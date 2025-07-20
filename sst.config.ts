@@ -17,6 +17,20 @@ export default $config({
       },
     };
   },
+  console: {
+    autodeploy: {
+      async workflow({ $, event }) {
+        await $`npm i -g pnpm`;
+        await $`pnpm install`;
+        if (event.action === "removed") {
+          await $`pnpm sst remove`;
+          return;
+        }
+
+        await $`pnpm sst deploy`;
+      },
+    },
+  },
   async run() {
     const outputs = {};
     const { readdirSync } = await import("fs");
