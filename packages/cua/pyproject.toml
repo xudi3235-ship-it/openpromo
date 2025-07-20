@@ -1,0 +1,24 @@
+[project]
+name = "cua"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anyio>=4.9.0",
+    "beautifulsoup4>=4.13.4",
+    "browser-use>=0.2.5",
+    "browserbase>=1.4.0",
+    "fastmcp>=2.8.0",
+    "lxml>=5.4.0",
+    "openai>=1.85.0",
+    "openai-agents",
+    "pillow>=11.2.1",
+    "playwright>=1.52.0",
+    "python-dotenv>=1.1.0",
+    "requests>=2.32.4",
+    "scrapybara>=2.5.3",
+]
+
+[tool.uv.sources]
+openai-agents = { git = "https://github.com/openai/openai-agents-python" }

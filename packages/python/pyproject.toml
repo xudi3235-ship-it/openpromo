@@ -1,0 +1,52 @@
+[project]
+name = "python"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">3.12"
+dependencies = [
+    "huggingface-hub>=0.29.2",
+    "modal>=1.0.2",
+    "openai>=1.85.0",
+    "opencv-python>=4.11.0.86",
+    "python-dotenv>=1.0.1",
+    "replicate>=1.0.4",
+    "requests>=2.32.3",
+    # "tikhub-sdk-v2",
+    # "tikhub>=1.13.0",
+    "runwayml>=2.3.5",
+    "fal-client>=0.5.9",
+    "speechbrain>=1.0.2",
+    "chattts>=0.2.4",
+    "soundfile>=0.13.1",
+    "faster-whisper>=1.1.1",
+    "ctranslate2==4.4.0",
+    "python-multipart>=0.0.20",
+    "pymupdf>=1.26.0",
+    "pdftopng>=0.2.4",
+    "ffmpeg-python>=0.2.0",
+    "playwright>=1.51.0",
+    "google-genai>=1.18.0",
+    "pillow>=11.2.1",
+    "mcp[cli]>=1.6.0",
+    "boto3>=1.38.33",
+    "diffusers>=0.33.1",
+    "manim>=0.18.1",
+    "openai-agents>=0.0.16",
+    "fastmcp>=2.5.2",
+    "fastapi>=0.115.12",
+    # "manim-voiceover[all]",
+]
+
+[tool.uv.sources]
+tikhub-sdk-v2 = { git = "https://github.com/TikHub/TikHub-API-Python-SDK-V2.git" }
+manim-voiceover = { git = "https://github.com/promobase/manim-voiceover.git" }
+
+
+[tool.ruff]
+select = ["F"]
+ignore = ["F405"]
+
+
+[dependency-groups]
+dev = ["ipykernel>=6.29.5", "ruff>=0.11.12"]

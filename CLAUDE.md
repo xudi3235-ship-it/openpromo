@@ -1,0 +1,3 @@
+# structure
+
+monorepo for openpromo
