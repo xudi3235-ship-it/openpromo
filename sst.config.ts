@@ -20,7 +20,7 @@ export default $config({
   console: {
     autodeploy: {
       async workflow({ $, event }) {
-        // ci
+        // workflow
         await $`npm i -g pnpm`;
         await $`pnpm install`;
         if (event.action === "removed") {
