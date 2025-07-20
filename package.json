@@ -1,9 +1,8 @@
 {
   "name": "openpromo",
   "version": "0.0.0",
-  "workspaces": [
-    "packages/*"
-  ],
+  "packageManager": "pnpm@10.13.1",
+
   "scripts": {
     "dev": "sst dev"
   },

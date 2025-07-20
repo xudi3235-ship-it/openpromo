@@ -4,7 +4,7 @@
   "type": "module",
   "dependencies": {
     "@browserbasehq/stagehand": "^2.3.0",
-    "@openpromo/core": "*",
+    "@openpromo/core": "workspace:*",
     "sst": "3.17.10",
     "zod": "^3.25.56"
   },
