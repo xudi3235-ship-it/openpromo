@@ -19,6 +19,14 @@ export default $config({
   },
   console: {
     autodeploy: {
+      target(event) {
+        if (event.type === "branch" && event.branch === "production") {
+          return { stage: "production" };
+        }
+        if (event.type === "branch" && event.branch === "dev") {
+          return { stage: "dev" };
+        }
+      },
       async workflow({ $, event }) {
         // workflow
         await $`npm i -g pnpm`;
