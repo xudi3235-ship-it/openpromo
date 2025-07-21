@@ -1,5 +1,3 @@
-// www related infra
-
 import { domain } from "./dns";
 
 export const www = new sst.aws.TanStackStart("WWW", {
