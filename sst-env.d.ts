@@ -25,6 +25,10 @@ declare module "sst" {
       "site": string
       "type": "sst.sst.Linkable"
     }
+    "WWW": {
+      "type": "sst.aws.TanstackStart"
+      "url": string
+    }
   }
 }
 /// <reference path="sst-env.d.ts" />
