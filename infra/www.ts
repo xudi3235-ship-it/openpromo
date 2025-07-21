@@ -9,4 +9,5 @@ export const www = new sst.aws.TanStackStart("WWW", {
     dns: sst.cloudflare.dns(),
     redirects: [`www.${domain}`],
   },
+  buildCommand: "pnpm build",
 });
