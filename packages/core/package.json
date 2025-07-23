@@ -15,6 +15,7 @@
     ]
   },
   "dependencies": {
+    "@planetscale/database": "^1.19.0",
     "drizzle-orm": "^0.44.3",
     "facebook-nodejs-business-sdk": "^23.0.1",
     "hono": "^4.8.5",

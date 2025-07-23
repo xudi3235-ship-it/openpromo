@@ -5,9 +5,7 @@ export function createContext<T>() {
   return {
     use() {
       const result = storage.getStore();
-      if (!result) {
-        throw new Error("No context available");
-      }
+      if (!result) throw new Error("No context available");
       return result;
     },
     provide<R>(value: T, fn: () => R) {

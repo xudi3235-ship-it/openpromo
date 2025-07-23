@@ -14,6 +14,10 @@ export default $config({
         cloudflare: true,
         tls: true,
         random: true,
+        fly: {
+          flyApiToken: process.env.FLY_API_TOKEN!,
+        },
+        docker: true,
       },
     };
   },

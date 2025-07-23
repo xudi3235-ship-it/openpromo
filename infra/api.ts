@@ -10,7 +10,7 @@ export const urls = new sst.Linkable("Urls", {
   },
 });
 
-export const apiFn = new sst.aws.Function("ApiFn", {
+const apiFn = new sst.aws.Function("ApiFn", {
   url: true,
   link: [bucket],
   handler: "packages/functions/src/api.handler",

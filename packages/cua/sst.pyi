@@ -13,6 +13,14 @@ class Resource:
     class App:
         name: str
         stage: str
+    class Database:
+        database: str
+        host: str
+        password: str
+        port: float
+        type: str
+        url: str
+        username: str
     class MyBucket:
         name: str
         type: str
