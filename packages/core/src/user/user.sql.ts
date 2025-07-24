@@ -6,8 +6,9 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/mysql-core";
-import { timestamps, workspaceID } from "../drizzle/types";
+import { timestamps } from "../drizzle/types";
 import { z } from "zod";
+import { workspaceID } from "../workspace/workspace.sql";
 
 export const UserFlags = z.object({
   printer: z.boolean().optional(),

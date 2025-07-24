@@ -8,7 +8,8 @@ import {
   varchar,
   timestamp,
 } from "drizzle-orm/mysql-core";
-import { timestamps, workspaceID, ulid } from "../drizzle/types";
+import { timestamps } from "../drizzle/types";
+import { workspaceID } from "../workspace/workspace.sql";
 
 export const Standing = ["good", "overdue"] as const;
 // TODO: implement this proper usage table

@@ -8,7 +8,21 @@ import {
   varchar,
   index,
 } from "drizzle-orm/mysql-core";
-import { timestamps, id } from "../drizzle/types";
+import { timestamps, id, ulid } from "../drizzle/types";
+
+// creates workspace ID for tables
+export const workspaceID = {
+  get id() {
+    return ulid("id").notNull();
+  },
+  get workspaceID() {
+    return ulid("workspace_id")
+      .notNull()
+      .references(() => workspace.id, {
+        onDelete: "cascade",
+      });
+  },
+};
 
 export const workspace = mysqlTable(
   "workspace",

@@ -11,9 +11,9 @@ import {
   varchar,
 } from "drizzle-orm/mysql-core";
 
-import { timestamps, ulid, workspaceID } from "../drizzle/types";
+import { timestamps, ulid } from "../drizzle/types";
 import z from "zod";
-import { workspaceIndexes } from "../workspace/workspace.sql";
+import { workspaceID, workspaceIndexes } from "../workspace/workspace.sql";
 
 const baseContentTable = <
   TTableName extends string,

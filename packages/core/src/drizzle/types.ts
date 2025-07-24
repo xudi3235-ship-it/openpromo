@@ -9,15 +9,6 @@ export const id = {
   },
 };
 
-export const workspaceID = {
-  get id() {
-    return ulid("id").notNull();
-  },
-  get workspaceID() {
-    return ulid("workspace_id").notNull();
-  },
-};
-
 export const timestamp = (name: string) =>
   rawTs(name, {
     fsp: 3,
