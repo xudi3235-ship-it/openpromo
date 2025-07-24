@@ -10,6 +10,11 @@ export default $config({
       providers: {
         aws: {
           region: "us-east-1",
+          profile: process.env.GITHUB_ACTIONS
+            ? undefined
+            : input.stage !== "production"
+            ? "openpromo-dev"
+            : undefined,
         },
         cloudflare: true,
         tls: true,
@@ -18,6 +23,10 @@ export default $config({
           flyApiToken: process.env.FLY_API_TOKEN!,
         },
         docker: true,
+        planetscale: {
+          serviceToken: process.env.PLANETSCALE_SERVICE_TOKEN!,
+          serviceTokenId: process.env.PLANETSCALE_SERVICE_TOKEN_ID!,
+        },
       },
     };
   },

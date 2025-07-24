@@ -19,7 +19,6 @@ class Resource:
         password: str
         port: float
         type: str
-        url: str
         username: str
     class MyBucket:
         name: str

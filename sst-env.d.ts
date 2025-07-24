@@ -20,7 +20,6 @@ declare module "sst" {
       "password": string
       "port": number
       "type": "sst.sst.Linkable"
-      "url": string
       "username": string
     }
     "MyBucket": {

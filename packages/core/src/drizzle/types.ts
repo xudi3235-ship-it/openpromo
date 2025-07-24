@@ -3,10 +3,18 @@ import { bigint, char, timestamp as rawTs, json } from "drizzle-orm/mysql-core";
 
 export const ulid = (name: string) => char(name, { length: 26 + 4 });
 
-// table builders
 export const id = {
   get id() {
     return ulid("id").primaryKey();
+  },
+};
+
+export const workspaceID = {
+  get id() {
+    return ulid("id").notNull();
+  },
+  get workspaceID() {
+    return ulid("workspace_id").notNull();
   },
 };
 
@@ -28,3 +36,19 @@ export const timestamps = {
     .default(sql`CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)`),
   timeDeleted: timestamp("time_deleted"),
 };
+
+import { customType } from "drizzle-orm/mysql-core";
+import { gunzipSync, gzipSync } from "zlib";
+
+export const blob = <TData>(name: string) =>
+  customType<{ data: TData; driverData: string }>({
+    dataType() {
+      return "longtext";
+    },
+    fromDriver(value) {
+      return JSON.parse(gunzipSync(Buffer.from(value, "binary")).toString());
+    },
+    toDriver(value: TData) {
+      return gzipSync(Buffer.from(JSON.stringify(value))).toString("binary");
+    },
+  })(name);

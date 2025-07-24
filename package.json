@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "packageManager": "pnpm@10.13.1",
   "scripts": {
-    "dev": "sst dev"
+    "dev": "sst dev",
+    "sso": "aws sso login --sso-session=promobase-dev-ray --no-browser"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22",
