@@ -1,20 +1,3 @@
-CREATE TABLE `stripe` (
-	`id` char(30) NOT NULL,
-	`workspace_id` char(30) NOT NULL,
-	`time_created` timestamp(3) NOT NULL DEFAULT (now()),
-	`time_updated` timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-	`time_deleted` timestamp(3),
-	`customer_id` varchar(255),
-	`subscription_id` varchar(255),
-	`subscription_item_id` varchar(255),
-	`price_id` varchar(255),
-	`coupon_id` varchar(255),
-	`standing` enum('good','overdue'),
-	`time_trial_ended` timestamp,
-	CONSTRAINT `stripe_workspace_id_id_pk` PRIMARY KEY(`workspace_id`,`id`),
-	CONSTRAINT `workspaceID` UNIQUE(`workspace_id`)
-);
---> statement-breakpoint
 CREATE TABLE `content_publishing` (
 	`id` char(30) NOT NULL,
 	`workspace_id` char(30) NOT NULL,
@@ -38,6 +21,23 @@ CREATE TABLE `content` (
 	`base_spec` json,
 	CONSTRAINT `content_workspace_id_id_pk` PRIMARY KEY(`workspace_id`,`id`),
 	CONSTRAINT `content_id_unique` UNIQUE(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `subscription` (
+	`id` char(30) NOT NULL,
+	`workspace_id` char(30) NOT NULL,
+	`time_created` timestamp(3) NOT NULL DEFAULT (now()),
+	`time_updated` timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+	`time_deleted` timestamp(3),
+	`customer_id` varchar(255),
+	`subscription_id` varchar(255),
+	`subscription_item_id` varchar(255),
+	`status` enum('active','canceled','incomplete','incomplete_expired','past_due','paused','trialing','unpaid') NOT NULL,
+	`price_id` varchar(255),
+	`coupon_id` varchar(255),
+	`time_trial_ended` timestamp,
+	CONSTRAINT `subscription_workspace_id_id_pk` PRIMARY KEY(`workspace_id`,`id`),
+	CONSTRAINT `workspaceID` UNIQUE(`workspace_id`)
 );
 --> statement-breakpoint
 CREATE TABLE `user` (
@@ -69,5 +69,7 @@ CREATE TABLE `workspace` (
 ALTER TABLE `content_publishing` ADD CONSTRAINT `content_publishing_workspace_id_workspace_id_fk` FOREIGN KEY (`workspace_id`) REFERENCES `workspace`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `content_publishing` ADD CONSTRAINT `fk_content_publishing_content` FOREIGN KEY (`workspace_id`,`content_id`) REFERENCES `content`(`workspace_id`,`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `content` ADD CONSTRAINT `content_workspace_id_workspace_id_fk` FOREIGN KEY (`workspace_id`) REFERENCES `workspace`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `subscription` ADD CONSTRAINT `subscription_workspace_id_workspace_id_fk` FOREIGN KEY (`workspace_id`) REFERENCES `workspace`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `user` ADD CONSTRAINT `user_workspace_id_workspace_id_fk` FOREIGN KEY (`workspace_id`) REFERENCES `workspace`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX `id_idx` ON `content_publishing` (`id`);--> statement-breakpoint
 CREATE INDEX `id_idx` ON `content` (`id`);

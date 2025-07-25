@@ -3,3 +3,8 @@ packages:
 
 ignoredBuiltDependencies:
   - esbuild
+
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@tailwindcss/oxide'
+  - aws-sdk

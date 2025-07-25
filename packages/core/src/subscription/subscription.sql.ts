@@ -10,27 +10,23 @@ import {
 } from "drizzle-orm/mysql-core";
 import { timestamps } from "../drizzle/types";
 import { workspaceID } from "../workspace/workspace.sql";
+import type Stripe from "stripe";
+import { z } from "zod";
 
-export const Standing = ["good", "overdue"] as const;
-// TODO: implement this proper usage table
-// export const usageTable = mysqlTable(
-//   "usage",
-//   {
-//     workspaceID: workspaceID.workspaceID,
-//     ...timestamps,
-//     id: ulid("id").notNull(),
-//     stageID: ulid("stage_id").notNull(),
-//     day: date("day", { mode: "string" }).notNull(),
-//     invocations: bigint("invocations", { mode: "number" }).notNull(),
-//   },
-//   (table) => [
-//     primaryKey({ columns: [table.workspaceID, table.id] }),
-//     uniqueIndex("stage").on(table.workspaceID, table.stageID, table.day),
-//   ],
-// );
+type SubscriptionStatus = Stripe.Subscription.Status;
+export const StripeSubscriptionStatus = [
+  "active",
+  "canceled",
+  "incomplete",
+  "incomplete_expired",
+  "past_due",
+  "paused",
+  "trialing",
+  "unpaid",
+] as const;
 
-export const stripeTable = mysqlTable(
-  "stripe",
+export const subscriptionTable = mysqlTable(
+  "subscription",
   {
     ...workspaceID,
     ...timestamps,
@@ -39,9 +35,9 @@ export const stripeTable = mysqlTable(
     subscriptionItemID: varchar("subscription_item_id", {
       length: 255,
     }),
+    status: mysqlEnum("status", [...StripeSubscriptionStatus]).notNull(),
     priceID: varchar("price_id", { length: 255 }),
     couponID: varchar("coupon_id", { length: 255 }),
-    standing: mysqlEnum("standing", Standing),
     timeTrialEnded: timestamp("time_trial_ended", { mode: "string" }),
   },
   (table) => [
