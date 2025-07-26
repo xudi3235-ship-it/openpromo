@@ -14,6 +14,7 @@ import {
 import { timestamps, ulid } from "../drizzle/types";
 import z from "zod";
 import { workspaceID, workspaceIndexes } from "../workspace/workspace.sql";
+import { createSelectSchema } from "drizzle-zod";
 
 const baseContentTable = <
   TTableName extends string,
@@ -30,27 +31,35 @@ const baseContentTable = <
 };
 
 // a piece of attachment, could be img, video, etc
-const attachmentSpec = z.object({
+const AttachmentSpec = z.object({
   id: z.string().optional(),
   url: z.string().optional(),
   s3Key: z.string().optional(),
   mimeType: z.string().optional(),
+  metadata: z.record(z.any(), z.any()).optional(),
 });
 
+export const TimeSpec = z.object({
+  createdAt: z.string().optional(),
+  scheduledPublishAt: z.date().optional(),
+  publishedAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
 // internal content spec.
 // platform agnostic representation of a "post" item.
-const contentBaseSpec = z.object({
+export const ContentBaseSpec = z.object({
   title: z.string().optional(),
   bodyText: z.string().optional(),
-  attachments: z.array(attachmentSpec).optional(),
-  metadata: z.record(z.any()).optional(),
+  attachments: z.array(AttachmentSpec).optional(),
+  metadata: z.record(z.any(), z.any()).optional(),
+  timeSpec: TimeSpec.optional(),
 });
 
-type ContentBaseSpec = z.infer<typeof contentBaseSpec>;
+type ContentBaseSpec = z.infer<typeof ContentBaseSpec>;
 
-// core content table
-export const contentTable = mysqlTable(
-  "content",
+// handling draft & scheduling, 1..N to unified content
+export const pendingContentGroupTable = mysqlTable(
+  "pending_content_group",
   {
     ...workspaceID,
     ...timestamps,
@@ -79,41 +88,69 @@ export const ContentPublishingStatus = z.enum([
 ]);
 
 // placement specifics specs
-const FBPlacementSpec = contentBaseSpec.extend({
+const FBPlacementSpec = ContentBaseSpec.extend({
   placement: FBPlacement,
   fbPageID: z.string().optional(),
   fbAdAccountID: z.string().optional(),
 });
-const IGPlacementSpec = contentBaseSpec.extend({
+const IGPlacementSpec = ContentBaseSpec.extend({
   placement: IGPlacement,
   igAccountID: z.string().optional(),
   fbAdAccountID: z.string().optional(),
 });
+const TiktokPlacementSpec = ContentBaseSpec.extend({
+  placement: TiktokPlacement,
+  ttAccountID: z.string().optional(),
+});
 
-const PlacementSpec = z.union([FBPlacementSpec, IGPlacementSpec]);
+export const PlacementSpecMapping = z.object({
+  // FB placements
+  FB_FEED: FBPlacementSpec.optional(),
+  FB_STORY: FBPlacementSpec.optional(),
+  FB_REEL: FBPlacementSpec.optional(),
+  // IG placements
+  IG_FEED: IGPlacementSpec.optional(),
+  IG_STORY: IGPlacementSpec.optional(),
+  IG_REEL: IGPlacementSpec.optional(),
+  // TikTok placements
+  TT_FEED: TiktokPlacementSpec.optional(),
+  TT_STORY: TiktokPlacementSpec.optional(),
+});
 
+export type PlacementSpecMapping = z.infer<typeof PlacementSpecMapping>;
+
+export const PlacementSpec = z.union([
+  FBPlacementSpec,
+  IGPlacementSpec,
+  TiktokPlacementSpec,
+]);
 export type PlacementSpec = z.infer<typeof PlacementSpec>;
 
-// content publishing table
-export const contentPublishingTable = mysqlTable(
-  "content_publishing",
+// represents a unified content item.
+// if scheduled & drafts, it has a pending content group
+// else, it might not, since it's backfilled & lazy synced from source platforms.
+export const unifiedContentTable = mysqlTable(
+  "unified_content",
   {
     ...workspaceID,
     ...timestamps,
-    contentID: ulid("content_id").notNull(),
+    // (?) pending content group
+    pendingContentGroupId: ulid("pending_content_group_id"),
+    // source content json, synced from platforms
+    sourceContent: json("source_content"),
+    // spec of the specific placement, used for publishing
     placement_spec: json("placement_spec").$type<PlacementSpec>(),
-    placement: mysqlEnum("placement", [...AllPlacement.options]).notNull(),
-    status: mysqlEnum("status", [...ContentPublishingStatus.options])
+    // internal, where this is going to
+    placement: mysqlEnum(
+      "placement",
+      AllPlacement.options as [string],
+    ).notNull(),
+    // status
+    status: mysqlEnum("status", ContentPublishingStatus.options as [string])
       .notNull()
       .default(ContentPublishingStatus.enum.DRAFT),
+    // some normalized fields
     scheduledPublishAt: timestamp("scheduled_publish_at"),
   },
-  (t) => [
-    ...workspaceIndexes(t),
-    foreignKey({
-      name: "fk_content_publishing_content",
-      columns: [t.workspaceID, t.contentID],
-      foreignColumns: [contentTable.workspaceID, contentTable.id],
-    }),
-  ],
+  (t) => [...workspaceIndexes(t)],
 );

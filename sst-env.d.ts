@@ -14,6 +14,11 @@ declare module "sst" {
       "type": "sst.aws.Function"
       "url": string
     }
+    "Bus": {
+      "arn": string
+      "name": string
+      "type": "sst.aws.Bus"
+    }
     "Database": {
       "database": string
       "host": string

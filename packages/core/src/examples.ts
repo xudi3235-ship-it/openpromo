@@ -17,11 +17,21 @@ export namespace Examples {
 
   export const Subscription = {
     id: Id("subscription"),
-    productVariantID: ProductVariant.id,
-    price: ProductVariant.price,
-    quantity: 1,
     schedule: { type: "weekly" as const, interval: 3 },
     next: new Date("2025-02-01 19:36:19.000"),
     created: new Date("2024-06-29 19:36:19.000"),
+  };
+
+  export const Workspace = {
+    id: Id("workspace"),
+    slug: "example-workspace",
+  };
+
+  export const UnifiedContent = {
+    id: Id("unified_content"),
+    title: "Example Content",
+    bodyText: "This is an example content body.",
+    attachments: [],
+    metadata: {},
   };
 }

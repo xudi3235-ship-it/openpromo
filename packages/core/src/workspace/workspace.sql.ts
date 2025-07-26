@@ -18,13 +18,13 @@ export const workspaceID = {
   get workspaceID() {
     return ulid("workspace_id")
       .notNull()
-      .references(() => workspace.id, {
+      .references(() => workspaceTable.id, {
         onDelete: "cascade",
       });
   },
 };
 
-export const workspace = mysqlTable(
+export const workspaceTable = mysqlTable(
   "workspace",
   {
     ...id,
@@ -42,7 +42,7 @@ export function workspaceIndexes(table: any) {
     primaryKey({ columns: [table.workspaceID, table.id] }),
     index("id_idx").on(table.id),
     foreignKey({
-      foreignColumns: [workspace.id],
+      foreignColumns: [workspaceTable.id],
       columns: [table.workspaceID],
     }),
   ];

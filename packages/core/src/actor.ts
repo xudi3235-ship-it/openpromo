@@ -11,6 +11,7 @@ export namespace Actor {
     properties: {
       userID: string;
       clientID: string;
+      email: string;
       workspaceID: string;
     };
   }
@@ -42,6 +43,25 @@ export namespace Actor {
   export function userID() {
     const actor = Context.use();
     if ("userID" in actor.properties) return actor.properties.userID;
+    throw new VisibleError(
+      "authentication",
+      ErrorCodes.Authentication.UNAUTHORIZED,
+      `You don't have permission to access this resource.`,
+    );
+  }
+  export function workspaceID() {
+    const actor = Context.use();
+    if ("workspaceID" in actor.properties) return actor.properties.workspaceID;
+    throw new VisibleError(
+      "authentication",
+      ErrorCodes.Authentication.UNAUTHORIZED,
+      `You don't have permission to access this resource.`,
+    );
+  }
+
+  export function email(): string | import("drizzle-orm").SQLWrapper {
+    const actor = Context.use();
+    if ("email" in actor.properties) return actor.properties.email;
     throw new VisibleError(
       "authentication",
       ErrorCodes.Authentication.UNAUTHORIZED,

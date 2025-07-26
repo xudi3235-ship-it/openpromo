@@ -3,6 +3,9 @@ import { ulid } from "ulid";
 export const prefixes = {
   user: "usr",
   subscription: "sub",
+  workspace: "wrk",
+  content_group: "cgr",
+  unified_content: "unc",
 } as const;
 
 export function createID(prefix: keyof typeof prefixes): string {

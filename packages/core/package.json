@@ -17,6 +17,7 @@
   "dependencies": {
     "@planetscale/database": "^1.19.0",
     "drizzle-orm": "^0.44.3",
+    "drizzle-zod": "^0.8.2",
     "facebook-nodejs-business-sdk": "^23.0.1",
     "hono": "^4.8.5",
     "nanoid": "^5.1.5",
@@ -24,7 +25,7 @@
     "stripe": "^18.3.0",
     "ulid": "^3.0.1",
     "zod": "*",
-    "zod-openapi": "^5.2.0",
+    "zod-openapi": "4.1.0",
     "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {

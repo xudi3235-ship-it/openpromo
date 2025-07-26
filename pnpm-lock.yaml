@@ -17,9 +17,6 @@ importers:
       sst:
         specifier: 3.17.10
         version: 3.17.10
-      zod:
-        specifier: ^3.24.1
-        version: 3.25.76
     devDependencies:
       '@tsconfig/node22':
         specifier: ^22
@@ -58,6 +55,9 @@ importers:
       drizzle-orm:
         specifier: ^0.44.3
         version: 0.44.3(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)
+      drizzle-zod:
+        specifier: ^0.8.2
+        version: 0.8.2(drizzle-orm@0.44.3(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0))(zod@4.0.5)
       facebook-nodejs-business-sdk:
         specifier: ^23.0.1
         version: 23.0.1
@@ -80,8 +80,8 @@ importers:
         specifier: '*'
         version: 4.0.5
       zod-openapi:
-        specifier: ^5.2.0
-        version: 5.2.0(zod@4.0.5)
+        specifier: 4.1.0
+        version: 4.1.0(zod@4.0.5)
       zod-to-json-schema:
         specifier: ^3.24.6
         version: 3.24.6(zod@4.0.5)
@@ -2505,6 +2505,12 @@ packages:
       sqlite3:
         optional: true
 
+  drizzle-zod@0.8.2:
+    resolution: {integrity: sha512-9Do/16OjFFNrQDZgvMtxtDDwKWbFOxUAIwNPKX98SfxrP8H18vhN1BvNXbhelLcdgCE7GEaXDJqBjMExSkhpkA==}
+    peerDependencies:
+      drizzle-orm: '>=0.36.0'
+      zod: ^3.25.1
+
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
@@ -4810,11 +4816,11 @@ packages:
     resolution: {integrity: sha512-zK7YHHz4ZXpW89AHXUPbQVGKI7uvkd3hzusTdotCg1UxyaVtg0zFJSTfW/Dq5f7OBBVnq6cZIaC8Ti4hb6dtCA==}
     engines: {node: '>= 14'}
 
-  zod-openapi@5.2.0:
-    resolution: {integrity: sha512-f1bxel2MR5L5sxG9KNNAUs6Eh76VHrrF0pN06+W21MtO2f6oOaWkfY16r9rjTsXV9M3YmRITh++//Ur37GzUZg==}
-    engines: {node: '>=20'}
+  zod-openapi@4.1.0:
+    resolution: {integrity: sha512-bRCwRYhEO9CmFLyKgJX8h6j1dRtRiwOe+TLzMVPyV0pRW5vRIgb1rLgIGcuRZ5z3MmSVrZqbv3yva4IJrtZK4g==}
+    engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.25.74 || ^4.0.0
+      zod: ^3.21.4
 
   zod-to-json-schema@3.24.3:
     resolution: {integrity: sha512-HIAfWdYIt1sssHfYZFCXp4rU1w2r8hVVXYIlmoa0r0gABLs5di3RCqPU5DDROogVz1pAdYBaz7HK5n9pSUNs3A==}
@@ -7172,6 +7178,11 @@ snapshots:
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
       '@planetscale/database': 1.19.0
+
+  drizzle-zod@0.8.2(drizzle-orm@0.44.3(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0))(zod@4.0.5):
+    dependencies:
+      drizzle-orm: 0.44.3(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)
+      zod: 4.0.5
 
   dunder-proto@1.0.1:
     dependencies:
@@ -9627,7 +9638,7 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.7.0
 
-  zod-openapi@5.2.0(zod@4.0.5):
+  zod-openapi@4.1.0(zod@4.0.5):
     dependencies:
       zod: 4.0.5
 

@@ -14,6 +14,7 @@ import type Stripe from "stripe";
 import { z } from "zod";
 
 type SubscriptionStatus = Stripe.Subscription.Status;
+// mirrored from sdk
 export const StripeSubscriptionStatus = [
   "active",
   "canceled",
