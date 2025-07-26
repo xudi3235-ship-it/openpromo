@@ -6,7 +6,7 @@
     "@browserbasehq/stagehand": "^2.3.0",
     "@openpromo/core": "workspace:*",
     "sst": "*",
-    "zod": "3.24.1"
+    "zod": "catalog:"
   },
   "scripts": {
     "shell": "sst shell tsx"

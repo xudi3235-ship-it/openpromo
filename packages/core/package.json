@@ -24,7 +24,7 @@
     "sst": "3.17.10",
     "stripe": "^18.3.0",
     "ulid": "^3.0.1",
-    "zod": "*",
+    "zod": "catalog:",
     "zod-openapi": "4.1.0",
     "zod-to-json-schema": "^3.24.6"
   },
