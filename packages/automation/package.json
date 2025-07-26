@@ -5,8 +5,8 @@
   "dependencies": {
     "@browserbasehq/stagehand": "^2.3.0",
     "@openpromo/core": "workspace:*",
-    "sst": "3.17.10",
-    "zod": "*"
+    "sst": "*",
+    "zod": "3.24.1"
   },
   "scripts": {
     "shell": "sst shell tsx"
