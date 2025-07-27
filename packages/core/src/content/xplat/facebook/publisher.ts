@@ -1,4 +1,9 @@
-import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
+import {
+  AdVideo,
+  FacebookAdsApi,
+  Page,
+  Photo,
+} from "facebook-nodejs-business-sdk";
 
 import { VideoUploader } from "facebook-nodejs-business-sdk/src/video-uploader";
 import {
@@ -9,11 +14,14 @@ import {
   CreateVideoParams,
   CreateVideoSchema,
 } from "./types";
+import { FacebookReelProvider } from "./infra/reel";
 
 export class FacebookPageApi {
   private page: Page;
-  constructor(api: FacebookAdsApi, private pageId: string) {
-    this.page = new Page(pageId, api);
+  private api: FacebookAdsApi;
+  constructor(private pageId: string, private accessToken: string) {
+    this.api = new FacebookAdsApi(accessToken);
+    this.page = new Page(pageId, this.api);
   }
 
   // low level wrappers
@@ -33,7 +41,10 @@ export class FacebookPageApi {
     return await this.page.createPhoto(fields, validatedParams);
   }
 
-  public async _createVideo(fields: string[], params: CreateVideoParams) {
+  public async _createVideo(
+    fields: string[],
+    params: CreateVideoParams,
+  ): Promise<AdVideo> {
     const validatedParams = CreateVideoSchema.parse(params);
     return await this.page.createVideo(fields, validatedParams);
   }
@@ -81,15 +92,32 @@ export class FacebookPageApi {
     title: string,
     description: string,
   ) {
-    // FIXME: this is wrong. we need to first
-    // upload the video and get a ready videoID
-    // then publish
+    // seems like we don't need to upload, FB just curls the video
+    // and handles it
     const params: CreateVideoParams = {
       file_url: videoUrl,
       title,
       description,
       published: true, // publish immediately
     };
-    return await this._createVideo(["id"], params);
+    const adVideo = await this._createVideo(["id"], params);
+  }
+  public async createVideoReel(
+    videoUrl: string,
+    title: string,
+    description: string,
+  ) {
+    const config = {
+      pageId: this.pageId,
+      accessToken: this.accessToken,
+    };
+    const { video_id, upload_url } =
+      await FacebookReelProvider.startUploadSession(config);
+    await FacebookReelProvider.uploadVideo(config, upload_url, videoUrl);
+    return await FacebookReelProvider.publishReel(config, video_id, {
+      video_state: "PUBLISHED",
+      title,
+      description,
+    });
   }
 }
