@@ -1,26 +1,27 @@
-CREATE TABLE `content_publishing` (
-	`id` char(30) NOT NULL,
-	`workspace_id` char(30) NOT NULL,
-	`time_created` timestamp(3) NOT NULL DEFAULT (now()),
-	`time_updated` timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-	`time_deleted` timestamp(3),
-	`content_id` char(30) NOT NULL,
-	`placement_spec` json,
-	`placement` enum('IG_FEED','IG_STORY','IG_REEL','FB_FEED','FB_STORY','FB_REEL','TT_FEED','TT_STORY') NOT NULL,
-	`status` enum('DRAFT','SCHEDULED','PUBLISHED','FAILED_TO_PUBLISH','ARCHIVED') NOT NULL DEFAULT 'DRAFT',
-	`scheduled_publish_at` timestamp,
-	CONSTRAINT `content_publishing_workspace_id_id_pk` PRIMARY KEY(`workspace_id`,`id`)
-);
---> statement-breakpoint
-CREATE TABLE `content` (
+CREATE TABLE `pending_content_group` (
 	`id` char(30) NOT NULL,
 	`workspace_id` char(30) NOT NULL,
 	`time_created` timestamp(3) NOT NULL DEFAULT (now()),
 	`time_updated` timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
 	`time_deleted` timestamp(3),
 	`base_spec` json,
-	CONSTRAINT `content_workspace_id_id_pk` PRIMARY KEY(`workspace_id`,`id`),
+	CONSTRAINT `pending_content_group_workspace_id_id_pk` PRIMARY KEY(`workspace_id`,`id`),
 	CONSTRAINT `content_id_unique` UNIQUE(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `unified_content` (
+	`id` char(30) NOT NULL,
+	`workspace_id` char(30) NOT NULL,
+	`time_created` timestamp(3) NOT NULL DEFAULT (now()),
+	`time_updated` timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+	`time_deleted` timestamp(3),
+	`pending_content_group_id` char(30),
+	`source_content` json,
+	`placement_spec` json,
+	`placement` enum('IG_FEED','IG_STORY','IG_REEL','FB_FEED','FB_STORY','FB_REEL','TT_FEED','TT_STORY') NOT NULL,
+	`status` enum('DRAFT','SCHEDULED','PUBLISHED','FAILED_TO_PUBLISH','ARCHIVED') NOT NULL DEFAULT 'DRAFT',
+	`scheduled_publish_at` timestamp(3),
+	CONSTRAINT `unified_content_workspace_id_id_pk` PRIMARY KEY(`workspace_id`,`id`)
 );
 --> statement-breakpoint
 CREATE TABLE `subscription` (
@@ -66,10 +67,9 @@ CREATE TABLE `workspace` (
 	CONSTRAINT `slug` UNIQUE(`slug`)
 );
 --> statement-breakpoint
-ALTER TABLE `content_publishing` ADD CONSTRAINT `content_publishing_workspace_id_workspace_id_fk` FOREIGN KEY (`workspace_id`) REFERENCES `workspace`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `content_publishing` ADD CONSTRAINT `fk_content_publishing_content` FOREIGN KEY (`workspace_id`,`content_id`) REFERENCES `content`(`workspace_id`,`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `content` ADD CONSTRAINT `content_workspace_id_workspace_id_fk` FOREIGN KEY (`workspace_id`) REFERENCES `workspace`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `pending_content_group` ADD CONSTRAINT `pending_content_group_workspace_id_workspace_id_fk` FOREIGN KEY (`workspace_id`) REFERENCES `workspace`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `unified_content` ADD CONSTRAINT `unified_content_workspace_id_workspace_id_fk` FOREIGN KEY (`workspace_id`) REFERENCES `workspace`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `subscription` ADD CONSTRAINT `subscription_workspace_id_workspace_id_fk` FOREIGN KEY (`workspace_id`) REFERENCES `workspace`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `user` ADD CONSTRAINT `user_workspace_id_workspace_id_fk` FOREIGN KEY (`workspace_id`) REFERENCES `workspace`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX `id_idx` ON `content_publishing` (`id`);--> statement-breakpoint
-CREATE INDEX `id_idx` ON `content` (`id`);
+CREATE INDEX `id_idx` ON `pending_content_group` (`id`);--> statement-breakpoint
+CREATE INDEX `id_idx` ON `unified_content` (`id`);

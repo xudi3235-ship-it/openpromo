@@ -16,12 +16,13 @@ import {
   unifiedContentTable,
   pendingContentGroupTable,
   PlacementSpecMapping,
+  PendingContentGroupDTO,
 } from "./content.sql";
 import { Actor } from "../actor";
-import { createSelectSchema } from "drizzle-zod";
+import { eq, getTableColumns } from "../drizzle";
 
 export namespace PendingContentGroup {
-  export const Info = createSelectSchema(pendingContentGroupTable);
+  export const Info = PendingContentGroupDTO;
 
   export const Event = {
     Created: defineEvent(
@@ -68,6 +69,34 @@ export namespace PendingContentGroup {
       return pending_content_group_id;
     },
   );
+
+  export const list = fn(
+    z.object({
+      workspaceID: z.string(),
+    }),
+    async (input) => {
+      const { workspaceID } = input;
+      return createTransaction(async (tx) => {
+        const results = await tx
+          .select(getTableColumns(pendingContentGroupTable))
+          .from(pendingContentGroupTable)
+          .where(eq(pendingContentGroupTable.workspaceID, workspaceID));
+        return results.map(serialize);
+      });
+    },
+  );
+
+  function serialize(
+    input: typeof pendingContentGroupTable.$inferSelect,
+  ): z.infer<typeof Info> {
+    return {
+      id: input.id,
+      workspaceID: input.workspaceID,
+      timeCreated: input.timeCreated,
+      timeUpdated: input.timeUpdated,
+      baseSpec: input.baseSpec as any, // TODO: refine this type
+    };
+  }
 }
 
 // ------ helpers ------

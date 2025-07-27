@@ -6,12 +6,11 @@ import {
   mysqlTable,
   primaryKey,
   text,
-  timestamp,
   uniqueIndex,
   varchar,
 } from "drizzle-orm/mysql-core";
 
-import { timestamps, ulid } from "../drizzle/types";
+import { timestamps, ulid, timestamp } from "../drizzle/types";
 import z from "zod";
 import { workspaceID, workspaceIndexes } from "../workspace/workspace.sql";
 import { createSelectSchema } from "drizzle-zod";
@@ -141,12 +140,9 @@ export const unifiedContentTable = mysqlTable(
     // spec of the specific placement, used for publishing
     placement_spec: json("placement_spec").$type<PlacementSpec>(),
     // internal, where this is going to
-    placement: mysqlEnum(
-      "placement",
-      AllPlacement.options as [string],
-    ).notNull(),
+    placement: mysqlEnum("placement", AllPlacement.options).notNull(),
     // status
-    status: mysqlEnum("status", ContentPublishingStatus.options as [string])
+    status: mysqlEnum("status", ContentPublishingStatus.options)
       .notNull()
       .default(ContentPublishingStatus.enum.DRAFT),
     // some normalized fields
@@ -154,3 +150,26 @@ export const unifiedContentTable = mysqlTable(
   },
   (t) => [...workspaceIndexes(t)],
 );
+
+// ------- DTO -------
+export const UnifiedContentDTO = z.object({
+  id: z.string(),
+  workspaceID: z.string(),
+  timeCreated: z.date(),
+  timeUpdated: z.date(),
+  pendingContentGroupId: z.string().optional(),
+  // TODO: update this to use zod schema for each platform's source content
+  sourceContent: z.record(z.any(), z.any()).optional(),
+  placement_spec: PlacementSpec.optional(),
+  placement: AllPlacement,
+  status: ContentPublishingStatus,
+  scheduledPublishAt: z.date().optional(),
+});
+
+export const PendingContentGroupDTO = z.object({
+  id: z.string(),
+  workspaceID: z.string(),
+  timeCreated: z.date(),
+  timeUpdated: z.date(),
+  baseSpec: ContentBaseSpec.optional(),
+});

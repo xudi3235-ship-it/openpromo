@@ -1,1 +1,1 @@
-abstract class BasePublisher {}
+abstract class XPlatContentInfraBase {}

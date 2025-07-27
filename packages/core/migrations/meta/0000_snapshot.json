@@ -1,139 +1,11 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "ed10b4b1-be03-42c0-b9f7-0bb51951304d",
+  "id": "64d144f6-4e8a-4de9-a973-5b24dbf82e03",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "content_publishing": {
-      "name": "content_publishing",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "char(30)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "workspace_id": {
-          "name": "workspace_id",
-          "type": "char(30)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "time_created": {
-          "name": "time_created",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(now())"
-        },
-        "time_updated": {
-          "name": "time_updated",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)"
-        },
-        "time_deleted": {
-          "name": "time_deleted",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "content_id": {
-          "name": "content_id",
-          "type": "char(30)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "placement_spec": {
-          "name": "placement_spec",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "placement": {
-          "name": "placement",
-          "type": "enum('IG_FEED','IG_STORY','IG_REEL','FB_FEED','FB_STORY','FB_REEL','TT_FEED','TT_STORY')",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "status": {
-          "name": "status",
-          "type": "enum('DRAFT','SCHEDULED','PUBLISHED','FAILED_TO_PUBLISH','ARCHIVED')",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'DRAFT'"
-        },
-        "scheduled_publish_at": {
-          "name": "scheduled_publish_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "id_idx": {
-          "name": "id_idx",
-          "columns": [
-            "id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "content_publishing_workspace_id_workspace_id_fk": {
-          "name": "content_publishing_workspace_id_workspace_id_fk",
-          "tableFrom": "content_publishing",
-          "tableTo": "workspace",
-          "columnsFrom": [
-            "workspace_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "fk_content_publishing_content": {
-          "name": "fk_content_publishing_content",
-          "tableFrom": "content_publishing",
-          "tableTo": "content",
-          "columnsFrom": [
-            "workspace_id",
-            "content_id"
-          ],
-          "columnsTo": [
-            "workspace_id",
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "content_publishing_workspace_id_id_pk": {
-          "name": "content_publishing_workspace_id_id_pk",
-          "columns": [
-            "workspace_id",
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraint": {}
-    },
-    "content": {
-      "name": "content",
+    "pending_content_group": {
+      "name": "pending_content_group",
       "columns": {
         "id": {
           "name": "id",
@@ -197,9 +69,9 @@
         }
       },
       "foreignKeys": {
-        "content_workspace_id_workspace_id_fk": {
-          "name": "content_workspace_id_workspace_id_fk",
-          "tableFrom": "content",
+        "pending_content_group_workspace_id_workspace_id_fk": {
+          "name": "pending_content_group_workspace_id_workspace_id_fk",
+          "tableFrom": "pending_content_group",
           "tableTo": "workspace",
           "columnsFrom": [
             "workspace_id"
@@ -212,8 +84,128 @@
         }
       },
       "compositePrimaryKeys": {
-        "content_workspace_id_id_pk": {
-          "name": "content_workspace_id_id_pk",
+        "pending_content_group_workspace_id_id_pk": {
+          "name": "pending_content_group_workspace_id_id_pk",
+          "columns": [
+            "workspace_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "unified_content": {
+      "name": "unified_content",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "char(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "char(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "time_created": {
+          "name": "time_created",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "time_updated": {
+          "name": "time_updated",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)"
+        },
+        "time_deleted": {
+          "name": "time_deleted",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pending_content_group_id": {
+          "name": "pending_content_group_id",
+          "type": "char(30)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "source_content": {
+          "name": "source_content",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "placement_spec": {
+          "name": "placement_spec",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "placement": {
+          "name": "placement",
+          "type": "enum('IG_FEED','IG_STORY','IG_REEL','FB_FEED','FB_STORY','FB_REEL','TT_FEED','TT_STORY')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('DRAFT','SCHEDULED','PUBLISHED','FAILED_TO_PUBLISH','ARCHIVED')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'DRAFT'"
+        },
+        "scheduled_publish_at": {
+          "name": "scheduled_publish_at",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "id_idx": {
+          "name": "id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "unified_content_workspace_id_workspace_id_fk": {
+          "name": "unified_content_workspace_id_workspace_id_fk",
+          "tableFrom": "unified_content",
+          "tableTo": "workspace",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "unified_content_workspace_id_id_pk": {
+          "name": "unified_content_workspace_id_id_pk",
           "columns": [
             "workspace_id",
             "id"
