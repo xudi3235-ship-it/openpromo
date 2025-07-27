@@ -3,14 +3,14 @@ import {
   Page,
   PagePost,
   Photo,
-  // Upload
-  AdCreativeLinkDataChildAttachment,
+  IGMedia,
+  IGUser,
 } from "facebook-nodejs-business-sdk";
 
 /**
  * child attachment specs: https://gist.github.com/rachhen/4b8618de872e1388b577421ecfc8fb1a
  */
-export default class FacebookPublisher {
+export default class FacebookContentPublisher {
   private api: FacebookAdsApi;
   private page: Page;
 
