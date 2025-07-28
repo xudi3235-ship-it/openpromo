@@ -31,6 +31,10 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Bucket"
     }
+    "SchedulePublishFunction": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
     "Urls": {
       "api": string
       "auth": string

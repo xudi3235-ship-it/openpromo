@@ -27,6 +27,9 @@ class Resource:
     class MyBucket:
         name: str
         type: str
+    class SchedulePublishFunction:
+        name: str
+        type: str
     class Urls:
         api: str
         auth: str

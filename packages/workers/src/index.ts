@@ -9,8 +9,8 @@ type Params = {
   metadata: Record<string, string>;
 };
 
-// TODO: example workflow
-export class MyWorkflow extends WorkflowEntrypoint<Env, Params> {
+// this workflow is invoked when a unified content is scheduled for publishing
+export class ScheduledContentWorkflow extends WorkflowEntrypoint<Env, Params> {
   async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
     // Can access bindings on `this.env`
     // Can access params on `event.payload`
@@ -64,7 +64,6 @@ interface Env {
 }
 
 export default {
-  // worker trigger workflow defined
   async fetch(req: Request, env: Env) {
     // Get instanceId from query parameters
     const instanceId = new URL(req.url).searchParams.get("instanceId");

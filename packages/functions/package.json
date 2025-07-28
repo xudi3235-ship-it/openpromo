@@ -3,10 +3,15 @@
   "version": "0.0.0",
   "type": "module",
   "dependencies": {
+    "@aws-sdk/client-lambda": "^3.851.0",
+    "@aws-sdk/client-scheduler": "^3.848.0",
+    "@aws-sdk/client-sfn": "^3.848.0",
     "@openpromo/core": "workspace:*",
-    "sst": "3.17.10"
+    "sst": "3.17.10",
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8"
+    "@types/aws-lambda": "^8",
+    "@types/node": "^24.1.0"
   }
 }

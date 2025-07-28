@@ -20,6 +20,8 @@ import {
 } from "./content.sql";
 import { Actor } from "../actor";
 import { eq, getTableColumns } from "../drizzle";
+import { scheduleEvent } from "../event/scheduler";
+import { UnifiedContent } from "./unified_content";
 
 export namespace PendingContentGroup {
   export const Info = PendingContentGroupDTO;
@@ -106,21 +108,41 @@ async function createPendingContents(
   pendingContentGroupId: string,
 ) {
   const workspaceID = Actor.workspaceID();
-  const promises: Promise<any>[] = [];
 
   for (const [placement, spec] of Object.entries(placementSpecs)) {
     if (!spec) continue;
     const id = createID("unified_content");
-    const p = tx.insert(unifiedContentTable).values({
+    const scheduledPublishAt = spec.timeSpec?.scheduledPublishAt;
+
+    // Store schedule name if scheduling is needed
+    let scheduleName: string | null = null;
+    if (scheduledPublishAt) scheduleName = `publish-${id}-${workspaceID}`;
+
+    await tx.insert(unifiedContentTable).values({
       id,
       workspaceID,
       pendingContentGroupId,
       placement_spec: spec,
       placement: placement as keyof typeof AllPlacement.enum,
-      scheduledPublishAt: spec.timeSpec?.scheduledPublishAt,
+      scheduledPublishAt,
+      scheduleName, // schedule name
     });
-    promises.push(p);
-  }
 
-  return await Promise.all(promises);
+    if (!scheduledPublishAt || !scheduleName) continue;
+
+    // Use afterTx for scheduling
+    afterTx(async () => {
+      await scheduleEvent(
+        UnifiedContent.Event.Publish,
+        {
+          id,
+          workspaceID,
+        },
+        scheduledPublishAt,
+        {
+          scheduleName,
+        },
+      );
+    });
+  }
 }

@@ -147,6 +147,7 @@ export const unifiedContentTable = mysqlTable(
       .default(ContentPublishingStatus.enum.DRAFT),
     // some normalized fields
     scheduledPublishAt: timestamp("scheduled_publish_at"),
+    scheduleName: varchar("schedule_name", { length: 255 }),
   },
   (t) => [...workspaceIndexes(t)],
 );

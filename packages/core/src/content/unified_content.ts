@@ -7,18 +7,15 @@ import {
   createTransaction,
   Transaction,
 } from "../drizzle/transaction";
-import { createSelectSchema } from "drizzle-zod";
 import { bus } from "sst/aws/bus";
 import {
   unifiedContentTable,
   AllPlacement,
-  PlacementSpec,
   UnifiedContentDTO,
 } from "./content.sql";
 import { Resource } from "sst";
 import { createID } from "../util/id";
 import { and, asc, desc, eq } from "drizzle-orm";
-import { PagePost } from "facebook-nodejs-business-sdk";
 
 export namespace UnifiedContent {
   export const Info = UnifiedContentDTO;
@@ -34,6 +31,20 @@ export namespace UnifiedContent {
       "unified_content.updated",
       z.object({
         id: Info.shape.id,
+      }),
+    ),
+    Scheduled: defineEvent(
+      "unified_content.scheduled",
+      z.object({
+        id: Info.shape.id,
+        scheduledPublishAt: z.string(),
+      }),
+    ),
+    Publish: defineEvent(
+      "unified_content.publish",
+      z.object({
+        id: Info.shape.id,
+        workspaceID: z.string(),
       }),
     ),
   };
