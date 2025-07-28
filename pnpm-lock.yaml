@@ -58,6 +58,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@aws-sdk/client-scheduler':
+        specifier: ^3.848.0
+        version: 3.848.0
       '@planetscale/database':
         specifier: ^1.19.0
         version: 1.19.0
