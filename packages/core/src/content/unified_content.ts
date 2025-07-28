@@ -8,15 +8,13 @@ import {
   Transaction,
 } from "../drizzle/transaction";
 import { bus } from "sst/aws/bus";
-import {
-  unifiedContentTable,
-  AllPlacement,
-  UnifiedContentDTO,
-} from "./content.sql";
+import { unifiedContentTable, UnifiedContentDTO } from "./content.sql";
 import { Resource } from "sst";
 import { createID } from "../util/id";
 import { and, asc, desc, eq, getTableColumns } from "drizzle-orm";
 import { scheduleEvent, updateScheduledEvent } from "../event/scheduler";
+import { NotImplementedError } from "../error";
+import { AllPlacement } from "./schema/placement";
 
 export namespace UnifiedContent {
   export const Info = UnifiedContentDTO;
@@ -135,7 +133,12 @@ export namespace UnifiedContent {
 
       switch (content.placement) {
         case AllPlacement.Enum.FB_FEED:
-          return await publishToFacebookFeed(tx, input.id);
+        case AllPlacement.Enum.FB_REEL:
+        case AllPlacement.Enum.IG_FEED:
+        case AllPlacement.Enum.IG_REEL:
+          // const spec = content.placement_spec
+          // TODO: transform this spec to sdk's format.
+          throw new NotImplementedError();
         default:
           throw new Error(`Unsupported placement: ${content.placement}`);
       }
@@ -169,7 +172,5 @@ async function publishToFacebookFeed(tx: Transaction, id: string) {
     .where(eq(unifiedContentTable.id, id))
     .then((rows) => rows.at(0));
   if (!content) throw new Error(`Content with id ${id} not found`);
-  // 2. publish to facebook feed using facebook business node sdk
-  // TODO: implement this
-  // Page.crea
+  throw new NotImplementedError();
 }

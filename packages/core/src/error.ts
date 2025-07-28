@@ -141,3 +141,9 @@ export class VisibleError extends Error {
     return response;
   }
 }
+
+export class NotImplementedError extends VisibleError {
+  constructor(message: string = "This feature is not implemented yet") {
+    super("internal", "not_implemented", message);
+  }
+}

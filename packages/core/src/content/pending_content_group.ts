@@ -12,16 +12,15 @@ import {
 import { fn } from "../util/fn";
 import { createID } from "../util/id";
 import {
-  AllPlacement,
   unifiedContentTable,
   pendingContentGroupTable,
-  PlacementSpecMapping,
   PendingContentGroupDTO,
 } from "./content.sql";
 import { Actor } from "../actor";
 import { eq, getTableColumns } from "../drizzle";
 import { scheduleEvent } from "../event/scheduler";
 import { UnifiedContent } from "./unified_content";
+import { AllPlacement, PlacementSpecMapping } from "./schema/placement";
 
 export namespace PendingContentGroup {
   export const Info = PendingContentGroupDTO;
