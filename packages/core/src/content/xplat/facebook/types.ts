@@ -792,3 +792,15 @@ export const CreateVideoSchema = z
   .describe("Parameters for creating a Facebook page video");
 
 export type CreateVideoParams = z.infer<typeof CreateVideoSchema>;
+
+export const CreateFBReelSchema = z.object({
+  description: z.string().optional(),
+  feed_targeting: z.object({}).optional(),
+  place: z.string().optional(),
+  scheduled_publish_time: z.number().optional(),
+  targeting: z.object({}).optional(),
+  title: z.string().optional(),
+  upload_phase: z.enum(["start", "finish"]),
+  video_id: z.string().optional(),
+  video_state: z.enum(["DRAFT", "SCHEDULED", "PUBLISHED"]),
+});

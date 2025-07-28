@@ -1,24 +1,13 @@
 import { z } from "zod";
 import { API_VERSION } from "./constant";
+import { CreateFBReelSchema } from "../types";
 
 const FacebookReelProviderConfig = z.object({
   pageId: z.string(),
   accessToken: z.string(),
 });
 
-const FacebookReelPublishParams = z.object({
-  description: z.string().optional(),
-  feed_targeting: z.object({}).optional(),
-  place: z.string().optional(),
-  scheduled_publish_time: z.number().optional(),
-  targeting: z.object({}).optional(),
-  title: z.string().optional(),
-  upload_phase: z.enum(["start", "finish"]),
-  video_id: z.string().optional(),
-  video_state: z.enum(["DRAFT", "SCHEDULED", "PUBLISHED"]),
-});
-
-type FacebookReelPublishParams = z.infer<typeof FacebookReelPublishParams>;
+type CreateFBReelSchema = z.infer<typeof CreateFBReelSchema>;
 
 type FacebookReelProviderConfig = z.infer<typeof FacebookReelProviderConfig>;
 
@@ -74,13 +63,90 @@ export namespace FacebookReelProvider {
     return await uploadResponse.json();
   }
 
+  const ProcessingPhaseSchema = z.object({
+    error: z
+      .object({
+        message: z.string(),
+      })
+      .optional(),
+    status: z.enum(["completed", "error", "not_started", "in_progress"]),
+  });
+
+  const PublishingPhaseSchema = z.object({
+    error: z
+      .object({
+        message: z.string(),
+      })
+      .optional(),
+    status: z.enum(["completed", "error", "not_started", "in_progress"]),
+    publish_status: z
+      .enum(["draft", "error", "published", "scheduled"])
+      .optional(),
+    publish_time: z.number().optional(),
+  });
+
+  const UploadingPhaseSchema = z.object({
+    bytes_transfered: z.number().optional(),
+    errors: z.any().optional(),
+    status: z.enum(["completed", "error", "not_started", "in_progress"]),
+    source_file_size: z.number().optional(),
+  });
+
+  export const VideoStatusSchema = z.object({
+    processing_phase: ProcessingPhaseSchema.optional(),
+    publishing_phase: PublishingPhaseSchema.optional(),
+    uploading_phase: UploadingPhaseSchema.optional(),
+    video_status: z.enum([
+      "error",
+      "expired",
+      "processing",
+      "ready",
+      "uploading",
+      "upload_failed",
+      "upload_complete",
+    ]),
+  });
+  export async function getUploadStatus(
+    config: FacebookReelProviderConfig,
+    videoId: string,
+  ) {
+    const { pageId, accessToken } = config;
+    const statusResponse = await fetch(
+      `https://graph.facebook.com/${API_VERSION}/${pageId}/${videoId}?fields=status`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+
+    if (!statusResponse.ok) {
+      const errorData = await statusResponse.json();
+      throw new Error(
+        `Failed to get upload status: ${JSON.stringify(errorData)}`,
+      );
+    }
+
+    const { data: videoStatus, error } = VideoStatusSchema.safeParse(
+      await statusResponse.json(),
+    );
+    if (error) {
+      throw new Error(`Invalid video status response: ${error}`);
+    }
+    return {
+      videoStatus,
+      isReady: videoStatus.video_status === "ready",
+    };
+  }
+
   export async function publishReel(
     config: FacebookReelProviderConfig,
     videoId: string,
-    params: Omit<FacebookReelPublishParams, "upload_phase" | "video_id">,
+    params: Omit<CreateFBReelSchema, "upload_phase" | "video_id">,
   ) {
     const { pageId, accessToken } = config;
-    const publishParams = FacebookReelPublishParams.parse({
+    const publishParams = CreateFBReelSchema.parse({
       ...params,
       upload_phase: "finish",
       video_id: videoId,
