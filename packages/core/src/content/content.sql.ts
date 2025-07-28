@@ -165,6 +165,7 @@ export const UnifiedContentDTO = z.object({
   placement: AllPlacement,
   status: ContentPublishingStatus,
   scheduledPublishAt: z.date().optional(),
+  scheduleName: z.string().optional(),
 });
 
 export const PendingContentGroupDTO = z.object({

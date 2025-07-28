@@ -15,7 +15,8 @@ import {
 } from "./content.sql";
 import { Resource } from "sst";
 import { createID } from "../util/id";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns } from "drizzle-orm";
+import { scheduleEvent, updateScheduledEvent } from "../event/scheduler";
 
 export namespace UnifiedContent {
   export const Info = UnifiedContentDTO;
@@ -27,19 +28,7 @@ export namespace UnifiedContent {
         id: Info.shape.id,
       }),
     ),
-    Updated: defineEvent(
-      "unified_content.updated",
-      z.object({
-        id: Info.shape.id,
-      }),
-    ),
-    Scheduled: defineEvent(
-      "unified_content.scheduled",
-      z.object({
-        id: Info.shape.id,
-        scheduledPublishAt: z.string(),
-      }),
-    ),
+    Updated: defineEvent("unified_content.updated", Info),
     Publish: defineEvent(
       "unified_content.publish",
       z.object({
@@ -62,6 +51,44 @@ export namespace UnifiedContent {
       await afterTx(() => bus.publish(Resource.Bus, Event.Created, { id }));
     });
     return id;
+  });
+  // update a content
+  export const update = fn(Info, async (after) => {
+    const workspaceID = Actor.workspaceID();
+    return createTransaction(async (tx) => {
+      const before = await tx
+        .select(getTableColumns(unifiedContentTable))
+        .from(unifiedContentTable)
+        .where(
+          and(
+            eq(unifiedContentTable.id, after.id),
+            eq(unifiedContentTable.workspaceID, workspaceID),
+          ),
+        )
+        .then((rows) => rows[0]);
+      if (!before) throw new Error(`Content with id ${after.id} not found`);
+      await tx
+        .update(unifiedContentTable)
+        .set(after)
+        .where(
+          and(
+            eq(unifiedContentTable.id, after.id),
+            eq(unifiedContentTable.workspaceID, workspaceID),
+          ),
+        );
+      // if there's a change in scheduled publish time, we need to reschedule
+      if (after.scheduledPublishAt != null) {
+        afterTx(
+          async () =>
+            await updateScheduledEvent(
+              before.scheduleName!,
+              UnifiedContent.Event.Publish,
+              { id: after.id, workspaceID },
+              after.scheduledPublishAt!,
+            ),
+        );
+      }
+    });
   });
   export const list = fn(
     z.object({
