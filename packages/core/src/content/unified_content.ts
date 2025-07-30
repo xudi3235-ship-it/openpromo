@@ -15,6 +15,8 @@ import { and, asc, desc, eq, getTableColumns } from "drizzle-orm";
 import { scheduleEvent, updateScheduledEvent } from "../event/scheduler";
 import { NotImplementedError } from "../error";
 import { AllPlacement } from "./schema/placement";
+import { FacebookPublishTransformer } from "./infra/facebook/transformer";
+import { FBFeedPlacementSpec } from "./schema/placement/facebook";
 
 export namespace UnifiedContent {
   export const Info = UnifiedContentDTO;
@@ -131,8 +133,12 @@ export namespace UnifiedContent {
 
       if (!content) throw new Error(`Content with id ${input.id} not found`);
 
+      if (content.placement_spec == null)
+        throw new Error(`Content with id ${input.id} has no placement_spec`);
+
       switch (content.placement) {
         case AllPlacement.Enum.FB_FEED:
+          const pageId = content.placement_spec;
         // 1. let's implement the fb publisher
         case AllPlacement.Enum.FB_REEL:
         case AllPlacement.Enum.IG_FEED:

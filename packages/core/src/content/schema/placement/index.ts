@@ -37,7 +37,7 @@ export const PlacementSpecMapping = z.object({
 
 export type PlacementSpecMapping = z.infer<typeof PlacementSpecMapping>;
 
-export const PlacementSpec = z.union([
+export const PlacementSpec = z.discriminatedUnion("placement", [
   FBFeedPlacementSpec,
   FBReelPlacementSpec,
   FBStoryPlacementSpec,

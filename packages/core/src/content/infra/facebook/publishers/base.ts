@@ -13,19 +13,19 @@ import {
   CreatePhotoSchema,
   CreateVideoParams,
   CreateVideoSchema,
-} from "./types";
-import { FacebookReelProvider } from "./infra/reel";
+} from "../types";
+import { FacebookReelProvider } from "../media/reel";
 
-export class FacebookPageApi {
-  private page: Page;
-  private api: FacebookAdsApi;
-  constructor(private pageId: string, private accessToken: string) {
-    this.api = new FacebookAdsApi(accessToken);
+export class BaseFacebookPublisher {
+  protected page: Page;
+  protected api: FacebookAdsApi;
+
+  constructor(pageId: string, api: FacebookAdsApi) {
+    this.api = api;
     this.page = new Page(pageId, this.api);
   }
-
-  // low level wrappers
-  public async _createFeed(
+  // -------- low level apis -------
+  protected async createFeed(
     fields: string[],
     params: CreateFeedParams,
   ): Promise<Page> {
@@ -33,7 +33,7 @@ export class FacebookPageApi {
     return await this.page.createFeed(fields, validatedParams);
   }
 
-  public async _createPhoto(
+  protected async createPhoto(
     fields: string[],
     params: CreatePhotoParams,
   ): Promise<Photo> {
@@ -41,7 +41,13 @@ export class FacebookPageApi {
     return await this.page.createPhoto(fields, validatedParams);
   }
 
-  public async _createVideo(
+  /**
+   * This creates a video on the page. NOTE it's not a reel.
+   * @param fields
+   * @param params
+   * @returns
+   */
+  protected async createVideo(
     fields: string[],
     params: CreateVideoParams,
   ): Promise<AdVideo> {
@@ -50,18 +56,12 @@ export class FacebookPageApi {
   }
 
   // ----- apis -----
-  public async createTextPost(message: string) {
-    const params: CreateFeedParams = {
-      message,
-      published: true, // publish immediately
-    };
-    return this._createFeed(["id"], params);
-  }
+
   public async createMultiPhotoPost(message: string, img_urls: string[]) {
     const photoIds: string[] = [];
     // 1. create unpublished photos
     for (const url of img_urls) {
-      const photo = await this._createPhoto(["id"], {
+      const photo = await this.createPhoto(["id"], {
         url,
         published: false, // unpublished photo
       });
@@ -76,7 +76,7 @@ export class FacebookPageApi {
       attached_media: attachedMedia,
       published: true,
     };
-    return await this._createFeed(["id"], params);
+    return await this.createFeed(["id"], params);
   }
 
   public async createLinkPost(message: string, link: string) {
@@ -85,7 +85,7 @@ export class FacebookPageApi {
       link,
       published: true, // publish immediately
     };
-    return this._createFeed(["id"], params);
+    return this.createFeed(["id"], params);
   }
   public async createVideoPost(
     videoUrl: string,
@@ -100,7 +100,7 @@ export class FacebookPageApi {
       description,
       published: true, // publish immediately
     };
-    const adVideo = await this._createVideo(["id"], params);
+    const adVideo = await this.createVideo(["id"], params);
   }
   public async createVideoReel(
     videoUrl: string,
@@ -108,8 +108,8 @@ export class FacebookPageApi {
     description: string,
   ) {
     const config = {
-      pageId: this.pageId,
-      accessToken: this.accessToken,
+      pageId: this.page.id,
+      accessToken: this.api.accessToken,
     };
     const { video_id, upload_url } =
       await FacebookReelProvider.startUploadSession(config);
