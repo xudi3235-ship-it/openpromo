@@ -10,12 +10,11 @@ import {
 import { timestamps, ulid, timestamp } from "../drizzle/types";
 import z from "zod";
 import { workspaceID, workspaceIndexes } from "../workspace/workspace.sql";
+import { AllPlacement, PlacementSpec } from "./schema/placement";
 import {
-  AllPlacement,
   ContentBaseSpec,
   ContentPublishingStatus,
-  PlacementSpec,
-} from "./schema/placement";
+} from "./schema/placement/common";
 
 // const baseContentTable = <
 //   TTableName extends string,

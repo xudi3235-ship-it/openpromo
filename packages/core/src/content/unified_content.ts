@@ -133,6 +133,7 @@ export namespace UnifiedContent {
 
       switch (content.placement) {
         case AllPlacement.Enum.FB_FEED:
+        // 1. let's implement the fb publisher
         case AllPlacement.Enum.FB_REEL:
         case AllPlacement.Enum.IG_FEED:
         case AllPlacement.Enum.IG_REEL:

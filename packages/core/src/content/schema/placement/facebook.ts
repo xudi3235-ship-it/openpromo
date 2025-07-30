@@ -1,14 +1,21 @@
 import { z } from "zod";
-import { SharedAttachmentSpec, VideoAttachmentSpec } from "./common";
+import {
+  SharedAttachmentSpec,
+  VideoAttachmentSpec,
+  ContentBaseSpec,
+} from "./common";
 import {
   CreateFBReelSchema,
   CreateFeedSchema,
-} from "../../xplat/facebook/types";
+} from "../../infra/facebook/types";
+
 // defines schema & validation logics for facebook placements,
 // it'll be used in both client & server side to valiate the inputs
 // eventually, this will be transformed to sdk calls to facebook graph api
 // targeting creating facebook posts, reels, stories.
 // this is organic for now, for ads, we handle these separately.
+
+export const FBPlacement = z.enum(["FB_FEED", "FB_STORY", "FB_REEL"]);
 
 // 1. identity specs, e.g. pageId, adAccountId
 const identitySpec = z.object({
@@ -17,7 +24,7 @@ const identitySpec = z.object({
 });
 
 // 2. post spec
-const postSpec = z.object({
+export const postSpec = z.object({
   message: z.string().optional(),
   link: z.string().optional(),
   attachments: SharedAttachmentSpec.array().optional(),
@@ -26,21 +33,29 @@ const postSpec = z.object({
 });
 
 // 3. reel spec
-const reelSpec = z.object({
+export const reelSpec = z.object({
   video: VideoAttachmentSpec.optional(),
   caption: z.string().optional(),
   // internal
   _createReelSchema: CreateFBReelSchema.optional(),
 });
 
-//
-export const FacebookPlacementSchema = z
-  .object({
-    identity: identitySpec,
-    postSpec: postSpec.optional(),
-    reelSpec: reelSpec.optional(),
-  })
-  .refine((t) => !!t.postSpec || !!t.reelSpec, {
-    message: "Either post or reel must be provided",
-    path: ["post", "reel"],
-  });
+// placement specifics specs
+export const BaseFBPlacementSpec = ContentBaseSpec.extend({
+  placement: FBPlacement,
+  identity: identitySpec,
+});
+
+export const FBFeedPlacementSpec = BaseFBPlacementSpec.extend({
+  placement: z.literal(FBPlacement.enum.FB_FEED),
+  postSpec: postSpec,
+});
+
+export const FBReelPlacementSpec = BaseFBPlacementSpec.extend({
+  placement: z.literal(FBPlacement.enum.FB_REEL),
+  reelSpec: reelSpec,
+});
+
+export const FBStoryPlacementSpec = BaseFBPlacementSpec.extend({
+  placement: z.literal(FBPlacement.enum.FB_STORY),
+});
