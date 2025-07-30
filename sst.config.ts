@@ -19,18 +19,14 @@ export default $config({
         cloudflare: true,
         tls: true,
         random: true,
-        fly: {
-          flyApiToken: process.env.FLY_API_TOKEN!,
-        },
-        docker: true,
         planetscale: {
           serviceToken: process.env.PLANETSCALE_SERVICE_TOKEN!,
           serviceTokenId: process.env.PLANETSCALE_SERVICE_TOKEN_ID!,
         },
-        "@upstash/pulumi": {
-          email: process.env.UPSTASH_EMAIL!,
-          apiKey: process.env.UPSTASH_API_KEY!,
-        },
+        // "@upstash/pulumi": {
+        //   email: process.env.UPSTASH_EMAIL!,
+        //   apiKey: process.env.UPSTASH_API_KEY!,
+        // },
       },
     };
   },
