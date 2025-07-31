@@ -15,6 +15,7 @@ import {
   ContentBaseSpec,
   ContentPublishingStatus,
 } from "./schema/placement/common";
+import { connectedAccount } from "../connected_account/connected_account.sql";
 
 // const baseContentTable = <
 //   TTableName extends string,
@@ -49,6 +50,9 @@ export const unifiedContentTable = mysqlTable(
   {
     ...workspaceID,
     ...timestamps,
+    connectedAccountId: ulid("connected_account_id")
+      .notNull()
+      .references(() => connectedAccount.id),
     // (?) pending content group
     pendingContentGroupId: ulid("pending_content_group_id"),
     // source content json, synced from platforms
@@ -74,6 +78,7 @@ export const UnifiedContentDTO = z.object({
   workspaceID: z.string(),
   timeCreated: z.date(),
   timeUpdated: z.date(),
+  connectedAccountId: z.string(),
   pendingContentGroupId: z.string().optional(),
   // TODO: update this to use zod schema for each platform's source content
   sourceContent: z.record(z.any(), z.any()).optional(),

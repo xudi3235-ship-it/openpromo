@@ -6,6 +6,7 @@ export const prefixes = {
   workspace: "wrk",
   content_group: "cgr",
   unified_content: "unc",
+  connected_account: "cac",
 } as const;
 
 export function createID(prefix: keyof typeof prefixes): string {

@@ -17,6 +17,8 @@ import { NotImplementedError } from "../error";
 import { AllPlacement } from "./schema/placement";
 import { FacebookPublishTransformer } from "./infra/facebook/transformer";
 import { FBFeedPlacementSpec } from "./schema/placement/facebook";
+import { FacebookFeedPublisher } from "./infra/facebook/publishers/feed";
+import { IdentityService } from "./infra/facebook/identity";
 
 export namespace UnifiedContent {
   export const Info = UnifiedContentDTO;
@@ -47,6 +49,7 @@ export namespace UnifiedContent {
         workspaceID,
         placement: input.placement,
         sourceContent: input.sourceContent,
+        connectedAccountId: input.connectedAccountId,
       });
       await afterTx(() => bus.publish(Resource.Bus, Event.Created, { id }));
     });
@@ -138,13 +141,19 @@ export namespace UnifiedContent {
 
       switch (content.placement) {
         case AllPlacement.Enum.FB_FEED:
-          const pageId = content.placement_spec;
+          const identity = await IdentityService.fromUnifiedContent(content);
+          const publisher = new FacebookFeedPublisher(identity, content);
+          // we need more stuff:
+          // 1. send event bus of published event
+          // 2. sync & store post id
+          // 3. error handling, retries, etc.
+          const response = await publisher.publish();
+          console.debug(`Published to Facebook Feed: ${response}`);
+          return { ok: true };
         // 1. let's implement the fb publisher
         case AllPlacement.Enum.FB_REEL:
         case AllPlacement.Enum.IG_FEED:
         case AllPlacement.Enum.IG_REEL:
-          // const spec = content.placement_spec
-          // TODO: transform this spec to sdk's format.
           throw new NotImplementedError();
         default:
           throw new Error(`Unsupported placement: ${content.placement}`);
@@ -161,6 +170,7 @@ export namespace UnifiedContent {
       timeCreated: input?.timeCreated!,
       timeUpdated: input?.timeUpdated!,
       pendingContentGroupId: input.pendingContentGroupId!,
+      connectedAccountId: input.connectedAccountId,
       sourceContent: input.sourceContent!,
       placement_spec: input.placement_spec!,
       placement: input.placement,
@@ -168,16 +178,4 @@ export namespace UnifiedContent {
       scheduledPublishAt: input.scheduledPublishAt ?? undefined,
     };
   }
-}
-
-// --------- helpers ---------
-async function publishToFacebookFeed(tx: Transaction, id: string) {
-  // 1. load the unified content
-  const content = await tx
-    .select()
-    .from(unifiedContentTable)
-    .where(eq(unifiedContentTable.id, id))
-    .then((rows) => rows.at(0));
-  if (!content) throw new Error(`Content with id ${id} not found`);
-  throw new NotImplementedError();
 }

@@ -3,10 +3,15 @@ import { unifiedContentTable } from "../../content.sql";
 import { Actor } from "../../../actor";
 import { createTransaction } from "../../../drizzle/transaction";
 import { NotImplementedError } from "../../../error";
+import { eq, and } from "drizzle-orm";
+import {
+  assertMetadata,
+  connectedAccount,
+  ConnectedAccountMetadata,
+} from "../../../connected_account/connected_account.sql";
 
 /**
- * core identity service used for FB & IG
- * infra
+ * core identity service used for FB & IG infra
  */
 export class IdentityService {
   private api: FacebookAdsApi;
@@ -24,18 +29,36 @@ export class IdentityService {
   ): IdentityService {
     return new IdentityService(accessToken, pageId);
   }
-  public static fromUnifiedContent(
+  public static async fromUnifiedContent(
     c: typeof unifiedContentTable.$inferSelect,
-  ): IdentityService {
+  ): Promise<IdentityService> {
     if (!c.placement.startsWith("FB")) throw new Error("Invalid placement");
-    // the content --> maps to the connected account, which stores the access token
-    //
     const actor = Actor.assert("user");
-    createTransaction(async (tx) => {
-      // await tx.select().from(connectedA)
+    const workspaceID = actor.properties.workspaceID;
+    return await createTransaction(async (tx) => {
+      return await tx
+        .select()
+        .from(connectedAccount)
+        .where(
+          and(
+            eq(connectedAccount.workspaceID, workspaceID),
+            eq(connectedAccount.platform, "FACEBOOK"),
+            eq(connectedAccount.status, "ACTIVE"),
+            eq(connectedAccount.id, c.connectedAccountId),
+          ),
+        )
+        .then((rows) => {
+          if (rows.length === 0)
+            throw new Error("No active connected account found for Facebook");
+          const acc = rows[0];
+          const meta = assertMetadata("FACEBOOK", acc.metadata);
+          return new IdentityService(
+            acc.encryptedAccessToken,
+            meta.pageId!,
+            meta.adAccountId,
+          );
+        });
     });
-
-    throw new NotImplementedError();
   }
   public getPageId(): string {
     return this.pageId;
