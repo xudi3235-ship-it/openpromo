@@ -1,4 +1,4 @@
-export const storage = new sst.aws.Bucket("Storage", {
+export const bucket = new sst.aws.Bucket("Storage", {
   transform: {
     publicAccessBlock: {
       blockPublicAcls: false,
@@ -10,14 +10,14 @@ export const storage = new sst.aws.Bucket("Storage", {
 });
 
 new aws.s3.BucketOwnershipControls("ownership-controls", {
-  bucket: storage.name,
+  bucket: bucket.name,
   rule: {
     objectOwnership: "ObjectWriter",
   },
 });
 
 new aws.s3.BucketLifecycleConfigurationV2("StorageLifecycle", {
-  bucket: storage.name,
+  bucket: bucket.name,
   rules: [
     {
       id: "daily",

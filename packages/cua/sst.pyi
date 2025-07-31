@@ -24,10 +24,7 @@ class Resource:
         port: float
         type: str
         username: str
-    class MyBucket:
-        name: str
-        type: str
-    class SchedulePublishFunction:
+    class Storage:
         name: str
         type: str
     class Urls:

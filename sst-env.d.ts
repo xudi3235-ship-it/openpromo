@@ -27,13 +27,9 @@ declare module "sst" {
       "type": "sst.sst.Linkable"
       "username": string
     }
-    "MyBucket": {
+    "Storage": {
       "name": string
       "type": "sst.aws.Bucket"
-    }
-    "SchedulePublishFunction": {
-      "name": string
-      "type": "sst.aws.Function"
     }
     "Urls": {
       "api": string
