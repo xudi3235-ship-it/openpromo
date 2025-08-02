@@ -7,8 +7,10 @@
     "@aws-sdk/client-scheduler": "^3.848.0",
     "@aws-sdk/client-sfn": "^3.848.0",
     "@openpromo/core": "workspace:*",
+    "hono-openapi": "^0.4.8",
     "sst": "3.17.10",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "zod-openapi": "catalog:"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8",

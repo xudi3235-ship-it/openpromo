@@ -13,7 +13,7 @@ export const urls = new sst.Linkable("Urls", {
 const apiFn = new sst.aws.Function("ApiFn", {
   url: true,
   link: [bucket],
-  handler: "packages/functions/src/api.handler",
+  handler: "packages/functions/src/index.handler",
 });
 
 export const api = new sst.aws.Router("Api", {

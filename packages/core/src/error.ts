@@ -1,4 +1,4 @@
-import * as z from "zod/v4";
+import * as z from "zod";
 
 /**
  * Standard error response schema used for OpenAPI documentation
@@ -14,30 +14,30 @@ export const ErrorResponse = z
         "rate_limit",
         "internal",
       ])
-      .meta({
+      .openapi({
         description: "The error type category",
         examples: ["validation", "authentication"],
       }),
-    code: z.string().meta({
+    code: z.string().openapi({
       description: "Machine-readable error code identifier",
       examples: ["invalid_parameter", "missing_required_field", "unauthorized"],
     }),
-    message: z.string().meta({
+    message: z.string().openapi({
       description: "Human-readable error message",
       examples: ["The request was invalid", "Authentication required"],
     }),
     param: z
       .string()
       .optional()
-      .meta({
+      .openapi({
         description: "The parameter that caused the error (if applicable)",
         examples: ["email", "user_id"],
       }),
-    details: z.any().optional().meta({
+    details: z.any().optional().openapi({
       description: "Additional error context information",
     }),
   })
-  .meta({ ref: "ErrorResponse" });
+  .openapi({ ref: "ErrorResponse" });
 
 export type ErrorResponseType = z.infer<typeof ErrorResponse>;
 
