@@ -28,6 +28,18 @@ declare module "sst" {
       "type": "sst.sst.Linkable"
       "username": string
     }
+    "FACEBOOK_APP_ID": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "FACEBOOK_APP_SECRET": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "FACEBOOK_REDIRECT_URI": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "Storage": {
       "name": string
       "type": "sst.aws.Bucket"

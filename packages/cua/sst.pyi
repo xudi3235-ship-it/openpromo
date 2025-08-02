@@ -24,6 +24,15 @@ class Resource:
         port: float
         type: str
         username: str
+    class FACEBOOK_APP_ID:
+        type: str
+        value: str
+    class FACEBOOK_APP_SECRET:
+        type: str
+        value: str
+    class FACEBOOK_REDIRECT_URI:
+        type: str
+        value: str
     class Storage:
         name: str
         type: str

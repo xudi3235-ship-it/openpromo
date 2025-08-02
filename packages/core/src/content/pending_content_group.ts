@@ -21,6 +21,7 @@ import { eq, getTableColumns } from "../drizzle";
 import { scheduleEvent } from "../event/scheduler";
 import { UnifiedContent } from "./unified_content";
 import { AllPlacement, PlacementSpecMapping } from "./schema/placement";
+import { NotImplementedError } from "../error";
 
 export namespace PendingContentGroup {
   export const Info = PendingContentGroupDTO;
@@ -116,10 +117,12 @@ async function createPendingContents(
     // Store schedule name if scheduling is needed
     let scheduleName: string | null = null;
     if (scheduledPublishAt) scheduleName = `publish-${id}-${workspaceID}`;
-
+    // TODO: we need to check for the each placement spec's identity
+    // and verify it's on the connected account table
     await tx.insert(unifiedContentTable).values({
       id,
       workspaceID,
+      connectedAccountId: "FIXME: FIGURE THIS OUT",
       pendingContentGroupId,
       placement_spec: spec,
       placement: placement as keyof typeof AllPlacement.enum,

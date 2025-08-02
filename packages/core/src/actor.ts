@@ -1,9 +1,15 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { createContext } from "./context";
 import { useTransaction } from "./drizzle/transaction";
 import { UserFlags, userTable } from "./user/user.sql";
-import { ErrorCodes, VisibleError } from "./error";
+import { ErrorCodes, NotImplementedError, VisibleError } from "./error";
 import { Log } from "./util/log";
+import {
+  connectedAccount,
+  ConnectedAccountSelect,
+  Platform,
+} from "./connected_account/connected_account.sql";
+import { db } from "./drizzle";
 
 export namespace Actor {
   export interface User {
@@ -67,6 +73,18 @@ export namespace Actor {
       ErrorCodes.Authentication.UNAUTHORIZED,
       `You don't have permission to access this resource.`,
     );
+  }
+
+  export async function useConnectedAccounts(): Promise<
+    ConnectedAccountSelect[]
+  > {
+    // loads all connected accounts
+    const workspaceId = workspaceID();
+    const accounts = await db
+      .select()
+      .from(connectedAccount)
+      .where(eq(connectedAccount.workspaceID, workspaceId));
+    return accounts;
   }
 
   export async function assertFlag(flag: keyof UserFlags) {

@@ -16,6 +16,100 @@ import { afterTx, createTransaction } from "../drizzle/transaction";
 import { bus } from "sst/aws/bus";
 import { Resource } from "sst";
 
+// Facebook OAuth and API helper functions
+interface FacebookTokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in?: number;
+  refresh_token?: string;
+  scope?: string;
+}
+
+interface FacebookUserInfo {
+  id: string;
+  name: string;
+  email?: string;
+}
+
+interface FacebookPage {
+  id: string;
+  name: string;
+  access_token: string;
+}
+
+// Simple token encryption using base64 (replace with proper encryption in production)
+async function encryptToken(token: string): Promise<string> {
+  // TODO: Implement proper encryption using AWS KMS or similar service
+  // For now, using base64 encoding as placeholder
+  return Buffer.from(token).toString("base64");
+}
+
+async function decryptToken(encryptedToken: string): Promise<string> {
+  // TODO: Implement proper decryption using AWS KMS or similar service
+  // For now, using base64 decoding as placeholder
+  return Buffer.from(encryptedToken, "base64").toString("utf-8");
+}
+
+async function exchangeCodeForToken(
+  code: string,
+): Promise<FacebookTokenResponse> {
+  const clientId = process.env.FACEBOOK_APP_ID;
+  const clientSecret = process.env.FACEBOOK_APP_SECRET;
+  const redirectUri = process.env.FACEBOOK_REDIRECT_URI;
+
+  if (!clientId || !clientSecret || !redirectUri) {
+    throw new Error("Facebook OAuth credentials not configured");
+  }
+
+  const tokenUrl = "https://graph.facebook.com/v23.0/oauth/access_token";
+  const params = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: redirectUri,
+    code: code,
+  });
+
+  const response = await fetch(`${tokenUrl}?${params.toString()}`, {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to exchange code for token: ${error}`);
+  }
+
+  return (await response.json()) as FacebookTokenResponse;
+}
+
+async function getFacebookUserData(accessToken: string): Promise<{
+  userInfo: FacebookUserInfo;
+  pages: FacebookPage[];
+}> {
+  // Get user info
+  const userResponse = await fetch(
+    `https://graph.facebook.com/v23.0/me?fields=id,name,email&access_token=${accessToken}`,
+  );
+
+  if (!userResponse.ok) {
+    throw new Error(`Failed to fetch user info: ${await userResponse.text()}`);
+  }
+
+  const userInfo = (await userResponse.json()) as FacebookUserInfo;
+
+  // Get user's pages
+  const pagesResponse = await fetch(
+    `https://graph.facebook.com/v23.0/me/accounts?fields=id,name,access_token&access_token=${accessToken}`,
+  );
+
+  let pages: FacebookPage[] = [];
+  if (pagesResponse.ok) {
+    const pagesData = (await pagesResponse.json()) as { data?: FacebookPage[] };
+    pages = pagesData.data || [];
+  }
+
+  return { userInfo, pages };
+}
+
 export namespace ConnectedAccount {
   export const Info = ConnectedAccountDTO;
 
@@ -81,6 +175,103 @@ export namespace ConnectedAccount {
       });
 
       return id;
+    },
+  );
+
+  // Facebook OAuth connection function
+  export const connectFacebook = fn(
+    z.object({
+      code: z.string(),
+      state: z.string().optional(),
+    }),
+    async (input) => {
+      const workspaceID = Actor.workspaceID();
+
+      // Exchange authorization code for access token
+      const tokenResponse = await exchangeCodeForToken(input.code);
+
+      // Get user's Facebook pages and account info
+      const { userInfo, pages } = await getFacebookUserData(
+        tokenResponse.access_token,
+      );
+
+      // For now, we'll use the first page if available, or the user account
+      const accountData =
+        pages.length > 0
+          ? pages[0]
+          : {
+              id: userInfo.id,
+              name: userInfo.name,
+            };
+
+      const id = createID("connected_account");
+
+      await createTransaction(async (tx) => {
+        await tx.insert(connectedAccount).values({
+          id,
+          workspaceID,
+          platform: "FACEBOOK",
+          externalAccountId: accountData.id,
+          accountName: accountData.name,
+          status: "ACTIVE",
+          encryptedAccessToken: await encryptToken(tokenResponse.access_token),
+          refreshToken: tokenResponse.refresh_token,
+          tokenExpiresAt: tokenResponse.expires_in
+            ? new Date(Date.now() + tokenResponse.expires_in * 1000)
+            : undefined,
+          scopes: tokenResponse.scope?.split(",") || [],
+          metadata: {
+            platform: "FACEBOOK" as const,
+            pageId: pages.length > 0 ? accountData.id : undefined,
+            adAccountId: undefined, // Will be populated later if needed
+          },
+        });
+
+        await afterTx(() =>
+          bus.publish(Resource.Bus, Event.Created, {
+            id,
+            workspaceID,
+            platform: "FACEBOOK",
+          }),
+        );
+      });
+
+      return {
+        id,
+        accountName: accountData.name,
+        platform: "FACEBOOK" as const,
+      };
+    },
+  );
+
+  // Get Facebook OAuth URL
+  export const getFacebookOAuthUrl = fn(
+    z.object({
+      redirectUri: z.string(),
+      state: z.string().optional(),
+    }),
+    async (input) => {
+      const clientId = process.env.FACEBOOK_APP_ID;
+      if (!clientId) {
+        throw new Error("Facebook App ID not configured");
+      }
+
+      const scopes = [
+        "pages_show_list",
+        "pages_manage_posts",
+        "pages_read_engagement",
+        "public_profile",
+      ].join(",");
+
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: input.redirectUri,
+        scope: scopes,
+        response_type: "code",
+        ...(input.state && { state: input.state }),
+      });
+
+      return `https://www.facebook.com/v23.0/dialog/oauth?${params.toString()}`;
     },
   );
 

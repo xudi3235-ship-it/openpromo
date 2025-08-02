@@ -4,7 +4,8 @@
   "packageManager": "pnpm@10.14.0",
   "scripts": {
     "dev": "sst dev",
-    "sso": "aws sso login --sso-session=promobase-dev-ray --no-browser"
+    "sso": "aws sso login --sso-session=promobase-dev-ray --no-browser",
+    "sync_secrets": "bash scripts/sync_secrets.sh"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22",

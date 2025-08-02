@@ -41,13 +41,16 @@ export default $config({
         }
       },
       async workflow({ $, event }) {
-        // workflow
         await $`npm i -g pnpm`;
-        await $`pnpm install`;
         if (event.action === "removed") {
           await $`pnpm sst remove`;
           return;
         }
+        // doppler cli
+        await $`(curl -Ls --tlsv1.2 --proto "=https" --retry 3 https://cli.doppler.com/install.sh || wget -t 3 -qO- https://cli.doppler.com/install.sh) | sudo sh`;
+        await $`pnpm install`;
+        // sync secrets
+        await $`pnpm sync_secrets`;
 
         await $`pnpm sst deploy`;
       },
