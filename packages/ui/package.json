@@ -1,0 +1,24 @@
+{
+  "name": "@openpromo/ui",
+  "type": "module",
+  "version": "0.0.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "exports": {
+    "./*": [
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
+  },
+  "dependencies": {
+    "tailwindcss": "^4.0.8",
+    "@tailwindcss/postcss": "^4.0.8",
+    "postcss": "^8.4.49"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
