@@ -52,6 +52,11 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "MyEmail": {
+      "configSet": string
+      "sender": string
+      "type": "sst.aws.Email"
+    }
     "Storage": {
       "name": string
       "type": "sst.aws.Bucket"

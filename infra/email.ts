@@ -1,4 +1,5 @@
-// aconst email = new sst.aws.Email("MyEmail", {
-//     sender: "example.com", // TODO: change this
-//     dmarc: "v=DMARC1; p=quarantine; adkim=s; aspf=s;",
-// });
+const email = new sst.aws.Email("MyEmail", {
+    sender: "openpromo.app",
+    dns: sst.cloudflare.dns(),
+    dmarc: "v=DMARC1; p=quarantine; adkim=s; aspf=s;",
+});
