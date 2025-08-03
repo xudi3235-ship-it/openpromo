@@ -51,6 +51,10 @@ declare module "sst" {
       "site": string
       "type": "sst.sst.Linkable"
     }
+    "WWW": {
+      "type": "sst.aws.StaticSite"
+      "url": string
+    }
   }
 }
 // cloudflare 

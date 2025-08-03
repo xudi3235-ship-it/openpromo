@@ -42,6 +42,9 @@ class Resource:
         openapi: str
         site: str
         type: str
+    class WWW:
+        type: str
+        url: str
     class Worker:
         type: str
         url: str

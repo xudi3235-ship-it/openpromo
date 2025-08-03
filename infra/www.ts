@@ -15,5 +15,5 @@ import { domain } from "./dns";
 // });
 
 export const www = new sst.aws.StaticSite("WWW", {
-    path: "packages/www_",
+    path: "packages/www_v2",
 });

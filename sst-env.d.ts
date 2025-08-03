@@ -50,6 +50,10 @@ declare module "sst" {
       "site": string
       "type": "sst.sst.Linkable"
     }
+    "WWW": {
+      "type": "sst.aws.StaticSite"
+      "url": string
+    }
     "Worker": {
       "type": "sst.cloudflare.Worker"
       "url": string
