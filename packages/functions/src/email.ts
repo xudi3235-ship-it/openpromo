@@ -1,12 +1,14 @@
 import { Resource } from "sst";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
+import { NotImplementedError } from '@openpromo/core/error';
 
 const client = new SESv2Client();
 
 export const handler = async ({to, subject, text}: {to: string, subject: string, text: string}) => {
+  throw new NotImplementedError();
     await client.send(
       new SendEmailCommand({    
-        FromEmailAddress: Resource.Email.sender,
+        FromEmailAddress: "TODO: Set your verified email address here",
         Destination: {
           ToAddresses: [to],
         },

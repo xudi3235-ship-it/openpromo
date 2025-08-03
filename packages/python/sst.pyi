@@ -24,6 +24,10 @@ class Resource:
         port: float
         type: str
         username: str
+    class EmailFn:
+        name: str
+        type: str
+        url: str
     class FACEBOOK_APP_ID:
         type: str
         value: str
@@ -31,6 +35,12 @@ class Resource:
         type: str
         value: str
     class FACEBOOK_REDIRECT_URI:
+        type: str
+        value: str
+    class GITHUB_OAUTH_CLIENT_ID:
+        type: str
+        value: str
+    class GITHUB_OAUTH_CLIENT_SECRET:
         type: str
         value: str
     class Storage:
@@ -43,9 +53,6 @@ class Resource:
         site: str
         type: str
     class WWW:
-        type: str
-        url: str
-    class WWW_RR:
         type: str
         url: str
     class Worker:

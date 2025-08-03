@@ -1,6 +1,7 @@
 import { domain } from "./dns";
 import { bucket } from "./storage";
 import { allSecrets } from "./secret";
+import { database } from './database';
 // import { email } from "./email";
 
 export const urls = new sst.Linkable("Urls", {
@@ -14,7 +15,7 @@ export const urls = new sst.Linkable("Urls", {
 
 const apiFn = new sst.aws.Function("ApiFn", {
     url: true,
-    link: [bucket, ...allSecrets],
+    link: [bucket, ...allSecrets, database],
     streaming: !$dev,
     handler: "packages/functions/src/index.handler",
 });

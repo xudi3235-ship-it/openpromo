@@ -27,6 +27,11 @@ declare module "sst" {
       "type": "sst.sst.Linkable"
       "username": string
     }
+    "EmailFn": {
+      "name": string
+      "type": "sst.aws.Function"
+      "url": string
+    }
     "FACEBOOK_APP_ID": {
       "type": "sst.sst.Secret"
       "value": string
@@ -36,6 +41,14 @@ declare module "sst" {
       "value": string
     }
     "FACEBOOK_REDIRECT_URI": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "GITHUB_OAUTH_CLIENT_ID": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "GITHUB_OAUTH_CLIENT_SECRET": {
       "type": "sst.sst.Secret"
       "value": string
     }
@@ -52,10 +65,6 @@ declare module "sst" {
     }
     "WWW": {
       "type": "sst.aws.StaticSite"
-      "url": string
-    }
-    "WWW_RR": {
-      "type": "sst.aws.React"
       "url": string
     }
     "Worker": {

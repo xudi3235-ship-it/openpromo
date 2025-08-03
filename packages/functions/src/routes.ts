@@ -1,7 +1,6 @@
 import { Log } from "@openpromo/core/util/log";
 import { Hono } from "hono";
 import { Ping } from "./ping";
-import { OAuth } from "./oauth";
 import { logger } from "hono/logger";
 import { ErrorCodes, VisibleError } from "@openpromo/core/error";
 import { HTTPException } from "hono/http-exception";
@@ -21,7 +20,6 @@ app.use(logger()).use(async (c, next) => {
 
 export const routes = app
     .route("/ping", Ping.route)
-    .route("/oauth", OAuth.route)
     .onError((error, c) => {
         // Handle our custom VisibleError
         if (error instanceof VisibleError) {
