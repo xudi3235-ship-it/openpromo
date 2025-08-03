@@ -55,6 +55,10 @@ declare module "sst" {
       "type": "sst.aws.StaticSite"
       "url": string
     }
+    "WWW_RR": {
+      "type": "sst.aws.React"
+      "url": string
+    }
   }
 }
 // cloudflare 

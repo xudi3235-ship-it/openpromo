@@ -45,6 +45,9 @@ class Resource:
     class WWW:
         type: str
         url: str
+    class WWW_RR:
+        type: str
+        url: str
     class Worker:
         type: str
         url: str
