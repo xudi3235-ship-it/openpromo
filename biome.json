@@ -1,27 +1,29 @@
 {
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true
+        }
     },
-    "includes": [
-      "**/*.ts",
-      "**/*.tsx",
-      "**/*.js",
-      "**/*.jsx",
-      "**/*.json",
-      "**/*.md",
-      "!.node_modules/**",
-      "!.vscode/**",
-      "!.git/**",
-      "!.idea/**",
-      "!.sst/**",
-      "!.next/**"
-    ]
-  },
-  "formatter": {
-    "lineWidth": 120,
-    "indentStyle": "space",
-    "indentWidth": 6
-  }
+    "files": {
+       "includes": [
+            "**/*.ts",
+            "**/*.tsx",
+            "**/*.js",
+            "**/*.jsx",
+            "**/*.json",
+            "**/*.md",
+            "!**/.node_modules/**",
+            "!**/.vscode/**",
+            "!**/.git/**",
+            "!**/.idea/**",
+            "!**/.sst/**",
+            "!**/.next/**"
+        ]
+    },
+    "formatter": {
+        "lineWidth": 100,
+        "indentStyle": "space",
+        "indentWidth": 4
+    }
 }
