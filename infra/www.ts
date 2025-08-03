@@ -8,3 +8,8 @@ export const www = new sst.aws.Nextjs("WWW", {
         redirects: [`www.${domain}`],
     },
 });
+
+// react router v7
+const www_rr = new sst.aws.React("WWW_RR", {
+    path: "packages/www_rr",
+});
