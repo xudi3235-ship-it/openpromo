@@ -40,6 +40,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <div className="p-2 flex gap-2 text-lg">
           <Link to="/">Index</Link>
           <Link to="/about">About</Link>
+          <Link to="/internal">Internal</Link>
         </div>
 
         {children}
