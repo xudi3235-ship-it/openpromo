@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { DropdownMenuDemo } from "~/components/__internal__/dropdown";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
@@ -12,6 +13,8 @@ function RouteComponent() {
         <p className="text-lg text-gray-600">
           Cross-platform content creation & management
         </p>
+        {/* FIXME: why the fuck the dropdown is not showing up */}
+        <DropdownMenuDemo />
       </div>
     </main>
   );

@@ -1,15 +1,13 @@
-import { createFileRoute } from '@tanstack/react-router'
-import Counter from '~/components/Counter'
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/about')({
+export const Route = createFileRoute("/about")({
   component: RouteComponent,
-})
+});
 
 function RouteComponent() {
   return (
     <main>
       <h1>About</h1>
-      <Counter />
     </main>
-  )
+  );
 }
