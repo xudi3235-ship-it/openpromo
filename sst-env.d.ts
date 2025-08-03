@@ -27,10 +27,6 @@ declare module "sst" {
       "type": "sst.sst.Linkable"
       "username": string
     }
-    "Email": {
-      "type": "sst.aws.Email"
-      "sender": string
-    }
     "FACEBOOK_APP_ID": {
       "type": "sst.sst.Secret"
       "value": string
@@ -53,10 +49,6 @@ declare module "sst" {
       "openapi": string
       "site": string
       "type": "sst.sst.Linkable"
-    }
-    "WWW": {
-      "type": "sst.aws.Nextjs"
-      "url": string
     }
     "Worker": {
       "type": "sst.cloudflare.Worker"

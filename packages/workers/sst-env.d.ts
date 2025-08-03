@@ -51,14 +51,6 @@ declare module "sst" {
       "site": string
       "type": "sst.sst.Linkable"
     }
-    "WWW": {
-      "type": "sst.aws.Nextjs"
-      "url": string
-    }
-    "WWW_RR": {
-      "type": "sst.aws.React"
-      "url": string
-    }
   }
 }
 // cloudflare 
