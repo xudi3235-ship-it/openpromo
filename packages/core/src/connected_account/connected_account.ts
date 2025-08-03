@@ -37,24 +37,6 @@ interface FacebookPage {
   access_token: string;
 }
 
-// Github Oauth and API helper functions
-interface GitHubTokenResponse {
-  access_token: string;
-  token_type: string;
-  scope: string;
-  refresh_token?: string; // Only present if app is configured for expiring tokens
-  expires_in?: number; // Token expiration in seconds (28800 = 8 hours)
-  refresh_token_expires_in?: number; // Refresh token expiration in seconds (15897600 = 6 months)
-}
-
-interface GitHubUserInfo {
-  id: number;
-  login: string;
-  name: string | null;
-  email: string | null;
-  avatar_url: string;
-}
-
 // Tiktok Oauth and API helper functions
 interface TiktokTokenResponse {
   open_id: string;
