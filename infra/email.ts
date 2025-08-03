@@ -1,5 +1,7 @@
-const email = new sst.aws.Email("MyEmail", {
-    sender: "openpromo.app",
+import { domain } from './dns';
+
+const email = new sst.aws.Email("Email", {
+    sender: domain,
     dns: sst.cloudflare.dns(),
     dmarc: "v=DMARC1; p=quarantine; adkim=s; aspf=s;",
 });

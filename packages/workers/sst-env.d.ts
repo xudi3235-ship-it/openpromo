@@ -28,6 +28,11 @@ declare module "sst" {
       "type": "sst.sst.Linkable"
       "username": string
     }
+    "Email": {
+      "configSet": string
+      "sender": string
+      "type": "sst.aws.Email"
+    }
     "EmailFn": {
       "name": string
       "type": "sst.aws.Function"
@@ -52,11 +57,6 @@ declare module "sst" {
     "GITHUB_OAUTH_CLIENT_SECRET": {
       "type": "sst.sst.Secret"
       "value": string
-    }
-    "MyEmail": {
-      "configSet": string
-      "sender": string
-      "type": "sst.aws.Email"
     }
     "Storage": {
       "name": string
