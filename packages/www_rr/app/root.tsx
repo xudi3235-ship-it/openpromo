@@ -9,6 +9,7 @@ import {
 import "@openpromo/ui/globals.css";
 
 import type { Route } from "./+types/root";
+import Navbar from '@openpromo/ui/components/navbar';
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -33,6 +34,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+        <Navbar />
         {children}
         <ScrollRestoration />
         <Scripts />
