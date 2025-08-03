@@ -1,6 +1,7 @@
 import { domain } from "./dns";
 import { bucket } from "./storage";
 import { allSecrets } from "./secret";
+import { email } from "valibot";
 
 export const urls = new sst.Linkable("Urls", {
     properties: {
@@ -13,7 +14,7 @@ export const urls = new sst.Linkable("Urls", {
 
 const apiFn = new sst.aws.Function("ApiFn", {
     url: true,
-    link: [bucket, ...allSecrets],
+    link: [bucket, email, ...allSecrets],
     streaming: !$dev,
     handler: "packages/functions/src/index.handler",
 });
