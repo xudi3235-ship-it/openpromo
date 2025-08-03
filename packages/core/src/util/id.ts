@@ -1,14 +1,14 @@
 import { ulid } from "ulid";
 
 export const prefixes = {
-  user: "usr",
-  subscription: "sub",
-  workspace: "wrk",
-  content_group: "cgr",
-  unified_content: "unc",
-  connected_account: "cac",
+    user: "usr",
+    subscription: "sub",
+    workspace: "wrk",
+    content_group: "cgr",
+    unified_content: "unc",
+    connected_account: "cac",
 } as const;
 
 export function createID(prefix: keyof typeof prefixes): string {
-  return [prefixes[prefix], ulid()].join("_");
+    return [prefixes[prefix], ulid()].join("_");
 }

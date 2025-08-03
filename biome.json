@@ -6,7 +6,7 @@
         }
     },
     "files": {
-       "includes": [
+        "includes": [
             "**/*.ts",
             "**/*.tsx",
             "**/*.js",
@@ -18,7 +18,10 @@
             "!**/.git/**",
             "!**/.idea/**",
             "!**/.sst/**",
-            "!**/.next/**"
+            "!**/.next/**",
+            "!**/*.d.ts",
+            "!**/.venv/**",
+            "!packages/python"
         ]
     },
     "formatter": {

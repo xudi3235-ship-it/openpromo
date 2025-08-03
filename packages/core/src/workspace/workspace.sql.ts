@@ -1,49 +1,46 @@
 import {
-  boolean,
-  foreignKey,
-  mysqlTable,
-  primaryKey,
-  timestamp,
-  uniqueIndex,
-  varchar,
-  index,
+    boolean,
+    foreignKey,
+    mysqlTable,
+    primaryKey,
+    timestamp,
+    uniqueIndex,
+    varchar,
+    index,
 } from "drizzle-orm/mysql-core";
 import { timestamps, id, ulid } from "../drizzle/types";
 
 // creates workspace ID for tables
 export const workspaceID = {
-  get id() {
-    return ulid("id").notNull();
-  },
-  get workspaceID() {
-    return ulid("workspace_id")
-      .notNull()
-      .references(() => workspaceTable.id, {
-        onDelete: "cascade",
-      });
-  },
+    get id() {
+        return ulid("id").notNull();
+    },
+    get workspaceID() {
+        return ulid("workspace_id")
+            .notNull()
+            .references(() => workspaceTable.id, {
+                onDelete: "cascade",
+            });
+    },
 };
 
 export const workspaceTable = mysqlTable(
-  "workspace",
-  {
-    ...id,
-    ...timestamps,
-    slug: varchar("slug", { length: 255 }).notNull(),
-  },
-  (table) => [
-    primaryKey({ columns: [table.id] }),
-    uniqueIndex("slug").on(table.slug),
-  ],
+    "workspace",
+    {
+        ...id,
+        ...timestamps,
+        slug: varchar("slug", { length: 255 }).notNull(),
+    },
+    (table) => [primaryKey({ columns: [table.id] }), uniqueIndex("slug").on(table.slug)],
 );
 
 export function workspaceIndexes(table: any) {
-  return [
-    primaryKey({ columns: [table.workspaceID, table.id] }),
-    index("id_idx").on(table.id),
-    foreignKey({
-      foreignColumns: [workspaceTable.id],
-      columns: [table.workspaceID],
-    }),
-  ];
+    return [
+        primaryKey({ columns: [table.workspaceID, table.id] }),
+        index("id_idx").on(table.id),
+        foreignKey({
+            foreignColumns: [workspaceTable.id],
+            columns: [table.workspaceID],
+        }),
+    ];
 }

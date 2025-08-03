@@ -5,13 +5,11 @@ import { CreateFeedParams } from "./types";
 // transforms from/to publishing params and our unified specs
 // TODO: it's actually more complex than this, it's not a 1:1 mapping. For videos/multiple photos, it's a stepped process, i.e. we need to create photos first, and then upload videos, and then finally use the IDs to create the feed post/reel using the video IDs.
 export class FacebookPublishTransformer {
-  public static toCreateFeedParams(
-    spec: z.infer<typeof FBFeedPlacementSpec>,
-  ): CreateFeedParams {
-    // normalize the specs into creation params
-    return {
-      message: spec.postSpec.message,
-      published: spec.postSpec?._createFeedSchema?.published,
-    } as CreateFeedParams;
-  }
+    public static toCreateFeedParams(spec: z.infer<typeof FBFeedPlacementSpec>): CreateFeedParams {
+        // normalize the specs into creation params
+        return {
+            message: spec.postSpec.message,
+            published: spec.postSpec?._createFeedSchema?.published,
+        } as CreateFeedParams;
+    }
 }

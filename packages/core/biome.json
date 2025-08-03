@@ -1,11 +1,11 @@
 {
-  "root": false,
-  "extends": "//",
-  "linter": {
-    "rules": {
-      "suspicious": {
-        "noConsole": "off"
-      }
+    "root": false,
+    "extends": "//",
+    "linter": {
+        "rules": {
+            "suspicious": {
+                "noConsole": "off"
+            }
+        }
     }
-  }
 }

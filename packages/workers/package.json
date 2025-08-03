@@ -1,15 +1,15 @@
 {
-  "name": "@openpromo/workers",
-  "version": "0.0.0",
-  "type": "module",
-  "$schema": "https://json.schemastore.org/package.json",
-  "dependencies": {
-    "@openpromo/core": "workspace:*",
-    "cloudflare": "^4.5.0",
-    "sst": "*"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250726.0",
-    "@types/node": "^24.1.0"
-  }
+    "name": "@openpromo/workers",
+    "version": "0.0.0",
+    "type": "module",
+    "$schema": "https://json.schemastore.org/package.json",
+    "dependencies": {
+        "@openpromo/core": "workspace:*",
+        "cloudflare": "^4.5.0",
+        "sst": "*"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20250726.0",
+        "@types/node": "^24.1.0"
+    }
 }
