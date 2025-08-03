@@ -1,6 +1,8 @@
-import "zod-openapi/extend";
 import { handle, streamHandle } from "hono/aws-lambda";
-import { app, type routes } from "./routes";
+import "zod-openapi/extend";
+import { authApp } from "./auth/index";
+import { app, routes } from "./routes";
 
 export type Routes = typeof routes;
 export const handler = process.env.SST_LIVE ? handle(app) : streamHandle(app);
+export const authHandler = process.env.SST_LIVE ? handle(authApp) : streamHandle(authApp);
