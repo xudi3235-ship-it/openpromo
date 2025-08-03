@@ -1,7 +1,7 @@
 import { domain } from "./dns";
 import { bucket } from "./storage";
 import { allSecrets } from "./secret";
-import { email } from "valibot";
+import { email } from "./email";
 
 export const urls = new sst.Linkable("Urls", {
     properties: {
@@ -14,14 +14,22 @@ export const urls = new sst.Linkable("Urls", {
 
 const apiFn = new sst.aws.Function("ApiFn", {
     url: true,
-    link: [bucket, email, ...allSecrets],
+    link: [bucket, ...allSecrets],
     streaming: !$dev,
     handler: "packages/functions/src/index.handler",
+});
+
+const emailFn = new sst.aws.Function("EmailFn", {
+    url: true,
+    link: [email, ...allSecrets],
+    streaming: !$dev,
+    handler: "packages/functions/src/email.handler",
 });
 
 export const api = new sst.aws.Router("Api", {
     routes: {
         "/*": apiFn.url,
+        "/email": emailFn.url,
     },
     domain: {
         name: "api." + domain,
