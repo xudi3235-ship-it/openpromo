@@ -37,6 +37,39 @@ interface FacebookPage {
   access_token: string;
 }
 
+// Github Oauth and API helper functions
+interface GitHubTokenResponse {
+  access_token: string;
+  token_type: string;
+  scope: string;
+  refresh_token?: string; // Only present if app is configured for expiring tokens
+  expires_in?: number; // Token expiration in seconds (28800 = 8 hours)
+  refresh_token_expires_in?: number; // Refresh token expiration in seconds (15897600 = 6 months)
+}
+
+interface GitHubUserInfo {
+  id: number;
+  login: string;
+  name: string | null;
+  email: string | null;
+  avatar_url: string;
+}
+
+// Tiktok Oauth and API helper functions
+interface TiktokTokenResponse {
+  open_id: string;
+  scope: string;
+  access_token: string;
+  expires_in: number;
+  refresh_token: string;
+  refresh_expires_in: number;
+  token_type: string;
+}
+
+interface TiktokUserInfo {
+  // TODO: Add Tiktok user info fields
+}
+
 // Simple token encryption using base64 (replace with proper encryption in production)
 async function encryptToken(token: string): Promise<string> {
   // TODO: Implement proper encryption using AWS KMS or similar service

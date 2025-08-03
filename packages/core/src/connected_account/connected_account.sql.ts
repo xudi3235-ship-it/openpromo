@@ -11,7 +11,7 @@ import { workspaceID, workspaceIndexes } from "../workspace/workspace.sql";
 import { z } from "zod";
 
 // Platform enum for supported social media platforms
-export const Platform = z.enum(["FACEBOOK", "INSTAGRAM", "TIKTOK"]);
+export const Platform = z.enum(["FACEBOOK", "INSTAGRAM", "TIKTOK", "GITHUB"]);
 export type Platform = z.infer<typeof Platform>;
 
 // Status enum for connected account status
