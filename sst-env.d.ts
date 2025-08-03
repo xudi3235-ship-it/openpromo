@@ -51,7 +51,7 @@ declare module "sst" {
       "type": "sst.sst.Linkable"
     }
     "WWW": {
-      "type": "sst.aws.TanstackStart"
+      "type": "sst.aws.Nextjs"
       "url": string
     }
     "Worker": {
