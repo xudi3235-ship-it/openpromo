@@ -5,10 +5,13 @@ import { OAuth } from "./oauth";
 import { logger } from "hono/logger";
 import { ErrorCodes, VisibleError } from "@openpromo/core/error";
 import { HTTPException } from "hono/http-exception";
-
+import { auth } from "./auth";
 const log = Log.create({ namespace: "api" });
 
 export const app = new Hono();
+
+// User authentication handler
+app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
 
 app.use(logger()).use(async (c, next) => {
   c.header("Cache-Control", "no-store");
