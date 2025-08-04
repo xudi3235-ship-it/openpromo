@@ -99,36 +99,36 @@ export namespace User {
     if (!primary) throw new Error("No primary user");
 
     await useTransaction(async (tx) => {
-        // get primary user info
-        const primaryUser = await tx
-            .select()
-            .from(userTable)
-            .where(eq(userTable.id, primary))
-            .then(rows => rows.at(0));
+      // get primary user info
+      const primaryUser = await tx
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, primary))
+        .then((rows) => rows.at(0));
 
-        if (!primaryUser) throw new Error("Primary user not found");
+      if (!primaryUser) throw new Error("Primary user not found");
 
-        // update the users to be merged, mark them as deleted
-        // use soft delete, set timeDeleted field
-        await tx
-            .update(userTable)
-            .set({
-                timeDeleted: new Date(),
-            })
-            .where(inArray(userTable.id, ids));
+      // update the users to be merged, mark them as deleted
+      // use soft delete, set timeDeleted field
+      await tx
+        .update(userTable)
+        .set({
+          timeDeleted: new Date(),
+        })
+        .where(inArray(userTable.id, ids));
 
-        // if your system has other tables that reference userID, you also need to update them
-        // for example, if you have project table, file table, etc, you can refer to the sample code pattern:
-        // await tx
-        //   .update(projectTable)
-        //   .set({
-        //     userID: primary,
-        //   })
-        //   .where(inArray(projectTable.userID, ids));
+      // if your system has other tables that reference userID, you also need to update them
+      // for example, if you have project table, file table, etc, you can refer to the sample code pattern:
+      // await tx
+      //   .update(projectTable)
+      //   .set({
+      //     userID: primary,
+      //   })
+      //   .where(inArray(projectTable.userID, ids));
     });
 
     return primary;
-});
+  });
 
   export const update = fn(
     Info.pick({ name: true, email: true, id: true }).partial({

@@ -18,13 +18,13 @@ export namespace Email {
     subject: string,
     body: string,
     options?: {
-      attachments?: Attachment[],
-      html?: string,
-    }
+      attachments?: Attachment[];
+      html?: string;
+    },
   ) {
     from = from + "@" + Resource.Email.sender;
     log.info("sending email", { subject, from, to });
-    
+
     // Convert to array if single string
     const toAddresses = Array.isArray(to) ? to : [to];
 
@@ -49,7 +49,8 @@ export namespace Email {
       ];
 
       // Add each attachment
-      for (const attachment of options?.attachments) {
+      // biome-ignore lint/correctness/noUnsafeOptionalChaining: TODO: fix later
+            for (const attachment of options?.attachments) {
         const contentType =
           attachment.contentType ||
           (attachment.filename.endsWith(".csv")

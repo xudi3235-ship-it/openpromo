@@ -39,8 +39,6 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
-
-
         {/* Login Card */}
         <Card className="shadow-lg">
           <CardHeader className="space-y-1 text-center">
@@ -88,18 +86,11 @@ function LoginPage() {
                 />
               </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 <MailIcon className="mr-2 h-4 w-4" />
                 {isLoading ? "Signing in..." : "Sign in with Email"}
               </Button>
             </form>
-
-  
-
           </CardContent>
         </Card>
 
@@ -117,4 +108,4 @@ function LoginPage() {
       </div>
     </div>
   );
-} 
+}

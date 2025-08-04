@@ -22,7 +22,7 @@ if (isPermanentStage) {
           Action: "sts:AssumeRoleWithWebIdentity",
           Condition: {
             StringLike: github.url.apply((url) => ({
-              [`${url}:sub`]: "repo:terminaldotshop/terminal:*",
+              [`${url}:sub`]: "repo:promobase/openpromo:*",
             })),
           },
         },

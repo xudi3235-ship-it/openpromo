@@ -52,7 +52,12 @@ export default $config({
         // sync secrets
         await $`pnpm sync_secrets`;
 
-        await $`pnpm sst deploy`;
+        const deployResult = await $`pnpm sst deploy`;
+        if (deployResult.exitCode !== 0) {
+          throw new Error(
+            `pnpm sst deploy failed with exit code ${deployResult.exitCode}, ${JSON.stringify(deployResult.stdout)}`,
+          );
+        }
       },
     },
   },
