@@ -443,6 +443,9 @@ importers:
 
   packages/www_v2:
     dependencies:
+      '@openauthjs/openauth':
+        specifier: ^0.4.3
+        version: 0.4.3(arctic@2.3.4)(hono@4.8.5)
       '@openpromo/ui':
         specifier: workspace:^
         version: link:../ui
@@ -458,6 +461,12 @@ importers:
       '@tanstack/router-plugin':
         specifier: ^1.121.2
         version: 1.130.15(@tanstack/react-router@1.130.12(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(vite@6.3.5(@types/node@24.1.0)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3))
+      '@types/js-cookie':
+        specifier: ^3.0.6
+        version: 3.0.6
+      js-cookie:
+        specifier: ^3.0.5
+        version: 3.0.5
       lucide-react:
         specifier: ^0.475.0
         version: 0.475.0(react@19.1.0)
@@ -470,6 +479,9 @@ importers:
       tailwindcss:
         specifier: ^4.1.4
         version: 4.1.11
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.1
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.0
@@ -3104,6 +3116,9 @@ packages:
   '@types/facebook-nodejs-business-sdk@22.0.0':
     resolution: {integrity: sha512-1s+BUhmjmyYz2s5ZaPCWFTt5RXKZXFMW1uqme93RpDDW2wlJ/m5tGTPwAcWOBF0A16XjU3mtDxpQN+X/85/FbQ==}
 
+  '@types/js-cookie@3.0.6':
+    resolution: {integrity: sha512-wkw9yd1kEXOPnvEeEV1Go1MmxtBJL0RR79aOTAApecWFVu7w0NNXNqhcWgvw2YgZDYadliXkl14pa3WXw5jlCQ==}
+
   '@types/node-fetch@2.6.12':
     resolution: {integrity: sha512-8nneRWKCg3rMtF69nLQJnOYUcbafYeFSjqkw3jCRLsqkWFlHaoQrr5mXmofFGOx3DKn7UfmBMyov8ySvLRVldA==}
 
@@ -4272,6 +4287,10 @@ packages:
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
+
+  js-cookie@3.0.5:
+    resolution: {integrity: sha512-cEiJEAEoIbWfCZYKWhVwFuvPX1gETRYPw6LlaTKoxD3s2AkXzkCjnp6h0V77ozyqj0jakteJ4YqDJT830+lVGw==}
+    engines: {node: '>=14'}
 
   js-sha256@0.9.0:
     resolution: {integrity: sha512-sga3MHh9sgQN2+pJ9VYZ+1LPwXOxuBJBA5nrR5/ofPfuiJBE2hnjsaN8se8JznOmGLN2p49Pe5U/ttafcs/apA==}
@@ -9048,6 +9067,8 @@ snapshots:
 
   '@types/facebook-nodejs-business-sdk@22.0.0': {}
 
+  '@types/js-cookie@3.0.6': {}
+
   '@types/node-fetch@2.6.12':
     dependencies:
       '@types/node': 24.1.0
@@ -10291,6 +10312,8 @@ snapshots:
   jose@5.9.6: {}
 
   joycon@3.1.1: {}
+
+  js-cookie@3.0.5: {}
 
   js-sha256@0.9.0: {}
 
