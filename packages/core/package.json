@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-scheduler": "^3.848.0",
+    "@aws-sdk/client-sesv2": "^3.859.0",
     "@planetscale/database": "^1.19.0",
     "drizzle-orm": "^0.44.3",
     "facebook-nodejs-business-sdk": "^23.0.1",
