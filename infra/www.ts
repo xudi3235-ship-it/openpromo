@@ -2,7 +2,7 @@ import { api, auth } from "./api";
 import { domain } from "./dns";
 
 export const www = new sst.aws.StaticSite("WWW", {
-  path: "packages/www_v2",
+  path: "packages/www",
   domain: {
     name: domain,
     dns: sst.cloudflare.dns(),

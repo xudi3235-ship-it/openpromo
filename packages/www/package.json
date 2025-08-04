@@ -1,5 +1,5 @@
 {
-  "name": "@openpromo/www_v2",
+  "name": "@openpromo/www",
   "type": "module",
   "scripts": {
     "dev": "vite --port 3000",
