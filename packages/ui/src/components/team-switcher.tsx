@@ -1,7 +1,4 @@
-"use client"
-
-import * as React from "react"
-import { ChevronsUpDown, Plus } from "lucide-react"
+"use client";
 
 import {
   DropdownMenu,
@@ -11,28 +8,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@openpromo/ui/components/dropdown-menu"
+} from "@openpromo/ui/components/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@openpromo/ui/components/sidebar"
+} from "@openpromo/ui/components/sidebar";
+import { ChevronsUpDown, Plus } from "lucide-react";
+import * as React from "react";
 
 export function TeamSwitcher({
   teams,
 }: {
   teams: {
-    name: string
-    logo: React.ElementType
-    plan: string
-  }[]
+    name: string;
+    logo: React.ElementType;
+    plan: string;
+  }[];
 }) {
-  const { isMobile } = useSidebar()
-  const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const { isMobile } = useSidebar();
+  const [activeTeam, setActiveTeam] = React.useState(teams[0]);
 
   if (!activeTeam) {
-    return null
+    return null;
   }
 
   return (
@@ -87,5 +86,5 @@ export function TeamSwitcher({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

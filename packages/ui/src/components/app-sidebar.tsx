@@ -1,6 +1,16 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import { NavMain } from "@openpromo/ui/components/nav-main";
+import { NavProjects } from "@openpromo/ui/components/nav-projects";
+import { NavUser } from "@openpromo/ui/components/nav-user";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarRail,
+} from "@openpromo/ui/components/sidebar";
+import { TeamSwitcher } from "@openpromo/ui/components/team-switcher";
 import {
   // AudioWaveform,
   BookOpen,
@@ -8,23 +18,12 @@ import {
   // Command,
   Frame,
   GalleryVerticalEnd,
-  Map,
+  Map as LucideMap,
   PieChart,
   Settings2,
   SquareTerminal,
-} from "lucide-react"
-
-import { NavMain } from "@openpromo/ui/components/nav-main"
-import { NavProjects } from "@openpromo/ui/components/nav-projects"
-import { NavUser } from "@openpromo/ui/components/nav-user"
-import { TeamSwitcher } from "@openpromo/ui/components/team-switcher"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarRail,
-} from "@openpromo/ui/components/sidebar"
+} from "lucide-react";
+import type * as React from "react";
 
 // This is sample data.
 const data = {
@@ -137,10 +136,10 @@ const data = {
     {
       name: "Travel",
       url: "#",
-      icon: Map,
+      icon: LucideMap,
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -157,5 +156,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

@@ -1,12 +1,10 @@
-"use client"
-
-import { ChevronRight, type LucideIcon } from "lucide-react"
+"use client";
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@openpromo/ui/components/collapsible"
+} from "@openpromo/ui/components/collapsible";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -16,21 +14,22 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "@openpromo/ui/components/sidebar"
+} from "@openpromo/ui/components/sidebar";
+import { ChevronRight, type LucideIcon } from "lucide-react";
 
 export function NavMain({
   items,
 }: {
   items: {
-    title: string
-    url: string
-    icon?: LucideIcon
-    isActive?: boolean
+    title: string;
+    url: string;
+    icon?: LucideIcon;
+    isActive?: boolean;
     items?: {
-      title: string
-      url: string
-    }[]
-  }[]
+      title: string;
+      url: string;
+    }[];
+  }[];
 }) {
   return (
     <SidebarGroup>
@@ -69,5 +68,5 @@ export function NavMain({
         ))}
       </SidebarMenu>
     </SidebarGroup>
-  )
+  );
 }
