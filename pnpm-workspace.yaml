@@ -5,11 +5,10 @@ catalog:
   zod: 3.25.1
   zod-openapi: 4.1.0
 
-ignoredBuiltDependencies:
-  - esbuild
-  - lefthook
-
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - '@tailwindcss/oxide'
   - aws-sdk
+  - sharp
+  - esbuild
+  - lefthook
