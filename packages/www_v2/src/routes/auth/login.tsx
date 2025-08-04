@@ -12,6 +12,7 @@ import { Separator } from "@openpromo/ui/components/separator";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GithubIcon, MailIcon } from "lucide-react";
 import { useState } from "react";
+import { login } from "../../lib/auth-actions";
 
 export const Route = createFileRoute("/auth/login")({
   component: LoginPage,
@@ -24,18 +25,22 @@ function LoginPage() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // TODO: Implement email login logic
-    // biome-ignore lint/suspicious/noConsole: implement later
-    console.log("Email login:", { email });
-    setTimeout(() => setIsLoading(false), 1000);
+    try {
+      await login("code", email);
+    } catch (error) {
+      console.error("Email login failed:", error);
+      setIsLoading(false);
+    }
   };
 
   const handleGithubLogin = async () => {
     setIsLoading(true);
-    // TODO: Implement GitHub OAuth login
-    // biome-ignore lint/suspicious/noConsole: implement later
-    console.log("GitHub login");
-    setTimeout(() => setIsLoading(false), 1000);
+    try {
+      await login("github");
+    } catch (error) {
+      console.error("GitHub login failed:", error);
+      setIsLoading(false);
+    }
   };
 
   return (

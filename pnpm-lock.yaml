@@ -446,6 +446,9 @@ importers:
       '@openauthjs/openauth':
         specifier: ^0.4.3
         version: 0.4.3(arctic@2.3.4)(hono@4.8.5)
+      '@openpromo/functions':
+        specifier: workspace:^
+        version: link:../functions
       '@openpromo/ui':
         specifier: workspace:^
         version: link:../ui

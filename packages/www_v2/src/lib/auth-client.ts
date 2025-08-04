@@ -1,11 +1,10 @@
 import { createClient } from "@openauthjs/openauth/client";
 import Cookies from "js-cookie";
-import { Resource } from "sst";
 
 // You may need to adjust the issuer URL depending on your deployment
 export const authClient = createClient({
-  clientID: "www_v2", // or your actual client id
-  issuer: `${Resource.Urls.api}/api/auth`, // or Resource.Auth.url if available
+  clientID: "www_v2",
+  issuer: import.meta.env.VITE_AUTH_URL,
 });
 
 export function setTokens(access: string, refresh: string) {
