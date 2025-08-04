@@ -14,7 +14,7 @@ export const urls = new sst.Linkable("Urls", {
   },
 });
 
-const auth = new sst.aws.Auth("Auth", {
+export const auth = new sst.aws.Auth("Auth", {
   authorizer: {
     link: [
       bus,
