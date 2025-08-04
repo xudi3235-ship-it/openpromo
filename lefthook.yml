@@ -1,5 +1,5 @@
 pre-commit:
   commands:
     check:
-      run: pnpm exec biome check --write --error-on-warnings --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      run: pnpm exec biome check --write --diagnostic-level=warn --error-on-warnings --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
       stage_fixed: true

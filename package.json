@@ -4,7 +4,7 @@
   "packageManager": "pnpm@10.14.0",
   "scripts": {
     "dev": "sst dev",
-    "check": "biome check --write",
+    "check": "biome check --write --diagnostic-level=warn",
     "sso": "aws sso login --sso-session=promobase-dev-ray --no-browser",
     "sync_secrets": "bash scripts/sync_secrets.sh"
   },
