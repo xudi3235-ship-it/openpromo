@@ -1,20 +1,27 @@
-import { createFileRoute } from '@tanstack/react-router'
-import {AppSidebar} from "@openpromo/ui/components/app-sidebar"
+import { AppSidebar } from "@openpromo/ui/components/app-sidebar";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@openpromo/ui/components/breadcrumb";
+import { Separator } from "@openpromo/ui/components/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@openpromo/ui/components/sidebar"
-import { Separator } from '@openpromo/ui/components/separator'
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@openpromo/ui/components/breadcrumb"
+} from "@openpromo/ui/components/sidebar";
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/workspace')({
+export const Route = createFileRoute("/workspace")({
   component: RouteComponent,
-})
+});
 
 function RouteComponent() {
   return (
-     <SidebarProvider>
+    <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2">
@@ -49,5 +56,5 @@ function RouteComponent() {
         </div>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }

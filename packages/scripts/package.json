@@ -1,18 +1,18 @@
 {
-    "name": "@openpromo/scripts",
-    "version": "0.0.0",
-    "type": "module",
-    "sideEffects": false,
-    "dependencies": {
-        "@openpromo/core": "workspace:*",
-        "sst": "3.17.10"
-    },
-    "scripts": {
-        "shell": "sst shell tsx"
-    },
-    "devDependencies": {
-        "@openpromo/core": "workspace:*",
-        "@types/node": "^22",
-        "tsx": "^4"
-    }
+  "name": "@openpromo/scripts",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "dependencies": {
+    "@openpromo/core": "workspace:*",
+    "sst": "3.17.10"
+  },
+  "scripts": {
+    "shell": "sst shell tsx"
+  },
+  "devDependencies": {
+    "@openpromo/core": "workspace:*",
+    "@types/node": "^22",
+    "tsx": "^4"
+  }
 }

@@ -8,8 +8,8 @@ import {
 } from "react-router";
 import "@openpromo/ui/globals.css";
 
+import Navbar from "@openpromo/ui/components/navbar";
 import type { Route } from "./+types/root";
-import Navbar from '@openpromo/ui/components/navbar';
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

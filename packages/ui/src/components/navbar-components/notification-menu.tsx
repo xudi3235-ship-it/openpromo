@@ -1,14 +1,13 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { BellIcon } from "lucide-react"
-
-import { Button } from "@openpromo/ui/components/button"
+import { Button } from "@openpromo/ui/components/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@openpromo/ui/components/popover"
+} from "@openpromo/ui/components/popover";
+import { BellIcon } from "lucide-react";
+import { useState } from "react";
 
 const initialNotifications = [
   {
@@ -59,7 +58,7 @@ const initialNotifications = [
     timestamp: "2 weeks ago",
     unread: false,
   },
-]
+];
 
 function Dot({ className }: { className?: string }) {
   return (
@@ -74,31 +73,31 @@ function Dot({ className }: { className?: string }) {
     >
       <circle cx="3" cy="3" r="3" />
     </svg>
-  )
+  );
 }
 
 export default function NotificationMenu() {
-  const [notifications, setNotifications] = useState(initialNotifications)
-  const unreadCount = notifications.filter((n) => n.unread).length
+  const [notifications, setNotifications] = useState(initialNotifications);
+  const unreadCount = notifications.filter((n) => n.unread).length;
 
   const handleMarkAllAsRead = () => {
     setNotifications(
       notifications.map((notification) => ({
         ...notification,
         unread: false,
-      }))
-    )
-  }
+      })),
+    );
+  };
 
   const handleNotificationClick = (id: number) => {
     setNotifications(
       notifications.map((notification) =>
         notification.id === id
           ? { ...notification, unread: false }
-          : notification
-      )
-    )
-  }
+          : notification,
+      ),
+    );
+  };
 
   return (
     <Popover>
@@ -170,5 +169,5 @@ export default function NotificationMenu() {
         ))}
       </PopoverContent>
     </Popover>
-  )
+  );
 }

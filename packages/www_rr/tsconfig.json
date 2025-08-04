@@ -3,8 +3,9 @@
     "**/*",
     "**/.server/**/*",
     "**/.client/**/*",
-    ".react-router/types/**/*"
-, "../ui/src/components/navbar.tsx"  ],
+    ".react-router/types/**/*",
+    "../ui/src/components/navbar.tsx"
+  ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "types": ["node", "vite/client"],

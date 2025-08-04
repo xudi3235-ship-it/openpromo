@@ -1,28 +1,28 @@
+import { Button } from "@openpromo/ui/components/button";
+
+import NotificationMenu from "@openpromo/ui/components/navbar-components/notification-menu";
+import TeamSwitcher from "@openpromo/ui/components/navbar-components/team-switcher";
+import UserMenu from "@openpromo/ui/components/navbar-components/user-menu";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+} from "@openpromo/ui/components/navigation-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@openpromo/ui/components/popover";
 import {
   CompassIcon,
   FeatherIcon,
   HouseIcon,
   PlusIcon,
   SearchIcon,
-} from "lucide-react"
+} from "lucide-react";
 
-import NotificationMenu from "@openpromo/ui/components/navbar-components/notification-menu"
-import TeamSwitcher from "@openpromo/ui/components/navbar-components/team-switcher"
-import UserMenu from "@openpromo/ui/components/navbar-components/user-menu"
-import { Button } from "@openpromo/ui/components/button"
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from "@openpromo/ui/components/navigation-menu"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@openpromo/ui/components/popover"
-
-const teams = ["Acme Inc.", "Origin UI", "Junon"]
+const teams = ["Acme Inc.", "Origin UI", "Junon"];
 
 // Navigation links array to be used in both desktop and mobile menus
 const navigationLinks = [
@@ -30,7 +30,7 @@ const navigationLinks = [
   { href: "#", label: "Explore", icon: CompassIcon },
   { href: "#", label: "Write", icon: FeatherIcon },
   { href: "#", label: "Search", icon: SearchIcon },
-]
+];
 
 export default function Component() {
   return (
@@ -77,8 +77,9 @@ export default function Component() {
               <NavigationMenu className="max-w-none *:w-full">
                 <NavigationMenuList className="flex-col items-start gap-0 md:gap-2">
                   {navigationLinks.map((link, index) => {
-                    const Icon = link.icon
+                    const Icon = link.icon;
                     return (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: TODO: fix later
                       <NavigationMenuItem key={index} className="w-full">
                         <NavigationMenuLink
                           href={link.href}
@@ -92,7 +93,7 @@ export default function Component() {
                           <span>{link.label}</span>
                         </NavigationMenuLink>
                       </NavigationMenuItem>
-                    )
+                    );
                   })}
                 </NavigationMenuList>
               </NavigationMenu>
@@ -104,8 +105,9 @@ export default function Component() {
         <NavigationMenu className="max-md:hidden">
           <NavigationMenuList className="gap-2">
             {navigationLinks.map((link, index) => {
-              const Icon = link.icon
+              const Icon = link.icon;
               return (
+                // biome-ignore lint/suspicious/noArrayIndexKey: TODO: fix later
                 <NavigationMenuItem key={index}>
                   <NavigationMenuLink
                     href={link.href}
@@ -116,7 +118,7 @@ export default function Component() {
                     <span className="sr-only">{link.label}</span>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
-              )
+              );
             })}
           </NavigationMenuList>
         </NavigationMenu>
@@ -135,5 +137,5 @@ export default function Component() {
         </div>
       </div>
     </header>
-  )
+  );
 }

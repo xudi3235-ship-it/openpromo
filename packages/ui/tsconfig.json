@@ -1,11 +1,11 @@
 {
-    "compilerOptions": {
-        "jsx": "react-jsx",
-        "baseUrl": ".",
-        "paths": {
-            "@openpromo/ui/*": ["./src/*"]
-        }
-    },
-    "include": [".", "src/components/navbar.tsx"],
-    "exclude": ["node_modules", "dist"]
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@openpromo/ui/*": ["./src/*"]
+    }
+  },
+  "include": [".", "src/components/navbar.tsx"],
+  "exclude": ["node_modules", "dist"]
 }
