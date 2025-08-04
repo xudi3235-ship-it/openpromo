@@ -17,7 +17,15 @@
     "enabled": true,
     "rules": {
       "recommended": true,
-      "a11y": "info"
+      "a11y": "info",
+      "suspicious": {
+        "noConsole": {
+          "level": "warn",
+          "options": {
+            "allow": ["error", "warn", "info", "assert"]
+          }
+        }
+      }
     }
   },
   "javascript": {
