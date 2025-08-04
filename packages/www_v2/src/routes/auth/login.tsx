@@ -19,14 +19,13 @@ export const Route = createFileRoute("/auth/login")({
 
 function LoginPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     // TODO: Implement email login logic
-    console.log("Email login:", { email, password });
+    console.log("Email login:", { email });
     setTimeout(() => setIsLoading(false), 1000);
   };
 

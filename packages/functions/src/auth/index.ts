@@ -4,11 +4,12 @@ import { GithubProvider } from "@openauthjs/openauth/provider/github";
 import { CodeUI } from "@openauthjs/openauth/ui/code";
 import { Email } from "@openpromo/core/email/index";
 import { User } from "@openpromo/core/user/index";
+import { logger } from "hono/logger";
 import { subjects } from "./subjects";
 
 // support PIN code and github for now
 
-export const authApp = issuer({
+export const auth = issuer({
   ttl: {
     access: 60 * 15,           // 15 minutes
     refresh: 60 * 60 * 24 * 7, // 7 days
@@ -101,4 +102,4 @@ export const authApp = issuer({
 
         throw new Error("Invalid provider");
   }
-})
+}).use(logger())
