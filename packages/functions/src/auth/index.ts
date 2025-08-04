@@ -7,6 +7,14 @@ import { User } from "@openpromo/core/user/index";
 import { logger } from "hono/logger";
 import { subjects } from "./subjects";
 
+// check docs: https://docs.github.com/en/rest/users/emails?apiVersion=2022-11-28
+interface GithubUserEmail {
+  email: string;
+  verified: boolean;
+  primary: boolean;
+  visibility: string | null;
+}
+
 // support PIN code and github for now
 
 export const auth = issuer({
@@ -33,8 +41,10 @@ export const auth = issuer({
       }),
     ),
     github: GithubProvider({
+      // biome-ignore lint/style/noNonNullAssertion: TODO: fix later
       clientID: process.env.GITHUB_CLIENT_ID!,
       // a better way to write this would be -- clientID: Resource.GithubClientID.value,
+      // biome-ignore lint/style/noNonNullAssertion: TODO: fix later
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
       // using assertion here to make sure the safety
       scopes: ["user:email"],
@@ -59,11 +69,14 @@ export const auth = issuer({
           Accept: "application/vnd.github.v3+json",
         },
       });
-      const emails = (await response.json()) as any[];
-      const primary = emails.find((email: any) => email.primary);
-      // check docs: https://docs.github.com/en/rest/users/emails?apiVersion=2022-11-28
+      const emails = (await response.json()) as GithubUserEmail[];
+      const primary = emails.find((email) => email.primary);
 
-      console.log("Currently logged-in user is:", primary);
+      if (!primary) {
+        throw new Error("No primary email found");
+      }
+
+      console.log("Currently logged-in user is:", primary.email);
 
       if (!primary.verified) {
         throw new Error("Email not verified by GitHub");
@@ -84,16 +97,23 @@ export const auth = issuer({
         });
       }
       if (matching.length === 1) {
+        const user = matching[0];
+        if (!user) {
+          throw new Error("User not found");
+        }
         return ctx.subject("user", {
-          id: matching[0]!.id,
+          id: user.id,
         });
       }
       if (matching.length > 1) {
         // For multiple users with same email, use the first one
         // In a production app, you might want to implement proper merging logic
-        const id = matching[0]!.id;
+        const user = matching[0];
+        if (!user) {
+          throw new Error("User not found");
+        }
         return ctx.subject("user", {
-          id,
+          id: user.id,
         });
       }
     }

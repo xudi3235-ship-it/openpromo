@@ -25,6 +25,7 @@ function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     // TODO: Implement email login logic
+    // biome-ignore lint/suspicious/noConsole: implement later
     console.log("Email login:", { email });
     setTimeout(() => setIsLoading(false), 1000);
   };
@@ -32,6 +33,7 @@ function LoginPage() {
   const handleGithubLogin = async () => {
     setIsLoading(true);
     // TODO: Implement GitHub OAuth login
+    // biome-ignore lint/suspicious/noConsole: implement later
     console.log("GitHub login");
     setTimeout(() => setIsLoading(false), 1000);
   };

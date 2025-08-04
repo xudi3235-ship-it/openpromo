@@ -22,7 +22,7 @@ export namespace Email {
       html?: string;
     },
   ) {
-    from = from + "@" + Resource.Email.sender;
+    from = `${from}@${Resource.Email.sender}`;
     log.info("sending email", { subject, from, to });
 
     // Convert to array if single string
@@ -31,7 +31,7 @@ export namespace Email {
     // For SESv2, we need to manually construct the MIME message for attachments
     if (options?.attachments && options.attachments.length > 0) {
       // Create a unique boundary for the multipart message
-      const boundary = "boundary-" + Date.now().toString(16);
+      const boundary = `boundary-${Date.now().toString(16)}`;
 
       let rawMessageContent = [
         `From: OpenPromo <${from}>`,
@@ -49,8 +49,7 @@ export namespace Email {
       ];
 
       // Add each attachment
-      // biome-ignore lint/correctness/noUnsafeOptionalChaining: TODO: fix later
-            for (const attachment of options?.attachments) {
+      for (const attachment of options?.attachments ?? []) {
         const contentType =
           attachment.contentType ||
           (attachment.filename.endsWith(".csv")

@@ -5,7 +5,7 @@ import { Resource } from "sst";
 // You may need to adjust the issuer URL depending on your deployment
 export const authClient = createClient({
   clientID: "www_v2", // or your actual client id
-  issuer: Resource.Urls.api + "/api/auth", // or Resource.Auth.url if available
+  issuer: `${Resource.Urls.api}/api/auth`, // or Resource.Auth.url if available
 });
 
 export function setTokens(access: string, refresh: string) {
