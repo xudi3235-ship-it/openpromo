@@ -3,17 +3,11 @@ import { Log } from "@openpromo/core/util/log";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
-import { auth } from "./auth/index";
 import { Ping } from "./ping";
 
 const log = Log.create({ namespace: "api" });
 
 export const app = new Hono();
-
-// User authentication handler
-app.on(["POST", "GET"], "/api/auth/**", async (c) => {
-  return auth.fetch(c.req.raw);
-});
 
 app.use(logger()).use(async (c, next) => {
   c.header("Cache-Control", "no-store");

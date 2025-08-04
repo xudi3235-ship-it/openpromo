@@ -13,6 +13,9 @@ class Resource:
     class App:
         name: str
         stage: str
+    class Auth:
+        type: str
+        url: str
     class Bus:
         arn: str
         name: str
