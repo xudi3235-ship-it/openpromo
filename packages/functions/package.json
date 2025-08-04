@@ -10,6 +10,7 @@
     "@openauthjs/openauth": "^0.4.3",
     "@openpromo/core": "workspace:*",
     "better-auth": "^1.3.4",
+    "hono": "*",
     "sst": "3.17.10",
     "zod": "catalog:",
     "zod-openapi": "catalog:"

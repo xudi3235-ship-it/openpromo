@@ -1,4 +1,5 @@
 import * as z from "zod";
+import "zod-openapi/extend";
 
 /**
  * Standard error response schema used for OpenAPI documentation
