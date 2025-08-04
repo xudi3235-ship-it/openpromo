@@ -1,12 +1,12 @@
-import { event } from "sst/event";
 import {
-    SchedulerClient,
-    CreateScheduleCommand,
-    UpdateScheduleCommand,
-    DeleteScheduleCommand,
-    FlexibleTimeWindowMode,
+  CreateScheduleCommand,
+  DeleteScheduleCommand,
+  FlexibleTimeWindowMode,
+  SchedulerClient,
+  UpdateScheduleCommand,
 } from "@aws-sdk/client-scheduler";
 import { Resource } from "sst";
+import type { event } from "sst/event";
 import { nullThrows } from "../util/common";
 
 const scheduler = new SchedulerClient();
@@ -27,22 +27,25 @@ const schedulerSource = "openpromo.scheduler";
  * second argument of `create`.
  */
 type ScheduleOptions<T extends event.Definition> = {
-    scheduleName?: string;
-    schedulerRoleArn?: string;
+  scheduleName?: string;
+  schedulerRoleArn?: string;
+  // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
 } & (Parameters<T["create"]> extends [properties: any]
-    ? { metadata?: never }
-    : { metadata: Parameters<T["create"]>[1] });
+  ? { metadata?: never }
+  : { metadata: Parameters<T["create"]>[1] });
 
 /**
  * Validate that the scheduled time is in the future.
  */
 function validateScheduledTime(scheduledAt: Date | string): Date {
-    const scheduledDate = new Date(scheduledAt);
-    const now = new Date();
-    if (scheduledDate <= now) {
-        throw new Error(`Scheduled time ${scheduledDate.toISOString()} must be in the future`);
-    }
-    return scheduledDate;
+  const scheduledDate = new Date(scheduledAt);
+  const now = new Date();
+  if (scheduledDate <= now) {
+    throw new Error(
+      `Scheduled time ${scheduledDate.toISOString()} must be in the future`,
+    );
+  }
+  return scheduledDate;
 }
 
 /**
@@ -50,47 +53,53 @@ function validateScheduledTime(scheduledAt: Date | string): Date {
  * This internal function is now updated to dynamically handle the call to `eventDef.create`.
  */
 async function createScheduleConfig<T extends event.Definition>(
-    scheduleName: string,
-    eventDef: T,
-    properties: T["$input"],
-    scheduledDate: Date,
-    options?: ScheduleOptions<T>,
+  scheduleName: string,
+  eventDef: T,
+  properties: T["$input"],
+  scheduledDate: Date,
+  options?: ScheduleOptions<T>,
 ) {
-    // The ScheduleOptions<T> type provides compile-time safety for the caller.
-    // Inside this function, we dynamically call `create` with the correct arguments
-    // by preparing the arguments array.
-    const createArgs: [T["$input"], ...any[]] = [properties];
-    // Check if options and the metadata property exist. The conditional type ensures
-    // this is only possible when the event definition expects it.
-    if (options && "metadata" in options && options.metadata !== undefined) {
-        createArgs.push(options.metadata);
-    }
+  // The ScheduleOptions<T> type provides compile-time safety for the caller.
+  // Inside this function, we dynamically call `create` with the correct arguments
+  // by preparing the arguments array.
+  // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
+  const createArgs: [T["$input"], ...any[]] = [properties];
+  // Check if options and the metadata property exist. The conditional type ensures
+  // this is only possible when the event definition expects it.
+  if (options && "metadata" in options && options.metadata !== undefined) {
+    createArgs.push(options.metadata);
+  }
 
-    // We cast `create` to a function that accepts a spreadable array of arguments.
-    // The external type safety from `ScheduleOptions<T>` ensures this call is valid.
-    const eventPayload = await (eventDef.create as (...args: any[]) => Promise<T["$payload"]>)(
-        ...createArgs,
+  // We cast `create` to a function that accepts a spreadable array of arguments.
+  // The external type safety from `ScheduleOptions<T>` ensures this call is valid.
+  const eventPayload =
+    await // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
+    (eventDef.create as (...args: any[]) => Promise<T["$payload"]>)(
+      ...createArgs,
     );
 
-    const roleArn = nullThrows(options?.schedulerRoleArn || process.env.SCHEDULER_ROLE_ARN);
+  const roleArn = nullThrows(
+    options?.schedulerRoleArn || process.env.SCHEDULER_ROLE_ARN,
+  );
 
-    return {
-        Name: scheduleName,
-        ScheduleExpression: `at(${scheduledDate.toISOString().slice(0, 19)})`,
-        Target: {
-            Arn: Resource.Bus.arn!,
-            RoleArn: roleArn,
-            EventBridgeParameters: {
-                DetailType: eventDef.type,
-                Source: schedulerSource,
-            },
-            Input: JSON.stringify(eventPayload),
-        },
-        FlexibleTimeWindow: {
-            Mode: FlexibleTimeWindowMode.OFF,
-        },
-        eventPayload,
-    };
+  return {
+    Name: scheduleName,
+    ScheduleExpression: `at(${scheduledDate.toISOString().slice(0, 19)})`,
+    Target: {
+      // biome-ignore lint/style/noNonNullAssertion: TODO: fix later
+      Arn: Resource.Bus.arn!,
+      RoleArn: roleArn,
+      EventBridgeParameters: {
+        DetailType: eventDef.type,
+        Source: schedulerSource,
+      },
+      Input: JSON.stringify(eventPayload),
+    },
+    FlexibleTimeWindow: {
+      Mode: FlexibleTimeWindowMode.OFF,
+    },
+    eventPayload,
+  };
 }
 
 /**
@@ -102,34 +111,36 @@ async function createScheduleConfig<T extends event.Definition>(
  * @param options The schedule options, with metadata being conditionally required.
  */
 export async function scheduleEvent<T extends event.Definition>(
-    eventDef: T,
-    properties: T["$input"],
-    scheduledAt: Date | string,
-    options?: ScheduleOptions<T>,
+  eventDef: T,
+  properties: T["$input"],
+  scheduledAt: Date | string,
+  options?: ScheduleOptions<T>,
 ) {
-    const scheduledDate = validateScheduledTime(scheduledAt);
+  const scheduledDate = validateScheduledTime(scheduledAt);
 
-    // Generate a unique schedule name if not provided.
-    const scheduleName =
-        options?.scheduleName ||
-        `${eventDef.type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  // Generate a unique schedule name if not provided.
+  const scheduleName =
+    options?.scheduleName ||
+    `${eventDef.type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
-    const { eventPayload, ...scheduleConfig } = await createScheduleConfig(
-        scheduleName,
-        eventDef,
-        properties,
-        scheduledDate,
-        options,
-    );
+  const { eventPayload, ...scheduleConfig } = await createScheduleConfig(
+    scheduleName,
+    eventDef,
+    properties,
+    scheduledDate,
+    options,
+  );
 
-    // Create the EventBridge Scheduler schedule.
-    const result = await scheduler.send(new CreateScheduleCommand(scheduleConfig));
+  // Create the EventBridge Scheduler schedule.
+  const result = await scheduler.send(
+    new CreateScheduleCommand(scheduleConfig),
+  );
 
-    return {
-        scheduleArn: result.ScheduleArn,
-        scheduleName,
-        eventPayload,
-    };
+  return {
+    scheduleArn: result.ScheduleArn,
+    scheduleName,
+    eventPayload,
+  };
 }
 
 /**
@@ -142,30 +153,32 @@ export async function scheduleEvent<T extends event.Definition>(
  * @param options The schedule options, with metadata being conditionally required.
  */
 export async function updateScheduledEvent<T extends event.Definition>(
-    scheduleName: string,
-    eventDef: T,
-    properties: T["$input"],
-    scheduledAt: Date | string,
-    options?: ScheduleOptions<T>,
+  scheduleName: string,
+  eventDef: T,
+  properties: T["$input"],
+  scheduledAt: Date | string,
+  options?: ScheduleOptions<T>,
 ) {
-    const scheduledDate = validateScheduledTime(scheduledAt);
+  const scheduledDate = validateScheduledTime(scheduledAt);
 
-    const { eventPayload, ...scheduleConfig } = await createScheduleConfig(
-        scheduleName,
-        eventDef,
-        properties,
-        scheduledDate,
-        options,
-    );
+  const { eventPayload, ...scheduleConfig } = await createScheduleConfig(
+    scheduleName,
+    eventDef,
+    properties,
+    scheduledDate,
+    options,
+  );
 
-    // Update the EventBridge Scheduler schedule.
-    const result = await scheduler.send(new UpdateScheduleCommand(scheduleConfig));
+  // Update the EventBridge Scheduler schedule.
+  const result = await scheduler.send(
+    new UpdateScheduleCommand(scheduleConfig),
+  );
 
-    return {
-        scheduleArn: result.ScheduleArn,
-        scheduleName,
-        eventPayload,
-    };
+  return {
+    scheduleArn: result.ScheduleArn,
+    scheduleName,
+    eventPayload,
+  };
 }
 
 /**
@@ -173,9 +186,9 @@ export async function updateScheduledEvent<T extends event.Definition>(
  * @param scheduleName The name of the schedule to delete.
  */
 export async function deleteScheduledEvent(scheduleName: string) {
-    return await scheduler.send(
-        new DeleteScheduleCommand({
-            Name: scheduleName,
-        }),
-    );
+  return await scheduler.send(
+    new DeleteScheduleCommand({
+      Name: scheduleName,
+    }),
+  );
 }

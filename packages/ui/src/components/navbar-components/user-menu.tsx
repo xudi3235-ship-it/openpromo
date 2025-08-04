@@ -1,18 +1,9 @@
 import {
-  BoltIcon,
-  BookOpenIcon,
-  Layers2Icon,
-  LogOutIcon,
-  PinIcon,
-  UserPenIcon,
-} from "lucide-react"
-
-import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@openpromo/ui/components/avatar"
-import { Button } from "@openpromo/ui/components/button"
+} from "@openpromo/ui/components/avatar";
+import { Button } from "@openpromo/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +12,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@openpromo/ui/components/dropdown-menu"
+} from "@openpromo/ui/components/dropdown-menu";
+import {
+  BoltIcon,
+  BookOpenIcon,
+  Layers2Icon,
+  LogOutIcon,
+  PinIcon,
+  UserPenIcon,
+} from "lucide-react";
 
 export default function UserMenu() {
   return (
@@ -76,5 +75,5 @@ export default function UserMenu() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

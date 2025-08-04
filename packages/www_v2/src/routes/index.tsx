@@ -1,18 +1,29 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
 import { Button } from "@openpromo/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@openpromo/ui/components/card";
 import Navbar from "@openpromo/ui/components/navbar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@openpromo/ui/components/card";
-import { ArrowRightIcon, CalendarIcon, ImageIcon, TrendingUpIcon } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  ArrowRightIcon,
+  CalendarIcon,
+  ImageIcon,
+  TrendingUpIcon,
+} from "lucide-react";
 
-export const Route = createFileRoute('/')(({
+export const Route = createFileRoute("/")({
   component: App,
-}))
+});
 
 function App() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       <main>
         {/* Hero Section */}
         <section className="px-4 py-20 md:px-6 lg:py-32">
@@ -22,8 +33,8 @@ function App() {
                 Unified Content Creation & Management
               </h1>
               <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
-                Manage your content across Facebook, Instagram, and TikTok from one powerful platform. 
-                Schedule, draft, and publish with ease.
+                Manage your content across Facebook, Instagram, and TikTok from
+                one powerful platform. Schedule, draft, and publish with ease.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" asChild>
@@ -51,7 +62,7 @@ function App() {
                 Streamline your workflow with our comprehensive suite of tools
               </p>
             </div>
-            
+
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader>
@@ -62,11 +73,12 @@ function App() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Schedule your content across multiple platforms with intelligent timing optimization.
+                    Schedule your content across multiple platforms with
+                    intelligent timing optimization.
                   </CardDescription>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -76,11 +88,12 @@ function App() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Publish to Facebook, Instagram, and TikTok simultaneously with platform-specific optimizations.
+                    Publish to Facebook, Instagram, and TikTok simultaneously
+                    with platform-specific optimizations.
                   </CardDescription>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -90,7 +103,8 @@ function App() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Track performance across platforms and get actionable insights to improve your content strategy.
+                    Track performance across platforms and get actionable
+                    insights to improve your content strategy.
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -105,7 +119,8 @@ function App() {
               Ready to streamline your content workflow?
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Join thousands of content creators who trust OpenPromo for their multi-platform strategy.
+              Join thousands of content creators who trust OpenPromo for their
+              multi-platform strategy.
             </p>
             <Button size="lg" asChild>
               <Link to="/workspace">
@@ -117,5 +132,5 @@ function App() {
         </section>
       </main>
     </div>
-  )
+  );
 }

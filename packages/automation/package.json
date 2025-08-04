@@ -1,18 +1,18 @@
 {
-    "name": "@openpromo/automation",
-    "version": "0.0.0",
-    "type": "module",
-    "dependencies": {
-        "@browserbasehq/stagehand": "^2.3.0",
-        "@openpromo/core": "workspace:*",
-        "sst": "*",
-        "zod": "catalog:"
-    },
-    "scripts": {
-        "shell": "sst shell tsx"
-    },
-    "devDependencies": {
-        "@types/node": "^22",
-        "tsx": "^4"
-    }
+  "name": "@openpromo/automation",
+  "version": "0.0.0",
+  "type": "module",
+  "dependencies": {
+    "@browserbasehq/stagehand": "^2.3.0",
+    "@openpromo/core": "workspace:*",
+    "sst": "*",
+    "zod": "catalog:"
+  },
+  "scripts": {
+    "shell": "sst shell tsx"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsx": "^4"
+  }
 }

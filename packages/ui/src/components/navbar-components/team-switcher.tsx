@@ -1,24 +1,23 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { ChevronsUpDown } from "lucide-react"
-
-import { Button } from "@openpromo/ui/components/button"
+import { Button } from "@openpromo/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@openpromo/ui/components/dropdown-menu"
+} from "@openpromo/ui/components/dropdown-menu";
+import { ChevronsUpDown } from "lucide-react";
+import * as React from "react";
 
 export default function TeamSwitcher({
   teams,
   defaultTeam,
 }: {
-  teams: string[]
-  defaultTeam: string
+  teams: string[];
+  defaultTeam: string;
 }) {
-  const [selectedProject, setSelectedProject] = React.useState(defaultTeam)
+  const [selectedProject, setSelectedProject] = React.useState(defaultTeam);
 
   return (
     <DropdownMenu>
@@ -44,5 +43,5 @@ export default function TeamSwitcher({
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
