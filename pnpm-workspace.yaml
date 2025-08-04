@@ -7,6 +7,7 @@ catalog:
 
 ignoredBuiltDependencies:
   - esbuild
+  - lefthook
 
 onlyBuiltDependencies:
   - '@parcel/watcher'
