@@ -61,6 +61,7 @@ jobs:
         uses: dopplerhq/cli-action@v3
 
       - name: Deploy
+        id: deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           # STRIPE_API_KEY: ${{ github.ref == 'refs/heads/production' && secrets.PRODUCTION_STRIPE_API_KEY || secrets.DEV_STRIPE_API_KEY }}
@@ -74,8 +75,8 @@ jobs:
           pnpm sync_secrets
           pnpm sst deploy --stage=${GITHUB_REF_NAME}
 
-      - uses: actions/checkout@master
-      - name: send msg to our discord channel
+      - name: Send success notification to Discord
+        if: success()
         uses: appleboy/discord-action@v1.2.0
         with:
           webhook_url: ${{ secrets.DISCORD_DEPLOYMENT_WEBHOOK_URL }}
@@ -83,3 +84,15 @@ jobs:
             **[Success] Openpromo Deployed**
             - **Branch:** `${{ github.ref_name }}`
             - **Commit:** [${{ github.event.head_commit.message }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) (`${{ github.sha }}`)
+
+      - name: Send failure notification to Discord
+        if: failure()
+        uses: appleboy/discord-action@v1.2.0
+        with:
+          webhook_url: ${{ secrets.DISCORD_DEPLOYMENT_WEBHOOK_URL }}
+          message: |
+            **[Failed] Openpromo Deployment Failed** ❌
+            - **Branch:** `${{ github.ref_name }}`
+            - **Commit:** [${{ github.event.head_commit.message }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) (`${{ github.sha }}`)
+            - **Job:** [${{ github.job }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - **Error:** Check the workflow logs for details
