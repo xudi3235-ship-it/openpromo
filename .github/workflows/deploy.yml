@@ -1,10 +1,7 @@
 name: Deployment
 
 on:
-  workflow_run:
-    workflows: [Code Quality]
-    types:
-      - completed
+  push:
     branches:
       - dev
       - production
@@ -20,6 +17,26 @@ jobs:
       contents: read
 
     steps:
+      - name: Wait for biome check
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        id: biome-check
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: biome-check
+
+      - name: Wait for typecheck
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        id: typecheck
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: typecheck
+
+      - name: Exit if code quality checks failed
+        if: steps.biome-check.outputs.status != 'success' || steps.typecheck.outputs.status != 'success'
+        run: |
+          echo "Code quality checks failed"
+          exit 1
+
       - name: Checkout code
         uses: actions/checkout@v4
 
