@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@openpromo/ui/components/card";
 import Navbar from "@openpromo/ui/components/navbar";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRightIcon,
@@ -14,12 +15,25 @@ import {
   ImageIcon,
   TrendingUpIcon,
 } from "lucide-react";
+import { apiClient } from "@/lib/hono-client";
 
 export const Route = createFileRoute("/")({
   component: App,
 });
 
 function App() {
+  // @ts-ignore placholder for demo
+  const _queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: ["ping"],
+    queryFn: async () => {
+      const res = await apiClient.ping.$get();
+      if (!res.ok) {
+        throw new Error("Failed to fetch ping");
+      }
+      return await res.json();
+    },
+  });
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -46,6 +60,20 @@ function App() {
                 <Button variant="outline" size="lg">
                   Learn More
                 </Button>
+                show case RPC call here
+                {query.isLoading ? (
+                  <span className="text-muted-foreground">Loading...</span>
+                ) : query.isError ? (
+                  <span className="text-red-500">
+                    Error: {query.error.message}
+                  </span>
+                ) : (
+                  query.isSuccess && (
+                    <span className="text-green-500">
+                      Ping: {query.data.message}
+                    </span>
+                  )
+                )}
               </div>
             </div>
           </div>

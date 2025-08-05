@@ -4,6 +4,7 @@ packages:
 catalog:
   zod: 3.24.1
   zod-openapi: 4.1.0
+  hono: 4.8.12
 
 onlyBuiltDependencies:
   - '@parcel/watcher'

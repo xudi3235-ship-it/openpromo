@@ -21,7 +21,7 @@
     "drizzle-orm": "^0.44.3",
     "@openpromo/js-shared": "workspace:^",
     "facebook-nodejs-business-sdk": "^23.0.1",
-    "hono": "^4.8.5",
+    "hono": "catalog:",
     "nanoid": "^5.1.5",
     "sst": "3.17.10",
     "stripe": "^18.3.0",

@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    hono:
+      specifier: 4.8.12
+      version: 4.8.12
     zod:
       specifier: 3.24.1
       version: 3.24.1
@@ -21,8 +24,8 @@ importers:
         specifier: ^16.5.0
         version: 16.6.1
       hono:
-        specifier: ^4.8.5
-        version: 4.8.5
+        specifier: 'catalog:'
+        version: 4.8.12
       sst:
         specifier: 3.17.10
         version: 3.17.10
@@ -86,8 +89,8 @@ importers:
         specifier: ^23.0.1
         version: 23.0.1
       hono:
-        specifier: ^4.8.5
-        version: 4.8.5
+        specifier: 'catalog:'
+        version: 4.8.12
       nanoid:
         specifier: ^5.1.5
         version: 5.1.5
@@ -136,7 +139,7 @@ importers:
         version: 3.848.0
       '@openauthjs/openauth':
         specifier: ^0.4.3
-        version: 0.4.3(arctic@2.3.4)(hono@4.8.5)
+        version: 0.4.3(arctic@2.3.4)(hono@4.8.12)
       '@openpromo/core':
         specifier: workspace:*
         version: link:../core
@@ -144,8 +147,8 @@ importers:
         specifier: ^1.3.4
         version: 1.3.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       hono:
-        specifier: '*'
-        version: 4.8.5
+        specifier: 'catalog:'
+        version: 4.8.12
       sst:
         specifier: 3.17.10
         version: 3.17.10
@@ -381,7 +384,7 @@ importers:
     dependencies:
       '@openauthjs/openauth':
         specifier: ^0.4.3
-        version: 0.4.3(arctic@2.3.4)(hono@4.8.5)
+        version: 0.4.3(arctic@2.3.4)(hono@4.8.12)
       '@openpromo/functions':
         specifier: workspace:^
         version: link:../functions
@@ -394,6 +397,9 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.0.6
         version: 4.1.11(vite@6.3.5(@types/node@24.1.0)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3))
+      '@tanstack/react-query':
+        specifier: ^5.84.1
+        version: 5.84.1(react@19.1.0)
       '@tanstack/react-router':
         specifier: ^1.130.2
         version: 1.130.12(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -406,6 +412,9 @@ importers:
       '@types/js-cookie':
         specifier: ^3.0.6
         version: 3.0.6
+      hono:
+        specifier: 'catalog:'
+        version: 4.8.12
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
@@ -424,6 +433,9 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.24.1
+      zustand:
+        specifier: ^5.0.7
+        version: 5.0.7(@types/react@19.1.8)(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0))
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.0
@@ -2652,6 +2664,14 @@ packages:
     resolution: {integrity: sha512-2VO1nNFDWojgZ7Uqv/OJfH6LphZQ1kE6l8sI3YBgSPtj3qN6I/rsoTHW9rGjwiDO8sQoDRXod2hpH6HMs5NDsw==}
     engines: {node: '>=12'}
 
+  '@tanstack/query-core@5.83.1':
+    resolution: {integrity: sha512-OG69LQgT7jSp+5pPuCfzltq/+7l2xoweggjme9vlbCPa/d7D7zaqv5vN/S82SzSYZ4EDLTxNO1PWrv49RAS64Q==}
+
+  '@tanstack/react-query@5.84.1':
+    resolution: {integrity: sha512-zo7EUygcWJMQfFNWDSG7CBhy8irje/XY0RDVKKV4IQJAysb+ZJkkJPcnQi+KboyGUgT+SQebRFoTqLuTtfoDLw==}
+    peerDependencies:
+      react: ^18 || ^19
+
   '@tanstack/react-router-devtools@1.130.13':
     resolution: {integrity: sha512-cY+jYxEP4/WNDgFFlI5/1u2U9zY9zHmJDoNxCF3NiaSgtAIVHdCKRGvfG6oRl6EposNGtn+JJhQkMkfAyoN9lQ==}
     engines: {node: '>=12'}
@@ -3679,8 +3699,8 @@ packages:
     resolution: {integrity: sha512-Pst8FuGqz3L7tFF+u9Pu70eI0xa5S3LPUmrNd5Jm8nTHze9FxLTK9Kaj5g/k4UcwuJSXTP65SyHOPLrffpcAJg==}
     engines: {node: '>=16.9.0'}
 
-  hono@4.8.5:
-    resolution: {integrity: sha512-Up2cQbtNz1s111qpnnECdTGqSIUIhZJMLikdKkshebQSEBcoUKq6XJayLGqSZWidiH0zfHRCJqFu062Mz5UuRA==}
+  hono@4.8.12:
+    resolution: {integrity: sha512-MQSKk1Mg7b74k8l+A025LfysnLtXDKkE4pLaSsYRQC5iy85lgZnuyeQ1Wynair9mmECzoLu+FtJtqNZSoogBDQ==}
     engines: {node: '>=16.9.0'}
 
   html-encoding-sniffer@4.0.0:
@@ -5068,6 +5088,24 @@ packages:
 
   zod@4.0.14:
     resolution: {integrity: sha512-nGFJTnJN6cM2v9kXL+SOBq3AtjQby3Mv5ySGFof5UGRHrRioSJ5iG680cYNjE/yWk671nROcpPj4hAS8nyLhSw==}
+
+  zustand@5.0.7:
+    resolution: {integrity: sha512-Ot6uqHDW/O2VdYsKLLU8GQu8sCOM1LcoE8RwvLv9uuRT9s6SOHCKs0ZEOhxg+I1Ld+A1Q5lwx+UlKXXUoCZITg==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
 
 snapshots:
 
@@ -6583,12 +6621,12 @@ snapshots:
 
   '@noble/hashes@1.8.0': {}
 
-  '@openauthjs/openauth@0.4.3(arctic@2.3.4)(hono@4.8.5)':
+  '@openauthjs/openauth@0.4.3(arctic@2.3.4)(hono@4.8.12)':
     dependencies:
       '@standard-schema/spec': 1.0.0-beta.3
       arctic: 2.3.4
       aws4fetch: 1.0.20
-      hono: 4.8.5
+      hono: 4.8.12
       jose: 5.9.6
 
   '@opentelemetry/api@1.9.0': {}
@@ -7858,6 +7896,13 @@ snapshots:
 
   '@tanstack/history@1.130.12': {}
 
+  '@tanstack/query-core@5.83.1': {}
+
+  '@tanstack/react-query@5.84.1(react@19.1.0)':
+    dependencies:
+      '@tanstack/query-core': 5.83.1
+      react: 19.1.0
+
   '@tanstack/react-router-devtools@1.130.13(@tanstack/react-router@1.130.12(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@tanstack/router-core@1.130.12)(csstype@3.1.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(solid-js@1.9.7)(tiny-invariant@1.3.3)':
     dependencies:
       '@tanstack/react-router': 1.130.12(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -8965,7 +9010,7 @@ snapshots:
 
   hono@4.7.4: {}
 
-  hono@4.8.5: {}
+  hono@4.8.12: {}
 
   html-encoding-sniffer@4.0.0:
     dependencies:
@@ -10339,3 +10384,9 @@ snapshots:
   zod@3.25.76: {}
 
   zod@4.0.14: {}
+
+  zustand@5.0.7(@types/react@19.1.8)(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0)):
+    optionalDependencies:
+      '@types/react': 19.1.8
+      react: 19.1.0
+      use-sync-external-store: 1.5.0(react@19.1.0)
