@@ -34,7 +34,7 @@ const _schedulerRolePolicy = new aws.iam.RolePolicy("SchedulerRolePolicy", {
 });
 
 const _busSubscriber = bus.subscribe("busSubscriber", {
-  handler: "packages/functions/src/bus_subscriber.handler",
+  handler: "packages/functions/src/event/bus_subscriber.handler",
   environment: {
     SCHEDULER_ROLE_ARN: schedulerRole.arn,
   },
