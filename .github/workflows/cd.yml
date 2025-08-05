@@ -58,6 +58,8 @@ jobs:
 
       - name: typecheck
         run: pnpm check
+      - name: sync secrets
+        run: pnpm sync_secrets
 
       - name: Deploy
         env:
