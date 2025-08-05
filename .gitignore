@@ -7,7 +7,7 @@ node_modules
 # tmp files
 .#*
 
-# env 
+# env
 .env*.local
 .env
 
@@ -16,3 +16,6 @@ node_modules
 
 # misc
 .DS_Store
+
+# typescript
+tsconfig.tsbuildinfo
