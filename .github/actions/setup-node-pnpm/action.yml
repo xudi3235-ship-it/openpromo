@@ -1,0 +1,21 @@
+name: "Setup Node.js with pnpm"
+description: "Setup Node.js, pnpm, and install dependencies"
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - uses: pnpm/action-setup@v4
+      name: Install pnpm
+      shell: bash
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: "pnpm"
+
+    - name: Install dependencies
+      run: pnpm install
+      shell: bash
