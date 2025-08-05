@@ -82,3 +82,10 @@ jobs:
           pnpm sst install
           pnpm sync_secrets
           pnpm sst deploy --stage=${GITHUB_REF_NAME}
+      
+      - uses: actions/checkout@master
+      - name: send msg to our discord channel
+        uses: appleboy/discord-action@v1.2.0
+        with:
+          webhook_url: ${{ secrets.DISCORD_DEPLOYMENT_WEBHOOK_URL }}
+          message: "[Success] Openpromo Deployed to branch `${{ github.ref_name }}`."
