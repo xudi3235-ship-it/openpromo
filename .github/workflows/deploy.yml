@@ -6,8 +6,9 @@ on:
       - dev
       - production
 
-concurrency: 
-  group: ${{ github.ref }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   biome-check:
@@ -15,8 +16,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
+
       - name: Run Biome
         run: biome ci --diagnostic-level=warn
 
@@ -28,25 +31,26 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/cache@v4
-        with:
-          path: |
-            .sst
-          key: ${{ runner.os }}-sst
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
 
-      - uses: pnpm/action-setup@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          version: 10.14.0
+          node-version-file: .nvmrc
+          cache: "pnpm"
 
-      - uses: actions/setup-node@v1
-        with:
-          node-version: "20"
+      - name: Install dependencies
+        run: pnpm install
 
-      - run: "curl -fsSL https://ion.sst.dev/install | bash"
+      - name: Install sst providers
+        run: pnpm exec sst install
+
+      - name: typecheck
+        run: pnpm -r typecheck
 
       - if: github.ref == 'refs/heads/dev'
         name: Configure Dev AWS credentials
@@ -61,13 +65,9 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::549182891830:role/openpromo-production-github
           aws-region: us-east-1
-      - name: Install CLI
-        uses: dopplerhq/cli-action@v3
-      - name: deps
-        run: pnpm install --frozen-lockfile
 
-      - name: typecheck
-        run: pnpm check          
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
 
       - name: Deploy
         env:
@@ -82,7 +82,7 @@ jobs:
           pnpm sst install
           pnpm sync_secrets
           pnpm sst deploy --stage=${GITHUB_REF_NAME}
-      
+
       - uses: actions/checkout@master
       - name: send msg to our discord channel
         uses: appleboy/discord-action@v1.2.0
