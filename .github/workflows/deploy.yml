@@ -88,4 +88,7 @@ jobs:
         uses: appleboy/discord-action@v1.2.0
         with:
           webhook_url: ${{ secrets.DISCORD_DEPLOYMENT_WEBHOOK_URL }}
-          message: "[Success] Openpromo Deployed to branch `${{ github.ref_name }}`."
+          message: |
+            **[Success] Openpromo Deployed**
+            - **Branch:** `${{ github.ref_name }}`
+            - **Commit:** [${{ github.event.head_commit.message }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) (`${{ github.sha }}`)
