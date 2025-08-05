@@ -68,9 +68,9 @@ async function _decryptToken(encryptedToken: string): Promise<string> {
 async function exchangeCodeForToken(
   code: string,
 ): Promise<FacebookTokenResponse> {
-  const clientId = process.env.FACEBOOK_APP_ID;
-  const clientSecret = process.env.FACEBOOK_APP_SECRET;
-  const redirectUri = process.env.FACEBOOK_REDIRECT_URI;
+  const clientId = Resource.FACEBOOK_APP_ID.value;
+  const clientSecret = Resource.FACEBOOK_APP_SECRET.value;
+  const redirectUri = Resource.FACEBOOK_REDIRECT_URI.value;
 
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error("Facebook OAuth credentials not configured");
@@ -267,7 +267,7 @@ export namespace ConnectedAccount {
       state: z.string().optional(),
     }),
     async (input) => {
-      const clientId = process.env.FACEBOOK_APP_ID;
+      const clientId = Resource.FACEBOOK_APP_ID.value;
       if (!clientId) {
         throw new Error("Facebook App ID not configured");
       }

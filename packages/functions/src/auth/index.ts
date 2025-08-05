@@ -6,6 +6,7 @@ import { Email } from "@openpromo/core/email/index";
 import { User } from "@openpromo/core/user/index";
 import { handle } from "hono/aws-lambda";
 import { logger } from "hono/logger";
+import { Resource } from "sst";
 import { subjects } from "./subjects";
 
 // check docs: https://docs.github.com/en/rest/users/emails?apiVersion=2022-11-28
@@ -43,12 +44,8 @@ export const app = issuer({
       }),
     ),
     github: GithubProvider({
-      // biome-ignore lint/style/noNonNullAssertion: TODO: fix later
-      clientID: process.env.GITHUB_CLIENT_ID!,
-      // a better way to write this would be -- clientID: Resource.GithubClientID.value,
-      // biome-ignore lint/style/noNonNullAssertion: TODO: fix later
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-      // using assertion here to make sure the safety
+      clientID: Resource.GITHUB_OAUTH_CLIENT_ID.value,
+      clientSecret: Resource.GITHUB_OAUTH_CLIENT_SECRET.value,
       scopes: ["user:email"],
       // this is required by github, i think user:email is enough for now?
     }),
