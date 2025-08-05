@@ -50,16 +50,19 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::549182891830:role/openpromo-production-github
           aws-region: us-east-1
-
+      - name: Install CLI
+        uses: dopplerhq/cli-action@v3
       - name: deps
-        run: |
-          curl -Ls --tlsv1.2 --proto "=https" --retry 3 https://cli.doppler.com/install.sh || wget -t 3 -qO- https://cli.doppler.com/install.sh | sudo sh
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: typecheck
         run: pnpm check
+
       - name: sync secrets
-        run: pnpm sync_secrets
+        run: |
+          pnpm sync_secrets
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
 
       - name: Deploy
         env:
