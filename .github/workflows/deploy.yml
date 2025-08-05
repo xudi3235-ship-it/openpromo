@@ -32,7 +32,7 @@ jobs:
           checkName: typecheck
 
       - name: Exit if code quality checks failed
-        if: steps.biome-check.outputs.status != 'success' || steps.typecheck.outputs.status != 'success'
+        if: steps.biome-check.outputs.conclusion != 'success' || steps.typecheck.outputs.conclusion != 'success'
         run: |
           echo "Code quality checks failed"
           exit 1
