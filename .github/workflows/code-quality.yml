@@ -20,6 +20,9 @@ jobs:
   typecheck:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup Node and pnpm
         uses: ./.github/actions/setup-node-pnpm
 
