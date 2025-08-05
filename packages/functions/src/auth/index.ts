@@ -23,17 +23,20 @@ export const app = issuer({
   },
 
   providers: {
-    code: CodeProvider<{ email: string }>(
+    email: CodeProvider(
       CodeUI({
-        sendCode: async (user_email, code) => {
-          console.log(`Sending code ${code} to ${user_email.email}`);
+        async sendCode(claims, code) {
+          console.log(`Sending code ${code} to ${claims.email}`);
+          // TODO: Fix SES configuration - for now just log the code
+          console.log(`📧 EMAIL CODE FOR ${claims.email}: ${code}`);
+
           await Email.send(
             "no-reply",
-            user_email.email,
+            claims.email,
             "OpenPromo Login Code",
             "", // the email body, but we choose to use styled HTML instead, can enrich it later. see below
             {
-              html: `<p>Your login verification code is: ${code}</p>`,
+              html: `<p>Your login verification code is: <strong>${code}</strong></p>`,
             },
           );
         },
@@ -54,10 +57,13 @@ export const app = issuer({
   success: async (ctx, value) => {
     let email = undefined as string | undefined;
 
-    if (value.provider === "code") {
-      // get email from client side
-      email = value.claims.email;
-      console.log("User logged in with email:", email);
+    console.log("Success handler called with:", JSON.stringify(value, null, 2));
+
+    if (value.provider === "email") {
+      // For CodeUI, the email comes from the claims object
+      email = value.claims?.email;
+      console.log("Extracted email:", email);
+      console.log("Claims object:", JSON.stringify(value.claims, null, 2));
     }
 
     if (value.provider === "github") {
@@ -118,6 +124,14 @@ export const app = issuer({
     }
 
     throw new Error("Invalid provider");
+  },
+  async allow(input) {
+    const url = new URL(input.redirectURI);
+    return (
+      url.hostname.endsWith("localhost") ||
+      url.hostname.endsWith("openpromo.app") ||
+      url.hostname === "localhost"
+    );
   },
 }).use(logger());
 

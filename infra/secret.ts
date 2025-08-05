@@ -4,6 +4,7 @@ export const secret = {
   FACEBOOK_REDIRECT_URI: new sst.Secret("FACEBOOK_REDIRECT_URI"),
   GITHUB_OAUTH_CLIENT_ID: new sst.Secret("GITHUB_OAUTH_CLIENT_ID"),
   GITHUB_OAUTH_CLIENT_SECRET: new sst.Secret("GITHUB_OAUTH_CLIENT_SECRET"),
+  STRIPE_SECRET_KEY: new sst.Secret("STRIPE_SECRET_KEY"),
 };
 
 export const allSecrets = Object.values(secret);

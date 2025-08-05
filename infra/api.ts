@@ -2,7 +2,7 @@ import { bus } from "./bus";
 import { database } from "./database";
 import { domain } from "./dns";
 import { email } from "./email";
-import { allSecrets, secret } from "./secret";
+import { allSecrets } from "./secret";
 import { bucket } from "./storage";
 
 export const urls = new sst.Linkable("Urls", {
@@ -16,13 +16,7 @@ export const urls = new sst.Linkable("Urls", {
 
 export const auth = new sst.aws.Auth("Auth", {
   authorizer: {
-    link: [
-      bus,
-      secret.GITHUB_OAUTH_CLIENT_ID,
-      secret.GITHUB_OAUTH_CLIENT_SECRET,
-      database,
-      email,
-    ],
+    link: [bus, ...allSecrets, database, email],
     permissions: [
       {
         actions: ["ses:SendEmail"],
@@ -30,6 +24,9 @@ export const auth = new sst.aws.Auth("Auth", {
       },
     ],
     handler: "./packages/functions/src/auth/index.handler",
+    environment: {
+      AUTH_FRONTEND_URL: $dev ? "http://localhost:3000" : `https://${domain}`,
+    },
   },
   domain: {
     name: `auth.${domain}`,

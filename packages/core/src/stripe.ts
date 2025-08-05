@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { Resource } from "sst";
 import { Stripe as StripeClient } from "stripe";
 import { z } from "zod";
 import { useTransaction } from "./drizzle/transaction";
@@ -6,7 +7,7 @@ import { userTable } from "./user/user.sql";
 import { fn } from "./util/fn";
 
 // TODO: setup stripe secrets here when we actually have some users
-export const stripe = new StripeClient("TODO_STRIPE_SECRET", {
+export const stripe = new StripeClient(Resource.STRIPE_SECRET_KEY.value, {
   httpClient: StripeClient.createFetchHttpClient(),
 });
 

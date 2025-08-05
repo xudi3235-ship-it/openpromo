@@ -50,6 +50,9 @@ class Resource:
     class GITHUB_OAUTH_CLIENT_SECRET:
         type: str
         value: str
+    class STRIPE_SECRET_KEY:
+        type: str
+        value: str
     class Storage:
         name: str
         type: str
