@@ -15,19 +15,21 @@ import {
   ImageIcon,
   TrendingUpIcon,
 } from "lucide-react";
-import { apiClient } from "@/lib/hono-client";
+import { useAuth } from "@/lib/auth-provider";
 
 export const Route = createFileRoute("/")({
   component: App,
 });
 
 function App() {
+  const { getApiClient, userId, loggedIn, loaded } = useAuth();
   // @ts-ignore placholder for demo
   const _queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ["ping"],
     queryFn: async () => {
-      const res = await apiClient.ping.$get();
+      // @ts-ignore
+      const res = await getApiClient().ping.$get();
       if (!res.ok) {
         throw new Error("Failed to fetch ping");
       }
@@ -46,6 +48,16 @@ function App() {
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
                 Unified Content Creation & Management
               </h1>
+              {loggedIn ? (
+                <p className="text-lg text-muted-foreground">
+                  Welcome back, {userId}! Manage your content seamlessly across
+                  multiple platforms.
+                </p>
+              ) : (
+                <p className="text-lg text-muted-foreground">Not logged in</p>
+              )}
+              {loaded}
+
               <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
                 Manage your content across Facebook, Instagram, and TikTok from
                 one powerful platform. Schedule, draft, and publish with ease.

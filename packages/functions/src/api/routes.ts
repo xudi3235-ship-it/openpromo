@@ -1,18 +1,27 @@
 import { Log } from "@openpromo/core/util/log";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
+import { jwtAuth } from "./middleware/jwt-auth";
 import { noCache } from "./middleware/no-cache";
-import { Ping } from "./ping";
+import { Ping } from "./routes/ping";
+import { UserRoutes } from "./routes/user";
+import { Workspace } from "./routes/workspace";
 
 const log = Log.create({ namespace: "api" });
 
-export const app = new Hono()
+export const app = new Hono();
+
+// Apply global middleware first
+app.use(logger()).use(noCache()).use(jwtAuth());
+
+// Then define routes
+app
   .get("/", (c) => {
     log.info("Received request at root endpoint");
     return c.text("you just hit our api lol");
   })
-  .route("/ping", Ping.route);
-
-app.use(logger()).use(noCache());
+  .route("/ping", Ping.route)
+  .route("/workspace", Workspace.route)
+  .route("/user", UserRoutes.route);
 
 export type Routes = typeof app;

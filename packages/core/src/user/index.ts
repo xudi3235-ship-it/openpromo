@@ -36,6 +36,10 @@ export namespace User {
         description: "Stripe customer ID of the user.",
         example: Examples.User.stripeCustomerID,
       }),
+      workspaceID: z.string().openapi({
+        description: "Workspace ID of the user.",
+        example: Examples.User.workspaceID,
+      }),
     })
     .openapi({
       ref: "User",
@@ -71,7 +75,7 @@ export namespace User {
           userID: id,
         },
       });
-      await createTransaction(async (tx) => {
+      return await createTransaction(async (tx) => {
         // 1. new workspace, default
         const workspaceID = createID("workspace");
         await tx.insert(workspaceTable).values({
@@ -89,8 +93,8 @@ export namespace User {
         await afterTx(() =>
           bus.publish(Resource.Bus, Event.Created, { userID: id }),
         );
+        return { id, workspaceID };
       });
-      return id;
     },
   );
 
@@ -214,6 +218,7 @@ export namespace User {
       name: input.name,
       email: input.email,
       stripeCustomerID: input.stripeCustomerID,
+      workspaceID: input.workspaceID,
     };
   }
 }

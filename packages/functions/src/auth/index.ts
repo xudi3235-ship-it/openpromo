@@ -34,11 +34,8 @@ export const app = issuer({
           await Email.send(
             "no-reply",
             claims.email,
-            "OpenPromo Login Code",
-            "", // the email body, but we choose to use styled HTML instead, can enrich it later. see below
-            {
-              html: `<p>Your login verification code is: <strong>${code}</strong></p>`,
-            },
+            `Openpromo Code: ${code}`,
+            `Your Openpromo login code is: ${code}`,
           );
         },
       }),
@@ -91,11 +88,12 @@ export const app = issuer({
     if (email) {
       const matching = await User.fromEmail(email);
       if (matching.length === 0) {
-        const id = await User.create({
+        const { id, workspaceID } = await User.create({
           email,
         });
         return ctx.subject("user", {
           id,
+          workspaceID,
         });
       }
       if (matching.length === 1) {
@@ -105,17 +103,25 @@ export const app = issuer({
         }
         return ctx.subject("user", {
           id: user.id,
+          workspaceID: user.workspaceID,
         });
       }
       if (matching.length > 1) {
-        // For multiple users with same email, use the first one
-        // In a production app, you might want to implement proper merging logic
-        const user = matching[0];
-        if (!user) {
-          throw new Error("User not found");
-        }
+        // Multiple workspaces - use the first one (they're already ordered by timeCreated ASC from User.fromEmail)
+        // TODO: Implement proper workspace selection logic:
+        // - Could check for a preferred workspace in JWT claims
+        // - Could implement a "last used workspace" preference
+        // - Could prompt user to select workspace during login
+        const user = matching[0]; // Using first (oldest) for consistency
+        if (!user) throw new Error("User not found");
+
+        console.log(
+          `User ${email} has ${matching.length} workspaces, selected workspace: ${user.workspaceID}`,
+        );
+
         return ctx.subject("user", {
           id: user.id,
+          workspaceID: user.workspaceID,
         });
       }
     }
