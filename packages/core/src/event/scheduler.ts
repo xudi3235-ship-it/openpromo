@@ -5,9 +5,9 @@ import {
   SchedulerClient,
   UpdateScheduleCommand,
 } from "@aws-sdk/client-scheduler";
+import { nullThrows } from "@openpromo/js-shared/common";
 import { Resource } from "sst";
 import type { event } from "sst/event";
-import { nullThrows } from "../util/common";
 
 const scheduler = new SchedulerClient();
 

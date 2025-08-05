@@ -11,6 +11,7 @@
   "dependencies": {
     "@openauthjs/openauth": "^0.4.3",
     "@openpromo/ui": "workspace:^",
+    "@openpromo/js-shared": "workspace:^",
     "@openpromo/functions": "workspace:^",
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/react-router": "^1.130.2",

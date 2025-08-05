@@ -1,0 +1,23 @@
+{
+  "name": "@openpromo/js-shared",
+  "version": "0.0.0",
+  "description": "shared JS lib, no external deps",
+  "type": "module",
+  "sideEffects": false,
+  "dependencies": {
+    "sst": "3.17.10"
+  },
+  "scripts": {
+    "shell": "sst shell tsx"
+  },
+  "devDependencies": {
+    "@openpromo/core": "workspace:*",
+    "@types/node": "^22",
+    "tsx": "^4"
+  },
+  "exports": {
+    "./*": [
+      "./src/*.ts"
+    ]
+  }
+}

@@ -1,10 +1,14 @@
 import { createClient } from "@openauthjs/openauth/client";
+import { nullThrows } from "@openpromo/js-shared/common";
 import Cookies from "js-cookie";
 
-// You may need to adjust the issuer URL depending on your deployment
+const issuer = nullThrows(
+  import.meta.env.VITE_AUTH_URL,
+  "VITE_AUTH_URL is not set",
+);
 export const authClient = createClient({
   clientID: "www_v2",
-  issuer: import.meta.env.VITE_AUTH_URL,
+  issuer,
 });
 
 export function setTokens(access: string, refresh: string) {
