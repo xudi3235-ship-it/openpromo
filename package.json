@@ -6,7 +6,8 @@
     "dev": "sst dev",
     "check": "biome check --write --diagnostic-level=warn",
     "sso": "aws sso login --sso-session=promobase-dev-ray --no-browser",
-    "sync_secrets": "bash scripts/sync_secrets.sh"
+    "sync_secrets": "bash scripts/sync_secrets.sh",
+    "postinstall": "lefthook install"
   },
   "devDependencies": {
     "@biomejs/biome": "2.1.3",
