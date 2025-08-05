@@ -52,7 +52,9 @@ jobs:
           aws-region: us-east-1
 
       - name: deps
-        run: pnpm install --frozen-lockfile
+        run: |
+          curl -Ls --tlsv1.2 --proto "=https" --retry 3 https://cli.doppler.com/install.sh || wget -t 3 -qO- https://cli.doppler.com/install.sh) | sudo sh
+          pnpm install --frozen-lockfile
 
       - name: typecheck
         run: pnpm check
@@ -63,6 +65,7 @@ jobs:
           # STRIPE_API_KEY: ${{ github.ref == 'refs/heads/production' && secrets.PRODUCTION_STRIPE_API_KEY || secrets.DEV_STRIPE_API_KEY }}
           PLANETSCALE_SERVICE_TOKEN_NAME: ${{ secrets.PLANETSCALE_SERVICE_TOKEN_NAME }}
           PLANETSCALE_SERVICE_TOKEN: ${{ secrets.PLANETSCALE_SERVICE_TOKEN }}
+          PLANETSCALE_SERVICE_TOKEN_ID: ${{secrets.PLANETSCALE_SERVICE_TOKEN_ID}}
 
         run: |
           pnpm sst install
