@@ -1,0 +1,42 @@
+name: Deployment
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  biome-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+
+      - name: Biome check
+        run: biome ci --diagnostic-level=warn
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install sst providers
+        run: pnpm exec sst install
+
+      - name: typecheck
+        run: pnpm -r typecheck
