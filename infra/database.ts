@@ -22,7 +22,7 @@ const password = new planetscale.Password("DatabasePassword", {
   organization: mysql.organization,
   branch: branch.name,
   role: "admin",
-  name: `${$app.name}-${$app.stage}-credentials-v2`,
+  name: `${$app.name}-${$app.stage}-credentials`,
 });
 
 export const database = new sst.Linkable("Database", {
