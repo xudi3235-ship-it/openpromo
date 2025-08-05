@@ -25,21 +25,20 @@ jobs:
 
       - if: github.ref == 'refs/heads/dev'
         name: Configure Dev AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4.3.1
         with:
           role-to-assume: arn:aws:iam::549182891830:role/openpromo-dev-github
           aws-region: us-east-1
 
       - if: github.ref == 'refs/heads/production'
         name: Configure Production AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4.3.1
         with:
           role-to-assume: arn:aws:iam::549182891830:role/openpromo-production-github
           aws-region: us-east-1
 
       - name: Install Doppler CLI
         uses: dopplerhq/cli-action@v3
-
 
       - name: Wait for biome check
         uses: fountainhead/action-wait-for-check@v1.2.0
