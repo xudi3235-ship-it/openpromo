@@ -1,4 +1,4 @@
-name: sst
+name: sst deployment
 
 on:
   push:
@@ -52,10 +52,10 @@ jobs:
           aws-region: us-east-1
 
       - name: deps
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: typecheck
-        run: pnpm typecheck
+        run: pnpm check
 
       - name: Deploy
         env:
