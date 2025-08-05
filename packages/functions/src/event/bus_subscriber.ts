@@ -1,7 +1,9 @@
 import { PendingContentGroup } from "@openpromo/core/content/pending_content_group";
 import { UnifiedContent } from "@openpromo/core/content/unified_content";
+import { Log } from "@openpromo/core/util/log";
 import { bus } from "sst/aws/bus";
 
+const log = Log.create({ namespace: "event/bus_subscriber" });
 export const handler = bus.subscriber(
   [
     UnifiedContent.Event.Created,
@@ -26,8 +28,13 @@ export const handler = bus.subscriber(
       case PendingContentGroup.Event.Created.type:
         break;
 
-      default:
-        throw new Error(`Unknown event type: ${evt}`);
+      default: {
+        const err = new Error(
+          `Unknown event type: ${console.dir(evt, { depth: null })}`,
+        );
+        log.error(err);
+        throw err;
+      }
     }
   },
 );
