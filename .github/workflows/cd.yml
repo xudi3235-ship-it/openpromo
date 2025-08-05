@@ -1,4 +1,4 @@
-name: sst deployment
+name: Deployment
 
 on:
   push:
@@ -65,5 +65,5 @@ jobs:
           PLANETSCALE_SERVICE_TOKEN: ${{ secrets.PLANETSCALE_SERVICE_TOKEN }}
 
         run: |
-          sst install
-          sst deploy --stage=${GITHUB_REF_NAME}
+          pnpm sst install
+          pnpm sst deploy --stage=${GITHUB_REF_NAME}
