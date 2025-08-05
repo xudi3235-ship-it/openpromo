@@ -42,17 +42,9 @@ const apiFn = new sst.aws.Function("ApiFn", {
   handler: "packages/functions/src/api/index.handler",
 });
 
-const emailFn = new sst.aws.Function("EmailFn", {
-  url: true,
-  link: [...allSecrets], // email,
-  streaming: !$dev,
-  handler: "packages/functions/src/email.handler",
-});
-
 export const api = new sst.aws.Router("Api", {
   routes: {
     "/*": apiFn.url,
-    "/email": emailFn.url,
   },
   domain: {
     name: `api.${domain}`,
