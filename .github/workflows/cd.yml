@@ -56,13 +56,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: typecheck
-        run: pnpm check
-
-      - name: sync secrets
-        run: |
-          pnpm sync_secrets
-        env:
-          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: pnpm check          
 
       - name: Deploy
         env:
@@ -71,7 +65,9 @@ jobs:
           PLANETSCALE_SERVICE_TOKEN_NAME: ${{ secrets.PLANETSCALE_SERVICE_TOKEN_NAME }}
           PLANETSCALE_SERVICE_TOKEN: ${{ secrets.PLANETSCALE_SERVICE_TOKEN }}
           PLANETSCALE_SERVICE_TOKEN_ID: ${{secrets.PLANETSCALE_SERVICE_TOKEN_ID}}
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
 
         run: |
           pnpm sst install
+          pnpm sync_secrets
           pnpm sst deploy --stage=${GITHUB_REF_NAME}
