@@ -32,7 +32,7 @@ export const userTable = mysqlTable(
     stripeCustomerID: varchar("stripe_customer_id", { length: 255 })
       .unique()
       .notNull(),
-    emailOctopusID: varchar("stripe_customer_id", { length: 255 })
+    emailOctopusID: varchar("email_octopus_id", { length: 255 })
       .unique()
       .notNull(),
     flags: json("flags").$type<UserFlags>().default({}),
