@@ -178,7 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function user() {
     try {
       const apiClient = getApiClient();
-      // @ts-ignore
       const res = await apiClient.user.me.$get();
 
       if (!res.ok) {

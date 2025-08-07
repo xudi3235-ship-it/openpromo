@@ -9,13 +9,10 @@ import { Workspace } from "./routes/workspace";
 
 const log = Log.create({ namespace: "api" });
 
-export const app = new Hono();
-
-// Apply global middleware first
-app.use(logger()).use(noCache()).use(jwtAuth());
-
-// Then define routes
-app
+export const app = new Hono()
+  .use(logger())
+  .use(noCache())
+  .use(jwtAuth())
   .get("/", (c) => {
     log.info("Received request at root endpoint");
     return c.text("you just hit our api lol");
