@@ -31,7 +31,7 @@ export class IdentityService {
     c: typeof unifiedContentTable.$inferSelect,
   ): Promise<IdentityService> {
     if (!c.placement.startsWith("FB")) throw new Error("Invalid placement");
-    const actor = Actor.assert("user");
+    const actor = Actor.assert("workspace_user");
     const workspaceID = actor.properties.workspaceID;
     return await createTransaction(async (tx) => {
       return await tx

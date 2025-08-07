@@ -16,7 +16,6 @@ const client = createClient({
 
 interface Workspace {
   id: string;
-  workspaceID: string;
   name: string | null;
 }
 
@@ -31,6 +30,7 @@ interface AuthContextType {
   getToken: () => Promise<string | undefined>;
   switchWorkspace?: (workspaceID: string) => Promise<void>;
   getApiClient: () => ReturnType<typeof createApiClient>;
+  fetchWorkspaces: () => Promise<void>;
 }
 
 const AuthContext = createContext({} as AuthContextType);
@@ -41,7 +41,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const token = useRef<string | undefined>(undefined);
   const [userId, setUserId] = useState<string | undefined>();
-  const [workspaceId, setWorkspaceId] = useState<string | undefined>();
   const [availableWorkspaces, setAvailableWorkspaces] = useState<
     Array<Workspace>
   >([]);
@@ -179,7 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const apiClient = getApiClient();
       const res = await apiClient.user.me.$get();
-
       if (!res.ok) {
         const errorText = await res.text();
         console.error("User API error response:", errorText);
@@ -187,12 +185,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           `Failed to fetch user data: ${res.status} ${errorText}`,
         );
       }
-
       const userData = await res.json();
       setUserId(userData.id);
-      setWorkspaceId(userData.currentWorkspaceID);
-      setAvailableWorkspaces(userData.availableWorkspaces || []);
       setLoggedIn(true);
+
+      // Fetch available workspaces
+      await fetchWorkspaces();
+
       setLoaded(true);
     } catch (error) {
       console.error("Error in user() function:", error);
@@ -202,14 +201,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function switchWorkspace(targetWorkspaceID: string) {
-    // This would require generating a new token for the target workspace
-    // For now, we'll store the preference and require re-login
-    localStorage.setItem("preferred-workspace", targetWorkspaceID);
+  async function fetchWorkspaces() {
+    try {
+      const apiClient = getApiClient();
+      const res = await apiClient.user.workspaces.$get();
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Workspaces API error response:", errorText);
+        throw new Error(
+          `Failed to fetch workspaces: ${res.status} ${errorText}`,
+        );
+      }
+      const workspacesData = await res.json();
+      setAvailableWorkspaces(workspacesData.workspaces);
+    } catch (error) {
+      console.error("Error fetching workspaces:", error);
+      // Don't throw here - workspaces are optional for the auth flow
+    }
+  }
 
-    // You might want to implement a proper workspace switching endpoint
-    // that issues a new token with the target workspace context
-    await logout();
+  async function switchWorkspace(targetWorkspaceID: string) {
+    try {
+      const currentToken = await getToken();
+      const response = await fetch("/api/user/switch-workspace", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${currentToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ workspaceId: targetWorkspaceID }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Access denied to workspace");
+      }
+
+      // Switch successful - workspace context will be provided via URL params in subsequent API calls
+      // No need to store workspace ID locally
+    } catch (error) {
+      console.error("Workspace switch failed:", error);
+      // Fallback to re-login with workspace preference
+      localStorage.setItem("preferred-workspace", targetWorkspaceID);
+      logout();
+    }
   }
 
   function logout() {
@@ -225,13 +259,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         userId,
-        workspaceId,
         availableWorkspaces,
         loaded,
         loggedIn,
         getToken,
         switchWorkspace,
         getApiClient,
+        fetchWorkspaces,
       }}
     >
       {children}

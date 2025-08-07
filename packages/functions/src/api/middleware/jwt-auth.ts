@@ -57,14 +57,14 @@ export const jwtAuth: () => MiddlewareHandler = () => async (c, next) => {
 
     console.log("Setting up Actor context with user data");
 
-    // Populate Actor context with verified user data
+    // Populate Actor context with verified user data (no workspace context yet)
     return Actor.provide(
       "user",
       {
         userID: verified.subject.properties.id,
-        workspaceID: verified.subject.properties.workspaceID,
         email: user.email || "",
         clientID: "openpromo-www", // This matches the OpenAuth client ID
+        // workspaceID will be set by workspace middleware when needed
       },
       () => {
         console.log("Actor context set, proceeding to next middleware");

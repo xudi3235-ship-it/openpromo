@@ -31,10 +31,6 @@ class Resource:
         configSet: str
         sender: str
         type: str
-    class EmailFn:
-        name: str
-        type: str
-        url: str
     class FACEBOOK_APP_ID:
         type: str
         value: str

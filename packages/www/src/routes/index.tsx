@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@openpromo/ui/components/card";
 import Navbar from "@openpromo/ui/components/navbar";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRightIcon,
@@ -22,13 +22,11 @@ export const Route = createFileRoute("/")({
 });
 
 function App() {
-  const { getApiClient, userId, loggedIn, loaded } = useAuth();
-  // @ts-ignore placholder for demo
-  const _queryClient = useQueryClient();
+  const { getApiClient, userId, loggedIn, loaded, availableWorkspaces } =
+    useAuth();
   const query = useQuery({
     queryKey: ["ping"],
     queryFn: async () => {
-      // @ts-ignore
       const res = await getApiClient().ping.$get();
       if (!res.ok) {
         throw new Error("Failed to fetch ping");
@@ -36,6 +34,7 @@ function App() {
       return await res.json();
     },
   });
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -49,10 +48,24 @@ function App() {
                 Unified Content Creation & Management
               </h1>
               {loggedIn ? (
-                <p className="text-lg text-muted-foreground">
-                  Welcome back, {userId}! Manage your content seamlessly across
-                  multiple platforms.
-                </p>
+                <div className="space-y-2">
+                  <p className="text-lg text-muted-foreground">
+                    Welcome back, {userId}! Manage your content seamlessly
+                    across multiple platforms.
+                  </p>
+                  {availableWorkspaces && availableWorkspaces.length > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      <p>Available Workspaces:</p>
+                      <ul className="list-disc list-inside">
+                        {availableWorkspaces.map((workspace) => (
+                          <li key={workspace.id}>
+                            {workspace.id} - {workspace.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <p className="text-lg text-muted-foreground">Not logged in</p>
               )}

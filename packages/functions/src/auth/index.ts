@@ -88,12 +88,11 @@ export const app = issuer({
     if (email) {
       const matching = await User.fromEmail(email);
       if (matching.length === 0) {
-        const { id, workspaceID } = await User.create({
+        const { id } = await User.create({
           email,
         });
         return ctx.subject("user", {
           id,
-          workspaceID,
         });
       }
       if (matching.length === 1) {
@@ -101,27 +100,19 @@ export const app = issuer({
         if (!user) {
           throw new Error("User not found");
         }
+
         return ctx.subject("user", {
           id: user.id,
-          workspaceID: user.workspaceID,
         });
       }
       if (matching.length > 1) {
-        // Multiple workspaces - use the first one (they're already ordered by timeCreated ASC from User.fromEmail)
-        // TODO: Implement proper workspace selection logic:
-        // - Could check for a preferred workspace in JWT claims
-        // - Could implement a "last used workspace" preference
-        // - Could prompt user to select workspace during login
+        // Multiple users with same email - use the first one (they're already ordered by timeCreated ASC from User.fromEmail)
+        // TODO: Implement proper user selection logic for duplicate emails
         const user = matching[0]; // Using first (oldest) for consistency
         if (!user) throw new Error("User not found");
 
-        console.log(
-          `User ${email} has ${matching.length} workspaces, selected workspace: ${user.workspaceID}`,
-        );
-
         return ctx.subject("user", {
           id: user.id,
-          workspaceID: user.workspaceID,
         });
       }
     }

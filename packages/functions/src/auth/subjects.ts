@@ -4,6 +4,5 @@ import { z } from "zod";
 export const subjects = createSubjects({
   user: z.object({
     id: z.string(),
-    workspaceID: z.string(),
   }),
 });

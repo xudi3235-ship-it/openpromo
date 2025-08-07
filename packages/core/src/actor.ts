@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
   type ConnectedAccountSelect,
   connectedAccount,
@@ -8,11 +8,21 @@ import { db } from "./drizzle";
 import { useTransaction } from "./drizzle/transaction";
 import { ErrorCodes, VisibleError } from "./error";
 import { type UserFlags, userTable } from "./user/user.sql";
+import { userWorkspaceTable } from "./user_workspace/user_workspace.sql";
 import { Log } from "./util/log";
 
 export namespace Actor {
   export interface User {
     type: "user";
+    properties: {
+      userID: string;
+      clientID: string; // currently just openpromo-www
+      email: string;
+    };
+  }
+
+  export interface WorkspaceUser {
+    type: "workspace_user";
     properties: {
       userID: string;
       clientID: string;
@@ -42,7 +52,7 @@ export namespace Actor {
     properties: {};
   }
 
-  export type Info = User | Public | Token | System;
+  export type Info = User | WorkspaceUser | Public | Token | System;
 
   export const Context = createContext<Info>();
 
@@ -57,11 +67,13 @@ export namespace Actor {
   }
   export function workspaceID() {
     const actor = Context.use();
-    if ("workspaceID" in actor.properties) return actor.properties.workspaceID;
+    if (actor.type === "workspace_user") {
+      return actor.properties.workspaceID;
+    }
     throw new VisibleError(
       "authentication",
       ErrorCodes.Authentication.UNAUTHORIZED,
-      `You don't have permission to access this resource.`,
+      `No workspace context set. User must select a workspace.`,
     );
   }
 
@@ -85,6 +97,38 @@ export namespace Actor {
       .from(connectedAccount)
       .where(eq(connectedAccount.workspaceID, workspaceId));
     return accounts;
+  }
+
+  // Assert user has access to workspace
+  /* Guard case: What if user know someone's workspace ID and try to directly access? */
+  export async function assertWorkspaceAccess(
+    workspaceId?: string,
+  ): Promise<void> {
+    const uid = userID();
+    const wid = workspaceId || workspaceID();
+
+    const hasAccess = await useTransaction(async (tx) => {
+      const membership = await tx
+        .select({ id: userWorkspaceTable.id })
+        .from(userWorkspaceTable)
+        .where(
+          and(
+            eq(userWorkspaceTable.userID, uid),
+            eq(userWorkspaceTable.workspaceID, wid),
+          ),
+        )
+        .then((rows) => rows.at(0));
+
+      return !!membership;
+    });
+
+    if (!hasAccess) {
+      throw new VisibleError(
+        "forbidden",
+        ErrorCodes.Permission.INSUFFICIENT_PERMISSIONS,
+        `User does not have access to workspace ${wid}`,
+      );
+    }
   }
 
   export async function assertFlag(flag: keyof UserFlags) {

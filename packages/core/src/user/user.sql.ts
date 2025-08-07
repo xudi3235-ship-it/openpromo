@@ -1,14 +1,6 @@
-import {
-  json,
-  mysqlTable,
-  primaryKey,
-  text,
-  uniqueIndex,
-  varchar,
-} from "drizzle-orm/mysql-core";
+import { json, mysqlTable, primaryKey, varchar } from "drizzle-orm/mysql-core";
 import { z } from "zod";
-import { timestamps } from "../drizzle/types";
-import { workspaceID } from "../workspace/workspace.sql";
+import { id, timestamps, ulid } from "../drizzle/types";
 
 export const UserFlags = z.object({
   printer: z.boolean().optional(),
@@ -16,21 +8,34 @@ export const UserFlags = z.object({
 
 export type UserFlags = z.infer<typeof UserFlags>;
 
+// creates user ID for tables
+export const userID = {
+  get id() {
+    return ulid("id").notNull();
+  },
+  get userID() {
+    return ulid("user_id")
+      .notNull()
+      .references(() => userTable.id, {
+        onDelete: "cascade",
+      });
+  },
+};
+
 export const userTable = mysqlTable(
   "user",
   {
-    ...workspaceID,
+    ...id,
     ...timestamps,
     name: varchar("name", { length: 255 }),
-    email: varchar("email", { length: 255 }).notNull(),
+    email: varchar("email", { length: 255 }).notNull().unique(),
     stripeCustomerID: varchar("stripe_customer_id", { length: 255 })
       .unique()
       .notNull(),
-    emailOctopusID: text("email_octopus_id"),
+    emailOctopusID: varchar("stripe_customer_id", { length: 255 })
+      .unique()
+      .notNull(),
     flags: json("flags").$type<UserFlags>().default({}),
   },
-  (t) => [
-    primaryKey({ columns: [t.workspaceID, t.id] }),
-    uniqueIndex("email").on(t.workspaceID, t.email),
-  ],
+  (t) => [primaryKey({ columns: [t.id] })],
 );

@@ -474,7 +474,7 @@ export namespace ConnectedAccount {
         await afterTx(() =>
           bus.publish(Resource.Bus, Event.Updated, {
             id: input.id,
-            workspaceID,
+            workspaceID: workspaceID,
             status: input.status,
           }),
         );

@@ -1,8 +1,7 @@
-import { and, asc, eq, getTableColumns, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { Resource } from "sst";
 import { bus } from "sst/aws/bus";
 import z from "zod";
-import { Actor } from "../actor";
 import { Common } from "../common";
 import {
   afterTx,
@@ -12,6 +11,7 @@ import {
 import { defineEvent } from "../event";
 import { Examples } from "../examples";
 import { stripe } from "../stripe";
+import { userWorkspaceTable } from "../user_workspace/user_workspace.sql";
 import { fn } from "../util/fn";
 import { createID } from "../util/id";
 import { workspaceTable } from "../workspace/workspace.sql";
@@ -36,9 +36,9 @@ export namespace User {
         description: "Stripe customer ID of the user.",
         example: Examples.User.stripeCustomerID,
       }),
-      workspaceID: z.string().openapi({
-        description: "Workspace ID of the user.",
-        example: Examples.User.workspaceID,
+      emailOctopusID: z.string().openapi({
+        description: "Email Octopus ID of the user.",
+        example: Examples.User.emailOctopusID,
       }),
     })
     .openapi({
@@ -66,8 +66,9 @@ export namespace User {
   export const create = fn(
     z.object({
       email: z.string(),
+      workspaceName: z.string().optional(),
     }),
-    async ({ email }) => {
+    async ({ email, workspaceName }) => {
       const id = createID("user");
       const customer = await stripe.customers.create({
         email,
@@ -76,24 +77,38 @@ export namespace User {
         },
       });
       return await createTransaction(async (tx) => {
-        // 1. new workspace, default
-        const workspaceID = createID("workspace");
-        await tx.insert(workspaceTable).values({
-          id: workspaceID,
-          slug: `workspace-${id}`,
-        });
-        // 2. create new user
+        // 1. create new user first
         await tx.insert(userTable).values({
-          workspaceID,
           id,
           email,
           name: customer?.name ?? "not_provided",
-          stripeCustomerID: customer?.id,
+          stripeCustomerID: "cus_placeholder", // user should bind them later
+          emailOctopusID: "eot_placeholder",
         });
+
+        // 2. create default workspace
+        const workspaceID = createID("workspace");
+        await tx.insert(workspaceTable).values({
+          id: workspaceID,
+          slug: workspaceName
+            ? workspaceName.toLowerCase().replace(/\s+/g, "-")
+            : `workspace-${id}`,
+        });
+
+        // 3. create user-workspace relationship (user as owner and primary)
+        const userWorkspaceID = createID("user_workspace");
+        await tx.insert(userWorkspaceTable).values({
+          id: userWorkspaceID,
+          userID: id,
+          workspaceID: workspaceID,
+          roleId: "role_admin", // TODO: Use actual admin role ID
+          joinedAt: new Date(),
+        });
+
         await afterTx(() =>
           bus.publish(Resource.Bus, Event.Created, { userID: id }),
         );
-        return { id, workspaceID };
+        return { id, workspaceID, userWorkspaceID };
       });
     },
   );
@@ -112,23 +127,12 @@ export namespace User {
 
       if (!primaryUser) throw new Error("Primary user not found");
 
-      // update the users to be merged, mark them as deleted
-      // use soft delete, set timeDeleted field
       await tx
         .update(userTable)
         .set({
           timeDeleted: new Date(),
         })
         .where(inArray(userTable.id, ids));
-
-      // if your system has other tables that reference userID, you also need to update them
-      // for example, if you have project table, file table, etc, you can refer to the sample code pattern:
-      // await tx
-      //   .update(projectTable)
-      //   .set({
-      //     userID: primary,
-      //   })
-      //   .where(inArray(projectTable.userID, ids));
     });
 
     return primary;
@@ -183,32 +187,27 @@ export namespace User {
     ),
   );
 
-  export const fromCustomerID = fn(Info.shape.stripeCustomerID, async (id) =>
+  export const fromStripeCustomerID = fn(
+    Info.shape.stripeCustomerID,
+    async (id) =>
+      useTransaction((tx) =>
+        tx
+          .select()
+          .from(userTable)
+          .where(eq(userTable.stripeCustomerID, id))
+          .then((rows) => rows.map(serialize).at(0)),
+      ),
+  );
+
+  export const fromEmailOctopusID = fn(Info.shape.emailOctopusID, async (id) =>
     useTransaction((tx) =>
       tx
         .select()
         .from(userTable)
-        .where(eq(userTable.stripeCustomerID, id))
+        .where(eq(userTable.emailOctopusID, id))
         .then((rows) => rows.map(serialize).at(0)),
     ),
   );
-
-  export const workspaces = () => {
-    return useTransaction((tx) =>
-      tx
-        .select(getTableColumns(workspaceTable))
-        .from(workspaceTable)
-        .innerJoin(userTable, eq(userTable.workspaceID, workspaceTable.id))
-        .where(
-          and(
-            eq(userTable.email, Actor.email()),
-            isNull(userTable.timeDeleted),
-            isNull(workspaceTable.timeDeleted),
-          ),
-        )
-        .execute(),
-    );
-  };
 
   function serialize(
     input: typeof userTable.$inferSelect,
@@ -218,7 +217,7 @@ export namespace User {
       name: input.name,
       email: input.email,
       stripeCustomerID: input.stripeCustomerID,
-      workspaceID: input.workspaceID,
+      emailOctopusID: input.emailOctopusID,
     };
   }
 }

@@ -9,7 +9,7 @@ export namespace Examples {
     name: "John Doe",
     email: "john@example.com",
     stripeCustomerID: "cus_XXXXXXXXXXXXXXXXX",
-    workspaceID: Id("workspace"),
+    emailOctopusID: "xxx_XXXXXXXX", // im not sure what pattern it is
   };
 
   export const Profile = {

@@ -36,11 +36,6 @@ declare module "sst" {
       "sender": string
       "type": "sst.aws.Email"
     }
-    "EmailFn": {
-      "name": string
-      "type": "sst.aws.Function"
-      "url": string
-    }
     "FACEBOOK_APP_ID": {
       "type": "sst.sst.Secret"
       "value": string
