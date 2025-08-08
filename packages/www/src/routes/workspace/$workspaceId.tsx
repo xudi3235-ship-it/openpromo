@@ -7,6 +7,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@openpromo/ui/components/breadcrumb";
+import NotFoundError from "@openpromo/ui/components/errors/not-found-error";
+import UnauthorisedError from "@openpromo/ui/components/errors/unauthorised-error";
 import { Separator } from "@openpromo/ui/components/separator";
 import {
   SidebarInset,
@@ -33,16 +35,7 @@ function WorkspaceComponent() {
   }
 
   if (!loggedIn) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold">Access Required</h1>
-          <p className="text-muted-foreground">
-            Please log in to access this workspace.
-          </p>
-        </div>
-      </div>
-    );
+    return <UnauthorisedError />;
   }
 
   const currentWorkspace = availableWorkspaces?.find(
@@ -50,16 +43,7 @@ function WorkspaceComponent() {
   );
 
   if (!currentWorkspace) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold">Workspace Not Found</h1>
-          <p className="text-muted-foreground">
-            You don't have access to this workspace or it doesn't exist.
-          </p>
-        </div>
-      </div>
-    );
+    return <NotFoundError />;
   }
 
   return (
