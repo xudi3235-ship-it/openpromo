@@ -1,4 +1,5 @@
 import { createClient } from "@openauthjs/openauth/client";
+import type { FormattedWorkspace } from "@openpromo/functions/src/api/routes/workspace";
 import {
   createContext,
   type ReactNode,
@@ -14,15 +15,10 @@ const client = createClient({
   issuer: import.meta.env.VITE_AUTH_URL,
 });
 
-interface Workspace {
-  id: string;
-  name: string | null;
-}
-
 interface AuthContextType {
   userId?: string;
   workspaceId?: string;
-  availableWorkspaces?: Array<Workspace>;
+  availableWorkspaces?: Array<FormattedWorkspace>;
   loaded: boolean;
   loggedIn: boolean;
   logout: () => void;
@@ -30,7 +26,6 @@ interface AuthContextType {
   getToken: () => Promise<string | undefined>;
   switchWorkspace?: (workspaceID: string) => Promise<void>;
   getApiClient: () => ReturnType<typeof createApiClient>;
-  fetchWorkspaces: () => Promise<void>;
 }
 
 const AuthContext = createContext({} as AuthContextType);
@@ -42,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const token = useRef<string | undefined>(undefined);
   const [userId, setUserId] = useState<string | undefined>();
   const [availableWorkspaces, setAvailableWorkspaces] = useState<
-    Array<Workspace>
+    Array<FormattedWorkspace>
   >([]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: TODO
@@ -71,6 +66,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (token) {
       try {
         await user();
+        try {
+          await workspaces();
+        } catch (error) {
+          console.error("Failed to fetch workspaces in auth flow:", error);
+        }
       } catch (error) {
         console.error("Failed to fetch user in auth flow:", error);
       }
@@ -141,17 +141,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           token.current = exchanged.tokens.access;
           localStorage.setItem("refresh", exchanged.tokens.refresh);
 
-          // Fetch user data after successful token exchange
+          // Fetch available workspaces data after successful token exchange
           try {
-            await user();
+            redirectToLatestWorkspace(availableWorkspaces);
           } catch (error) {
             console.error("Failed to fetch user data:", error);
             // Don't silently handle this error - it's critical
             setLoaded(true); // Still mark as loaded even if user fetch fails
+            window.location.replace("/");
           }
         } else {
           console.error("Token exchange failed:", exchanged.err);
           setLoaded(true);
+          window.location.replace("/");
         }
       } else {
         console.error(
@@ -161,8 +163,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           state,
         );
         setLoaded(true);
+        window.location.replace("/");
       }
-      window.location.replace("/");
     }
   }
 
@@ -188,10 +190,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await res.json();
       setUserId(userData.id);
       setLoggedIn(true);
-
-      // Fetch available workspaces
-      await fetchWorkspaces();
-
       setLoaded(true);
     } catch (error) {
       console.error("Error in user() function:", error);
@@ -201,10 +199,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function fetchWorkspaces() {
+  async function workspaces() {
     try {
       const apiClient = getApiClient();
-      const res = await apiClient.user.workspaces.$get();
+      const res = await apiClient.workspaces.$get();
       if (!res.ok) {
         const errorText = await res.text();
         console.error("Workspaces API error response:", errorText);
@@ -213,29 +211,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         );
       }
       const workspacesData = await res.json();
-      setAvailableWorkspaces(workspacesData.workspaces);
+      const serializedWorkspaces: FormattedWorkspace[] =
+        workspacesData.workspaces.map((ws) => ({
+          ...ws,
+          createdAt: new Date(ws.createdAt),
+          updatedAt: new Date(ws.updatedAt),
+          joinedAt: ws.joinedAt ? new Date(ws.joinedAt) : null,
+        }));
+      setAvailableWorkspaces(serializedWorkspaces);
     } catch (error) {
       console.error("Error fetching workspaces:", error);
       // Don't throw here - workspaces are optional for the auth flow
+      return [];
+    }
+  }
+
+  function redirectToLatestWorkspace(workspaces: FormattedWorkspace[]) {
+    if (workspaces && workspaces.length > 0) {
+      const latestWorkspace = workspaces.reduce((latest, current) => {
+        const latestUpdatedAt = new Date(latest.updatedAt || latest.createdAt);
+        const currentUpdatedAt = new Date(
+          current.updatedAt || current.createdAt,
+        );
+        return currentUpdatedAt > latestUpdatedAt ? current : latest;
+      });
+      window.location.replace(`/workspace/${latestWorkspace.id}`);
+    } else {
+      // If no workspaces, just go to home
+      window.location.replace("/");
     }
   }
 
   async function switchWorkspace(targetWorkspaceID: string) {
     try {
       const currentToken = await getToken();
-      const response = await fetch("/api/user/switch-workspace", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${currentToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ workspaceId: targetWorkspaceID }),
+      const response = await getApiClient().workspaces.switch.$post({
+        body: { workspaceId: targetWorkspaceID },
+        headers: { Authorization: `Bearer ${currentToken}` },
       });
-
-      if (!response.ok) {
-        throw new Error("Access denied to workspace");
+      if (!response) {
+        throw new Error("Can't switch workspace - no response from server");
       }
-
       // Switch successful - workspace context will be provided via URL params in subsequent API calls
       // No need to store workspace ID locally
     } catch (error) {
@@ -265,7 +281,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         getToken,
         switchWorkspace,
         getApiClient,
-        fetchWorkspaces,
       }}
     >
       {children}

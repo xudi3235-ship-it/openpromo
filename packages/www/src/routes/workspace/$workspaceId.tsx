@@ -13,13 +13,55 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@openpromo/ui/components/sidebar";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useParams } from "@tanstack/react-router";
+import { useAuth } from "@/lib/auth-provider";
 
-export const Route = createFileRoute("/workspace")({
-  component: RouteComponent,
+export const Route = createFileRoute("/workspace/$workspaceId")({
+  component: WorkspaceComponent,
 });
 
-function RouteComponent() {
+function WorkspaceComponent() {
+  const { workspaceId } = useParams({ from: "/workspace/$workspaceId" });
+  const { loggedIn, loaded, availableWorkspaces } = useAuth();
+
+  if (!loaded) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!loggedIn) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold">Access Required</h1>
+          <p className="text-muted-foreground">
+            Please log in to access this workspace.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentWorkspace = availableWorkspaces?.find(
+    (ws) => ws.id === workspaceId,
+  );
+
+  if (!currentWorkspace) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold">Workspace Not Found</h1>
+          <p className="text-muted-foreground">
+            You don't have access to this workspace or it doesn't exist.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -34,13 +76,11 @@ function RouteComponent() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">
-                    Building Your Application
-                  </BreadcrumbLink>
+                  <BreadcrumbLink href="#">Workspace</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+                  <BreadcrumbPage>{currentWorkspace.name}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

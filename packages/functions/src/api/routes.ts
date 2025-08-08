@@ -18,7 +18,7 @@ export const app = new Hono()
     return c.text("you just hit our api lol");
   })
   .route("/ping", Ping.route)
-  .route("/workspace", Workspace.route)
+  .route("/workspaces", Workspace.route)
   .route("/user", UserRoutes.route);
 
 export type Routes = typeof app;

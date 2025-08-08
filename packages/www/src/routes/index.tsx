@@ -8,7 +8,7 @@ import {
 } from "@openpromo/ui/components/card";
 import Navbar from "@openpromo/ui/components/navbar";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -22,8 +22,9 @@ export const Route = createFileRoute("/")({
 });
 
 function App() {
-  const { getApiClient, userId, loggedIn, loaded, availableWorkspaces } =
+  const { getApiClient, userId, loggedIn, loaded, availableWorkspaces, login } =
     useAuth();
+  const navigate = useNavigate();
   const query = useQuery({
     queryKey: ["ping"],
     queryFn: async () => {
@@ -34,6 +35,27 @@ function App() {
       return await res.json();
     },
   });
+
+  // Get the latest workspace by timeUpdated
+  const getLatestWorkspace = () => {
+    if (!availableWorkspaces || availableWorkspaces.length === 0) return null;
+    return availableWorkspaces.reduce((latest, current) => {
+      const latestUpdatedAt = new Date(latest.updatedAt || latest.createdAt);
+      const currentUpdatedAt = new Date(current.updatedAt || current.createdAt);
+      return currentUpdatedAt > latestUpdatedAt ? current : latest;
+    });
+  };
+
+  const handleGetStartedClick = async () => {
+    if (!loggedIn) {
+      await login();
+    } else {
+      const latestWorkspace = getLatestWorkspace();
+      if (latestWorkspace) {
+        navigate({ to: `/workspace/${latestWorkspace.id}` });
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,11 +98,9 @@ function App() {
                 one powerful platform. Schedule, draft, and publish with ease.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" asChild>
-                  <Link to="/demo">
-                    Get Started
-                    <ArrowRightIcon className="ml-2 h-4 w-4" />
-                  </Link>
+                <Button size="lg" onClick={handleGetStartedClick}>
+                  {loggedIn ? "Go To Workspace" : "Get Started"}
+                  <ArrowRightIcon className="ml-2 h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="lg">
                   Learn More
@@ -175,12 +195,6 @@ function App() {
               Join thousands of content creators who trust OpenPromo for their
               multi-platform strategy.
             </p>
-            <Button size="lg" asChild>
-              <Link to="/workspace">
-                Start Your Workspace
-                <ArrowRightIcon className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
           </div>
         </section>
       </main>

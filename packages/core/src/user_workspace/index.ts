@@ -75,9 +75,6 @@ export namespace UserWorkspace {
       userId: z.string(),
       workspaceID: z.string(),
       roleId: z.string().optional(),
-      isOwner: z.boolean().optional().default(false),
-      isPrimary: z.boolean().optional().default(false),
-      joinMethod: z.string().optional().default("invited"),
     }),
     async (input) => {
       const id = createID("user_workspace");
