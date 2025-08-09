@@ -1,3 +1,5 @@
+import GeneralError from "@openpromo/ui/components/errors/general-error";
+import NotFoundError from "@openpromo/ui/components/errors/not-found-error";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
@@ -15,4 +17,6 @@ export const Route = createRootRoute({
       </QueryClientProvider>
     </>
   ),
+  notFoundComponent: NotFoundError,
+  errorComponent: GeneralError,
 });

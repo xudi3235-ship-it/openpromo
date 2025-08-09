@@ -1,9 +1,13 @@
-import { useNavigate, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { Button } from "../button";
 
-export default function UnauthorisedError() {
-  const navigate = useNavigate();
+interface UnauthorizedErrorProps {
+  login: () => void;
+}
+
+export default function UnauthorizedError({ login }: UnauthorizedErrorProps) {
   const { history } = useRouter();
+
   return (
     <div className="h-svh">
       <div className="m-auto flex h-full w-full flex-col items-center justify-center gap-2">
@@ -17,7 +21,7 @@ export default function UnauthorisedError() {
           <Button variant="outline" onClick={() => history.go(-1)}>
             Go Back
           </Button>
-          <Button onClick={() => navigate({ to: "/" })}>Back to Home</Button>
+          <Button onClick={login}>Log In</Button>
         </div>
       </div>
     </div>

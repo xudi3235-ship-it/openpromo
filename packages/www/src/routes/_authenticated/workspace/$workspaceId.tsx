@@ -8,7 +8,6 @@ import {
   BreadcrumbSeparator,
 } from "@openpromo/ui/components/breadcrumb";
 import NotFoundError from "@openpromo/ui/components/errors/not-found-error";
-import UnauthorisedError from "@openpromo/ui/components/errors/unauthorised-error";
 import { Separator } from "@openpromo/ui/components/separator";
 import {
   SidebarInset,
@@ -18,25 +17,15 @@ import {
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-provider";
 
-export const Route = createFileRoute("/workspace/$workspaceId")({
+export const Route = createFileRoute("/_authenticated/workspace/$workspaceId")({
   component: WorkspaceComponent,
 });
 
 function WorkspaceComponent() {
-  const { workspaceId } = useParams({ from: "/workspace/$workspaceId" });
-  const { loggedIn, loaded, availableWorkspaces } = useAuth();
-
-  if (!loaded) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!loggedIn) {
-    return <UnauthorisedError />;
-  }
+  const { workspaceId } = useParams({
+    from: "/_authenticated/workspace/$workspaceId",
+  });
+  const { availableWorkspaces } = useAuth();
 
   const currentWorkspace = availableWorkspaces?.find(
     (ws) => ws.id === workspaceId,
