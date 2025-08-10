@@ -10,7 +10,7 @@ export const urls = new sst.Linkable("Urls", {
     domain,
     api: `https://api.${domain}`,
     auth: `https://auth.${domain}`,
-    site: $dev ? "http://localhost:3000" : `https://www.${domain}`,
+    site: $dev ? "http://localhost:3000" : `https://${domain}`,
     openapi: `https://api.${domain}/doc`,
   },
 });
