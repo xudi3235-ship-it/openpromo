@@ -21,16 +21,6 @@ export const authFn = new sst.aws.Function("AuthFn", {
   link: [bus, ...allSecrets, database, email, urls],
 });
 
-export const auth = new sst.aws.Router("Auth", {
-  routes: {
-    "/*": authFn.url,
-  },
-  domain: {
-    name: `auth.${domain}`,
-    dns: sst.cloudflare.dns(),
-  },
-});
-
 const apiFn = new sst.aws.Function("ApiFn", {
   url: {
     cors: {
@@ -54,6 +44,6 @@ export const api = new sst.aws.Router("Api", {
 });
 
 export const outputs = {
-  auth: auth.url,
+  auth: authFn.url,
   api: api.url,
 };

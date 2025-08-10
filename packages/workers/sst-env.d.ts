@@ -15,10 +15,6 @@ declare module "sst" {
       "type": "sst.aws.Function"
       "url": string
     }
-    "Auth": {
-      "type": "sst.aws.Router"
-      "url": string
-    }
     "AuthFn": {
       "name": string
       "type": "sst.aws.Function"
