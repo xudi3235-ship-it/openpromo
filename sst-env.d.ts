@@ -15,7 +15,12 @@ declare module "sst" {
       "url": string
     }
     "Auth": {
-      "type": "sst.aws.Auth"
+      "type": "sst.aws.Router"
+      "url": string
+    }
+    "AuthFn": {
+      "name": string
+      "type": "sst.aws.Function"
       "url": string
     }
     "Bus": {
@@ -67,9 +72,22 @@ declare module "sst" {
     "Urls": {
       "api": string
       "auth": string
+      "domain": string
       "openapi": string
       "site": string
       "type": "sst.sst.Linkable"
+    }
+    "WORKOS_API_KEY": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "WORKOS_CLIENT_ID": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "WORKOS_COOKIE_PASSWORD": {
+      "type": "sst.sst.Secret"
+      "value": string
     }
     "WWW": {
       "type": "sst.aws.StaticSite"

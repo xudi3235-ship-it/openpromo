@@ -3,6 +3,7 @@ import { UserWorkspace } from "@openpromo/core/user_workspace/index";
 import { Hono } from "hono";
 import { z } from "zod";
 import { notPublic } from "../middleware/not-public";
+import type { MyEnv } from "../routes";
 
 export interface FormattedWorkspace {
   id: string;
@@ -29,7 +30,7 @@ const WorkspacesResponseSchema = z.object({
 export type WorkspacesResponse = z.infer<typeof WorkspacesResponseSchema>;
 
 export namespace Workspace {
-  export const route = new Hono()
+  export const route = new Hono<MyEnv>()
     .get("/", notPublic(), async (ctx) => {
       try {
         // Get all workspaces for this user

@@ -1,12 +1,3 @@
-import { Button } from "@openpromo/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@openpromo/ui/components/card";
-import Navbar from "@openpromo/ui/components/navbar";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
@@ -16,19 +7,29 @@ import {
   TrendingUpIcon,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-provider";
+import { apiClient } from "@/lib/hono-client";
+import { Button } from "@/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/ui/components/card";
+import Navbar from "@/ui/components/navbar";
 
 export const Route = createFileRoute("/")({
   component: App,
 });
 
 function App() {
-  const { getApiClient, userId, loggedIn, loaded, availableWorkspaces, login } =
-    useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
+
   const query = useQuery({
     queryKey: ["ping"],
     queryFn: async () => {
-      const res = await getApiClient().ping.$get();
+      const res = await apiClient.ping.$get();
       if (!res.ok) {
         throw new Error("Failed to fetch ping");
       }
@@ -36,24 +37,12 @@ function App() {
     },
   });
 
-  // Get the latest workspace by timeUpdated
-  const getLatestWorkspace = () => {
-    if (!availableWorkspaces || availableWorkspaces.length === 0) return null;
-    return availableWorkspaces.reduce((latest, current) => {
-      const latestUpdatedAt = new Date(latest.updatedAt || latest.createdAt);
-      const currentUpdatedAt = new Date(current.updatedAt || current.createdAt);
-      return currentUpdatedAt > latestUpdatedAt ? current : latest;
-    });
-  };
-
-  const handleGetStartedClick = async () => {
-    if (!loggedIn) {
-      await login();
+  const handleGetStartedClick = () => {
+    if (user) {
+      const latestWorkspace = 0 as number;
+      navigate({ to: `/workspace/${latestWorkspace}` });
     } else {
-      const latestWorkspace = getLatestWorkspace();
-      if (latestWorkspace) {
-        navigate({ to: `/workspace/${latestWorkspace.id}` });
-      }
+      navigate({ to: "/login" });
     }
   };
 
@@ -69,29 +58,16 @@ function App() {
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
                 Unified Content Creation & Management
               </h1>
-              {loggedIn ? (
+              {user ? (
                 <div className="space-y-2">
                   <p className="text-lg text-muted-foreground">
-                    Welcome back, {userId}! Manage your content seamlessly
-                    across multiple platforms.
+                    Welcome back, {user.firstName} {user.lastName}! Manage your
+                    content seamlessly across multiple platforms.
                   </p>
-                  {availableWorkspaces && availableWorkspaces.length > 0 && (
-                    <div className="text-sm text-muted-foreground">
-                      <p>Available Workspaces:</p>
-                      <ul className="list-disc list-inside">
-                        {availableWorkspaces.map((workspace) => (
-                          <li key={workspace.id}>
-                            {workspace.id} - {workspace.name}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <p className="text-lg text-muted-foreground">Not logged in</p>
               )}
-              {loaded}
 
               <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
                 Manage your content across Facebook, Instagram, and TikTok from
@@ -99,7 +75,7 @@ function App() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" onClick={handleGetStartedClick}>
-                  {loggedIn ? "Go To Workspace" : "Get Started"}
+                  {user ? "Go To Workspace" : "Get Started"}
                   <ArrowRightIcon className="ml-2 h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="lg">

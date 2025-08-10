@@ -1,39 +1,36 @@
-import { AppSidebar } from "@openpromo/ui/components/app-sidebar";
+import { createFileRoute } from "@tanstack/react-router";
+import { AppSidebar } from "@/ui/components/app-sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@openpromo/ui/components/breadcrumb";
-import NotFoundError from "@openpromo/ui/components/errors/not-found-error";
-import { Separator } from "@openpromo/ui/components/separator";
+} from "@/ui/components/breadcrumb";
+import { Separator } from "@/ui/components/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@openpromo/ui/components/sidebar";
-import { createFileRoute, useParams } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth-provider";
+} from "@/ui/components/sidebar";
 
 export const Route = createFileRoute("/_authenticated/workspace/$workspaceId")({
   component: WorkspaceComponent,
 });
 
 function WorkspaceComponent() {
-  const { workspaceId } = useParams({
-    from: "/_authenticated/workspace/$workspaceId",
-  });
-  const { availableWorkspaces } = useAuth();
+  // const { workspaceId } = useParams({
+  //   from: "/_authenticated/workspace/$workspaceId",
+  // });
+  // const { availableWorkspaces } = useAuth();
 
-  const currentWorkspace = availableWorkspaces?.find(
-    (ws) => ws.id === workspaceId,
-  );
+  // const currentWorkspace = availableWorkspaces?.find(
+  //   (ws) => ws.id === workspaceId,
+  // );
 
-  if (!currentWorkspace) {
-    return <NotFoundError />;
-  }
+  // if (!currentWorkspace) {
+  //   return <NotFoundError />;
+  // }
 
   return (
     <SidebarProvider>
@@ -53,7 +50,7 @@ function WorkspaceComponent() {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{currentWorkspace.name}</BreadcrumbPage>
+                  {/* <BreadcrumbPage>{currentWorkspace.name}</BreadcrumbPage> */}
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

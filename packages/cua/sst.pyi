@@ -16,6 +16,10 @@ class Resource:
     class Auth:
         type: str
         url: str
+    class AuthFn:
+        name: str
+        type: str
+        url: str
     class Bus:
         arn: str
         name: str
@@ -55,9 +59,19 @@ class Resource:
     class Urls:
         api: str
         auth: str
+        domain: str
         openapi: str
         site: str
         type: str
+    class WORKOS_API_KEY:
+        type: str
+        value: str
+    class WORKOS_CLIENT_ID:
+        type: str
+        value: str
+    class WORKOS_COOKIE_PASSWORD:
+        type: str
+        value: str
     class WWW:
         type: str
         url: str

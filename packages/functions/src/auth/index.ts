@@ -1,132 +1,75 @@
-import { issuer } from "@openauthjs/openauth";
-import { CodeProvider } from "@openauthjs/openauth/provider/code";
-import { GithubProvider } from "@openauthjs/openauth/provider/github";
-import { CodeUI } from "@openauthjs/openauth/ui/code";
-import { Email } from "@openpromo/core/email/index";
-import { User } from "@openpromo/core/user/index";
+import { WorkOS } from "@workos-inc/node";
+import { Hono } from "hono";
 import { handle } from "hono/aws-lambda";
-import { logger } from "hono/logger";
+import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { Resource } from "sst";
-import { subjects } from "./subjects";
 
-// check docs: https://docs.github.com/en/rest/users/emails?apiVersion=2022-11-28
-interface GithubUserEmail {
-  email: string;
-  verified: boolean;
-  primary: boolean;
-  visibility: string | null;
-}
+export const WORKOS_SESSION_COOKIE_NAME = "wos-session";
 
-export const app = issuer({
-  ttl: {
-    access: 60 * 15, // 15 minutes
-    refresh: 60 * 60 * 24 * 7, // 7 days
-  },
+const hono = new Hono();
+const workos = new WorkOS(Resource.WORKOS_API_KEY.value, {
+  clientId: Resource.WORKOS_CLIENT_ID.value,
+});
 
-  providers: {
-    email: CodeProvider(
-      CodeUI({
-        async sendCode(claims, code) {
-          console.log(`Sending code ${code} to ${claims.email}`);
-          // TODO: Fix SES configuration - for now just log the code
-          console.log(`📧 EMAIL CODE FOR ${claims.email}: ${code}`);
+hono.get("/login", (c) => {
+  const authorizationUrl = workos.userManagement.getAuthorizationUrl({
+    provider: "authkit",
+    redirectUri: `${Resource.Urls.auth}/callback`,
+    clientId: Resource.WORKOS_CLIENT_ID.value,
+  });
 
-          await Email.send(
-            "no-reply",
-            claims.email,
-            `Openpromo Code: ${code}`,
-            `Your Openpromo login code is: ${code}`,
-          );
-        },
-      }),
-    ),
-    github: GithubProvider({
-      clientID: Resource.GITHUB_OAUTH_CLIENT_ID.value,
-      clientSecret: Resource.GITHUB_OAUTH_CLIENT_SECRET.value,
-      scopes: ["user:email"],
-      // this is required by github, i think user:email is enough for now?
-    }),
-  },
-  subjects,
-  success: async (ctx, value) => {
-    let email = undefined as string | undefined;
+  return c.redirect(authorizationUrl);
+});
 
-    console.log("Success handler called with:", JSON.stringify(value, null, 2));
+hono.get("/callback", async (c) => {
+  const code = c.req.query("code");
 
-    if (value.provider === "email") {
-      // For CodeUI, the email comes from the claims object
-      email = value.claims?.email;
-      console.log("Extracted email:", email);
-      console.log("Claims object:", JSON.stringify(value.claims, null, 2));
+  if (!code) {
+    return c.json({ error: "No code provided" }, 400);
+  }
+
+  try {
+    const authenticatedUser = await workos.userManagement.authenticateWithCode({
+      code,
+      clientId: Resource.WORKOS_CLIENT_ID.value,
+      session: {
+        sealSession: true,
+        cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
+      },
+    });
+
+    const { sealedSession } = authenticatedUser;
+
+    if (!sealedSession) {
+      throw new Error("No sealed session");
     }
 
-    if (value.provider === "github") {
-      const access_token = value.tokenset.access;
-      const response = await fetch("https://api.github.com/user/emails", {
-        headers: {
-          Authorization: `token ${access_token}`,
-          Accept: "application/vnd.github.v3+json",
-        },
-      });
-      const emails = (await response.json()) as GithubUserEmail[];
-      const primary = emails.find((email) => email.primary);
+    setCookie(c, WORKOS_SESSION_COOKIE_NAME, sealedSession, {
+      domain: Resource.Urls.domain,
+      secure: true,
+      httpOnly: true,
+      sameSite: "None",
+      path: "/",
+    });
 
-      if (!primary) {
-        throw new Error("No primary email found");
-      }
+    return c.redirect(Resource.Urls.site);
+  } catch (error) {
+    console.error(error);
+    return c.redirect(`${Resource.Urls.site}/login`);
+  }
+});
 
-      console.log("Currently logged-in user is:", primary.email);
+hono.get("/logout", async (c) => {
+  const sessionCookie = getCookie(c, WORKOS_SESSION_COOKIE_NAME);
+  const session = workos.userManagement.loadSealedSession({
+    sessionData: sessionCookie ?? "",
+    cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
+  });
 
-      if (!primary.verified) {
-        throw new Error("Email not verified by GitHub");
-      }
+  const logoutUrl = await session.getLogoutUrl();
 
-      email = primary.email;
-    }
+  deleteCookie(c, WORKOS_SESSION_COOKIE_NAME);
+  return c.redirect(logoutUrl);
+});
 
-    // use email to check if there's already a user in our DB
-    if (email) {
-      const matching = await User.fromEmail(email);
-      if (matching.length === 0) {
-        const { id } = await User.create({
-          email,
-        });
-        return ctx.subject("user", {
-          id,
-        });
-      }
-      if (matching.length === 1) {
-        const user = matching[0];
-        if (!user) {
-          throw new Error("User not found");
-        }
-
-        return ctx.subject("user", {
-          id: user.id,
-        });
-      }
-      if (matching.length > 1) {
-        // Multiple users with same email - use the first one (they're already ordered by timeCreated ASC from User.fromEmail)
-        // TODO: Implement proper user selection logic for duplicate emails
-        const user = matching[0]; // Using first (oldest) for consistency
-        if (!user) throw new Error("User not found");
-
-        return ctx.subject("user", {
-          id: user.id,
-        });
-      }
-    }
-
-    throw new Error("Invalid provider");
-  },
-  async allow(input) {
-    const url = new URL(input.redirectURI);
-    return (
-      url.hostname.endsWith("localhost") ||
-      url.hostname.endsWith("openpromo.app") ||
-      url.hostname === "localhost"
-    );
-  },
-}).use(logger());
-
-export const handler = handle(app);
+export const handler = handle(hono);

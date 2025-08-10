@@ -1,18 +1,26 @@
 import { Log } from "@openpromo/core/util/log";
+import type { User as WorkosUser } from "@workos-inc/node";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
-import { jwtAuth } from "./middleware/jwt-auth";
 import { noCache } from "./middleware/no-cache";
+import { workosAuth } from "./middleware/workos-auth";
 import { Ping } from "./routes/ping";
 import { UserRoutes } from "./routes/user";
 import { Workspace } from "./routes/workspace";
 
 const log = Log.create({ namespace: "api" });
 
-export const app = new Hono()
+export type User = WorkosUser;
+export type MyEnv = {
+  Variables: {
+    user: User | undefined;
+  };
+};
+
+export const app = new Hono<MyEnv>()
   .use(logger())
   .use(noCache())
-  .use(jwtAuth())
+  .use(workosAuth())
   .get("/", (c) => {
     log.info("Received request at root endpoint");
     return c.text("you just hit our api lol");

@@ -1,23 +1,17 @@
-import UnauthorizedError from "@openpromo/ui/components/errors/unauthorized-error";
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-provider";
+import UnauthorizedError from "@/ui/components/errors/unauthorized-error";
 
 export const Route = createFileRoute("/_authenticated")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { loaded, loggedIn, login } = useAuth();
-  if (!loaded) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  if (!loggedIn) {
-    return <UnauthorizedError login={login} />;
+  if (!user) {
+    return <UnauthorizedError login={() => navigate({ to: "/login" })} />;
   }
 
   return <Outlet />;
