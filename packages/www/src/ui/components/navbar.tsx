@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import {
   CompassIcon,
   FeatherIcon,
@@ -34,6 +35,7 @@ const navigationLinks = [
 
 export default function Component() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="border-b px-4 md:px-6">
@@ -135,7 +137,16 @@ export default function Component() {
             <span className="max-sm:sr-only">Post</span>
           </Button>
           <NotificationMenu />
-          {user ? <UserMenu user={user} /> : "Log in"}
+          {user ? (
+            <UserMenu user={user} />
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => navigate({ to: "/login" })}
+            >
+              Log in
+            </Button>
+          )}
         </div>
       </div>
     </header>
