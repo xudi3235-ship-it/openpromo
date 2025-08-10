@@ -2,8 +2,9 @@ import { WorkOS } from "@workos-inc/node";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { MiddlewareHandler } from "hono/types";
 import { Resource } from "sst";
-import { WORKOS_SESSION_COOKIE_NAME } from "../../auth";
+
 import type { MyEnv } from "../routes";
+import { WORKOS_SESSION_COOKIE_NAME } from "../routes/auth";
 
 const workos = new WorkOS(Resource.WORKOS_API_KEY.value, {
   clientId: Resource.WORKOS_CLIENT_ID.value,

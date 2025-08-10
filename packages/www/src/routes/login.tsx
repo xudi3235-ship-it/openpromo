@@ -7,6 +7,6 @@ export const Route = createFileRoute("/login")({
 
 function RouteComponent() {
   useEffect(() => {
-    window.location.href = `${import.meta.env.VITE_AUTH_URL}/login`;
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/login`;
   }, []);
 }

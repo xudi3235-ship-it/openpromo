@@ -1,7 +1,5 @@
-import { bus } from "./bus";
 import { database } from "./database";
 import { domain } from "./dns";
-import { email } from "./email";
 import { allSecrets } from "./secret";
 import { bucket } from "./storage";
 
@@ -9,16 +7,8 @@ export const urls = new sst.Linkable("Urls", {
   properties: {
     domain,
     api: `https://api.${domain}`,
-    auth: `https://auth.${domain}`,
     site: $dev ? "http://localhost:3000" : `https://${domain}`,
-    openapi: `https://api.${domain}/doc`,
   },
-});
-
-export const authFn = new sst.aws.Function("AuthFn", {
-  url: true,
-  handler: "packages/functions/src/auth/index.handler",
-  link: [bus, ...allSecrets, database, email, urls],
 });
 
 const apiFn = new sst.aws.Function("ApiFn", {
@@ -42,8 +32,3 @@ export const api = new sst.aws.Router("Api", {
     dns: sst.cloudflare.dns(),
   },
 });
-
-export const outputs = {
-  auth: authFn.url,
-  api: api.url,
-};

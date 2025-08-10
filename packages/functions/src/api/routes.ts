@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { noCache } from "./middleware/no-cache";
 import { workosAuth } from "./middleware/workos-auth";
+import { Auth } from "./routes/auth";
 import { Ping } from "./routes/ping";
 import { UserRoutes } from "./routes/user";
 import { Workspace } from "./routes/workspace";
@@ -27,6 +28,7 @@ export const app = new Hono<MyEnv>()
   })
   .route("/ping", Ping.route)
   .route("/workspaces", Workspace.route)
-  .route("/user", UserRoutes.route);
+  .route("/user", UserRoutes.route)
+  .route("/auth", Auth.route);
 
 export type Routes = typeof app;

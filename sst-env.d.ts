@@ -14,11 +14,6 @@ declare module "sst" {
       "type": "sst.aws.Function"
       "url": string
     }
-    "AuthFn": {
-      "name": string
-      "type": "sst.aws.Function"
-      "url": string
-    }
     "Bus": {
       "arn": string
       "name": string
@@ -31,11 +26,6 @@ declare module "sst" {
       "port": number
       "type": "sst.sst.Linkable"
       "username": string
-    }
-    "Email": {
-      "configSet": string
-      "sender": string
-      "type": "sst.aws.Email"
     }
     "FACEBOOK_APP_ID": {
       "type": "sst.sst.Secret"
@@ -67,9 +57,7 @@ declare module "sst" {
     }
     "Urls": {
       "api": string
-      "auth": string
       "domain": string
-      "openapi": string
       "site": string
       "type": "sst.sst.Linkable"
     }
