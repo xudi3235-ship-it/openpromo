@@ -38,7 +38,7 @@ const apiFn = new sst.aws.Function("ApiFn", {
       allowCredentials: true,
     },
   },
-  link: [bucket, ...allSecrets, database, auth, urls],
+  link: [bucket, ...allSecrets, database, urls],
   streaming: !$dev,
   handler: "packages/functions/src/api/index.handler",
 });
