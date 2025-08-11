@@ -24,6 +24,10 @@ class Resource:
         port: float
         type: str
         username: str
+    class Email:
+        configSet: str
+        sender: str
+        type: str
     class FACEBOOK_APP_ID:
         type: str
         value: str

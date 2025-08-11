@@ -1,5 +1,6 @@
 import { database } from "./database";
 import { domain } from "./dns";
+import { email } from "./email";
 import { allSecrets } from "./secret";
 import { bucket } from "./storage";
 
@@ -18,7 +19,7 @@ const apiFn = new sst.aws.Function("ApiFn", {
       allowCredentials: true,
     },
   },
-  link: [bucket, ...allSecrets, database, urls],
+  link: [bucket, ...allSecrets, database, urls, email],
   streaming: !$dev,
   handler: "packages/functions/src/api/index.handler",
 });

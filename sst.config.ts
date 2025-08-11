@@ -23,10 +23,6 @@ export default $config({
           serviceToken: process.env.PLANETSCALE_SERVICE_TOKEN,
           serviceTokenId: process.env.PLANETSCALE_SERVICE_TOKEN_ID,
         },
-        // "@upstash/pulumi": {
-        //   email: process.env.UPSTASH_EMAIL!,
-        //   apiKey: process.env.UPSTASH_API_KEY!,
-        // },
       },
     };
   },
