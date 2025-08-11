@@ -66,7 +66,4 @@ class Resource:
     class WWW:
         type: str
         url: str
-    class Worker:
-        type: str
-        url: str
 

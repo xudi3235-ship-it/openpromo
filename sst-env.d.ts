@@ -82,10 +82,6 @@ declare module "sst" {
       "type": "sst.aws.StaticSite"
       "url": string
     }
-    "Worker": {
-      "type": "sst.cloudflare.Worker"
-      "url": string
-    }
   }
 }
 /// <reference path="sst-env.d.ts" />
