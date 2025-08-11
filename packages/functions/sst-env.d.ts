@@ -3,7 +3,95 @@
 /* eslint-disable */
 /* deno-fmt-ignore-file */
 
-/// <reference path="../../sst-env.d.ts" />
+import "sst"
+declare module "sst" {
+  export interface Resource {
+    "Api": {
+      "type": "sst.aws.Router"
+      "url": string
+    }
+    "ApiFn": {
+      "name": string
+      "type": "sst.aws.Function"
+      "url": string
+    }
+    "Bus": {
+      "arn": string
+      "name": string
+      "type": "sst.aws.Bus"
+    }
+    "Database": {
+      "database": string
+      "host": string
+      "password": string
+      "port": number
+      "type": "sst.sst.Linkable"
+      "username": string
+    }
+    "Email": {
+      "configSet": string
+      "sender": string
+      "type": "sst.aws.Email"
+    }
+    "FACEBOOK_APP_ID": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "FACEBOOK_APP_SECRET": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "FACEBOOK_REDIRECT_URI": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "GITHUB_OAUTH_CLIENT_ID": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "GITHUB_OAUTH_CLIENT_SECRET": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "STRIPE_SECRET_KEY": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "Storage": {
+      "name": string
+      "type": "sst.aws.Bucket"
+    }
+    "Urls": {
+      "api": string
+      "domain": string
+      "site": string
+      "type": "sst.sst.Linkable"
+    }
+    "WORKOS_API_KEY": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "WORKOS_CLIENT_ID": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "WORKOS_COOKIE_PASSWORD": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "WWW": {
+      "type": "sst.aws.StaticSite"
+      "url": string
+    }
+  }
+}
+// cloudflare 
+import * as cloudflare from "@cloudflare/workers-types";
+declare module "sst" {
+  export interface Resource {
+    "Worker": cloudflare.Service
+  }
+}
 
 import "sst"
 export {}

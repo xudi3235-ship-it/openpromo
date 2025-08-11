@@ -162,6 +162,9 @@ importers:
         specifier: 'catalog:'
         version: 4.1.0(zod@3.24.1)
     devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20250726.0
+        version: 4.20250726.0
       '@types/aws-lambda':
         specifier: ^8
         version: 8.10.152
@@ -206,6 +209,9 @@ importers:
       '@openpromo/core':
         specifier: workspace:*
         version: link:../core
+      '@openpromo/functions':
+        specifier: workspace:*
+        version: link:../functions
       cloudflare:
         specifier: ^4.5.0
         version: 4.5.0

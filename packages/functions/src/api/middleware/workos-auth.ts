@@ -1,19 +1,14 @@
-import { WorkOS } from "@workos-inc/node";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { MiddlewareHandler } from "hono/types";
 import { Resource } from "sst";
-
+import { useWorkOS } from "../common";
 import type { MyEnv } from "../routes";
 import { WORKOS_SESSION_COOKIE_NAME } from "../routes/auth";
-
-const workos = new WorkOS(Resource.WORKOS_API_KEY.value, {
-  clientId: Resource.WORKOS_CLIENT_ID.value,
-});
 
 export const workosAuth: () => MiddlewareHandler<MyEnv> =
   () => async (c, next) => {
     const sessionCookie = getCookie(c, WORKOS_SESSION_COOKIE_NAME);
-    const session = workos.userManagement.loadSealedSession({
+    const session = useWorkOS().userManagement.loadSealedSession({
       sessionData: sessionCookie ?? "",
       cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
     });

@@ -1,19 +1,15 @@
-import { WorkOS } from "@workos-inc/node";
 import { Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { Resource } from "sst";
+import { useWorkOS } from "../common";
 import type { MyEnv } from "../routes";
 
 export const WORKOS_SESSION_COOKIE_NAME = "wos-session";
 
-const workos = new WorkOS(Resource.WORKOS_API_KEY.value, {
-  clientId: Resource.WORKOS_CLIENT_ID.value,
-});
-
 export namespace Auth {
   export const route = new Hono<MyEnv>()
     .get("/login", (c) => {
-      const authorizationUrl = workos.userManagement.getAuthorizationUrl({
+      const authorizationUrl = useWorkOS().userManagement.getAuthorizationUrl({
         provider: "authkit",
         redirectUri: `${Resource.Urls.api}/auth/callback`,
         clientId: Resource.WORKOS_CLIENT_ID.value,
@@ -30,7 +26,7 @@ export namespace Auth {
 
       try {
         const authenticatedUser =
-          await workos.userManagement.authenticateWithCode({
+          await useWorkOS().userManagement.authenticateWithCode({
             code,
             clientId: Resource.WORKOS_CLIENT_ID.value,
             session: {
@@ -61,7 +57,7 @@ export namespace Auth {
     })
     .get("/logout", async (c) => {
       const sessionCookie = getCookie(c, WORKOS_SESSION_COOKIE_NAME);
-      const session = workos.userManagement.loadSealedSession({
+      const session = useWorkOS().userManagement.loadSealedSession({
         sessionData: sessionCookie ?? "",
         cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
       });
