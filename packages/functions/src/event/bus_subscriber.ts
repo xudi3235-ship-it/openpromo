@@ -1,5 +1,6 @@
 import { PendingContentGroup } from "@openpromo/core/content/pending_content_group";
 import { UnifiedContent } from "@openpromo/core/content/unified_content";
+import { NotImplementedError } from "@openpromo/core/error";
 import { Log } from "@openpromo/core/util/log";
 import { bus } from "sst/aws/bus";
 
@@ -15,7 +16,7 @@ export const handler = bus.subscriber(
     if (raw.source === "openpromo.scheduler") {
       console.log("Received scheduled event:", raw.detail);
       const _scheduledEvent = raw.detail;
-      throw new Error("Not implemented");
+      throw new NotImplementedError("implement scheduled event handling");
     }
 
     switch (evt.type) {
