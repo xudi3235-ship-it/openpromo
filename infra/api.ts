@@ -31,7 +31,8 @@ export const api = new sst.aws.Function("ApiFn", {
 // });
 
 // ------ cloudflare workers ------
-export const worker = new sst.cloudflare.Worker("Worker", {
+// wip migration, if everything works on worker, we can deprecate the lambda fn
+export const worker = new sst.cloudflare.Worker("WorkerApi", {
   handler: "packages/functions/src/api/deploy/worker.ts",
   link: [urls, database, ...allSecrets, bucket, email],
   url: true,

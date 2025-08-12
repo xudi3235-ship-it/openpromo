@@ -70,7 +70,7 @@ declare module "sst" {
       "type": "sst.aws.StaticSite"
       "url": string
     }
-    "Worker": {
+    "WorkerApi": {
       "type": "sst.cloudflare.Worker"
       "url": string
     }

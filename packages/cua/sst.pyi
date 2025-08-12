@@ -57,7 +57,7 @@ class Resource:
     class WWW:
         type: str
         url: str
-    class Worker:
+    class WorkerApi:
         type: str
         url: str
 
