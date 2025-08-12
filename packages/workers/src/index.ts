@@ -1,3 +1,5 @@
-import { app } from "@openpromo/functions/src/api/routes";
-// simply map the hono app in cloudflare worker here
+import { Hono } from "hono";
+
+const app = new Hono().get("/", (c) => c.text("ping from workers!"));
+
 export default app;

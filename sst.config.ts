@@ -16,7 +16,9 @@ export default $config({
               ? "openpromo-dev"
               : undefined,
         },
-        cloudflare: true,
+        cloudflare: {
+          apiToken: process.env.CLOUDFLARE_API_TOKEN,
+        },
         tls: true,
         random: true,
         planetscale: {

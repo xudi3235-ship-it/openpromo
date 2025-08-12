@@ -5,10 +5,6 @@
 
 declare module "sst" {
   export interface Resource {
-    "Api": {
-      "type": "sst.aws.Router"
-      "url": string
-    }
     "ApiFn": {
       "name": string
       "type": "sst.aws.Function"
@@ -26,11 +22,6 @@ declare module "sst" {
       "port": number
       "type": "sst.sst.Linkable"
       "username": string
-    }
-    "Email": {
-      "configSet": string
-      "sender": string
-      "type": "sst.aws.Email"
     }
     "FACEBOOK_APP_ID": {
       "type": "sst.sst.Secret"
@@ -80,6 +71,10 @@ declare module "sst" {
     }
     "WWW": {
       "type": "sst.aws.StaticSite"
+      "url": string
+    }
+    "Worker": {
+      "type": "sst.cloudflare.Worker"
       "url": string
     }
   }

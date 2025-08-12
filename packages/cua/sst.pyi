@@ -3,9 +3,6 @@
 from typing import Any
 
 class Resource:
-    class Api:
-        type: str
-        url: str
     class ApiFn:
         name: str
         type: str
@@ -24,10 +21,6 @@ class Resource:
         port: float
         type: str
         username: str
-    class Email:
-        configSet: str
-        sender: str
-        type: str
     class FACEBOOK_APP_ID:
         type: str
         value: str
@@ -64,6 +57,9 @@ class Resource:
         type: str
         value: str
     class WWW:
+        type: str
+        url: str
+    class Worker:
         type: str
         url: str
 
