@@ -4,7 +4,6 @@
 /// <reference types="vite/client" />
 interface ImportMetaEnv {
   readonly VITE_API_URL: string
-  readonly VITE_WORKER_URL: string
   readonly VITE_STAGE: string
 }
 interface ImportMeta {

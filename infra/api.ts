@@ -13,11 +13,20 @@ export const urls = new sst.Linkable("Urls", {
   },
 });
 
-export const api = new sst.aws.Function("ApiFn", {
+export const apiFn = new sst.aws.Function("ApiFn", {
   url: true,
   link: [bucket, ...allSecrets, database, urls, email],
   streaming: !$dev,
   handler: "packages/functions/src/api/deploy/lambda.handler",
+});
+
+// ------ cloudflare workers ------
+// wip migration, if everything works on worker, we can deprecate the lambda fn
+export const api = new sst.cloudflare.Worker("WorkerApi", {
+  handler: "packages/functions/src/api/deploy/worker.ts",
+  link: [urls, database, ...allSecrets, bucket, email],
+  domain: `api.${domain}`,
+  url: true,
 });
 
 // export const api = new sst.aws.Router("Api", {
@@ -30,14 +39,4 @@ export const api = new sst.aws.Function("ApiFn", {
 //   },
 // });
 
-// ------ cloudflare workers ------
-// wip migration, if everything works on worker, we can deprecate the lambda fn
-export const worker = new sst.cloudflare.Worker("WorkerApi", {
-  handler: "packages/functions/src/api/deploy/worker.ts",
-  link: [urls, database, ...allSecrets, bucket, email],
-  url: true,
-});
-
-export const outputs = {
-  workerUrl: worker.url,
-};
+export const outputs = {};

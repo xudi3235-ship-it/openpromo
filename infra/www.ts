@@ -1,4 +1,4 @@
-import { api, worker } from "./api";
+import { api } from "./api";
 import { domain } from "./dns";
 
 export const www = new sst.aws.StaticSite("WWW", {
@@ -14,7 +14,6 @@ export const www = new sst.aws.StaticSite("WWW", {
   },
   environment: {
     VITE_API_URL: api.url,
-    VITE_WORKER_URL: worker.url,
     VITE_STAGE: $app.stage,
   },
 });
