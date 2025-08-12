@@ -30,12 +30,6 @@ class Resource:
     class FACEBOOK_REDIRECT_URI:
         type: str
         value: str
-    class GITHUB_OAUTH_CLIENT_ID:
-        type: str
-        value: str
-    class GITHUB_OAUTH_CLIENT_SECRET:
-        type: str
-        value: str
     class STRIPE_SECRET_KEY:
         type: str
         value: str

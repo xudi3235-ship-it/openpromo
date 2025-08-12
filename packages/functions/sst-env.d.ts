@@ -36,14 +36,6 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "GITHUB_OAUTH_CLIENT_ID": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "GITHUB_OAUTH_CLIENT_SECRET": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
     "STRIPE_SECRET_KEY": {
       "type": "sst.sst.Secret"
       "value": string
