@@ -1,5 +1,6 @@
 import { database } from "./database";
 import { domain } from "./dns";
+import { email } from "./email";
 // import { email } from "./email";
 import { allSecrets } from "./secret";
 import { bucket } from "./storage";
@@ -14,7 +15,7 @@ export const urls = new sst.Linkable("Urls", {
 
 export const api = new sst.aws.Function("ApiFn", {
   url: true,
-  link: [bucket, ...allSecrets, database, urls],
+  link: [bucket, ...allSecrets, database, urls, email],
   streaming: !$dev,
   handler: "packages/functions/src/api/deploy/lambda.handler",
 });
@@ -29,12 +30,10 @@ export const api = new sst.aws.Function("ApiFn", {
 //   },
 // });
 
-// FIXME: workers' bindings are yelling about the Resource.<name> values,
-// i think it's broken due to the bindings / build time.
 // ------ cloudflare workers ------
 export const worker = new sst.cloudflare.Worker("Worker", {
-  handler: "packages/workers/src/index.ts",
-  link: [urls, database, ...allSecrets, bucket],
+  handler: "packages/functions/src/api/deploy/worker.ts",
+  link: [urls, database, ...allSecrets, bucket, email],
   url: true,
 });
 

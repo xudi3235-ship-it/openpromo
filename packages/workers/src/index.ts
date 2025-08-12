@@ -1,5 +1,3 @@
-import { Hono } from "hono";
-
-const app = new Hono().get("/", (c) => c.text("ping from workers!"));
+import { app } from "@openpromo/functions/src/api/routes";
 
 export default app;
