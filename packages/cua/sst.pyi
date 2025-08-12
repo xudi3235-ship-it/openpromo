@@ -54,9 +54,6 @@ class Resource:
     class WORKOS_COOKIE_PASSWORD:
         type: str
         value: str
-    class WWW:
-        type: str
-        url: str
     class WorkerApi:
         type: str
         url: str

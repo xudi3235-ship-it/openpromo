@@ -66,10 +66,6 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "WWW": {
-      "type": "sst.aws.StaticSite"
-      "url": string
-    }
     "WorkerApi": {
       "type": "sst.cloudflare.Worker"
       "url": string

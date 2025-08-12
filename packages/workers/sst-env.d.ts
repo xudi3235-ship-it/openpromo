@@ -67,10 +67,6 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "WWW": {
-      "type": "sst.aws.StaticSite"
-      "url": string
-    }
   }
 }
 // cloudflare 
