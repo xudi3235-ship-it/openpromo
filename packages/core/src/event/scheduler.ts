@@ -9,7 +9,7 @@ import { nullThrows } from "@openpromo/js-shared/common";
 import { Resource } from "sst";
 import type { event } from "sst/event";
 
-const scheduler = new SchedulerClient();
+const scheduler = new SchedulerClient({ region: "us-east-1" });
 
 // ---- constants ----
 const schedulerSource = "openpromo.scheduler";
