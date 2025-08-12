@@ -92,7 +92,7 @@ export namespace Actor {
   > {
     // loads all connected accounts
     const workspaceId = workspaceID();
-    const accounts = await db
+    const accounts = await db()
       .select()
       .from(connectedAccount)
       .where(eq(connectedAccount.workspaceID, workspaceId));

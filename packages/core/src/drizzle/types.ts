@@ -37,9 +37,11 @@ export const blob = <TData>(name: string) =>
       return "longtext";
     },
     fromDriver(value) {
+      // @ts-ignore
       return JSON.parse(gunzipSync(Buffer.from(value, "binary")).toString());
     },
     toDriver(value: TData) {
+      // @ts-ignore
       return gzipSync(Buffer.from(JSON.stringify(value))).toString("binary");
     },
   })(name);

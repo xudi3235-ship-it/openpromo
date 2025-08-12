@@ -17,7 +17,7 @@ export type Transaction = MySqlTransaction<
   ExtractTablesWithRelations<Record<string, never>>
 >;
 
-type TxOrDb = Transaction | typeof db;
+type TxOrDb = Transaction | ReturnType<typeof db>;
 
 const TransactionContext = createContext<{
   tx: Transaction;
@@ -29,7 +29,7 @@ export async function useTransaction<T>(callback: (trx: TxOrDb) => Promise<T>) {
     const { tx } = TransactionContext.use();
     return callback(tx);
   } catch {
-    return callback(db);
+    return callback(db());
   }
 }
 
@@ -52,7 +52,7 @@ export async function createTransaction<T>(
     return callback(tx);
   } catch {
     const effects: (() => void | Promise<void>)[] = [];
-    const result = await db.transaction(
+    const result = await db().transaction(
       async (tx) => {
         return TransactionContext.provide({ tx, effects }, () => callback(tx));
       },
