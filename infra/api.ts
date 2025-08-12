@@ -1,7 +1,7 @@
+import { bus } from "./bus";
 import { database } from "./database";
 import { domain } from "./dns";
 import { email } from "./email";
-// import { email } from "./email";
 import { allSecrets } from "./secret";
 import { bucket } from "./storage";
 
@@ -15,7 +15,7 @@ export const urls = new sst.Linkable("Urls", {
 
 export const apiFn = new sst.aws.Function("ApiFn", {
   url: true,
-  link: [bucket, ...allSecrets, database, urls, email],
+  link: [bucket, ...allSecrets, database, urls, email, bus],
   streaming: !$dev,
   handler: "packages/functions/src/api/deploy/lambda.handler",
 });
@@ -24,7 +24,7 @@ export const apiFn = new sst.aws.Function("ApiFn", {
 // wip migration, if everything works on worker, we can deprecate the lambda fn
 export const api = new sst.cloudflare.Worker("WorkerApi", {
   handler: "packages/functions/src/api/deploy/worker.ts",
-  link: [urls, database, ...allSecrets, bucket, email],
+  link: [urls, database, ...allSecrets, bucket, email, bus],
   domain: `api.${domain}`,
   url: true,
 });
