@@ -2,6 +2,7 @@ import { Log } from "@openpromo/core/util/log";
 import type { User as WorkosUser } from "@workos-inc/node";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
+import { useCors as cors } from "./middleware/cors";
 import { noCache } from "./middleware/no-cache";
 import { workosAuth } from "./middleware/workos-auth";
 import { Auth } from "./routes/auth";
@@ -19,6 +20,7 @@ export type MyEnv = {
 };
 
 export const app = new Hono<MyEnv>()
+  .use(cors())
   .use(logger())
   .use(noCache())
   .use(workosAuth())
