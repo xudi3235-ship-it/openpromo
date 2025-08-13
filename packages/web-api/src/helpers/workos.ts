@@ -17,6 +17,6 @@ export function setSessionCookie(c: Context<MyEnv>, sealedSession: string) {
     path: "/",
     httpOnly: true,
     secure: true,
-    sameSite: "lax",
+    sameSite: "Strict",
   });
 }
