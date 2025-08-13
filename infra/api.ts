@@ -47,6 +47,21 @@ export const api = new sst.cloudflare.Worker("WorkerApi", {
     : {
         directory: "packages/web-ui/dist",
       },
+  transform: {
+    worker: (args) => {
+      // available on workers paid plan or enterprise plan
+      // args.logpush = true;
+      args.bindings = $resolve(args.bindings).apply((bindings) => [
+        ...bindings,
+      ]);
+      args.observability = {
+        enabled: true,
+        headSamplingRate: 1,
+      };
+      // TODO: figure out service bindings for containers, haven't found
+      // any docs on this yet
+    },
+  },
   // TODO: uncomment after https://github.com/sst/sst/issues/5947 is fixed
   // transform: {
   //   worker: {
