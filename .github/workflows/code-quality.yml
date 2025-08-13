@@ -33,4 +33,4 @@ jobs:
         run: pnpm exec sst install
 
       - name: typecheck
-        run: pnpm -r typecheck
+        run: pnpm run --parallel -r typecheck

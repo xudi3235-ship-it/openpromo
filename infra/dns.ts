@@ -3,4 +3,4 @@ const DOMAIN = {
   dev: "dev.openpromo.app",
 };
 
-export const domain = DOMAIN[$app.stage] || `${$app.stage}.dev.openpromo.app`;
+export const domain = DOMAIN[$app.stage] || `${$app.stage}.${DOMAIN.dev}`;

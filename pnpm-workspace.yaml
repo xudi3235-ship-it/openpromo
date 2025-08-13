@@ -2,13 +2,17 @@ packages:
   - packages/*
 
 catalog:
-  zod: 3.24.1
-  zod-openapi: 4.1.0
-  hono: 4.8.12
+  "@types/react": ^19.1.10
+  "@types/react-dom": ^19.1.7
+  hono: ^4.9.1
+  react: ^19.1.1
+  react-dom: ^19.1.1
+  zod: ^3.24.1
+  zod-openapi: ^4.1.0
 
 onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - '@tailwindcss/oxide'
+  - "@parcel/watcher"
+  - "@tailwindcss/oxide"
   - aws-sdk
   - sharp
   - esbuild

@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { bus } from "./bus";
 import { database } from "./database";
 import { domain } from "./dns";
@@ -22,11 +23,41 @@ export const apiFn = new sst.aws.Function("ApiFn", {
 
 // ------ cloudflare workers ------
 // wip migration, if everything works on worker, we can deprecate the lambda fn
+
+// Run web-ui locally in dev mode
+new sst.x.DevCommand("WebUI", {
+  dev: {
+    directory: "packages/web-ui",
+    command: "pnpm dev",
+  },
+  link: [urls],
+});
+
+// Build web-ui package to be used as worker assets in non-dev mode
+if (!$dev) {
+  spawnSync("pnpm", ["build"], { cwd: "packages/web-ui" });
+}
+
 export const api = new sst.cloudflare.Worker("WorkerApi", {
-  handler: "packages/functions/src/api/deploy/worker.ts",
+  handler: "packages/web-api/src/index.ts",
   link: [urls, database, ...allSecrets, bucket, email, bus],
-  domain: `api.${domain}`,
+  domain,
   url: true,
+  assets: $dev
+    ? undefined
+    : {
+        directory: "packages/web-ui/dist",
+      },
+  // TODO: uncomment after https://github.com/sst/sst/issues/5947 is fixed
+  // transform: {
+  //   worker: {
+  //     assets: {
+  //       config: {
+  //         notFoundHandling: "single-page-application",
+  //       },
+  //     },
+  //   },
+  // },
 });
 
 // export const api = new sst.aws.Router("Api", {
