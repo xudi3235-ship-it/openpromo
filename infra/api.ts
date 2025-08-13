@@ -38,27 +38,26 @@ if (!$dev) {
   spawnSync("pnpm", ["build"], { cwd: "packages/web-ui", stdio: "inherit" });
 }
 
-// export const api = new sst.cloudflare.Worker("WorkerApi", {
-//   handler: "packages/web-api/src/index.ts",
-//   link: [urls, database, ...allSecrets, bucket, email, bus],
-//   domain,
-//   url: true,
-//   assets: $dev
-//     ? undefined
-//     : {
-//         directory: "packages/web-ui/dist",
-//       },
-//   // TODO: uncomment after https://github.com/sst/sst/issues/5947 is fixed
-//   // transform: {
-//   //   worker: {
-//   //     assets: {
-//   //       config: {
-//   //         notFoundHandling: "single-page-application",
-//   //       },
-//   //     },
-//   //   },
-//   // },
-// });
+export const api = new sst.cloudflare.Worker("WorkerApi", {
+  handler: "packages/web-api/src/index.ts",
+  link: [urls, database, ...allSecrets, bucket, email, bus],
+  domain,
+  assets: $dev
+    ? undefined
+    : {
+        directory: "packages/web-ui/dist",
+      },
+  // TODO: uncomment after https://github.com/sst/sst/issues/5947 is fixed
+  // transform: {
+  //   worker: {
+  //     assets: {
+  //       config: {
+  //         notFoundHandling: "single-page-application",
+  //       },
+  //     },
+  //   },
+  // },
+});
 
 // export const api = new sst.aws.Router("Api", {
 //   routes: {
