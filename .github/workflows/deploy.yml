@@ -74,8 +74,8 @@ jobs:
           SST_STAGE: ${{ github.ref == 'refs/heads/production' && 'production' || 'dev' }}
         run: |
           pnpm sst install
-          pnpm sync_secrets
-          pnpm sst deploy --stage=${GITHUB_REF_NAME}
+          doppler run -- pnpm sync_secrets
+          doppler run -- pnpm sst deploy --stage=${GITHUB_REF_NAME}
 
       - name: Send success notification to Discord
         if: success()
