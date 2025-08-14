@@ -6,6 +6,7 @@
     "typecheck": "tsc --noEmit",
     "db": "sst shell drizzle-kit",
     "db:push": "sst shell drizzle-kit push",
+    "db:studio": "sst shell pnpm drizzle-kit studio",
     "db:connect": "sst shell ../scripts/mysql",
     "test": "sst shell vitest"
   },

@@ -1,5 +1,4 @@
 /// <reference path="./.sst/platform/config.d.ts" />
-
 export default $config({
   app(input) {
     return {
@@ -24,6 +23,10 @@ export default $config({
         planetscale: {
           serviceToken: process.env.PLANETSCALE_SERVICE_TOKEN,
           serviceTokenId: process.env.PLANETSCALE_SERVICE_TOKEN_ID,
+        },
+        neon: {
+          version: "0.9.0",
+          apiKey: process.env.NEON_API_KEY,
         },
       },
     };
@@ -50,11 +53,12 @@ export default $config({
         await $`pnpm install`;
         // sync secrets
         await $`pnpm sync_secrets`;
-
         const deployResult = await $`pnpm sst deploy`;
         if (deployResult.exitCode !== 0) {
           throw new Error(
-            `pnpm sst deploy failed with exit code ${deployResult.exitCode}, ${JSON.stringify(deployResult.stdout)}`,
+            `pnpm sst deploy failed with exit code ${
+              deployResult.exitCode
+            }, ${JSON.stringify(deployResult.stdout)}`,
           );
         }
       },

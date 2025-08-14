@@ -18,7 +18,6 @@ class Resource:
         database: str
         host: str
         password: str
-        port: float
         type: str
         username: str
     class Email:
@@ -32,6 +31,12 @@ class Resource:
         type: str
         value: str
     class FACEBOOK_REDIRECT_URI:
+        type: str
+        value: str
+    class NEON_API_KEY:
+        type: str
+        value: str
+    class NEON_PROJECT_ID:
         type: str
         value: str
     class STRIPE_SECRET_KEY:

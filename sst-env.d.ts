@@ -19,7 +19,6 @@ declare module "sst" {
       "database": string
       "host": string
       "password": string
-      "port": number
       "type": "sst.sst.Linkable"
       "username": string
     }
@@ -37,6 +36,14 @@ declare module "sst" {
       "value": string
     }
     "FACEBOOK_REDIRECT_URI": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "NEON_API_KEY": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "NEON_PROJECT_ID": {
       "type": "sst.sst.Secret"
       "value": string
     }

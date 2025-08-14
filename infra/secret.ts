@@ -6,6 +6,8 @@ export const secret = {
   WORKOS_CLIENT_ID: new sst.Secret("WORKOS_CLIENT_ID"),
   WORKOS_API_KEY: new sst.Secret("WORKOS_API_KEY"),
   WORKOS_COOKIE_PASSWORD: new sst.Secret("WORKOS_COOKIE_PASSWORD"),
+  NEON_API_KEY: new sst.Secret("NEON_API_KEY"),
+  NEON_PROJECT_ID: new sst.Secret("NEON_PROJECT_ID"),
 };
 
 export const allSecrets = Object.values(secret);
