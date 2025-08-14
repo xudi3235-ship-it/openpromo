@@ -15,15 +15,23 @@ export const logoutRoute = new Hono().get("/", async (c) => {
     return c.redirect(Resource.Urls.site);
   }
 
-  const session = workOS.userManagement.loadSealedSession({
-    sessionData: sessionCookie ?? "",
-    cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
-  });
+  try {
+    const session = workOS.userManagement.loadSealedSession({
+      sessionData: sessionCookie ?? "",
+      cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
+    });
 
-  const logoutUrl = await session.getLogoutUrl({
-    returnTo: Resource.Urls.site,
-  });
+    const logoutUrl = await session.getLogoutUrl({
+      returnTo: Resource.Urls.site,
+    });
 
-  clearSessionCookie(c);
-  return c.redirect(logoutUrl);
+    clearSessionCookie(c);
+    return c.redirect(logoutUrl);
+  } catch (error) {
+    console.error(error);
+
+    // if the session is invalid, clear the session cookie and redirect to the site
+    clearSessionCookie(c);
+    return c.redirect(Resource.Urls.site);
+  }
 });
