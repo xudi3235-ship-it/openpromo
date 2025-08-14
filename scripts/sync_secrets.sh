@@ -7,6 +7,7 @@ if [ -z "${SST_STAGE}" ]; then
     exit 1
 fi
 STAGE="${SST_STAGE}"
+echo "Using stage: $STAGE"
 
 doppler secrets download --format=env --no-file > "$TMPFILE"
 pnpm pnpm sst secret load "$TMPFILE" --stage="$STAGE"
