@@ -1,19 +1,29 @@
 import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { Resource } from "sst";
-import { getWorkOS, setSessionCookie } from "@/helpers/workos";
-import type { MyEnv } from "@/types";
+import {
+  clearAuthStateCookie,
+  getAuthStateCookie,
+  getWorkOS,
+  setSessionCookie,
+} from "@/helpers/auth";
+import type { EnvWithUser } from "@/types";
 
-export const callbackRoute = new Hono<MyEnv>().get("/", async (c) => {
+export const callbackRoute = new Hono<EnvWithUser>().get("/", async (c) => {
   const workOS = getWorkOS();
 
   const code = c.req.query("code");
-  const state = c.req.query("state");
-  if (!code) {
-    throw new HTTPException(400, { message: "Missing code" });
-  }
+  const passedNonce = c.req.query("state");
+  const { nonce: storedNonce, returnTo } = getAuthStateCookie(c) ?? {};
+  clearAuthStateCookie(c);
 
   try {
+    if (!code) {
+      throw new Error("Missing authorization code");
+    }
+    if (!passedNonce || !storedNonce || passedNonce !== storedNonce) {
+      throw new Error("Authentication state mismatch");
+    }
+
     const authenticatedUser = await workOS.userManagement.authenticateWithCode({
       code,
       clientId: Resource.WORKOS_CLIENT_ID.value,
@@ -24,30 +34,15 @@ export const callbackRoute = new Hono<MyEnv>().get("/", async (c) => {
     });
 
     const { sealedSession } = authenticatedUser;
-
     if (!sealedSession) {
       throw new Error("No sealed session");
     }
-
     setSessionCookie(c, sealedSession);
 
-    // Default to homepage if no state/returnTo
-    let returnToPath = `${Resource.Urls.site}`;
-    if (state) {
-      try {
-        const params = new URLSearchParams(state);
-        const candidate = params.get("returnTo") ?? undefined;
-        if (candidate?.startsWith("/")) {
-          returnToPath += candidate;
-        }
-      } catch {
-        // ignore malformed state
-      }
-    }
-
-    return c.redirect(returnToPath);
+    const redirectUrl = new URL(returnTo ?? "/", Resource.Urls.site);
+    return c.redirect(redirectUrl.toString());
   } catch (error) {
     console.error(error);
-    return c.redirect(`${Resource.Urls.site}/login`);
+    return c.redirect(`${Resource.Urls.site}#login-error`);
   }
 });

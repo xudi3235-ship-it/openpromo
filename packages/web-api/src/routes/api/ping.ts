@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import type { MyEnv } from "@/types";
+import type { EnvWithUser } from "@/types";
 
-export const pingRoute = new Hono<MyEnv>().get("/", (c) => {
+export const pingRoute = new Hono<EnvWithUser>().get("/", (c) => {
   return c.json({ message: "pong" });
 });

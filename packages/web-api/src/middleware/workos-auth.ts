@@ -1,16 +1,15 @@
-import { deleteCookie, getCookie } from "hono/cookie";
+import { getCookie } from "hono/cookie";
 import type { MiddlewareHandler } from "hono/types";
 import { Resource } from "sst";
 import {
+  clearSessionCookie,
   getWorkOS,
   setSessionCookie,
   WORKOS_SESSION_COOKIE_NAME,
-} from "@/helpers/workos";
-import type { MyEnv } from "@/types";
+} from "@/helpers/auth";
+import type { EnvWithUser } from "@/types";
 
-// console.log(process.env);
-
-export const workOSAuth: () => MiddlewareHandler<MyEnv> =
+export const workOSAuth: () => MiddlewareHandler<EnvWithUser> =
   () => async (c, next) => {
     const workOS = getWorkOS();
 
@@ -39,8 +38,8 @@ export const workOSAuth: () => MiddlewareHandler<MyEnv> =
       }
     } catch (error) {
       console.error(error);
-      // delete the session cookie if refresh fails
-      deleteCookie(c, WORKOS_SESSION_COOKIE_NAME);
+      // clear the session cookie if refresh fails
+      clearSessionCookie(c);
     }
 
     return next();

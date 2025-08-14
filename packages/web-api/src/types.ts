@@ -1,7 +1,7 @@
 import type { User as WorkOSUser } from "@workos-inc/node";
 import type { apiRoutes } from "./routes/api";
 
-export type MyEnv = {
+export type EnvWithUser = {
   Variables: {
     user: WorkOSUser | undefined;
   };

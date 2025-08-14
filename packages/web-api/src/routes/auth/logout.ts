@@ -1,13 +1,20 @@
 import { Hono } from "hono";
-import { deleteCookie, getCookie } from "hono/cookie";
+import { getCookie } from "hono/cookie";
 import { Resource } from "sst";
-import { getWorkOS, WORKOS_SESSION_COOKIE_NAME } from "../../helpers/workos";
-import type { MyEnv } from "../../types";
+import {
+  clearSessionCookie,
+  getWorkOS,
+  WORKOS_SESSION_COOKIE_NAME,
+} from "@/helpers/auth";
 
-export const logoutRoute = new Hono<MyEnv>().get("/", async (c) => {
+export const logoutRoute = new Hono().get("/", async (c) => {
   const workOS = getWorkOS();
 
   const sessionCookie = getCookie(c, WORKOS_SESSION_COOKIE_NAME);
+  if (!sessionCookie) {
+    return c.redirect(Resource.Urls.site);
+  }
+
   const session = workOS.userManagement.loadSealedSession({
     sessionData: sessionCookie ?? "",
     cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
@@ -17,6 +24,6 @@ export const logoutRoute = new Hono<MyEnv>().get("/", async (c) => {
     returnTo: Resource.Urls.site,
   });
 
-  deleteCookie(c, WORKOS_SESSION_COOKIE_NAME);
+  clearSessionCookie(c);
   return c.redirect(logoutUrl);
 });

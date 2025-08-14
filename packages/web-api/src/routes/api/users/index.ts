@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { MyEnv } from "@/types";
+import type { EnvWithUser } from "@/types";
 import { meRoute } from "./me";
 
-export const usersRoute = new Hono<MyEnv>().route("/me", meRoute);
+export const usersRoute = new Hono<EnvWithUser>().route("/me", meRoute);
