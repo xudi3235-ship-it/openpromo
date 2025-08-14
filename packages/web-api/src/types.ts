@@ -1,3 +1,4 @@
+import type { Hyperdrive } from "@cloudflare/workers-types";
 import type { User as WorkOSUser } from "@workos-inc/node";
 import type { apiRoutes } from "./routes/api";
 
