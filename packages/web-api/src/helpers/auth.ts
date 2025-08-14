@@ -73,7 +73,7 @@ export function setAuthStateCookie(
   });
 }
 
-export function getAuthStateCookie(c: Context): AuthState | undefined {
+export function getAuthState(c: Context): AuthState | undefined {
   const raw = getCookie(c, AUTH_STATE_COOKIE_NAME);
   return deserializeAuthState(raw);
 }

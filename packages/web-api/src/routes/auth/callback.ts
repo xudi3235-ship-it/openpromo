@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { Resource } from "sst";
 import {
   clearAuthStateCookie,
-  getAuthStateCookie,
+  getAuthState,
   getWorkOS,
   setSessionCookie,
 } from "@/helpers/auth";
@@ -13,7 +13,7 @@ export const callbackRoute = new Hono<EnvWithUser>().get("/", async (c) => {
 
   const code = c.req.query("code");
   const passedNonce = c.req.query("state");
-  const { nonce: storedNonce, returnTo } = getAuthStateCookie(c) ?? {};
+  const { nonce: storedNonce, returnTo } = getAuthState(c) ?? {};
   clearAuthStateCookie(c);
 
   try {
