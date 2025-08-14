@@ -53,6 +53,20 @@ export const database = new sst.Linkable("Database", {
   },
 });
 
+if (isPermanentStage) {
+  new cloudflare.HyperdriveConfig("Hyperdrive", {
+    name: `openpromo-${$app.stage}`,
+    accountId: sst.cloudflare.DEFAULT_ACCOUNT_ID,
+    origin: {
+      host: endpoint.host,
+      user: role.name,
+      password: role.password,
+      database: db.name,
+      scheme: "postgres",
+    },
+  });
+}
+
 // export const studio = new sst.x.DevCommand("Studio", {
 //   link: [database],
 //   dev: {
