@@ -2,7 +2,7 @@ import { secret } from "./secret";
 import { isPermanentStage } from "./stage";
 
 const project = neon.getProjectOutput({ id: secret.NEON_PROJECT_ID.value });
-const branchName = isPermanentStage ? $app.stage : `dev-${$app.stage}`;
+const branchName = isPermanentStage ? $app.stage : `${$app.stage}-dev`;
 
 const branch =
   $app.stage !== "production"
@@ -62,6 +62,7 @@ if (isPermanentStage) {
       user: role.name,
       password: role.password,
       database: db.name,
+      port: 5432,
       scheme: "postgres",
     },
   });
