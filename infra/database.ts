@@ -24,6 +24,8 @@ const endpoint =
         type: "read_write",
         autoscalingLimitMinCu: 0.25,
         autoscalingLimitMaxCu: 1,
+        // Disable connection pooling because Hyperdrive handles it
+        poolerEnabled: false,
       })
     : neon.getBranchEndpointsOutput({
         projectId: project.id,
@@ -53,20 +55,18 @@ export const database = new sst.Linkable("Database", {
   },
 });
 
-if (isPermanentStage) {
-  new cloudflare.HyperdriveConfig("Hyperdrive", {
-    name: `openpromo-${$app.stage}`,
-    accountId: sst.cloudflare.DEFAULT_ACCOUNT_ID,
-    origin: {
-      host: endpoint.host,
-      user: role.name,
-      password: role.password,
-      database: db.name,
-      port: 5432,
-      scheme: "postgres",
-    },
-  });
-}
+export const hyperdrive = new cloudflare.HyperdriveConfig("Hyperdrive", {
+  name: branchName,
+  accountId: sst.cloudflare.DEFAULT_ACCOUNT_ID,
+  origin: {
+    host: endpoint.host,
+    user: role.name,
+    password: role.password,
+    database: db.name,
+    port: 5432,
+    scheme: "postgres",
+  },
+});
 
 // export const studio = new sst.x.DevCommand("Studio", {
 //   link: [database],
