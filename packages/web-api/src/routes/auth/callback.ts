@@ -6,9 +6,9 @@ import {
   getWorkOS,
   setSessionCookie,
 } from "@/helpers/auth";
-import type { EnvWithUser } from "@/types";
+import type { ApiEnv } from "@/types";
 
-export const callbackRoute = new Hono<EnvWithUser>().get("/", async (c) => {
+export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
   const workOS = getWorkOS();
 
   const code = c.req.query("code");

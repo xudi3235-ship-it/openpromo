@@ -7,9 +7,9 @@ import {
   setSessionCookie,
   WORKOS_SESSION_COOKIE_NAME,
 } from "@/helpers/auth";
-import type { EnvWithUser } from "@/types";
+import type { ApiEnv } from "@/types";
 
-export const workOSAuth: () => MiddlewareHandler<EnvWithUser> =
+export const workOSAuth: () => MiddlewareHandler<ApiEnv> =
   () => async (c, next) => {
     const workOS = getWorkOS();
 

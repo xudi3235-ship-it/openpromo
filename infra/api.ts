@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { bus } from "./bus";
-import { database } from "./database";
+import { database, hyperdrive } from "./database";
 import { domain } from "./dns";
 import { email } from "./email";
 import { allSecrets } from "./secret";
@@ -53,6 +53,11 @@ export const api = new sst.cloudflare.Worker("WorkerApi", {
       // args.logpush = true;
       args.bindings = $resolve(args.bindings).apply((bindings) => [
         ...bindings,
+        {
+          type: "hyperdrive",
+          name: "HYPERDRIVE",
+          id: hyperdrive.id,
+        },
       ]);
       args.observability = {
         enabled: true,

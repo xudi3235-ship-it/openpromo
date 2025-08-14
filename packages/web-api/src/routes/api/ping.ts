@@ -1,6 +1,8 @@
 import { Hono } from "hono";
-import type { EnvWithUser } from "@/types";
+import type { ApiEnv } from "@/types";
 
-export const pingRoute = new Hono<EnvWithUser>().get("/", (c) => {
+export const pingRoute = new Hono<ApiEnv>().get("/", (c) => {
+  const _conn = c.env.HYPERDRIVE.connectionString;
+  // do something with db
   return c.json({ message: "pong" });
 });
