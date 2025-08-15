@@ -1,18 +1,11 @@
 import type { ExtractTablesWithRelations } from "drizzle-orm";
-import type {
-  MySqlTransaction,
-  MySqlTransactionConfig,
-} from "drizzle-orm/mysql-core";
-import type {
-  PlanetScalePreparedQueryHKT,
-  PlanetscaleQueryResultHKT,
-} from "drizzle-orm/planetscale-serverless";
+import type { NeonQueryResultHKT } from "drizzle-orm/neon-serverless";
+import type { PgTransaction, PgTransactionConfig } from "drizzle-orm/pg-core";
 import { createContext } from "../context";
 import { db } from ".";
 
-export type Transaction = MySqlTransaction<
-  PlanetscaleQueryResultHKT,
-  PlanetScalePreparedQueryHKT,
+export type Transaction = PgTransaction<
+  NeonQueryResultHKT,
   Record<string, never>,
   ExtractTablesWithRelations<Record<string, never>>
 >;
@@ -45,7 +38,7 @@ export async function afterTx(effect: () => any | Promise<any>) {
 
 export async function createTransaction<T>(
   callback: (tx: Transaction) => Promise<T>,
-  isolationLevel?: MySqlTransactionConfig["isolationLevel"],
+  isolationLevel?: PgTransactionConfig["isolationLevel"],
 ): Promise<T> {
   try {
     const { tx } = TransactionContext.use();

@@ -1,4 +1,4 @@
-import { json, mysqlTable, primaryKey, varchar } from "drizzle-orm/mysql-core";
+import { json, pgTable, primaryKey, varchar } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { id, timestamps, ulid } from "../drizzle/types";
 
@@ -22,16 +22,15 @@ export const userID = {
   },
 };
 
-export const userTable = mysqlTable(
+export const userTable = pgTable(
   "user",
   {
     ...id,
     ...timestamps,
     name: varchar("name", { length: 255 }),
     email: varchar("email", { length: 255 }).notNull().unique(),
-    stripeCustomerID: varchar("stripe_customer_id", { length: 255 })
-      .unique()
-      .notNull(),
+    stripeCustomerID: varchar("stripe_customer_id", { length: 255 }).unique(),
+    workOsUserID: varchar("workos_user_id", { length: 255 }).unique().notNull(),
     emailOctopusID: varchar("email_octopus_id", { length: 255 })
       .unique()
       .notNull(),

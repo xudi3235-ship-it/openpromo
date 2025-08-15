@@ -1,14 +1,9 @@
-import {
-  index,
-  mysqlTable,
-  uniqueIndex,
-  varchar,
-} from "drizzle-orm/mysql-core";
+import { index, pgTable, uniqueIndex, varchar } from "drizzle-orm/pg-core";
 import { id, timestamp, timestamps } from "../drizzle/types";
 import { userID } from "../user/user.sql";
 import { workspaceID } from "../workspace/workspace.sql";
 
-export const userWorkspaceTable = mysqlTable(
+export const userWorkspaceTable = pgTable(
   "user_workspace",
   {
     ...id,

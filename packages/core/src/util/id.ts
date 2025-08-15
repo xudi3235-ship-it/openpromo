@@ -3,6 +3,7 @@ import { ulid } from "ulid";
 export const prefixes = {
   user: "usr",
   subscription: "sub",
+  organization: "org",
   workspace: "wrk",
   user_workspace: "uwrk",
   content_group: "cgr",

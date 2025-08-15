@@ -1,5 +1,11 @@
+import { gunzipSync, gzipSync } from "node:zlib";
 import { sql } from "drizzle-orm";
-import { bigint, char, timestamp as rawTs } from "drizzle-orm/mysql-core";
+import {
+  bigint,
+  char,
+  customType,
+  timestamp as rawTs,
+} from "drizzle-orm/pg-core";
 
 export const ulid = (name: string) => char(name, { length: 26 + 4 });
 
@@ -11,7 +17,7 @@ export const id = {
 
 export const timestamp = (name: string) =>
   rawTs(name, {
-    fsp: 3,
+    precision: 3,
     mode: "date",
   });
 
@@ -28,20 +34,15 @@ export const timestamps = {
   timeDeleted: timestamp("time_deleted"),
 };
 
-import { gunzipSync, gzipSync } from "node:zlib";
-import { customType } from "drizzle-orm/mysql-core";
-
 export const blob = <TData>(name: string) =>
   customType<{ data: TData; driverData: string }>({
     dataType() {
       return "longtext";
     },
     fromDriver(value) {
-      // @ts-ignore
       return JSON.parse(gunzipSync(Buffer.from(value, "binary")).toString());
     },
     toDriver(value: TData) {
-      // @ts-ignore
       return gzipSync(Buffer.from(JSON.stringify(value))).toString("binary");
     },
   })(name);

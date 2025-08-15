@@ -32,7 +32,7 @@ export namespace User {
         description: "Email address of the user.",
         example: Examples.User.email,
       }),
-      stripeCustomerID: z.string().openapi({
+      stripeCustomerID: z.string().nullable().openapi({
         description: "Stripe customer ID of the user.",
         example: Examples.User.stripeCustomerID,
       }),
@@ -81,6 +81,7 @@ export namespace User {
         await tx.insert(userTable).values({
           id,
           email,
+          workOsUserID: "TODO: create workos user",
           name: customer?.name ?? "not_provided",
           stripeCustomerID: "cus_placeholder", // user should bind them later
           emailOctopusID: "eot_placeholder",
@@ -90,6 +91,7 @@ export namespace User {
         const workspaceID = createID("workspace");
         await tx.insert(workspaceTable).values({
           id: workspaceID,
+          workOsWorkspaceID: "TODO: create workos workspace",
           slug: workspaceName
             ? workspaceName.toLowerCase().replace(/\s+/g, "-")
             : `workspace-${id}`,
@@ -189,14 +191,16 @@ export namespace User {
 
   export const fromStripeCustomerID = fn(
     Info.shape.stripeCustomerID,
-    async (id) =>
-      useTransaction((tx) =>
+    async (id) => {
+      if (!id) return undefined;
+      return useTransaction((tx) =>
         tx
           .select()
           .from(userTable)
           .where(eq(userTable.stripeCustomerID, id))
           .then((rows) => rows.map(serialize).at(0)),
-      ),
+      );
+    },
   );
 
   export const fromEmailOctopusID = fn(Info.shape.emailOctopusID, async (id) =>

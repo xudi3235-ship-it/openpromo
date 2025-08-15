@@ -29,7 +29,8 @@
     "ulid": "^3.0.1",
     "zod": "catalog:",
     "zod-openapi": "catalog:",
-    "zod-to-json-schema": "^3.24.6"
+    "zod-to-json-schema": "^3.24.6",
+    "@workos-inc/node": "catalog:"
   },
   "devDependencies": {
     "@types/facebook-nodejs-business-sdk": "^22.0.0",

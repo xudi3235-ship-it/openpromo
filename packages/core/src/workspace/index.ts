@@ -47,6 +47,7 @@ export namespace Workspace {
       await tx.insert(workspaceTable).values({
         id,
         slug,
+        workOsWorkspaceID: "TODO: create workos workspace", // Placeholder for WorkOS integration
       });
     });
     return id;

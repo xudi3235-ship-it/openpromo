@@ -1,14 +1,13 @@
 import {
   foreignKey,
   index,
-  mysqlTable,
+  pgTable,
   primaryKey,
   uniqueIndex,
   varchar,
-} from "drizzle-orm/mysql-core";
+} from "drizzle-orm/pg-core";
 import { id, timestamps, ulid } from "../drizzle/types";
 
-// creates workspace ID for tables
 export const workspaceID = {
   get id() {
     return ulid("id").notNull();
@@ -22,11 +21,14 @@ export const workspaceID = {
   },
 };
 
-export const workspaceTable = mysqlTable(
+export const workspaceTable = pgTable(
   "workspace",
   {
     ...id,
     ...timestamps,
+    workOsWorkspaceID: varchar("workos_workspace_id", { length: 255 })
+      .notNull()
+      .unique(),
     slug: varchar("slug", { length: 255 }).notNull(),
   },
   (table) => [
@@ -35,7 +37,7 @@ export const workspaceTable = mysqlTable(
   ],
 );
 
-// biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
+// biome-ignore lint/suspicious/noExplicitAny: util for table builder
 export function workspaceIndexes(table: any) {
   return [
     primaryKey({ columns: [table.workspaceID, table.id] }),

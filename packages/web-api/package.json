@@ -7,7 +7,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@workos-inc/node": "^7.66.0",
+    "@workos-inc/node": "catalog:",
     "hono": "catalog:"
   },
   "devDependencies": {

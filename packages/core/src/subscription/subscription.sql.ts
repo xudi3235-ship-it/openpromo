@@ -1,11 +1,11 @@
 import {
-  mysqlEnum,
-  mysqlTable,
+  pgEnum,
+  pgTable,
   primaryKey,
   timestamp,
   uniqueIndex,
   varchar,
-} from "drizzle-orm/mysql-core";
+} from "drizzle-orm/pg-core";
 import { timestamps } from "../drizzle/types";
 import { workspaceID } from "../workspace/workspace.sql";
 
@@ -21,7 +21,7 @@ export const StripeSubscriptionStatus = [
   "unpaid",
 ] as const;
 
-export const subscriptionTable = mysqlTable(
+export const subscriptionTable = pgTable(
   "subscription",
   {
     ...workspaceID,
@@ -31,7 +31,7 @@ export const subscriptionTable = mysqlTable(
     subscriptionItemID: varchar("subscription_item_id", {
       length: 255,
     }),
-    status: mysqlEnum("status", [...StripeSubscriptionStatus]).notNull(),
+    status: pgEnum("status", [...StripeSubscriptionStatus])().notNull(),
     priceID: varchar("price_id", { length: 255 }),
     couponID: varchar("coupon_id", { length: 255 }),
     timeTrialEnded: timestamp("time_trial_ended", { mode: "string" }),

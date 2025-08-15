@@ -5,9 +5,9 @@ export default defineConfig({
   strict: true,
   verbose: true,
   out: "./migrations",
-  dialect: "mysql",
+  dialect: "postgresql",
   dbCredentials: {
-    url: `mysql://${Resource.Database.username}:${Resource.Database.password}@${Resource.Database.host}/${Resource.Database.database}`,
+    url: `postgresql://${Resource.Database.username}:${Resource.Database.password}@${Resource.Database.host}/${Resource.Database.database}`,
   },
   schema: "./src/**/*.sql.ts",
 });

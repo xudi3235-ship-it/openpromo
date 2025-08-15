@@ -1,4 +1,4 @@
-import { index, json, mysqlTable, text, varchar } from "drizzle-orm/mysql-core";
+import { index, json, pgTable, text, varchar } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { id, timestamps } from "../drizzle/types";
 import { workspaceID, workspaceIndexes } from "../workspace/workspace.sql";
@@ -68,7 +68,7 @@ export const ConnectedAccountDTO = z.object({
   timeUpdated: z.date(),
 });
 
-export const connectedAccount = mysqlTable(
+export const connectedAccount = pgTable(
   "connected_account",
   {
     ...id,

@@ -12,6 +12,9 @@ catalogs:
     '@types/react-dom':
       specifier: ^19.1.7
       version: 19.1.7
+    '@workos-inc/node':
+      specifier: ^7.66.0
+      version: 7.66.0
     hono:
       specifier: ^4.9.1
       version: 4.9.1
@@ -91,6 +94,9 @@ importers:
       '@planetscale/database':
         specifier: ^1.19.0
         version: 1.19.0
+      '@workos-inc/node':
+        specifier: 'catalog:'
+        version: 7.66.0(express@5.1.0)
       drizzle-orm:
         specifier: ^0.44.3
         version: 0.44.3(@cloudflare/workers-types@4.20250812.0)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(kysely@0.28.4)
@@ -216,7 +222,7 @@ importers:
   packages/web-api:
     dependencies:
       '@workos-inc/node':
-        specifier: ^7.66.0
+        specifier: 'catalog:'
         version: 7.66.0(express@5.1.0)
       hono:
         specifier: 'catalog:'

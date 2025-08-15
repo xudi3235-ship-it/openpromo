@@ -1,10 +1,10 @@
 import {
   json,
-  mysqlEnum,
-  mysqlTable,
+  pgEnum,
+  pgTable,
   uniqueIndex,
   varchar,
-} from "drizzle-orm/mysql-core";
+} from "drizzle-orm/pg-core";
 import z from "zod";
 import { connectedAccount } from "../connected_account/connected_account.sql";
 import { timestamp, timestamps, ulid } from "../drizzle/types";
@@ -30,7 +30,7 @@ import {
 // };
 
 // handling draft & scheduling, 1..N to unified content
-export const pendingContentGroupTable = mysqlTable(
+export const pendingContentGroupTable = pgTable(
   "pending_content_group",
   {
     ...workspaceID,
@@ -43,7 +43,7 @@ export const pendingContentGroupTable = mysqlTable(
 // represents a unified content item.
 // if scheduled & drafts, it has a pending content group
 // else, it might not, since it's backfilled & lazy synced from source platforms.
-export const unifiedContentTable = mysqlTable(
+export const unifiedContentTable = pgTable(
   "unified_content",
   {
     ...workspaceID,
@@ -58,9 +58,9 @@ export const unifiedContentTable = mysqlTable(
     // spec of the specific placement, used for publishing
     placement_spec: json("placement_spec").$type<PlacementSpec>(),
     // internal, where this is going to
-    placement: mysqlEnum("placement", AllPlacement.options).notNull(),
+    placement: pgEnum("placement", AllPlacement.options)().notNull(),
     // status
-    status: mysqlEnum("status", ContentPublishingStatus.options)
+    status: pgEnum("status", ContentPublishingStatus.options)()
       .notNull()
       .default(ContentPublishingStatus.enum.DRAFT),
     // some normalized fields

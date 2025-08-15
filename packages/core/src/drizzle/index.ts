@@ -1,5 +1,5 @@
 import { Client } from "@planetscale/database";
-import { drizzle } from "drizzle-orm/planetscale-serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
 import { Resource } from "sst";
 import { Log } from "../util/log";
 
