@@ -14,6 +14,7 @@ import { stripe } from "../stripe";
 import { userWorkspaceTable } from "../user_workspace/user_workspace.sql";
 import { fn } from "../util/fn";
 import { createID } from "../util/id";
+import { getWorkOS } from "../workos";
 import { workspaceTable } from "../workspace/workspace.sql";
 import { userTable } from "./user.sql";
 
@@ -70,12 +71,22 @@ export namespace User {
     }),
     async ({ email, workspaceName }) => {
       const id = createID("user");
+      const workos = getWorkOS();
       const customer = await stripe.customers.create({
         email,
         metadata: {
           userID: id,
         },
       });
+      // TODO: handle org, workspace, etc.
+      const workosUser = await workos.userManagement.createUser({
+        email,
+        externalId: id,
+        metadata: {
+          stripeCustomerID: customer.id,
+        },
+      });
+      console.log("Created WorkOS user:", workosUser);
       return await createTransaction(async (tx) => {
         // 1. create new user first
         await tx.insert(userTable).values({

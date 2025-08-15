@@ -25,9 +25,7 @@ export namespace Stripe {
         .where(eq(userTable.id, id))
         .then((rows) => rows.at(0));
       if (!user) throw new Error("User not found");
-      const stripeCustomerId = user.stripeCustomerID;
-      if (!stripeCustomerId) throw new Error("Stripe customer ID not found");
-      await stripe.customers.update(stripeCustomerId, {
+      await stripe.customers.update(user.stripeCustomerID, {
         email: user.email || undefined,
         name: user.name || undefined,
         metadata: {

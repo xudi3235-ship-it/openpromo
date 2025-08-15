@@ -29,7 +29,9 @@ export const userTable = pgTable(
     ...timestamps,
     name: varchar("name", { length: 255 }),
     email: varchar("email", { length: 255 }).notNull().unique(),
-    stripeCustomerID: varchar("stripe_customer_id", { length: 255 }).unique(),
+    stripeCustomerID: varchar("stripe_customer_id", { length: 255 })
+      .unique()
+      .notNull(),
     workOsUserID: varchar("workos_user_id", { length: 255 }).unique().notNull(),
     emailOctopusID: varchar("email_octopus_id", { length: 255 })
       .unique()
