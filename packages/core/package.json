@@ -18,9 +18,10 @@
   "dependencies": {
     "@aws-sdk/client-scheduler": "^3.848.0",
     "@aws-sdk/client-sesv2": "^3.859.0",
-    "@planetscale/database": "^1.19.0",
-    "drizzle-orm": "^0.44.3",
+    "@neondatabase/serverless": "^1.0.1",
     "@openpromo/js-shared": "workspace:^",
+    "@workos-inc/node": "catalog:",
+    "drizzle-orm": "^0.44.3",
     "facebook-nodejs-business-sdk": "^23.0.1",
     "hono": "catalog:",
     "nanoid": "^5.1.5",
@@ -29,8 +30,7 @@
     "ulid": "^3.0.1",
     "zod": "catalog:",
     "zod-openapi": "catalog:",
-    "zod-to-json-schema": "^3.24.6",
-    "@workos-inc/node": "catalog:"
+    "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
     "@types/facebook-nodejs-business-sdk": "^22.0.0",

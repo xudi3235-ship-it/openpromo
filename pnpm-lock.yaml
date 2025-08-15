@@ -88,18 +88,18 @@ importers:
       '@aws-sdk/client-sesv2':
         specifier: ^3.859.0
         version: 3.859.0
+      '@neondatabase/serverless':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@openpromo/js-shared':
         specifier: workspace:^
         version: link:../js-shared
-      '@planetscale/database':
-        specifier: ^1.19.0
-        version: 1.19.0
       '@workos-inc/node':
         specifier: 'catalog:'
         version: 7.66.0(express@5.1.0)
       drizzle-orm:
         specifier: ^0.44.3
-        version: 0.44.3(@cloudflare/workers-types@4.20250812.0)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(kysely@0.28.4)
+        version: 0.44.3(@cloudflare/workers-types@4.20250812.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)
       facebook-nodejs-business-sdk:
         specifier: ^23.0.1
         version: 23.0.1
@@ -1479,6 +1479,10 @@ packages:
     resolution: {integrity: sha512-oxzMzYCkZHMntzuyerehK3fV6A2Kwh5BD6CGEJSVDU2QNEhfLOptf2X7esQgaHZXHZY0oHmMsOtIDLP71UJXgA==}
     engines: {node: '>=18'}
 
+  '@neondatabase/serverless@1.0.1':
+    resolution: {integrity: sha512-O6yC5TT0jbw86VZVkmnzCZJB0hfxBl0JJz6f+3KHoZabjb/X08r9eFA+vuY06z1/qaovykvdkrXYq3SPUuvogA==}
+    engines: {node: '>=19.0.0'}
+
   '@noble/ciphers@0.6.0':
     resolution: {integrity: sha512-mIbq/R9QXk5/cTfESb1OKtyFnk7oc1Om/8onA1158K9/OZUQFDEVy55jVTato+xmp3XX6F6Qh0zz0Nc1AxAlRQ==}
 
@@ -2807,6 +2811,9 @@ packages:
   '@types/node@24.1.0':
     resolution: {integrity: sha512-ut5FthK5moxFKH2T1CUOC6ctR67rQRvvHdFLCD2Ql6KXmMuCrjsSsRI9UsLCm9M18BMwClv4pn327UvB7eeO1w==}
 
+  '@types/pg@8.15.5':
+    resolution: {integrity: sha512-LF7lF6zWEKxuT3/OR8wAZGzkg4ENGXFNyiV/JeOt9z5B+0ZVwbql9McqX5c/WStFq1GaGso7H1AzP/qSzmlCKQ==}
+
   '@types/qs@6.14.0':
     resolution: {integrity: sha512-eOunJqu0K1923aExK6y8p6fsihYEn/BYuQ4g0CxAAgFc4b/ZLN4CrsRZ55srTdqoiLzU2B2evC+apEIxprEzkQ==}
 
@@ -4096,6 +4103,17 @@ packages:
     resolution: {integrity: sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ==}
     engines: {node: '>= 14.16'}
 
+  pg-int8@1.0.1:
+    resolution: {integrity: sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw==}
+    engines: {node: '>=4.0.0'}
+
+  pg-protocol@1.10.3:
+    resolution: {integrity: sha512-6DIBgBQaTKDJyxnXaLiLR8wBpQQcGWuAESkRBX/t6OwA8YsqP+iVSiond2EDy6Y/dsGk8rh/jtax3js5NeV7JQ==}
+
+  pg-types@2.2.0:
+    resolution: {integrity: sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==}
+    engines: {node: '>=4'}
+
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
@@ -4146,6 +4164,22 @@ packages:
   postcss@8.5.6:
     resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
     engines: {node: ^10 || ^12 || >=14}
+
+  postgres-array@2.0.0:
+    resolution: {integrity: sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA==}
+    engines: {node: '>=4'}
+
+  postgres-bytea@1.0.0:
+    resolution: {integrity: sha512-xy3pmLuQqRBZBXDULy7KbaitYqLcmxigw14Q5sj8QBVLqEwXfeybIKVWiqAXTlcvdvb0+xkOtDbfQMOf4lST1w==}
+    engines: {node: '>=0.10.0'}
+
+  postgres-date@1.0.7:
+    resolution: {integrity: sha512-suDmjLVQg78nMK2UZ454hAG+OAW+HQPZ6n++TNDUX+L0+uUlLywnoxJKDou51Zm+zTCjrCl0Nq6J9C5hP9vK/Q==}
+    engines: {node: '>=0.10.0'}
+
+  postgres-interval@1.2.0:
+    resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
+    engines: {node: '>=0.10.0'}
 
   prettier@3.6.2:
     resolution: {integrity: sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ==}
@@ -4877,6 +4911,10 @@ packages:
 
   xmlchars@2.2.0:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
+
+  xtend@4.0.2:
+    resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
+    engines: {node: '>=0.4'}
 
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
@@ -6442,6 +6480,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@neondatabase/serverless@1.0.1':
+    dependencies:
+      '@types/node': 22.17.1
+      '@types/pg': 8.15.5
+
   '@noble/ciphers@0.6.0': {}
 
   '@noble/hashes@1.8.0': {}
@@ -6520,7 +6563,8 @@ snapshots:
       tslib: 2.8.1
       webcrypto-core: 1.8.1
 
-  '@planetscale/database@1.19.0': {}
+  '@planetscale/database@1.19.0':
+    optional: true
 
   '@radix-ui/number@1.1.1': {}
 
@@ -7846,7 +7890,7 @@ snapshots:
 
   '@types/accepts@1.3.7':
     dependencies:
-      '@types/node': 17.0.45
+      '@types/node': 22.17.1
 
   '@types/aws-lambda@8.10.152': {}
 
@@ -7874,11 +7918,11 @@ snapshots:
   '@types/body-parser@1.19.6':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 17.0.45
+      '@types/node': 22.17.1
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 17.0.45
+      '@types/node': 22.17.1
 
   '@types/content-disposition@0.5.9': {}
 
@@ -7889,7 +7933,7 @@ snapshots:
       '@types/connect': 3.4.38
       '@types/express': 4.17.23
       '@types/keygrip': 1.0.6
-      '@types/node': 17.0.45
+      '@types/node': 22.17.1
 
   '@types/diff-match-patch@1.0.36': {}
 
@@ -7897,7 +7941,7 @@ snapshots:
 
   '@types/express-serve-static-core@4.19.6':
     dependencies:
-      '@types/node': 17.0.45
+      '@types/node': 22.17.1
       '@types/qs': 6.14.0
       '@types/range-parser': 1.2.7
       '@types/send': 0.17.5
@@ -7930,13 +7974,13 @@ snapshots:
       '@types/http-errors': 2.0.5
       '@types/keygrip': 1.0.6
       '@types/koa-compose': 3.2.8
-      '@types/node': 17.0.45
+      '@types/node': 22.17.1
 
   '@types/mime@1.3.5': {}
 
   '@types/node-fetch@2.6.12':
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 22.17.1
       form-data: 4.0.4
 
   '@types/node@17.0.45': {}
@@ -7957,6 +8001,12 @@ snapshots:
     dependencies:
       undici-types: 7.8.0
 
+  '@types/pg@8.15.5':
+    dependencies:
+      '@types/node': 22.17.1
+      pg-protocol: 1.10.3
+      pg-types: 2.2.0
+
   '@types/qs@6.14.0': {}
 
   '@types/range-parser@1.2.7': {}
@@ -7972,12 +8022,12 @@ snapshots:
   '@types/send@0.17.5':
     dependencies:
       '@types/mime': 1.3.5
-      '@types/node': 17.0.45
+      '@types/node': 22.17.1
 
   '@types/serve-static@1.15.8':
     dependencies:
       '@types/http-errors': 2.0.5
-      '@types/node': 17.0.45
+      '@types/node': 22.17.1
       '@types/send': 0.17.5
 
   '@types/uuid@9.0.8': {}
@@ -8399,11 +8449,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.44.3(@cloudflare/workers-types@4.20250812.0)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(kysely@0.28.4):
+  drizzle-orm@0.44.3(@cloudflare/workers-types@4.20250812.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20250812.0
+      '@neondatabase/serverless': 1.0.1
       '@opentelemetry/api': 1.9.0
       '@planetscale/database': 1.19.0
+      '@types/pg': 8.15.5
       kysely: 0.28.4
 
   dunder-proto@1.0.1:
@@ -9234,6 +9286,18 @@ snapshots:
 
   pathval@2.0.1: {}
 
+  pg-int8@1.0.1: {}
+
+  pg-protocol@1.10.3: {}
+
+  pg-types@2.2.0:
+    dependencies:
+      pg-int8: 1.0.1
+      postgres-array: 2.0.0
+      postgres-bytea: 1.0.0
+      postgres-date: 1.0.7
+      postgres-interval: 1.2.0
+
   picocolors@1.1.1: {}
 
   picomatch@2.3.1: {}
@@ -9295,6 +9359,16 @@ snapshots:
       nanoid: 3.3.11
       picocolors: 1.1.1
       source-map-js: 1.2.1
+
+  postgres-array@2.0.0: {}
+
+  postgres-bytea@1.0.0: {}
+
+  postgres-date@1.0.7: {}
+
+  postgres-interval@1.2.0:
+    dependencies:
+      xtend: 4.0.2
 
   prettier@3.6.2: {}
 
@@ -10044,6 +10118,8 @@ snapshots:
 
   xmlchars@2.2.0:
     optional: true
+
+  xtend@4.0.2: {}
 
   yallist@3.1.1: {}
 
