@@ -24,8 +24,7 @@ const endpoint =
         type: "read_write",
         autoscalingLimitMinCu: 0.25,
         autoscalingLimitMaxCu: 1,
-        // Disable connection pooling because Hyperdrive handles it
-        poolerEnabled: false,
+        poolerEnabled: true,
       })
     : neon.getBranchEndpointsOutput({
         projectId: project.id,
@@ -59,10 +58,11 @@ export const hyperdrive = new cloudflare.HyperdriveConfig("Hyperdrive", {
   name: branchName,
   accountId: sst.cloudflare.DEFAULT_ACCOUNT_ID,
   origin: {
-    host: endpoint.host,
-    user: role.name,
-    password: role.password,
-    database: db.name,
+    // Use direct connection for Hyperdrive
+    host: database.properties.host.apply((host) => host.replace("-pooler", "")),
+    user: database.properties.username,
+    password: database.properties.password,
+    database: database.properties.database,
     port: 5432,
     scheme: "postgres",
   },
