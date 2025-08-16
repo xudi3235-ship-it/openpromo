@@ -6,11 +6,6 @@
 import "sst"
 declare module "sst" {
   export interface Resource {
-    "ApiFn": {
-      "name": string
-      "type": "sst.aws.Function"
-      "url": string
-    }
     "Bus": {
       "arn": string
       "name": string

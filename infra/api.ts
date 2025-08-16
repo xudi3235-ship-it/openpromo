@@ -14,16 +14,6 @@ export const urls = new sst.Linkable("Urls", {
   },
 });
 
-export const apiFn = new sst.aws.Function("ApiFn", {
-  url: true,
-  link: [bucket, ...allSecrets, database, urls, email, bus],
-  streaming: !$dev,
-  handler: "packages/functions/src/api/deploy/lambda.handler",
-});
-
-// ------ cloudflare workers ------
-// wip migration, if everything works on worker, we can deprecate the lambda fn
-
 // Run web-ui locally in dev mode
 new sst.x.DevCommand("WebUI", {
   dev: {
@@ -78,15 +68,5 @@ export const api = new sst.cloudflare.Worker("WorkerApi", {
   //   },
   // },
 });
-
-// export const api = new sst.aws.Router("Api", {
-//   routes: {
-//     "/*": apiFn.url,
-//   },
-//   domain: {
-//     name: `api.${domain}`,
-//     dns: sst.cloudflare.dns(),
-//   },
-// });
 
 export const outputs = {};
