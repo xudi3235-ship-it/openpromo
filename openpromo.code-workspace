@@ -1,0 +1,28 @@
+{
+  "folders": [
+    {
+      "name": "🏠 root",
+      "path": "."
+    },
+    {
+      "name": "🧱 infra",
+      "path": "infra"
+    },
+    {
+      "name": "🧠 core",
+      "path": "packages/core"
+    },
+    {
+      "name": "⚙️ functions",
+      "path": "packages/functions"
+    },
+    {
+      "name": "🎨 web-ui",
+      "path": "packages/web-ui"
+    },
+    {
+      "name": "🔗 web-api",
+      "path": "packages/web-api"
+    }
+  ]
+}
