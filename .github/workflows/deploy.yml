@@ -77,6 +77,16 @@ jobs:
           doppler run -- pnpm sync_secrets
           doppler run -- pnpm sst deploy --stage=${GITHUB_REF_NAME}
 
+      - name: Run database migrations
+        id: db-migrate
+        if: success()
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        working-directory: packages/core
+        run: |
+          echo "Running database migrations for ${{ github.ref_name }}"
+          doppler run -- pnpm db:migrate
+
       - name: Send success notification to Discord
         if: success()
         uses: appleboy/discord-action@v1.2.0
@@ -93,7 +103,7 @@ jobs:
         with:
           webhook_url: ${{ secrets.DISCORD_DEPLOYMENT_WEBHOOK_URL }}
           message: |
-            **[Failed] Openpromo Deployment Failed** ❌
+            **[Failed] Openpromo ${{steps.db-migrate.conclusion == 'failure' && 'Database Migration' || 'Deployment'}} Failed** ❌
             - **Branch:** `${{ github.ref_name }}`
             - **Commit:** [${{ github.event.head_commit.message }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) (`${{ github.sha }}`)
             - **Job:** [${{ github.job }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})

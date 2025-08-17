@@ -7,7 +7,12 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/sst-env.d.ts", "!**/routeTree.gen.ts"]
+    "includes": [
+      "**",
+      "!**/sst-env.d.ts",
+      "!**/routeTree.gen.ts",
+      "!**/migrations/**"
+    ]
   },
   "formatter": {
     "enabled": true,

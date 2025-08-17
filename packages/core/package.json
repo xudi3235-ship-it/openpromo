@@ -5,9 +5,10 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "db": "sst shell drizzle-kit",
-    "db:push": "sst shell drizzle-kit push",
-    "db:studio": "sst shell pnpm drizzle-kit studio",
-    "db:connect": "sst shell ../scripts/mysql",
+    "db:push": "pnpm db push",
+    "db:generate": "pnpm db generate",
+    "db:migrate": "pnpm db migrate",
+    "db:studio": "pnpm db studio",
     "test": "sst shell vitest"
   },
   "exports": {

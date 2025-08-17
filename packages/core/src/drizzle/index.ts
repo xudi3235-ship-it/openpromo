@@ -12,7 +12,10 @@ export const db = (urlOverride?: string) => {
   const connectionString =
     urlOverride ||
     `postgresql://${Resource.Database.username}:${Resource.Database.password}@${Resource.Database.host}/${Resource.Database.database}`;
-  return drizzle(connectionString, {
+
+  return drizzle({
+    connection: connectionString,
+    casing: "snake_case",
     logger:
       process.env.DRIZZLE_LOG === "true"
         ? {
