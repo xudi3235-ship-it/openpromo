@@ -31,39 +31,6 @@ export default $config({
       },
     };
   },
-  console: {
-    autodeploy: {
-      target(_event) {
-        return undefined;
-        // if (event.type === "branch" && event.branch === "production") {
-        //   return { stage: "production" };
-        // }
-        // if (event.type === "branch" && event.branch === "dev") {
-        //   return { stage: "dev" };
-        // }
-      },
-      async workflow({ $, event }) {
-        await $`npm i -g pnpm`;
-        if (event.action === "removed") {
-          await $`pnpm sst remove`;
-          return;
-        }
-        // doppler cli
-        await $`(curl -Ls --tlsv1.2 --proto "=https" --retry 3 https://cli.doppler.com/install.sh || wget -t 3 -qO- https://cli.doppler.com/install.sh) | sudo sh`;
-        await $`pnpm install`;
-        // sync secrets
-        await $`pnpm sync_secrets`;
-        const deployResult = await $`pnpm sst deploy`;
-        if (deployResult.exitCode !== 0) {
-          throw new Error(
-            `pnpm sst deploy failed with exit code ${
-              deployResult.exitCode
-            }, ${JSON.stringify(deployResult.stdout)}`,
-          );
-        }
-      },
-    },
-  },
   async run() {
     const outputs = {};
     const { readdirSync } = await import("node:fs");
