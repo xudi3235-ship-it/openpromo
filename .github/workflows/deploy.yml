@@ -82,6 +82,7 @@ jobs:
         if: success()
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+          SST_STAGE: ${{ github.ref == 'refs/heads/production' && 'production' || 'dev' }}
         working-directory: packages/core
         run: |
           echo "Running database migrations for ${{ github.ref_name }}"
