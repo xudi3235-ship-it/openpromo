@@ -85,7 +85,7 @@ jobs:
         working-directory: packages/core
         run: |
           echo "Running database migrations for ${{ github.ref_name }}"
-          doppler run -- pnpm db:migrate
+          doppler run -- pnpm db:migrate --print-logs
 
       - name: Send success notification to Discord
         if: success()
