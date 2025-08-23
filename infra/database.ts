@@ -68,10 +68,10 @@ export const hyperdrive = new cloudflare.HyperdriveConfig("Hyperdrive", {
   },
 });
 
-// export const studio = new sst.x.DevCommand("Studio", {
-//   link: [database],
-//   dev: {
-//     command: "pnpm db:studio",
-//     directory: "packages/core",
-//   },
-// });
+export const studio = new sst.x.DevCommand("DrizzleStudio", {
+  link: [database],
+  dev: {
+    command: "pnpm db:studio",
+    directory: "packages/core",
+  },
+});
