@@ -53,6 +53,8 @@ export const api = new sst.cloudflare.Worker("WorkerApi", {
         enabled: true,
         headSamplingRate: 1,
       };
+      args.compatibilityFlags = ["nodejs_compat"];
+      args.compatibilityDate = "2025-08-23";
       // TODO: figure out service bindings for containers, haven't found
       // any docs on this yet
     },
