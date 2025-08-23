@@ -6,7 +6,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { ORGANIZATION_ROLE, WORKSPACE_ROLE } from "../../../constants/auth";
-import { assertUserAndOrg } from "../../../helpers/auth";
+import { assertOrg, assertUser } from "../../../helpers/auth";
 import { getDbClient } from "../../../helpers/db";
 import { withAuth } from "../../../middleware/with-auth";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
@@ -17,10 +17,10 @@ export const workspacesRoute = new Hono<ApiEnv>()
   .get("/", async (ctx) => {
     const db = getDbClient(ctx.env.HYPERDRIVE);
     const role = ctx.get("role");
+    const user = assertUser(ctx);
+    const organizationId = assertOrg(ctx);
 
-    const { user, organizationId } = assertUserAndOrg(ctx);
-
-    // if the user is an admin or owner, they are equivalent to workspace admins for all workspaces in the organization
+    // if the user is an admin or owner, they have unrestricted access to all workspaces in the organization
     if (role === ORGANIZATION_ROLE.ADMIN || role === ORGANIZATION_ROLE.OWNER) {
       const workspaces = await db
         .select()
@@ -29,6 +29,7 @@ export const workspacesRoute = new Hono<ApiEnv>()
       return ctx.json(workspaces);
     }
 
+    // Otherwise, get the workspaces the user has access to
     const workspaces = await db
       .select()
       .from(workspacesTable)

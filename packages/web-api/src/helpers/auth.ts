@@ -86,20 +86,30 @@ export function clearAuthStateCookie(c: Context) {
   });
 }
 
-export function assertUserAndOrg(ctx: Context<ApiEnv>) {
+/**
+ * Asserts that the user object is present in the context
+ * @param ctx - The context object.
+ * @returns The user object.
+ * @throws 401 if the user is not present.
+ */
+export function assertUser(ctx: Context<ApiEnv>) {
   const user = ctx.get("user");
-  const organizationId = ctx.get("organizationId");
   if (!user) {
     throw new HTTPException(401);
   }
-  if (!organizationId) {
-    throw new HTTPException(500, {
-      message: "Cannot find associated organization",
-    });
-  }
+  return user;
+}
 
-  return {
-    user,
-    organizationId,
-  };
+/**
+ * Asserts that the organization ID is present in the context.
+ * @param ctx - The context object.
+ * @returns The organization ID.
+ * @throws 401 if the organization ID is not present.
+ */
+export function assertOrg(ctx: Context<ApiEnv>) {
+  const organizationId = ctx.get("organizationId");
+  if (!organizationId) {
+    throw new HTTPException(401);
+  }
+  return organizationId;
 }
