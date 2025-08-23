@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { Resource } from "sst";
-import { getWorkOS, setAuthStateCookie } from "@/helpers/auth";
+import { getWorkOS, setAuthStateCookie } from "../../helpers/auth";
 
 export const loginRoute = new Hono().get("/", (c) => {
   const workOS = getWorkOS();

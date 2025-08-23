@@ -117,7 +117,6 @@ export namespace IGMediaSchema {
         "Caption for the media. Excludes album children. The @ symbol is excluded for non-admins.",
       ),
     comments_count: z
-      .number()
       .int()
       .describe(
         "Count of comments on the media. Excludes comments on album child media and the media's caption. Includes replies on comments.",
@@ -146,7 +145,6 @@ export namespace IGMediaSchema {
         "The ID for Instagram media created for Marketing API endpoints for v21.0 and older.",
       ),
     like_count: z
-      .number()
       .int()
       .optional()
       .describe(
@@ -161,7 +159,6 @@ export namespace IGMediaSchema {
       .enum(["CAROUSEL_ALBUM", "IMAGE", "VIDEO"])
       .describe("The type of the media."),
     media_url: z
-      .string()
       .url()
       .optional()
       .describe(
@@ -173,22 +170,19 @@ export namespace IGMediaSchema {
       .describe(
         "Instagram user ID who created the media. Only returned if the app user making the query also created the media.",
       ),
-    permalink: z.string().url().describe("A permanent URL to the media."),
+    permalink: z.url().describe("A permanent URL to the media."),
     shortcode: z.string().optional().describe("A shortcode for the media."),
     thumbnail_url: z
-      .string()
       .url()
       .optional()
       .describe("Media thumbnail URL. Only available on VIDEO media."),
-    timestamp: z
-      .string()
+    timestamp: z.iso
       .datetime()
       .describe("ISO 8601-formatted creation date in UTC."),
     username: z
       .string()
       .describe("Username of the user who created the media."),
     view_count: z
-      .number()
       .int()
       .optional()
       .describe(

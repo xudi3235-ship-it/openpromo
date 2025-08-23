@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import { Resource } from "sst";
-import { OrganizationRole } from "@/constants/auth";
+import { ORGANIZATION_ROLE } from "../../constants/auth";
 import {
   clearAuthStateCookie,
   getAuthState,
   getWorkOS,
   setSessionCookie,
-} from "@/helpers/auth";
-import type { ApiEnv } from "@/types";
+} from "../../helpers/auth";
+import type { ApiEnv } from "../../types";
 
 export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
   const workOS = getWorkOS();
@@ -34,14 +34,14 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
       },
     });
 
-    const { sealedSession, user, organizationId } = authenticatedUser;
+    const { sealedSession, user } = authenticatedUser;
     if (!sealedSession) {
       throw new Error("No sealed session");
     }
     setSessionCookie(c, sealedSession);
 
     // Create an organization for the user if it doesn't exist
-    if (!organizationId) {
+    if (!authenticatedUser.organizationId) {
       const orgNamePrefix =
         user.firstName ?? user.lastName ?? user.email.split("@")[0];
       const orgName = orgNamePrefix ? `${orgNamePrefix}'s Org` : "My Org";
@@ -51,7 +51,7 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
       await workOS.userManagement.createOrganizationMembership({
         organizationId: organization.id,
         userId: user.id,
-        roleSlug: OrganizationRole.OWNER,
+        roleSlug: ORGANIZATION_ROLE.OWNER,
       });
     }
 

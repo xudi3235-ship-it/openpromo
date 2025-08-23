@@ -7,8 +7,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.7.2",
+    "@openpromo/core": "workspace:*",
     "@workos-inc/node": "catalog:",
-    "hono": "catalog:"
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
+    "postgres": "^3.4.7",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250812.0"

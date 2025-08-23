@@ -7,9 +7,9 @@ export namespace PhotoSchema {
   });
 
   const PhotoImageSchema = z.object({
-    height: z.number().int(),
-    source: z.string().url(),
-    width: z.number().int(),
+    height: z.int(),
+    source: z.url(),
+    width: z.int(),
   });
 
   export const Schema = z.object({
@@ -18,7 +18,7 @@ export namespace PhotoSchema {
       .object({
         id: z.string(),
         name: z.string().optional(),
-        created_time: z.string().datetime().optional(),
+        created_time: z.iso.datetime().optional(),
       })
       .optional()
       .describe("The album this photo is in."),
@@ -30,8 +30,7 @@ export namespace PhotoSchema {
       .string()
       .optional()
       .describe("The user-provided alternative text for the photo."),
-    created_time: z
-      .string()
+    created_time: z.iso
       .datetime()
       .describe("The time the photo was published."),
     event: IdNameObject.optional().describe(
@@ -40,25 +39,13 @@ export namespace PhotoSchema {
     from: IdNameObject.optional().describe(
       "The profile (user or page) that uploaded the photo.",
     ),
-    height: z
-      .number()
-      .int()
-      .optional()
-      .describe("The height of the photo in pixels."),
-    icon: z
-      .string()
-      .url()
-      .optional()
-      .describe("The icon representing the photo type."),
+    height: z.int().optional().describe("The height of the photo in pixels."),
+    icon: z.url().optional().describe("The icon representing the photo type."),
     images: z
       .array(PhotoImageSchema)
       .optional()
       .describe("The different stored representations of the photo."),
-    link: z
-      .string()
-      .url()
-      .optional()
-      .describe("A link to the photo on Facebook."),
+    link: z.url().optional().describe("A link to the photo on Facebook."),
     name: z
       .string()
       .optional()
@@ -78,7 +65,6 @@ export namespace PhotoSchema {
       .optional()
       .describe("The ID of the page story associated with this photo."),
     picture: z
-      .string()
       .url()
       .optional()
       .describe("URL to a thumbnail-sized version of the photo."),
@@ -98,8 +84,7 @@ export namespace PhotoSchema {
     target: IdNameObject.optional().describe(
       "The target (like a page or user) this photo is published to.",
     ),
-    updated_time: z
-      .string()
+    updated_time: z.iso
       .datetime()
       .describe("The last time the photo or its caption was updated."),
     webp_images: z
@@ -108,10 +93,6 @@ export namespace PhotoSchema {
       .describe(
         "The different stored representations of the photo in WebP format.",
       ),
-    width: z
-      .number()
-      .int()
-      .optional()
-      .describe("The width of the photo in pixels."),
+    width: z.int().optional().describe("The width of the photo in pixels."),
   });
 }

@@ -22,9 +22,9 @@ const BackdatedTimeGranularity = z.enum([
 ]);
 
 export const CreateFeedSchema = z
-  .object({
+  .strictObject({
     actions: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Actions that people can take on the post"),
     album_id: z.string().optional().describe("Album ID for photo posts"),
@@ -34,7 +34,6 @@ export const CreateFeedSchema = z
       .describe("Android key hash for app links"),
     application_id: z.string().optional().describe("Application ID"),
     asked_fun_fact_prompt_id: z
-      .number()
       .int()
       .nonnegative()
       .optional()
@@ -46,12 +45,11 @@ export const CreateFeedSchema = z
       .optional()
       .describe("Whether to attach place suggestion"),
     attached_media: z
-      .array(z.record(z.any()))
+      .array(z.record(z.string(), z.any()))
       .optional()
       .describe("List of attached media objects"),
     audience_exp: z.boolean().optional().describe("Audience experiment flag"),
-    backdated_time: z
-      .string()
+    backdated_time: z.iso
       .datetime()
       .optional()
       .describe("Backdated time for the post"),
@@ -63,18 +61,17 @@ export const CreateFeedSchema = z
       .optional()
       .describe("Whether this is breaking news"),
     breaking_news_expiration: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Breaking news expiration time"),
     call_to_action: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Call to action object"),
     caption: z.string().optional().describe("Caption for the post"),
     child_attachments: z
-      .array(z.record(z.any()))
+      .array(z.record(z.string(), z.any()))
       .optional()
       .describe("Child attachments for carousel posts"),
     client_mutation_id: z.string().optional().describe("Client mutation ID"),
@@ -87,7 +84,6 @@ export const CreateFeedSchema = z
       .optional()
       .describe("Composer entry point"),
     composer_entry_time: z
-      .number()
       .int()
       .nonnegative()
       .optional()
@@ -105,14 +101,13 @@ export const CreateFeedSchema = z
     connection_class: z.string().optional().describe("Connection class"),
     content_attachment: z.string().optional().describe("Content attachment ID"),
     coordinates: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Geographic coordinates"),
     cta_link: z.string().optional().describe("Call to action link"),
     cta_type: z.string().optional().describe("Call to action type"),
     description: z.string().optional().describe("Description of the post"),
     direct_share_status: z
-      .number()
       .int()
       .nonnegative()
       .optional()
@@ -122,42 +117,36 @@ export const CreateFeedSchema = z
       .optional()
       .describe("Whether to enforce link ownership"),
     expanded_height: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Expanded height for media"),
     expanded_width: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Expanded width for media"),
     feed_targeting: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Feed targeting specification"),
     formatting: z.string().optional().describe("Post formatting"),
     fun_fact_prompt_id: z.string().optional().describe("Fun fact prompt ID"),
     fun_fact_toastee_id: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Fun fact toastee ID"),
-    height: z.number().int().nonnegative().optional().describe("Media height"),
+    height: z.int().nonnegative().optional().describe("Media height"),
     home_checkin_city_id: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Home checkin city ID"),
     image_crops: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Image crop specifications"),
-    implicit_with_tags: z
-      .array(z.number().int())
-      .optional()
-      .describe("Implicit tags"),
+    implicit_with_tags: z.array(z.int()).optional().describe("Implicit tags"),
     instant_game_entry_point_data: z
       .string()
       .optional()
@@ -226,7 +215,10 @@ export const CreateFeedSchema = z
       .describe("OG suggestion mechanism"),
     page_recommendation: z.string().optional().describe("Page recommendation"),
     picture: z.string().optional().describe("Picture URL"),
-    place: z.record(z.any()).optional().describe("Place object for location"),
+    place: z
+      .record(z.string(), z.any())
+      .optional()
+      .describe("Place object for location"),
     place_attachment_setting: z
       .string()
       .optional()
@@ -247,10 +239,12 @@ export const CreateFeedSchema = z
       .string()
       .optional()
       .describe("Prompt tracking string"),
-    properties: z.record(z.any()).optional().describe("Additional properties"),
+    properties: z
+      .record(z.string(), z.any())
+      .optional()
+      .describe("Additional properties"),
     proxied_app_id: z.string().optional().describe("Proxied app ID"),
     publish_event_id: z
-      .number()
       .int()
       .nonnegative()
       .optional()
@@ -266,29 +260,27 @@ export const CreateFeedSchema = z
       .optional()
       .describe("Referenceable image IDs"),
     referral_id: z.string().optional().describe("Referral ID"),
-    scheduled_publish_time: z
-      .string()
+    scheduled_publish_time: z.iso
       .datetime()
       .optional()
       .describe("Scheduled publish time"),
     source: z.string().optional().describe("Source of the post"),
     sponsor_id: z.string().optional().describe("Sponsor ID"),
     sponsor_relationship: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Sponsor relationship"),
     suggested_place_id: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Suggested place ID"),
-    tags: z
-      .array(z.number().int())
-      .optional()
-      .describe("List of user IDs to tag"),
+    tags: z.array(z.int()).optional().describe("List of user IDs to tag"),
     target_surface: z.string().optional().describe("Target surface"),
-    targeting: z.record(z.any()).optional().describe("Targeting specification"),
+    targeting: z
+      .record(z.string(), z.any())
+      .optional()
+      .describe("Targeting specification"),
     text_format_metadata: z
       .string()
       .optional()
@@ -300,7 +292,6 @@ export const CreateFeedSchema = z
     text_only_place: z.string().optional().describe("Text only place"),
     thumbnail: z.any().optional().describe("Thumbnail file"),
     time_since_original_post: z
-      .number()
       .int()
       .nonnegative()
       .optional()
@@ -315,24 +306,22 @@ export const CreateFeedSchema = z
       .optional()
       .describe("Whether tags are user selected"),
     video_start_time_ms: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Video start time in milliseconds"),
     viewer_coordinates: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Viewer coordinates"),
-    width: z.number().int().nonnegative().optional().describe("Media width"),
+    width: z.int().nonnegative().optional().describe("Media width"),
   })
-  .strict()
   .describe("Parameters for creating a Facebook page feed post");
 
 export type CreateFeedParams = z.infer<typeof CreateFeedSchema>;
 
 export const CreatePhotoSchema = z
-  .object({
+  .strictObject({
     // Optional parameters with defaults
     aid: z.string().optional().describe("Legacy album ID. Deprecated"),
     allow_spherical_photo: z
@@ -349,14 +338,12 @@ export const CreatePhotoSchema = z
       .optional()
       .describe("iTunes App ID for native Share dialog"),
     attempt: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Number of upload attempts"),
     audience_exp: z.boolean().optional().describe("Audience experiment flag"),
-    backdated_time: z
-      .string()
+    backdated_time: z.iso
       .datetime()
       .optional()
       .describe("User-specified creation time for this photo"),
@@ -366,35 +353,31 @@ export const CreatePhotoSchema = z
     caption: z.string().optional().describe("Description of the photo"),
     composer_session_id: z.string().optional().describe("Composer session ID"),
     direct_share_status: z
-      .number()
       .int()
       .optional()
       .describe("Status to allow sponsor directly boost the post"),
     feed_targeting: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("News Feed targeting for this post"),
-    filter_type: z.number().int().optional().describe("Filter type (unused)"),
+    filter_type: z.int().optional().describe("Filter type (unused)"),
     full_res_is_coming_later: z
       .boolean()
       .optional()
       .describe("Whether full resolution is coming later"),
     initial_view_heading_override_degrees: z
-      .number()
       .int()
       .min(0)
       .max(360)
       .optional()
       .describe("Initial view heading override in degrees (0-360)"),
     initial_view_pitch_override_degrees: z
-      .number()
       .int()
       .min(-90)
       .max(90)
       .optional()
       .describe("Initial view pitch override in degrees (-90 to 90)"),
     initial_view_vertical_fov_override_degrees: z
-      .number()
       .int()
       .min(60)
       .max(120)
@@ -422,7 +405,7 @@ export const CreatePhotoSchema = z
       .boolean()
       .optional()
       .describe("Whether to suppress News Feed story creation"),
-    offline_id: z.number().int().optional().describe("Offline ID"),
+    offline_id: z.int().optional().describe("Offline ID"),
     og_action_type_id: z
       .string()
       .optional()
@@ -439,21 +422,20 @@ export const CreatePhotoSchema = z
       .optional()
       .describe("Open Graph suggestion mechanism"),
     place: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Page ID of a place associated with the photo"),
     privacy: z.string().optional().describe("Privacy settings of the photo"),
     profile_id: z
-      .number()
       .int()
       .optional()
       .describe("Deprecated. Use target_id instead"),
     provenance_info: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Provenance information"),
     proxied_app_id: z
-      .union([z.string(), z.number().int()])
+      .union([z.string(), z.int()])
       .optional()
       .describe("Proxied app ID"),
     published: z
@@ -462,41 +444,41 @@ export const CreatePhotoSchema = z
       .describe("Whether to publish the photo immediately"),
     qn: z.string().optional().describe("Photos waterfall ID"),
     spherical_metadata: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Parameters describing an uploaded spherical photo"),
     sponsor_id: z
-      .union([z.string(), z.number().int()])
+      .union([z.string(), z.int()])
       .optional()
       .describe("Facebook Page ID tagged as sponsor"),
     sponsor_relationship: z
-      .number()
       .int()
       .optional()
       .describe("Sponsor relationship type"),
-    tags: z.array(z.record(z.any())).optional().describe("Tags on this photo"),
+    tags: z
+      .array(z.record(z.string(), z.any()))
+      .optional()
+      .describe("Tags on this photo"),
     target_id: z
-      .number()
       .int()
       .optional()
       .describe("Target ID (use edge endpoints instead)"),
     targeting: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Audience targeting for Pages"),
     time_since_original_post: z
-      .number()
       .int()
       .optional()
       .describe("Time delta instead of absolute backdated_time"),
-    uid: z.number().int().optional().describe("Deprecated"),
+    uid: z.int().optional().describe("Deprecated"),
     unpublished_content_type: UnpublishedContentType.optional().describe(
       "Content type of unpublished content",
     ),
     // Photo source - at least one of these is required
     url: z.string().optional().describe("URL of photo already on Internet"),
     vault_image_id: z
-      .union([z.string(), z.number().int()])
+      .union([z.string(), z.int()])
       .optional()
       .describe("Vault image ID to use for photo"),
     user_selected_tags: z
@@ -504,17 +486,15 @@ export const CreatePhotoSchema = z
       .optional()
       .describe("Whether tags are user selected"),
   })
-  .strict()
   .describe("Parameters for creating a Facebook page photo");
 
 export type CreatePhotoParams = z.infer<typeof CreatePhotoSchema>;
 
 export const CreateVideoSchema = z
-  .object({
+  .strictObject({
     ad_breaks: z.array(z.any()).optional().describe("Ad breaks configuration"),
     application_id: z.string().optional().describe("Application ID"),
     asked_fun_fact_prompt_id: z
-      .number()
       .int()
       .nonnegative()
       .optional()
@@ -528,7 +508,7 @@ export const CreateVideoSchema = z
       .optional()
       .describe("Backdated post configuration"),
     call_to_action: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Call to action configuration"),
     composer_entry_picker: z
@@ -540,7 +520,6 @@ export const CreateVideoSchema = z
       .optional()
       .describe("Composer entry point"),
     composer_entry_time: z
-      .number()
       .int()
       .nonnegative()
       .optional()
@@ -572,65 +551,50 @@ export const CreateVideoSchema = z
     custom_labels: z.array(z.string()).optional().describe("Custom labels"),
     description: z.string().optional().describe("Video description"),
     direct_share_status: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Direct share status"),
     embeddable: z.boolean().optional().describe("Whether video is embeddable"),
-    end_offset: z
-      .number()
-      .int()
-      .nonnegative()
+    end_offset: z.int().nonnegative().optional().describe("End offset"),
+    expiration: z
+      .record(z.string(), z.any())
       .optional()
-      .describe("End offset"),
-    expiration: z.record(z.any()).optional().describe("Expiration settings"),
+      .describe("Expiration settings"),
     fbuploader_video_file_chunk: z
       .string()
       .optional()
       .describe("Facebook uploader video file chunk"),
     feed_targeting: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Feed targeting settings"),
-    file_size: z
-      .number()
-      .int()
-      .nonnegative()
-      .optional()
-      .describe("File size in bytes"),
+    file_size: z.int().nonnegative().optional().describe("File size in bytes"),
     file_url: z.string().optional().describe("URL of video file"),
     fisheye_video_cropped: z
       .boolean()
       .optional()
       .describe("Whether fisheye video is cropped"),
     formatting: z.string().optional().describe("Page videos formatting"),
-    fov: z.number().int().nonnegative().optional().describe("Field of view"),
+    fov: z.int().nonnegative().optional().describe("Field of view"),
     front_z_rotation: z.number().optional().describe("Front Z rotation"),
     fun_fact_prompt_id: z.string().optional().describe("Fun fact prompt ID"),
     fun_fact_toastee_id: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Fun fact toastee ID"),
     guide: z
-      .array(z.array(z.number().int().nonnegative()))
+      .array(z.array(z.int().nonnegative()))
       .optional()
       .describe("Guide configuration"),
     guide_enabled: z.boolean().optional().describe("Whether guide is enabled"),
     initial_heading: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Initial heading"),
-    initial_pitch: z
-      .number()
-      .int()
-      .nonnegative()
-      .optional()
-      .describe("Initial pitch"),
+    initial_pitch: z.int().nonnegative().optional().describe("Initial pitch"),
     instant_game_entry_point_data: z
       .string()
       .optional()
@@ -655,7 +619,7 @@ export const CreateVideoSchema = z
     location_source_id: z.string().optional().describe("Location source ID"),
     manual_privacy: z.boolean().optional().describe("Manual privacy setting"),
     multilingual_data: z
-      .array(z.record(z.any()))
+      .array(z.record(z.string(), z.any()))
       .optional()
       .describe("Multilingual data"),
     no_story: z
@@ -674,7 +638,6 @@ export const CreateVideoSchema = z
       .optional()
       .describe("Open Graph suggestion mechanism"),
     original_fov: z
-      .number()
       .int()
       .nonnegative()
       .optional()
@@ -688,7 +651,6 @@ export const CreateVideoSchema = z
       .optional()
       .describe("Partnership ad code"),
     publish_event_id: z
-      .number()
       .int()
       .nonnegative()
       .optional()
@@ -707,14 +669,13 @@ export const CreateVideoSchema = z
       .describe("Referenced sticker ID"),
     replace_video_id: z.string().optional().describe("Video ID to replace"),
     scheduled_publish_time: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Scheduled publish time"),
     secret: z.boolean().optional().describe("Whether video is secret"),
     slideshow_spec: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .optional()
       .describe("Slideshow specification"),
     social_actions: z
@@ -730,26 +691,22 @@ export const CreateVideoSchema = z
     spherical: z.boolean().optional().describe("Whether video is spherical"),
     sponsor_id: z.string().optional().describe("Sponsor ID"),
     sponsor_relationship: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Sponsor relationship type"),
-    start_offset: z
-      .number()
-      .int()
-      .nonnegative()
-      .optional()
-      .describe("Start offset"),
+    start_offset: z.int().nonnegative().optional().describe("Start offset"),
     swap_mode: z.string().optional().describe("Swap mode"),
-    targeting: z.record(z.any()).optional().describe("Targeting settings"),
+    targeting: z
+      .record(z.string(), z.any())
+      .optional()
+      .describe("Targeting settings"),
     text_format_metadata: z
       .string()
       .optional()
       .describe("Text format metadata"),
     thumb: z.any().optional().describe("Thumbnail file"),
     time_since_original_post: z
-      .number()
       .int()
       .nonnegative()
       .optional()
@@ -774,14 +731,12 @@ export const CreateVideoSchema = z
     video_file_chunk: z.string().optional().describe("Video file chunk"),
     video_id_original: z.string().optional().describe("Original video ID"),
     video_start_time_ms: z
-      .number()
       .int()
       .nonnegative()
       .optional()
       .describe("Video start time in milliseconds"),
     waterfall_id: z.string().optional().describe("Waterfall ID"),
   })
-  .strict()
   .describe("Parameters for creating a Facebook page video");
 
 export type CreateVideoParams = z.infer<typeof CreateVideoSchema>;

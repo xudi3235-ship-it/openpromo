@@ -1,7 +1,9 @@
 import { WorkOS } from "@workos-inc/node";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { HTTPException } from "hono/http-exception";
 import { Resource } from "sst";
+import type { ApiEnv } from "../types";
 
 export const WORKOS_SESSION_COOKIE_NAME = "wos-session";
 export const AUTH_STATE_COOKIE_NAME = "wos-auth-state";
@@ -82,4 +84,22 @@ export function clearAuthStateCookie(c: Context) {
   deleteCookie(c, AUTH_STATE_COOKIE_NAME, {
     path: DEFAULT_COOKIE_OPTIONS.path,
   });
+}
+
+export function assertUserAndOrg(ctx: Context<ApiEnv>) {
+  const user = ctx.get("user");
+  const organizationId = ctx.get("organizationId");
+  if (!user) {
+    throw new HTTPException(401);
+  }
+  if (!organizationId) {
+    throw new HTTPException(500, {
+      message: "Cannot find associated organization",
+    });
+  }
+
+  return {
+    user,
+    organizationId,
+  };
 }

@@ -1,7 +1,7 @@
-import type { ZodSchema, z } from "zod";
+import type { ZodType, z } from "zod";
 
 export function fn<
-  Arg1 extends ZodSchema,
+  Arg1 extends ZodType,
   // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
   Callback extends (arg1: z.output<Arg1>) => any,
 >(arg1: Arg1, cb: Callback) {

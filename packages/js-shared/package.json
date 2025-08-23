@@ -12,7 +12,6 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@openpromo/core": "workspace:*",
     "@types/node": "^22",
     "tsx": "^4"
   },

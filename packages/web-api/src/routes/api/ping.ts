@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { ApiEnv } from "@/types";
+import type { ApiEnv } from "../../types";
 
 export const pingRoute = new Hono<ApiEnv>().get("/", (c) => {
   const conn = c.env.HYPERDRIVE.connectionString;

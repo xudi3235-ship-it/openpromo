@@ -11,34 +11,31 @@ export namespace VideoSchema {
   const VideoFormatSchema = z.object({
     embed_html: z.string().optional(),
     filter: z.string().optional(),
-    height: z.number().int(),
-    picture: z.string().url(),
-    width: z.number().int(),
+    height: z.int(),
+    picture: z.url(),
+    width: z.int(),
   });
 
   // Schema for video thumbnails.
   const VideoThumbnailSchema = z.object({
     id: z.string(),
-    height: z.number().int(),
+    height: z.int(),
     is_preferred: z.boolean(),
-    uri: z.string().url(),
+    uri: z.url(),
     scale: z.number(),
-    width: z.number().int(),
+    width: z.int(),
   });
 
   // Schema for the video's status.
   const VideoStatusSchema = z.object({
-    processing_progress: z.number().int().optional(),
+    processing_progress: z.int().optional(),
     video_status: z.enum(["ready", "processing", "error"]).optional(),
   });
 
   // The main Zod schema for a Facebook Video object.
   export const Schema = z.object({
     id: z.string().describe("The video ID."),
-    created_time: z
-      .string()
-      .datetime()
-      .describe("The time the video was created."),
+    created_time: z.iso.datetime().describe("The time the video was created."),
     description: z
       .string()
       .optional()
@@ -51,31 +48,24 @@ export namespace VideoSchema {
     from: IdNameObject.optional().describe(
       "The profile that uploaded the video.",
     ),
-    icon: z.string().url().optional().describe("The icon for the video."),
+    icon: z.url().optional().describe("The icon for the video."),
     length: z
       .number()
       .optional()
       .describe("The length of the video in seconds."),
     permalink_url: z
-      .string()
       .url()
       .optional()
       .describe("The permanent URL for the video."),
     picture: z
-      .string()
       .url()
       .optional()
       .describe("The URL for the video's thumbnail image."),
-    source: z
-      .string()
-      .url()
-      .optional()
-      .describe("A URL to the raw video file."),
+    source: z.url().optional().describe("A URL to the raw video file."),
     status: VideoStatusSchema.optional().describe(
       "The processing status of the video.",
     ),
-    updated_time: z
-      .string()
+    updated_time: z.iso
       .datetime()
       .describe("The last time the video was updated."),
     content_category: z.string().optional(),
@@ -85,7 +75,7 @@ export namespace VideoSchema {
     is_episode: z.boolean().optional(),
     is_instagram_eligible: z.boolean().optional(),
     live_status: z.enum(["LIVE", "LIVE_STOPPED", "VOD"]).optional(),
-    post_views: z.number().int().optional(),
+    post_views: z.int().optional(),
     title: z.string().optional().describe("The title of the video."),
     thumbnails: z
       .object({

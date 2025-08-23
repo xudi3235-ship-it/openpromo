@@ -5,7 +5,7 @@ import {
   clearSessionCookie,
   getWorkOS,
   WORKOS_SESSION_COOKIE_NAME,
-} from "@/helpers/auth";
+} from "../../helpers/auth";
 
 export const logoutRoute = new Hono().get("/", async (c) => {
   const workOS = getWorkOS();

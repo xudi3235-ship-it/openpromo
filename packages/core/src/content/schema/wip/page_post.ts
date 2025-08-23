@@ -10,7 +10,7 @@ export namespace PagePostSchema {
   // Schema for actions like 'Comment' or 'Like' on a post
   const PostAction = z.object({
     name: z.string(),
-    link: z.string().url(),
+    link: z.url(),
   });
 
   // Define the TypeScript type for a PostAttachment to handle recursion
@@ -46,7 +46,7 @@ export namespace PagePostSchema {
           image: z
             .object({
               height: z.number(),
-              src: z.string().url(),
+              src: z.url(),
               width: z.number(),
             })
             .optional(),
@@ -55,12 +55,12 @@ export namespace PagePostSchema {
       target: z
         .object({
           id: z.string().optional(),
-          url: z.string().url(),
+          url: z.url(),
         })
         .optional(),
       title: z.string().optional().describe("The title of the attachment."),
       type: z.string().optional(),
-      url: z.string().url().optional(),
+      url: z.url().optional(),
       subattachments: z
         .array(PostAttachment)
         .optional()
@@ -88,8 +88,7 @@ export namespace PagePostSchema {
     application: IdNameObject.optional().describe(
       "Information about the app this post was published by.",
     ),
-    backdated_time: z
-      .string()
+    backdated_time: z.iso
       .datetime()
       .nullable()
       .optional()
@@ -141,8 +140,7 @@ export namespace PagePostSchema {
       })
       .optional()
       .describe("An array of information about the attachment to the post"),
-    created_time: z
-      .string()
+    created_time: z.iso
       .datetime()
       .describe("The time the post was published, expressed as UNIX timestamp"),
     event: z
@@ -155,12 +153,10 @@ export namespace PagePostSchema {
         "If this Post has a place, the event associated with the place",
       ),
     expanded_height: z
-      .number()
       .int()
       .optional()
       .describe("An array of information about the attachment to the post"),
     expanded_width: z
-      .number()
       .int()
       .optional()
       .describe("An array of information about the attachment to the post"),
@@ -202,17 +198,14 @@ export namespace PagePostSchema {
       "The ID of the user, page, group, or event that published the post",
     ),
     full_picture: z
-      .string()
       .url()
       .optional()
       .describe("Full size picture from attachment"),
     height: z
-      .number()
       .int()
       .optional()
       .describe("An array of information about the attachment to the post"),
     icon: z
-      .string()
       .url()
       .optional()
       .describe("A link to an icon representing the type of this post."),
@@ -284,7 +277,6 @@ export namespace PagePostSchema {
         "The ID of a parent post for this post, if it exists. For example, if this story is a 'Your Page was mentioned in a post' story, the parent_id will be the original post where the mention happened",
       ),
     permalink_url: z
-      .string()
       .url()
       .describe(
         "The permanent static URL to the post on www.facebook.com. Example: https://www.facebook.com/FacebookforDevelopers/posts/10153449196353553",
@@ -346,7 +338,7 @@ export namespace PagePostSchema {
       .describe("UNIX timestamp of the scheduled publish time for the post"),
     shares: z
       .object({
-        count: z.number().int().default(0),
+        count: z.int().prefault(0),
       })
       .optional()
       .describe("Number of times the post has been shared"),
@@ -463,8 +455,7 @@ export namespace PagePostSchema {
       .string()
       .optional()
       .describe("Timeline visibility information of the post"),
-    updated_time: z
-      .string()
+    updated_time: z.iso
       .datetime()
       .describe(
         "The time the post was last updated, which occurs when a user comments on the post.",
@@ -473,7 +464,6 @@ export namespace PagePostSchema {
       "ID of the user or Page the post was shared from",
     ),
     width: z
-      .number()
       .int()
       .optional()
       .describe("An array of information about the attachment to the post"),
