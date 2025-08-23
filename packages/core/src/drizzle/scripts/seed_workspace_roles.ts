@@ -1,16 +1,16 @@
-import { workspaceRoles } from "@/schema/workspace_roles.sql";
+import { workspaceRolesTable } from "../../schema/workspace_roles.sql";
 import { db } from "..";
 
 async function main() {
   try {
-    const existingRoles = await db().select().from(workspaceRoles);
+    const existingRoles = await db().select().from(workspaceRolesTable);
     if (existingRoles.length > 0) {
       console.log("Roles already exist, skipping seeding");
       return;
     }
 
     await db()
-      .insert(workspaceRoles)
+      .insert(workspaceRolesTable)
       .values([
         {
           name: "Admin",

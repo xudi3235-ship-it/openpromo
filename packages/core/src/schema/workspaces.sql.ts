@@ -1,7 +1,7 @@
-import { pgTable, text, unique } from "drizzle-orm/pg-core";
-import { timestamps, ulid } from "@/drizzle/types";
+import { index, pgTable, text, unique } from "drizzle-orm/pg-core";
+import { timestamps, ulid } from "../drizzle/types";
 
-export const workspaces = pgTable(
+export const workspacesTable = pgTable(
   "workspaces",
   {
     id: ulid().primaryKey(),
@@ -11,8 +11,9 @@ export const workspaces = pgTable(
     ...timestamps,
   },
   (t) => [
+    index().on(t.organizationId),
     unique().on(t.organizationId, t.slug), // workspace slug is unique within an organization
   ],
 );
 
-export type Workspace = typeof workspaces.$inferSelect;
+export type Workspace = typeof workspacesTable.$inferSelect;

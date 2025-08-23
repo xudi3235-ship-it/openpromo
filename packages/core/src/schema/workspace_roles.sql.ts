@@ -1,5 +1,5 @@
 import { pgEnum, pgTable, text } from "drizzle-orm/pg-core";
-import { timestamps, ulid } from "@/drizzle/types";
+import { timestamps, ulid } from "../drizzle/types";
 
 export const workspaceRoleTypes = pgEnum("workspace_role_types", [
   "workspace_admin",
@@ -7,7 +7,7 @@ export const workspaceRoleTypes = pgEnum("workspace_role_types", [
   "workspace_viewer",
 ]);
 
-export const workspaceRoles = pgTable("workspace_roles", {
+export const workspaceRolesTable = pgTable("workspace_roles", {
   id: ulid().primaryKey(),
   name: text().notNull(),
   description: text(),
@@ -15,4 +15,4 @@ export const workspaceRoles = pgTable("workspace_roles", {
   ...timestamps,
 });
 
-export type WorkspaceRole = typeof workspaceRoles.$inferSelect;
+export type WorkspaceRole = typeof workspaceRolesTable.$inferSelect;
