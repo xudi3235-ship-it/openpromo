@@ -5,6 +5,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "db": "sst shell drizzle-kit",
+    "db:script": "sst shell -- tsx",
     "db:push": "pnpm db push",
     "db:generate": "pnpm db generate",
     "db:migrate": "pnpm db migrate",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@types/facebook-nodejs-business-sdk": "^22.0.0",
     "drizzle-kit": "^0.31.4",
+    "tsx": "^4.20.3",
     "vitest": "^2"
   }
 }
