@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { Resource } from "sst";
-import { WorkOSOrganizationRole } from "@/constants/auth";
+import { OrganizationRole } from "@/constants/auth";
 import {
   clearAuthStateCookie,
   getAuthState,
@@ -51,7 +51,7 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
       await workOS.userManagement.createOrganizationMembership({
         organizationId: organization.id,
         userId: user.id,
-        roleSlug: WorkOSOrganizationRole.OWNER,
+        roleSlug: OrganizationRole.OWNER,
       });
     }
 

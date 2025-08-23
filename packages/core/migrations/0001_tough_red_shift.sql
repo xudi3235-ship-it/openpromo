@@ -1,0 +1,2 @@
+CREATE TYPE "public"."workspace_role_types" AS ENUM('admin', 'editor', 'viewer');--> statement-breakpoint
+ALTER TABLE "workspace_roles" ALTER COLUMN "slug" SET DATA TYPE "public"."workspace_role_types" USING "slug"::"public"."workspace_role_types";
