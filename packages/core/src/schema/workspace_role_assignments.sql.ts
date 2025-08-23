@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { index, pgEnum, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 import { timestamps, ulid } from "../drizzle/types";
 import { workspaceRolesTable } from "./workspace_roles.sql";
 import { workspacesTable } from "./workspaces.sql";
@@ -19,7 +19,10 @@ export const workspaceRoleAssignmentsTable = pgTable(
     assigneeId: text().notNull(), // user or group id from WorkOS
     ...timestamps,
   },
-  (t) => [uniqueIndex().on(t.workspaceId, t.assigneeId)],
+  (t) => [
+    uniqueIndex().on(t.assigneeId, t.workspaceId),
+    index().on(t.workspaceId),
+  ],
 );
 
 export type WorkspaceRoleAssignment =

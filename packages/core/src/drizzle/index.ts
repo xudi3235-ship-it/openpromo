@@ -11,7 +11,7 @@ export const db = (urlOverride?: string) => {
   // other services will use the pooled conn from neon.
   const connectionString =
     urlOverride ||
-    `postgresql://${Resource.Database.username}:${Resource.Database.password}@${Resource.Database.host}/${Resource.Database.database}`;
+    `postgresql://${Resource.Database.username}:${Resource.Database.password}@${Resource.Database.host}/${Resource.Database.database}?sslmode=require`;
 
   return drizzle({
     connection: connectionString,

@@ -29,6 +29,13 @@
       "when": 1755944087164,
       "tag": "0003_wild_ezekiel_stane",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1755974110235,
+      "tag": "0004_premium_silver_fox",
+      "breakpoints": true
     }
   ]
 }

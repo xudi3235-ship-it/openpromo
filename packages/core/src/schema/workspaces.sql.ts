@@ -11,7 +11,7 @@ export const workspacesTable = pgTable(
     ...timestamps,
   },
   (t) => [
-    index().on(t.organizationId),
+    index().on(t.organizationId, t.id),
     unique().on(t.organizationId, t.slug), // workspace slug is unique within an organization
   ],
 );
