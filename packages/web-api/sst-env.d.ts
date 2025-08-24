@@ -3,81 +3,84 @@
 /* eslint-disable */
 /* deno-fmt-ignore-file */
 
-import "sst"
+import "sst";
 declare module "sst" {
   export interface Resource {
-    "Bus": {
-      "arn": string
-      "name": string
-      "type": "sst.aws.Bus"
-    }
-    "Database": {
-      "database": string
-      "host": string
-      "password": string
-      "type": "sst.sst.Linkable"
-      "username": string
-    }
-    "Email": {
-      "configSet": string
-      "sender": string
-      "type": "sst.aws.Email"
-    }
-    "FACEBOOK_APP_ID": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "FACEBOOK_APP_SECRET": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "FACEBOOK_REDIRECT_URI": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "NEON_API_KEY": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "NEON_PROJECT_ID": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "STRIPE_SECRET_KEY": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "Storage": {
-      "name": string
-      "type": "sst.aws.Bucket"
-    }
-    "Urls": {
-      "api": string
-      "domain": string
-      "site": string
-      "type": "sst.sst.Linkable"
-    }
-    "WORKOS_API_KEY": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "WORKOS_CLIENT_ID": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "WORKOS_COOKIE_PASSWORD": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
+    Bus: {
+      arn: string;
+      name: string;
+      type: "sst.aws.Bus";
+    };
+    Database: {
+      database: string;
+      host: string;
+      password: string;
+      type: "sst.sst.Linkable";
+      username: string;
+    };
+    Email: {
+      configSet: string;
+      sender: string;
+      type: "sst.aws.Email";
+    };
+    FACEBOOK_APP_ID: {
+      type: "sst.sst.Secret";
+      value: string;
+    };
+    FACEBOOK_APP_SECRET: {
+      type: "sst.sst.Secret";
+      value: string;
+    };
+    FACEBOOK_REDIRECT_URI: {
+      type: "sst.sst.Secret";
+      value: string;
+    };
+    LIQUID_API_URL: {
+      type: "sst.sst.Secret";
+      value: string;
+    };
+    NEON_API_KEY: {
+      type: "sst.sst.Secret";
+      value: string;
+    };
+    NEON_PROJECT_ID: {
+      type: "sst.sst.Secret";
+      value: string;
+    };
+    STRIPE_SECRET_KEY: {
+      type: "sst.sst.Secret";
+      value: string;
+    };
+    Storage: {
+      name: string;
+      type: "sst.aws.Bucket";
+    };
+    Urls: {
+      api: string;
+      domain: string;
+      site: string;
+      type: "sst.sst.Linkable";
+    };
+    WORKOS_API_KEY: {
+      type: "sst.sst.Secret";
+      value: string;
+    };
+    WORKOS_CLIENT_ID: {
+      type: "sst.sst.Secret";
+      value: string;
+    };
+    WORKOS_COOKIE_PASSWORD: {
+      type: "sst.sst.Secret";
+      value: string;
+    };
   }
 }
-// cloudflare 
+// cloudflare
 import * as cloudflare from "@cloudflare/workers-types";
 declare module "sst" {
   export interface Resource {
-    "WorkerApi": cloudflare.Service
+    WorkerApi: cloudflare.Service;
   }
 }
 
-import "sst"
-export {}
+import "sst";

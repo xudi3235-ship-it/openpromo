@@ -29,6 +29,9 @@ class Resource:
     class FACEBOOK_REDIRECT_URI:
         type: str
         value: str
+    class LIQUID_API_URL:
+        type: str
+        value: str
     class NEON_API_KEY:
         type: str
         value: str

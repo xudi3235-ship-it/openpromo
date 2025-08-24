@@ -8,6 +8,7 @@ export const secret = {
   WORKOS_COOKIE_PASSWORD: new sst.Secret("WORKOS_COOKIE_PASSWORD"),
   NEON_API_KEY: new sst.Secret("NEON_API_KEY"),
   NEON_PROJECT_ID: new sst.Secret("NEON_PROJECT_ID"),
+  LIQUID_API_URL: new sst.Secret("LIQUID_API_URL"),
 };
 
 export const allSecrets = Object.values(secret);

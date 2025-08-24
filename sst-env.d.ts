@@ -34,6 +34,10 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "LIQUID_API_URL": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "NEON_API_KEY": {
       "type": "sst.sst.Secret"
       "value": string
