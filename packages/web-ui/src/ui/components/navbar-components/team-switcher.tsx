@@ -42,6 +42,9 @@ export default function OrgSwitcher({ orgs, currentOrgId }: OrgSwitcherProps) {
   }
 
   const handleSwitchOrg = (orgId: string) => {
+    if (orgId === currentOrgId) {
+      return;
+    }
     switchOrgMutation.mutate(orgId);
   };
 
