@@ -1,12 +1,16 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { login } from "@/lib/auth";
+import { createFileRoute } from "@tanstack/react-router";
+import { LoginForm } from "@/ui/components/auth/login-form";
 
 export const Route = createFileRoute("/login")({
-  beforeLoad: async ({ context }) => {
-    const { user } = context;
-    if (user) {
-      return redirect({ to: "/workspaces" });
-    }
-    login();
-  },
+  component: LoginPage,
 });
+
+function LoginPage() {
+  return (
+    <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+      <div className="w-full max-w-sm">
+        <LoginForm />
+      </div>
+    </div>
+  );
+}

@@ -93,15 +93,25 @@ export const ErrorCodes = {
  * Standard error that will be exposed to clients through API responses
  */
 export class VisibleError extends Error {
+  public type: ErrorResponseType["type"];
+  public code: string;
+  public param?: string;
+  // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
+  public details?: any;
+
   constructor(
-    public type: ErrorResponseType["type"],
-    public code: string,
-    public message: string,
-    public param?: string,
+    type: ErrorResponseType["type"],
+    code: string,
+    message: string,
+    param?: string,
     // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
-    public details?: any,
+    details?: any,
   ) {
     super(message);
+    this.type = type;
+    this.code = code;
+    this.param = param;
+    this.details = details;
   }
 
   /**
