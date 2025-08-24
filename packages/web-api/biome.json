@@ -1,6 +1,9 @@
 {
   "root": false,
   "extends": "//",
+  "files": {
+    "includes": ["**", "!src/generated/**"]
+  },
   "linter": {
     "rules": {
       "suspicious": {

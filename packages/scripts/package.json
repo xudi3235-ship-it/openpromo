@@ -8,9 +8,11 @@
     "sst": "3.17.10"
   },
   "scripts": {
-    "shell": "sst shell tsx"
+    "shell": "sst shell tsx",
+    "codegen": "doppler run tsx src/codegen.ts"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "0.81.1",
     "@openpromo/core": "workspace:*",
     "@types/node": "^22",
     "tsx": "^4"
