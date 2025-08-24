@@ -1,5 +1,10 @@
 import type { ApiRoutes, AuthRoutes } from "@openpromo/web-api/src/types";
-import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+import {
+  type UseMutationOptions,
+  type UseQueryOptions,
+  useMutation,
+  useQuery,
+} from "@tanstack/react-query";
 import { type ClientResponse, hc } from "hono/client";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { toast } from "sonner";
@@ -36,13 +41,15 @@ type ApiResponse<T> =
       };
     };
 
-const withErrorHandling = async <T extends object>(
-  request: Promise<ClientResponse<T, ContentfulStatusCode, "json">>,
+const honoApiCall = async <T extends object>(
+  request: (
+    api: typeof apiClient,
+  ) => Promise<ClientResponse<T, ContentfulStatusCode, "json">>,
   options?: {
     disableErrorToast?: boolean;
   },
 ): Promise<ApiResponse<T>> => {
-  const response = await request;
+  const response = await request(apiClient);
   const json = await response.json();
 
   if (response.ok) {
@@ -82,7 +89,7 @@ export const useHonoQuery = <T extends object>(
   return useQuery<T>({
     ...useQueryOptions,
     queryFn: async () => {
-      const res = await withErrorHandling(options.queryFn(apiClient), {
+      const res = await honoApiCall(options.queryFn, {
         disableErrorToast,
       });
       if (res.success) {
@@ -92,3 +99,48 @@ export const useHonoQuery = <T extends object>(
     },
   });
 };
+
+interface UseHonoMutationOptions<T extends object, V>
+  extends Omit<UseMutationOptions<T, Error, V>, "mutationFn"> {
+  mutationFn: (
+    api: typeof apiClient,
+    variables: V,
+  ) => Promise<ClientResponse<T, ContentfulStatusCode, "json">>;
+  disableErrorToast?: boolean;
+}
+
+export const useHonoMutation = <T extends object, V>(
+  options: UseHonoMutationOptions<T, V>,
+) => {
+  const { disableErrorToast, ...useMutationOptions } = options;
+  return useMutation<T, Error, V>({
+    ...useMutationOptions,
+    mutationFn: async (variables) => {
+      const res = await honoApiCall(
+        (api) => options.mutationFn(api, variables),
+        {
+          disableErrorToast,
+        },
+      );
+      if (res.success) {
+        return res.data;
+      }
+      throw new Error(res.error.message);
+    },
+  });
+};
+
+/**
+ * Helper type utility that extracts the result type from an API client method
+ * @example
+ * type User = ApiResult<typeof apiClient.users.me.$get>;
+ * type Workspace = ApiResult<typeof apiClient.workspaces.$get>;
+ */
+export type ApiResult<
+  T extends () => Promise<
+    ClientResponse<unknown, ContentfulStatusCode, "json">
+  >,
+> = Awaited<ReturnType<Awaited<ReturnType<T>>["json"]>>;
+
+export type User = ApiResult<typeof apiClient.users.me.$get>;
+export type Org = ApiResult<typeof apiClient.orgs.$get>[0];

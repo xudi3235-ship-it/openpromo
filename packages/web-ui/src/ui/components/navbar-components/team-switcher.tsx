@@ -1,7 +1,9 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronsUpDown } from "lucide-react";
-import * as React from "react";
+import { toast } from "sonner";
+import { type Org, useHonoMutation } from "@/lib/hono-client";
 import { Button } from "@/ui/components/button";
 import {
   DropdownMenu,
@@ -10,35 +12,59 @@ import {
   DropdownMenuTrigger,
 } from "@/ui/components/dropdown-menu";
 
-export default function TeamSwitcher({
-  teams,
-  defaultTeam,
-}: {
-  teams: string[];
-  defaultTeam: string;
-}) {
-  const [selectedProject, setSelectedProject] = React.useState(defaultTeam);
+interface OrgSwitcherProps {
+  orgs: Org[];
+  currentOrgId: string;
+}
+
+export default function OrgSwitcher({ orgs, currentOrgId }: OrgSwitcherProps) {
+  const queryClient = useQueryClient();
+
+  const switchOrgMutation = useHonoMutation({
+    mutationFn: (api, organizationId: string) =>
+      api.orgs.switch.$post({ json: { organizationId } }),
+    onSuccess: ({ organizationId }) => {
+      queryClient.invalidateQueries({ queryKey: ["currentOrg"] });
+
+      const selectedOrg = orgs.find(
+        (org) => org.organizationId === organizationId,
+      );
+      if (selectedOrg) {
+        toast.success(`Switched to ${selectedOrg.organizationName}`);
+      }
+    },
+  });
+
+  const selectedOrg = orgs.find((org) => org.organizationId === currentOrgId);
+
+  if (!selectedOrg) {
+    return null;
+  }
+
+  const handleSwitchOrg = (orgId: string) => {
+    switchOrgMutation.mutate(orgId);
+  };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="p-0 hover:bg-transparent">
           <span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-full">
-            {selectedProject.charAt(0).toUpperCase()}
+            {selectedOrg.organizationName.charAt(0).toUpperCase()}
           </span>
           <div className="flex flex-col gap-0.5 leading-none">
-            <span className="">{selectedProject}</span>
+            <span className="">{selectedOrg.organizationName}</span>
           </div>
           <ChevronsUpDown size={14} className="text-muted-foreground/80" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {teams.map((project) => (
+        {orgs.map(({ organizationId, organizationName }) => (
           <DropdownMenuItem
-            key={project}
-            onSelect={() => setSelectedProject(project)}
+            key={organizationId}
+            onSelect={() => handleSwitchOrg(organizationId)}
           >
-            {project}
+            {organizationName}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

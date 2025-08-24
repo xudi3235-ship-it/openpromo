@@ -1,4 +1,3 @@
-import type { User } from "@openpromo/web-api/src/types";
 import {
   BoltIcon,
   BookOpenIcon,
@@ -8,6 +7,7 @@ import {
   UserPenIcon,
 } from "lucide-react";
 import { logout } from "@/lib/auth";
+import type { User } from "@/lib/hono-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/components/avatar";
 import { Button } from "@/ui/components/button";
 import {

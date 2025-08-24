@@ -9,6 +9,7 @@ import {
   ImageIcon,
   TrendingUpIcon,
 } from "lucide-react";
+import { login } from "@/lib/auth";
 import { useHonoQuery } from "@/lib/hono-client";
 import { Button } from "@/ui/components/button";
 import {
@@ -35,7 +36,11 @@ function App() {
   });
 
   const handleGetStartedClick = () => {
-    navigate({ to: "/login" });
+    if (user) {
+      navigate({ to: "/workspaces" });
+    } else {
+      login("/workspaces");
+    }
   };
 
   return (

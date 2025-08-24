@@ -7,9 +7,10 @@ import {
   SearchIcon,
 } from "lucide-react";
 import { login } from "@/lib/auth";
+import { useHonoQuery } from "@/lib/hono-client";
 import { Button } from "@/ui/components/button";
 import NotificationMenu from "@/ui/components/navbar-components/notification-menu";
-import TeamSwitcher from "@/ui/components/navbar-components/team-switcher";
+import OrgSwitcher from "@/ui/components/navbar-components/team-switcher";
 import UserMenu from "@/ui/components/navbar-components/user-menu";
 import {
   NavigationMenu,
@@ -23,8 +24,6 @@ import {
   PopoverTrigger,
 } from "@/ui/components/popover";
 
-const teams = ["Acme Inc.", "Origin UI", "Junon"];
-
 // Navigation links array to be used in both desktop and mobile menus
 const navigationLinks = [
   { href: "#", label: "Dashboard", icon: HouseIcon },
@@ -35,6 +34,16 @@ const navigationLinks = [
 
 export default function Component() {
   const { user } = useLoaderData({ from: "__root__" });
+
+  const { data: currentOrg } = useHonoQuery({
+    queryKey: ["currentOrg"],
+    queryFn: (api) => api.orgs.current.$get(),
+  });
+
+  const { data: orgs } = useHonoQuery({
+    queryKey: ["orgs"],
+    queryFn: (api) => api.orgs.$get(),
+  });
 
   return (
     <header className="border-b px-4 md:px-6">
@@ -102,7 +111,9 @@ export default function Component() {
               </NavigationMenu>
             </PopoverContent>
           </Popover>
-          <TeamSwitcher teams={teams} defaultTeam={teams[0]} />
+          {orgs && currentOrg && (
+            <OrgSwitcher orgs={orgs} currentOrgId={currentOrg.id} />
+          )}
         </div>
         {/* Middle area */}
         <NavigationMenu className="max-md:hidden">

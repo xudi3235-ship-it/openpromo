@@ -1,5 +1,16 @@
+import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-import { assertUser, getWorkOS } from "../../../helpers/auth";
+import { getCookie } from "hono/cookie";
+import { Resource } from "sst";
+import { z } from "zod";
+import {
+  assertOrg,
+  assertUser,
+  getWorkOS,
+  setSessionCookie,
+  WORKOS_SESSION_COOKIE_NAME,
+} from "../../../helpers/auth";
+import { AppError } from "../../../helpers/error";
 import { withAuth } from "../../../middleware/with-auth";
 import type { ApiEnv } from "../../../types";
 
@@ -15,4 +26,39 @@ export const orgsRoute = new Hono<ApiEnv>()
     });
 
     return ctx.json(await orgs.autoPagination());
-  });
+  })
+  .get("/current", async (ctx) => {
+    const orgId = assertOrg(ctx);
+
+    return ctx.json({ id: orgId });
+  })
+  .post(
+    "/switch",
+    zValidator("json", z.object({ organizationId: z.string() })),
+    async (ctx) => {
+      const workOS = getWorkOS();
+      const sessionCookie = getCookie(ctx, WORKOS_SESSION_COOKIE_NAME);
+      const { organizationId } = ctx.req.valid("json");
+
+      if (!sessionCookie) {
+        throw new AppError(500, {
+          message: "Assertion failed: session cookie is not present",
+        });
+      }
+
+      const session = workOS.userManagement.loadSealedSession({
+        sessionData: sessionCookie,
+        cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
+      });
+
+      const refreshResult = await session.refresh({ organizationId });
+      if (refreshResult.authenticated && refreshResult.sealedSession) {
+        setSessionCookie(ctx, refreshResult.sealedSession);
+        return ctx.json({ organizationId });
+      } else {
+        throw new AppError(500, {
+          message: "Failed to switch organization",
+        });
+      }
+    },
+  );
