@@ -12,7 +12,10 @@ import LandingNavbar from "@/ui/components/landing-navbar";
 
 export const Route = createFileRoute("/")({
   component: App,
-  pendingComponent: () => <div>Loading...</div>,
+  // not sure if this works
+  headers: () => ({
+    "Cache-Control": "public, max-age=31536000, immutable",
+  }),
 });
 
 function App() {
