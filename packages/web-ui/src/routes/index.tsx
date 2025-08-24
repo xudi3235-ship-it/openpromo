@@ -3,12 +3,12 @@ import {
   useLoaderData,
   useNavigate,
 } from "@tanstack/react-router";
+import { CompaniesSection } from "@/components/landing/companies-section";
+import { DashboardPreviewSection } from "@/components/landing/dashboard-preview-section";
+import { FeaturesSection } from "@/components/landing/features-section";
+import { HeroSection } from "@/components/landing/hero-section";
+import LandingNavbar from "@/components/ui/landing-navbar";
 import { login } from "@/lib/auth";
-import { CompaniesSection } from "@/ui/components/landing/companies-section";
-import { DashboardPreviewSection } from "@/ui/components/landing/dashboard-preview-section";
-import { FeaturesSection } from "@/ui/components/landing/features-section";
-import { HeroSection } from "@/ui/components/landing/hero-section";
-import LandingNavbar from "@/ui/components/landing-navbar";
 
 export const Route = createFileRoute("/")({
   component: App,
