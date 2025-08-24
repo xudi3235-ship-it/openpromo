@@ -1,9 +1,9 @@
 import { WorkOS } from "@workos-inc/node";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import { HTTPException } from "hono/http-exception";
 import { Resource } from "sst";
 import type { ApiEnv } from "../types";
+import { AppError } from "./error";
 
 export const WORKOS_SESSION_COOKIE_NAME = "wos-session";
 export const AUTH_STATE_COOKIE_NAME = "wos-auth-state";
@@ -95,7 +95,9 @@ export function clearAuthStateCookie(c: Context) {
 export function assertUser(ctx: Context<ApiEnv>) {
   const user = ctx.get("user");
   if (!user) {
-    throw new HTTPException(401);
+    throw new AppError(500, {
+      message: "Assertion failed: user is not present in context",
+    });
   }
   return user;
 }
@@ -109,7 +111,9 @@ export function assertUser(ctx: Context<ApiEnv>) {
 export function assertOrg(ctx: Context<ApiEnv>) {
   const organizationId = ctx.get("organizationId");
   if (!organizationId) {
-    throw new HTTPException(401);
+    throw new AppError(500, {
+      message: "Assertion failed: organizationId is not present in context",
+    });
   }
   return organizationId;
 }

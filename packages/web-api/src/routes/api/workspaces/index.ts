@@ -3,11 +3,11 @@ import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace_
 import { workspacesTable } from "@openpromo/core/schema/workspaces.sql";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { ORGANIZATION_ROLE, WORKSPACE_ROLE } from "../../../constants/auth";
 import { assertOrg, assertUser } from "../../../helpers/auth";
 import { getDbClient } from "../../../helpers/db";
+import { AppError } from "../../../helpers/error";
 import { withAuth } from "../../../middleware/with-auth";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
 import type { ApiEnv } from "../../../types";
@@ -63,7 +63,9 @@ export const workspacesRoute = new Hono<ApiEnv>()
         .then((res) => res[0]);
 
       if (!workspace) {
-        throw new HTTPException(404);
+        throw new AppError(404, {
+          message: `Workspace ${workspaceId} not found`,
+        });
       }
       return ctx.json(workspace);
     },

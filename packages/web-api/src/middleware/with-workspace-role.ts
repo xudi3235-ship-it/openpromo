@@ -1,11 +1,11 @@
 import { workspacesTable } from "@openpromo/core/schema/workspaces.sql";
 import { eq } from "drizzle-orm";
 import type { Context } from "hono";
-import { HTTPException } from "hono/http-exception";
 import type { MiddlewareHandler } from "hono/types";
 import { ORGANIZATION_ROLE, type WorkspaceRole } from "../constants/auth";
 import { assertOrg, assertUser } from "../helpers/auth";
 import { getDbClient } from "../helpers/db";
+import { AppError } from "../helpers/error";
 import { getWorkspaceRole, hasWorkspaceRole } from "../helpers/role";
 import type { ApiEnv } from "../types";
 
@@ -25,7 +25,7 @@ export const withWorkspaceRole: (
   const user = assertUser(c);
 
   if (!workspaceId) {
-    throw new HTTPException(500, {
+    throw new AppError(500, {
       message: "Workspace ID is required in the path",
     });
   }
@@ -39,7 +39,9 @@ export const withWorkspaceRole: (
     .then((res) => res[0]?.organizationId);
 
   if (orgIdOfWorkspace !== organizationId) {
-    throw new HTTPException(404);
+    throw new AppError(404, {
+      message: `Workspace ${workspaceId} is not part of the user's organization`,
+    });
   }
 
   // 3. check if user has the required role
@@ -58,7 +60,7 @@ export const withWorkspaceRole: (
   );
 
   if (!hasWorkspaceRole(workspaceUserRole, requiredRole)) {
-    throw new HTTPException(403, {
+    throw new AppError(403, {
       message: `Insufficient workspace permissions. User role: ${workspaceUserRole}, Required role: ${requiredRole}.`,
     });
   }

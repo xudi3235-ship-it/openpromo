@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   useLoaderData,
@@ -10,7 +9,7 @@ import {
   ImageIcon,
   TrendingUpIcon,
 } from "lucide-react";
-import { apiClient } from "@/lib/hono-client";
+import { useHonoQuery } from "@/lib/hono-client";
 import { Button } from "@/ui/components/button";
 import {
   Card,
@@ -30,15 +29,9 @@ function App() {
   const { user } = useLoaderData({ from: "__root__" });
   const navigate = useNavigate();
 
-  const query = useQuery({
+  const pingQuery = useHonoQuery({
     queryKey: ["ping"],
-    queryFn: async () => {
-      const res = await apiClient.ping.$get();
-      if (!res.ok) {
-        throw new Error("Failed to fetch ping");
-      }
-      return await res.json();
-    },
+    queryFn: (api) => api.ping.$get(),
   });
 
   const handleGetStartedClick = () => {
@@ -81,16 +74,16 @@ function App() {
                   Learn More
                 </Button>
                 show case RPC call here
-                {query.isLoading ? (
+                {pingQuery.isLoading ? (
                   <span className="text-muted-foreground">Loading...</span>
-                ) : query.isError ? (
+                ) : pingQuery.isError ? (
                   <span className="text-red-500">
-                    Error: {query.error.message}
+                    Error: {pingQuery.error.message}
                   </span>
                 ) : (
-                  query.isSuccess && (
+                  pingQuery.isSuccess && (
                     <span className="text-green-500">
-                      Ping: {query.data.message}
+                      Ping: {pingQuery.data.message}
                     </span>
                   )
                 )}
