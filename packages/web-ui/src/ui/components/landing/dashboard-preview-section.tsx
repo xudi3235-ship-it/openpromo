@@ -1,5 +1,5 @@
 import dashboardPreview from "@/assets/dashboard.svg";
-import { Container, Section } from "@/ui/components/layout";
+import { Container, Section } from "@/ui/components/_layout";
 
 export function DashboardPreviewSection() {
   return (

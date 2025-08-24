@@ -4,7 +4,7 @@ import luminousLogo from "@/assets/company/Luminous.svg";
 import orbitcLogo from "@/assets/company/Orbitc.svg";
 import prolineLogo from "@/assets/company/Proline.svg";
 import springfieldLogo from "@/assets/company/Springfield.svg";
-import { Container, Section, Stack } from "@/ui/components/layout";
+import { Container, Section, Stack } from "@/ui/components/_layout";
 import { Typography } from "@/ui/components/typography";
 
 const companies = [

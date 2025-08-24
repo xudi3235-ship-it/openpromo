@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react";
+import { Center, Container, Section, Stack } from "@/ui/components/_layout";
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
-import { Center, Container, Section, Stack } from "@/ui/components/layout";
 import { Typography } from "@/ui/components/typography";
 
 interface HeroSectionProps {

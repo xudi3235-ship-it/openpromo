@@ -1,6 +1,6 @@
 import { BarChart3, Calendar, ChevronRight, Users } from "lucide-react";
+import { Container, Grid, Section, Stack } from "@/ui/components/_layout";
 import { Button } from "@/ui/components/button";
-import { Container, Grid, Section, Stack } from "@/ui/components/layout";
 import { Typography } from "@/ui/components/typography";
 
 const collaborationFeatures = [
