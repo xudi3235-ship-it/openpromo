@@ -37,17 +37,17 @@ export function FeaturesSection() {
         <div className="flex flex-col items-center text-center mb-16">
           <div className="flex items-center gap-1 mb-6">
             <Users className="w-4 h-4 text-blue-600" />
-            <Typography variant="feature-tag" color="blue">
+            <Typography.FeatureTag color="blue">
               Seamless collaboration
-            </Typography>
+            </Typography.FeatureTag>
           </div>
-          <Typography variant="h2" className="mb-6 max-w-2xl">
+          <Typography.H2 className="mb-6 max-w-2xl">
             Powering teamwork to simplify workflows
-          </Typography>
-          <Typography variant="body-lg" className="max-w-2xl">
+          </Typography.H2>
+          <Typography.BodyLg className="max-w-2xl">
             Say goodbye to version chaos and embrace a smoother workflow
             designed to help your team achieve more, together.
-          </Typography>
+          </Typography.BodyLg>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
@@ -58,12 +58,10 @@ export function FeaturesSection() {
                 alt={feature.alt}
                 className="w-full h-auto rounded-lg mb-6"
               />
-              <Typography variant="h3" className="mb-2">
-                {feature.title}
-              </Typography>
-              <Typography variant="body-sm" className="mb-4">
+              <Typography.H3 className="mb-2">{feature.title}</Typography.H3>
+              <Typography.BodySm className="mb-4">
                 {feature.description}
-              </Typography>
+              </Typography.BodySm>
               <Button
                 variant="ghost"
                 className="justify-start px-0 text-sm font-semibold"
@@ -81,18 +79,18 @@ export function FeaturesSection() {
         <div>
           <div className="flex items-center gap-1 mb-4">
             <Calendar className="w-4 h-4 text-orange-600" />
-            <Typography variant="feature-tag" color="orange">
+            <Typography.FeatureTag color="orange">
               Meaningful calendar
-            </Typography>
+            </Typography.FeatureTag>
           </div>
-          <Typography variant="h2" className="mb-6">
+          <Typography.H2 className="mb-6">
             Dynamic planner that keeps you ahead
-          </Typography>
-          <Typography variant="body-lg" className="mb-10">
+          </Typography.H2>
+          <Typography.BodyLg className="mb-10">
             Stay one step ahead with a calendar that grows with your schedule.
             Adapt quickly to changes, manage priorities effectively, and achieve
             your goals with ease.
-          </Typography>
+          </Typography.BodyLg>
           <Button variant="secondary" size="lg">
             Learn more
             <ChevronRight className="w-4 h-4" />
@@ -119,18 +117,18 @@ export function FeaturesSection() {
         <div>
           <div className="flex items-center gap-1 mb-4">
             <BarChart3 className="w-4 h-4 text-purple-600" />
-            <Typography variant="feature-tag" color="purple">
+            <Typography.FeatureTag color="purple">
               Insightful analytics
-            </Typography>
+            </Typography.FeatureTag>
           </div>
-          <Typography variant="h2" className="mb-6">
+          <Typography.H2 className="mb-6">
             Analytics that power smarter decisions
-          </Typography>
-          <Typography variant="body-lg" className="mb-10">
+          </Typography.H2>
+          <Typography.BodyLg className="mb-10">
             Our cutting-edge analytics deliver detailed trends, patterns, and
             actionable intelligence to help you make informed decisions and stay
             ahead of the competition.
-          </Typography>
+          </Typography.BodyLg>
           <Button variant="secondary" size="lg">
             Learn more
             <ChevronRight className="w-4 h-4" />

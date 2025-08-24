@@ -18,9 +18,9 @@ const companies = [
 export function CompaniesSection() {
   return (
     <section className="flex flex-col items-center gap-8 py-16 lg:py-20">
-      <Typography variant="body-base" className="text-center">
+      <Typography.BodyBase className="text-center">
         Trusted by the best teams
-      </Typography>
+      </Typography.BodyBase>
       <div className="flex items-center justify-center gap-6 md:gap-10 lg:gap-12 flex-wrap">
         {companies.map((company) => (
           <img

@@ -13,22 +13,22 @@ export function HeroSection({ onGetStartedClick }: HeroSectionProps) {
       {/* Announcement Pill */}
       <Badge variant="announcement" className="mb-14">
         <Badge variant="announcement-pill">
-          <Typography variant="announcement-badge" color="green">
+          <Typography.AnnouncementBadge color="green">
             NEW
-          </Typography>
+          </Typography.AnnouncementBadge>
         </Badge>
-        <Typography variant="announcement">Announcing API 2.0</Typography>
+        <Typography.Announcement>Announcing API 2.0</Typography.Announcement>
       </Badge>
 
       {/* Main Content */}
       <div className="max-w-4xl mb-11">
-        <Typography variant="h1" className="mb-6">
+        <Typography.H1 className="mb-6">
           The most powerful business platform.
-        </Typography>
-        <Typography variant="body-lg" className="max-w-2xl mx-auto">
+        </Typography.H1>
+        <Typography.BodyLg className="max-w-2xl mx-auto">
           Unlock the potential of your business with our next-level SaaS
           platform. Transform your workflows and achieve new heights today.
-        </Typography>
+        </Typography.BodyLg>
       </div>
 
       {/* CTA Buttons */}
