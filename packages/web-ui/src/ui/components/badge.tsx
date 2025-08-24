@@ -16,6 +16,10 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+        announcement:
+          "inline-flex items-center gap-1.5 h-8 px-3 bg-white border border-neutral-200 rounded-full",
+        "announcement-pill":
+          "flex items-center justify-center h-5 px-2 bg-green-fill border border-green-stroke rounded-full",
       },
     },
     defaultVariants: {

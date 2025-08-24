@@ -8,27 +8,41 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        primary:
+          "bg-gradient-to-b from-[#1E1E28] to-[#141317] border border-[var(--neutral-800)] text-white font-semibold shadow-sm hover:opacity-90 rounded-xl text-[15px]",
+        secondary:
+          "border border-[var(--neutral-200)] text-[var(--neutral-900)] bg-white font-semibold hover:bg-neutral-50 rounded-xl text-[15px]",
         destructive:
           "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
           "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Legacy variants (deprecated - use primary/secondary instead)
+        default:
+          "bg-gradient-to-b from-[#1E1E28] to-[#141317] border border-[var(--neutral-800)] text-white font-semibold shadow-sm hover:opacity-90 rounded-xl text-[15px]",
+        "dark-gradient":
+          "bg-gradient-to-b from-[#1E1E28] to-[#141317] border border-[var(--neutral-800)] text-white font-semibold shadow-sm hover:opacity-90 rounded-xl text-[15px]",
+        "light-outline":
+          "border border-[var(--neutral-200)] text-[var(--neutral-900)] bg-white font-semibold hover:bg-neutral-50 rounded-xl text-[15px]",
+        // Mode toggle variants
+        "mode-active":
+          "bg-gradient-to-b from-[#1E1E28] to-[#141317] border border-[#333335] text-white shadow-sm hover:opacity-90 rounded-full",
+        "mode-inactive":
+          "text-[var(--neutral-600)] hover:bg-neutral-100 rounded-full",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
         lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        xl: "h-11 px-5 pr-4",
         icon: "size-9",
+        "mode-icon": "w-7 h-7 p-0",
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "primary",
       size: "default",
     },
   },

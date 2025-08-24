@@ -4,10 +4,21 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+async function getDomain(): Promise<string | undefined> {
+  try {
+    return (await import("sst")).Resource.Urls.domain;
+  } catch (error: unknown) {
+    // TODO: this is trying to enable local dev for www
+    // without depending on SST
+    console.error("Error fetching domain:", error);
+    return undefined;
+  }
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(async ({ mode }) => {
   const isDev = mode === "development";
-  const domain = isDev ? (await import("sst")).Resource.Urls.domain : undefined;
+  const domain = isDev ? await getDomain() : undefined;
 
   return {
     server: isDev
