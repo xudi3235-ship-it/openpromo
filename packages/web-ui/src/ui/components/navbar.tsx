@@ -9,8 +9,8 @@ import {
 import { login } from "@/lib/auth";
 import { useHonoQuery } from "@/lib/hono-client";
 import { Button } from "@/ui/components/button";
+import OrgSwitcher from "@/ui/components/layout/org-switcher";
 import NotificationMenu from "@/ui/components/navbar-components/notification-menu";
-import OrgSwitcher from "@/ui/components/navbar-components/team-switcher";
 import UserMenu from "@/ui/components/navbar-components/user-menu";
 import {
   NavigationMenu,

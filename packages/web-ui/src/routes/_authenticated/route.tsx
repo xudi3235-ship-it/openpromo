@@ -1,17 +1,6 @@
-import { createFileRoute, Outlet, useLoaderData } from "@tanstack/react-router";
-import { login } from "@/lib/auth";
-import UnauthorizedError from "@/ui/components/errors/unauthorized-error";
+import { createFileRoute } from "@tanstack/react-router";
+import { AuthenticatedLayout } from "@/ui/components/layout/authenticated-layout";
 
 export const Route = createFileRoute("/_authenticated")({
-  component: RouteComponent,
+  component: AuthenticatedLayout,
 });
-
-function RouteComponent() {
-  const { user } = useLoaderData({ from: "__root__" });
-
-  if (!user) {
-    return <UnauthorizedError login={() => login()} />;
-  }
-
-  return <Outlet />;
-}
