@@ -11,7 +11,6 @@ import {
 import { LayoutProvider } from "@/context/layout-provider";
 import { getCookie } from "@/lib/cookies";
 import { AppSidebar } from "../ui/app-sidebar";
-import { SkipToMain } from "../ui/skip-to-main";
 import { TeamSwitcher } from "../ui/team-switcher";
 import { sidebarData } from "./data/sidebar-data";
 import { NavGroup } from "./nav-group";
@@ -26,7 +25,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <LayoutProvider>
-        <SkipToMain />
         <AppSidebar>
           <SidebarHeader>
             <TeamSwitcher teams={sidebarData.teams} />
