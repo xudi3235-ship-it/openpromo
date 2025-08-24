@@ -62,6 +62,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.11",
+    "@tanstack/react-query-devtools": "^5.85.5",
     "@tanstack/router-plugin": "^1.131.3",
     "@tsconfig/vite-react": "^7.0.0",
     "@types/react": "catalog:",

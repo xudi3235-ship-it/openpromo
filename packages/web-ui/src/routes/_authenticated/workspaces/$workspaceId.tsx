@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "@/components/layout/header";
 import { Main } from "@/components/layout/main";
 import { TopNav } from "@/components/layout/top-nav";
+import { ProfileDropdown } from "@/components/profile-dropdown";
+import { ThemeSwitch } from "@/components/theme-switcher";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,9 +28,9 @@ function WorkspaceComponent() {
         <TopNav links={topNav} />
         <div className="ms-auto flex items-center space-x-4">
           {/* <Search />
+          <ConfigDrawer /> */}
           <ThemeSwitch />
-          <ConfigDrawer />
-          <ProfileDropdown /> */}
+          <ProfileDropdown />
         </div>
       </Header>
 

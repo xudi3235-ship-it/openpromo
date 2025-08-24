@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import GeneralError from "@/components/errors/general-error";
@@ -35,7 +36,12 @@ function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <Toaster richColors />
       <Outlet />
-      <TanStackRouterDevtools />
+      {import.meta.env.MODE === "development" && (
+        <>
+          <ReactQueryDevtools buttonPosition="bottom-left" />
+          <TanStackRouterDevtools position="bottom-right" />
+        </>
+      )}
     </QueryClientProvider>
   );
 }
