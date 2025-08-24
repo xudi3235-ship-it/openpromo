@@ -4,6 +4,7 @@
   "linter": {
     "domains": {
       "react": "recommended"
-    }
+    },
+    "includes": ["!sst-env.d.ts"]
   }
 }

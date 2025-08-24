@@ -1,12 +1,18 @@
+import amsterdamLogo from "@/assets/company/Amsterdam.svg";
+import cloudLogo from "@/assets/company/Cloud.svg";
+import luminousLogo from "@/assets/company/Luminous.svg";
+import orbitcLogo from "@/assets/company/Orbitc.svg";
+import prolineLogo from "@/assets/company/Proline.svg";
+import springfieldLogo from "@/assets/company/Springfield.svg";
 import { Typography } from "@/ui/components/typography";
 
 const companies = [
-  { name: "Springfield", src: "/company/Springfield.svg" },
-  { name: "Orbitc", src: "/company/Orbitc.svg" },
-  { name: "Cloud", src: "/company/Cloud.svg" },
-  { name: "Proline", src: "/company/Proline.svg" },
-  { name: "Amsterdam", src: "/company/Amsterdam.svg" },
-  { name: "Luminous", src: "/company/Luminous.svg" },
+  { name: "Springfield", src: springfieldLogo },
+  { name: "Orbitc", src: orbitcLogo },
+  { name: "Cloud", src: cloudLogo },
+  { name: "Proline", src: prolineLogo },
+  { name: "Amsterdam", src: amsterdamLogo },
+  { name: "Luminous", src: luminousLogo },
 ];
 
 export function CompaniesSection() {
