@@ -4,6 +4,7 @@ import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import GeneralError from "@/components/errors/general-error";
 import NotFoundError from "@/components/errors/not-found-error";
+import { NavigationProgress } from "@/components/navigation-progress";
 import { Toaster } from "@/components/ui/sonner";
 import { useHashNotification } from "@/hooks/useHashNotification";
 import { honoApiCall } from "@/lib/hono-client";
@@ -34,6 +35,7 @@ function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <NavigationProgress />
       <Toaster richColors />
       <Outlet />
       {import.meta.env.MODE === "development" && (
