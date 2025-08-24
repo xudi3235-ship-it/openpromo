@@ -1,5 +1,6 @@
 import { BarChart3, Calendar, ChevronRight, Users } from "lucide-react";
 import { Button } from "@/ui/components/button";
+import { Container, Grid, Section, Stack } from "@/ui/components/layout";
 import { Typography } from "@/ui/components/typography";
 
 const collaborationFeatures = [
@@ -31,110 +32,126 @@ const collaborationFeatures = [
 
 export function FeaturesSection() {
   return (
-    <section className="py-20 lg:py-32">
-      {/* Seamless Collaboration */}
-      <div className="mb-20 lg:mb-32">
-        <div className="flex flex-col items-center text-center mb-16">
-          <div className="flex items-center gap-1 mb-6">
-            <Users className="w-4 h-4 text-blue-600" />
-            <Typography.FeatureTag color="blue">
-              Seamless collaboration
-            </Typography.FeatureTag>
-          </div>
-          <Typography.H2 className="mb-6 max-w-2xl">
-            Powering teamwork to simplify workflows
-          </Typography.H2>
-          <Typography.BodyLg className="max-w-2xl">
-            Say goodbye to version chaos and embrace a smoother workflow
-            designed to help your team achieve more, together.
-          </Typography.BodyLg>
-        </div>
+    <Section spacing="lg">
+      <Container size="xl">
+        <Stack spacing="3xl">
+          {/* Seamless Collaboration */}
+          <Stack spacing="2xl">
+            <Stack spacing="xl" align="center" className="text-center">
+              <Stack direction="row" spacing="xs" align="center">
+                <Users className="w-4 h-4 text-blue-600" />
+                <Typography.FeatureTag color="blue">
+                  Seamless collaboration
+                </Typography.FeatureTag>
+              </Stack>
+              <Typography.H2 className="max-w-2xl">
+                Powering teamwork to simplify workflows
+              </Typography.H2>
+              <Typography.BodyLg className="max-w-2xl">
+                Say goodbye to version chaos and embrace a smoother workflow
+                designed to help your team achieve more, together.
+              </Typography.BodyLg>
+            </Stack>
 
-        <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
-          {collaborationFeatures.map((feature) => (
-            <div key={feature.title} className="flex flex-col">
-              <img
-                src={feature.image}
-                alt={feature.alt}
-                className="w-full h-auto rounded-lg mb-6"
-              />
-              <Typography.H3 className="mb-2">{feature.title}</Typography.H3>
-              <Typography.BodySm className="mb-4">
-                {feature.description}
-              </Typography.BodySm>
-              <Button
-                variant="ghost"
-                className="justify-start px-0 text-sm font-semibold"
-              >
+            <Grid cols={3} responsive="md" gap="xl">
+              {collaborationFeatures.map((feature) => (
+                <Stack key={feature.title} spacing="lg">
+                  <img
+                    src={feature.image}
+                    alt={feature.alt}
+                    className="w-full h-auto rounded-lg"
+                  />
+                  <Stack spacing="md">
+                    <Typography.H3>{feature.title}</Typography.H3>
+                    <Typography.BodySm>{feature.description}</Typography.BodySm>
+                    <Button
+                      variant="ghost"
+                      className="justify-start px-0 text-sm font-semibold self-start"
+                    >
+                      Learn more
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </Stack>
+                </Stack>
+              ))}
+            </Grid>
+          </Stack>
+
+          {/* Dynamic Planner */}
+          <Grid
+            cols={1}
+            responsive="lg"
+            gap="2xl"
+            align="center"
+            className="lg:grid-cols-2"
+          >
+            <Stack spacing="xl">
+              <Stack direction="row" spacing="xs" align="center">
+                <Calendar className="w-4 h-4 text-orange-600" />
+                <Typography.FeatureTag color="orange">
+                  Meaningful calendar
+                </Typography.FeatureTag>
+              </Stack>
+              <Typography.H2>
+                Dynamic planner that keeps you ahead
+              </Typography.H2>
+              <Typography.BodyLg>
+                Stay one step ahead with a calendar that grows with your
+                schedule. Adapt quickly to changes, manage priorities
+                effectively, and achieve your goals with ease.
+              </Typography.BodyLg>
+              <Button variant="secondary" size="lg" className="self-start">
                 Learn more
                 <ChevronRight className="w-4 h-4" />
               </Button>
+            </Stack>
+            <div className="order-first lg:order-last">
+              <img
+                src="https://api.builder.io/api/v1/image/assets/TEMP/2e77ca64962f468b6348ac2fe2cebad270e2b573?width=904"
+                alt="Dynamic calendar interface"
+                className="w-full h-auto rounded-2xl"
+              />
             </div>
-          ))}
-        </div>
-      </div>
+          </Grid>
 
-      {/* Dynamic Planner */}
-      <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center mb-20 lg:mb-32">
-        <div>
-          <div className="flex items-center gap-1 mb-4">
-            <Calendar className="w-4 h-4 text-orange-600" />
-            <Typography.FeatureTag color="orange">
-              Meaningful calendar
-            </Typography.FeatureTag>
-          </div>
-          <Typography.H2 className="mb-6">
-            Dynamic planner that keeps you ahead
-          </Typography.H2>
-          <Typography.BodyLg className="mb-10">
-            Stay one step ahead with a calendar that grows with your schedule.
-            Adapt quickly to changes, manage priorities effectively, and achieve
-            your goals with ease.
-          </Typography.BodyLg>
-          <Button variant="secondary" size="lg">
-            Learn more
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-        <div className="order-first lg:order-last">
-          <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/2e77ca64962f468b6348ac2fe2cebad270e2b573?width=904"
-            alt="Dynamic calendar interface"
-            className="w-full h-auto rounded-2xl"
-          />
-        </div>
-      </div>
-
-      {/* Analytics */}
-      <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-        <div>
-          <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/27b1ce9a10c182a02edc25b8120aa962196d752e?width=904"
-            alt="Analytics dashboard interface"
-            className="w-full h-auto rounded-2xl"
-          />
-        </div>
-        <div>
-          <div className="flex items-center gap-1 mb-4">
-            <BarChart3 className="w-4 h-4 text-purple-600" />
-            <Typography.FeatureTag color="purple">
-              Insightful analytics
-            </Typography.FeatureTag>
-          </div>
-          <Typography.H2 className="mb-6">
-            Analytics that power smarter decisions
-          </Typography.H2>
-          <Typography.BodyLg className="mb-10">
-            Our cutting-edge analytics deliver detailed trends, patterns, and
-            actionable intelligence to help you make informed decisions and stay
-            ahead of the competition.
-          </Typography.BodyLg>
-          <Button variant="secondary" size="lg">
-            Learn more
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    </section>
+          {/* Analytics */}
+          <Grid
+            cols={1}
+            responsive="lg"
+            gap="2xl"
+            align="center"
+            className="lg:grid-cols-2"
+          >
+            <div>
+              <img
+                src="https://api.builder.io/api/v1/image/assets/TEMP/27b1ce9a10c182a02edc25b8120aa962196d752e?width=904"
+                alt="Analytics dashboard interface"
+                className="w-full h-auto rounded-2xl"
+              />
+            </div>
+            <Stack spacing="xl">
+              <Stack direction="row" spacing="xs" align="center">
+                <BarChart3 className="w-4 h-4 text-purple-600" />
+                <Typography.FeatureTag color="purple">
+                  Insightful analytics
+                </Typography.FeatureTag>
+              </Stack>
+              <Typography.H2>
+                Analytics that power smarter decisions
+              </Typography.H2>
+              <Typography.BodyLg>
+                Our cutting-edge analytics deliver detailed trends, patterns,
+                and actionable intelligence to help you make informed decisions
+                and stay ahead of the competition.
+              </Typography.BodyLg>
+              <Button variant="secondary" size="lg" className="self-start">
+                Learn more
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </Stack>
+          </Grid>
+        </Stack>
+      </Container>
+    </Section>
   );
 }

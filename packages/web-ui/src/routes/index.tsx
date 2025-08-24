@@ -34,13 +34,11 @@ function App() {
     <div className="min-h-screen bg-white">
       <LandingNavbar />
 
-      <main className="px-4 lg:px-6">
-        <div className="mx-auto max-w-7xl">
-          <HeroSection onGetStartedClick={handleGetStartedClick} />
-          <DashboardPreviewSection />
-          <CompaniesSection />
-          <FeaturesSection />
-        </div>
+      <main>
+        <HeroSection onGetStartedClick={handleGetStartedClick} />
+        <DashboardPreviewSection />
+        <CompaniesSection />
+        <FeaturesSection />
       </main>
     </div>
   );
