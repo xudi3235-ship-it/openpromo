@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLoaderData } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,27 +12,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import useDialogState from "./hooks/use-dialog-state";
+import { SignOutDialog } from "./signout-dialog";
 
 export function ProfileDropdown() {
-  const [_, setOpen] = useDialogState();
-
+  const [open, setOpen] = useDialogState();
+  const { user } = useLoaderData({ from: "__root__" });
   return (
     <>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
-              <AvatarImage src="/avatars/01.png" alt="@shadcn" />
-              <AvatarFallback>OP</AvatarFallback>
+              <AvatarImage
+                src={user?.profilePictureUrl ?? ""}
+                alt={user?.firstName ?? ""}
+              />
+              <AvatarFallback>{user?.firstName?.charAt(0)}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col gap-1.5">
-              <p className="text-sm leading-none font-medium">dev</p>
+              <p className="text-sm leading-none font-medium">
+                {user?.firstName}
+              </p>
               <p className="text-muted-foreground text-xs leading-none">
-                dev@openpromo.app
+                {user?.email}
               </p>
             </div>
           </DropdownMenuLabel>
@@ -66,7 +72,7 @@ export function ProfileDropdown() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* <SignOutDialog open={!!open} onOpenChange={setOpen} /> */}
+      <SignOutDialog open={!!open} onOpenChange={setOpen} />
     </>
   );
 }

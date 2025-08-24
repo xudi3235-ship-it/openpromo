@@ -1,4 +1,4 @@
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useLoaderData } from "@tanstack/react-router";
 import { cn } from "@/components/lib/utils";
 import {
   SidebarContent,
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 import { LayoutProvider } from "@/context/layout-provider";
 import { getCookie } from "@/lib/cookies";
+import type { User } from "@/lib/hono-client";
 import { AppSidebar } from "../ui/app-sidebar";
 import { TeamSwitcher } from "../ui/team-switcher";
 import { sidebarData } from "./data/sidebar-data";
@@ -22,6 +23,7 @@ type AuthenticatedLayoutProps = {
 
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const defaultOpen = getCookie("sidebar_state") !== "false";
+  const { user } = useLoaderData({ from: "__root__" });
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <LayoutProvider>
@@ -35,7 +37,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
             ))}
           </SidebarContent>
           <SidebarFooter>
-            <NavUser user={sidebarData.user} />
+            <NavUser user={user as User} />
           </SidebarFooter>
           <SidebarRail />
         </AppSidebar>
