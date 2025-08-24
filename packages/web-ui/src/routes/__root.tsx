@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useHashNotification } from "@/hooks/useHashNotification";
-import { apiClient } from "@/lib/hono-client";
+import { honoApiCall } from "@/lib/hono-client";
 import GeneralError from "@/ui/components/errors/general-error";
 import NotFoundError from "@/ui/components/errors/not-found-error";
 import { Toaster } from "@/ui/components/sonner";
@@ -12,8 +12,10 @@ const queryClient = new QueryClient();
 export const Route = createRootRoute({
   beforeLoad: async () => {
     try {
-      const user = await apiClient.users.me.$get().then((res) => res.json());
-      return { user };
+      const user = await honoApiCall((api) => api.users.me.$get(), {
+        disableErrorToast: true,
+      });
+      return user.success ? { user: user.data } : { user: undefined };
     } catch (_e) {
       return { user: undefined };
     }

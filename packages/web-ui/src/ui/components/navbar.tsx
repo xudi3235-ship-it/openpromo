@@ -38,11 +38,13 @@ export default function Component() {
   const { data: currentOrg } = useHonoQuery({
     queryKey: ["currentOrg"],
     queryFn: (api) => api.orgs.current.$get(),
+    enabled: !!user,
   });
 
   const { data: orgs } = useHonoQuery({
     queryKey: ["orgs"],
     queryFn: (api) => api.orgs.$get(),
+    enabled: !!user,
   });
 
   return (

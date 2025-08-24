@@ -41,7 +41,7 @@ type ApiResponse<T> =
       };
     };
 
-const honoApiCall = async <T extends object>(
+export const honoApiCall = async <T extends object>(
   request: (
     api: typeof apiClient,
   ) => Promise<ClientResponse<T, ContentfulStatusCode, "json">>,
