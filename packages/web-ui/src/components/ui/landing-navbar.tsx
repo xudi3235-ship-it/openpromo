@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, Moon, Sun } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Button } from "./button";
 import {
   NavigationMenu,
@@ -71,26 +71,8 @@ export default function LandingNavbar() {
             </NavigationMenuList>
           </NavigationMenu>
 
-          {/* Right side - Dark mode toggle and Book demo */}
+          {/* Right side */}
           <div className="flex items-center gap-4">
-            {/* Dark Mode Toggle */}
-            <div className="flex items-center rounded-full border border-[var(--neutral-200)] p-1">
-              <Button
-                variant="mode-active"
-                size="mode-icon"
-                className="flex items-center justify-center"
-              >
-                <Sun className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="mode-inactive"
-                size="mode-icon"
-                className="flex items-center justify-center"
-              >
-                <Moon className="w-4 h-4" />
-              </Button>
-            </div>
-
             {/* Book a demo button */}
             <Button variant="secondary" size="xl">
               Book a demo

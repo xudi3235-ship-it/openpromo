@@ -6,6 +6,7 @@ import GeneralError from "@/components/errors/general-error";
 import NotFoundError from "@/components/errors/not-found-error";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/context/theme-provider";
 import { useHashNotification } from "@/hooks/useHashNotification";
 import { honoApiCall } from "@/lib/hono-client";
 
@@ -34,16 +35,18 @@ function RootLayout() {
   useHashNotification();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <NavigationProgress />
-      <Toaster richColors />
-      <Outlet />
-      {import.meta.env.MODE === "development" && (
-        <>
-          <ReactQueryDevtools buttonPosition="bottom-left" />
-          <TanStackRouterDevtools position="bottom-right" />
-        </>
-      )}
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <NavigationProgress />
+        <Toaster richColors />
+        <Outlet />
+        {import.meta.env.MODE === "development" && (
+          <>
+            <ReactQueryDevtools buttonPosition="bottom-left" />
+            <TanStackRouterDevtools position="bottom-right" />
+          </>
+        )}
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
