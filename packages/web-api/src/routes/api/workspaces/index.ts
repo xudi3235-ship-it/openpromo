@@ -1,4 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
+import { usersTable } from "@openpromo/core/schema/users.sql";
 import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace_role_assignments.sql";
 import { workspacesTable } from "@openpromo/core/schema/workspaces.sql";
 import { and, eq } from "drizzle-orm";
@@ -8,13 +9,16 @@ import { ORGANIZATION_ROLE, WORKSPACE_ROLE } from "../../../constants/auth";
 import { assertOrg, assertUser } from "../../../helpers/auth";
 import { getDbClient } from "../../../helpers/db";
 import { AppError } from "../../../helpers/error";
+import { createWorkspace } from "../../../helpers/workspace";
 import { withAuth } from "../../../middleware/with-auth";
+import { withOrgRole } from "../../../middleware/with-org-role";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
 import type { ApiEnv } from "../../../types";
 
 export const workspacesRoute = new Hono<ApiEnv>()
   .use(withAuth())
-  .get("/", async (ctx) => {
+  // List all workspaces
+  .get("/", withOrgRole(ORGANIZATION_ROLE.MEMBER), async (ctx) => {
     const db = getDbClient(ctx.env.HYPERDRIVE);
     const role = ctx.get("role");
     const user = assertUser(ctx);
@@ -31,7 +35,11 @@ export const workspacesRoute = new Hono<ApiEnv>()
 
     // Otherwise, get the workspaces the user has access to
     const workspaces = await db
-      .select()
+      .select({
+        id: workspacesTable.id,
+        name: workspacesTable.name,
+        slug: workspacesTable.slug,
+      })
       .from(workspacesTable)
       .innerJoin(
         workspaceRoleAssignmentsTable,
@@ -42,31 +50,86 @@ export const workspacesRoute = new Hono<ApiEnv>()
           eq(workspaceRoleAssignmentsTable.assigneeId, user.id),
           eq(workspacesTable.organizationId, organizationId),
         ),
-      )
-      .then((res) => res.map((w) => w.workspaces));
+      );
 
     return ctx.json(workspaces);
   })
+  // Get workspace by slug
   .get(
-    "/:workspaceId",
-    zValidator("param", z.object({ workspaceId: z.string() })),
+    "/:workspaceSlug",
+    zValidator("param", z.object({ workspaceSlug: z.string() })),
     withWorkspaceRole(WORKSPACE_ROLE.VIEWER),
     async (ctx) => {
       const db = getDbClient(ctx.env.HYPERDRIVE);
 
-      const { workspaceId } = ctx.req.valid("param");
+      const { workspaceSlug } = ctx.req.valid("param");
 
-      const workspace = await db
+      const [workspace] = await db
         .select()
         .from(workspacesTable)
-        .where(and(eq(workspacesTable.id, workspaceId)))
-        .then((res) => res[0]);
+        .where(eq(workspacesTable.slug, workspaceSlug))
+        .limit(1);
 
       if (!workspace) {
         throw new AppError(404, {
-          message: `Workspace ${workspaceId} not found`,
+          message: `Workspace ${workspaceSlug} not found`,
         });
       }
       return ctx.json(workspace);
+    },
+  )
+  // Create a new workspace
+  .post(
+    "/",
+    zValidator("json", z.object({ name: z.string() })),
+    withOrgRole(ORGANIZATION_ROLE.MEMBER),
+    async (ctx) => {
+      const db = getDbClient(ctx.env.HYPERDRIVE);
+
+      const user = assertUser(ctx);
+      const organizationId = assertOrg(ctx);
+      const { name } = ctx.req.valid("json");
+
+      const workspace = await createWorkspace(
+        db,
+        name,
+        organizationId,
+        user.id,
+      );
+
+      return ctx.json(workspace);
+    },
+  )
+  // Delete workspace by slug
+  .delete(
+    "/:workspaceSlug",
+    zValidator("param", z.object({ workspaceSlug: z.string() })),
+    withWorkspaceRole(WORKSPACE_ROLE.ADMIN),
+    async (ctx) => {
+      const db = getDbClient(ctx.env.HYPERDRIVE);
+
+      const user = assertUser(ctx);
+      const { workspaceSlug } = ctx.req.valid("param");
+
+      const [dbUser] = await db
+        .select({
+          defaultWorkspaceSlug: usersTable.defaultWorkspaceSlug,
+        })
+        .from(usersTable)
+        .where(eq(usersTable.workosId, user.id))
+        .limit(1);
+
+      if (dbUser.defaultWorkspaceSlug === workspaceSlug) {
+        throw new AppError(400, {
+          userMessage: "Default workspace cannot be deleted",
+        });
+      }
+
+      const [result] = await db
+        .delete(workspacesTable)
+        .where(eq(workspacesTable.slug, workspaceSlug))
+        .returning();
+
+      return ctx.json({ workspaceId: result?.id });
     },
   );

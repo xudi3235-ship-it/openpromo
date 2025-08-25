@@ -11,6 +11,8 @@ import type { ApiEnv } from "../types";
 
 /**
  * Middleware to check if the user has the required workspace role
+ *
+ * `workspaceId` or `workspaceSlug` is required in the path
  * @param requiredRole - The required workspace role
  */
 export const withWorkspaceRole: (
@@ -19,14 +21,29 @@ export const withWorkspaceRole: (
   const db = getDbClient(c.env.HYPERDRIVE);
 
   const orgRole = c.get("role");
-  const workspaceId = c.req.param("workspaceId");
+  const workspaceSlug = c.req.param("workspaceSlug");
+  let workspaceId = c.req.param("workspaceId");
+
+  if (workspaceSlug && !workspaceId) {
+    workspaceId = await db
+      .select({ id: workspacesTable.id })
+      .from(workspacesTable)
+      .where(eq(workspacesTable.slug, workspaceSlug))
+      .limit(1)
+      .then((res) => res[0]?.id);
+    if (!workspaceId) {
+      throw new AppError(404, {
+        message: `Workspace ${workspaceSlug} not found`,
+      });
+    }
+  }
 
   // 1. check if user is authenticated and workspace id is provided
   const user = assertUser(c);
 
   if (!workspaceId) {
     throw new AppError(500, {
-      message: "Workspace ID is required in the path",
+      message: "Workspace id or slug required in the path",
     });
   }
 
@@ -53,11 +70,7 @@ export const withWorkspaceRole: (
     return next();
   }
 
-  const workspaceUserRole = await getWorkspaceRole(
-    c.env.HYPERDRIVE,
-    workspaceId,
-    user.id,
-  );
+  const workspaceUserRole = await getWorkspaceRole(db, workspaceId, user.id);
 
   if (!hasWorkspaceRole(workspaceUserRole, requiredRole)) {
     throw new AppError(403, {

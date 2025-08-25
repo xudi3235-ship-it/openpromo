@@ -64,6 +64,20 @@
       "when": 1756090043478,
       "tag": "0008_seed-workspace-roles",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1756101391933,
+      "tag": "0009_tough_ozymandias",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1756104082729,
+      "tag": "0010_shocking_wither",
+      "breakpoints": true
     }
   ]
 }

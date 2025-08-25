@@ -1,4 +1,3 @@
-import type { Hyperdrive } from "@cloudflare/workers-types";
 import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace_role_assignments.sql";
 import { workspaceRolesTable } from "@openpromo/core/schema/workspace_roles.sql";
 import { and, eq } from "drizzle-orm";
@@ -8,7 +7,7 @@ import {
   WORKSPACE_ROLE,
   type WorkspaceRole,
 } from "../constants/auth";
-import { getDbClient } from "./db";
+import type { DbClient } from "./db";
 
 /**
  * Role hierarchy levels for organization roles
@@ -74,12 +73,10 @@ export function hasWorkspaceRole(
  * @returns The workspace role of the user
  */
 export async function getWorkspaceRole(
-  hyperdrive: Hyperdrive,
+  db: DbClient,
   workspaceId: string,
   userId: string,
 ): Promise<WorkspaceRole | undefined> {
-  const db = getDbClient(hyperdrive);
-
   const workspaceRole = await db
     .select({ slug: workspaceRolesTable.slug })
     .from(workspaceRoleAssignmentsTable)

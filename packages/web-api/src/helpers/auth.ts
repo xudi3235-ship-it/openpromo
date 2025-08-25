@@ -90,7 +90,7 @@ export function clearAuthStateCookie(c: Context) {
  * Asserts that the user object is present in the context
  * @param ctx - The context object.
  * @returns The user object.
- * @throws 401 if the user is not present.
+ * @throws 500 if the user is not present.
  */
 export function assertUser(ctx: Context<ApiEnv>) {
   const user = ctx.get("user");
@@ -106,7 +106,7 @@ export function assertUser(ctx: Context<ApiEnv>) {
  * Asserts that the organization ID is present in the context.
  * @param ctx - The context object.
  * @returns The organization ID.
- * @throws 401 if the organization ID is not present.
+ * @throws 500 if the organization ID is not present.
  */
 export function assertOrg(ctx: Context<ApiEnv>) {
   const organizationId = ctx.get("organizationId");

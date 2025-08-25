@@ -1,4 +1,6 @@
-import { Hono } from "hono";
+import { usersTable } from "@openpromo/core/schema/users.sql";
+import type { User } from "@workos-inc/node";
+import { type Context, Hono } from "hono";
 import { Resource } from "sst";
 import { ORGANIZATION_ROLE } from "../../constants/auth";
 import {
@@ -7,7 +9,68 @@ import {
   getWorkOS,
   setSessionCookie,
 } from "../../helpers/auth";
+import { getDbClient } from "../../helpers/db";
+import { AppError } from "../../helpers/error";
+import { createWorkspace } from "../../helpers/workspace";
 import type { ApiEnv } from "../../types";
+
+const bootstrapNewUser = async (
+  user: User,
+  ctx: Context<ApiEnv>,
+  sealedSession: string,
+) => {
+  const workOS = getWorkOS();
+  const db = getDbClient(ctx.env.HYPERDRIVE);
+
+  const namePrefix =
+    user.firstName ?? user.lastName ?? user.email.split("@")[0];
+  // Create an organization for the user
+  const orgName = namePrefix ? `${namePrefix}'s Org` : "My Org";
+  const organization = await workOS.organizations.createOrganization({
+    name: orgName,
+  });
+  await workOS.userManagement.createOrganizationMembership({
+    organizationId: organization.id,
+    userId: user.id,
+    roleSlug: ORGANIZATION_ROLE.OWNER,
+  });
+
+  // Refresh the user's session with the new organization
+  const session = workOS.userManagement.loadSealedSession({
+    sessionData: sealedSession,
+    cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
+  });
+  const refreshResult = await session.refresh({
+    organizationId: organization.id,
+  });
+  if (!refreshResult.authenticated) {
+    throw new AppError(500, {
+      message: `Failed to refresh session: ${refreshResult.reason}`,
+    });
+  }
+  if (!refreshResult.sealedSession) {
+    throw new AppError(500, { message: "No sealed session" });
+  }
+  setSessionCookie(ctx, refreshResult.sealedSession);
+
+  // Create a default workspace for the user
+  const workspaceName = namePrefix
+    ? `${namePrefix}'s Workspace`
+    : "My Workspace";
+
+  const workspace = await createWorkspace(
+    db,
+    workspaceName,
+    organization.id,
+    user.id,
+  );
+
+  // Create a user record in our database and set the default workspace
+  await db.insert(usersTable).values({
+    workosId: user.id,
+    defaultWorkspaceSlug: workspace.slug,
+  });
+};
 
 export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
   const workOS = getWorkOS();
@@ -36,23 +99,14 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
 
     const { sealedSession, user } = authenticatedUser;
     if (!sealedSession) {
-      throw new Error("No sealed session");
+      throw new AppError(500, { message: "No sealed session" });
     }
-    setSessionCookie(c, sealedSession);
 
-    // Create an organization for the user if it doesn't exist
-    if (!authenticatedUser.organizationId) {
-      const orgNamePrefix =
-        user.firstName ?? user.lastName ?? user.email.split("@")[0];
-      const orgName = orgNamePrefix ? `${orgNamePrefix}'s Org` : "My Org";
-      const organization = await workOS.organizations.createOrganization({
-        name: orgName,
-      });
-      await workOS.userManagement.createOrganizationMembership({
-        organizationId: organization.id,
-        userId: user.id,
-        roleSlug: ORGANIZATION_ROLE.OWNER,
-      });
+    // bootstrap new user if they don't have an organization
+    if (authenticatedUser.organizationId) {
+      setSessionCookie(c, sealedSession);
+    } else {
+      await bootstrapNewUser(user, c, sealedSession);
     }
 
     const redirectUrl = new URL(returnTo ?? "/", Resource.Urls.site);

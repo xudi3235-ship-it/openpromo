@@ -56,6 +56,7 @@ export const database = new sst.Linkable("Database", {
 
 export const hyperdrive = new cloudflare.HyperdriveConfig("Hyperdrive", {
   name: branchName,
+  caching: { disabled: true },
   accountId: sst.cloudflare.DEFAULT_ACCOUNT_ID,
   origin: {
     // Use direct connection for Hyperdrive

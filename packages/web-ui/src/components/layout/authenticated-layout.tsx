@@ -1,4 +1,4 @@
-import { Outlet, useLoaderData } from "@tanstack/react-router";
+import { Outlet, useLoaderData, useParams } from "@tanstack/react-router";
 import { cn } from "@/components/lib/utils";
 import {
   SidebarContent,
@@ -10,9 +10,9 @@ import {
 } from "@/components/ui/sidebar";
 import { LayoutProvider } from "@/context/layout-provider";
 import { getCookie } from "@/lib/cookies";
-import type { User } from "@/lib/hono-client";
+import { type User, useHonoQuery } from "@/lib/hono-client";
 import { AppSidebar } from "../ui/app-sidebar";
-import { TeamSwitcher } from "../ui/team-switcher";
+import { WorkspaceSwitcher } from "../ui/workspace-switcher";
 import { sidebarData } from "./data/sidebar-data";
 import { NavGroup } from "./nav-group";
 import { NavUser } from "./nav-user";
@@ -24,12 +24,29 @@ type AuthenticatedLayoutProps = {
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const defaultOpen = getCookie("sidebar_state") !== "false";
   const { user } = useLoaderData({ from: "__root__" });
+  const { data: workspaces } = useHonoQuery({
+    queryKey: ["workspaces"],
+    queryFn: (api) => api.workspaces.$get(),
+  });
+
+  const { workspaceSlug: currentWorkspaceSlug } =
+    useParams({
+      from: "/_authenticated/workspaces/$workspaceSlug",
+      shouldThrow: false,
+    }) ?? {};
+
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <LayoutProvider>
         <AppSidebar>
           <SidebarHeader>
-            <TeamSwitcher teams={sidebarData.teams} />
+            {workspaces && (
+              <WorkspaceSwitcher
+                currentWorkspaceSlug={currentWorkspaceSlug}
+                workspaces={workspaces}
+                defaultWorkspaceSlug={user?.defaultWorkspaceSlug}
+              />
+            )}
           </SidebarHeader>
           <SidebarContent>
             {sidebarData.navGroups.map((props) => (

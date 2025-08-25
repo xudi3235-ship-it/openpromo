@@ -2,8 +2,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import GeneralError from "@/components/errors/general-error";
-import NotFoundError from "@/components/errors/not-found-error";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/context/theme-provider";
@@ -27,8 +25,6 @@ export const Route = createRootRoute({
     return { user: context.user };
   },
   component: RootLayout,
-  notFoundComponent: NotFoundError,
-  errorComponent: GeneralError,
 });
 
 function RootLayout() {
@@ -42,7 +38,7 @@ function RootLayout() {
         <Outlet />
         {import.meta.env.MODE === "development" && (
           <>
-            <ReactQueryDevtools buttonPosition="bottom-left" />
+            <ReactQueryDevtools buttonPosition="bottom-right" />
             <TanStackRouterDevtools position="bottom-right" />
           </>
         )}

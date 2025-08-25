@@ -1,0 +1,1 @@
+CREATE INDEX "workspaces_slug_index" ON "workspaces" USING btree ("slug");

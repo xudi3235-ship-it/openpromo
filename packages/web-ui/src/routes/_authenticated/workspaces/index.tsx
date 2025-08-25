@@ -2,15 +2,16 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 export const Route = createFileRoute("/_authenticated/workspaces/")({
   loader: async ({ context }) => {
     const { user } = context;
-    if (!user) {
-      throw redirect({ to: "/login" });
-    }
 
-    // get default workspace id
-    const defaultWorkspaceId = 0;
-    throw redirect({
-      to: "/workspaces/$workspaceId",
-      params: { workspaceId: `${defaultWorkspaceId}` },
-    });
+    if (user?.defaultWorkspaceSlug) {
+      throw redirect({
+        to: "/workspaces/$workspaceSlug",
+        params: { workspaceSlug: user.defaultWorkspaceSlug },
+      });
+    }
+  },
+  component: () => {
+    // TODO: better UI
+    return <div>Select a workspace to continue</div>;
   },
 });

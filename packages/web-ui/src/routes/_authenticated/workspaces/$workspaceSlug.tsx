@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
 import { Main } from "@/components/layout/main";
 import { TopNav } from "@/components/layout/top-nav";
@@ -13,14 +14,47 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
 
-export const Route = createFileRoute("/_authenticated/workspaces/$workspaceId")(
-  {
-    component: WorkspaceComponent,
+export const Route = createFileRoute(
+  "/_authenticated/workspaces/$workspaceSlug",
+)({
+  loader: async ({ params }) => {
+    const workspace = await honoApiCall((api) =>
+      api.workspaces[":workspaceSlug"].$get({
+        param: {
+          workspaceSlug: params.workspaceSlug,
+        },
+      }),
+    );
+    if (workspace.success) {
+      return { workspace: workspace.data };
+    }
+    if (workspace.error.status === 404) {
+      throw notFound();
+    }
+    throw new Error(workspace.error.message);
   },
-);
+  component: WorkspaceComponent,
+});
 
 function WorkspaceComponent() {
+  const { workspace } = Route.useLoaderData();
+  const navigate = useNavigate();
+
+  const { mutate: deleteWorkspace } = useHonoMutation({
+    mutationFn: (api) =>
+      api.workspaces[":workspaceSlug"].$delete({
+        param: {
+          workspaceSlug: workspace.slug,
+        },
+      }),
+    onSuccess: () => {
+      toast.success(`Workspace ${workspace.name} deleted`);
+      navigate({ to: "/workspaces" });
+    },
+  });
+
   return (
     <>
       {/* ===== Top Heading ===== */}
@@ -39,7 +73,7 @@ function WorkspaceComponent() {
         <div className="mb-2 flex items-center justify-between space-y-2">
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <div className="flex items-center space-x-2">
-            <Button>Download</Button>
+            <Button onClick={deleteWorkspace}>Delete Workspace [Test]</Button>
           </div>
         </div>
         <Tabs

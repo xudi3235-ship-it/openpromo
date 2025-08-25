@@ -3,6 +3,8 @@ import "@/components/styles/globals.css";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
+import GeneralError from "./components/errors/general-error";
+import NotFoundError from "./components/errors/not-found-error";
 import reportWebVitals from "./reportWebVitals";
 import { routeTree } from "./routeTree.gen";
 
@@ -12,6 +14,8 @@ const router = createRouter({
   defaultPreload: "intent",
   scrollRestoration: true,
   defaultStructuralSharing: true,
+  defaultErrorComponent: GeneralError,
+  defaultNotFoundComponent: NotFoundError,
 });
 
 // Register the router instance for type safety

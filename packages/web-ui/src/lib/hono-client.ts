@@ -1,4 +1,4 @@
-import type { ApiRoutes, AuthRoutes } from "@openpromo/web-api/src/types";
+import type { ApiRoutes } from "@openpromo/web-api/src/types";
 import {
   type UseMutationOptions,
   type UseQueryOptions,
@@ -6,12 +6,10 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import { type ClientResponse, hc } from "hono/client";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { toast } from "sonner";
-import { API_BASE_URL, AUTH_BASE_URL } from "@/constants";
+import { API_BASE_URL } from "@/constants";
 
 export const apiClient = hc<ApiRoutes>(API_BASE_URL);
-export const authClient = hc<AuthRoutes>(AUTH_BASE_URL);
 
 function getDefaultErrorMessage(status: number) {
   switch (status) {
@@ -37,6 +35,7 @@ type ApiResponse<T> =
   | {
       success: false;
       error: {
+        status: number;
         message: string;
       };
     };
@@ -44,7 +43,7 @@ type ApiResponse<T> =
 export const honoApiCall = async <T extends object>(
   request: (
     api: typeof apiClient,
-  ) => Promise<ClientResponse<T, ContentfulStatusCode, "json">>,
+  ) => Promise<ClientResponse<T, number, "json">>,
   options?: {
     disableErrorToast?: boolean;
   },
@@ -70,7 +69,10 @@ export const honoApiCall = async <T extends object>(
 
   return {
     success: false,
-    error: { message: errorMessage },
+    error: {
+      status: response.status,
+      message: errorMessage,
+    },
   };
 };
 
@@ -78,7 +80,7 @@ interface UseHonoQueryOptions<T extends object>
   extends Omit<UseQueryOptions<T>, "queryFn"> {
   queryFn: (
     api: typeof apiClient,
-  ) => Promise<ClientResponse<T, ContentfulStatusCode, "json">>;
+  ) => Promise<ClientResponse<T, number, "json">>;
   disableErrorToast?: boolean;
 }
 
@@ -105,7 +107,7 @@ interface UseHonoMutationOptions<T extends object, V>
   mutationFn: (
     api: typeof apiClient,
     variables: V,
-  ) => Promise<ClientResponse<T, ContentfulStatusCode, "json">>;
+  ) => Promise<ClientResponse<T, number, "json">>;
   disableErrorToast?: boolean;
 }
 
@@ -137,10 +139,9 @@ export const useHonoMutation = <T extends object, V>(
  * type Workspace = ApiResult<typeof apiClient.workspaces.$get>;
  */
 export type ApiResult<
-  T extends () => Promise<
-    ClientResponse<unknown, ContentfulStatusCode, "json">
-  >,
+  T extends () => Promise<ClientResponse<unknown, number, "json">>,
 > = Awaited<ReturnType<Awaited<ReturnType<T>>["json"]>>;
 
 export type User = ApiResult<typeof apiClient.users.me.$get>;
 export type Org = ApiResult<typeof apiClient.orgs.$get>[0];
+export type Workspace = ApiResult<typeof apiClient.workspaces.$get>[0];
