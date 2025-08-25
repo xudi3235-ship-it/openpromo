@@ -10,10 +10,10 @@ interface HeroSectionProps {
 
 export function HeroSection({ onGetStartedClick }: HeroSectionProps) {
   return (
-    <Section spacing="lg">
+    <Section spacing="md">
       <Container size="xl">
         <Center direction="both">
-          <Stack spacing="3xl" align="center" className="text-center">
+          <Stack spacing="xl" align="center" className="text-center">
             {/* Announcement Pill */}
             <Badge variant="announcement">
               <Badge variant="announcement-pill">
@@ -27,7 +27,7 @@ export function HeroSection({ onGetStartedClick }: HeroSectionProps) {
             </Badge>
 
             {/* Main Content */}
-            <Stack spacing="xl" align="center" className="max-w-4xl">
+            <Stack spacing="lg" align="center" className="max-w-4xl">
               <Typography.H1>
                 The most powerful business platform.
               </Typography.H1>
