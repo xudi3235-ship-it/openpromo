@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { ChevronRight, Moon, Sun } from "lucide-react";
 import { Button } from "./button";
 import {
@@ -44,8 +45,9 @@ export default function LandingNavbar() {
                 <Button
                   variant="ghost"
                   className="px-0 text-[15px] font-medium text-[var(--neutral-900)] hover:bg-transparent"
+                  asChild
                 >
-                  Pricing
+                  <Link to="/pricing">Pricing</Link>
                 </Button>
               </NavigationMenuItem>
               <NavigationMenuItem>
