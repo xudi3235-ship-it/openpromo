@@ -2,7 +2,7 @@
   "root": false,
   "extends": "//",
   "files": {
-    "includes": ["**", "!src/generated/**"]
+    "includes": ["**", "!src/generated/**", "!sst-env.d.ts"]
   },
   "linter": {
     "rules": {

@@ -12,10 +12,6 @@ import { login } from "@/lib/auth";
 
 export const Route = createFileRoute("/")({
   component: App,
-  // not sure if this works
-  headers: () => ({
-    "Cache-Control": "public, max-age=31536000, immutable",
-  }),
 });
 
 function App() {
