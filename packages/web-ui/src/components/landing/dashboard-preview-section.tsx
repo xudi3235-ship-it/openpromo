@@ -8,7 +8,7 @@ export function DashboardPreviewSection() {
         <img
           src={dashboardPreview}
           alt="Dashboard Preview"
-          className="w-full h-auto"
+          className="w-full h-auto aspect-1000/726"
         />
       </Container>
     </Section>
