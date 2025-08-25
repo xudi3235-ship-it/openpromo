@@ -5,8 +5,11 @@ import {
 } from "@tanstack/react-router";
 import { CompaniesSection } from "@/components/landing/companies-section";
 import { DashboardPreviewSection } from "@/components/landing/dashboard-preview-section";
+import { FaqSection } from "@/components/landing/faq-section";
 import { FeaturesSection } from "@/components/landing/features-section";
+import { FooterSection } from "@/components/landing/footer-section";
 import { HeroSection } from "@/components/landing/hero-section";
+import { TestimonialsSection } from "@/components/landing/testimonials-section";
 import LandingNavbar from "@/components/ui/landing-navbar";
 import { login } from "@/lib/auth";
 
@@ -35,7 +38,11 @@ function App() {
         <DashboardPreviewSection />
         <CompaniesSection />
         <FeaturesSection />
+        <TestimonialsSection />
+        <FaqSection />
       </main>
+
+      <FooterSection onGetStartedClick={handleGetStartedClick} />
     </div>
   );
 }
