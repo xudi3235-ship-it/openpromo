@@ -7,6 +7,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@layer base {
+  button:not([disabled]),
+  [role="button"]:not([disabled]),
+  [role="menuitem"]:not([disabled]) {
+    cursor: pointer;
+  }
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

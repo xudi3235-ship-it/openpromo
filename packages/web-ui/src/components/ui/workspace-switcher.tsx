@@ -3,6 +3,7 @@
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { ChevronsUpDown, Plus, Star } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/components/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -107,7 +108,11 @@ export function WorkspaceSwitcher({
               <DropdownMenuItem
                 key={workspace.name}
                 onClick={() => handleSwitchWorkspace(workspace)}
-                className="gap-2 p-2"
+                className={cn(
+                  "gap-2 p-2",
+                  workspace.slug === currentWorkspaceSlug &&
+                    "bg-accent text-accent-foreground",
+                )}
               >
                 <div className="flex size-6 items-center justify-center rounded-md border">
                   {workspace.name.charAt(0)}
