@@ -8,7 +8,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "./navigation-menu";
-import SuperiorLogo from "./superior-logo";
+import Logo from "./superior-logo";
 
 export default function LandingNavbar() {
   return (
@@ -16,7 +16,9 @@ export default function LandingNavbar() {
       <div className="mx-auto max-w-7xl">
         <div className="flex h-10 items-center justify-between">
           {/* Logo */}
-          <SuperiorLogo />
+          <Link to="/" className="flex items-center">
+            <Logo />
+          </Link>
 
           {/* Navigation Links - Hidden on mobile */}
           <NavigationMenu className="hidden md:flex" viewport={false}>

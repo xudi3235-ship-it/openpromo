@@ -1,4 +1,4 @@
-export default function SuperiorLogo() {
+export default function Logo() {
   return (
     <div className="flex items-center gap-2">
       <div className="w-5 h-5 rounded-full bg-neutral-800 flex items-center justify-center">
