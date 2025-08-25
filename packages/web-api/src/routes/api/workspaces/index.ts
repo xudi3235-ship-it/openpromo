@@ -17,8 +17,8 @@ import type { ApiEnv } from "../../../types";
 
 export const workspacesRoute = new Hono<ApiEnv>()
   .use(withAuth())
-  // List all workspaces
-  .get("/", withOrgRole(ORGANIZATION_ROLE.MEMBER), async (ctx) => {
+  // List all workspaces a user has access to
+  .get("/", async (ctx) => {
     const db = getDbClient(ctx.env.HYPERDRIVE);
     const role = ctx.get("role");
     const user = assertUser(ctx);
@@ -82,7 +82,7 @@ export const workspacesRoute = new Hono<ApiEnv>()
   .post(
     "/",
     zValidator("json", z.object({ name: z.string() })),
-    withOrgRole(ORGANIZATION_ROLE.MEMBER),
+    withOrgRole(ORGANIZATION_ROLE.ADMIN),
     async (ctx) => {
       const db = getDbClient(ctx.env.HYPERDRIVE);
 
