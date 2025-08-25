@@ -1,7 +1,10 @@
-import { char, timestamp as rawTs } from "drizzle-orm/pg-core";
-import { ulid as generateULID } from "ulid";
+import { customType, timestamp as rawTs } from "drizzle-orm/pg-core";
 
-export const ulid = () => char({ length: 26 }).$defaultFn(() => generateULID());
+export const ulid = customType<{ data: string }>({
+  dataType() {
+    return "ulid";
+  },
+});
 
 export const timestamp = () => rawTs({ withTimezone: true, mode: "date" });
 

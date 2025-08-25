@@ -1,10 +1,11 @@
+import { sql } from "drizzle-orm";
 import { index, pgTable, text, unique } from "drizzle-orm/pg-core";
 import { timestamps, ulid } from "../drizzle/types";
 
 export const workspacesTable = pgTable(
   "workspaces",
   {
-    id: ulid().primaryKey(),
+    id: ulid().primaryKey().default(sql`gen_ulid()`),
     organizationId: text().notNull(), // organization id from WorkOS
     name: text().notNull(),
     slug: text().notNull(),

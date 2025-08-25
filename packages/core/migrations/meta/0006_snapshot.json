@@ -1,0 +1,36 @@
+{
+  "id": "2c26fded-fb1e-4a27-bbc6-8532abb84b15",
+  "prevId": "c7385d85-e47f-409f-9c9e-0d777595bd44",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {},
+  "enums": {
+    "public.assignee_type": {
+      "name": "assignee_type",
+      "schema": "public",
+      "values": [
+        "user",
+        "group"
+      ]
+    },
+    "public.workspace_role_types": {
+      "name": "workspace_role_types",
+      "schema": "public",
+      "values": [
+        "workspace_admin",
+        "workspace_editor",
+        "workspace_viewer"
+      ]
+    }
+  },
+  "schemas": {},
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -36,6 +36,34 @@
       "when": 1755974110235,
       "tag": "0004_premium_silver_fox",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1756087648858,
+      "tag": "0005_add-ulid",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1756089622918,
+      "tag": "0006_drop-tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1756089974630,
+      "tag": "0007_odd_valeria_richards",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1756090043478,
+      "tag": "0008_seed-workspace-roles",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { index, pgEnum, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 import { timestamps, ulid } from "../drizzle/types";
 import { workspaceRolesTable } from "./workspace_roles.sql";
@@ -8,7 +9,7 @@ export const assigneeType = pgEnum("assignee_type", ["user", "group"]);
 export const workspaceRoleAssignmentsTable = pgTable(
   "workspace_role_assignments",
   {
-    id: ulid().primaryKey(),
+    id: ulid().primaryKey().default(sql`gen_ulid()`),
     workspaceId: ulid()
       .references(() => workspacesTable.id, { onDelete: "cascade" })
       .notNull(),
