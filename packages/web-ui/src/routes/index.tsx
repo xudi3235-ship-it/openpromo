@@ -3,7 +3,6 @@ import {
   useLoaderData,
   useNavigate,
 } from "@tanstack/react-router";
-import { CompaniesSection } from "@/components/landing/companies-section";
 import { DashboardPreviewSection } from "@/components/landing/dashboard-preview-section";
 import { FaqSection } from "@/components/landing/faq-section";
 import { FeaturesSection } from "@/components/landing/features-section";
@@ -36,7 +35,6 @@ function App() {
       <main>
         <HeroSection onGetStartedClick={handleGetStartedClick} />
         <DashboardPreviewSection />
-        <CompaniesSection />
         <FeaturesSection />
         <TestimonialsSection />
         <FaqSection />
