@@ -7,6 +7,7 @@ import { authRoutes } from "./routes/auth";
 const app = new Hono()
   .use(logger())
   .use(noCache())
+  .notFound((c) => c.redirect(`/?redirect_to=${c.req.path}`))
   .route("/api", apiRoutes)
   .route("/auth", authRoutes);
 

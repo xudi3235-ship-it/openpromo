@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { createRootRoute, Outlet, redirect } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import z from "zod";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/context/theme-provider";
@@ -10,8 +11,16 @@ import { honoApiCall } from "@/lib/hono-client";
 
 const queryClient = new QueryClient();
 
+const schema = z.object({
+  redirect_to: z.string().optional(),
+});
+
 export const Route = createRootRoute({
-  beforeLoad: async () => {
+  validateSearch: (search) => schema.parse(search),
+  beforeLoad: async ({ search }) => {
+    if (search.redirect_to) {
+      throw redirect({ to: search.redirect_to });
+    }
     try {
       const user = await honoApiCall((api) => api.users.me.$get(), {
         disableErrorToast: true,
