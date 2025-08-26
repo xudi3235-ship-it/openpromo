@@ -54,6 +54,10 @@ export interface AuthTokenDetails {
 }
 
 export class FacebookOAuthService {
+  // https://developers.facebook.com/docs/permissions
+  // we will incrementally request permissions as needed
+  // NOTE: permissions are divided into basic access & advanced access
+  // 2nd one needs app review + business verifications
   private readonly scopes = [
     "pages_show_list",
     "business_management",
@@ -61,12 +65,10 @@ export class FacebookOAuthService {
     "pages_manage_engagement",
     "pages_read_engagement",
     "read_insights",
-    "public_profile",
-    "email",
   ];
 
   private get redirectUri(): string {
-    return `${Resource.Urls.domain}/api/connected_account/facebook/callback`;
+    return `${Resource.Urls.site}/api/connected_accounts/facebook/callback`;
   }
 
   private get appId(): string {
