@@ -1,5 +1,8 @@
-import { workspacesTable } from "@openpromo/core/schema/workspaces.sql";
-import { eq } from "drizzle-orm";
+import {
+  type Workspace,
+  workspacesTable,
+} from "@openpromo/core/schema/workspaces.sql";
+import { and, eq } from "drizzle-orm";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";
 import { ORGANIZATION_ROLE, type WorkspaceRole } from "../constants/auth";
@@ -21,43 +24,45 @@ export const withWorkspaceRole: (
   const db = getDbClient(c.env.HYPERDRIVE);
 
   const orgRole = c.get("role");
+  const workspaceId = c.req.param("workspaceId");
   const workspaceSlug = c.req.param("workspaceSlug");
-  let workspaceId = c.req.param("workspaceId");
 
-  if (workspaceSlug && !workspaceId) {
-    workspaceId = await db
-      .select({ id: workspacesTable.id })
-      .from(workspacesTable)
-      .where(eq(workspacesTable.slug, workspaceSlug))
-      .limit(1)
-      .then((res) => res[0]?.id);
-    if (!workspaceId) {
-      throw new AppError(404, {
-        message: `Workspace ${workspaceSlug} not found`,
-      });
-    }
-  }
-
-  // 1. check if user is authenticated and workspace id is provided
+  // 1. assert user and org
   const user = assertUser(c);
+  const organizationId = assertOrg(c);
 
-  if (!workspaceId) {
-    throw new AppError(500, {
-      message: "Workspace id or slug required in the path",
-    });
+  // 2. resolve workspace and ensure it belongs to the user's org
+  let workspace: Workspace | undefined;
+
+  if (workspaceId) {
+    const [ws] = await db
+      .select()
+      .from(workspacesTable)
+      .where(
+        and(
+          eq(workspacesTable.id, workspaceId),
+          eq(workspacesTable.organizationId, organizationId),
+        ),
+      )
+      .limit(1);
+    workspace = ws;
+  } else if (workspaceSlug) {
+    const [ws] = await db
+      .select()
+      .from(workspacesTable)
+      .where(
+        and(
+          eq(workspacesTable.slug, workspaceSlug),
+          eq(workspacesTable.organizationId, organizationId),
+        ),
+      )
+      .limit(1);
+    workspace = ws;
   }
 
-  // 2. check if workspace is part of the user's organization
-  const organizationId = assertOrg(c);
-  const orgIdOfWorkspace = await db
-    .select({ organizationId: workspacesTable.organizationId })
-    .from(workspacesTable)
-    .where(eq(workspacesTable.id, workspaceId))
-    .then((res) => res[0]?.organizationId);
-
-  if (orgIdOfWorkspace !== organizationId) {
+  if (!workspace) {
     throw new AppError(404, {
-      message: `Workspace ${workspaceId} is not part of the user's organization`,
+      message: `Workspace ${workspaceSlug ?? workspaceId} not found`,
     });
   }
 
