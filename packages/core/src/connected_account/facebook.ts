@@ -1,4 +1,5 @@
 import { Resource } from "sst";
+import { Log } from "../util/log";
 
 interface FacebookProfile {
   id: string;
@@ -53,6 +54,8 @@ export interface AuthTokenDetails {
   username: string;
 }
 
+const log = Log.create({ namespace: "FacebookOAuthService" });
+
 export class FacebookOAuthService {
   // https://developers.facebook.com/docs/permissions
   // we will incrementally request permissions as needed
@@ -100,7 +103,8 @@ export class FacebookOAuthService {
     });
 
     return {
-      url: `${this.baseUrl}/dialog/oauth?${params.toString()}`,
+      // not graph api
+      url: `https://www.facebook.com/v23.0/dialog/oauth?${params.toString()}`,
       state: state,
       codeVerifier,
     };
@@ -130,6 +134,7 @@ export class FacebookOAuthService {
     if (tokenData.error) {
       throw new Error(`Facebook OAuth error: ${tokenData.error.message}`);
     }
+    log.info("Facebook OAuth access token obtained", { tokenData });
 
     return tokenData;
   }
@@ -266,22 +271,26 @@ export class FacebookOAuthService {
    */
   async authenticate(params: {
     code: string;
-    codeVerifier: string;
     refresh?: string;
   }): Promise<AuthTokenDetails> {
+    log.info("authenticate");
     // Get short-lived access token
     const shortToken = await this.getAccessToken(params.code);
 
+    log.info("Short-lived access token obtained", { shortToken });
     // Exchange for long-lived token
     const longToken = await this.exchangeForLongLivedToken(
       shortToken.access_token,
     );
+
+    log.info("Long-lived access token obtained", { longToken });
 
     // Verify permissions
     await this.verifyPermissions(longToken.access_token);
 
     // Get user profile
     const profile = await this.getUserProfile(longToken.access_token);
+    log.info("User profile obtained", { profile });
 
     // Calculate expiration (60 days or from response)
     const expiresIn = longToken.expires_in || 5184000; // 60 days default
