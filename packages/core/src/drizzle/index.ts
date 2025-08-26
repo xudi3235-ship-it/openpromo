@@ -1,18 +1,50 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Resource } from "sst";
+import { createContext } from "../context";
 import { Log } from "../util/log";
 
 export * from "drizzle-orm";
 
 const log = Log.create({ namespace: "drizzle" });
 
-export const db = (urlOverride?: string) => {
-  // for cf workers, they provide a url override through hyperdrive
-  // other services will use the pooled conn from neon.
-  const connectionString =
-    urlOverride ||
-    `postgresql://${Resource.Database.username}:${Resource.Database.password}@${Resource.Database.host}/${Resource.Database.database}?sslmode=require`;
+export namespace Database {
+  export interface Info {
+    connectionString: string;
+  }
 
+  export const Context = createContext<Info>();
+
+  export function use() {
+    // for cf workers, they provide a url override through hyperdrive
+    // other services will use the pooled conn from neon.
+    try {
+      return Context.use();
+    } catch {
+      // fallback to pooled conn.
+      return {
+        connectionString: `postgresql://${Resource.Database.username}:${Resource.Database.password}@${Resource.Database.host}/${Resource.Database.database}?sslmode=require`,
+      } as Info;
+    }
+  }
+
+  export function provide<
+    // biome-ignore lint/suspicious/noExplicitAny: expected
+    Next extends (...args: any) => any,
+  >(connectionString: string, fn: Next) {
+    // biome-ignore lint/suspicious/noExplicitAny: expected
+    return Context.provide({ connectionString } as any, () =>
+      Log.provide(
+        {
+          connectionString,
+        },
+        fn,
+      ),
+    );
+  }
+}
+
+export const db = () => {
+  const { connectionString } = Database.use();
   return drizzle({
     connection: connectionString,
     casing: "snake_case",
