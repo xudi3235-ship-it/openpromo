@@ -32,14 +32,7 @@ export namespace Database {
     Next extends (...args: any) => any,
   >(connectionString: string, fn: Next) {
     // biome-ignore lint/suspicious/noExplicitAny: expected
-    return Context.provide({ connectionString } as any, () =>
-      Log.provide(
-        {
-          connectionString,
-        },
-        fn,
-      ),
-    );
+    return Context.provide({ connectionString } as any, () => fn());
   }
 }
 

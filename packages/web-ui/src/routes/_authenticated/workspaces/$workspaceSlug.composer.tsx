@@ -23,8 +23,9 @@ function ComposerComponent() {
   // Facebook OAuth mutation
   const { mutate: initiateFacebookOAuth, isPending } = useHonoMutation({
     mutationFn: (api, variables: { state?: string }) =>
-      api.workspaces.connected_accounts.facebook.auth.$get({
-        query: variables,
+      api.workspaces[":workspaceSlug"].connected_accounts.facebook.auth.$get({
+        query: { state: variables.state },
+        param: { workspaceSlug: workspace.slug },
       }),
     onError: (error) => {
       toast.error(`Failed to initiate Facebook OAuth: ${error.message}`);

@@ -21,6 +21,7 @@ export namespace Actor {
       organizationID: string;
       role: OrganizationRole;
       workspaceID: string; // scoped to workspace
+      workspaceSlug: string;
     };
   }
 
@@ -54,6 +55,17 @@ export namespace Actor {
     const actor = Context.use();
     if (actor.type === "workspace_user") {
       return actor.properties.workspaceID;
+    }
+    throw new VisibleError(
+      "authentication",
+      ErrorCodes.Authentication.UNAUTHORIZED,
+      `No workspace context set. User must select a workspace.`,
+    );
+  }
+  export function workspaceSlug() {
+    const actor = Context.use();
+    if (actor.type === "workspace_user") {
+      return actor.properties.workspaceSlug;
     }
     throw new VisibleError(
       "authentication",

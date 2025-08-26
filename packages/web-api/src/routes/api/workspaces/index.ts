@@ -137,4 +137,4 @@ export const workspacesRoute = new Hono<ApiEnv>()
       return ctx.json({ workspaceId: result?.id });
     },
   )
-  .route("/connected_accounts", connectedAccountsRoute);
+  .route("/:workspaceSlug/connected_accounts", connectedAccountsRoute);

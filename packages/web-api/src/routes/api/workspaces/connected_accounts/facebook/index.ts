@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
+import { Actor } from "@openpromo/core/actor";
 import { facebookOAuthService } from "@openpromo/core/connected_account/facebook";
-import { NotImplementedError } from "@openpromo/core/error";
 import { Hono } from "hono";
 import { z } from "zod";
 import {
@@ -31,6 +31,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
   .use(withAuth())
   .get("/auth", zValidator("query", AuthQuerySchema), async (ctx) => {
     const { state } = ctx.req.valid("query");
+    const workspaceSlug = Actor.workspaceSlug();
 
     // Generate state and codeVerifier for the caller
     const authState =
@@ -46,6 +47,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
     const authData = await facebookOAuthService.getLoginUrl(
       authState,
       codeVerifier,
+      workspaceSlug,
     );
 
     return ctx.json({
@@ -58,6 +60,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
     // FB dialog oauth.
     // 1. token exchange
     const { code, state } = ctx.req.valid("query");
+    const workspaceSlug = Actor.workspaceSlug();
     const storedAuthState = getAuthState(ctx);
 
     if (!storedAuthState || storedAuthState.nonce !== state) {
@@ -75,6 +78,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
     // 2. Authenticate with Facebook
     const authResult = await facebookOAuthService.authenticate({
       code,
+      workspaceSlug,
     });
     // 3. fetch list of pages user has granted access to
     const userPages = await facebookOAuthService.getUserPages(
@@ -86,7 +90,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
     // accounts connected.
     for (const page of userPages) {
       console.debug({ page });
-      throw new NotImplementedError("TODO");
+      // throw new NotImplementedError("TODO");
     }
 
     // at this point, we should be storing the connected account in our db.

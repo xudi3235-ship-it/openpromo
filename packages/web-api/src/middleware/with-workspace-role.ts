@@ -77,6 +77,7 @@ export const withWorkspaceRole: (
     organizationID: organizationId,
     role: orgRole as OrganizationRole,
     email: user.email,
+    workspaceSlug: workspace.slug,
   };
 
   // 3. check if user has the required role

@@ -70,8 +70,8 @@ export class FacebookOAuthService {
     "read_insights",
   ];
 
-  private get redirectUri(): string {
-    return `${Resource.Urls.site}/api/connected_accounts/facebook/callback`;
+  private redirectUri(workspaceSlug: string): string {
+    return `${Resource.Urls.site}/api/workspaces/${workspaceSlug}/connected_accounts/facebook/callback`;
   }
 
   private get appId(): string {
@@ -93,10 +93,11 @@ export class FacebookOAuthService {
   async getLoginUrl(
     state: string,
     codeVerifier: string,
+    workspaceSlug: string,
   ): Promise<{ url: string; state: string; codeVerifier: string }> {
     const params = new URLSearchParams({
       client_id: this.appId,
-      redirect_uri: this.redirectUri,
+      redirect_uri: this.redirectUri(workspaceSlug),
       state: state,
       scope: this.scopes.join(","),
       response_type: "code",
@@ -113,11 +114,14 @@ export class FacebookOAuthService {
   /**
    * Exchange authorization code for access token
    */
-  async getAccessToken(code: string): Promise<FacebookTokenResponse> {
+  async getAccessToken(
+    code: string,
+    workspaceSlug: string,
+  ): Promise<FacebookTokenResponse> {
     const params = new URLSearchParams({
       client_id: this.appId,
       client_secret: this.appSecret,
-      redirect_uri: this.redirectUri,
+      redirect_uri: this.redirectUri(workspaceSlug),
       code,
     });
 
@@ -272,11 +276,15 @@ export class FacebookOAuthService {
    */
   async authenticate(params: {
     code: string;
+    workspaceSlug: string;
     refresh?: string;
   }): Promise<AuthTokenDetails> {
     log.info("authenticate");
     // Get short-lived access token
-    const shortToken = await this.getAccessToken(params.code);
+    const shortToken = await this.getAccessToken(
+      params.code,
+      params.workspaceSlug,
+    );
 
     log.info("Short-lived access token obtained", { shortToken });
     // Exchange for long-lived token
