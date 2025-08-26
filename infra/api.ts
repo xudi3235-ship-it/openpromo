@@ -30,6 +30,9 @@ if (!$dev) {
 
 export const api = new sst.cloudflare.Worker("WorkerApi", {
   handler: "packages/web-api/src/index.ts",
+  environment: {
+    DEBUG: "OFF", // only takes string
+  },
   link: [urls, database, ...allSecrets, bucket, email, bus],
   domain,
   assets: $dev
