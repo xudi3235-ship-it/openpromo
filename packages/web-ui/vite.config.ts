@@ -1,7 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import viteReact from "@vitejs/plugin-react";
-import path from "path";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -15,10 +14,6 @@ async function getDomain(): Promise<string | undefined> {
     return undefined;
   }
 }
-
-const alias = {
-  "@": path.resolve(__dirname, "./src"),
-};
 
 // https://vitejs.dev/config/
 export default defineConfig(async ({ mode }) => {
@@ -40,8 +35,5 @@ export default defineConfig(async ({ mode }) => {
       viteReact(),
       tailwindcss(),
     ],
-    resolve: {
-      alias,
-    },
   };
 });

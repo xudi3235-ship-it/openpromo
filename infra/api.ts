@@ -25,7 +25,13 @@ new sst.x.DevCommand("WebUI", {
 
 // Build web-ui package to be used as worker assets in non-dev mode
 if (!$dev) {
-  spawnSync("pnpm", ["build"], { cwd: "packages/web-ui", stdio: "inherit" });
+  const result = spawnSync("pnpm", ["build"], {
+    cwd: "packages/web-ui",
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    process.exit(result.status);
+  }
 }
 
 export const api = new sst.cloudflare.Worker("WorkerApi", {
