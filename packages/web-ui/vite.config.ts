@@ -17,7 +17,7 @@ async function getDomain(): Promise<string | undefined> {
 }
 
 const alias = {
-  "@/assets": path.resolve(__dirname, "src/assets"),
+  "@": path.resolve(__dirname, "./src"),
 };
 
 // https://vitejs.dev/config/
