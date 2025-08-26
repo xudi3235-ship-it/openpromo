@@ -1,9 +1,11 @@
+import { Actor } from "@openpromo/core/actor";
 import {
   type Workspace,
   workspacesTable,
 } from "@openpromo/core/schema/workspaces.sql";
 import {
   ORGANIZATION_ROLE,
+  type OrganizationRole,
   type WorkspaceRole,
 } from "@openpromo/core/workspace/auth";
 import { and, eq } from "drizzle-orm";
@@ -69,13 +71,21 @@ export const withWorkspaceRole: (
     });
   }
 
+  const workspaceCtx = {
+    userID: user.id,
+    workspaceID: workspace.id,
+    organizationID: organizationId,
+    role: orgRole as OrganizationRole,
+    email: user.email,
+  };
+
   // 3. check if user has the required role
   if (
     orgRole === ORGANIZATION_ROLE.OWNER ||
     orgRole === ORGANIZATION_ROLE.ADMIN
   ) {
     // org owner or admin has unrestricted access to all workspaces
-    return next();
+    return Actor.provide("workspace_user", workspaceCtx, next);
   }
 
   const workspaceUserRole = await getWorkspaceRole(db, workspaceId, user.id);
@@ -85,6 +95,13 @@ export const withWorkspaceRole: (
       message: `Insufficient workspace permissions. User role: ${workspaceUserRole}, Required role: ${requiredRole}.`,
     });
   }
-
-  return next();
+  // scoped selector
+  return Actor.provide(
+    "workspace_user",
+    {
+      ...workspaceCtx,
+      role: workspaceUserRole as OrganizationRole,
+    },
+    next,
+  );
 };

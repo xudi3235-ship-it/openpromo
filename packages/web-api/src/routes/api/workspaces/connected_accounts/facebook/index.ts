@@ -7,10 +7,10 @@ import {
   clearAuthStateCookie,
   getAuthState,
   setAuthStateCookie,
-} from "../../../../helpers/auth";
-import { AppError } from "../../../../helpers/error";
-import { withAuth } from "../../../../middleware/with-auth";
-import type { ApiEnv } from "../../../../types";
+} from "../../../../../helpers/auth";
+import { AppError } from "../../../../../helpers/error";
+import { withAuth } from "../../../../../middleware/with-auth";
+import type { ApiEnv } from "../../../../../types";
 
 // Validation schemas
 const AuthQuerySchema = z.object({

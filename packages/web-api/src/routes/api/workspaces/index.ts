@@ -17,6 +17,7 @@ import { withAuth } from "../../../middleware/with-auth";
 import { withOrgRole } from "../../../middleware/with-org-role";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
 import type { ApiEnv } from "../../../types";
+import { connectedAccountsRoute } from "./connected_accounts";
 
 export const workspacesRoute = new Hono<ApiEnv>()
   .use(withAuth())
@@ -135,4 +136,5 @@ export const workspacesRoute = new Hono<ApiEnv>()
 
       return ctx.json({ workspaceId: result?.id });
     },
-  );
+  )
+  .route("/connected_accounts", connectedAccountsRoute);

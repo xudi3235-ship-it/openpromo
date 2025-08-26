@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { Actor } from "../actor";
 import { createTransaction } from "../drizzle/transaction";
 import {
@@ -39,4 +40,14 @@ export namespace ConnectedAccount {
       return acc;
     },
   );
+  export async function list() {
+    const workspaceId = Actor.workspaceID();
+    const accounts = await createTransaction(async (tx) => {
+      return await tx
+        .select()
+        .from(connectedAccount)
+        .where(eq(connectedAccount.workspaceId, workspaceId));
+    });
+    return accounts;
+  }
 }
