@@ -55,6 +55,9 @@ export const api = new sst.cloudflare.Worker("WorkerApi", {
       };
       args.compatibilityFlags = ["nodejs_compat"];
       args.compatibilityDate = "2025-08-23";
+      args.placement = {
+        mode: "smart",
+      };
       // TODO: enable after upstream issue is fixed
       // args.assets = {
       // config: {
