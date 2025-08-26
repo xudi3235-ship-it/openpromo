@@ -49,6 +49,9 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
       code,
       codeVerifier,
     });
+    // at this point, we should be storing the connected account in our db.
+    // open Q: seems like user can select multiple pages/businesses to connect
+    // how do we wanna handle the data models here..?
 
     return ctx.json({
       success: true,

@@ -79,6 +79,11 @@ export class FacebookOAuthService {
     return Resource.FACEBOOK_APP_SECRET.value;
   }
 
+  private get baseUrl(): string {
+    const version = "v23.0";
+    return `https://graph.facebook.com/${version}`;
+  }
+
   /**
    * Generate Facebook OAuth URL for user login
    */
@@ -95,7 +100,7 @@ export class FacebookOAuthService {
     });
 
     return {
-      url: `https://www.facebook.com/v23.0/dialog/oauth?${params.toString()}`,
+      url: `${this.baseUrl}/dialog/oauth?${params.toString()}`,
       state: state,
       codeVerifier,
     };
@@ -113,7 +118,7 @@ export class FacebookOAuthService {
     });
 
     const response = await fetch(
-      `https://graph.facebook.com/v23.0/oauth/access_token?${params.toString()}`,
+      `${this.baseUrl}/oauth/access_token?${params.toString()}`,
     );
 
     if (!response.ok) {
@@ -135,15 +140,12 @@ export class FacebookOAuthService {
   async exchangeForLongLivedToken(
     shortLivedToken: string,
   ): Promise<FacebookTokenResponse> {
-    const response = await fetch(
-      "https://graph.facebook.com/v23.0/oauth/access_token",
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+    const response = await fetch(`${this.baseUrl}/oauth/access_token`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+    });
 
     const url = new URL(response.url);
     url.searchParams.set("grant_type", "fb_exchange_token");
@@ -173,7 +175,7 @@ export class FacebookOAuthService {
    */
   async getUserProfile(accessToken: string): Promise<FacebookProfile> {
     const response = await fetch(
-      `https://graph.facebook.com/v23.0/me?fields=id,name,picture.width(200).height(200),email&access_token=${accessToken}`,
+      `${this.baseUrl}/me?fields=id,name,picture.width(200).height(200),email&access_token=${accessToken}`,
     );
 
     if (!response.ok) {
@@ -188,7 +190,7 @@ export class FacebookOAuthService {
    */
   async verifyPermissions(accessToken: string): Promise<string[]> {
     const response = await fetch(
-      `https://graph.facebook.com/v23.0/me/permissions?access_token=${accessToken}`,
+      `${this.baseUrl}/me/permissions?access_token=${accessToken}`,
     );
 
     if (!response.ok) {
@@ -216,7 +218,7 @@ export class FacebookOAuthService {
    */
   async getUserPages(accessToken: string): Promise<FacebookPage[]> {
     const response = await fetch(
-      `https://graph.facebook.com/v23.0/me/accounts?fields=id,username,name,picture.type(large),category,fan_count,access_token&access_token=${accessToken}`,
+      `${this.baseUrl}/me/accounts?fields=id,username,name,picture.type(large),category,fan_count,access_token&access_token=${accessToken}`,
     );
 
     if (!response.ok) {
@@ -241,7 +243,7 @@ export class FacebookOAuthService {
     username: string;
   }> {
     const response = await fetch(
-      `https://graph.facebook.com/v23.0/${pageId}?fields=username,access_token,name,picture.type(large)&access_token=${accessToken}`,
+      `${this.baseUrl}/${pageId}?fields=username,access_token,name,picture.type(large)&access_token=${accessToken}`,
     );
 
     if (!response.ok) {
