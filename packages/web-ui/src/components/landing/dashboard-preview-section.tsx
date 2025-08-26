@@ -1,6 +1,6 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import dashboardPreview from "@/assets/dashboard.svg";
+import dashboardPreview from "@/assets/dashboard.png";
 import { Container, Section } from "@/components/_layout";
 import { CompaniesMarquee } from "@/components/animations/companies-marquee";
 import { Typography } from "@/components/ui/typography";
