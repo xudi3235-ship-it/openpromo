@@ -1,11 +1,10 @@
-import { sql } from "drizzle-orm";
 import { pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
-import { timestamps, ulid } from "../drizzle/types";
+import { id, timestamps } from "../drizzle/types";
 
 export const usersTable = pgTable(
   "users",
   {
-    id: ulid().primaryKey().default(sql`gen_ulid()`),
+    ...id,
     workosId: text().notNull(),
     defaultWorkspaceSlug: text(),
     ...timestamps,

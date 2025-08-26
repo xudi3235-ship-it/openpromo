@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { customType, timestamp as rawTs } from "drizzle-orm/pg-core";
 
 export const ulid = customType<{ data: string }>({
@@ -5,6 +6,12 @@ export const ulid = customType<{ data: string }>({
     return "ulid";
   },
 });
+
+export const id = {
+  get id() {
+    return ulid("id").primaryKey().default(sql`gen_ulid()`);
+  },
+};
 
 export const timestamp = () => rawTs({ withTimezone: true, mode: "date" });
 
@@ -15,11 +22,6 @@ export const timestamps = {
     .defaultNow()
     .$onUpdate(() => new Date()),
 };
-
-// export const dollar = (name: string) =>
-//   bigint(name, {
-//     mode: "number",
-//   });
 
 // export const blob = <TData>(name: string) =>
 //   customType<{ data: TData; driverData: string }>({

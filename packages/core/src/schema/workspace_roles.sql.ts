@@ -1,6 +1,5 @@
-import { sql } from "drizzle-orm";
 import { pgEnum, pgTable, text } from "drizzle-orm/pg-core";
-import { timestamps, ulid } from "../drizzle/types";
+import { id, timestamps } from "../drizzle/types";
 
 export const workspaceRoleTypes = pgEnum("workspace_role_types", [
   "workspace_admin",
@@ -9,7 +8,7 @@ export const workspaceRoleTypes = pgEnum("workspace_role_types", [
 ]);
 
 export const workspaceRolesTable = pgTable("workspace_roles", {
-  id: ulid().primaryKey().default(sql`gen_ulid()`),
+  ...id,
   name: text().notNull(),
   description: text(),
   slug: workspaceRoleTypes().unique().notNull(),

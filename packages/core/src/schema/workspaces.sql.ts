@@ -1,15 +1,14 @@
-import { sql } from "drizzle-orm";
 import { index, pgTable, text, unique } from "drizzle-orm/pg-core";
-import { timestamps, ulid } from "../drizzle/types";
+import { id, timestamps, ulid } from "../drizzle/types";
 
 export const workspacesTable = pgTable(
   "workspaces",
   {
-    id: ulid().primaryKey().default(sql`gen_ulid()`),
+    ...id,
+    ...timestamps,
     organizationId: text().notNull(), // organization id from WorkOS
     name: text().notNull(),
     slug: text().notNull(),
-    ...timestamps,
   },
   (t) => [
     index().on(t.slug),
@@ -19,3 +18,10 @@ export const workspacesTable = pgTable(
 );
 
 export type Workspace = typeof workspacesTable.$inferSelect;
+
+// Reusable helper for workspace foreign key reference (spreadable)
+export const workspaceID = {
+  workspaceId: ulid()
+    .references(() => workspacesTable.id, { onDelete: "cascade" })
+    .notNull(),
+};
