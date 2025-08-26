@@ -43,17 +43,17 @@ export const sidebarData: SidebarData = {
         },
         {
           title: "Create Post",
-          url: "/composer",
+          url: "/workspaces/$workspaceSlug/composer",
           icon: SquarePen,
         },
         {
           title: "Calendar",
-          url: "/calendar",
+          url: "/workspaces/$workspaceSlug/calendar",
           icon: Calendar,
         },
         {
           title: "Insights",
-          url: "/insights",
+          url: "/workspaces/$workspaceSlug/insights",
           badge: "3",
           icon: TrendingUp,
         },

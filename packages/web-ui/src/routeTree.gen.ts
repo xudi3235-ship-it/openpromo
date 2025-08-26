@@ -18,6 +18,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWorkspacesRouteRouteImport } from './routes/_authenticated/workspaces/route'
 import { Route as AuthenticatedWorkspacesIndexRouteImport } from './routes/_authenticated/workspaces/index'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug'
+import { Route as AuthenticatedWorkspacesWorkspaceSlugIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug.index'
+import { Route as AuthenticatedWorkspacesWorkspaceSlugComposerRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug.composer'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -66,6 +68,18 @@ const AuthenticatedWorkspacesWorkspaceSlugRoute =
     path: '/$workspaceSlug',
     getParentRoute: () => AuthenticatedWorkspacesRouteRoute,
   } as any)
+const AuthenticatedWorkspacesWorkspaceSlugIndexRoute =
+  AuthenticatedWorkspacesWorkspaceSlugIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRoute,
+  } as any)
+const AuthenticatedWorkspacesWorkspaceSlugComposerRoute =
+  AuthenticatedWorkspacesWorkspaceSlugComposerRouteImport.update({
+    id: '/composer',
+    path: '/composer',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -74,8 +88,10 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/workspaces': typeof AuthenticatedWorkspacesRouteRouteWithChildren
-  '/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugRoute
+  '/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugRouteWithChildren
   '/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
+  '/workspaces/$workspaceSlug/composer': typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
+  '/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,8 +99,9 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugRoute
   '/workspaces': typeof AuthenticatedWorkspacesIndexRoute
+  '/workspaces/$workspaceSlug/composer': typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
+  '/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,8 +112,10 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_authenticated/workspaces': typeof AuthenticatedWorkspacesRouteRouteWithChildren
-  '/_authenticated/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugRoute
+  '/_authenticated/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugRouteWithChildren
   '/_authenticated/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
+  '/_authenticated/workspaces/$workspaceSlug/composer': typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
+  '/_authenticated/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -109,6 +128,8 @@ export interface FileRouteTypes {
     | '/workspaces'
     | '/workspaces/$workspaceSlug'
     | '/workspaces/'
+    | '/workspaces/$workspaceSlug/composer'
+    | '/workspaces/$workspaceSlug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -116,8 +137,9 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
-    | '/workspaces/$workspaceSlug'
     | '/workspaces'
+    | '/workspaces/$workspaceSlug/composer'
+    | '/workspaces/$workspaceSlug'
   id:
     | '__root__'
     | '/'
@@ -129,6 +151,8 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces'
     | '/_authenticated/workspaces/$workspaceSlug'
     | '/_authenticated/workspaces/'
+    | '/_authenticated/workspaces/$workspaceSlug/composer'
+    | '/_authenticated/workspaces/$workspaceSlug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -205,18 +229,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteImport
       parentRoute: typeof AuthenticatedWorkspacesRouteRoute
     }
+    '/_authenticated/workspaces/$workspaceSlug/': {
+      id: '/_authenticated/workspaces/$workspaceSlug/'
+      path: '/'
+      fullPath: '/workspaces/$workspaceSlug/'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugIndexRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRoute
+    }
+    '/_authenticated/workspaces/$workspaceSlug/composer': {
+      id: '/_authenticated/workspaces/$workspaceSlug/composer'
+      path: '/composer'
+      fullPath: '/workspaces/$workspaceSlug/composer'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugComposerRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRoute
+    }
   }
 }
 
+interface AuthenticatedWorkspacesWorkspaceSlugRouteChildren {
+  AuthenticatedWorkspacesWorkspaceSlugComposerRoute: typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
+  AuthenticatedWorkspacesWorkspaceSlugIndexRoute: typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
+}
+
+const AuthenticatedWorkspacesWorkspaceSlugRouteChildren: AuthenticatedWorkspacesWorkspaceSlugRouteChildren =
+  {
+    AuthenticatedWorkspacesWorkspaceSlugComposerRoute:
+      AuthenticatedWorkspacesWorkspaceSlugComposerRoute,
+    AuthenticatedWorkspacesWorkspaceSlugIndexRoute:
+      AuthenticatedWorkspacesWorkspaceSlugIndexRoute,
+  }
+
+const AuthenticatedWorkspacesWorkspaceSlugRouteWithChildren =
+  AuthenticatedWorkspacesWorkspaceSlugRoute._addFileChildren(
+    AuthenticatedWorkspacesWorkspaceSlugRouteChildren,
+  )
+
 interface AuthenticatedWorkspacesRouteRouteChildren {
-  AuthenticatedWorkspacesWorkspaceSlugRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRoute
+  AuthenticatedWorkspacesWorkspaceSlugRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteWithChildren
   AuthenticatedWorkspacesIndexRoute: typeof AuthenticatedWorkspacesIndexRoute
 }
 
 const AuthenticatedWorkspacesRouteRouteChildren: AuthenticatedWorkspacesRouteRouteChildren =
   {
     AuthenticatedWorkspacesWorkspaceSlugRoute:
-      AuthenticatedWorkspacesWorkspaceSlugRoute,
+      AuthenticatedWorkspacesWorkspaceSlugRouteWithChildren,
     AuthenticatedWorkspacesIndexRoute: AuthenticatedWorkspacesIndexRoute,
   }
 
