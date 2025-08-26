@@ -1,4 +1,10 @@
-import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  createFileRoute,
+  notFound,
+  useNavigate,
+  useRouteContext,
+} from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
 import { Main } from "@/components/layout/main";
@@ -15,6 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
+import { QUERY_KEYS } from "@/lib/query";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug",
@@ -39,8 +46,10 @@ export const Route = createFileRoute(
 });
 
 function WorkspaceComponent() {
+  const { user } = useRouteContext({ from: "/_authenticated" });
   const { workspace } = Route.useLoaderData();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { mutate: deleteWorkspace } = useHonoMutation({
     mutationFn: (api) =>
@@ -50,6 +59,7 @@ function WorkspaceComponent() {
         },
       }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WORKSPACES });
       toast.success(`Workspace ${workspace.name} deleted`);
       navigate({ to: "/workspaces" });
     },
@@ -64,7 +74,7 @@ function WorkspaceComponent() {
           {/* <Search />
           <ConfigDrawer /> */}
           <ThemeSwitch />
-          <ProfileDropdown />
+          <ProfileDropdown user={user} />
         </div>
       </Header>
 

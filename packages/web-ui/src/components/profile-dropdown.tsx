@@ -1,4 +1,4 @@
-import { Link, useLoaderData } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,12 +11,21 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { User } from "@/lib/hono-client";
 import useDialogState from "./hooks/use-dialog-state";
 import { SignOutDialog } from "./signout-dialog";
 
-export function ProfileDropdown() {
+interface ProfileDropdownProps {
+  user: User;
+}
+
+export function ProfileDropdown({ user }: ProfileDropdownProps) {
   const [open, setOpen] = useDialogState();
-  const { user } = useLoaderData({ from: "__root__" });
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <>
       <DropdownMenu modal={false}>
@@ -24,10 +33,10 @@ export function ProfileDropdown() {
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
               <AvatarImage
-                src={user?.profilePictureUrl ?? ""}
-                alt={user?.firstName ?? ""}
+                src={user.profilePictureUrl ?? ""}
+                alt={user.firstName ?? ""}
               />
-              <AvatarFallback>{user?.firstName?.charAt(0)}</AvatarFallback>
+              <AvatarFallback>{user.firstName?.charAt(0)}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
@@ -35,10 +44,10 @@ export function ProfileDropdown() {
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col gap-1.5">
               <p className="text-sm leading-none font-medium">
-                {user?.firstName}
+                {user.firstName}
               </p>
               <p className="text-muted-foreground text-xs leading-none">
-                {user?.email}
+                {user.email}
               </p>
             </div>
           </DropdownMenuLabel>

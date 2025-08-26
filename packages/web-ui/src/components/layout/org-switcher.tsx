@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { type Org, useHonoMutation } from "@/lib/hono-client";
+import { QUERY_KEYS } from "@/lib/query";
 
 interface OrgSwitcherProps {
   orgs: Org[];
@@ -24,7 +25,7 @@ export default function OrgSwitcher({ orgs, currentOrgId }: OrgSwitcherProps) {
     mutationFn: (api, organizationId: string) =>
       api.orgs.switch.$post({ json: { organizationId } }),
     onSuccess: ({ organizationId }) => {
-      queryClient.invalidateQueries({ queryKey: ["currentOrg"] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CURRENT_ORG });
 
       const selectedOrg = orgs.find(
         (org) => org.organizationId === organizationId,

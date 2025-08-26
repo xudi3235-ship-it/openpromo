@@ -76,7 +76,7 @@ export const honoApiCall = async <T extends object>(
   };
 };
 
-interface UseHonoQueryOptions<T extends object>
+export interface UseHonoQueryOptions<T extends object>
   extends Omit<UseQueryOptions<T>, "queryFn"> {
   queryFn: (
     api: typeof apiClient,
@@ -84,14 +84,14 @@ interface UseHonoQueryOptions<T extends object>
   disableErrorToast?: boolean;
 }
 
-export const useHonoQuery = <T extends object>(
+export const convertHonoQueryOptions = <T extends object>(
   options: UseHonoQueryOptions<T>,
 ) => {
-  const { disableErrorToast, ...useQueryOptions } = options;
-  return useQuery<T>({
+  const { queryFn, disableErrorToast, ...useQueryOptions } = options;
+  return {
     ...useQueryOptions,
     queryFn: async () => {
-      const res = await honoApiCall(options.queryFn, {
+      const res = await honoApiCall(queryFn, {
         disableErrorToast,
       });
       if (res.success) {
@@ -99,7 +99,13 @@ export const useHonoQuery = <T extends object>(
       }
       throw new Error(res.error.message);
     },
-  });
+  };
+};
+
+export const useHonoQuery = <T extends object>(
+  options: UseHonoQueryOptions<T>,
+) => {
+  return useQuery<T>(convertHonoQueryOptions(options));
 };
 
 interface UseHonoMutationOptions<T extends object, V>

@@ -1,16 +1,20 @@
 import "@/components/styles/globals.css";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import GeneralError from "./components/errors/general-error";
 import NotFoundError from "./components/errors/not-found-error";
+import { useAuth } from "./hooks/useAuth";
 import reportWebVitals from "./reportWebVitals";
 import { routeTree } from "./routeTree.gen";
 
+const queryClient = new QueryClient();
+
 const router = createRouter({
   routeTree,
-  context: { user: undefined },
+  context: { auth: undefined },
   defaultPreload: "intent",
   scrollRestoration: true,
   defaultStructuralSharing: true,
@@ -25,12 +29,20 @@ declare module "@tanstack/react-router" {
   }
 }
 
+const RouteProviderWithContext = () => {
+  const auth = useAuth();
+
+  return <RouterProvider router={router} context={{ auth }} />;
+};
+
 const rootElement = document.getElementById("root");
 if (rootElement && !rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <StrictMode>
-      <RouterProvider router={router} />
+      <QueryClientProvider client={queryClient}>
+        <RouteProviderWithContext />
+      </QueryClientProvider>
     </StrictMode>,
   );
 }

@@ -1,7 +1,9 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { ChevronsUpDown, Plus, Star } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/components/lib/utils";
 import {
@@ -18,7 +20,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useHonoMutation, type Workspace } from "@/lib/hono-client";
+import { type User, useHonoMutation, type Workspace } from "@/lib/hono-client";
+import { QUERY_KEYS } from "@/lib/query";
+import { NewWorkspaceModal } from "./new-workspace-modal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 
 interface WorkspaceSwitcherProps {
@@ -34,7 +38,9 @@ export function WorkspaceSwitcher({
 }: WorkspaceSwitcherProps) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const router = useRouter();
+  const [isNewWorkspaceModalOpen, setIsNewWorkspaceModalOpen] = useState(false);
 
   const setDefaultWorkspaceMutation = useHonoMutation({
     mutationFn: (api, workspaceSlug: string) =>
@@ -44,6 +50,10 @@ export function WorkspaceSwitcher({
         },
       }),
     onSuccess: (_, workspaceSlug) => {
+      queryClient.setQueryData(QUERY_KEYS.USER, (old: User) => ({
+        ...old,
+        defaultWorkspaceSlug: workspaceSlug,
+      }));
       router.invalidate();
       const workspace = workspaces.find((w) => w.slug === workspaceSlug);
       toast.success(`${workspace?.name || "Workspace"} set as default`);
@@ -154,7 +164,7 @@ export function WorkspaceSwitcher({
             <DropdownMenuItem
               className="gap-2 p-2"
               onClick={() => {
-                navigate({ to: "/workspaces/new" });
+                setIsNewWorkspaceModalOpen(true);
               }}
             >
               <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
@@ -167,6 +177,10 @@ export function WorkspaceSwitcher({
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
+      <NewWorkspaceModal
+        open={isNewWorkspaceModalOpen}
+        onOpenChange={setIsNewWorkspaceModalOpen}
+      />
     </SidebarMenu>
   );
 }

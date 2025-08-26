@@ -1,4 +1,4 @@
-import { Outlet, useLoaderData, useParams } from "@tanstack/react-router";
+import { Outlet, useParams, useRouteContext } from "@tanstack/react-router";
 import { cn } from "@/components/lib/utils";
 import {
   SidebarContent,
@@ -9,23 +9,23 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { LayoutProvider } from "@/context/layout-provider";
-import { getCookie } from "@/lib/cookies";
-import { type User, useHonoQuery } from "@/lib/hono-client";
+import { useHonoQuery } from "@/lib/hono-client";
+import { QUERY_KEYS } from "@/lib/query";
 import { AppSidebar } from "../ui/app-sidebar";
 import { WorkspaceSwitcher } from "../ui/workspace-switcher";
 import { sidebarData } from "./data/sidebar-data";
 import { NavGroup } from "./nav-group";
 import { NavUser } from "./nav-user";
 
-type AuthenticatedLayoutProps = {
+type WorkspaceLayoutProps = {
   children?: React.ReactNode;
 };
 
-export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
-  const defaultOpen = getCookie("sidebar_state") !== "false";
-  const { user } = useLoaderData({ from: "__root__" });
+export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
+  const { user } = useRouteContext({ from: "/_authenticated" });
+
   const { data: workspaces } = useHonoQuery({
-    queryKey: ["workspaces"],
+    queryKey: QUERY_KEYS.WORKSPACES,
     queryFn: (api) => api.workspaces.$get(),
   });
 
@@ -36,7 +36,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     }) ?? {};
 
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
+    <SidebarProvider>
       <LayoutProvider>
         <AppSidebar>
           <SidebarHeader>
@@ -44,7 +44,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               <WorkspaceSwitcher
                 currentWorkspaceSlug={currentWorkspaceSlug}
                 workspaces={workspaces}
-                defaultWorkspaceSlug={user?.defaultWorkspaceSlug}
+                defaultWorkspaceSlug={user.defaultWorkspaceSlug}
               />
             )}
           </SidebarHeader>
@@ -54,7 +54,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
             ))}
           </SidebarContent>
           <SidebarFooter>
-            <NavUser user={user as User} />
+            <NavUser user={user} />
           </SidebarFooter>
           <SidebarRail />
         </AppSidebar>

@@ -1,4 +1,3 @@
-import { useLoaderData } from "@tanstack/react-router";
 import {
   CompassIcon,
   FeatherIcon,
@@ -21,8 +20,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useAuth } from "@/hooks/useAuth";
 import { login } from "@/lib/auth";
 import { useHonoQuery } from "@/lib/hono-client";
+import { QUERY_KEYS } from "@/lib/query";
 
 // Navigation links array to be used in both desktop and mobile menus
 const navigationLinks = [
@@ -33,16 +34,16 @@ const navigationLinks = [
 ];
 
 export default function Component() {
-  const { user } = useLoaderData({ from: "__root__" });
+  const { data: user } = useAuth();
 
   const { data: currentOrg } = useHonoQuery({
-    queryKey: ["currentOrg"],
+    queryKey: QUERY_KEYS.CURRENT_ORG,
     queryFn: (api) => api.orgs.current.$get(),
     enabled: !!user,
   });
 
   const { data: orgs } = useHonoQuery({
-    queryKey: ["orgs"],
+    queryKey: QUERY_KEYS.ORGS,
     queryFn: (api) => api.orgs.$get(),
     enabled: !!user,
   });
