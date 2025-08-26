@@ -2,10 +2,13 @@ import {
   type Workspace,
   workspacesTable,
 } from "@openpromo/core/schema/workspaces.sql";
+import {
+  ORGANIZATION_ROLE,
+  type WorkspaceRole,
+} from "@openpromo/core/workspace/auth";
 import { and, eq } from "drizzle-orm";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";
-import { ORGANIZATION_ROLE, type WorkspaceRole } from "../constants/auth";
 import { assertOrg, assertUser } from "../helpers/auth";
 import { getDbClient } from "../helpers/db";
 import { AppError } from "../helpers/error";

@@ -1,8 +1,8 @@
 import { usersTable } from "@openpromo/core/schema/users.sql";
+import { ORGANIZATION_ROLE } from "@openpromo/core/workspace/auth";
 import type { User } from "@workos-inc/node";
 import { type Context, Hono } from "hono";
 import { Resource } from "sst";
-import { ORGANIZATION_ROLE } from "../../constants/auth";
 import {
   clearAuthStateCookie,
   getAuthState,

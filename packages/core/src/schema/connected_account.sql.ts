@@ -1,4 +1,5 @@
 import { index, json, pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { id, timestamp, timestamps } from "../drizzle/types";
 import { workspaceID } from "./workspaces.sql";
@@ -35,3 +36,5 @@ export const connectedAccount = pgTable(
 
 export type ConnectedAccountInsert = typeof connectedAccount.$inferInsert;
 export type ConnectedAccountSelect = typeof connectedAccount.$inferSelect;
+export const ConnectedAccountSelectSchema =
+  createSelectSchema(connectedAccount);

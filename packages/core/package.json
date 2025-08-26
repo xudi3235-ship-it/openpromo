@@ -24,6 +24,7 @@
     "@openpromo/js-shared": "workspace:^",
     "@workos-inc/node": "catalog:",
     "drizzle-orm": "catalog:",
+    "drizzle-zod": "^0.8.3",
     "facebook-nodejs-business-sdk": "^23.0.1",
     "hono": "catalog:",
     "nanoid": "^5.1.5",

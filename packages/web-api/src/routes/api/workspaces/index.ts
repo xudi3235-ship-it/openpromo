@@ -2,10 +2,13 @@ import { zValidator } from "@hono/zod-validator";
 import { usersTable } from "@openpromo/core/schema/users.sql";
 import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace_role_assignments.sql";
 import { workspacesTable } from "@openpromo/core/schema/workspaces.sql";
+import {
+  ORGANIZATION_ROLE,
+  WORKSPACE_ROLE,
+} from "@openpromo/core/workspace/auth";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { ORGANIZATION_ROLE, WORKSPACE_ROLE } from "../../../constants/auth";
 import { assertOrg, assertUser } from "../../../helpers/auth";
 import { getDbClient } from "../../../helpers/db";
 import { AppError } from "../../../helpers/error";

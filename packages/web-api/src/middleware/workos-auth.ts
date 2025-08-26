@@ -1,7 +1,8 @@
+import { Actor } from "@openpromo/core/actor";
+import type { OrganizationRole } from "@openpromo/core/workspace/auth";
 import { getCookie } from "hono/cookie";
 import type { MiddlewareHandler } from "hono/types";
 import { Resource } from "sst";
-import type { OrganizationRole } from "../constants/auth";
 import {
   clearSessionCookie,
   getWorkOS,
@@ -31,7 +32,18 @@ export const workOSAuth: () => MiddlewareHandler<ApiEnv> =
         c.set("user", result.user);
         c.set("organizationId", result.organizationId);
         c.set("role", result.role as OrganizationRole);
-        return next();
+        // this uses node async local storage, so that we can reuse our core business logic in any Nodejs runtimes: worker, lambda, container, etc.
+        // feels a bit duplicated compared to hono's ctx, maybe we can use local storage as source of truth?
+        return Actor.provide(
+          "user",
+          {
+            userID: result.user.id,
+            organizationID: result.organizationId as string,
+            role: result.role as OrganizationRole,
+            email: result.user.email,
+          },
+          next,
+        );
       }
 
       // If the session is invalid, attempt to refresh

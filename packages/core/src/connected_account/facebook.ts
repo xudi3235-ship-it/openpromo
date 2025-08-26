@@ -219,7 +219,8 @@ export class FacebookOAuthService {
   }
 
   /**
-   * Get user's Facebook pages
+   * Get user's Facebook pages. This gives us the list of FB pages that
+   * user granted access. Datamodel wise, it's User 1..N Page
    */
   async getUserPages(accessToken: string): Promise<FacebookPage[]> {
     const response = await fetch(

@@ -1,5 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { facebookOAuthService } from "@openpromo/core/connected_account/facebook";
+import { NotImplementedError } from "@openpromo/core/error";
 import { Hono } from "hono";
 import { z } from "zod";
 import {
@@ -53,9 +54,10 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
     });
   })
   .get("/callback", zValidator("query", CallbackBodySchema), async (ctx) => {
+    // this endpoint is hit when user successfully logged in via
+    // FB dialog oauth.
+    // 1. token exchange
     const { code, state } = ctx.req.valid("query");
-
-    // Verify the state parameter against what we stored
     const storedAuthState = getAuthState(ctx);
 
     if (!storedAuthState || storedAuthState.nonce !== state) {
@@ -70,10 +72,22 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
     // Clear the stored state since we've verified it
     clearAuthStateCookie(ctx);
 
-    // Authenticate with Facebook
+    // 2. Authenticate with Facebook
     const authResult = await facebookOAuthService.authenticate({
       code,
     });
+    // 3. fetch list of pages user has granted access to
+    const userPages = await facebookOAuthService.getUserPages(
+      authResult.accessToken,
+    );
+
+    // 4. for each linked page, 1:1 map to connected account
+    // we do this in a flatten way so that user can have N FB + M IG, etc.
+    // accounts connected.
+    for (const page of userPages) {
+      console.debug({ page });
+      throw new NotImplementedError("TODO");
+    }
 
     // at this point, we should be storing the connected account in our db.
     // open Q: seems like user can select multiple pages/businesses to connect
