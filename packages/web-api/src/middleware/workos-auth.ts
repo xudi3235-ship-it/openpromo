@@ -18,7 +18,7 @@ export const workOSAuth: () => MiddlewareHandler<ApiEnv> =
     try {
       const sessionCookie = getCookie(c, WORKOS_SESSION_COOKIE_NAME);
       if (!sessionCookie) {
-        return next();
+        return Actor.provide("public", {}, next);
       }
 
       const session = workOS.userManagement.loadSealedSession({
@@ -56,6 +56,16 @@ export const workOSAuth: () => MiddlewareHandler<ApiEnv> =
         if (refreshResult.sealedSession) {
           setSessionCookie(c, refreshResult.sealedSession);
         }
+        return Actor.provide(
+          "user",
+          {
+            userID: refreshResult.user.id,
+            organizationID: refreshResult.organizationId as string,
+            role: refreshResult.role as OrganizationRole,
+            email: refreshResult.user.email,
+          },
+          next,
+        );
       } else {
         throw new Error(`Failed to refresh session: ${refreshResult.reason}`);
       }
@@ -65,5 +75,5 @@ export const workOSAuth: () => MiddlewareHandler<ApiEnv> =
       clearSessionCookie(c);
     }
 
-    return next();
+    return Actor.provide("public", {}, next);
   };
