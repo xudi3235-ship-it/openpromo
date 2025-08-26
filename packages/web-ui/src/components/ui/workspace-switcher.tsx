@@ -41,6 +41,9 @@ export function WorkspaceSwitcher({
   const queryClient = useQueryClient();
   const router = useRouter();
   const [isNewWorkspaceModalOpen, setIsNewWorkspaceModalOpen] = useState(false);
+  const [pendingDefaultSlug, setPendingDefaultSlug] = useState<string | null>(
+    null,
+  );
 
   const setDefaultWorkspaceMutation = useHonoMutation({
     mutationFn: (api, workspaceSlug: string) =>
@@ -78,7 +81,12 @@ export function WorkspaceSwitcher({
     if (workspace.slug === defaultWorkspaceSlug) {
       return;
     }
-    setDefaultWorkspaceMutation.mutate(workspace.slug);
+    setPendingDefaultSlug(workspace.slug);
+    setDefaultWorkspaceMutation.mutate(workspace.slug, {
+      onSettled: () => {
+        setPendingDefaultSlug(null);
+      },
+    });
   };
 
   return (
@@ -139,11 +147,15 @@ export function WorkspaceSwitcher({
                             handleSetDefaultWorkspace(workspace);
                           }}
                           className="ml-auto rounded p-1 hover:bg-accent disabled:opacity-50 transition-colors"
-                          disabled={setDefaultWorkspaceMutation.isPending}
+                          disabled={
+                            setDefaultWorkspaceMutation.isPending &&
+                            pendingDefaultSlug === workspace.slug
+                          }
                         >
                           {defaultWorkspaceSlug === workspace.slug ? (
                             <Star className="size-3 fill-yellow-400 text-yellow-400" />
-                          ) : setDefaultWorkspaceMutation.isPending ? (
+                          ) : setDefaultWorkspaceMutation.isPending &&
+                            pendingDefaultSlug === workspace.slug ? (
                             <div className="size-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
                           ) : (
                             <Star className="size-3 text-muted-foreground hover:text-yellow-400 hover:scale-110 transition-all" />
