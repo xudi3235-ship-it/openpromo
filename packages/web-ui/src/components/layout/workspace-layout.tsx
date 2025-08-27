@@ -39,9 +39,15 @@ export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     <SidebarProvider>
       <LayoutProvider>
         <AppSidebar>
-          <SidebarHeader>
+          <SidebarHeader className="p-4 border-b border-sidebar-border/50">
             {isPending ? (
-              <div>Loading...</div>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-sidebar-accent animate-pulse rounded-xl" />
+                <div className="flex-1">
+                  <div className="h-3 bg-sidebar-accent animate-pulse rounded mb-1" />
+                  <div className="h-2 bg-sidebar-accent/50 animate-pulse rounded w-20" />
+                </div>
+              </div>
             ) : (
               workspaces && (
                 <WorkspaceSwitcher
@@ -52,12 +58,12 @@ export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
               )
             )}
           </SidebarHeader>
-          <SidebarContent>
+          <SidebarContent className="px-2 py-4">
             {sidebarData.navGroups.map((props) => (
               <NavGroup key={props.title} {...props} />
             ))}
           </SidebarContent>
-          <SidebarFooter>
+          <SidebarFooter className="px-4 py-4 border-t border-sidebar-border/50">
             <NavUser user={user} />
           </SidebarFooter>
           <SidebarRail />
