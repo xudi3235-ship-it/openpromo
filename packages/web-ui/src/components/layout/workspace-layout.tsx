@@ -24,7 +24,7 @@ type WorkspaceLayoutProps = {
 export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
   const { user } = useRouteContext({ from: "/_authenticated" });
 
-  const { data: workspaces } = useHonoQuery({
+  const { data: workspaces, isPending } = useHonoQuery({
     queryKey: QUERY_KEYS.WORKSPACES,
     queryFn: (api) => api.workspaces.$get(),
   });
@@ -40,12 +40,16 @@ export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
       <LayoutProvider>
         <AppSidebar>
           <SidebarHeader>
-            {workspaces && (
-              <WorkspaceSwitcher
-                currentWorkspaceSlug={currentWorkspaceSlug}
-                workspaces={workspaces}
-                defaultWorkspaceSlug={user.defaultWorkspaceSlug}
-              />
+            {isPending ? (
+              <div>Loading...</div>
+            ) : (
+              workspaces && (
+                <WorkspaceSwitcher
+                  currentWorkspaceSlug={currentWorkspaceSlug}
+                  workspaces={workspaces}
+                  defaultWorkspaceSlug={user.defaultWorkspaceSlug}
+                />
+              )
             )}
           </SidebarHeader>
           <SidebarContent>

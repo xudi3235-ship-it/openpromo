@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Suspense } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
+import { useHonoMutation, useHonoSuspenseQuery } from "@/lib/hono-client";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/composer",
@@ -47,7 +48,7 @@ function ComposerComponent() {
       }
     },
   });
-  const { data: connectedAccounts } = useHonoQuery({
+  const { data: connectedAccounts } = useHonoSuspenseQuery({
     queryKey: [workspace.slug, "connected_accounts"],
     queryFn: (api) =>
       api.workspaces[":workspaceSlug"].connected_accounts.$get({
@@ -98,11 +99,13 @@ function ComposerComponent() {
         </Card>
       </div>
       connected accounts:
-      {connectedAccounts?.accounts.map((account) => (
-        <div key={account.id}>
-          {account.platform}, {account.accountName}
-        </div>
-      ))}
+      <Suspense fallback={<div>Loading...</div>}>
+        {connectedAccounts?.accounts.map((account) => (
+          <div key={account.id}>
+            {account.platform}, {account.accountName}
+          </div>
+        ))}
+      </Suspense>
     </div>
   );
 }
