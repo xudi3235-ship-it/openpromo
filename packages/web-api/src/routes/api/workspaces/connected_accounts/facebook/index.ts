@@ -130,11 +130,4 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
       success: true,
       data: reconnectResult,
     });
-  })
-  .onError((err, _) => {
-    console.error("Facebook API error:", err);
-    throw new AppError(500, {
-      message: `${err.message}`,
-      userMessage: "Something went wrong. Please try again later.",
-    });
   });

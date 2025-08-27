@@ -32,8 +32,19 @@ function ComposerComponent() {
     },
     onSuccess({ data: { url } }) {
       toast.success("Successfully initiated Facebook OAuth");
-      // open in a dialog
-      window.open(url, "_blank");
+      const popup = window.open(
+        url,
+        "facebook-oauth",
+        "width=600,height=700,scrollbars=yes,resizable=yes,status=yes,location=yes,toolbar=no,menubar=no,left=" +
+          (screen.width / 2 - 300) +
+          ",top=" +
+          (screen.height / 2 - 350),
+      );
+
+      // Optional: Focus the popup window
+      if (popup) {
+        popup.focus();
+      }
     },
   });
   const { data: connectedAccounts } = useHonoQuery({
