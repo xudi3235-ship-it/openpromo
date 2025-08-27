@@ -2,8 +2,10 @@ import type { ApiRoutes } from "@openpromo/web-api/src/types";
 import {
   type UseMutationOptions,
   type UseQueryOptions,
+  type UseSuspenseQueryOptions,
   useMutation,
   useQuery,
+  useSuspenseQuery,
 } from "@tanstack/react-query";
 import { type ClientResponse, hc } from "hono/client";
 import { toast } from "sonner";
@@ -138,6 +140,30 @@ export const useHonoMutation = <T extends object, V>(
   });
 };
 
+interface UseHonoSuspenseQueryOptions<T extends object>
+  extends Omit<UseSuspenseQueryOptions<T>, "queryFn"> {
+  queryFn: (
+    api: typeof apiClient,
+  ) => Promise<ClientResponse<T, number, "json">>;
+  disableErrorToast?: boolean;
+}
+
+export const useHonoSuspenseQuery = <T extends object>(
+  options: UseHonoSuspenseQueryOptions<T>,
+) => {
+  const { queryFn, disableErrorToast, ...useSuspenseQueryOptions } = options;
+  return useSuspenseQuery<T>({
+    ...useSuspenseQueryOptions,
+    queryFn: async () => {
+      const res = await honoApiCall(queryFn, { disableErrorToast });
+      if (res.success) {
+        return res.data;
+      }
+      throw new Error(res.error.message);
+    },
+  });
+};
+
 /**
  * Helper type utility that extracts the result type from an API client method
  * @example
@@ -148,6 +174,7 @@ export type ApiResult<
   T extends () => Promise<ClientResponse<unknown, number, "json">>,
 > = Awaited<ReturnType<Awaited<ReturnType<T>>["json"]>>;
 
+// ------- types -------
 export type User = ApiResult<typeof apiClient.users.me.$get>;
 export type Org = ApiResult<typeof apiClient.orgs.$get>[0];
 export type Workspace = ApiResult<typeof apiClient.workspaces.$get>[0];
