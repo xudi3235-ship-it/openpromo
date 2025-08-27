@@ -1,3 +1,4 @@
+import { getDbClient } from "@openpromo/core/drizzle/index";
 import { usersTable } from "@openpromo/core/schema/users.sql";
 import { ORGANIZATION_ROLE } from "@openpromo/core/workspace/auth";
 import type { User } from "@workos-inc/node";
@@ -9,7 +10,6 @@ import {
   getWorkOS,
   setSessionCookie,
 } from "../../helpers/auth";
-import { getDbClient } from "../../helpers/db";
 import { AppError } from "../../helpers/error";
 import { createWorkspace } from "../../helpers/workspace";
 import type { ApiEnv } from "../../types";
@@ -20,7 +20,7 @@ const bootstrapNewUser = async (
   sealedSession: string,
 ) => {
   const workOS = getWorkOS();
-  const db = getDbClient(ctx.env.HYPERDRIVE);
+  const db = getDbClient();
 
   const namePrefix =
     user.firstName ?? user.lastName ?? user.email.split("@")[0];

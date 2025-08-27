@@ -1,4 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
+import { getDbClient } from "@openpromo/core/drizzle/index";
 import { usersTable } from "@openpromo/core/schema/users.sql";
 import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace_role_assignments.sql";
 import { workspacesTable } from "@openpromo/core/schema/workspaces.sql";
@@ -10,7 +11,6 @@ import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertOrg, assertUser } from "../../../helpers/auth";
-import { getDbClient } from "../../../helpers/db";
 import { AppError } from "../../../helpers/error";
 import { createWorkspace } from "../../../helpers/workspace";
 import { withAuth } from "../../../middleware/with-auth";
@@ -23,7 +23,7 @@ export const workspacesRoute = new Hono<ApiEnv>()
   .use(withAuth())
   // List all workspaces a user has access to
   .get("/", async (ctx) => {
-    const db = getDbClient(ctx.env.HYPERDRIVE);
+    const db = getDbClient();
     const role = ctx.get("role");
     const user = assertUser(ctx);
     const organizationId = assertOrg(ctx);
@@ -64,7 +64,7 @@ export const workspacesRoute = new Hono<ApiEnv>()
     zValidator("param", z.object({ workspaceSlug: z.string() })),
     withWorkspaceRole(WORKSPACE_ROLE.VIEWER),
     async (ctx) => {
-      const db = getDbClient(ctx.env.HYPERDRIVE);
+      const db = getDbClient();
 
       const { workspaceSlug } = ctx.req.valid("param");
 
@@ -88,7 +88,7 @@ export const workspacesRoute = new Hono<ApiEnv>()
     zValidator("json", z.object({ name: z.string() })),
     withOrgRole(ORGANIZATION_ROLE.ADMIN),
     async (ctx) => {
-      const db = getDbClient(ctx.env.HYPERDRIVE);
+      const db = getDbClient();
 
       const user = assertUser(ctx);
       const organizationId = assertOrg(ctx);
@@ -110,7 +110,7 @@ export const workspacesRoute = new Hono<ApiEnv>()
     zValidator("param", z.object({ workspaceSlug: z.string() })),
     withWorkspaceRole(WORKSPACE_ROLE.ADMIN),
     async (ctx) => {
-      const db = getDbClient(ctx.env.HYPERDRIVE);
+      const db = getDbClient();
 
       const user = assertUser(ctx);
       const { workspaceSlug } = ctx.req.valid("param");

@@ -1,17 +1,6 @@
-import type { Hyperdrive } from "@cloudflare/workers-types";
-import { drizzle } from "drizzle-orm/postgres-js";
 import { nanoid } from "nanoid";
-import postgres from "postgres";
 import slugify from "slugify";
 import { AppError } from "./error";
-
-export type DbClient = ReturnType<typeof getDbClient>;
-
-export const getDbClient = (hyperdrive: Hyperdrive) => {
-  return drizzle(postgres(hyperdrive.connectionString), {
-    casing: "snake_case",
-  });
-};
 
 export const generateSlug = async <T>(
   name: string,

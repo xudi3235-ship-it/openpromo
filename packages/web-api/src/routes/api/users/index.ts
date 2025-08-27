@@ -1,10 +1,10 @@
 import { zValidator } from "@hono/zod-validator";
+import { getDbClient } from "@openpromo/core/drizzle/index";
 import { usersTable } from "@openpromo/core/schema/users.sql";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertUser } from "../../../helpers/auth";
-import { getDbClient } from "../../../helpers/db";
 import { withAuth } from "../../../middleware/with-auth";
 import type { ApiEnv } from "../../../types";
 
@@ -12,7 +12,7 @@ export const usersRoute = new Hono<ApiEnv>()
   .use(withAuth())
   .get("/me", async (ctx) => {
     const user = assertUser(ctx);
-    const db = getDbClient(ctx.env.HYPERDRIVE);
+    const db = getDbClient();
 
     const [dbUser] = await db
       .select({
@@ -31,7 +31,7 @@ export const usersRoute = new Hono<ApiEnv>()
       z.object({ defaultWorkspaceSlug: z.string().optional() }),
     ),
     async (ctx) => {
-      const db = getDbClient(ctx.env.HYPERDRIVE);
+      const db = getDbClient();
 
       const user = assertUser(ctx);
       const metadata = ctx.req.valid("json");

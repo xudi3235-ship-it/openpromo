@@ -13,7 +13,6 @@
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "nanoid": "^5.1.5",
-    "postgres": "^3.4.7",
     "slugify": "^1.6.6",
     "zod": "catalog:"
   },

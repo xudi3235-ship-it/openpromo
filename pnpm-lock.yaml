@@ -93,6 +93,9 @@ importers:
       nanoid:
         specifier: ^5.1.5
         version: 5.1.5
+      postgres:
+        specifier: ^3.4.7
+        version: 3.4.7
       sst:
         specifier: 3.17.10
         version: 3.17.10
@@ -223,9 +226,6 @@ importers:
       nanoid:
         specifier: ^5.1.5
         version: 5.1.5
-      postgres:
-        specifier: ^3.4.7
-        version: 3.4.7
       slugify:
         specifier: ^1.6.6
         version: 1.6.6

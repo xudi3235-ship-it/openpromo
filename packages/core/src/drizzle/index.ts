@@ -1,4 +1,5 @@
-import { drizzle } from "drizzle-orm/neon-serverless";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import { Resource } from "sst";
 import { createContext } from "../context";
 import { Log } from "../util/log";
@@ -38,8 +39,7 @@ export namespace Database {
 
 export const db = () => {
   const { connectionString } = Database.use();
-  return drizzle({
-    connection: connectionString,
+  return drizzle(postgres(connectionString), {
     casing: "snake_case",
     logger:
       process.env.DRIZZLE_LOG === "true"
@@ -52,3 +52,6 @@ export const db = () => {
         : undefined,
   });
 };
+
+export const getDbClient = db;
+export type DbClient = ReturnType<typeof db>;

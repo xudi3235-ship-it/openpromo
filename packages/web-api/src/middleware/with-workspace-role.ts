@@ -1,4 +1,5 @@
 import { Actor } from "@openpromo/core/actor";
+import { getDbClient } from "@openpromo/core/drizzle/index";
 import {
   type Workspace,
   workspacesTable,
@@ -12,7 +13,6 @@ import { and, eq } from "drizzle-orm";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";
 import { assertOrg, assertUser } from "../helpers/auth";
-import { getDbClient } from "../helpers/db";
 import { AppError } from "../helpers/error";
 import { getWorkspaceRole, hasWorkspaceRole } from "../helpers/role";
 import type { ApiEnv } from "../types";
@@ -26,9 +26,8 @@ import type { ApiEnv } from "../types";
 export const withWorkspaceRole: (
   requiredRole: WorkspaceRole,
 ) => MiddlewareHandler = (requiredRole) => async (c: Context<ApiEnv>, next) => {
-  const db = getDbClient(c.env.HYPERDRIVE);
-
   const orgRole = c.get("role");
+  const db = getDbClient();
   const workspaceId = c.req.param("workspaceId");
   const workspaceSlug = c.req.param("workspaceSlug");
 
