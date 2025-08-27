@@ -1,11 +1,11 @@
 import type { ExtractTablesWithRelations } from "drizzle-orm";
-import type { NeonQueryResultHKT } from "drizzle-orm/neon-serverless";
 import type { PgTransaction, PgTransactionConfig } from "drizzle-orm/pg-core";
+import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 import { createContext } from "../context";
 import { db } from ".";
 
 export type Transaction = PgTransaction<
-  NeonQueryResultHKT,
+  PostgresJsQueryResultHKT,
   Record<string, never>,
   ExtractTablesWithRelations<Record<string, never>>
 >;
