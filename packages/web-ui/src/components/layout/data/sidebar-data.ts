@@ -6,6 +6,7 @@ import {
   Home,
   SquarePen,
   TrendingUp,
+  Users,
 } from "lucide-react";
 import type { SidebarData } from "../types";
 
@@ -56,6 +57,16 @@ export const sidebarData: SidebarData = {
           url: "/workspaces/$workspaceSlug/insights",
           badge: "3",
           icon: TrendingUp,
+        },
+      ],
+    },
+    {
+      title: "Settings",
+      items: [
+        {
+          title: "Connected Accounts",
+          url: "/workspaces/$workspaceSlug/connected-accounts",
+          icon: Users,
         },
       ],
     },

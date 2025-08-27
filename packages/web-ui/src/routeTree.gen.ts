@@ -19,6 +19,7 @@ import { Route as AuthenticatedWorkspacesRouteRouteImport } from './routes/_auth
 import { Route as AuthenticatedWorkspacesIndexRouteImport } from './routes/_authenticated/workspaces/index'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug.index'
+import { Route as AuthenticatedWorkspacesWorkspaceSlugConnectedAccountsRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug.connected-accounts'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugComposerRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug.composer'
 
 const TermsRoute = TermsRouteImport.update({
@@ -74,6 +75,12 @@ const AuthenticatedWorkspacesWorkspaceSlugIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRoute,
   } as any)
+const AuthenticatedWorkspacesWorkspaceSlugConnectedAccountsRoute =
+  AuthenticatedWorkspacesWorkspaceSlugConnectedAccountsRouteImport.update({
+    id: '/connected-accounts',
+    path: '/connected-accounts',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRoute,
+  } as any)
 const AuthenticatedWorkspacesWorkspaceSlugComposerRoute =
   AuthenticatedWorkspacesWorkspaceSlugComposerRouteImport.update({
     id: '/composer',
@@ -91,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugRouteWithChildren
   '/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/workspaces/$workspaceSlug/composer': typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
+  '/workspaces/$workspaceSlug/connected-accounts': typeof AuthenticatedWorkspacesWorkspaceSlugConnectedAccountsRoute
   '/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +109,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/workspaces': typeof AuthenticatedWorkspacesIndexRoute
   '/workspaces/$workspaceSlug/composer': typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
+  '/workspaces/$workspaceSlug/connected-accounts': typeof AuthenticatedWorkspacesWorkspaceSlugConnectedAccountsRoute
   '/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
 }
 export interface FileRoutesById {
@@ -115,6 +124,7 @@ export interface FileRoutesById {
   '/_authenticated/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugRouteWithChildren
   '/_authenticated/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/_authenticated/workspaces/$workspaceSlug/composer': typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
+  '/_authenticated/workspaces/$workspaceSlug/connected-accounts': typeof AuthenticatedWorkspacesWorkspaceSlugConnectedAccountsRoute
   '/_authenticated/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
 }
 export interface FileRouteTypes {
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug'
     | '/workspaces/'
     | '/workspaces/$workspaceSlug/composer'
+    | '/workspaces/$workspaceSlug/connected-accounts'
     | '/workspaces/$workspaceSlug/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/workspaces'
     | '/workspaces/$workspaceSlug/composer'
+    | '/workspaces/$workspaceSlug/connected-accounts'
     | '/workspaces/$workspaceSlug'
   id:
     | '__root__'
@@ -152,6 +164,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/$workspaceSlug'
     | '/_authenticated/workspaces/'
     | '/_authenticated/workspaces/$workspaceSlug/composer'
+    | '/_authenticated/workspaces/$workspaceSlug/connected-accounts'
     | '/_authenticated/workspaces/$workspaceSlug/'
   fileRoutesById: FileRoutesById
 }
@@ -236,6 +249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugIndexRouteImport
       parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRoute
     }
+    '/_authenticated/workspaces/$workspaceSlug/connected-accounts': {
+      id: '/_authenticated/workspaces/$workspaceSlug/connected-accounts'
+      path: '/connected-accounts'
+      fullPath: '/workspaces/$workspaceSlug/connected-accounts'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugConnectedAccountsRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRoute
+    }
     '/_authenticated/workspaces/$workspaceSlug/composer': {
       id: '/_authenticated/workspaces/$workspaceSlug/composer'
       path: '/composer'
@@ -248,6 +268,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedWorkspacesWorkspaceSlugRouteChildren {
   AuthenticatedWorkspacesWorkspaceSlugComposerRoute: typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
+  AuthenticatedWorkspacesWorkspaceSlugConnectedAccountsRoute: typeof AuthenticatedWorkspacesWorkspaceSlugConnectedAccountsRoute
   AuthenticatedWorkspacesWorkspaceSlugIndexRoute: typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
 }
 
@@ -255,6 +276,8 @@ const AuthenticatedWorkspacesWorkspaceSlugRouteChildren: AuthenticatedWorkspaces
   {
     AuthenticatedWorkspacesWorkspaceSlugComposerRoute:
       AuthenticatedWorkspacesWorkspaceSlugComposerRoute,
+    AuthenticatedWorkspacesWorkspaceSlugConnectedAccountsRoute:
+      AuthenticatedWorkspacesWorkspaceSlugConnectedAccountsRoute,
     AuthenticatedWorkspacesWorkspaceSlugIndexRoute:
       AuthenticatedWorkspacesWorkspaceSlugIndexRoute,
   }
