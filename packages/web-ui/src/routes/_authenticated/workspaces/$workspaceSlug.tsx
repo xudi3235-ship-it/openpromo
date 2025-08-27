@@ -8,7 +8,6 @@ import {
 } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
-import { Main } from "@/components/layout/main";
 import { ProfileDropdown } from "@/components/profile-dropdown";
 import { ThemeSwitch } from "@/components/theme-switcher";
 import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
@@ -58,7 +57,6 @@ function WorkspaceComponent() {
 
   return (
     <>
-      {/* ===== Top Heading ===== */}
       <Header>
         <div className="ms-auto flex items-center space-x-4">
           {/* <Search />
@@ -68,10 +66,7 @@ function WorkspaceComponent() {
         </div>
       </Header>
 
-      {/* ===== Main ===== */}
-      <Main>
-        <Outlet />
-      </Main>
+      <Outlet />
     </>
   );
 }

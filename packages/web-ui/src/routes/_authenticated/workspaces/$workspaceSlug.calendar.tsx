@@ -153,11 +153,14 @@ export default function CalendarPage() {
   };
 
   return (
-    <EventCalendar
-      events={events}
-      onEventAdd={handleEventAdd}
-      onEventUpdate={handleEventUpdate}
-      onEventDelete={handleEventDelete}
-    />
+    <div className="h-full w-full">
+      <EventCalendar
+        events={events}
+        onEventAdd={handleEventAdd}
+        onEventUpdate={handleEventUpdate}
+        onEventDelete={handleEventDelete}
+        className="h-full w-full"
+      />
+    </div>
   );
 }

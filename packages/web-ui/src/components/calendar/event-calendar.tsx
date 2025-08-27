@@ -261,7 +261,7 @@ export function EventCalendar({
 
   return (
     <div
-      className="flex flex-col rounded-lg border has-data-[slot=month-view]:flex-1"
+      className={cn("h-full w-full bg-white flex flex-col", className)}
       style={
         {
           "--event-height": `${EventHeight}px`,
@@ -271,16 +271,12 @@ export function EventCalendar({
       }
     >
       <CalendarDndProvider onEventUpdate={handleEventUpdate}>
-        <div
-          className={cn(
-            "flex items-center justify-between p-2 sm:p-4",
-            className,
-          )}
-        >
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between p-6 bg-white">
           <div className="flex items-center gap-1 sm:gap-4">
             <Button
-              variant="outline"
-              className="max-[479px]:aspect-square max-[479px]:p-0!"
+              variant="secondary"
+              className="max-[479px]:aspect-square max-[479px]:p-0! bg-[var(--neutral-800)] text-white hover:bg-[var(--neutral-700)]"
               onClick={handleToday}
             >
               <RiCalendarCheckLine
@@ -308,14 +304,17 @@ export function EventCalendar({
                 <ChevronRightIcon size={16} aria-hidden="true" />
               </Button>
             </div>
-            <h2 className="text-sm font-semibold sm:text-lg md:text-xl">
+            <h2 className="text-lg font-semibold text-foreground sm:text-xl md:text-2xl">
               {viewTitle}
             </h2>
           </div>
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-1.5 max-[479px]:h-8">
+                <Button
+                  variant="outline"
+                  className="gap-1.5 max-[479px]:h-8 border-border hover:bg-accent"
+                >
                   <span>
                     <span className="min-[480px]:hidden" aria-hidden="true">
                       {view.charAt(0).toUpperCase()}
@@ -347,7 +346,7 @@ export function EventCalendar({
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
-              className="max-[479px]:aspect-square max-[479px]:p-0!"
+              className="max-[479px]:aspect-square max-[479px]:p-0! bg-[var(--neutral-800)] text-white hover:bg-[var(--neutral-700)]"
               size="sm"
               onClick={() => {
                 setSelectedEvent(null); // Ensure we're creating a new event
@@ -364,7 +363,8 @@ export function EventCalendar({
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col">
+        {/* Scrollable Calendar Content */}
+        <div className="flex-1 overflow-auto">
           {view === "month" && (
             <MonthView
               currentDate={currentDate}
