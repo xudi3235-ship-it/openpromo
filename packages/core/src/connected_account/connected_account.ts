@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Actor } from "../actor";
 import { db } from "../drizzle";
 import {
@@ -51,5 +51,17 @@ export namespace ConnectedAccount {
       .from(connectedAccount)
       .where(eq(connectedAccount.workspaceId, workspaceId));
     return accounts;
+  }
+  export async function deleteById(id: string): Promise<void> {
+    const workspaceId = Actor.workspaceID();
+    await db()
+      .delete(connectedAccount)
+      .where(
+        and(
+          eq(connectedAccount.id, id),
+          eq(connectedAccount.workspaceId, workspaceId),
+        ),
+      )
+      .execute();
   }
 }

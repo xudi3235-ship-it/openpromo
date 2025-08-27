@@ -28,6 +28,7 @@ export const connectedAccount = pgTable(
     externalUrl: text().notNull(),
     // display name
     accountName: varchar("account_name", { length: 255 }),
+    profilePicUrl: text("profile_pic_url"),
     // oauth stuff
     encryptedAccessToken: text("encrypted_access_token").notNull(),
     refreshToken: text("refresh_token"),

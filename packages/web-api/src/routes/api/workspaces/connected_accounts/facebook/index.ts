@@ -97,12 +97,15 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
         externalAccountId: page.id,
         accountName: page.name,
         externalUrl: `https://www.facebook.com/${page.id}`,
+        profilePicUrl: page.picture?.data?.url ?? null,
+        // TODO: impl encryptions
         encryptedAccessToken: authResult.accessToken,
         refreshToken: authResult.refreshToken,
         tokenExpiresAt: new Date(Date.now() + authResult.expiresIn * 1000),
         metadata: {
           pageId: page.id,
           pageName: page.name,
+          followers: page.fan_count,
         },
       });
       accounts.push(acc);
