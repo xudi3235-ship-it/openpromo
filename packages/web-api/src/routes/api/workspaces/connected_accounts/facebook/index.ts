@@ -92,7 +92,6 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
     // accounts connected.
     const accounts = [];
     for (const page of userPages) {
-      console.debug({ page });
       const acc = await ConnectedAccount.create({
         platform: Platform.enum.FACEBOOK,
         externalAccountId: page.id,
