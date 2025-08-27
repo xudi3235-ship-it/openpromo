@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 import {
@@ -29,13 +29,11 @@ import {
 import type {
   NavCollapsible,
   NavGroup as NavGroupProps,
-  NavItem,
   NavLink,
 } from "./types";
 
 export function NavGroup({ title, items }: NavGroupProps) {
   const { state, isMobile } = useSidebar();
-  const href = useLocation({ select: (location) => location.href });
   return (
     <SidebarGroup className="mb-6">
       <SidebarGroupLabel className="text-xs font-semibold text-[var(--neutral-600)] uppercase tracking-wider mb-3">
@@ -45,15 +43,12 @@ export function NavGroup({ title, items }: NavGroupProps) {
         {items.map((item) => {
           const key = `${item.title}-${item.url}`;
 
-          if (!item.items)
-            return <SidebarMenuLink key={key} item={item} href={href} />;
+          if (!item.items) return <SidebarMenuLink key={key} item={item} />;
 
           if (state === "collapsed" && !isMobile)
-            return (
-              <SidebarMenuCollapsedDropdown key={key} item={item} href={href} />
-            );
+            return <SidebarMenuCollapsedDropdown key={key} item={item} />;
 
-          return <SidebarMenuCollapsible key={key} item={item} href={href} />;
+          return <SidebarMenuCollapsible key={key} item={item} />;
         })}
       </SidebarMenu>
     </SidebarGroup>
@@ -68,38 +63,45 @@ function NavBadge({ children }: { children: ReactNode }) {
   );
 }
 
-function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
+function SidebarMenuLink({ item }: { item: NavLink }) {
   const { setOpenMobile } = useSidebar();
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton
-        asChild
-        isActive={checkIsActive(href, item)}
-        tooltip={item.title}
-        className="h-10 px-3 font-medium text-[var(--neutral-700)] hover:bg-sidebar-accent hover:text-[var(--neutral-900)] data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground transition-all duration-200 rounded-lg"
+      <Link
+        to={item.url}
+        onClick={() => setOpenMobile(false)}
+        activeOptions={{ exact: true }}
       >
-        <Link to={item.url} onClick={() => setOpenMobile(false)}>
-          {item.icon && <item.icon className="w-5 h-5 mr-3" />}
-          <span className="flex-1">{item.title}</span>
-          {item.badge && <NavBadge>{item.badge}</NavBadge>}
-        </Link>
-      </SidebarMenuButton>
+        {({ isActive }) => (
+          <SidebarMenuButton
+            tooltip={item.title}
+            className={`h-10 px-3 font-medium transition-all duration-200 rounded-lg ${
+              isActive
+                ? "bg-[var(--neutral-800)] text-white"
+                : "text-[var(--neutral-700)] hover:bg-sidebar-accent hover:text-[var(--neutral-900)]"
+            }`}
+          >
+            {item.icon && <item.icon className="w-5 h-5 mr-3" />}
+            <span className="flex-1">{item.title}</span>
+            {item.badge && <NavBadge>{item.badge}</NavBadge>}
+          </SidebarMenuButton>
+        )}
+      </Link>
     </SidebarMenuItem>
   );
 }
 
-function SidebarMenuCollapsible({
-  item,
-  href,
-}: {
-  item: NavCollapsible;
-  href: string;
-}) {
+function SidebarMenuCollapsible({ item }: { item: NavCollapsible }) {
+  const routerState = useRouterState();
   const { setOpenMobile } = useSidebar();
+  const hasActiveChild = item.items.some(
+    (subItem) => routerState.location.pathname === subItem.url,
+  );
+
   return (
     <Collapsible
       asChild
-      defaultOpen={checkIsActive(href, item, true)}
+      defaultOpen={hasActiveChild}
       className="group/collapsible"
     >
       <SidebarMenuItem>
@@ -118,17 +120,27 @@ function SidebarMenuCollapsible({
           <SidebarMenuSub>
             {item.items.map((subItem) => (
               <SidebarMenuSubItem key={subItem.title}>
-                <SidebarMenuSubButton
-                  asChild
-                  isActive={checkIsActive(href, subItem)}
-                  className="text-[var(--neutral-600)] hover:text-[var(--neutral-900)] hover:bg-sidebar-accent transition-all duration-200"
+                <Link
+                  to={subItem.url}
+                  onClick={() => setOpenMobile(false)}
+                  activeOptions={{ exact: true }}
                 >
-                  <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
-                    {subItem.icon && <subItem.icon className="w-4 h-4 mr-2" />}
-                    <span className="flex-1">{subItem.title}</span>
-                    {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
-                  </Link>
-                </SidebarMenuSubButton>
+                  {({ isActive }) => (
+                    <SidebarMenuSubButton
+                      className={`transition-all duration-200 ${
+                        isActive
+                          ? "bg-[var(--neutral-800)] text-white"
+                          : "text-[var(--neutral-600)] hover:text-[var(--neutral-900)] hover:bg-sidebar-accent"
+                      }`}
+                    >
+                      {subItem.icon && (
+                        <subItem.icon className="w-4 h-4 mr-2" />
+                      )}
+                      <span className="flex-1">{subItem.title}</span>
+                      {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
+                    </SidebarMenuSubButton>
+                  )}
+                </Link>
               </SidebarMenuSubItem>
             ))}
           </SidebarMenuSub>
@@ -138,20 +150,21 @@ function SidebarMenuCollapsible({
   );
 }
 
-function SidebarMenuCollapsedDropdown({
-  item,
-  href,
-}: {
-  item: NavCollapsible;
-  href: string;
-}) {
+function SidebarMenuCollapsedDropdown({ item }: { item: NavCollapsible }) {
+  const routerState = useRouterState();
+  const hasActiveChild = item.items.some(
+    (subItem) => routerState.location.pathname === subItem.url,
+  );
+
   return (
     <SidebarMenuItem>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <SidebarMenuButton
             tooltip={item.title}
-            isActive={checkIsActive(href, item)}
+            className={
+              hasActiveChild ? "bg-[var(--neutral-800)] text-white" : ""
+            }
           >
             {item.icon && <item.icon />}
             <span>{item.title}</span>
@@ -166,14 +179,17 @@ function SidebarMenuCollapsedDropdown({
           <DropdownMenuSeparator />
           {item.items.map((sub) => (
             <DropdownMenuItem key={`${sub.title}-${sub.url}`} asChild>
-              <Link
-                to={sub.url}
-                className={`${checkIsActive(href, sub) ? "bg-secondary" : ""}`}
-              >
-                {sub.icon && <sub.icon />}
-                <span className="max-w-52 text-wrap">{sub.title}</span>
-                {sub.badge && (
-                  <span className="ms-auto text-xs">{sub.badge}</span>
+              <Link to={sub.url} activeOptions={{ exact: true }}>
+                {({ isActive }) => (
+                  <div
+                    className={`flex items-center w-full ${isActive ? "bg-secondary" : ""}`}
+                  >
+                    {sub.icon && <sub.icon />}
+                    <span className="max-w-52 text-wrap">{sub.title}</span>
+                    {sub.badge && (
+                      <span className="ms-auto text-xs">{sub.badge}</span>
+                    )}
+                  </div>
                 )}
               </Link>
             </DropdownMenuItem>
@@ -181,16 +197,5 @@ function SidebarMenuCollapsedDropdown({
         </DropdownMenuContent>
       </DropdownMenu>
     </SidebarMenuItem>
-  );
-}
-
-function checkIsActive(href: string, item: NavItem, mainNav = false) {
-  return (
-    href === item.url || // /endpint?search=param
-    href.split("?")[0] === item.url || // endpoint
-    !!item?.items?.filter((i) => i.url === href).length || // if child nav is active
-    (mainNav &&
-      href.split("/")[1] !== "" &&
-      href.split("/")[1] === item?.url?.split("/")[1])
   );
 }
