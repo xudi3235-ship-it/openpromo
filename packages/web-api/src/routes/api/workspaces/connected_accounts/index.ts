@@ -12,5 +12,5 @@ export const connectedAccountsRoute = new Hono<ApiEnv>()
   .route("/facebook", facebookConnectedAccountRoute)
   .get("/", async (c) => {
     const accounts = await ConnectedAccount.list();
-    return c.json(accounts);
+    return c.json({ accounts });
   });

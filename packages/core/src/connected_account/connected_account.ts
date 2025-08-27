@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { Actor } from "../actor";
 import { db } from "../drizzle";
 import {
+  type ConnectedAccountSelect,
   ConnectedAccountSelectSchema,
   connectedAccount,
   type Platform,
@@ -43,7 +44,7 @@ export namespace ConnectedAccount {
       return acc;
     },
   );
-  export async function list() {
+  export async function list(): Promise<ConnectedAccountSelect[]> {
     const workspaceId = Actor.workspaceID();
     const accounts = await db()
       .select()

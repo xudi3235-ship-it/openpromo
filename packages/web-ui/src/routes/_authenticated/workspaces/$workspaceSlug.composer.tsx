@@ -60,7 +60,6 @@ function ComposerComponent() {
           </p>
         </div>
       </div>
-
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Facebook Integration Card */}
         <Card>
@@ -86,8 +85,13 @@ function ComposerComponent() {
             </Button>
           </CardContent>
         </Card>
-        connectedAccounts: {connectedAccounts}
       </div>
+      connected accounts:
+      {connectedAccounts?.accounts.map((account) => (
+        <div key={account.id}>
+          {account.platform}, {account.accountName}
+        </div>
+      ))}
     </div>
   );
 }
