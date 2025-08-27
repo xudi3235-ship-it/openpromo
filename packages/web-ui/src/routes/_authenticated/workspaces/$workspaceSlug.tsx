@@ -66,7 +66,9 @@ function WorkspaceComponent() {
         </div>
       </Header>
 
-      <Outlet />
+      <div className="p-6">
+        <Outlet />
+      </div>
     </>
   );
 }

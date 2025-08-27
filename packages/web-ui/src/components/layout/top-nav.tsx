@@ -24,8 +24,8 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
       <div className="lg:hidden">
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="outline" className="md:size-7">
-              <Menu />
+            <Button size="icon" variant="outline" className="md:size-6 h-8 w-8">
+              <Menu size={16} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="bottom" align="start">
@@ -46,7 +46,7 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
 
       <nav
         className={cn(
-          "hidden items-center space-x-4 lg:flex lg:space-x-4 xl:space-x-6",
+          "hidden items-center space-x-3 lg:flex lg:space-x-3 xl:space-x-5",
           className,
         )}
         {...props}
@@ -56,7 +56,7 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
             key={`${title}-${href}`}
             to={href}
             disabled={disabled}
-            className={`hover:text-primary text-sm font-medium transition-colors ${
+            className={`hover:text-primary text-xs font-medium transition-colors py-1 ${
               isActive ? "" : "text-muted-foreground"
             }`}
           >
