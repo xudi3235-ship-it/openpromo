@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { Actor } from "../actor";
-import { createTransaction } from "../drizzle/transaction";
+import { db } from "../drizzle";
 import {
   ConnectedAccountSelectSchema,
   connectedAccount,
@@ -17,37 +17,38 @@ export namespace ConnectedAccount {
 
   // link a new connected account
   export const create = fn(
-    Info.omit({ id: true, timeCreated: true, timeUpdated: true }),
+    Info.omit({
+      id: true,
+      createdAt: true,
+      updatedAt: true,
+      workspaceId: true,
+    }),
     async (input) => {
       const workspaceId = Actor.workspaceID();
-      const [acc] = await createTransaction(async (tx) => {
-        return await tx
-          .insert(connectedAccount)
-          .values({
-            workspaceId,
-            platform: input.platform as Platform,
-            externalAccountId: input.externalAccountId,
-            accountName: input.accountName,
-            externalUrl: input.externalUrl,
-            encryptedAccessToken: input.encryptedAccessToken,
-            refreshToken: input.refreshToken,
-            tokenExpiresAt: input.tokenExpiresAt,
-            metadata: input.metadata,
-          })
-          .returning();
-      });
+      const [acc] = await db()
+        .insert(connectedAccount)
+        .values({
+          workspaceId,
+          platform: input.platform as Platform,
+          externalAccountId: input.externalAccountId,
+          accountName: input.accountName,
+          externalUrl: input.externalUrl,
+          encryptedAccessToken: input.encryptedAccessToken,
+          refreshToken: input.refreshToken,
+          tokenExpiresAt: input.tokenExpiresAt,
+          metadata: input.metadata,
+        })
+        .returning();
 
       return acc;
     },
   );
   export async function list() {
     const workspaceId = Actor.workspaceID();
-    const accounts = await createTransaction(async (tx) => {
-      return await tx
-        .select()
-        .from(connectedAccount)
-        .where(eq(connectedAccount.workspaceId, workspaceId));
-    });
+    const accounts = await db()
+      .select()
+      .from(connectedAccount)
+      .where(eq(connectedAccount.workspaceId, workspaceId));
     return accounts;
   }
 }

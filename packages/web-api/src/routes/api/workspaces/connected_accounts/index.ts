@@ -9,7 +9,6 @@ import { facebookConnectedAccountRoute } from "./facebook";
 export const connectedAccountsRoute = new Hono<ApiEnv>()
   .use(withAuth())
   .use(withWorkspaceRole(WORKSPACE_ROLE.ADMIN))
-
   .route("/facebook", facebookConnectedAccountRoute)
   .get("/", async (c) => {
     const accounts = await ConnectedAccount.list();

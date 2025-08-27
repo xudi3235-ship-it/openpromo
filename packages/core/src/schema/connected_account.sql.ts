@@ -1,4 +1,11 @@
-import { index, json, pgTable, text, varchar } from "drizzle-orm/pg-core";
+import {
+  index,
+  json,
+  pgTable,
+  text,
+  unique,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { id, timestamp, timestamps } from "../drizzle/types";
@@ -31,6 +38,7 @@ export const connectedAccount = pgTable(
   (table) => [
     index("platform_idx").on(table.platform),
     index("workspace_platform_idx").on(table.workspaceId, table.platform),
+    unique().on(table.workspaceId, table.externalAccountId),
   ],
 );
 

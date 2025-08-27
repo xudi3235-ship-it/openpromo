@@ -1,6 +1,8 @@
 import { zValidator } from "@hono/zod-validator";
 import { Actor } from "@openpromo/core/actor";
+import { ConnectedAccount } from "@openpromo/core/connected_account/connected_account";
 import { facebookOAuthService } from "@openpromo/core/connected_account/facebook";
+import { Platform } from "@openpromo/core/schema/connected_account.sql";
 import { Hono } from "hono";
 import { z } from "zod";
 import {
@@ -88,9 +90,23 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
     // 4. for each linked page, 1:1 map to connected account
     // we do this in a flatten way so that user can have N FB + M IG, etc.
     // accounts connected.
+    const accounts = [];
     for (const page of userPages) {
       console.debug({ page });
-      // throw new NotImplementedError("TODO");
+      const acc = await ConnectedAccount.create({
+        platform: Platform.enum.FACEBOOK,
+        externalAccountId: page.id,
+        accountName: page.name,
+        externalUrl: `https://www.facebook.com/${page.id}`,
+        encryptedAccessToken: authResult.accessToken,
+        refreshToken: authResult.refreshToken,
+        tokenExpiresAt: new Date(Date.now() + authResult.expiresIn * 1000),
+        metadata: {
+          pageId: page.id,
+          pageName: page.name,
+        },
+      });
+      accounts.push(acc);
     }
 
     // at this point, we should be storing the connected account in our db.
@@ -99,7 +115,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
     // this is the user Actor.
     return ctx.json({
       success: true,
-      data: authResult,
+      data: { accounts },
     });
   })
   .post("/reconnect", zValidator("json", ReconnectBodySchema), async (ctx) => {

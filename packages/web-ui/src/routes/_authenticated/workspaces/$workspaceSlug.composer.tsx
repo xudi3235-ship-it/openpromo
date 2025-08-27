@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useHonoMutation } from "@/lib/hono-client";
+import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/composer",
@@ -35,6 +35,13 @@ function ComposerComponent() {
       // open in a dialog
       window.open(url, "_blank");
     },
+  });
+  const { data: connectedAccounts } = useHonoQuery({
+    queryKey: [workspace.slug, "connected_accounts"],
+    queryFn: (api) =>
+      api.workspaces[":workspaceSlug"].connected_accounts.$get({
+        param: { workspaceSlug: workspace.slug },
+      }),
   });
 
   const handleFacebookOAuth = () => {
@@ -79,6 +86,7 @@ function ComposerComponent() {
             </Button>
           </CardContent>
         </Card>
+        connectedAccounts: {connectedAccounts}
       </div>
     </div>
   );
