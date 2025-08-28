@@ -6,6 +6,7 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
+import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
 import { AllPlacement, type PlacementSpec } from "../content/schema/placement";
 import type { ContentBaseSpec } from "../content/schema/placement/common";
 import { id, timestamp, timestamps, ulid } from "../drizzle/types";
@@ -99,3 +100,6 @@ export const unifiedContentTable = pgTable(
   },
   (t) => [uniqueIndex().on(t.id, t.workspaceId, t.connectedAccountId)],
 );
+
+export const UnifiedContentInsert = createInsertSchema(unifiedContentTable);
+export const UnifiedContentUpdate = createUpdateSchema(unifiedContentTable);

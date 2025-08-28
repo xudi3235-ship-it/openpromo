@@ -1,180 +1,123 @@
-// import { and, asc, desc, eq, getTableColumns } from "drizzle-orm";
-// import { Resource } from "sst";
-// import { bus } from "sst/aws/bus";
-// import z from "zod";
-// import { Actor } from "../actor";
-// import { afterTx, createTransaction } from "../drizzle/transaction";
-// import { NotImplementedError } from "../error";
-// import { defineEvent } from "../event";
-// import { updateScheduledEvent } from "../event/scheduler";
-// import { fn } from "../util/fn";
-// import { createID } from "../util/id";
-// import { UnifiedContentDTO, unifiedContentTable } from "./content.sql";
-// import { IdentityService } from "./infra/facebook/identity";
-// import { FacebookFeedPublisher } from "./infra/facebook/publishers/feed";
-// import { AllPlacement } from "./schema/placement";
+import z from "zod";
+import { Actor } from "../actor";
+import { and, db, eq, gt, lt } from "../drizzle";
+import { withPagination } from "../drizzle/query";
+import { NotImplementedError } from "../error";
+import { defineEvent } from "../event";
+import {
+  type UnifiedContentUpdate,
+  unifiedContentTable,
+} from "../schema/content.sql";
 
-// export namespace UnifiedContent {
-//   export const Info = UnifiedContentDTO;
+export namespace UnifiedContent {
+  export const Event = {
+    Created: defineEvent(
+      "unified_content.created",
+      z.object({
+        id: z.string(),
+      }),
+    ),
+  };
 
-//   export const Event = {
-//     Created: defineEvent(
-//       "unified_content.created",
-//       z.object({
-//         id: Info.shape.id,
-//       }),
-//     ),
-//     Updated: defineEvent("unified_content.updated", Info),
-//     Publish: defineEvent(
-//       "unified_content.publish",
-//       z.object({
-//         id: Info.shape.id,
-//         workspaceID: z.string(),
-//       }),
-//     ),
-//   };
-//   // crud
-//   export const create = fn(Info.omit({ id: true }), async (input) => {
-//     const id = createID("unified_content");
-//     const workspaceID = Actor.workspaceID();
-//     await createTransaction(async (tx) => {
-//       await tx.insert(unifiedContentTable).values({
-//         id,
-//         workspaceID,
-//         placement: input.placement,
-//         sourceContent: input.sourceContent,
-//         connectedAccountId: input.connectedAccountId,
-//       });
-//       await afterTx(() => bus.publish(Resource.Bus, Event.Created, { id }));
-//     });
-//     return id;
-//   });
-//   // update a content
-//   export const update = fn(Info, async (after) => {
-//     const workspaceID = Actor.workspaceID();
-//     return createTransaction(async (tx) => {
-//       const before = await tx
-//         .select(getTableColumns(unifiedContentTable))
-//         .from(unifiedContentTable)
-//         .where(
-//           and(
-//             eq(unifiedContentTable.id, after.id),
-//             eq(unifiedContentTable.workspaceID, workspaceID),
-//           ),
-//         )
-//         .then((rows) => rows[0]);
-//       if (!before) throw new Error(`Content with id ${after.id} not found`);
-//       await tx
-//         .update(unifiedContentTable)
-//         .set(after)
-//         .where(
-//           and(
-//             eq(unifiedContentTable.id, after.id),
-//             eq(unifiedContentTable.workspaceID, workspaceID),
-//           ),
-//         );
-//       // if there's a change in scheduled publish time, we need to reschedule
-//       if (after.scheduledPublishAt != null) {
-//         afterTx(
-//           async () =>
-//             await updateScheduledEvent(
-//               // biome-ignore lint/style/noNonNullAssertion: TODO: fix later
-//               before.scheduleName!,
-//               UnifiedContent.Event.Publish,
-//               { id: after.id, workspaceID },
-//               // biome-ignore lint/style/noNonNullAssertion: TODO: fix later
-//               after.scheduledPublishAt!,
-//             ),
-//         );
-//       }
-//     });
-//   });
-//   export const list = fn(
-//     z.object({
-//       workspaceID: z.string(),
-//       order: z.enum(["asc", "desc"]).optional(),
-//       cursor: z.number().optional(),
-//       pageSize: z.number().optional(),
-//     }),
-//     async ({ workspaceID, order, pageSize }) => {
-//       const pageSizeDefault = 20;
-//       return createTransaction(async (tx) => {
-//         const orderByClause = order === "asc" ? asc : desc;
-//         const results = await tx
-//           .select()
-//           .from(unifiedContentTable)
-//           .where(
-//             and(
-//               eq(unifiedContentTable.workspaceID, workspaceID),
-//               // TODO: handle cursor
-//             ),
-//           )
-//           .orderBy(orderByClause(unifiedContentTable.timeCreated))
-//           .limit(pageSize ?? pageSizeDefault);
-//         return results.map(serialize);
-//       });
-//     },
-//   );
+  /**
+   * List a workspace's all unified content. This only returns from the current db. For backfilling/syncing, use the other apis.
+   *
+   * This is a expensive api, we enforce time range based filtering and pagination.
+   */
+  export async function list(
+    page: number,
+    limit: number = 10,
+    byTimeRange: {
+      start: Date;
+      end: Date;
+    },
+  ) {
+    // dynamic query building: https://orm.drizzle.team/docs/dynamic-query-building
+    const workspaceId = Actor.workspaceID();
+    const query = db()
+      .select()
+      .from(unifiedContentTable)
+      .where(
+        and(
+          eq(unifiedContentTable.workspaceId, workspaceId),
+          // by default we use created at. This is trivial for scheduled & drafts
+          // for published contents, it's backfilled.
+          gt(unifiedContentTable.createdAt, byTimeRange.start),
+          lt(unifiedContentTable.createdAt, byTimeRange.end),
+        ),
+      )
+      .$dynamic();
 
-//   export const publish = fn(Info.pick({ id: true }), async (input) => {
-//     // TODO: core publishing logic, take the unified pending content
-//     // and publish it to the specific placement. This is invoked
-//     // for either, draft posts' publishing now, or scheduled posts' publishing
-//     // at the scheduled time.
+    return withPagination(query, page, limit);
+  }
 
-//     return createTransaction(async (tx) => {
-//       // Load the content to determine placement
-//       const content = await tx
-//         .select()
-//         .from(unifiedContentTable)
-//         .where(eq(unifiedContentTable.id, input.id))
-//         .then((rows) => rows[0]);
+  export async function getByID(id: string) {
+    const workspaceId = Actor.workspaceID();
+    const [content] = await db()
+      .select()
+      .from(unifiedContentTable)
+      .where(
+        and(
+          eq(unifiedContentTable.workspaceId, workspaceId),
+          eq(unifiedContentTable.id, id),
+        ),
+      )
+      .limit(1);
+    return content;
+  }
 
-//       if (!content) throw new Error(`Content with id ${input.id} not found`);
+  export async function deleteByID(id: string) {
+    const workspaceId = Actor.workspaceID();
+    await db()
+      .delete(unifiedContentTable)
+      .where(
+        and(
+          eq(unifiedContentTable.workspaceId, workspaceId),
+          eq(unifiedContentTable.id, id),
+        ),
+      )
+      .execute();
+  }
 
-//       if (content.placement_spec == null)
-//         throw new Error(`Content with id ${input.id} has no placement_spec`);
+  export async function updateByID(
+    id: string,
+    data: z.infer<typeof UnifiedContentUpdate>,
+  ) {
+    const workspaceId = Actor.workspaceID();
+    await db()
+      .update(unifiedContentTable)
+      // @ts-ignore might be a bad idea
+      .set(data)
+      .where(
+        and(
+          eq(unifiedContentTable.workspaceId, workspaceId),
+          eq(unifiedContentTable.id, id),
+        ),
+      )
+      .execute();
+  }
 
-//       switch (content.placement) {
-//         case AllPlacement.Enum.FB_FEED: {
-//           const identity = await IdentityService.fromUnifiedContent(content);
-//           const publisher = new FacebookFeedPublisher(identity, content);
-//           // we need more stuff:
-//           // 1. send event bus of published event
-//           // 2. sync & store post id
-//           // 3. error handling, retries, etc.
-//           const response = await publisher.publish();
-//           console.debug(`Published to Facebook Feed: ${response}`);
-//           return { ok: true };
-//         }
-//         // 1. let's implement the fb publisher
-//         case AllPlacement.Enum.FB_REEL:
-//         case AllPlacement.Enum.IG_FEED:
-//         case AllPlacement.Enum.IG_REEL:
-//           throw new NotImplementedError();
-//         default:
-//           throw new Error(`Unsupported placement: ${content.placement}`);
-//       }
-//     });
-//   });
+  export async function create(data: typeof unifiedContentTable.$inferInsert) {
+    const workspaceId = Actor.workspaceID();
+    await db()
+      .insert(unifiedContentTable)
+      .values({
+        ...data,
+        workspaceId,
+      })
+      .execute();
+  }
 
-//   function serialize(
-//     input: typeof unifiedContentTable.$inferInsert,
-//   ): z.infer<typeof Info> {
-//     return {
-//       // biome-ignore-start lint/style/noNonNullAssertion: TODO: fix later
-//       id: input.id,
-//       workspaceID: input.workspaceID,
-//       timeCreated: input?.timeCreated!,
-//       timeUpdated: input?.timeUpdated!,
-//       pendingContentGroupId: input.pendingContentGroupId!,
-//       connectedAccountId: input.connectedAccountId,
-//       sourceContent: input.sourceContent!,
-//       placement_spec: input.placement_spec!,
-//       placement: input.placement,
-//       status: input.status!,
-//       scheduledPublishAt: input.scheduledPublishAt ?? undefined,
-//       // biome-ignore-end lint/style/noNonNullAssertion: TODO: fix later
-//     };
-//   }
-// }
+  // --------------- backfilling apis ---------------
+  // for a newly connected account, we do lazy rehydration. this is primarily for
+  export async function fromFacebookPost() {
+    throw new NotImplementedError(
+      "from a published FB post, backfill a unified content record",
+    );
+  }
+  export async function fromInstagramPost() {
+    throw new NotImplementedError(
+      "from a published IG post, backfill a unified content record",
+    );
+  }
+}
