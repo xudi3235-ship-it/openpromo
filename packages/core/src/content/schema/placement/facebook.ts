@@ -9,17 +9,27 @@ import {
   VideoAttachmentSpec,
 } from "./common";
 
-// defines schema & validation logics for facebook placements,
-// it'll be used in both client & server side to valiate the inputs
-// eventually, this will be transformed to sdk calls to facebook graph api
-// targeting creating facebook posts, reels, stories.
-// this is organic for now, for ads, we handle these separately.
+/**
+ * defines schema & validation logics for facebook placements,
+ * it'll be used in both client & server side to valiate the inputs
+ * eventually, this will be transformed to sdk calls to facebook graph api
+ * targeting creating facebook posts, reels, stories.
+ * this is organic for now, for ads, we handle these separately.
+ *
+ * we use this spec definitions in the front end for validation as well as preview rendering. In the backend, it's transformed into multiple api calls to eventually publish it.
+ */
+export const FBPlacement = {
+  FB_FEED: "FB_FEED",
+  FB_STORY: "FB_STORY",
+  FB_REEL: "FB_REEL",
+} as const;
 
-export const FBPlacement = z.enum(["FB_FEED", "FB_STORY", "FB_REEL"]);
+export type FBPlacement = (typeof FBPlacement)[keyof typeof FBPlacement];
 
 // 1. identity specs, e.g. pageId, adAccountId
 const identitySpec = z.object({
   pageId: z.string(),
+  userId: z.string(),
   adAccountId: z.string().optional(),
 });
 
@@ -47,15 +57,11 @@ export const BaseFBPlacementSpec = ContentBaseSpec.extend({
 });
 
 export const FBFeedPlacementSpec = BaseFBPlacementSpec.extend({
-  placement: z.literal(FBPlacement.enum.FB_FEED),
+  placement: z.literal(FBPlacement.FB_FEED),
   postSpec: postSpec,
 });
 
 export const FBReelPlacementSpec = BaseFBPlacementSpec.extend({
-  placement: z.literal(FBPlacement.enum.FB_REEL),
+  placement: z.literal(FBPlacement.FB_REEL),
   reelSpec: reelSpec,
-});
-
-export const FBStoryPlacementSpec = BaseFBPlacementSpec.extend({
-  placement: z.literal(FBPlacement.enum.FB_STORY),
 });

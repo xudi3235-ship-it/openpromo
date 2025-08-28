@@ -1,12 +1,14 @@
 import z from "zod";
 
-// platform agnostic stuff
-
+/**
+ * platform agnostic schemas for contents
+ */
 // Base attachment schema
 export const BaseAttachmentSpec = z.object({
   id: z.string().optional(),
   url: z.string().optional(),
   s3Key: z.string().optional(),
+  thumbnailUrl: z.string().optional(),
   mimeType: z.string().optional(),
   metadata: z.record(z.any(), z.any()).optional(),
 });
@@ -60,11 +62,3 @@ export const ContentBaseSpec = z.object({
 });
 
 export type ContentBaseSpec = z.infer<typeof ContentBaseSpec>;
-
-export const ContentPublishingStatus = z.enum([
-  "DRAFT",
-  "SCHEDULED",
-  "PUBLISHED",
-  "FAILED_TO_PUBLISH",
-  "ARCHIVED",
-]);
