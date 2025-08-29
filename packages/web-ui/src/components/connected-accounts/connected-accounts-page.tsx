@@ -101,14 +101,18 @@ function ConnectedAccountsContent({ onConnect }: { onConnect: () => void }) {
         <Typography.H3>Active Connections</Typography.H3>
         <Badge
           variant="secondary"
-          className="bg-[var(--green-fill)] text-[var(--green-text)] border-[var(--green-stroke)]"
+          className={
+            connectedAccounts.length > 0
+              ? "bg-[var(--green-fill)] text-[var(--green-text)] border-[var(--green-stroke)]"
+              : ""
+          }
         >
           {connectedAccounts.length} connected
         </Badge>
       </div>
 
       {connectedAccounts.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="card-grid-sm">
           {connectedAccounts.map((account) => (
             <ConnectedAccountCard
               key={account.id}
@@ -170,12 +174,12 @@ export function ConnectedAccountsPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+    <div className="page-container">
       <Container size="xl">
         <Stack spacing="2xl">
           {/* Header */}
           <Stack spacing="lg">
-            <div className="flex items-center justify-between">
+            <div className="page-header">
               <Stack spacing="xs">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-sidebar-accent rounded-lg">
@@ -208,7 +212,7 @@ export function ConnectedAccountsPage() {
           {/* Available Platforms */}
           <Stack spacing="xl">
             <Typography.H3>Available Platforms</Typography.H3>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="card-grid-sm">
               {availablePlatforms.map((platform) => (
                 <div
                   key={platform.id}

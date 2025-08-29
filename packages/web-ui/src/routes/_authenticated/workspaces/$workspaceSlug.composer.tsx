@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Typography } from "@/components/ui/typography";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
 export const Route = createFileRoute(
@@ -20,20 +21,18 @@ function ComposerComponent() {
   const { workspace } = useWorkspace();
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="mb-6 flex items-center justify-between space-y-2">
+    <div className="page-container">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Content Composer
-          </h1>
-          <p className="text-[var(--neutral-600)]">
+          <Typography.H1>Content Composer</Typography.H1>
+          <Typography.BodyBase className="text-neutral-600">
             Create and manage your social media content for {workspace.name}
-          </p>
+          </Typography.BodyBase>
         </div>
       </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="card-grid">
         {/* Text Post Card */}
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-smooth">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <div className="w-8 h-8 bg-[var(--neutral-800)] rounded-lg flex items-center justify-center">
@@ -53,7 +52,7 @@ function ComposerComponent() {
         </Card>
 
         {/* Image Post Card */}
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-smooth">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <div className="w-8 h-8 bg-[var(--neutral-800)] rounded-lg flex items-center justify-center">
@@ -73,7 +72,7 @@ function ComposerComponent() {
         </Card>
 
         {/* Video Post Card */}
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-smooth">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <div className="w-8 h-8 bg-[var(--neutral-800)] rounded-lg flex items-center justify-center">
@@ -93,7 +92,7 @@ function ComposerComponent() {
         </Card>
 
         {/* Scheduled Post Card */}
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-smooth">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <div className="w-8 h-8 bg-[var(--neutral-800)] rounded-lg flex items-center justify-center">

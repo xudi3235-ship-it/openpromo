@@ -17,6 +17,9 @@ const typographyStyles = {
   bodyLg: "text-lg text-neutral-600 leading-relaxed",
   bodyBase: "text-base font-medium text-neutral-600",
   bodySm: "text-sm text-neutral-600 leading-relaxed",
+  caption: "text-xs text-neutral-500 leading-normal",
+  overline: "text-xs font-semibold text-neutral-700 uppercase tracking-wide",
+  label: "text-sm font-medium text-neutral-900 leading-none",
   featureTag: "text-[13px] font-semibold",
   announcement: "text-sm font-medium text-neutral-700",
   announcementBadge: "text-[10px] font-bold leading-none",
@@ -217,6 +220,51 @@ const BodySm = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
 );
 BodySm.displayName = "Typography.BodySm";
 
+// Caption Component
+const Caption = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
+  ({ className, color = "default", ...props }, ref) => (
+    <p
+      ref={ref}
+      className={cn(
+        typographyStyles.caption,
+        colorVariants({ color }),
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
+Caption.displayName = "Typography.Caption";
+
+// Overline Component
+const Overline = React.forwardRef<HTMLSpanElement, BaseTypographyProps>(
+  ({ className, color = "default", ...props }, ref) => (
+    <span
+      ref={ref}
+      className={cn(
+        typographyStyles.overline,
+        colorVariants({ color }),
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
+Overline.displayName = "Typography.Overline";
+
+// Label Component
+const Label = React.forwardRef<
+  HTMLLabelElement,
+  BaseTypographyProps & { htmlFor?: string }
+>(({ className, color = "default", ...props }, ref) => (
+  <label
+    ref={ref}
+    className={cn(typographyStyles.label, colorVariants({ color }), className)}
+    {...props}
+  />
+));
+Label.displayName = "Typography.Label";
+
 // Specialized components
 const FeatureTag = React.forwardRef<HTMLSpanElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
@@ -376,6 +424,9 @@ const Typography = {
   BodyLg,
   BodyBase,
   BodySm,
+  Caption,
+  Overline,
+  Label,
   FeatureTag,
   Announcement,
   AnnouncementBadge,

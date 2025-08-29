@@ -13,14 +13,18 @@ const badgeVariants = cva(
         secondary:
           "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90 rounded-md",
         destructive:
-          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 rounded-md",
+          "border-transparent bg-error text-error-foreground [a&]:hover:bg-error/90 focus-visible:ring-error/20 dark:focus-visible:ring-error/40 rounded-md",
+        success:
+          "border-transparent bg-success text-success-foreground [a&]:hover:bg-success/90 focus-visible:ring-success/20 rounded-md",
+        warning:
+          "border-transparent bg-warning text-warning-foreground [a&]:hover:bg-warning/90 focus-visible:ring-warning/20 rounded-md",
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground rounded-md",
         // Special announcement badges (keep rounded-full for design intent)
         announcement:
           "inline-flex items-center gap-1.5 h-8 px-3 bg-white border border-neutral-200 rounded-full",
         "announcement-pill":
-          "flex items-center justify-center h-5 px-2 bg-green-fill border border-green-stroke rounded-full",
+          "flex items-center justify-center h-5 px-2 bg-success-muted border border-success-border rounded-full",
       },
     },
     defaultVariants: {

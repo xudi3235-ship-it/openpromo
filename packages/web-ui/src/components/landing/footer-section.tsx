@@ -18,7 +18,7 @@ export function FooterSection({ onGetStartedClick }: FooterProps) {
   };
 
   return (
-    <footer className="bg-[#020A0F] text-white">
+    <footer className="bg-landing-dark text-landing-dark-foreground">
       {/* CTA Section */}
       <Section className="relative overflow-hidden py-24">
         {/* Background Image */}
@@ -33,11 +33,11 @@ export function FooterSection({ onGetStartedClick }: FooterProps) {
         <Container size="lg" className="relative z-10">
           <div className="text-center max-w-[600px] mx-auto">
             <Stack spacing="lg">
-              <Typography.Hero className="text-[#FAFAFA]">
+              <Typography.Hero className="text-landing-dark-foreground">
                 Start your trial today.
               </Typography.Hero>
 
-              <Typography.BodyLg className="text-[#E6E6EB] leading-6">
+              <Typography.BodyLg className="text-landing-muted leading-6">
                 Unlock the potential of your business with our next-level SaaS
                 platform. Transform your workflows and achieve new heights
                 today.
@@ -46,7 +46,7 @@ export function FooterSection({ onGetStartedClick }: FooterProps) {
               <div className="mt-12">
                 <Button
                   onClick={handleGetStartedClick}
-                  className="bg-[#FAFAFA] text-[#020A0F] font-semibold hover:bg-white shadow-lg px-5 pr-4 h-[44px] rounded-xl"
+                  className="bg-landing-dark-foreground text-landing-dark font-semibold hover:bg-white shadow-lg px-5 pr-4 h-[44px] rounded-xl"
                 >
                   Get started
                   <ChevronRight className="w-4 h-4" />

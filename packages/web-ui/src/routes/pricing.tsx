@@ -10,7 +10,7 @@ export const Route = createFileRoute("/pricing")({
 
 function PricingPage() {
   return (
-    <div className="min-h-screen bg-[#F6F6F8]">
+    <div className="min-h-screen bg-landing-accent">
       <LandingNavbar />
       <main>
         <PricingSection />
