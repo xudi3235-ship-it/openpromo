@@ -49,7 +49,7 @@ export function HeroSection({ onGetStartedClick }: HeroSectionProps) {
             <div className="max-w-4xl space-y-6">
               {/* Animated Title */}
               <div className="text-center">
-                <Typography.H1 className="inline">
+                <Typography.Display className="inline">
                   {words.map((word, index) => (
                     <motion.span
                       key={`word-${word}-${index}-${Date.now()}`}
@@ -64,7 +64,7 @@ export function HeroSection({ onGetStartedClick }: HeroSectionProps) {
                       {word}
                     </motion.span>
                   ))}
-                </Typography.H1>
+                </Typography.Display>
               </div>
 
               {/* Animated Description */}

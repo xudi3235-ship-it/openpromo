@@ -4,10 +4,15 @@ import { cn } from "@/components/lib/utils";
 
 // Base styles for different typography variants
 const typographyStyles = {
-  h1: "text-4xl md:text-5xl lg:text-6xl font-semibold text-neutral-900 leading-tight",
-  h2: "text-3xl md:text-4xl lg:text-5xl font-semibold text-neutral-900",
-  h3: "text-sm font-medium text-neutral-900",
-  h4: "scroll-m-20 text-xl font-semibold tracking-tight",
+  h1: "text-2xl md:text-3xl font-semibold text-neutral-900 leading-tight",
+  h2: "text-xl md:text-2xl font-semibold text-neutral-900 leading-tight",
+  h3: "text-lg font-semibold text-neutral-900",
+  h4: "text-base font-semibold text-neutral-900",
+  h5: "text-sm font-semibold text-neutral-900",
+  h6: "text-xs font-semibold text-neutral-900 uppercase tracking-wide",
+  display:
+    "text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 leading-tight",
+  hero: "text-3xl md:text-4xl font-bold text-neutral-900 leading-tight",
   p: "leading-7 [&:not(:first-child)]:mt-6",
   bodyLg: "text-lg text-neutral-600 leading-relaxed",
   bodyBase: "text-base font-medium text-neutral-600",
@@ -101,6 +106,58 @@ const H4 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
   ),
 );
 H4.displayName = "Typography.H4";
+
+// H5 Component
+const H5 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
+  ({ className, color = "default", ...props }, ref) => (
+    <h5
+      ref={ref}
+      className={cn(typographyStyles.h5, colorVariants({ color }), className)}
+      {...props}
+    />
+  ),
+);
+H5.displayName = "Typography.H5";
+
+// H6 Component
+const H6 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
+  ({ className, color = "default", ...props }, ref) => (
+    <h6
+      ref={ref}
+      className={cn(typographyStyles.h6, colorVariants({ color }), className)}
+      {...props}
+    />
+  ),
+);
+H6.displayName = "Typography.H6";
+
+// Display Component (for very large titles)
+const Display = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
+  ({ className, color = "default", ...props }, ref) => (
+    <h1
+      ref={ref}
+      className={cn(
+        typographyStyles.display,
+        colorVariants({ color }),
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
+Display.displayName = "Typography.Display";
+
+// Hero Component (for hero sections)
+const Hero = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
+  ({ className, color = "default", ...props }, ref) => (
+    <h1
+      ref={ref}
+      className={cn(typographyStyles.hero, colorVariants({ color }), className)}
+      {...props}
+    />
+  ),
+);
+Hero.displayName = "Typography.Hero";
 
 // P Component
 const P = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
@@ -311,6 +368,10 @@ const Typography = {
   H2,
   H3,
   H4,
+  H5,
+  H6,
+  Display,
+  Hero,
   P,
   BodyLg,
   BodyBase,

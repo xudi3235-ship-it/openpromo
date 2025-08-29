@@ -44,9 +44,9 @@ export function FeaturesSection() {
                   Seamless collaboration
                 </Typography.FeatureTag>
               </Stack>
-              <Typography.H2 className="max-w-2xl">
+              <Typography.H1 className="max-w-2xl">
                 Powering teamwork to simplify workflows
-              </Typography.H2>
+              </Typography.H1>
               <Typography.BodyLg className="max-w-2xl">
                 Say goodbye to version chaos and embrace a smoother workflow
                 designed to help your team achieve more, together.
@@ -92,9 +92,9 @@ export function FeaturesSection() {
                   Meaningful calendar
                 </Typography.FeatureTag>
               </Stack>
-              <Typography.H2>
+              <Typography.H1>
                 Dynamic planner that keeps you ahead
-              </Typography.H2>
+              </Typography.H1>
               <Typography.BodyLg>
                 Stay one step ahead with a calendar that grows with your
                 schedule. Adapt quickly to changes, manage priorities
@@ -136,9 +136,9 @@ export function FeaturesSection() {
                   Insightful analytics
                 </Typography.FeatureTag>
               </Stack>
-              <Typography.H2>
+              <Typography.H1>
                 Analytics that power smarter decisions
-              </Typography.H2>
+              </Typography.H1>
               <Typography.BodyLg>
                 Our cutting-edge analytics deliver detailed trends, patterns,
                 and actionable intelligence to help you make informed decisions

@@ -127,9 +127,9 @@ export function PricingSection() {
               </div>
 
               {/* Main Heading */}
-              <Typography.H1 className="text-[64px] font-semibold leading-tight text-[var(--neutral-900)]">
+              <Typography.Display className="text-[var(--neutral-900)]">
                 Choose a plan that's right for you.
-              </Typography.H1>
+              </Typography.Display>
 
               {/* Subtitle */}
               <Typography.BodyLg className="text-[var(--neutral-600)] leading-6">

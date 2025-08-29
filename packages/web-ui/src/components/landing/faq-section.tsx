@@ -57,9 +57,9 @@ export function FaqSection() {
               </div>
 
               {/* Main Heading */}
-              <Typography.H1 className="text-[48px] font-semibold leading-[1.1] text-[var(--neutral-900)] max-w-[385px]">
+              <Typography.Hero className="text-[var(--neutral-900)] max-w-[385px]">
                 In case you missed anything
-              </Typography.H1>
+              </Typography.Hero>
 
               {/* Subtitle */}
               <Typography.BodyLg className="text-[var(--neutral-600)] leading-6">

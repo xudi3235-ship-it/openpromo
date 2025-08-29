@@ -33,9 +33,9 @@ export function FooterSection({ onGetStartedClick }: FooterProps) {
         <Container size="lg" className="relative z-10">
           <div className="text-center max-w-[600px] mx-auto">
             <Stack spacing="lg">
-              <Typography.H1 className="text-[48px] font-semibold text-[#FAFAFA]">
+              <Typography.Hero className="text-[#FAFAFA]">
                 Start your trial today.
-              </Typography.H1>
+              </Typography.Hero>
 
               <Typography.BodyLg className="text-[#E6E6EB] leading-6">
                 Unlock the potential of your business with our next-level SaaS

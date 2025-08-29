@@ -102,9 +102,9 @@ export function TestimonialsSection() {
               </div>
 
               {/* Main Heading */}
-              <Typography.H1 className="text-[48px] font-semibold leading-tight text-[var(--neutral-900)]">
+              <Typography.Hero className="text-[var(--neutral-900)]">
                 Trusted by the best in your industry
-              </Typography.H1>
+              </Typography.Hero>
 
               {/* Subtitle */}
               <Typography.BodyLg className="text-[var(--neutral-600)]">

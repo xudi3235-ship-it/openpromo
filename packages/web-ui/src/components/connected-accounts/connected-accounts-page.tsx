@@ -98,7 +98,7 @@ function ConnectedAccountsContent({ onConnect }: { onConnect: () => void }) {
   return (
     <Stack spacing="xl">
       <div className="flex items-center justify-between">
-        <Typography.H2>Active Connections</Typography.H2>
+        <Typography.H3>Active Connections</Typography.H3>
         <Badge
           variant="secondary"
           className="bg-[var(--green-fill)] text-[var(--green-text)] border-[var(--green-stroke)]"
@@ -181,7 +181,7 @@ export function ConnectedAccountsPage() {
                   <div className="p-2 bg-sidebar-accent rounded-lg">
                     <Users className="w-5 h-5 text-[var(--neutral-700)]" />
                   </div>
-                  <Typography.H1>Connected Accounts</Typography.H1>
+                  <Typography.H2>Connected Accounts</Typography.H2>
                 </div>
                 <Typography.BodyLg className="text-[var(--neutral-600)]">
                   Manage your social media platform connections and publishing
@@ -207,7 +207,7 @@ export function ConnectedAccountsPage() {
 
           {/* Available Platforms */}
           <Stack spacing="xl">
-            <Typography.H2>Available Platforms</Typography.H2>
+            <Typography.H3>Available Platforms</Typography.H3>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {availablePlatforms.map((platform) => (
                 <div
