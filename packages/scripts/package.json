@@ -5,7 +5,7 @@
   "sideEffects": false,
   "dependencies": {
     "@openpromo/core": "workspace:*",
-    "sst": "3.17.10"
+    "sst": "3.17.12"
   },
   "scripts": {
     "shell": "sst shell tsx",

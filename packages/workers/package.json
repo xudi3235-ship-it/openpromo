@@ -7,7 +7,7 @@
     "@openpromo/core": "workspace:*",
     "@openpromo/functions": "workspace:*",
     "cloudflare": "^4.5.0",
-    "sst": "*"
+    "sst": "3.17.12"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250726.0",
