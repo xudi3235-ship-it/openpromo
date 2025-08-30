@@ -7,6 +7,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
+import z from "zod";
 import { AllPlacement, type PlacementSpec } from "../content/schema/placement";
 import type { ContentBaseSpec } from "../content/schema/placement/common";
 import { id, timestamp, timestamps, ulid } from "../drizzle/types";
@@ -101,5 +102,20 @@ export const unifiedContentTable = pgTable(
   (t) => [uniqueIndex().on(t.id, t.workspaceId, t.connectedAccountId)],
 );
 
-export const UnifiedContentInsert = createInsertSchema(unifiedContentTable);
+export type UnifiedContentSelect = typeof unifiedContentTable.$inferSelect;
+export type UnifiedContentInsert = typeof unifiedContentTable.$inferInsert;
+export type UnifiedContentForPlacement<T extends AllPlacement[number]> = {
+  [K in keyof UnifiedContentSelect]: K extends "placement"
+    ? T
+    : K extends "placementSpec"
+      ? Extract<PlacementSpec, { placement: T }>
+      : UnifiedContentSelect[K];
+};
+export type UnifiedContentFacebookPost = UnifiedContentForPlacement<"FB_FEED">;
+export type UnifiedContentInstagramPost = UnifiedContentForPlacement<"IG_FEED">;
+
+export const UnifiedContentInsert = createInsertSchema(unifiedContentTable, {
+  placement: z.enum([...Object.values(AllPlacement)]),
+  publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
+});
 export const UnifiedContentUpdate = createUpdateSchema(unifiedContentTable);
