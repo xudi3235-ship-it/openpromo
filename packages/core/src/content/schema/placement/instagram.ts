@@ -1,5 +1,5 @@
 import z from "zod";
-import { ContentBaseSpec } from "./common";
+import { BasePlacementSpec } from "./common";
 
 export const IGPlacement = {
   IG_FEED: "IG_FEED",
@@ -9,7 +9,7 @@ export const IGPlacement = {
 
 export type IGPlacement = (typeof IGPlacement)[keyof typeof IGPlacement];
 
-export const IGPlacementSpec = ContentBaseSpec.extend({
+export const IGPlacementSpec = BasePlacementSpec.extend({
   placement: z.enum(Object.values(IGPlacement)),
   igAccountID: z.string().optional(),
   fbAdAccountID: z.string().optional(),

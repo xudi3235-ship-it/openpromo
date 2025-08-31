@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CreateFeedSchema } from "../../infra/facebook/types";
-import { ContentBaseSpec, SharedAttachmentSpec } from "./common";
+import { BasePlacementSpec, SharedAttachmentSpec } from "./common";
 
 /**
  * defines schema & validation logics for facebook placements,
@@ -36,7 +36,7 @@ export const postSpec = z.object({
 });
 
 // placement specifics specs
-export const BaseFBPlacementSpec = ContentBaseSpec.extend({
+export const BaseFBPlacementSpec = BasePlacementSpec.extend({
   placement: z.enum(Object.values(FBPlacement)),
   identity: identitySpec,
 });

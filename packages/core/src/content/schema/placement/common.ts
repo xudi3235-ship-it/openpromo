@@ -1,4 +1,6 @@
 import z from "zod";
+import { Actor } from "../../../actor";
+import { AllPlacement } from ".";
 
 /**
  * platform agnostic schemas for contents
@@ -6,7 +8,7 @@ import z from "zod";
 // Base attachment schema
 export const BaseAttachmentSpec = z.object({
   id: z.string().optional(),
-  url: z.string().optional(),
+  presignedUrl: z.string().optional(),
   s3Key: z.string().optional(),
   thumbnailUrl: z.string().optional(),
   mimeType: z.string().optional(),
@@ -36,12 +38,20 @@ export const SharedAttachmentSpec = z.discriminatedUnion("type", [
   VideoAttachmentSpec,
 ]);
 
-// internal content spec.
-// platform agnostic representation of a "content" item.
-export const ContentBaseSpec = z.object({
+/**
+ * base spec for all content placements. Platform specific children will extend
+ * this and override the fields. On high level, we break down to the following
+ * 1. actor context, workspace-scoped actor for this action.
+ * 2. normalized fields. This is for
+ */
+export const BasePlacementSpec = z.object({
+  actor: Actor.WorkspaceUserSchema, // scoped under workspace user
+  // normalized fields.
+  placement: z.enum([...Object.values(AllPlacement)]),
   title: z.string().optional(),
-  bodyText: z.string().optional(),
-  attachments: z.array(SharedAttachmentSpec).optional(),
+  thumbnailUrl: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
-export type ContentBaseSpec = z.infer<typeof ContentBaseSpec>;
+export type BasePlacementSpec = z.infer<typeof BasePlacementSpec>;
