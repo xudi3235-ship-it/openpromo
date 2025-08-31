@@ -14,5 +14,3 @@ export const IGPlacementSpec = ContentBaseSpec.extend({
   igAccountID: z.string().optional(),
   fbAdAccountID: z.string().optional(),
 });
-
-// TODO: narrow down to each specific placements

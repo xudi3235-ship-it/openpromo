@@ -1,13 +1,6 @@
 import { z } from "zod";
-import {
-  CreateFBReelSchema,
-  CreateFeedSchema,
-} from "../../infra/facebook/types";
-import {
-  ContentBaseSpec,
-  SharedAttachmentSpec,
-  VideoAttachmentSpec,
-} from "./common";
+import { CreateFeedSchema } from "../../infra/facebook/types";
+import { ContentBaseSpec, SharedAttachmentSpec } from "./common";
 
 /**
  * defines schema & validation logics for facebook placements,
@@ -42,26 +35,13 @@ export const postSpec = z.object({
   _createFeedSchema: CreateFeedSchema.optional(),
 });
 
-// 3. reel spec
-export const reelSpec = z.object({
-  video: VideoAttachmentSpec.optional(),
-  caption: z.string().optional(),
-  // internal
-  _createReelSchema: CreateFBReelSchema.optional(),
-});
-
 // placement specifics specs
 export const BaseFBPlacementSpec = ContentBaseSpec.extend({
-  placement: FBPlacement,
+  placement: z.enum(Object.values(FBPlacement)),
   identity: identitySpec,
 });
 
 export const FBFeedPlacementSpec = BaseFBPlacementSpec.extend({
   placement: z.literal(FBPlacement.FB_FEED),
   postSpec: postSpec,
-});
-
-export const FBReelPlacementSpec = BaseFBPlacementSpec.extend({
-  placement: z.literal(FBPlacement.FB_REEL),
-  reelSpec: reelSpec,
 });

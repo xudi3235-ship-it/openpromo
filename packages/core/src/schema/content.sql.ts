@@ -1,32 +1,72 @@
+import type { BuildExtraConfigColumns } from "drizzle-orm";
 import {
-  json,
+  jsonb,
+  type PgColumnBuilder,
+  type PgTableExtraConfigValue,
   pgEnum,
   pgTable,
-  text,
   uniqueIndex,
-  varchar,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
 import z from "zod";
 import { AllPlacement, type PlacementSpec } from "../content/schema/placement";
-import type { ContentBaseSpec } from "../content/schema/placement/common";
-import { id, timestamp, timestamps, ulid } from "../drizzle/types";
-import { connectedAccount } from "./connected_account.sql";
+import { id, timestamps, ulid } from "../drizzle/types";
+import { connectedAccountId } from "./connected_account.sql";
 import { workspaceID } from "./workspaces.sql";
 
-// const baseContentTable = <
-//   TTableName extends string,
-//   TColumnsMap extends Record<string, MySqlColumnBuilder>,
-// >(
-//   name: TTableName,
-//   columns: TColumnsMap,
-// ) => {
-//   return mysqlTable(name, {
-//     ...workspaceID,
-//     ...timestamps,
-//     ...columns,
-//   });
-// };
+// trying to get a table builder so that it enforces
+// workspace scoping. and extracts common table columns.
+export const _notReadyYet = <
+  TTableName extends string,
+  TColumnsMap extends Record<string, PgColumnBuilder>,
+>(
+  name: TTableName,
+  columns: TColumnsMap,
+  extraConfig?: (
+    self: BuildExtraConfigColumns<TTableName, TColumnsMap, "pg">,
+  ) => PgTableExtraConfigValue[],
+) => {
+  return pgTable(
+    name,
+    {
+      ...id,
+      ...workspaceID,
+      ...timestamps,
+      ...columns,
+    },
+    (self) => {
+      const baseExtraConfig: PgTableExtraConfigValue[] = [];
+      if (extraConfig) {
+        const fullyTypedSelf = self as BuildExtraConfigColumns<
+          TTableName,
+          TColumnsMap,
+          "pg"
+        >;
+        return [...baseExtraConfig, ...extraConfig(fullyTypedSelf)];
+      }
+      return baseExtraConfig;
+    },
+  );
+};
+
+/**
+ * specs for pending content group, a logical grouping of contents for scheduled or drafts. For such use case, this provides a unified config for different features.
+ * For now, we enable scheduling. Later it might include features like multi-user approval workflows, etc.
+ *
+ */
+const pendingContentGroupSpec = z.object({
+  // for scheduled contents, each content will have its own scheduling spec
+  schedulingSpec: z
+    .object({
+      unifiedContentId: z.string().describe("The ID of the unified content"),
+      scheduledJobId: z.string().describe("The id of the scheduled event"),
+      scheduledPublishAt: z.date().nullable(),
+    })
+    .array()
+    .optional(),
+});
+
+type PendingContentGroupSpec = z.infer<typeof pendingContentGroupSpec>;
 
 /**
  * Heart of data model supporting scheduling, drafts
@@ -38,7 +78,9 @@ export const pendingContentGroupTable = pgTable(
     ...id,
     ...workspaceID,
     ...timestamps,
-    baseSpec: json("base_spec").$type<ContentBaseSpec>(),
+    pendingContentGroupSpec: jsonb(
+      "pending_content_group_spec",
+    ).$type<PendingContentGroupSpec>(),
   },
   (t) => [uniqueIndex().on(t.workspaceId, t.id)],
 );
@@ -75,29 +117,21 @@ export const unifiedContentTable = pgTable(
     ...id,
     ...workspaceID,
     ...timestamps,
-    connectedAccountId: ulid("connected_account_id")
-      .notNull()
-      .references(() => connectedAccount.id),
-
+    ...connectedAccountId,
+    // external content id, for published content / backfilled.
+    sourceContentId: ulid("source_content_id"),
     // declaration of the source platform's spec, json object
     // that defines what a post looks like on src plat.
     // for scheduled contents: the spec will be translated into multiple api calls, kinda like IaC, due to the dependency graph it needs to sort out, e.g. for a carousel IG posts, we need to create videos 1-3 first, then create a media container for these videos, finally we can create a IGMedia.
     // Similarly, for backfilled contents, upstream services should transform to placement spec.
     // this will be source of truth used in publishing, composer, preview, and backfilling.
-    placementSpec: json("placement_spec").$type<PlacementSpec>(),
+    placementSpec: jsonb("placement_spec").$type<PlacementSpec>(),
     // internal, where this is going to
     placement: placementPgEnum().notNull(),
     publishingStatus: publishingStatusPgEnum().notNull(),
-    // scheduling related fields
-    scheduleName: varchar("schedule_name", { length: 255 }),
-    scheduledPublishAt: timestamp(),
     pendingContentGroupId: ulid("pending_content_group_id").references(
       () => pendingContentGroupTable.id,
     ),
-    // normalized fields
-    publishedAt: timestamp(),
-    thumbnailUrl: text("thumbnail_url").notNull(),
-    title: text("title").notNull(),
   },
   (t) => [uniqueIndex().on(t.id, t.workspaceId, t.connectedAccountId)],
 );

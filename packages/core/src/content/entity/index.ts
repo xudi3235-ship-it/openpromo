@@ -108,6 +108,11 @@ abstract class EntUnifiedContent {
     },
   );
 }
+// TODO: implement for unpublished content group CRUD logics.
+// abstract class EntUnpublishedContentGroup {
+//   constructor(data: UnifiedContentSelect) {
+//   }
+// }
 
 /**
  * app-level entity for Facebook posts. Internally it uses the unified content

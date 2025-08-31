@@ -8,7 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
-import { id, timestamp, timestamps } from "../drizzle/types";
+import { id, timestamp, timestamps, ulid } from "../drizzle/types";
 import { workspaceID } from "./workspaces.sql";
 
 // Platform enum for supported social media platforms
@@ -43,6 +43,9 @@ export const connectedAccount = pgTable(
   ],
 );
 
+export const connectedAccountId = {
+  connectedAccountId: ulid("connected_account_id").notNull(),
+};
 export type ConnectedAccountInsert = typeof connectedAccount.$inferInsert;
 export type ConnectedAccountSelect = typeof connectedAccount.$inferSelect;
 export const ConnectedAccountSelectSchema =

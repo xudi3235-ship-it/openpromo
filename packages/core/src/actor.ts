@@ -1,44 +1,57 @@
+import { z } from "zod";
 import { createContext } from "./context";
 import { ErrorCodes, VisibleError } from "./error";
 import { Log } from "./util/log";
 import type { OrganizationRole } from "./workspace/auth";
 
 export namespace Actor {
-  export interface User {
-    type: "user";
-    properties: {
-      userID: string;
-      email: string;
-      organizationID: string;
-      role: OrganizationRole;
-    };
-  }
-  export interface WorkspaceUser {
-    type: "workspace_user";
-    properties: {
-      userID: string;
-      email: string;
-      organizationID: string;
-      role: OrganizationRole;
-      workspaceID: string; // scoped to workspace
-      workspaceSlug: string;
-    };
-  }
+  export const UserSchema = z.object({
+    type: z.literal("user"),
+    properties: z.object({
+      userID: z.string(),
+      email: z.email(),
+      organizationID: z.string(),
+      role: z.custom<OrganizationRole>(),
+    }),
+  });
 
-  export interface System {
-    type: "system";
-    properties: {
-      userID: string;
-    };
-  }
+  export const WorkspaceUserSchema = z.object({
+    type: z.literal("workspace_user"),
+    properties: z.object({
+      userID: z.string(),
+      email: z.email(),
+      organizationID: z.string(),
+      role: z.custom<OrganizationRole>(),
+      workspaceID: z.string(),
+      workspaceSlug: z.string(),
+    }),
+  });
 
-  export interface Public {
-    type: "public";
-    // biome-ignore lint/complexity/noBannedTypes: TODO: fix later
-    properties: {};
-  }
+  export const SystemSchema = z.object({
+    type: z.literal("system"),
+    properties: z.object({
+      userID: z.string(),
+    }),
+  });
 
-  export type Info = User | WorkspaceUser | Public | System;
+  export const PublicSchema = z.object({
+    type: z.literal("public"),
+    properties: z.object({}),
+  });
+
+  export const InfoSchema = z.union([
+    UserSchema,
+    WorkspaceUserSchema,
+    SystemSchema,
+    PublicSchema,
+  ]);
+
+  // Type inference from schemas
+  export type User = z.infer<typeof UserSchema>;
+  export type WorkspaceUser = z.infer<typeof WorkspaceUserSchema>;
+  export type System = z.infer<typeof SystemSchema>;
+  export type Public = z.infer<typeof PublicSchema>;
+  export type Info = z.infer<typeof InfoSchema>;
 
   export const Context = createContext<Info>();
 
@@ -51,6 +64,7 @@ export namespace Actor {
       `You don't have permission to access this resource.`,
     );
   }
+
   export function workspaceID() {
     const actor = Context.use();
     if (actor.type === "workspace_user") {
@@ -62,6 +76,7 @@ export namespace Actor {
       `No workspace context set. User must select a workspace.`,
     );
   }
+
   export function workspaceSlug() {
     const actor = Context.use();
     if (actor.type === "workspace_user") {
@@ -108,8 +123,12 @@ export namespace Actor {
     // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
     Next extends (...args: any) => any,
   >(type: T, properties: Extract<Info, { type: T }>["properties"], fn: Next) {
+    // Validate the actor data before providing it
+    const actorData = { type, properties };
+    const validatedActor = InfoSchema.parse(actorData);
+
     // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
-    return Context.provide({ type, properties } as any, () =>
+    return Context.provide(validatedActor as any, () =>
       Log.provide(
         {
           actor: type,
@@ -118,5 +137,19 @@ export namespace Actor {
         fn,
       ),
     );
+  }
+
+  // Helper function to create validated actors
+  export function create<T extends Info["type"]>(
+    type: T,
+    properties: Extract<Info, { type: T }>["properties"],
+  ): Extract<Info, { type: T }> {
+    const actorData = { type, properties };
+    return InfoSchema.parse(actorData) as Extract<Info, { type: T }>;
+  }
+
+  // Helper function to validate actor data at runtime
+  export function validate(data: unknown): Info {
+    return InfoSchema.parse(data);
   }
 }
