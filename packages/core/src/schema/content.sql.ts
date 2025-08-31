@@ -81,7 +81,7 @@ const pendingContentGroupSpec = z.object({
     .object({
       unifiedContentId: z.string().describe("The ID of the unified content"),
       scheduledJobId: z.string().describe("The id of the scheduled event"),
-      scheduledPublishAt: z.date().nullable(),
+      scheduledPublishAt: z.date(),
     })
     .array()
     .optional(),

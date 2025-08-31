@@ -126,16 +126,19 @@ export namespace Actor {
     // Validate the actor data before providing it
     const actorData = { type, properties };
     const validatedActor = InfoSchema.parse(actorData);
+    const enableLog = process.env.DEBUG === "true";
 
     // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
     return Context.provide(validatedActor as any, () =>
-      Log.provide(
-        {
-          actor: type,
-          ...properties,
-        },
-        fn,
-      ),
+      enableLog
+        ? Log.provide(
+            {
+              actor: type,
+              ...properties,
+            },
+            fn,
+          )
+        : fn(),
     );
   }
 

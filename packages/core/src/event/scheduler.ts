@@ -137,7 +137,8 @@ export async function scheduleEvent<T extends event.Definition>(
   );
 
   return {
-    scheduleArn: result.ScheduleArn,
+    // biome-ignore lint/style/noNonNullAssertion: lib
+    scheduleArn: result.ScheduleArn!,
     scheduleName,
     eventPayload,
   };

@@ -1,8 +1,12 @@
+import { Resource } from "sst";
+import { bus } from "sst/aws/bus";
 import z from "zod";
 import { Actor } from "../../actor";
 import { and, db, eq } from "../../drizzle";
 import { afterTx, createTransaction } from "../../drizzle/transaction";
 import { NotImplementedError } from "../../error";
+import { defineEvent } from "../../event";
+import { scheduleEvent } from "../../event/scheduler";
 import {
   PendingContentGroupInsert,
   type PendingContentGroupSelect,
@@ -116,20 +120,48 @@ abstract class EntUnifiedContent {
 /**
  * Entity representing a pending content group. A pending content group supports scheduling & drafts, containing N unified content.
  */
-export class EntPendingContentGroup {
+class EntPendingContentGroup {
   data: PendingContentGroupSelect;
 
   constructor(data: PendingContentGroupSelect) {
     this.data = data;
   }
-  public static getCreateSchema() {
-    // schema used for creating a pending content group
-    // i.e. schedule or draft.
-    const schema = z.object({
+  // ================== static ==================
+  static Events() {
+    return {
+      // each content will have separate events for publish now
+      Publish: defineEvent(
+        "pending_content_group.publish",
+        z.object({
+          groupID: z.string(),
+          contentID: z.string(),
+        }),
+      ),
+      Scheduled: defineEvent(
+        "pending_content_group.scheduled",
+        z.object({
+          groupID: z.string(),
+          contentID: z.string(),
+          scheduleName: z.string(),
+          scheduleArn: z.string(),
+        }),
+      ),
+    };
+  }
+  static Schemas() {
+    // zod schemas
+    const create = z.object({
       group: PendingContentGroupInsert.omit({ workspaceId: true }),
       contents: z.array(UnifiedContentInsert.omit({ workspaceId: true })),
     });
-    return schema;
+    return {
+      create,
+    };
+  }
+  public static async list() {
+    throw new NotImplementedError(
+      "paginated query for pending content groups.",
+    );
   }
 
   public static async fromID(id: string) {
@@ -147,47 +179,12 @@ export class EntPendingContentGroup {
     if (!group) throw new Error(`EntPendingContentGroup ${id} not found`);
     return new EntPendingContentGroup(group);
   }
-
-  public async isScheduled(): Promise<boolean> {
-    return this.data.publishingStatus === "SCHEDULED";
-  }
-  public async isDraft(): Promise<boolean> {
-    return this.data.publishingStatus === "DRAFT";
-  }
-  public async delete(): Promise<PendingContentGroupSelect> {
-    // 1. delete the pending group
-    const workspaceID = Actor.workspaceID();
-    return createTransaction(async (tx) => {
-      const [deleted] = await tx
-        .delete(pendingContentGroupTable)
-        .where(
-          and(
-            eq(pendingContentGroupTable.id, this.data.id),
-            eq(pendingContentGroupTable.workspaceId, workspaceID),
-          ),
-        )
-        .returning();
-      if (!deleted)
-        throw new Error(`EntPendingContentGroup ${this.data.id} not found`);
-      // 2. delete the linked drafts/scheduled contents
-      const _contents = await tx
-        .delete(unifiedContentTable)
-        .where(
-          and(
-            eq(unifiedContentTable.pendingContentGroupId, this.data.id),
-            eq(unifiedContentTable.workspaceId, workspaceID),
-          ),
-        )
-        .returning();
-      return deleted;
-    });
-  }
   /**
    * create a pending content group. Core action that powers scheduling
    * and draft. It will create a group as well as associated unified contents.(1..N)
    */
   public static create = fn(
-    this.getCreateSchema(),
+    this.Schemas().create,
     async ({ group, contents }) => {
       const workspaceID = Actor.workspaceID();
       return createTransaction(async (tx) => {
@@ -217,12 +214,72 @@ export class EntPendingContentGroup {
           throw new Error(`Failed to create all unified contents`);
         }
         // 3. use scheduler to schedule publish events for each content
-        // if they are scheduled.
-        afterTx(() => {});
+        const scheduleSpec =
+          pendingContentGroup.pendingContentGroupSpec?.schedulingSpec;
+
+        afterTx(async () => {
+          if (!scheduleSpec) return;
+          // for scheduled posts, register separate publish event for each
+          scheduleSpec.map(async (spec) => {
+            const scheduledEvent = await scheduleEvent(
+              this.Events().Publish,
+              {
+                groupID: pendingContentGroup.id,
+                contentID: spec.unifiedContentId,
+              },
+              // publish time
+              spec.scheduledPublishAt,
+            );
+            // 4. now event is scheduled, we need to store the
+            // scheduled instance, delegating to event handler
+            bus.publish(Resource.Bus, this.Events().Scheduled, {
+              groupID: pendingContentGroup.id,
+              contentID: spec.unifiedContentId,
+              scheduleName: scheduledEvent.scheduleName,
+              scheduleArn: scheduledEvent.scheduleArn,
+            });
+          });
+        });
         return { pendingContentGroup, unifiedContents };
       });
     },
   );
+  // ================== cls methods ==================
+
+  public async isScheduled(): Promise<boolean> {
+    return this.data.publishingStatus === "SCHEDULED";
+  }
+  public async isDraft(): Promise<boolean> {
+    return this.data.publishingStatus === "DRAFT";
+  }
+  public async delete(): Promise<PendingContentGroupSelect> {
+    // 1. delete the pending group
+    const workspaceID = Actor.workspaceID();
+    return createTransaction(async (tx) => {
+      const [deleted] = await tx
+        .delete(pendingContentGroupTable)
+        .where(
+          and(
+            eq(pendingContentGroupTable.id, this.data.id),
+            eq(pendingContentGroupTable.workspaceId, workspaceID),
+          ),
+        )
+        .returning();
+      if (!deleted)
+        throw new Error(`EntPendingContentGroup ${this.data.id} not found`);
+      // 2. delete the linked drafts/scheduled contents
+      await tx
+        .delete(unifiedContentTable)
+        .where(
+          and(
+            eq(unifiedContentTable.pendingContentGroupId, this.data.id),
+            eq(unifiedContentTable.workspaceId, workspaceID),
+          ),
+        )
+        .returning();
+      return deleted;
+    });
+  }
 }
 
 /**
@@ -270,3 +327,5 @@ export class EntInstagramPost extends EntUnifiedContent {
     return (await super.delete()) as UnifiedContentInstagramPost;
   }
 }
+
+export { EntPendingContentGroup, EntUnifiedContent };
