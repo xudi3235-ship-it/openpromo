@@ -86,8 +86,7 @@ async function createScheduleConfig<T extends event.Definition>(
     Name: scheduleName,
     ScheduleExpression: `at(${scheduledDate.toISOString().slice(0, 19)})`,
     Target: {
-      // biome-ignore lint/style/noNonNullAssertion: TODO: fix later
-      Arn: Resource.Bus.arn!,
+      Arn: Resource.Bus.arn,
       RoleArn: roleArn,
       EventBridgeParameters: {
         DetailType: eventDef.type,
@@ -113,7 +112,7 @@ async function createScheduleConfig<T extends event.Definition>(
 export async function scheduleEvent<T extends event.Definition>(
   eventDef: T,
   properties: T["$input"],
-  scheduledAt: Date | string,
+  scheduledAt: Date,
   options?: ScheduleOptions<T>,
 ) {
   const scheduledDate = validateScheduledTime(scheduledAt);
@@ -122,7 +121,6 @@ export async function scheduleEvent<T extends event.Definition>(
   const scheduleName =
     options?.scheduleName ||
     `${eventDef.type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-
   const { eventPayload, ...scheduleConfig } = await createScheduleConfig(
     scheduleName,
     eventDef,
@@ -130,11 +128,16 @@ export async function scheduleEvent<T extends event.Definition>(
     scheduledDate,
     options,
   );
+  console.log({
+    eventPayload,
+    scheduleConfig,
+  });
 
   // Create the EventBridge Scheduler schedule.
   const result = await scheduler.send(
     new CreateScheduleCommand(scheduleConfig),
   );
+  console.log("result:", result);
 
   return {
     // biome-ignore lint/style/noNonNullAssertion: lib
