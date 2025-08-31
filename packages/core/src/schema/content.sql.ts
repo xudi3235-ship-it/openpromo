@@ -7,7 +7,11 @@ import {
   pgTable,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
+import {
+  createInsertSchema,
+  createSelectSchema,
+  createUpdateSchema,
+} from "drizzle-zod";
 import z from "zod";
 import { AllPlacement, type PlacementSpec } from "../content/schema/placement";
 import { id, timestamps, ulid } from "../drizzle/types";
@@ -49,6 +53,23 @@ export const _notReadyYet = <
   );
 };
 
+export const ContentPublishingStatus = {
+  DRAFT: "DRAFT",
+  SCHEDULED: "SCHEDULED",
+  PUBLISHED: "PUBLISHED",
+  FAILED_TO_PUBLISH: "FAILED_TO_PUBLISH",
+} as const;
+
+export type ContentPublishingStatus =
+  (typeof ContentPublishingStatus)[keyof typeof ContentPublishingStatus];
+
+// ----- enums -----
+export const publishingStatusPgEnum = pgEnum(
+  "publishing_status",
+  ContentPublishingStatus,
+);
+export const placementPgEnum = pgEnum("placement", AllPlacement);
+
 /**
  * specs for pending content group, a logical grouping of contents for scheduled or drafts. For such use case, this provides a unified config for different features.
  * For now, we enable scheduling. Later it might include features like multi-user approval workflows, etc.
@@ -78,12 +99,39 @@ export const pendingContentGroupTable = pgTable(
     ...id,
     ...workspaceID,
     ...timestamps,
+    publishingStatus: publishingStatusPgEnum().notNull(),
     pendingContentGroupSpec: jsonb(
       "pending_content_group_spec",
     ).$type<PendingContentGroupSpec>(),
   },
   (t) => [uniqueIndex().on(t.workspaceId, t.id)],
 );
+
+const pendingContentGroupRefinements = {
+  publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
+};
+
+export const PendingContentGroupInsert = createInsertSchema(
+  pendingContentGroupTable,
+  pendingContentGroupRefinements,
+);
+export const PendingContentGroupUpdate = createUpdateSchema(
+  pendingContentGroupTable,
+  pendingContentGroupRefinements,
+);
+export const PendingContentGroupSelect = createSelectSchema(
+  pendingContentGroupTable,
+  pendingContentGroupRefinements,
+);
+export type PendingContentGroupInsert = z.infer<
+  typeof PendingContentGroupInsert
+>;
+export type PendingContentGroupUpdate = z.infer<
+  typeof PendingContentGroupUpdate
+>;
+export type PendingContentGroupSelect = z.infer<
+  typeof PendingContentGroupSelect
+>;
 
 /**
  * core data model that represents a piece of content x-plat.
@@ -94,22 +142,6 @@ export const pendingContentGroupTable = pgTable(
  *
  * For backfilled contents, upstream services should transform to placement spec.
  */
-export const ContentPublishingStatus = {
-  DRAFT: "DRAFT",
-  SCHEDULED: "SCHEDULED",
-  PUBLISHED: "PUBLISHED",
-  FAILED_TO_PUBLISH: "FAILED_TO_PUBLISH",
-} as const;
-
-export type ContentPublishingStatus =
-  (typeof ContentPublishingStatus)[keyof typeof ContentPublishingStatus];
-
-// ----- enums -----
-export const publishingStatusPgEnum = pgEnum(
-  "publishing_status",
-  ContentPublishingStatus,
-);
-export const placementPgEnum = pgEnum("placement", AllPlacement);
 
 export const unifiedContentTable = pgTable(
   "unified_content",
@@ -129,6 +161,7 @@ export const unifiedContentTable = pgTable(
     // internal, where this is going to
     placement: placementPgEnum().notNull(),
     publishingStatus: publishingStatusPgEnum().notNull(),
+    // this is optional, for cascading deletions, app-layer handles it
     pendingContentGroupId: ulid("pending_content_group_id").references(
       () => pendingContentGroupTable.id,
     ),
