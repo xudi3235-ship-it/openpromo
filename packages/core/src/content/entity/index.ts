@@ -201,25 +201,25 @@ export class EntPendingContentGroup {
           .returning();
         if (!pendingContentGroup)
           throw new Error(`Failed to create pending content group`);
-        const createdContents = [];
         // 2. create unified contents
-        for (const content of contents) {
-          const [unifiedContent] = await tx
-            .insert(unifiedContentTable)
-            .values({
+        const unifiedContents = await tx
+          .insert(unifiedContentTable)
+          .values(
+            contents.map((content) => ({
               ...content,
               workspaceId: workspaceID,
               pendingContentGroupId: pendingContentGroup.id,
-            })
-            .returning();
-          if (!unifiedContent)
-            throw new Error(`Failed to create unified content`);
-          createdContents.push(unifiedContent);
+            })),
+          )
+          .returning();
+
+        if (unifiedContents.length !== contents.length) {
+          throw new Error(`Failed to create all unified contents`);
         }
         // 3. use scheduler to schedule publish events for each content
         // if they are scheduled.
         afterTx(() => {});
-        return { pendingContentGroup, createdContents };
+        return { pendingContentGroup, unifiedContents };
       });
     },
   );
