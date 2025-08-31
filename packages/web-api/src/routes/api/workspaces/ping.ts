@@ -22,13 +22,17 @@ export const pingRoute = new Hono<ApiEnv>()
     const group: PendingContentGroupInsert = {
       workspaceId: "dummy",
       publishingStatus: "SCHEDULED",
+      pendingContentGroupSpec: {},
     };
     const contents: UnifiedContentInsert[] = [
       {
         workspaceId: "dummy",
         publishingStatus: "SCHEDULED",
         placement: "FB_FEED",
-        connectedAccountId: "dummy",
+        connectedAccountId: "01K412AGBJJC1W2XXX9HSCH45Z",
+        schedulingSpec: {
+          scheduledPublishAt: new Date(Date.now()),
+        },
       },
     ];
     const res = await EntPendingContentGroup.create({ group, contents });

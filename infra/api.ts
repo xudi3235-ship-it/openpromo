@@ -38,7 +38,7 @@ export const api = new sst.cloudflare.Worker("WorkerApi", {
   handler: "packages/web-api/src/index.ts",
   environment: {
     DEBUG: "OFF", // only takes string
-    DRIZZLE_LOG: $dev ? "true" : "false",
+    DRIZZLE_LOG: "false",
   },
   link: [urls, database, ...allSecrets, bucket, email, bus],
   domain,

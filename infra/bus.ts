@@ -1,4 +1,5 @@
 import { database } from "./database";
+import { allSecrets } from "./secret";
 
 export const bus = new sst.aws.Bus("Bus");
 
@@ -44,5 +45,5 @@ const _busSubscriber = bus.subscribe("busSubscriber", {
       resources: ["*"],
     },
   ],
-  link: [bus, database],
+  link: [bus, database, ...allSecrets],
 });

@@ -10,6 +10,7 @@ export const handler = bus.subscriber(
     EntPendingContentGroup.Events().Publish,
   ],
   async (evt, raw) => {
+    log.info("hit bus sub handler");
     // Handle events from EventBridge Scheduler - they come with our event structure
     if (raw.source === "openpromo.scheduler") {
       console.log("Received scheduled event:", raw.detail);

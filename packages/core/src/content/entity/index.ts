@@ -3,10 +3,9 @@ import { bus } from "sst/aws/bus";
 import z from "zod";
 import { Actor } from "../../actor";
 import { and, db, eq } from "../../drizzle";
-import { afterTx, createTransaction } from "../../drizzle/transaction";
+import { createTransaction } from "../../drizzle/transaction";
 import { NotImplementedError } from "../../error";
 import { defineEvent } from "../../event";
-import { scheduleEvent } from "../../event/scheduler";
 import {
   PendingContentGroupInsert,
   type PendingContentGroupSelect,
@@ -210,36 +209,46 @@ class EntPendingContentGroup {
           )
           .returning();
 
-        if (unifiedContents.length !== contents.length) {
-          throw new Error(`Failed to create all unified contents`);
-        }
-        // 3. use scheduler to schedule publish events for each content
-        const scheduleSpec =
-          pendingContentGroup.pendingContentGroupSpec?.schedulingSpec;
-
-        afterTx(async () => {
-          if (!scheduleSpec) return;
-          // for scheduled posts, register separate publish event for each
-          scheduleSpec.map(async (spec) => {
-            const scheduledEvent = await scheduleEvent(
-              this.Events().Publish,
+        // 3. handle scheduled contents
+        // await afterTx(async () => {
+        unifiedContents.map(async (content) => {
+          const spec = content.schedulingSpec;
+          if (!spec?.scheduledPublishAt) return;
+          // const scheduledEvent = await scheduleEvent(
+          //   this.Events().Publish,
+          //   {
+          //     groupID: pendingContentGroup.id,
+          //     contentID: content.id,
+          //   },
+          //   // publish time
+          //   spec.scheduledPublishAt,
+          // );
+          // 4. now event is scheduled, we need to store the
+          // scheduled instance, delegating to event handler
+          try {
+            bus.publish(
+              Resource.Bus,
+              this.Events().Scheduled,
               {
                 groupID: pendingContentGroup.id,
-                contentID: spec.unifiedContentId,
+                contentID: content.id,
+                scheduleName: "test",
+                scheduleArn: "test",
               },
-              // publish time
-              spec.scheduledPublishAt,
+              {
+                aws: {
+                  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+                },
+              },
             );
-            // 4. now event is scheduled, we need to store the
-            // scheduled instance, delegating to event handler
-            bus.publish(Resource.Bus, this.Events().Scheduled, {
-              groupID: pendingContentGroup.id,
-              contentID: spec.unifiedContentId,
-              scheduleName: scheduledEvent.scheduleName,
-              scheduleArn: scheduledEvent.scheduleArn,
-            });
-          });
+          } catch (error) {
+            console.error("Error publishing event:", error);
+          } finally {
+            console.log("!! 5. bus.publish done");
+          }
         });
+        // });
         return { pendingContentGroup, unifiedContents };
       });
     },

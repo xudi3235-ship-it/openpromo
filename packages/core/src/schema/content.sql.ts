@@ -72,20 +72,10 @@ export const placementPgEnum = pgEnum("placement", AllPlacement);
 
 /**
  * specs for pending content group, a logical grouping of contents for scheduled or drafts. For such use case, this provides a unified config for different features.
- * For now, we enable scheduling. Later it might include features like multi-user approval workflows, etc.
+ * Later it might include features like multi-user approval workflows, comments, etc.
  *
  */
-const pendingContentGroupSpec = z.object({
-  // for scheduled contents, each content will have its own scheduling spec
-  schedulingSpec: z
-    .object({
-      unifiedContentId: z.string().describe("The ID of the unified content"),
-      scheduledJobId: z.string().describe("The id of the scheduled event"),
-      scheduledPublishAt: z.date(),
-    })
-    .array()
-    .optional(),
-});
+const pendingContentGroupSpec = z.object({});
 
 type PendingContentGroupSpec = z.infer<typeof pendingContentGroupSpec>;
 
@@ -143,6 +133,19 @@ export type PendingContentGroupSelect = z.infer<
  * For backfilled contents, upstream services should transform to placement spec.
  */
 
+// scheduling spec is bound at the content level.
+const SchedulingSpec = z.object({
+  scheduledPublishAt: z.date(),
+  eventInfo: z
+    .object({
+      scheduleArn: z.string(),
+      scheduleName: z.string(),
+    })
+    .optional(),
+});
+
+type SchedulingSpec = z.infer<typeof SchedulingSpec>;
+
 export const unifiedContentTable = pgTable(
   "unified_content",
   {
@@ -161,6 +164,8 @@ export const unifiedContentTable = pgTable(
     // internal, where this is going to
     placement: placementPgEnum().notNull(),
     publishingStatus: publishingStatusPgEnum().notNull(),
+    // scheduling spec
+    schedulingSpec: jsonb("scheduling_spec").$type<SchedulingSpec>(),
     // this is optional, for cascading deletions, app-layer handles it
     pendingContentGroupId: ulid("pending_content_group_id").references(
       () => pendingContentGroupTable.id,
