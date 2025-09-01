@@ -138,23 +138,6 @@ abstract class EntUnifiedContent {
       .limit(1);
     return g;
   }
-  // zod schema validated fn, low level api for creating a unified content
-  public create = fn(
-    UnifiedContentInsert.omit({
-      workspaceId: true,
-    }),
-    async (input) => {
-      const workspaceID = Actor.workspaceID();
-      const [content] = await db()
-        .insert(unifiedContentTable)
-        .values({
-          ...input,
-          workspaceId: workspaceID,
-        })
-        .returning();
-      return content;
-    },
-  );
 }
 
 /**
