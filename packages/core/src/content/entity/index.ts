@@ -40,6 +40,12 @@ abstract class EntUnifiedContent {
   fromUnifiedContent(_data: UnifiedContentSelect): EntUnifiedContent {
     throw new NotImplementedError();
   }
+  /**
+   * creates a piece of unified content.
+   * 1. backfilled from source plat.
+   * 2. scheduled, handle scheduling.
+   * 3. drafts
+   */
   static create = fn(this.Schemas().create, async (input) => {
     const workspaceID = Actor.workspaceID();
     return useTransaction(async (tx) => {
@@ -50,23 +56,14 @@ abstract class EntUnifiedContent {
           workspaceId: workspaceID,
         })
         .returning();
+      await afterTx(async () => {
+        // TODO: handle side effects
+      });
       return content;
     });
   });
   static createMany = fn(this.Schemas().create.array(), async (inputArray) => {
-    const workspaceID = Actor.workspaceID();
-    return useTransaction(async (tx) => {
-      const contents = await tx
-        .insert(unifiedContentTable)
-        .values(
-          inputArray.map((input) => ({
-            ...input,
-            workspaceId: workspaceID,
-          })),
-        )
-        .returning();
-      return contents;
-    });
+    return inputArray.map(async (input) => this.create(input));
   });
   public async fromID(id: string): Promise<UnifiedContentSelect> {
     const workspaceID = Actor.workspaceID();
@@ -355,4 +352,5 @@ export class EntInstagramPost extends EntUnifiedContent {
   }
 }
 
+// ================== exports ==================
 export { EntPendingContentGroup, EntUnifiedContent };
