@@ -63,12 +63,12 @@ function ConnectedAccountsSkeleton() {
 function EmptyConnectedAccounts({ onConnect }: { onConnect: () => void }) {
   return (
     <div className="text-center py-12 bg-sidebar rounded-xl border border-sidebar-border">
-      <Users className="w-12 h-12 text-[var(--neutral-600)] mx-auto mb-4" />
+      <Users className="w-12 h-12 mx-auto mb-4" />
       <Typography.H3 className="mb-2">No accounts connected</Typography.H3>
-      <Typography.BodyBase className="text-[var(--neutral-600)] mb-6">
+      <Typography.BodyBase className="mb-6">
         Connect your social media accounts to start publishing content
       </Typography.BodyBase>
-      <Button onClick={onConnect} variant="primary">
+      <Button onClick={onConnect} variant="default">
         <Plus className="w-4 h-4 mr-2" />
         Connect Your First Platform
       </Button>
@@ -96,7 +96,7 @@ function ConnectedAccountsContent({ onConnect }: { onConnect: () => void }) {
   const connectedAccounts = connectedAccountsData?.accounts || [];
 
   return (
-    <Stack spacing="xl">
+    <Stack spacing="md">
       <div className="flex items-center justify-between">
         <Typography.H3>Active Connections</Typography.H3>
         <Badge
@@ -175,27 +175,24 @@ export function ConnectedAccountsPage() {
 
   return (
     <div className="page-container">
-      <Container size="xl">
-        <Stack spacing="2xl">
+      <Container size="xl" padding="none">
+        <Stack spacing="xl">
           {/* Header */}
           <Stack spacing="lg">
             <div className="page-header">
               <Stack spacing="xs">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-sidebar-accent rounded-lg">
-                    <Users className="w-5 h-5 text-[var(--neutral-700)]" />
+                    <Users className="w-5 h-5" />
                   </div>
                   <Typography.H2>Connected Accounts</Typography.H2>
                 </div>
-                <Typography.BodyLg className="text-[var(--neutral-600)]">
+                <Typography.Large>
                   Manage your social media platform connections and publishing
                   settings
-                </Typography.BodyLg>
+                </Typography.Large>
               </Stack>
-              <Button
-                onClick={() => setIsConnectDialogOpen(true)}
-                className="bg-[var(--neutral-800)] text-white hover:bg-[var(--neutral-700)]"
-              >
+              <Button onClick={() => setIsConnectDialogOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Connect Platform
               </Button>
@@ -210,7 +207,7 @@ export function ConnectedAccountsPage() {
           </Suspense>
 
           {/* Available Platforms */}
-          <Stack spacing="xl">
+          <Stack spacing="md">
             <Typography.H3>Available Platforms</Typography.H3>
             <div className="card-grid-sm">
               {availablePlatforms.map((platform) => (
@@ -240,12 +237,12 @@ export function ConnectedAccountsPage() {
                       </Button>
                     )}
                   </div>
-                  <Typography.BodyBase className="text-[var(--neutral-600)] mb-4">
+                  <Typography.BodyBase className="mb-4">
                     {platform.description}
                   </Typography.BodyBase>
                   <Button
                     variant={
-                      platform.status === "available" ? "primary" : "secondary"
+                      platform.status === "available" ? "default" : "secondary"
                     }
                     disabled={platform.status === "coming_soon"}
                     onClick={() =>

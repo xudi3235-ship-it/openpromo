@@ -19,7 +19,6 @@ const queryClient = new QueryClient();
 const router = createRouter({
   routeTree,
   context: { auth: undefined },
-  defaultPreload: "intent",
   scrollRestoration: true,
   defaultStructuralSharing: true,
   defaultErrorComponent: GeneralError,

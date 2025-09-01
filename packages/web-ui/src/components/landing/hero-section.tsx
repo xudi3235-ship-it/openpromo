@@ -34,10 +34,11 @@ export function HeroSection({ onGetStartedClick }: HeroSectionProps) {
               transition={{ duration: 0.6, delay: 0.1 }}
             >
               <Badge variant="announcement">
-                <Badge variant="announcement-pill">
-                  <Typography.AnnouncementBadge color="green">
+                <Badge variant="announcement-pill" className="bg-green-50">
+                  <Typography.AnnouncementBadge>
                     NEW
                   </Typography.AnnouncementBadge>
+                  NEW
                 </Badge>
                 <Typography.Announcement>
                   Announcing API 2.0
@@ -88,11 +89,11 @@ export function HeroSection({ onGetStartedClick }: HeroSectionProps) {
               transition={{ duration: 0.6, delay: 0.8 }}
               className="flex flex-col sm:flex-row items-center gap-4"
             >
-              <Button onClick={onGetStartedClick} variant="primary" size="xl">
+              <Button onClick={onGetStartedClick} variant="default" size="xl">
                 Get started
                 <ChevronRight className="w-4 h-4" />
               </Button>
-              <Button variant="secondary" size="xl">
+              <Button variant="outline" size="xl">
                 Learn more
                 <ChevronRight className="w-4 h-4" />
               </Button>

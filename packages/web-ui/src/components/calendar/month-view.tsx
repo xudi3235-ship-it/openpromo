@@ -83,8 +83,12 @@ export function MonthView({
     onEventSelect(event);
   };
 
+  const [referencedCell, setReferencedCell] = useState<HTMLDivElement | null>(
+    null,
+  );
   const [isMounted, setIsMounted] = useState(false);
-  const { contentRef, getVisibleEventCount } = useEventVisibility({
+  const { getVisibleEventCount } = useEventVisibility({
+    referencedCell: referencedCell,
     eventHeight: EventHeight,
     eventGap: EventGap,
   });
@@ -105,7 +109,7 @@ export function MonthView({
           </div>
         ))}
       </div>
-      <div className="grid flex-1 auto-rows-fr">
+      <div className="grid flex-1 auto-rows-fr min-h-0">
         {weeks.map((week, weekIndex) => (
           <div
             key={`week-${
@@ -138,7 +142,7 @@ export function MonthView({
               return (
                 <div
                   key={day.toString()}
-                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 border-r border-b last:border-r-0"
+                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 border-r border-b last:border-r-0 overflow-auto"
                   data-today={isToday(day) || undefined}
                   data-outside-cell={!isCurrentMonth || undefined}
                 >
@@ -155,8 +159,12 @@ export function MonthView({
                       {format(day, "d")}
                     </div>
                     <div
-                      ref={isReferenceCell ? contentRef : null}
-                      className="min-h-[calc((var(--event-height)+var(--event-gap))*2)] sm:min-h-[calc((var(--event-height)+var(--event-gap))*3)] lg:min-h-[calc((var(--event-height)+var(--event-gap))*4)]"
+                      ref={(el) => {
+                        if (isReferenceCell) {
+                          setReferencedCell(el);
+                        }
+                      }}
+                      className="flex-1"
                     >
                       {sortEvents(allDayEvents).map((event, index) => {
                         const eventStart = new Date(event.start);

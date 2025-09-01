@@ -1,11 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { addDays, setHours, setMinutes, subDays } from "date-fns";
 import { useState } from "react";
+import z from "zod";
 import { type CalendarEvent, EventCalendar } from "@/components/calendar";
+import { CalendarViews } from "@/components/calendar/types";
+
+const calendarSearchSchema = z.object({
+  view: z.enum(CalendarViews).catch("month"),
+});
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/calendar",
 )({
+  validateSearch: calendarSearchSchema,
   component: CalendarPage,
 });
 
@@ -153,14 +160,11 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="h-full w-full">
-      <EventCalendar
-        events={events}
-        onEventAdd={handleEventAdd}
-        onEventUpdate={handleEventUpdate}
-        onEventDelete={handleEventDelete}
-        className="h-full w-full"
-      />
-    </div>
+    <EventCalendar
+      events={events}
+      onEventAdd={handleEventAdd}
+      onEventUpdate={handleEventUpdate}
+      onEventDelete={handleEventDelete}
+    />
   );
 }

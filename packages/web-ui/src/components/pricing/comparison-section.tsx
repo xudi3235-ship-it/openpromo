@@ -18,7 +18,7 @@ const comparisonData = {
       price: "$19",
       period: "/mo",
       buttonText: "Get started",
-      buttonVariant: "primary" as const,
+      buttonVariant: "default" as const,
     },
     {
       name: "Enterprise",
@@ -125,9 +125,7 @@ export function ComparisonSection() {
           {/* Header */}
           <div className="text-center max-w-[600px] mx-auto">
             <Stack spacing="md" align="center">
-              <Typography.H1 className="text-[48px] font-semibold text-[var(--neutral-900)]">
-                Compare plans
-              </Typography.H1>
+              <Typography.H1>Compare plans</Typography.H1>
               <Typography.BodyLg className="text-[var(--neutral-600)] leading-6">
                 Get an overview of what is included.
               </Typography.BodyLg>
@@ -156,20 +154,9 @@ export function ComparisonSection() {
                     <Button
                       onClick={handleGetStarted}
                       variant={plan.buttonVariant}
-                      className={`${
-                        plan.buttonVariant === "primary"
-                          ? "bg-gradient-to-b from-[#1E1E28] to-[#141317] border border-[#333335] text-white hover:opacity-90"
-                          : "border border-[var(--neutral-200)] bg-white text-[var(--neutral-900)] hover:bg-gray-50"
-                      } font-semibold px-5 pr-4 h-[44px] rounded-xl`}
                     >
                       {plan.buttonText}
-                      <ChevronRight
-                        className={`w-4 h-4 ${
-                          plan.buttonVariant === "primary"
-                            ? "text-white"
-                            : "text-[var(--neutral-900)]"
-                        }`}
-                      />
+                      <ChevronRight />
                     </Button>
                   </Stack>
                 </div>

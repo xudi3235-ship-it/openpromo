@@ -24,9 +24,7 @@ export function PageLayout({
           <div>
             {title && <Typography.H1>{title}</Typography.H1>}
             {description && (
-              <Typography.BodyBase className="text-neutral-600">
-                {description}
-              </Typography.BodyBase>
+              <Typography.BodyBase>{description}</Typography.BodyBase>
             )}
           </div>
           {action && <div>{action}</div>}
@@ -59,9 +57,7 @@ export function PageSection({
           <div>
             {title && <Typography.H3>{title}</Typography.H3>}
             {description && (
-              <Typography.BodyBase className="text-neutral-600">
-                {description}
-              </Typography.BodyBase>
+              <Typography.BodyBase>{description}</Typography.BodyBase>
             )}
           </div>
           {action && <div>{action}</div>}
@@ -115,7 +111,7 @@ export function EmptyState({
       {icon && <div className="mb-4 flex justify-center">{icon}</div>}
       <Typography.H3 className="mb-2">{title}</Typography.H3>
       {description && (
-        <Typography.BodyBase className="text-neutral-600 mb-6 max-w-md mx-auto">
+        <Typography.BodyBase className="mb-6 max-w-md mx-auto">
           {description}
         </Typography.BodyBase>
       )}

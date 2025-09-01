@@ -1,3 +1,3 @@
-export const STORAGE_KEYS = {
-  SIDEBAR_OPEN: "openpromo_sidebar_open",
-};
+export enum StorageKeys {
+  SidebarOpen = "openpromo_sidebar_open",
+}

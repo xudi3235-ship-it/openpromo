@@ -25,7 +25,7 @@ function ComposerComponent() {
       <div className="page-header">
         <div>
           <Typography.H1>Content Composer</Typography.H1>
-          <Typography.BodyBase className="text-neutral-600">
+          <Typography.BodyBase>
             Create and manage your social media content for {workspace.name}
           </Typography.BodyBase>
         </div>
@@ -45,7 +45,7 @@ function ComposerComponent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" variant="primary">
+            <Button className="w-full" variant="default">
               Create Text Post
             </Button>
           </CardContent>
@@ -65,7 +65,7 @@ function ComposerComponent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" variant="primary">
+            <Button className="w-full" variant="default">
               Upload Image
             </Button>
           </CardContent>
@@ -85,7 +85,7 @@ function ComposerComponent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" variant="primary">
+            <Button className="w-full" variant="default">
               Upload Video
             </Button>
           </CardContent>
@@ -105,9 +105,7 @@ function ComposerComponent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" variant="secondary">
-              Schedule Content
-            </Button>
+            <Button className="w-full">Schedule Content</Button>
           </CardContent>
         </Card>
       </div>

@@ -54,7 +54,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
             {cancelBtnText ?? "Cancel"}
           </AlertDialogCancel>
           <Button
-            variant={destructive ? "destructive" : "primary"}
+            variant={destructive ? "destructive" : "default"}
             onClick={handleConfirm}
             disabled={disabled || isLoading}
           >

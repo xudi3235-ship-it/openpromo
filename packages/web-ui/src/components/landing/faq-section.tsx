@@ -57,22 +57,19 @@ export function FaqSection() {
               </div>
 
               {/* Main Heading */}
-              <Typography.Hero className="text-[var(--neutral-900)] max-w-[385px]">
+              <Typography.Hero className="max-w-[385px]">
                 In case you missed anything
               </Typography.Hero>
 
               {/* Subtitle */}
-              <Typography.BodyLg className="text-[var(--neutral-600)] leading-6">
+              <Typography.BodyLg className="leading-6">
                 We're here to answer all your questions.
               </Typography.BodyLg>
             </Stack>
 
             {/* Contact Support Button */}
             <div className="mt-12">
-              <Button
-                variant="outline"
-                className="border border-[var(--neutral-200)] bg-white text-[var(--neutral-900)] font-semibold hover:bg-neutral-50 rounded-xl px-5 pr-4 h-[44px]"
-              >
+              <Button variant="outline" size="xl">
                 Contact support
                 <ChevronRight className="w-4 h-4" />
               </Button>

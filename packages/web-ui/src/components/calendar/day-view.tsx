@@ -225,7 +225,7 @@ export function DayView({
         </div>
       )}
 
-      <div className="border-border/70 grid flex-1 grid-cols-[3rem_1fr] overflow-hidden border-t sm:grid-cols-[4rem_1fr]">
+      <div className="border-border/70 grid flex-1 grid-cols-[3rem_1fr] overflow-auto border-t sm:grid-cols-[4rem_1fr] pr-2">
         <div>
           {hours.map((hour, index) => (
             <div

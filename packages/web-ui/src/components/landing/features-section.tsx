@@ -144,7 +144,7 @@ export function FeaturesSection() {
                 and actionable intelligence to help you make informed decisions
                 and stay ahead of the competition.
               </Typography.BodyLg>
-              <Button variant="secondary" size="lg" className="self-start">
+              <Button variant="outline" size="lg" className="self-start">
                 Learn more
                 <ChevronRight className="w-4 h-4" />
               </Button>

@@ -34,7 +34,7 @@ const pricingPlans = [
       "Automated reports",
     ],
     buttonText: "Get started",
-    buttonVariant: "primary" as const,
+    buttonVariant: "default" as const,
     popular: true,
   },
   {
@@ -269,23 +269,9 @@ function PricingCard({ plan, isYearly, onGetStarted }: PricingCardProps) {
       </div>
 
       {/* Button */}
-      <Button
-        onClick={onGetStarted}
-        variant={plan.buttonVariant}
-        className={`w-fit ${
-          plan.buttonVariant === "primary"
-            ? "bg-gradient-to-b from-[#1E1E28] to-[#141317] border border-[#333335] text-white hover:opacity-90"
-            : "border border-[var(--neutral-200)] bg-white text-[var(--neutral-900)] hover:bg-gray-50"
-        } font-semibold px-5 pr-4 h-[44px] rounded-xl`}
-      >
+      <Button onClick={onGetStarted} variant={plan.buttonVariant}>
         {plan.buttonText}
-        <ChevronRight
-          className={`w-4 h-4 ${
-            plan.buttonVariant === "primary"
-              ? "text-white"
-              : "text-[var(--neutral-900)]"
-          }`}
-        />
+        <ChevronRight />
       </Button>
     </div>
   );

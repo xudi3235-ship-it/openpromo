@@ -25,6 +25,8 @@ function getDefaultErrorMessage(status: number) {
       return "Resource not found";
     case 500:
       return "Internal server error";
+    case 503:
+      return "Service unavailable";
   }
   return "Unknown error";
 }
@@ -51,17 +53,23 @@ export const honoApiCall = async <T extends object>(
   },
 ): Promise<ApiResponse<T>> => {
   const response = await request(apiClient);
-  const json = await response.json();
+
+  let json: T | null = null;
+  try {
+    json = await response.json();
+  } catch {
+    // parsing failed, leave json = null
+  }
 
   if (response.ok) {
     return {
       success: true,
-      data: json,
+      data: json as T,
     };
   }
 
   const errorMessage =
-    "message" in json
+    json && "message" in json
       ? (json.message as string)
       : getDefaultErrorMessage(response.status);
 

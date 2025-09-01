@@ -1,5 +1,7 @@
 export type CalendarView = "month" | "week" | "day" | "agenda";
 
+export const CalendarViews = ["month", "week", "day", "agenda"] as const;
+
 export interface CalendarEvent {
   id: string;
   title: string;

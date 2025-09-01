@@ -1,8 +1,9 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 
 interface EventVisibilityOptions {
+  referencedCell: HTMLDivElement | null;
   eventHeight: number;
   eventGap: number;
 }
@@ -18,50 +19,43 @@ interface EventVisibilityResult {
  * Uses ResizeObserver for efficient updates
  */
 export function useEventVisibility({
+  referencedCell,
   eventHeight,
   eventGap,
 }: EventVisibilityOptions): EventVisibilityResult {
-  // Use the standard pattern for React refs
-  const contentRef = useRef<HTMLDivElement>(null);
-  const observerRef = useRef<ResizeObserver | null>(null);
   const [contentHeight, setContentHeight] = useState<number | null>(null);
 
   // Use layout effect for synchronous measurement before paint
   useLayoutEffect(() => {
-    if (!contentRef.current) return;
+    if (!referencedCell) return;
 
     // Function to update the content height
     const updateHeight = () => {
-      if (contentRef.current) {
-        setContentHeight(contentRef.current.clientHeight);
-      }
+      setContentHeight(referencedCell.clientHeight);
     };
 
     // Initial measurement (synchronous)
     updateHeight();
 
     // Create observer only once and reuse it
-    if (!observerRef.current) {
-      observerRef.current = new ResizeObserver(() => {
-        // Just call updateHeight when resize is detected
-        updateHeight();
-      });
-    }
+
+    const observer = new ResizeObserver(() => {
+      // Just call updateHeight when resize is detected
+      updateHeight();
+    });
 
     // Start observing the content container
-    observerRef.current.observe(contentRef.current);
+    observer.observe(referencedCell);
 
     // Clean up function
     return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
+      observer.disconnect();
     };
-  }, []);
+  }, [referencedCell]);
 
   // Function to calculate visible events for a cell
-  const getVisibleEventCount = useMemo(() => {
-    return (totalEvents: number): number => {
+  const getVisibleEventCount = useCallback(
+    (totalEvents: number): number => {
       if (!contentHeight) return totalEvents;
 
       // Calculate how many events can fit in the container
@@ -74,12 +68,12 @@ export function useEventVisibility({
         // Otherwise, reserve space for "more" button by showing one less
         return maxEvents > 0 ? maxEvents - 1 : 0;
       }
-    };
-  }, [contentHeight, eventHeight, eventGap]);
+    },
+    [contentHeight, eventHeight, eventGap],
+  );
 
   // Use type assertion to satisfy TypeScript
   return {
-    contentRef,
     contentHeight,
     getVisibleEventCount,
   } as EventVisibilityResult;

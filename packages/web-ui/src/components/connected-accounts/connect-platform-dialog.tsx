@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Typography } from "@/components/ui/typography";
+import { Badge } from "../ui/badge";
 
 interface ConnectPlatformDialogProps {
   open: boolean;
@@ -89,35 +90,32 @@ export function ConnectPlatformDialog({
                   <div className="flex items-center gap-2 mb-2">
                     <Typography.H4>{platform.name}</Typography.H4>
                     {!platform.available && (
-                      <span className="px-2 py-1 text-xs bg-sidebar-accent text-[var(--neutral-600)] rounded-full">
+                      <span className="px-2 py-1 text-xs bg-sidebar-accent rounded-full">
                         Coming Soon
                       </span>
                     )}
                   </div>
-                  <Typography.BodyBase className="text-[var(--neutral-600)] mb-3">
+                  <Typography.BodySm className="mb-3">
                     {platform.description}
-                  </Typography.BodyBase>
+                  </Typography.BodySm>
 
                   {platform.available && platform.permissions && (
                     <div className="mb-3">
-                      <Typography.Small className="text-[var(--neutral-700)] font-medium mb-2">
+                      <Typography.Small className="font-medium mb">
                         Required permissions:
                       </Typography.Small>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1 mt-1">
                         {platform.permissions.map((permission) => (
-                          <span
-                            key={permission}
-                            className="px-2 py-1 text-xs bg-[var(--green-fill)] text-[var(--green-text)] border border-[var(--green-stroke)] rounded-full"
-                          >
+                          <Badge key={permission} variant="announcement-pill">
                             {permission}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     </div>
                   )}
                 </div>
                 <Button
-                  variant={platform.available ? "primary" : "secondary"}
+                  variant={platform.available ? "default" : "secondary"}
                   disabled={
                     !platform.available ||
                     (platform.id === "facebook" && isConnecting)
@@ -144,7 +142,7 @@ export function ConnectPlatformDialog({
         </div>
 
         <div className="mt-6 p-4 bg-sidebar-accent/50 rounded-lg border border-sidebar-border/50">
-          <Typography.Small className="text-[var(--neutral-700)]">
+          <Typography.Small>
             <strong>Note:</strong> You'll be redirected to the platform's
             authentication page. Make sure you have the necessary permissions
             for the accounts you want to connect.

@@ -32,6 +32,7 @@ export const Route = createFileRoute(
     }
     throw new Error(workspace.error.message);
   },
+  staleTime: 1000 * 60, // 1 minute
   component: WorkspaceComponent,
 });
 
@@ -66,7 +67,7 @@ function WorkspaceComponent() {
         </div>
       </Header>
 
-      <div className="p-6">
+      <div className="min-h-0 flex-1">
         <Outlet />
       </div>
     </>

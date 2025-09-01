@@ -1,27 +1,25 @@
-import { cva } from "class-variance-authority";
 import * as React from "react";
 import { cn } from "@/components/lib/utils";
 
 // Base styles for different typography variants
 const typographyStyles = {
-  h1: "text-2xl md:text-3xl font-semibold text-neutral-900 leading-tight",
-  h2: "text-xl md:text-2xl font-semibold text-neutral-900 leading-tight",
-  h3: "text-lg font-semibold text-neutral-900",
-  h4: "text-base font-semibold text-neutral-900",
-  h5: "text-sm font-semibold text-neutral-900",
-  h6: "text-xs font-semibold text-neutral-900 uppercase tracking-wide",
-  display:
-    "text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 leading-tight",
-  hero: "text-3xl md:text-4xl font-bold text-neutral-900 leading-tight",
+  h1: "text-2xl md:text-3xl font-semibold leading-tight",
+  h2: "text-xl md:text-2xl font-semibold leading-tight",
+  h3: "text-lg font-semibold",
+  h4: "text-base font-semibold",
+  h5: "text-sm font-semibold",
+  h6: "text-xs font-semibold uppercase tracking-wide",
+  display: "text-4xl md:text-5xl lg:text-6xl font-bold leading-tight",
+  hero: "text-3xl md:text-4xl font-bold leading-tight",
   p: "leading-7 [&:not(:first-child)]:mt-6",
-  bodyLg: "text-lg text-neutral-600 leading-relaxed",
-  bodyBase: "text-base font-medium text-neutral-600",
-  bodySm: "text-sm text-neutral-600 leading-relaxed",
-  caption: "text-xs text-neutral-500 leading-normal",
-  overline: "text-xs font-semibold text-neutral-700 uppercase tracking-wide",
-  label: "text-sm font-medium text-neutral-900 leading-none",
+  bodyLg: "text-lg leading-relaxed",
+  bodyBase: "text-base font-medium",
+  bodySm: "text-sm leading-relaxed",
+  caption: "text-xs leading-normal",
+  overline: "text-xs font-semibold uppercase tracking-wide",
+  label: "text-sm font-medium leading-none",
   featureTag: "text-[13px] font-semibold",
-  announcement: "text-sm font-medium text-neutral-700",
+  announcement: "text-sm font-medium",
   announcementBadge: "text-[10px] font-bold leading-none",
   large: "text-lg font-semibold",
   lead: "text-xl text-muted-foreground",
@@ -32,24 +30,6 @@ const typographyStyles = {
   blockquote: "mt-6 border-l-2 pl-6 italic",
   list: "my-6 ml-6 list-disc [&>li]:mt-2",
 };
-
-// Color variants
-const colorVariants = cva("", {
-  variants: {
-    color: {
-      default: "",
-      primary: "text-neutral-900",
-      secondary: "text-neutral-600",
-      blue: "text-blue-600",
-      orange: "text-orange-600",
-      purple: "text-purple-600",
-      green: "text-green-text",
-    },
-  },
-  defaultVariants: {
-    color: "default",
-  },
-});
 
 interface BaseTypographyProps extends React.HTMLAttributes<HTMLElement> {
   color?:
@@ -65,11 +45,7 @@ interface BaseTypographyProps extends React.HTMLAttributes<HTMLElement> {
 // H1 Component
 const H1 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
-    <h1
-      ref={ref}
-      className={cn(typographyStyles.h1, colorVariants({ color }), className)}
-      {...props}
-    />
+    <h1 ref={ref} className={cn(typographyStyles.h1, className)} {...props} />
   ),
 );
 H1.displayName = "Typography.H1";
@@ -77,11 +53,7 @@ H1.displayName = "Typography.H1";
 // H2 Component
 const H2 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
-    <h2
-      ref={ref}
-      className={cn(typographyStyles.h2, colorVariants({ color }), className)}
-      {...props}
-    />
+    <h2 ref={ref} className={cn(typographyStyles.h2, className)} {...props} />
   ),
 );
 H2.displayName = "Typography.H2";
@@ -89,11 +61,7 @@ H2.displayName = "Typography.H2";
 // H3 Component
 const H3 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
-    <h3
-      ref={ref}
-      className={cn(typographyStyles.h3, colorVariants({ color }), className)}
-      {...props}
-    />
+    <h3 ref={ref} className={cn(typographyStyles.h3, className)} {...props} />
   ),
 );
 H3.displayName = "Typography.H3";
@@ -101,11 +69,7 @@ H3.displayName = "Typography.H3";
 // H4 Component
 const H4 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
-    <h4
-      ref={ref}
-      className={cn(typographyStyles.h4, colorVariants({ color }), className)}
-      {...props}
-    />
+    <h4 ref={ref} className={cn(typographyStyles.h4, className)} {...props} />
   ),
 );
 H4.displayName = "Typography.H4";
@@ -113,11 +77,7 @@ H4.displayName = "Typography.H4";
 // H5 Component
 const H5 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
-    <h5
-      ref={ref}
-      className={cn(typographyStyles.h5, colorVariants({ color }), className)}
-      {...props}
-    />
+    <h5 ref={ref} className={cn(typographyStyles.h5, className)} {...props} />
   ),
 );
 H5.displayName = "Typography.H5";
@@ -125,11 +85,7 @@ H5.displayName = "Typography.H5";
 // H6 Component
 const H6 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
-    <h6
-      ref={ref}
-      className={cn(typographyStyles.h6, colorVariants({ color }), className)}
-      {...props}
-    />
+    <h6 ref={ref} className={cn(typographyStyles.h6, className)} {...props} />
   ),
 );
 H6.displayName = "Typography.H6";
@@ -139,11 +95,7 @@ const Display = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
     <h1
       ref={ref}
-      className={cn(
-        typographyStyles.display,
-        colorVariants({ color }),
-        className,
-      )}
+      className={cn(typographyStyles.display, className)}
       {...props}
     />
   ),
@@ -153,11 +105,7 @@ Display.displayName = "Typography.Display";
 // Hero Component (for hero sections)
 const Hero = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
-    <h1
-      ref={ref}
-      className={cn(typographyStyles.hero, colorVariants({ color }), className)}
-      {...props}
-    />
+    <h1 ref={ref} className={cn(typographyStyles.hero, className)} {...props} />
   ),
 );
 Hero.displayName = "Typography.Hero";
@@ -165,11 +113,7 @@ Hero.displayName = "Typography.Hero";
 // P Component
 const P = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
-    <p
-      ref={ref}
-      className={cn(typographyStyles.p, colorVariants({ color }), className)}
-      {...props}
-    />
+    <p ref={ref} className={cn(typographyStyles.p, className)} {...props} />
   ),
 );
 P.displayName = "Typography.P";
@@ -179,11 +123,7 @@ const BodyLg = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
     <p
       ref={ref}
-      className={cn(
-        typographyStyles.bodyLg,
-        colorVariants({ color }),
-        className,
-      )}
+      className={cn(typographyStyles.bodyLg, className)}
       {...props}
     />
   ),
@@ -194,11 +134,7 @@ const BodyBase = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
     <p
       ref={ref}
-      className={cn(
-        typographyStyles.bodyBase,
-        colorVariants({ color }),
-        className,
-      )}
+      className={cn(typographyStyles.bodyBase, className)}
       {...props}
     />
   ),
@@ -209,11 +145,7 @@ const BodySm = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
     <p
       ref={ref}
-      className={cn(
-        typographyStyles.bodySm,
-        colorVariants({ color }),
-        className,
-      )}
+      className={cn(typographyStyles.bodySm, className)}
       {...props}
     />
   ),
@@ -225,11 +157,7 @@ const Caption = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
     <p
       ref={ref}
-      className={cn(
-        typographyStyles.caption,
-        colorVariants({ color }),
-        className,
-      )}
+      className={cn(typographyStyles.caption, className)}
       {...props}
     />
   ),
@@ -241,11 +169,7 @@ const Overline = React.forwardRef<HTMLSpanElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
     <span
       ref={ref}
-      className={cn(
-        typographyStyles.overline,
-        colorVariants({ color }),
-        className,
-      )}
+      className={cn(typographyStyles.overline, className)}
       {...props}
     />
   ),
@@ -259,7 +183,7 @@ const Label = React.forwardRef<
 >(({ className, color = "default", ...props }, ref) => (
   <label
     ref={ref}
-    className={cn(typographyStyles.label, colorVariants({ color }), className)}
+    className={cn(typographyStyles.label, className)}
     {...props}
   />
 ));
@@ -270,11 +194,7 @@ const FeatureTag = React.forwardRef<HTMLSpanElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
     <span
       ref={ref}
-      className={cn(
-        typographyStyles.featureTag,
-        colorVariants({ color }),
-        className,
-      )}
+      className={cn(typographyStyles.featureTag, className)}
       {...props}
     />
   ),
@@ -285,11 +205,7 @@ const Announcement = React.forwardRef<HTMLSpanElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
     <span
       ref={ref}
-      className={cn(
-        typographyStyles.announcement,
-        colorVariants({ color }),
-        className,
-      )}
+      className={cn(typographyStyles.announcement, className)}
       {...props}
     />
   ),
@@ -302,11 +218,7 @@ const AnnouncementBadge = React.forwardRef<
 >(({ className, color = "default", ...props }, ref) => (
   <span
     ref={ref}
-    className={cn(
-      typographyStyles.announcementBadge,
-      colorVariants({ color }),
-      className,
-    )}
+    className={cn(typographyStyles.announcementBadge, className)}
     {...props}
   />
 ));
@@ -317,11 +229,7 @@ const Large = React.forwardRef<HTMLDivElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
     <div
       ref={ref}
-      className={cn(
-        typographyStyles.large,
-        colorVariants({ color }),
-        className,
-      )}
+      className={cn(typographyStyles.large, className)}
       {...props}
     />
   ),
@@ -330,26 +238,14 @@ Large.displayName = "Typography.Large";
 
 const Lead = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
-    <p
-      ref={ref}
-      className={cn(typographyStyles.lead, colorVariants({ color }), className)}
-      {...props}
-    />
+    <p ref={ref} className={cn(typographyStyles.lead, className)} {...props} />
   ),
 );
 Lead.displayName = "Typography.Lead";
 
 const Muted = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
-    <p
-      ref={ref}
-      className={cn(
-        typographyStyles.muted,
-        colorVariants({ color }),
-        className,
-      )}
-      {...props}
-    />
+    <p ref={ref} className={cn(typographyStyles.muted, className)} {...props} />
   ),
 );
 Muted.displayName = "Typography.Muted";
@@ -358,11 +254,7 @@ const Small = React.forwardRef<HTMLElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
     <small
       ref={ref}
-      className={cn(
-        typographyStyles.small,
-        colorVariants({ color }),
-        className,
-      )}
+      className={cn(typographyStyles.small, className)}
       {...props}
     />
   ),
@@ -373,11 +265,7 @@ const InlineCode = React.forwardRef<HTMLElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
     <code
       ref={ref}
-      className={cn(
-        typographyStyles.inlineCode,
-        colorVariants({ color }),
-        className,
-      )}
+      className={cn(typographyStyles.inlineCode, className)}
       {...props}
     />
   ),
@@ -388,11 +276,7 @@ const Blockquote = React.forwardRef<HTMLQuoteElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
     <blockquote
       ref={ref}
-      className={cn(
-        typographyStyles.blockquote,
-        colorVariants({ color }),
-        className,
-      )}
+      className={cn(typographyStyles.blockquote, className)}
       {...props}
     />
   ),
@@ -401,11 +285,7 @@ Blockquote.displayName = "Typography.Blockquote";
 
 const List = React.forwardRef<HTMLUListElement, BaseTypographyProps>(
   ({ className, color = "default", ...props }, ref) => (
-    <ul
-      ref={ref}
-      className={cn(typographyStyles.list, colorVariants({ color }), className)}
-      {...props}
-    />
+    <ul ref={ref} className={cn(typographyStyles.list, className)} {...props} />
   ),
 );
 List.displayName = "Typography.List";

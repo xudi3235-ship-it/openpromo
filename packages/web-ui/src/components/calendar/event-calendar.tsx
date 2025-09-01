@@ -1,6 +1,5 @@
 "use client";
 
-import { RiCalendarCheckLine } from "@remixicon/react";
 import {
   addDays,
   addMonths,
@@ -13,12 +12,13 @@ import {
   subWeeks,
 } from "date-fns";
 import {
+  CalendarCheck,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   PlusIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AgendaDaysToShow,
@@ -43,6 +43,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Route as CalendarRoute } from "@/routes/_authenticated/workspaces/$workspaceSlug/calendar";
 import { cn } from "../lib/utils";
 
 export interface EventCalendarProps {
@@ -60,13 +61,22 @@ export function EventCalendar({
   onEventUpdate,
   onEventDelete,
   className,
-  initialView = "month",
 }: EventCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<CalendarView>(initialView);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
+  );
+
+  const { view } = CalendarRoute.useSearch();
+  const navigate = CalendarRoute.useNavigate();
+
+  const setView = useCallback(
+    (newView: CalendarView) => {
+      if (view === newView) return;
+      navigate({ search: { view: newView } });
+    },
+    [navigate, view],
   );
 
   // Add keyboard shortcuts for view switching
@@ -104,7 +114,7 @@ export function EventCalendar({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isEventDialogOpen]);
+  }, [isEventDialogOpen, setView]);
 
   const handlePrevious = () => {
     if (view === "month") {
@@ -225,11 +235,7 @@ export function EventCalendar({
     } else if (view === "week") {
       const start = startOfWeek(currentDate, { weekStartsOn: 0 });
       const end = endOfWeek(currentDate, { weekStartsOn: 0 });
-      if (isSameMonth(start, end)) {
-        return format(start, "MMMM yyyy");
-      } else {
-        return `${format(start, "MMM")} - ${format(end, "MMM yyyy")}`;
-      }
+      return `${format(start, "MMM d")} - ${format(end, "MMM d, yyyy")}`;
     } else if (view === "day") {
       return (
         <>
@@ -261,7 +267,7 @@ export function EventCalendar({
 
   return (
     <div
-      className={cn("h-full w-full bg-white flex flex-col", className)}
+      className={cn("h-full w-full flex flex-col", className)}
       style={
         {
           "--event-height": `${EventHeight}px`,
@@ -271,19 +277,14 @@ export function EventCalendar({
       }
     >
       <CalendarDndProvider onEventUpdate={handleEventUpdate}>
-        {/* Sticky Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between p-6 bg-white">
+        <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-1 sm:gap-4">
             <Button
-              variant="secondary"
-              className="max-[479px]:aspect-square max-[479px]:p-0! bg-[var(--neutral-800)] text-white hover:bg-[var(--neutral-700)]"
+              variant="outline"
+              className="max-[479px]:aspect-square max-[479px]:p-0!"
               onClick={handleToday}
             >
-              <RiCalendarCheckLine
-                className="min-[480px]:hidden"
-                size={16}
-                aria-hidden="true"
-              />
+              <CalendarCheck className="min-[480px]:hidden" size={16} />
               <span className="max-[479px]:sr-only">Today</span>
             </Button>
             <div className="flex items-center sm:gap-2">
@@ -304,17 +305,14 @@ export function EventCalendar({
                 <ChevronRightIcon size={16} aria-hidden="true" />
               </Button>
             </div>
-            <h2 className="text-lg font-semibold text-foreground sm:text-xl md:text-2xl">
+            <h2 className="text-sm font-semibold sm:text-lg md:text-xl">
               {viewTitle}
             </h2>
           </div>
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="gap-1.5 max-[479px]:h-8 border-border hover:bg-accent"
-                >
+                <Button variant="outline" className="gap-1.5 max-[479px]:h-8">
                   <span>
                     <span className="min-[480px]:hidden" aria-hidden="true">
                       {view.charAt(0).toUpperCase()}
@@ -346,7 +344,7 @@ export function EventCalendar({
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
-              className="max-[479px]:aspect-square max-[479px]:p-0! bg-[var(--neutral-800)] text-white hover:bg-[var(--neutral-700)]"
+              className="max-[479px]:aspect-square max-[479px]:p-0!"
               size="sm"
               onClick={() => {
                 setSelectedEvent(null); // Ensure we're creating a new event
@@ -363,8 +361,7 @@ export function EventCalendar({
           </div>
         </div>
 
-        {/* Scrollable Calendar Content */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex flex-1 flex-col min-h-0 p-4 pt-0!">
           {view === "month" && (
             <MonthView
               currentDate={currentDate}

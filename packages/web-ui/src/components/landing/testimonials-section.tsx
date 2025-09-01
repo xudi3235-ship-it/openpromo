@@ -127,12 +127,9 @@ export function TestimonialsSection() {
           </div>
 
           {/* Show More Button */}
-          <Button
-            variant="outline"
-            className="border border-[var(--neutral-200)] bg-white text-[var(--neutral-900)] font-semibold hover:bg-neutral-50 rounded-xl px-4 py-2 h-[44px]"
-          >
+          <Button variant="outline" size="xl">
             Show more
-            <Plus className="w-4 h-4 text-[#B5BDC5]" />
+            <Plus className="w-4 h-4" />
           </Button>
         </Stack>
       </Container>

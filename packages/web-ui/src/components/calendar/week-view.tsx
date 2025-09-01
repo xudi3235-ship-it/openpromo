@@ -303,7 +303,7 @@ export function WeekView({
         </div>
       )}
 
-      <div className="grid flex-1 grid-cols-8 overflow-hidden">
+      <div className="grid flex-1 grid-cols-8 overflow-auto">
         <div className="border-border/70 grid auto-cols-fr border-r">
           {hours.map((hour, index) => (
             <div

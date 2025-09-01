@@ -96,22 +96,24 @@ export function WorkspaceSwitcher({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent transition-all duration-200 rounded-xl h-auto px-3 py-3"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               {currentWorkspace && (
-                <div className="bg-[var(--neutral-800)] text-white flex aspect-square size-9 items-center justify-center rounded-xl font-bold text-sm shadow-sm">
+                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   {currentWorkspace.name.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold text-[var(--neutral-900)]">
+                <span className="truncate font-medium">
                   {currentWorkspace
                     ? currentWorkspace.name
                     : "Select a workspace"}
                 </span>
-                <span className="text-xs text-[var(--neutral-600)] truncate">
-                  {currentWorkspace ? "Workspace" : "Choose your workspace"}
-                </span>
+                {currentWorkspace && (
+                  <span className="text-xstext-sidebar-accent-foreground truncate">
+                    workspace
+                  </span>
+                )}
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>

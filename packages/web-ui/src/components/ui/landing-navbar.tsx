@@ -74,7 +74,7 @@ export default function LandingNavbar() {
           {/* Right side */}
           <div className="flex items-center gap-4">
             {/* Book a demo button */}
-            <Button variant="secondary" size="xl">
+            <Button variant="outline" size="xl">
               Book a demo
               <ChevronRight className="w-4 h-4" />
             </Button>
