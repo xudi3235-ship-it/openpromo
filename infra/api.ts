@@ -1,5 +1,10 @@
 import { spawnSync } from "node:child_process";
-import { bus, schedulerRole } from "./bus";
+import {
+  bus,
+  eventBridgePermissions,
+  schedulerPermissions,
+  schedulerRole,
+} from "./bus";
 import { database, hyperdrive } from "./database";
 import { domain } from "./dns";
 import { email } from "./email";
@@ -41,7 +46,16 @@ export const api = new sst.cloudflare.Worker("WorkerApi", {
     DRIZZLE_LOG: "false",
     SCHEDULER_ROLE_ARN: schedulerRole.arn,
   },
-  link: [urls, database, ...allSecrets, bucket, email, bus],
+  link: [
+    urls,
+    database,
+    ...allSecrets,
+    bucket,
+    email,
+    bus,
+    schedulerPermissions,
+    eventBridgePermissions,
+  ],
   domain,
   assets: $dev
     ? undefined
