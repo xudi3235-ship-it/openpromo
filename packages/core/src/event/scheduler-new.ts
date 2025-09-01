@@ -54,13 +54,12 @@ export namespace Scheduler {
    * This internal function is now updated to dynamically handle the call to `eventDef.create`.
    */
   async function createScheduleConfig<T extends event.Definition>(
+    scheduleName: string,
     eventDef: T,
     properties: T["$input"],
     scheduledDate: Date,
     options?: ScheduleOptions<T>,
-  ): Promise<
-    Omit<CreateScheduleCommandInput, "Name"> & { eventPayload: T["$payload"] }
-  > {
+  ): Promise<CreateScheduleCommandInput & { eventPayload: T["$payload"] }> {
     // The ScheduleOptions<T> type provides compile-time safety for the caller.
     // Inside this function, we dynamically call `create` with the correct arguments
     // by preparing the arguments array.
@@ -83,7 +82,11 @@ export namespace Scheduler {
       options?.schedulerRoleArn || process.env.SCHEDULER_ROLE_ARN,
     );
     return {
+      Name: scheduleName,
       ScheduleExpression: `at(${scheduledDate.toISOString().slice(0, 19)})`,
+      // TODO: this is for idempotence, i feel like
+      // there should be a better option.
+      ClientToken: scheduleName.replace(/[^a-zA-Z0-9\-_]/g, "-"),
       Target: {
         Arn: Resource.Bus.arn,
         RoleArn: roleArn,
@@ -92,10 +95,14 @@ export namespace Scheduler {
           Source: schedulerSource,
         },
         Input: JSON.stringify(eventPayload),
+        // TODO: we will next impelemnt retries, DLQ.
+        // RetryPolicy: {}
+        // DeadLetterConfig
       },
       FlexibleTimeWindow: {
         Mode: FlexibleTimeWindowMode.OFF,
       },
+
       eventPayload,
     };
   }
@@ -126,6 +133,7 @@ export namespace Scheduler {
       `${eventDef.type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     const { eventPayload, ...scheduleConfig } = await createScheduleConfig(
+      scheduleName,
       eventDef,
       properties,
       scheduledDate,
@@ -135,9 +143,6 @@ export namespace Scheduler {
     const c = await client();
     const region = process.env.AWS_REGION || "us-east-1";
     const u = url(region);
-    console.log("3/ step");
-    console.log("URL:", `${u}schedules/${scheduleName}`);
-    console.log("Body:", JSON.stringify(scheduleConfig, null, 2));
 
     const response = await c
       .fetch(`${u}schedules/${scheduleName}`, {
@@ -154,12 +159,6 @@ export namespace Scheduler {
       });
 
     console.log("4/ step");
-    console.log("Response status:", response.status);
-    console.log(
-      "Response headers:",
-      Object.fromEntries(response.headers.entries()),
-    );
-
     if (!response.ok) {
       const errorText = await response.text();
       console.log("Error response body:", errorText);
@@ -201,6 +200,7 @@ export namespace Scheduler {
     const scheduledDate = validateScheduledTime(scheduledAt);
 
     const { eventPayload, ...scheduleConfig } = await createScheduleConfig(
+      scheduleName,
       eventDef,
       properties,
       scheduledDate,

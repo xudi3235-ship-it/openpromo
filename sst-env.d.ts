@@ -54,6 +54,9 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "SchedulingPermissions": {
+      "type": "sst.sst.Linkable"
+    }
     "Storage": {
       "name": string
       "type": "sst.aws.Bucket"

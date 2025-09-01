@@ -34,33 +34,16 @@ const _schedulerRolePolicy = new aws.iam.RolePolicy("SchedulerRolePolicy", {
   },
 });
 
-// permissions for scheduling events
-export const schedulerPermissions = sst.aws.permission({
-  actions: [
-    "scheduler:CreateSchedule",
-    "scheduler:UpdateSchedule",
-    "scheduler:DeleteSchedule",
-    "scheduler:GetSchedule",
-    "scheduler:ListSchedules",
-  ],
-  resources: ["*"],
-});
-
-export const eventBridgePermissions = sst.aws.permission({
-  actions: ["events:PutEvents"],
-  resources: [bus.arn],
-});
-
 const _busSubscriber = bus.subscribe("busSubscriber", {
   handler: "packages/functions/src/event/bus_subscriber.handler",
   environment: {
     SCHEDULER_ROLE_ARN: schedulerRole.arn,
   },
-  link: [
-    bus,
-    database,
-    ...allSecrets,
-    schedulerPermissions,
-    eventBridgePermissions,
+  permissions: [
+    {
+      actions: ["scheduler:CreateSchedule", "scheduler:DeleteSchedule"],
+      resources: ["*"],
+    },
   ],
+  link: [bus, database, ...allSecrets],
 });

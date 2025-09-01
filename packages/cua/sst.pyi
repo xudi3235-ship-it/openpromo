@@ -44,6 +44,8 @@ class Resource:
     class STRIPE_SECRET_KEY:
         type: str
         value: str
+    class SchedulingPermissions:
+        type: str
     class Storage:
         name: str
         type: str

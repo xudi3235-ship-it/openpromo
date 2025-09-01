@@ -1,10 +1,5 @@
 import { spawnSync } from "node:child_process";
-import {
-  bus,
-  eventBridgePermissions,
-  schedulerPermissions,
-  schedulerRole,
-} from "./bus";
+import { bus, schedulerRole } from "./bus";
 import { database, hyperdrive } from "./database";
 import { domain } from "./dns";
 import { email } from "./email";
@@ -39,6 +34,22 @@ if (!$dev) {
   }
 }
 
+// we construct a linkable for permissions so that
+// cloudflare or other cloud resources can easily link.
+const permissions = new sst.Linkable("SchedulingPermissions", {
+  properties: {},
+  include: [
+    sst.aws.permission({
+      actions: ["scheduler:CreateSchedule", "scheduler:DeleteSchedule"],
+      resources: ["*"],
+    }),
+    sst.aws.permission({
+      actions: ["iam:PassRole"],
+      resources: [schedulerRole.arn],
+    }),
+  ],
+});
+
 export const api = new sst.cloudflare.Worker("WorkerApi", {
   handler: "packages/web-api/src/index.ts",
   environment: {
@@ -46,16 +57,7 @@ export const api = new sst.cloudflare.Worker("WorkerApi", {
     DRIZZLE_LOG: "false",
     SCHEDULER_ROLE_ARN: schedulerRole.arn,
   },
-  link: [
-    urls,
-    database,
-    ...allSecrets,
-    bucket,
-    email,
-    bus,
-    schedulerPermissions,
-    eventBridgePermissions,
-  ],
+  link: [permissions, urls, database, ...allSecrets, bucket, email, bus],
   domain,
   assets: $dev
     ? undefined
