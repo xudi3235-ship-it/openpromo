@@ -2,10 +2,12 @@ import { Resource } from "sst";
 import { bus } from "sst/aws/bus";
 import z from "zod";
 import { Actor } from "../../actor";
+import { getAwsConfig } from "../../aws";
 import { and, db, eq } from "../../drizzle";
 import { createTransaction } from "../../drizzle/transaction";
 import { NotImplementedError } from "../../error";
 import { defineEvent } from "../../event";
+import { scheduleEvent } from "../../event/scheduler";
 import {
   PendingContentGroupInsert,
   type PendingContentGroupSelect,
@@ -210,19 +212,20 @@ class EntPendingContentGroup {
           .returning();
 
         // 3. handle scheduled contents
+        console.log("1+2 done");
         // await afterTx(async () => {
         unifiedContents.map(async (content) => {
           const spec = content.schedulingSpec;
           if (!spec?.scheduledPublishAt) return;
-          // const scheduledEvent = await scheduleEvent(
-          //   this.Events().Publish,
-          //   {
-          //     groupID: pendingContentGroup.id,
-          //     contentID: content.id,
-          //   },
-          //   // publish time
-          //   spec.scheduledPublishAt,
-          // );
+          await scheduleEvent(
+            this.Events().Publish,
+            {
+              groupID: pendingContentGroup.id,
+              contentID: content.id,
+            },
+            // publish time
+            spec.scheduledPublishAt,
+          );
           // 4. now event is scheduled, we need to store the
           // scheduled instance, delegating to event handler
           try {
@@ -236,10 +239,7 @@ class EntPendingContentGroup {
                 scheduleArn: "test",
               },
               {
-                aws: {
-                  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-                },
+                aws: getAwsConfig(),
               },
             );
           } catch (error) {

@@ -77,11 +77,9 @@ async function createScheduleConfig<T extends event.Definition>(
     (eventDef.create as (...args: any[]) => Promise<T["$payload"]>)(
       ...createArgs,
     );
-
   const roleArn = nullThrows(
     options?.schedulerRoleArn || process.env.SCHEDULER_ROLE_ARN,
   );
-
   return {
     Name: scheduleName,
     ScheduleExpression: `at(${scheduledDate.toISOString().slice(0, 19)})`,
@@ -128,6 +126,7 @@ export async function scheduleEvent<T extends event.Definition>(
     scheduledDate,
     options,
   );
+  console.log("!!! Scheduling event with config:");
   console.log({
     eventPayload,
     scheduleConfig,
@@ -137,7 +136,6 @@ export async function scheduleEvent<T extends event.Definition>(
   const result = await scheduler.send(
     new CreateScheduleCommand(scheduleConfig),
   );
-  console.log("result:", result);
 
   return {
     // biome-ignore lint/style/noNonNullAssertion: lib

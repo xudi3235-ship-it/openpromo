@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { bus } from "./bus";
+import { bus, schedulerRole } from "./bus";
 import { database, hyperdrive } from "./database";
 import { domain } from "./dns";
 import { email } from "./email";
@@ -39,6 +39,7 @@ export const api = new sst.cloudflare.Worker("WorkerApi", {
   environment: {
     DEBUG: "OFF", // only takes string
     DRIZZLE_LOG: "false",
+    SCHEDULER_ROLE_ARN: schedulerRole.arn,
   },
   link: [urls, database, ...allSecrets, bucket, email, bus],
   domain,

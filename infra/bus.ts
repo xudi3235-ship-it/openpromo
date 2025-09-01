@@ -4,7 +4,7 @@ import { allSecrets } from "./secret";
 export const bus = new sst.aws.Bus("Bus");
 
 // Create IAM role for EventBridge Scheduler
-const schedulerRole = new aws.iam.Role("SchedulerRole", {
+export const schedulerRole = new aws.iam.Role("SchedulerRole", {
   assumeRolePolicy: {
     Version: "2012-10-17",
     Statement: [

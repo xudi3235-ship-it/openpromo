@@ -31,12 +31,11 @@ export const pingRoute = new Hono<ApiEnv>()
         placement: "FB_FEED",
         connectedAccountId: "01K412AGBJJC1W2XXX9HSCH45Z",
         schedulingSpec: {
-          scheduledPublishAt: new Date(Date.now()),
+          scheduledPublishAt: new Date(Date.now() + 60 * 1000),
         },
       },
     ];
-    const res = await EntPendingContentGroup.create({ group, contents });
-    console.log({ res });
+    await EntPendingContentGroup.create({ group, contents });
 
     return c.json({ message });
   });
