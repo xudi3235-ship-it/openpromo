@@ -5,6 +5,10 @@
 
 declare module "sst" {
   export interface Resource {
+    "ADMIN_API_TOKEN": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "Bus": {
       "arn": string
       "name": string

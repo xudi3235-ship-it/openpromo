@@ -3,6 +3,9 @@
 from typing import Any
 
 class Resource:
+    class ADMIN_API_TOKEN:
+        type: str
+        value: str
     class App:
         name: str
         stage: str
