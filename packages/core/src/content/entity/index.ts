@@ -11,7 +11,7 @@ import {
 } from "../../drizzle/transaction";
 import { NotImplementedError } from "../../error";
 import { defineEvent } from "../../event";
-import { Scheduler } from "../../event/scheduler-new";
+import { Scheduler } from "../../event/scheduler";
 import {
   PendingContentGroupInsert,
   type PendingContentGroupSelect,

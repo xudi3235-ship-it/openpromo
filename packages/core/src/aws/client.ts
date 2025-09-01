@@ -1,4 +1,5 @@
 import { AwsClient } from "aws4fetch";
+import { DEFAULT_AWS_REGION } from ".";
 
 export async function client(): Promise<AwsClient> {
   if (
@@ -9,7 +10,7 @@ export async function client(): Promise<AwsClient> {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       sessionToken: process.env.AWS_SESSION_TOKEN,
-      region: process.env.AWS_REGION || "us-east-1",
+      region: process.env.AWS_REGION || DEFAULT_AWS_REGION,
     });
   }
   throw new Error("No AWS credentials found");

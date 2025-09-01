@@ -1,5 +1,5 @@
 import { EntPendingContentGroup } from "@openpromo/core/content/entity/index";
-import { Scheduler } from "@openpromo/core/event/scheduler-new";
+import { Scheduler } from "@openpromo/core/event/scheduler";
 import { Hono } from "hono";
 import { Resource } from "sst";
 import { withAuth } from "../../../middleware/with-auth";
