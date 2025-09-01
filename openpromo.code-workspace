@@ -23,6 +23,10 @@
     {
       "name": "🔗 web-api",
       "path": "packages/web-api"
+    },
+    {
+      "name": "📜 scripts",
+      "path": "packages/scripts"
     }
   ]
 }
