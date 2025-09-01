@@ -166,7 +166,7 @@ export namespace Storage {
 
     export function validateFileSize(
       fileSize: number,
-      maxSizeMB: number = 100,
+      maxSizeMB: number = 1024, // Default 1GB
     ): boolean {
       const maxSizeBytes = maxSizeMB * 1024 * 1024;
       return fileSize <= maxSizeBytes;
