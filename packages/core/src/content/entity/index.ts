@@ -7,7 +7,7 @@ import { and, db, eq } from "../../drizzle";
 import { createTransaction } from "../../drizzle/transaction";
 import { NotImplementedError } from "../../error";
 import { defineEvent } from "../../event";
-import { scheduleEvent } from "../../event/scheduler";
+import { Scheduler } from "../../event/scheduler-new";
 import {
   PendingContentGroupInsert,
   type PendingContentGroupSelect,
@@ -212,12 +212,12 @@ class EntPendingContentGroup {
           .returning();
 
         // 3. handle scheduled contents
-        console.log("1+2 done");
         // await afterTx(async () => {
         unifiedContents.map(async (content) => {
           const spec = content.schedulingSpec;
           if (!spec?.scheduledPublishAt) return;
-          await scheduleEvent(
+          console.log("!! 3. scheduling event");
+          await Scheduler.createSchedule(
             this.Events().Publish,
             {
               groupID: pendingContentGroup.id,
@@ -226,6 +226,7 @@ class EntPendingContentGroup {
             // publish time
             spec.scheduledPublishAt,
           );
+          console.log("!! 4. event for bus");
           // 4. now event is scheduled, we need to store the
           // scheduled instance, delegating to event handler
           try {
