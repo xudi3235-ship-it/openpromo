@@ -4,7 +4,11 @@ import z from "zod";
 import { Actor } from "../../actor";
 import { getAwsConfig } from "../../aws";
 import { and, db, eq } from "../../drizzle";
-import { afterTx, createTransaction } from "../../drizzle/transaction";
+import {
+  afterTx,
+  createTransaction,
+  useTransaction,
+} from "../../drizzle/transaction";
 import { NotImplementedError } from "../../error";
 import { defineEvent } from "../../event";
 import { Scheduler } from "../../event/scheduler-new";
@@ -26,9 +30,44 @@ abstract class EntUnifiedContent {
     this.data = data;
   }
   abstract toJSON(): UnifiedContentSelect;
+  static Schemas() {
+    return {
+      create: UnifiedContentInsert.omit({
+        workspaceId: true,
+      }),
+    };
+  }
   fromUnifiedContent(_data: UnifiedContentSelect): EntUnifiedContent {
     throw new NotImplementedError();
   }
+  static create = fn(this.Schemas().create, async (input) => {
+    const workspaceID = Actor.workspaceID();
+    return useTransaction(async (tx) => {
+      const [content] = await tx
+        .insert(unifiedContentTable)
+        .values({
+          ...input,
+          workspaceId: workspaceID,
+        })
+        .returning();
+      return content;
+    });
+  });
+  static createMany = fn(this.Schemas().create.array(), async (inputArray) => {
+    const workspaceID = Actor.workspaceID();
+    return useTransaction(async (tx) => {
+      const contents = await tx
+        .insert(unifiedContentTable)
+        .values(
+          inputArray.map((input) => ({
+            ...input,
+            workspaceId: workspaceID,
+          })),
+        )
+        .returning();
+      return contents;
+    });
+  });
   public async fromID(id: string): Promise<UnifiedContentSelect> {
     const workspaceID = Actor.workspaceID();
     const [post] = await db()
