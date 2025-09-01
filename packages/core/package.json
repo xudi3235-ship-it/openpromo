@@ -23,6 +23,7 @@
     "@neondatabase/serverless": "^1.0.1",
     "@openpromo/js-shared": "workspace:^",
     "@workos-inc/node": "catalog:",
+    "aws4fetch": "^1.0.20",
     "drizzle-orm": "catalog:",
     "drizzle-zod": "^0.8.3",
     "facebook-nodejs-business-sdk": "^23.0.1",

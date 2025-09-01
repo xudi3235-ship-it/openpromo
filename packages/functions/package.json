@@ -10,6 +10,7 @@
     "@aws-sdk/client-scheduler": "^3.848.0",
     "@aws-sdk/client-sesv2": "^3.859.0",
     "@aws-sdk/client-sfn": "^3.848.0",
+    "aws4fetch": "^1.0.20",
     "@openauthjs/openauth": "^0.4.3",
     "@openpromo/core": "workspace:*",
     "@workos-inc/node": "^7.66.0",
