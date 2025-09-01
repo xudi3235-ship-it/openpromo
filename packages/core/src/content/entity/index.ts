@@ -24,7 +24,7 @@ import {
 } from "../../schema/content.sql";
 import { fn } from "../../util/fn";
 
-abstract class EntUnifiedContent {
+abstract class EntUnifiedContentBase {
   data: UnifiedContentSelect;
   constructor(data: UnifiedContentSelect) {
     this.data = data;
@@ -37,7 +37,7 @@ abstract class EntUnifiedContent {
       }),
     };
   }
-  fromUnifiedContent(_data: UnifiedContentSelect): EntUnifiedContent {
+  fromUnifiedContent(_data: UnifiedContentSelect): EntUnifiedContentBase {
     throw new NotImplementedError();
   }
   /**
@@ -134,6 +134,16 @@ abstract class EntUnifiedContent {
       )
       .limit(1);
     return g;
+  }
+}
+
+class EntPendingContent extends EntUnifiedContentBase {
+  toJSON(): UnifiedContentSelect {
+    return this.data;
+  }
+  protected deleteSrc(): Promise<void> {
+    // noop.
+    return Promise.resolve();
   }
 }
 
@@ -304,13 +314,26 @@ class EntPendingContentGroup {
       return deleted;
     });
   }
+  public async getContents(): Promise<EntPendingContent[]> {
+    const workspaceID = Actor.workspaceID();
+    const contents = await db()
+      .select()
+      .from(unifiedContentTable)
+      .where(
+        and(
+          eq(unifiedContentTable.pendingContentGroupId, this.data.id),
+          eq(unifiedContentTable.workspaceId, workspaceID),
+        ),
+      );
+    return contents.map((content) => new EntPendingContent(content));
+  }
 }
 
 /**
  * app-level entity for Facebook posts. Internally it uses the unified content
  * entity. We wrap it this way to provide platform specific operations.
  */
-export class EntFacebookPost extends EntUnifiedContent {
+export class EntFacebookPost extends EntUnifiedContentBase {
   toJSON(): UnifiedContentFacebookPost {
     return this.data as UnifiedContentFacebookPost;
   }
@@ -330,7 +353,7 @@ export class EntFacebookPost extends EntUnifiedContent {
   }
 }
 
-export class EntInstagramPost extends EntUnifiedContent {
+export class EntInstagramPost extends EntUnifiedContentBase {
   toJSON(): UnifiedContentInstagramPost {
     return this.data as UnifiedContentInstagramPost;
   }
@@ -352,5 +375,54 @@ export class EntInstagramPost extends EntUnifiedContent {
   }
 }
 
+// ================== publishers ==================
+
+/**
+ * publisher for scheduled contents / drafts.
+ */
+class PendingContentGroupPublisher {
+  private group: EntPendingContentGroup;
+
+  constructor(group: EntPendingContentGroup) {
+    this.group = group;
+  }
+  public async publish() {
+    const contents = await this.group.getContents();
+    for (const content of contents) {
+      await new PendingContentPublisher(content).publish();
+    }
+  }
+}
+
+// TODO: make this a base / abstract class
+// delegate platform logics for each platform/placement's publisher
+// e.g. FacebookPostPublisher, InstagramReelPublisher, etc?
+class PendingContentPublisher {
+  private content: EntPendingContent;
+
+  constructor(content: EntPendingContent) {
+    this.content = content;
+  }
+  /**
+   * heart of publishing a pending content. This api is called for both
+   * scheduled and draft contents.
+   * We will do a tons of transformations + api calls here.
+   * 1. we read the placement specc, e.g. is this FB post? IG reel? etc.
+   * 2. we validate the content against the platform's requirements.
+   * 3. transform the publishing steps for sequence of api calls. E.g. for video uploading first.
+   * 4. execute the api calls.
+   * 5. update the content status, e.g. to published, or failed.
+   * 6. handle any side effects, e.g. notifications, webhooks, etc.
+   */
+  public async publish() {
+    console.log("publishing content", this.content.data.id);
+    throw new NotImplementedError();
+  }
+}
+
 // ================== exports ==================
-export { EntPendingContentGroup, EntUnifiedContent };
+export {
+  EntPendingContent,
+  EntPendingContentGroup,
+  PendingContentGroupPublisher,
+};
