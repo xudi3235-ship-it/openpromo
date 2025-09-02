@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { ChevronsUpDown, Plus, Star } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { type User, useHonoMutation, type Workspace } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
+import { Route as WorkspacesRoute } from "@/routes/_authenticated/workspaces/route";
 import { NewWorkspaceModal } from "./new-workspace-modal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 
@@ -37,7 +38,7 @@ export function WorkspaceSwitcher({
   defaultWorkspaceSlug,
 }: WorkspaceSwitcherProps) {
   const { isMobile } = useSidebar();
-  const navigate = useNavigate();
+  const navigate = WorkspacesRoute.useNavigate();
   const queryClient = useQueryClient();
   const router = useRouter();
   const [isNewWorkspaceModalOpen, setIsNewWorkspaceModalOpen] = useState(false);
@@ -72,8 +73,10 @@ export function WorkspaceSwitcher({
       return;
     }
     navigate({
-      to: "/workspaces/$workspaceSlug",
-      params: { workspaceSlug: workspace.slug },
+      params: (old) => ({
+        ...old,
+        workspaceSlug: workspace.slug,
+      }),
     });
   };
 
@@ -110,7 +113,7 @@ export function WorkspaceSwitcher({
                     : "Select a workspace"}
                 </span>
                 {currentWorkspace && (
-                  <span className="text-xstext-sidebar-accent-foreground truncate">
+                  <span className="text-xs text-sidebar-accent-foreground truncate">
                     workspace
                   </span>
                 )}

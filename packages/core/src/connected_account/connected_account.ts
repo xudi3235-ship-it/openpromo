@@ -39,6 +39,20 @@ export namespace ConnectedAccount {
           tokenExpiresAt: input.tokenExpiresAt,
           metadata: input.metadata,
         })
+        .onConflictDoUpdate({
+          target: [
+            connectedAccount.workspaceId,
+            connectedAccount.externalAccountId,
+          ],
+          set: {
+            accountName: input.accountName,
+            externalUrl: input.externalUrl,
+            encryptedAccessToken: input.encryptedAccessToken,
+            refreshToken: input.refreshToken,
+            tokenExpiresAt: input.tokenExpiresAt,
+            metadata: input.metadata,
+          },
+        })
         .returning();
 
       return acc;

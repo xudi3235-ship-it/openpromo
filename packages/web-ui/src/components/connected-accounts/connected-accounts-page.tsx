@@ -1,12 +1,15 @@
+import { popupRelayMessageSchema } from "@openpromo/web-api/src/routes/api/popup-relay/constants";
+import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Settings2, Users } from "lucide-react";
-import { Suspense, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Container, Stack } from "@/components/_layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Typography } from "@/components/ui/typography";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useHonoMutation, useHonoSuspenseQuery } from "@/lib/hono-client";
+import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
+import { openPopup } from "@/lib/popup";
 import { ConnectPlatformDialog } from "./connect-platform-dialog";
 import { ConnectedAccountCard } from "./connected-account-card";
 
@@ -49,9 +52,8 @@ function ConnectedAccountsSkeleton() {
               <div className="h-3 bg-sidebar-accent/50 rounded w-20" />
             </div>
           </div>
-          <div className="space-y-2 mb-4">
-            <div className="h-3 bg-sidebar-accent/50 rounded" />
-            <div className="h-3 bg-sidebar-accent/50 rounded w-24" />
+          <div className="space-y-2 mb-6">
+            <div className="h-[18px] bg-sidebar-accent/50 rounded" />
           </div>
           <div className="h-9 bg-sidebar-accent/50 rounded" />
         </div>
@@ -80,18 +82,14 @@ function ConnectedAccountsContent({ onConnect }: { onConnect: () => void }) {
   const { workspace } = useWorkspace();
 
   // Get connected accounts with error handling
-  const { data: connectedAccountsData, error } = useHonoSuspenseQuery({
+  const { data: connectedAccountsData, isPending } = useHonoQuery({
     queryKey: [workspace.slug, "connected_accounts"],
     queryFn: (api) =>
       api.workspaces[":workspaceSlug"].connected_accounts.$get({
         param: { workspaceSlug: workspace.slug },
       }),
+    errorMessage: "Failed to load connected accounts",
   });
-
-  // Show error toast if query fails
-  if (error) {
-    toast.error(`Failed to load connected accounts: ${error.message}`);
-  }
 
   const connectedAccounts = connectedAccountsData?.accounts || [];
 
@@ -111,7 +109,9 @@ function ConnectedAccountsContent({ onConnect }: { onConnect: () => void }) {
         </Badge>
       </div>
 
-      {connectedAccounts.length > 0 ? (
+      {isPending ? (
+        <ConnectedAccountsSkeleton />
+      ) : connectedAccounts.length > 0 ? (
         <div className="card-grid-sm">
           {connectedAccounts.map((account) => (
             <ConnectedAccountCard
@@ -140,6 +140,32 @@ function ConnectedAccountsContent({ onConnect }: { onConnect: () => void }) {
 export function ConnectedAccountsPage() {
   const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
   const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    // listen for messages from the connection popup window
+    function handleMessage(event: MessageEvent<unknown>) {
+      if (event.origin !== window.location.origin) return;
+
+      const result = popupRelayMessageSchema.safeParse(event.data);
+      if (!result.success) return;
+
+      const { source, payload } = result.data;
+      if (source !== "openpromo") return;
+      if (payload.event !== "connected_account") return;
+
+      toast[payload.status](payload.message);
+
+      queryClient.invalidateQueries({
+        queryKey: [workspace.slug, "connected_accounts"],
+      });
+    }
+
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [queryClient, workspace.slug]);
 
   // Facebook OAuth mutation
   const { mutate: initiateFacebookOAuth, isPending: isConnecting } =
@@ -153,19 +179,12 @@ export function ConnectedAccountsPage() {
         toast.error(`Failed to initiate Facebook OAuth: ${error.message}`);
       },
       onSuccess({ data: { url } }) {
-        toast.success("Redirecting to Facebook authentication...");
-        const popup = window.open(
+        openPopup({
           url,
-          "facebook-oauth",
-          "width=600,height=700,scrollbars=yes,resizable=yes,status=yes,location=yes,toolbar=no,menubar=no,left=" +
-            (screen.width / 2 - 300) +
-            ",top=" +
-            (screen.height / 2 - 350),
-        );
-
-        if (popup) {
-          popup.focus();
-        }
+          target: "facebook-oauth",
+          width: 600,
+          height: 800,
+        });
       },
     });
 
@@ -200,11 +219,9 @@ export function ConnectedAccountsPage() {
           </Stack>
 
           {/* Connected Accounts */}
-          <Suspense fallback={<ConnectedAccountsSkeleton />}>
-            <ConnectedAccountsContent
-              onConnect={() => setIsConnectDialogOpen(true)}
-            />
-          </Suspense>
+          <ConnectedAccountsContent
+            onConnect={() => setIsConnectDialogOpen(true)}
+          />
 
           {/* Available Platforms */}
           <Stack spacing="md">

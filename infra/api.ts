@@ -54,6 +54,11 @@ const permissions = new sst.Linkable("SchedulingPermissions", {
 
 export const api = new sst.cloudflare.Worker("WorkerApi", {
   handler: "packages/web-api/src/index.ts",
+  build: {
+    loader: {
+      ".raw.js": "text", // Import raw js files as string
+    },
+  },
   environment: {
     DEBUG: "OFF", // only takes string
     DRIZZLE_LOG: "false",

@@ -13,6 +13,7 @@ import {
 import { AppError } from "../../../../../helpers/error";
 import { withAuth } from "../../../../../middleware/with-auth";
 import type { ApiEnv } from "../../../../../types";
+import type { PopupRelayPayload } from "../../../popup-relay/constants";
 
 // Validation schemas
 const AuthQuerySchema = z.object({
@@ -20,8 +21,8 @@ const AuthQuerySchema = z.object({
 });
 
 const CallbackBodySchema = z.object({
-  code: z.string().min(1, "Authorization code is required"),
-  state: z.string(),
+  code: z.string().optional(),
+  state: z.string().optional(),
 });
 
 const ReconnectBodySchema = z.object({
@@ -58,67 +59,90 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
     });
   })
   .get("/callback", zValidator("query", CallbackBodySchema), async (ctx) => {
-    // this endpoint is hit when user successfully logged in via
-    // FB dialog oauth.
-    // 1. token exchange
-    const { code, state } = ctx.req.valid("query");
-    const workspaceSlug = Actor.workspaceSlug();
-    const storedAuthState = getAuthState(ctx);
+    try {
+      // this endpoint is hit when user successfully logged in via
+      // FB dialog oauth.
+      // 1. token exchange
+      const { code, state } = ctx.req.valid("query");
+      if (!code || !state) {
+        throw new AppError(400, { message: "Missing code or state" });
+      }
+      const workspaceSlug = Actor.workspaceSlug();
+      const storedAuthState = getAuthState(ctx);
 
-    if (!storedAuthState || storedAuthState.nonce !== state) {
-      // Clear any stored state since verification failed
+      if (!storedAuthState || storedAuthState.nonce !== state) {
+        // Clear any stored state since verification failed
+        clearAuthStateCookie(ctx);
+        throw new AppError(400, {
+          message: "Invalid state parameter - possible CSRF attack",
+        });
+      }
+
+      // Clear the stored state since we've verified it
       clearAuthStateCookie(ctx);
-      throw new AppError(400, {
-        message: "Invalid state parameter - possible CSRF attack",
-        userMessage: "Authentication failed. Please try again.",
+
+      // 2. Authenticate with Facebook
+      const authResult = await facebookOAuthService.authenticate({
+        code,
+        workspaceSlug,
       });
+      // 3. fetch list of pages user has granted access to
+      const userPages = await facebookOAuthService.getUserPages(
+        authResult.accessToken,
+      );
+
+      // 4. for each linked page, 1:1 map to connected account
+      // we do this in a flatten way so that user can have N FB + M IG, etc.
+      // accounts connected.
+      const accounts = await Promise.allSettled(
+        userPages.map((page) =>
+          ConnectedAccount.create({
+            platform: Platform.enum.FACEBOOK,
+            externalAccountId: page.id,
+            accountName: page.name,
+            externalUrl: `https://www.facebook.com/${page.id}`,
+            profilePicUrl: page.picture?.data?.url ?? null,
+            // TODO: impl encryptions
+            encryptedAccessToken: authResult.accessToken,
+            refreshToken: authResult.refreshToken,
+            tokenExpiresAt: new Date(Date.now() + authResult.expiresIn * 1000),
+            metadata: {
+              pageId: page.id,
+              pageName: page.name,
+              followers: page.fan_count,
+            },
+          }),
+        ),
+      );
+
+      const failedCount = accounts.filter(
+        (a) => a.status === "rejected",
+      ).length;
+      if (failedCount > 0) {
+        throw new AppError(400, {
+          message: `Failed to create ${failedCount} connected accounts.`,
+        });
+      }
+
+      const successAccounts = accounts
+        .map((a) => (a.status === "fulfilled" ? a.value : null))
+        .filter((a) => a !== null);
+
+      const qp = new URLSearchParams({
+        status: "success",
+        event: "connected_account",
+        message: `Successfully connected to ${successAccounts.map((a) => a.accountName).join(", ")}.`,
+      } satisfies PopupRelayPayload).toString();
+      return ctx.redirect(`/api/popup-relay?${qp}`);
+    } catch (error) {
+      console.error(error);
+      const qp = new URLSearchParams({
+        status: "error",
+        event: "connected_account",
+        message: "Failed to connect to your account.",
+      } satisfies PopupRelayPayload).toString();
+      return ctx.redirect(`/api/popup-relay?${qp}`);
     }
-
-    // Clear the stored state since we've verified it
-    clearAuthStateCookie(ctx);
-
-    // 2. Authenticate with Facebook
-    const authResult = await facebookOAuthService.authenticate({
-      code,
-      workspaceSlug,
-    });
-    // 3. fetch list of pages user has granted access to
-    const userPages = await facebookOAuthService.getUserPages(
-      authResult.accessToken,
-    );
-
-    // 4. for each linked page, 1:1 map to connected account
-    // we do this in a flatten way so that user can have N FB + M IG, etc.
-    // accounts connected.
-    const accounts = [];
-    for (const page of userPages) {
-      const acc = await ConnectedAccount.create({
-        platform: Platform.enum.FACEBOOK,
-        externalAccountId: page.id,
-        accountName: page.name,
-        externalUrl: `https://www.facebook.com/${page.id}`,
-        profilePicUrl: page.picture?.data?.url ?? null,
-        // TODO: impl encryptions
-        encryptedAccessToken: authResult.accessToken,
-        refreshToken: authResult.refreshToken,
-        tokenExpiresAt: new Date(Date.now() + authResult.expiresIn * 1000),
-        metadata: {
-          pageId: page.id,
-          pageName: page.name,
-          followers: page.fan_count,
-        },
-      });
-      accounts.push(acc);
-    }
-
-    // at this point, we should be storing the connected account in our db.
-    // open Q: seems like user can select multiple pages/businesses to connect
-    // how do we wanna handle the data models here..?
-    // this is the user Actor.
-    return ctx.json({
-      success: true,
-      data: { accounts },
-    });
   })
   .post("/reconnect", zValidator("json", ReconnectBodySchema), async (ctx) => {
     const { pageId, accessToken } = ctx.req.valid("json");

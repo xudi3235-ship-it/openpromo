@@ -50,6 +50,7 @@ export const honoApiCall = async <T extends object>(
   ) => Promise<ClientResponse<T, number, "json">>,
   options?: {
     disableErrorToast?: boolean;
+    errorMessage?: string;
   },
 ): Promise<ApiResponse<T>> => {
   const response = await request(apiClient);
@@ -69,9 +70,10 @@ export const honoApiCall = async <T extends object>(
   }
 
   const errorMessage =
-    json && "message" in json
+    options?.errorMessage ??
+    (json && "message" in json
       ? (json.message as string)
-      : getDefaultErrorMessage(response.status);
+      : getDefaultErrorMessage(response.status));
 
   if (!options?.disableErrorToast) {
     toast.error(errorMessage);
@@ -92,17 +94,20 @@ export interface UseHonoQueryOptions<T extends object>
     api: typeof apiClient,
   ) => Promise<ClientResponse<T, number, "json">>;
   disableErrorToast?: boolean;
+  errorMessage?: string;
 }
 
 export const convertHonoQueryOptions = <T extends object>(
   options: UseHonoQueryOptions<T>,
 ) => {
-  const { queryFn, disableErrorToast, ...useQueryOptions } = options;
+  const { queryFn, disableErrorToast, errorMessage, ...useQueryOptions } =
+    options;
   return {
     ...useQueryOptions,
     queryFn: async () => {
       const res = await honoApiCall(queryFn, {
         disableErrorToast,
+        errorMessage,
       });
       if (res.success) {
         return res.data;
@@ -154,16 +159,25 @@ interface UseHonoSuspenseQueryOptions<T extends object>
     api: typeof apiClient,
   ) => Promise<ClientResponse<T, number, "json">>;
   disableErrorToast?: boolean;
+  errorMessage?: string;
 }
 
 export const useHonoSuspenseQuery = <T extends object>(
   options: UseHonoSuspenseQueryOptions<T>,
 ) => {
-  const { queryFn, disableErrorToast, ...useSuspenseQueryOptions } = options;
+  const {
+    queryFn,
+    disableErrorToast,
+    errorMessage,
+    ...useSuspenseQueryOptions
+  } = options;
   return useSuspenseQuery<T>({
     ...useSuspenseQueryOptions,
     queryFn: async () => {
-      const res = await honoApiCall(queryFn, { disableErrorToast });
+      const res = await honoApiCall(queryFn, {
+        disableErrorToast,
+        errorMessage,
+      });
       if (res.success) {
         return res.data;
       }
