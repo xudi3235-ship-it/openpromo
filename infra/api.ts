@@ -1,5 +1,7 @@
+/** biome-ignore-all lint/style/noNonNullAssertion: infra */
 import { spawnSync } from "node:child_process";
 import { bus, schedulerRole } from "./bus";
+import { CloudflareWorkflow } from "./cloudflare";
 import { database, hyperdrive } from "./database";
 import { domain } from "./dns";
 import { email } from "./email";
@@ -66,10 +68,16 @@ export const api = new sst.cloudflare.Worker("WorkerApi", {
       },
   transform: {
     worker: (args) => {
-      // available on workers paid plan or enterprise plan
-      // args.logpush = true;
+      args.logpush = true;
       args.bindings = $resolve(args.bindings).apply((bindings) => [
         ...bindings,
+        // !!match the workflow as below
+        {
+          type: "workflow",
+          name: "WORKFLOW",
+          className: "MyWorkflow",
+          workflowName: "WORKFLOW",
+        },
         {
           type: "hyperdrive",
           name: "HYPERDRIVE",
@@ -108,5 +116,22 @@ export const api = new sst.cloudflare.Worker("WorkerApi", {
   //   },
   // },
 });
+
+// ============ cloudflare infra stuff ============
+// for some reason, if we use hono along with the workflow
+// bindings, it doesn't really work.
+new CloudflareWorkflow(
+  "WORKFLOW",
+  {
+    name: "WORKFLOW",
+    scriptName: api.nodes.worker.scriptName,
+    className: "MyWorkflow",
+    accountId: sst.cloudflare.DEFAULT_ACCOUNT_ID,
+    apiToken: process.env.CLOUDFLARE_API_TOKEN!,
+  },
+  {
+    dependsOn: [api],
+  },
+);
 
 export const outputs = {};

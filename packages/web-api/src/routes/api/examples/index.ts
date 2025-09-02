@@ -7,6 +7,14 @@ import type { ApiEnv } from "../../../types";
 
 export const examplesRoute = new Hono<ApiEnv>()
   .use(withAuth())
+  .get("/workflow", async (c) => {
+    // return c.text("not ready");
+    const instance = await c.env.WORKFLOW.create();
+    return Response.json({
+      id: instance.id,
+      details: await instance.status(),
+    });
+  })
   .get("/", async (c) => {
     await Scheduler.createSchedule(
       EntPendingContentGroup.Events().Scheduled,

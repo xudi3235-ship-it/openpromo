@@ -19,6 +19,7 @@ export default $config({
           version: "6.6.0",
           apiToken: process.env.CLOUDFLARE_API_TOKEN,
         },
+        command: true,
         tls: true,
         random: true,
         planetscale: {
@@ -35,7 +36,10 @@ export default $config({
   async run() {
     const outputs = {};
     const { readdirSync } = await import("node:fs");
+    // skip some wip stuff
+    const blocklist = ["wrangler", "cloudflare"];
     for (const value of readdirSync("./infra/")) {
+      if (blocklist.includes(value)) continue;
       const result = await import(`./infra/${value}`);
       if (result.outputs) Object.assign(outputs, result.outputs);
     }
