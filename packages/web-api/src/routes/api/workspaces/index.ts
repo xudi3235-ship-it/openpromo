@@ -18,7 +18,7 @@ import { withOrgRole } from "../../../middleware/with-org-role";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
 import type { ApiEnv } from "../../../types";
 import { connectedAccountsRoute } from "./connected_accounts";
-import { pingRoute } from "./ping";
+import { mediaRoute } from "./media";
 
 export const workspacesRoute = new Hono<ApiEnv>()
   .use(withAuth())
@@ -139,4 +139,4 @@ export const workspacesRoute = new Hono<ApiEnv>()
     },
   )
   .route("/:workspaceSlug/connected_accounts", connectedAccountsRoute)
-  .route("/:workspaceSlug/ping", pingRoute);
+  .route("/:workspaceSlug/media", mediaRoute);
