@@ -1,4 +1,3 @@
-import { popupRelayMessageSchema } from "@openpromo/web-api/src/routes/api/popup-relay/constants";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Settings2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -9,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Typography } from "@/components/ui/typography";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
-import { openPopup } from "@/lib/popup";
+import { handlePopupMessage, openPopup } from "@/lib/popup";
 import { ConnectPlatformDialog } from "./connect-platform-dialog";
 import { ConnectedAccountCard } from "./connected-account-card";
 
@@ -143,22 +142,14 @@ export function ConnectedAccountsPage() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    // listen for messages from the connection popup window
     function handleMessage(event: MessageEvent<unknown>) {
-      if (event.origin !== window.location.origin) return;
-
-      const result = popupRelayMessageSchema.safeParse(event.data);
-      if (!result.success) return;
-
-      const { source, payload } = result.data;
-      if (source !== "openpromo") return;
-      if (payload.event !== "connected_account") return;
-
-      toast[payload.status](payload.message);
+      const payload = handlePopupMessage(event, "accounts_connected");
+      if (!payload) return;
 
       queryClient.invalidateQueries({
         queryKey: [workspace.slug, "connected_accounts"],
       });
+      toast[payload.status](payload.message);
     }
 
     window.addEventListener("message", handleMessage);

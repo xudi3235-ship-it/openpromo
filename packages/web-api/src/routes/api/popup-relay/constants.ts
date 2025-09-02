@@ -5,7 +5,7 @@ import { z } from "zod";
  */
 export const popupRelayQuerySchema = z.object({
   status: z.enum(["success", "error"]),
-  event: z.enum(["connected_account"]),
+  event: z.enum(["accounts_connected"]),
   message: z.string(),
 });
 
@@ -18,3 +18,5 @@ export const popupRelayMessageSchema = z.object({
   source: z.literal("openpromo"),
   payload: popupRelayQuerySchema,
 });
+
+export type PopupRelayMessage = z.infer<typeof popupRelayMessageSchema>;

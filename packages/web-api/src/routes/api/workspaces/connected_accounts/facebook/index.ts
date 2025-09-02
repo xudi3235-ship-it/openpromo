@@ -130,7 +130,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
 
       const qp = new URLSearchParams({
         status: "success",
-        event: "connected_account",
+        event: "accounts_connected",
         message: `Successfully connected to ${successAccounts.map((a) => a.accountName).join(", ")}.`,
       } satisfies PopupRelayQuery).toString();
       return ctx.redirect(`/api/popup-relay?${qp}`);
@@ -138,7 +138,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
       console.error(error);
       const qp = new URLSearchParams({
         status: "error",
-        event: "connected_account",
+        event: "accounts_connected",
         message: "Failed to connect to your account.",
       } satisfies PopupRelayQuery).toString();
       return ctx.redirect(`/api/popup-relay?${qp}`);

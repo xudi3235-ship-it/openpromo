@@ -1,3 +1,8 @@
+import {
+  type PopupRelayMessage,
+  popupRelayMessageSchema,
+} from "@openpromo/web-api/src/routes/api/popup-relay/constants";
+
 interface OpenPopupProps {
   url: string;
   target?: string;
@@ -47,4 +52,20 @@ export const openPopup = ({
   }
 
   return popup;
+};
+
+export const handlePopupMessage = (
+  event: MessageEvent<unknown>,
+  eventToListen: PopupRelayMessage["payload"]["event"],
+) => {
+  if (event.origin !== window.location.origin) return;
+
+  const result = popupRelayMessageSchema.safeParse(event.data);
+  if (!result.success) return;
+
+  const { source, payload } = result.data;
+  if (source !== "openpromo") return;
+  if (payload.event !== eventToListen) return;
+
+  return payload;
 };
