@@ -1,4 +1,4 @@
-import { Resource } from "sst";
+import { env } from "@openpromo/core/env/index";
 import {
   type ClientOptions,
   createClient,
@@ -8,7 +8,7 @@ import {
 export const createLiquidClient = () => {
   return createClient(
     createConfig<ClientOptions>({
-      baseUrl: Resource.LIQUID_API_URL.value,
+      baseUrl: env.LIQUID_API_URL,
     }),
   );
 };

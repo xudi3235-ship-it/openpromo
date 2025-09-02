@@ -1,4 +1,3 @@
-import { Resource } from "sst";
 import { bus } from "sst/aws/bus";
 import z from "zod";
 import { Actor } from "../../actor";
@@ -260,7 +259,8 @@ class EntPendingContentGroup {
             // 4. now event is scheduled, we need to store the
             // scheduled instance, delegating to event handler
             bus.publish(
-              Resource.Bus,
+              "FIXME!! move off aws bus --- we can't depend on sst here",
+              // Resource.Bus,
               this.Events().Scheduled,
               {
                 groupID: pendingContentGroup.id,

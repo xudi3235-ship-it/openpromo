@@ -6,7 +6,8 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 async function getDomain(): Promise<string | undefined> {
   try {
-    return (await import("sst")).Resource.Urls.domain;
+    throw new Error("TODO: implement this, read from .env and wrangler?");
+    // return (await import("sst")).e.domain;
   } catch (error: unknown) {
     // TODO: this is trying to enable local dev for www
     // without depending on SST

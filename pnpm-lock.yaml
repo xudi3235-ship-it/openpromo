@@ -87,6 +87,9 @@ importers:
       '@openpromo/js-shared':
         specifier: workspace:^
         version: link:../js-shared
+      '@t3-oss/env-core':
+        specifier: ^0.13.8
+        version: 0.13.8(typescript@5.9.2)(valibot@1.1.0(typescript@5.9.2))(zod@4.1.0)
       '@workos-inc/node':
         specifier: 'catalog:'
         version: 7.66.0(express@5.1.0)
@@ -3173,6 +3176,23 @@ packages:
 
   '@standard-schema/utils@0.3.0':
     resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
+
+  '@t3-oss/env-core@0.13.8':
+    resolution: {integrity: sha512-L1inmpzLQyYu4+Q1DyrXsGJYCXbtXjC4cICw1uAKv0ppYPQv656lhZPU91Qd1VS6SO/bou1/q5ufVzBGbNsUpw==}
+    peerDependencies:
+      arktype: ^2.1.0
+      typescript: '>=5.0.0'
+      valibot: ^1.0.0-beta.7 || ^1.0.0
+      zod: ^3.24.0 || ^4.0.0-beta.0
+    peerDependenciesMeta:
+      arktype:
+        optional: true
+      typescript:
+        optional: true
+      valibot:
+        optional: true
+      zod:
+        optional: true
 
   '@tailwindcss/node@4.1.11':
     resolution: {integrity: sha512-yzhzuGRmv5QyU9qLNg4GTlYI6STedBWRE7NjxP45CsFYYq9taI0zJXZBMqIC/c8fViNLhmrbpSFS57EoxUmD6Q==}
@@ -9332,6 +9352,12 @@ snapshots:
   '@standard-schema/spec@1.0.0-beta.3': {}
 
   '@standard-schema/utils@0.3.0': {}
+
+  '@t3-oss/env-core@0.13.8(typescript@5.9.2)(valibot@1.1.0(typescript@5.9.2))(zod@4.1.0)':
+    optionalDependencies:
+      typescript: 5.9.2
+      valibot: 1.1.0(typescript@5.9.2)
+      zod: 4.1.0
 
   '@tailwindcss/node@4.1.11':
     dependencies:

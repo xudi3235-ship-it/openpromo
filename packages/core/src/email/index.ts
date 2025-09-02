@@ -1,5 +1,4 @@
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
-import { Resource } from "sst";
 import { Log } from "../util/log";
 
 export namespace Email {
@@ -22,7 +21,9 @@ export namespace Email {
       html?: string;
     },
   ) {
-    from = `${from}@${Resource.Email.sender}`;
+    // FIXME: we're moving off aws SES, we need to use 3P providers
+    // for transactional/marketing, e.g. EmailOctopus.
+    // from = `${from}@${Resource.Email.sender}`;
     log.info("sending email", { subject, from, to });
 
     // Convert to array if single string

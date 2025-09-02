@@ -1,5 +1,5 @@
+import { env } from "@openpromo/core/env/index";
 import type { Context, MiddlewareHandler } from "hono";
-import { Resource } from "sst";
 import { AppError } from "../helpers/error";
 import type { ApiEnv } from "../types";
 
@@ -21,7 +21,7 @@ function checkAdminApiToken(c: Context<ApiEnv>): boolean {
     return false;
   }
   const bearerToken = parts[1];
-  if (bearerToken !== Resource.ADMIN_API_TOKEN.value) {
+  if (bearerToken !== env.ADMIN_API_TOKEN) {
     return false;
   }
   return true;

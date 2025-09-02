@@ -1,7 +1,7 @@
 import type { CreateScheduleCommandInput } from "@aws-sdk/client-scheduler";
 import { FlexibleTimeWindowMode } from "@aws-sdk/client-scheduler";
 import { nullThrows } from "@openpromo/js-shared/common";
-import { Resource } from "sst";
+import type { Resource } from "sst";
 import type { event } from "sst/event";
 import { DEFAULT_AWS_REGION } from "../aws";
 import type { AwsOptions } from "../aws/client";
@@ -91,7 +91,8 @@ export namespace Scheduler {
       // there should be a better option.
       ClientToken: scheduleName.replace(/[^a-zA-Z0-9\-_]/g, "-"),
       Target: {
-        Arn: Resource.Bus.arn,
+        Arn: "TODO: migrate off aws",
+        // Arn: Resource.Bus.arn,
         RoleArn: roleArn,
         EventBridgeParameters: {
           DetailType: eventDef.type,

@@ -2,8 +2,8 @@ import type {
   DirectUploadCreateParams,
   DirectUploadCreateResponse,
 } from "cloudflare/resources/stream/direct-upload.mjs";
-import { Resource } from "sst";
 import { getCloudflareClient } from "../cloudflare";
+import { env } from "../env";
 
 // using cloudflare stream service.
 export namespace VideoStorage {
@@ -31,7 +31,7 @@ export namespace VideoStorage {
   ): Promise<DirectUploadCreateResponse> {
     const c = getCloudflareClient();
     const directUpload = await c.stream.directUpload.create({
-      account_id: Resource.CLOUDFLARE_DEFAULT_ACCOUNT_ID.value,
+      account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
       ...params,
     });
     return directUpload;
@@ -44,13 +44,13 @@ export namespace VideoStorage {
    *
    */
   export async function createResumableUpload(request: Request) {
-    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${Resource.CLOUDFLARE_DEFAULT_ACCOUNT_ID.value}/stream?direct_user=true`;
+    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_DEFAULT_ACCOUNT_ID}/stream?direct_user=true`;
 
     const response = await fetch(endpoint, {
       method: "POST",
       // @ts-expect-error temporary
       headers: {
-        Authorization: `bearer ${Resource.CLOUDFLARE_API_TOKEN.value}`,
+        Authorization: `bearer ${env.CLOUDFLARE_API_TOKEN}`,
         "Tus-Resumable": "1.0.0",
         "Upload-Length": request.headers.get("Upload-Length"),
         "Upload-Metadata": request.headers.get("Upload-Metadata"),
@@ -74,12 +74,12 @@ export namespace VideoStorage {
   export async function createMP4Download(
     videoId: string,
   ): Promise<DownloadResponse> {
-    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${Resource.CLOUDFLARE_DEFAULT_ACCOUNT_ID.value}/stream/${videoId}/downloads`;
+    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_DEFAULT_ACCOUNT_ID}/stream/${videoId}/downloads`;
 
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${Resource.CLOUDFLARE_API_TOKEN.value}`,
+        Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
         "Content-Type": "application/json",
       },
     });
@@ -97,12 +97,12 @@ export namespace VideoStorage {
   export async function createM4ADownload(
     videoId: string,
   ): Promise<DownloadResponse> {
-    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${Resource.CLOUDFLARE_DEFAULT_ACCOUNT_ID.value}/stream/${videoId}/downloads/audio`;
+    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_DEFAULT_ACCOUNT_ID}/stream/${videoId}/downloads/audio`;
 
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${Resource.CLOUDFLARE_API_TOKEN.value}`,
+        Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
         "Content-Type": "application/json",
       },
     });
@@ -120,12 +120,12 @@ export namespace VideoStorage {
   export async function getDownloadLinks(
     videoId: string,
   ): Promise<DownloadResponse> {
-    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${Resource.CLOUDFLARE_DEFAULT_ACCOUNT_ID.value}/stream/${videoId}/downloads`;
+    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_DEFAULT_ACCOUNT_ID}/stream/${videoId}/downloads`;
 
     const response = await fetch(endpoint, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${Resource.CLOUDFLARE_API_TOKEN.value}`,
+        Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
       },
     });
 

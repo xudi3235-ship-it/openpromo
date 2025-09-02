@@ -6,8 +6,8 @@ import type {
   V2ListParams,
   V2ListResponse,
 } from "cloudflare/resources/images/v2/v2.mjs";
-import { Resource } from "sst";
 import { getCloudflareClient } from "../cloudflare";
+import { env } from "../env";
 
 // wraps the Cloudflare Images API
 // https://developers.cloudflare.com/images/
@@ -21,7 +21,7 @@ export namespace ImageStorage {
   ): Promise<DirectUploadCreateResponse> {
     const c = getCloudflareClient();
     const upload = await c.images.v2.directUploads.create({
-      account_id: Resource.CLOUDFLARE_DEFAULT_ACCOUNT_ID.value,
+      account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
       ...params,
     });
     return upload;
@@ -31,7 +31,7 @@ export namespace ImageStorage {
   ): Promise<V2ListResponse> {
     const c = getCloudflareClient();
     const images = await c.images.v2.list({
-      account_id: Resource.CLOUDFLARE_DEFAULT_ACCOUNT_ID.value,
+      account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
       ...params,
     });
     return images;
@@ -45,6 +45,6 @@ export namespace ImageStorage {
     id: string,
     variantName: string = "public",
   ) {
-    return `https://imagedelivery.net/${Resource.CLOUDFLARE_IMAGE_ACCOUNT_HASH.value}/${id}/${variantName}`;
+    return `https://imagedelivery.net/${env.CLOUDFLARE_IMAGE_ACCOUNT_HASH}/${id}/${variantName}`;
   }
 }

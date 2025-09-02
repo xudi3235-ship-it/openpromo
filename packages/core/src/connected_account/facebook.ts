@@ -1,4 +1,4 @@
-import { Resource } from "sst";
+import { env } from "../env";
 import { Log } from "../util/log";
 
 interface FacebookProfile {
@@ -71,15 +71,16 @@ export class FacebookOAuthService {
   ];
 
   private redirectUri(workspaceSlug: string): string {
-    return `${Resource.Urls.site}/api/workspaces/${workspaceSlug}/connected_accounts/facebook/callback`;
+    throw new Error("TODO: migrate off Resource.Urls.site" + workspaceSlug);
+    // return `${Resource.Urls.site}/api/workspaces/${workspaceSlug}/connected_accounts/facebook/callback`;
   }
 
   private get appId(): string {
-    return Resource.FACEBOOK_APP_ID.value;
+    return env.FACEBOOK_APP_ID;
   }
 
   private get appSecret(): string {
-    return Resource.FACEBOOK_APP_SECRET.value;
+    return env.FACEBOOK_APP_SECRET;
   }
 
   private get baseUrl(): string {

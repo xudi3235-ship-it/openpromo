@@ -1,7 +1,6 @@
 import { EntPendingContentGroup } from "@openpromo/core/content/entity/index";
 import { Scheduler } from "@openpromo/core/event/scheduler";
 import { Hono } from "hono";
-import { Resource } from "sst";
 import { withAuth } from "../../../middleware/with-auth";
 import type { ApiEnv } from "../../../types";
 
@@ -21,8 +20,8 @@ export const examplesRoute = new Hono<ApiEnv>()
       {
         contentID: "123",
         groupID: "456",
-        scheduleName: Resource.Bus.name,
-        scheduleArn: Resource.Bus.arn,
+        scheduleName: "TODO: move off aws",
+        scheduleArn: "TODO: move off aws",
       },
       new Date(Date.now() + 60 * 1000),
     );

@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { Resource } from "sst";
 import { createContext } from "../context";
+import { env } from "../env";
 import { Log } from "../util/log";
 
 export * from "drizzle-orm";
@@ -23,7 +23,8 @@ export namespace Database {
     } catch {
       // fallback to pooled conn.
       return {
-        connectionString: `postgresql://${Resource.Database.username}:${Resource.Database.password}@${Resource.Database.host}/${Resource.Database.database}?sslmode=require`,
+        connectionString: env.DATABASE_URL,
+        // connectionString: `postgresql://${Resource.Database.username}:${Resource.Database.password}@${Resource.Database.host}/${Resource.Database.database}?sslmode=require`,
       } as Info;
     }
   }

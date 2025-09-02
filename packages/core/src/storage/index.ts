@@ -3,8 +3,6 @@ import type {
   PutObjectCommandInput,
   CompletedPart as S3CompletedPart,
 } from "@aws-sdk/client-s3";
-import { Resource } from "sst";
-import { DEFAULT_AWS_REGION } from "../aws";
 import { client } from "../aws/client";
 import { Log } from "../util/log";
 
@@ -48,9 +46,11 @@ export namespace Storage {
   };
 
   function s3Url(key?: string): string {
-    const region = process.env.AWS_REGION || DEFAULT_AWS_REGION;
-    const baseUrl = `https://${Resource.Storage.name}.s3.${region}.amazonaws.com`;
-    return key ? `${baseUrl}/${key}` : baseUrl;
+    // const region = process.env.AWS_REGION || DEFAULT_AWS_REGION;
+    // FIXME: move to R2 instead, no need for these.
+    throw new Error("TODO: move to R2, off aws");
+    // const baseUrl = `https://${Resource.Storage.name}.s3.${region}.amazonaws.com`;
+    // return key ? `${baseUrl}/${key}` : baseUrl;
   }
 
   export class StorageError extends Error {

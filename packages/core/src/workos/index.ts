@@ -1,8 +1,8 @@
 import { WorkOS } from "@workos-inc/node";
-import { Resource } from "sst";
+import { env } from "../env";
 
 export const getWorkOS = () => {
-  return new WorkOS(Resource.WORKOS_API_KEY.value, {
-    clientId: Resource.WORKOS_CLIENT_ID.value,
+  return new WorkOS(env.WORKOS_API_KEY, {
+    clientId: env.WORKOS_CLIENT_ID,
   });
 };

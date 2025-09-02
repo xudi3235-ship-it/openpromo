@@ -1,12 +1,12 @@
 import { zValidator } from "@hono/zod-validator";
+import { env } from "@openpromo/core/env/index";
+import { getWorkOS } from "@openpromo/core/workos/index";
 import { Hono } from "hono";
 import { getCookie } from "hono/cookie";
-import { Resource } from "sst";
 import { z } from "zod";
 import {
   assertOrg,
   assertUser,
-  getWorkOS,
   setSessionCookie,
   WORKOS_SESSION_COOKIE_NAME,
 } from "../../../helpers/auth";
@@ -48,7 +48,7 @@ export const orgsRoute = new Hono<ApiEnv>()
 
       const session = workOS.userManagement.loadSealedSession({
         sessionData: sessionCookie,
-        cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
+        cookiePassword: env.WORKOS_COOKIE_PASSWORD,
       });
 
       const refreshResult = await session.refresh({ organizationId });

@@ -1,13 +1,13 @@
 import { getDbClient } from "@openpromo/core/drizzle/index";
+import { env } from "@openpromo/core/env/index";
 import { usersTable } from "@openpromo/core/schema/users.sql";
+import { getWorkOS } from "@openpromo/core/workos/index";
 import { ORGANIZATION_ROLE } from "@openpromo/core/workspace/auth";
 import type { User } from "@workos-inc/node";
 import { type Context, Hono } from "hono";
-import { Resource } from "sst";
 import {
   clearAuthStateCookie,
   getAuthState,
-  getWorkOS,
   setSessionCookie,
 } from "../../helpers/auth";
 import { AppError } from "../../helpers/error";
@@ -38,7 +38,7 @@ const bootstrapNewUser = async (
   // Refresh the user's session with the new organization
   const session = workOS.userManagement.loadSealedSession({
     sessionData: sealedSession,
-    cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
+    cookiePassword: env.WORKOS_COOKIE_PASSWORD,
   });
   const refreshResult = await session.refresh({
     organizationId: organization.id,
@@ -90,10 +90,10 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
 
     const authenticatedUser = await workOS.userManagement.authenticateWithCode({
       code,
-      clientId: Resource.WORKOS_CLIENT_ID.value,
+      clientId: env.WORKOS_CLIENT_ID,
       session: {
         sealSession: true,
-        cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
+        cookiePassword: env.WORKOS_COOKIE_PASSWORD,
       },
     });
 
@@ -109,10 +109,10 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
       await bootstrapNewUser(user, c, sealedSession);
     }
 
-    const redirectUrl = new URL(returnTo ?? "/", Resource.Urls.site);
+    const redirectUrl = new URL(returnTo ?? "/", env.DASHBOARD_URL);
     return c.redirect(redirectUrl.toString());
   } catch (error) {
     console.error(error);
-    return c.redirect(`${Resource.Urls.site}#login-error`);
+    return c.redirect(`${env.DASHBOARD_URL}#login-error`);
   }
 });

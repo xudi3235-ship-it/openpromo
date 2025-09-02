@@ -1,11 +1,11 @@
 import { Actor } from "@openpromo/core/actor";
+import { env } from "@openpromo/core/env/index";
+import { getWorkOS } from "@openpromo/core/workos/index";
 import type { OrganizationRole } from "@openpromo/core/workspace/auth";
 import { getCookie } from "hono/cookie";
 import type { MiddlewareHandler } from "hono/types";
-import { Resource } from "sst";
 import {
   clearSessionCookie,
-  getWorkOS,
   setSessionCookie,
   WORKOS_SESSION_COOKIE_NAME,
 } from "../helpers/auth";
@@ -23,7 +23,7 @@ export const workOSAuth: () => MiddlewareHandler<ApiEnv> =
 
       const session = workOS.userManagement.loadSealedSession({
         sessionData: sessionCookie,
-        cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
+        cookiePassword: env.WORKOS_COOKIE_PASSWORD,
       });
 
       const result = await session.authenticate();

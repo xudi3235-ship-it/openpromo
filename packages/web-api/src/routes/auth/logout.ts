@@ -1,9 +1,9 @@
+import { env } from "@openpromo/core/env/index";
+import { getWorkOS } from "@openpromo/core/workos/index";
 import { Hono } from "hono";
 import { getCookie } from "hono/cookie";
-import { Resource } from "sst";
 import {
   clearSessionCookie,
-  getWorkOS,
   WORKOS_SESSION_COOKIE_NAME,
 } from "../../helpers/auth";
 
@@ -12,17 +12,17 @@ export const logoutRoute = new Hono().get("/", async (c) => {
 
   const sessionCookie = getCookie(c, WORKOS_SESSION_COOKIE_NAME);
   if (!sessionCookie) {
-    return c.redirect(Resource.Urls.site);
+    return c.redirect(env.DASHBOARD_URL);
   }
 
   try {
     const session = workOS.userManagement.loadSealedSession({
       sessionData: sessionCookie ?? "",
-      cookiePassword: Resource.WORKOS_COOKIE_PASSWORD.value,
+      cookiePassword: env.WORKOS_COOKIE_PASSWORD,
     });
 
     const logoutUrl = await session.getLogoutUrl({
-      returnTo: Resource.Urls.site,
+      returnTo: env.DASHBOARD_URL,
     });
 
     clearSessionCookie(c);
@@ -32,6 +32,6 @@ export const logoutRoute = new Hono().get("/", async (c) => {
 
     // if the session is invalid, clear the session cookie and redirect to the site
     clearSessionCookie(c);
-    return c.redirect(Resource.Urls.site);
+    return c.redirect(env.DASHBOARD_URL);
   }
 });

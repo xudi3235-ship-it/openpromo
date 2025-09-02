@@ -1,6 +1,7 @@
+import { env } from "@openpromo/core/env/index";
+import { getWorkOS } from "@openpromo/core/workos/index";
 import { Hono } from "hono";
-import { Resource } from "sst";
-import { getWorkOS, setAuthStateCookie } from "../../helpers/auth";
+import { setAuthStateCookie } from "../../helpers/auth";
 
 export const loginRoute = new Hono().get("/", (c) => {
   const workOS = getWorkOS();
@@ -12,8 +13,8 @@ export const loginRoute = new Hono().get("/", (c) => {
 
   const authorizationUrl = workOS.userManagement.getAuthorizationUrl({
     provider: "authkit",
-    redirectUri: `${Resource.Urls.site}/auth/callback`,
-    clientId: Resource.WORKOS_CLIENT_ID.value,
+    redirectUri: `${env.DASHBOARD_URL}/auth/callback`,
+    clientId: env.WORKOS_CLIENT_ID,
     state: nonce,
   });
 

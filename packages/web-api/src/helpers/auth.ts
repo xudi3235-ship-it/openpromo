@@ -1,7 +1,5 @@
-import { WorkOS } from "@workos-inc/node";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import { Resource } from "sst";
 import type { ApiEnv } from "../types";
 import { AppError } from "./error";
 
@@ -14,12 +12,6 @@ const DEFAULT_COOKIE_OPTIONS = {
   secure: true,
   sameSite: "Lax",
 } satisfies Parameters<typeof setCookie>[3];
-
-export const getWorkOS = () => {
-  return new WorkOS(Resource.WORKOS_API_KEY.value, {
-    clientId: Resource.WORKOS_CLIENT_ID.value,
-  });
-};
 
 export function setSessionCookie(c: Context, sealedSession: string) {
   setCookie(
