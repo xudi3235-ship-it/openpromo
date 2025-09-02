@@ -16,7 +16,7 @@ export default $config({
               : undefined,
         },
         cloudflare: {
-          version: "6.6.0",
+          version: "6.8.0",
           apiToken: process.env.CLOUDFLARE_API_TOKEN,
         },
         command: true,
