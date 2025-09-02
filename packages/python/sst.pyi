@@ -3,76 +3,7 @@
 from typing import Any
 
 class Resource:
-    class ADMIN_API_TOKEN:
-        type: str
-        value: str
     class App:
         name: str
         stage: str
-    class Bus:
-        arn: str
-        name: str
-        type: str
-    class CLOUDFLARE_API_TOKEN:
-        type: str
-        value: str
-    class CLOUDFLARE_DEFAULT_ACCOUNT_ID:
-        type: str
-        value: str
-    class CLOUDFLARE_IMAGE_ACCOUNT_HASH:
-        type: str
-        value: str
-    class Database:
-        database: str
-        host: str
-        password: str
-        type: str
-        username: str
-    class Email:
-        configSet: str
-        sender: str
-        type: str
-    class FACEBOOK_APP_ID:
-        type: str
-        value: str
-    class FACEBOOK_APP_SECRET:
-        type: str
-        value: str
-    class FACEBOOK_REDIRECT_URI:
-        type: str
-        value: str
-    class LIQUID_API_URL:
-        type: str
-        value: str
-    class NEON_API_KEY:
-        type: str
-        value: str
-    class NEON_PROJECT_ID:
-        type: str
-        value: str
-    class STRIPE_SECRET_KEY:
-        type: str
-        value: str
-    class SchedulingPermissions:
-        type: str
-    class Storage:
-        name: str
-        type: str
-    class Urls:
-        api: str
-        domain: str
-        site: str
-        type: str
-    class WORKOS_API_KEY:
-        type: str
-        value: str
-    class WORKOS_CLIENT_ID:
-        type: str
-        value: str
-    class WORKOS_COOKIE_PASSWORD:
-        type: str
-        value: str
-    class WorkerApi:
-        type: str
-        url: str
 
