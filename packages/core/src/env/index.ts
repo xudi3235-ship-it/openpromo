@@ -31,9 +31,7 @@ export const env = createEnv({
    * 💡 You'll get type errors if these are not prefixed with VITE_.
    */
   clientPrefix: "VITE_",
-  client: {
-    VITE_CLERK_PUBLISHABLE_KEY: z.string().min(1),
-  },
+  client: {},
   /*
    * Specify what values should be validated by your schemas above.
    */

@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "web-api",
+  "main": "./src/index.ts",
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "logpush": true,
+  "upload_source_maps": true,
+  // "build": {
+  //   "cwd": "../web-ui",
+  //   "command": "pnpm build",
+  //   "watch_dir": "../web-ui"
+  // },
+  "assets": {
+    "directory": "../web-ui/dist",
+    "not_found_handling": "single-page-application"
+  },
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.raw.js"],
+      "fallthrough": true
+    }
+  ]
+}
