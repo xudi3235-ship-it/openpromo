@@ -1,17 +1,20 @@
 import { z } from "zod";
 
-export const popupRelaySchema = z.object({
+/**
+ * Query params schema for /popup-relay route
+ */
+export const popupRelayQuerySchema = z.object({
   status: z.enum(["success", "error"]),
   event: z.enum(["connected_account"]),
   message: z.string(),
 });
 
-export type PopupRelayPayload = z.infer<typeof popupRelaySchema>;
+export type PopupRelayQuery = z.infer<typeof popupRelayQuerySchema>;
 
 /**
- * Message sent from the popup to the parent window
+ * Message sent from the popup to the parent window via window.postMessage
  */
 export const popupRelayMessageSchema = z.object({
   source: z.literal("openpromo"),
-  payload: popupRelaySchema,
+  payload: popupRelayQuerySchema,
 });

@@ -13,7 +13,7 @@ import {
 import { AppError } from "../../../../../helpers/error";
 import { withAuth } from "../../../../../middleware/with-auth";
 import type { ApiEnv } from "../../../../../types";
-import type { PopupRelayPayload } from "../../../popup-relay/constants";
+import type { PopupRelayQuery } from "../../../popup-relay/constants";
 
 // Validation schemas
 const AuthQuerySchema = z.object({
@@ -132,7 +132,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
         status: "success",
         event: "connected_account",
         message: `Successfully connected to ${successAccounts.map((a) => a.accountName).join(", ")}.`,
-      } satisfies PopupRelayPayload).toString();
+      } satisfies PopupRelayQuery).toString();
       return ctx.redirect(`/api/popup-relay?${qp}`);
     } catch (error) {
       console.error(error);
@@ -140,7 +140,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
         status: "error",
         event: "connected_account",
         message: "Failed to connect to your account.",
-      } satisfies PopupRelayPayload).toString();
+      } satisfies PopupRelayQuery).toString();
       return ctx.redirect(`/api/popup-relay?${qp}`);
     }
   })

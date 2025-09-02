@@ -3,7 +3,7 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import type { ApiEnv } from "../../../types";
-import { popupRelaySchema } from "./constants";
+import { popupRelayQuerySchema } from "./constants";
 import { PopupRelay } from "./template";
 
 /**
@@ -12,7 +12,7 @@ import { PopupRelay } from "./template";
  */
 export const popupRelayRoute = new Hono<ApiEnv>().get(
   "/",
-  zValidator("query", popupRelaySchema),
+  zValidator("query", popupRelayQuerySchema),
   (c) => {
     const { message } = c.req.valid("query");
 
