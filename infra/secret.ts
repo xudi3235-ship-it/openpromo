@@ -10,6 +10,13 @@ export const secret = {
   NEON_API_KEY: new sst.Secret("NEON_API_KEY"),
   NEON_PROJECT_ID: new sst.Secret("NEON_PROJECT_ID"),
   LIQUID_API_URL: new sst.Secret("LIQUID_API_URL"),
+  CLOUDFLARE_API_TOKEN: new sst.Secret("CLOUDFLARE_API_TOKEN"),
+  CLOUDFLARE_DEFAULT_ACCOUNT_ID: new sst.Secret(
+    "CLOUDFLARE_DEFAULT_ACCOUNT_ID",
+  ),
+  CLOUDFLARE_IMAGE_ACCOUNT_HASH: new sst.Secret(
+    "CLOUDFLARE_IMAGE_ACCOUNT_HASH",
+  ),
 };
 
 export const allSecrets = Object.values(secret);

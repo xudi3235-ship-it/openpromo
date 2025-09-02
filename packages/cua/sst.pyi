@@ -13,6 +13,15 @@ class Resource:
         arn: str
         name: str
         type: str
+    class CLOUDFLARE_API_TOKEN:
+        type: str
+        value: str
+    class CLOUDFLARE_DEFAULT_ACCOUNT_ID:
+        type: str
+        value: str
+    class CLOUDFLARE_IMAGE_ACCOUNT_HASH:
+        type: str
+        value: str
     class Database:
         database: str
         host: str

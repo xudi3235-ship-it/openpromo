@@ -14,6 +14,18 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Bus"
     }
+    "CLOUDFLARE_API_TOKEN": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "CLOUDFLARE_DEFAULT_ACCOUNT_ID": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "CLOUDFLARE_IMAGE_ACCOUNT_HASH": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "Database": {
       "database": string
       "host": string
