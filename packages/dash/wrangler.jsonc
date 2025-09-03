@@ -23,10 +23,7 @@
           "pattern": "dash.staging.openpromo.app",
           "custom_domain": true
         }
-      ],
-      "vars": {
-        "DASHBOARD_URL": "https://dash.staging.openpromo.app"
-      }
+      ]
     },
     "production": {
       "name": "openpromo-dash-production",
@@ -35,10 +32,7 @@
           "pattern": "dash.openpromo.app",
           "custom_domain": true
         }
-      ],
-      "vars": {
-        "DASHBOARD_URL": "https://dash.openpromo.app"
-      }
+      ]
     }
   }
 }
