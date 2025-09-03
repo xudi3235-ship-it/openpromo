@@ -15,11 +15,13 @@
     "@astrojs/cloudflare": "^12.6.7",
     "@astrojs/react": "^4.3.0",
     "@openpromo/ui": "workspace:*",
+    "@tailwindcss/vite": "^4.1.11",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "astro": "^5.13.5",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
     "@types/node": "^22.17.1",
