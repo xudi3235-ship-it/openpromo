@@ -16,7 +16,7 @@ jobs:
       id-token: write
       contents: read
     environment:
-      name: ${{ github.ref == 'refs/heads/production' && 'production' || 'dev' }}
+      name: ${{ github.ref == 'refs/heads/production' && 'production' || 'staging' }}
 
     steps:
       - name: Checkout code
@@ -49,10 +49,9 @@ jobs:
       #     exit 1
       - name: Deploy Dashboard
         run: |
-          pnpm install
           cd packages/dash && pnpm build:${{ env.APP_STAGE }} && pnpm deploy:${{ env.APP_STAGE }}
           cd ../core && pnpm db:migrate
-        env: 
+        env:
           APP_STAGE: ${{ github.ref == 'refs/heads/production' && 'production' || 'staging' }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
