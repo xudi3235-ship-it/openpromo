@@ -49,7 +49,7 @@ importers:
         version: 1.1.0(typescript@5.9.2)
       wrangler:
         specifier: ^4.33.2
-        version: 4.33.2(@cloudflare/workers-types@4.20250812.0)
+        version: 4.33.2(@cloudflare/workers-types@4.20250902.0)
     devDependencies:
       '@biomejs/biome':
         specifier: 2.1.4
@@ -98,10 +98,10 @@ importers:
         version: 1.0.20
       drizzle-orm:
         specifier: 'catalog:'
-        version: 0.44.4(@cloudflare/workers-types@4.20250812.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7)
+        version: 0.44.4(@cloudflare/workers-types@4.20250902.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7)
       drizzle-zod:
         specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.44.4(@cloudflare/workers-types@4.20250812.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7))(zod@4.1.0)
+        version: 0.8.3(drizzle-orm@0.44.4(@cloudflare/workers-types@4.20250902.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7))(zod@4.1.0)
       facebook-nodejs-business-sdk:
         specifier: ^23.0.1
         version: 23.0.1
@@ -130,6 +130,9 @@ importers:
         specifier: 'catalog:'
         version: 5.3.1(zod@4.1.0)
     devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20250902.0
+        version: 4.20250902.0
       '@types/facebook-nodejs-business-sdk':
         specifier: ^22.0.0
         version: 22.0.0
@@ -265,7 +268,7 @@ importers:
     dependencies:
       '@cloudflare/vite-plugin':
         specifier: ^1.12.2
-        version: 1.12.2(vite@7.1.2(@types/node@24.1.0)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3))(workerd@1.20250829.0)(wrangler@4.33.2)
+        version: 1.12.2(vite@7.1.2(@types/node@24.1.0)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3))(workerd@1.20250829.0)(wrangler@4.33.2(@cloudflare/workers-types@4.20250902.0))
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -1102,6 +1105,9 @@ packages:
 
   '@cloudflare/workers-types@4.20250812.0':
     resolution: {integrity: sha512-LmKSud4X9zMqGhfoO09C2OQPMGMGpPCaQ4IaeF0xQW3n4eDBVlDNDC+Yn2EhsMp1Cvo3X7xtyVpLmuOeF6HyWw==}
+
+  '@cloudflare/workers-types@4.20250902.0':
+    resolution: {integrity: sha512-V4GJTvaqoMvctCIkdx+Joq9uQsaOQ1PPsar783bUYL8+VNWJyK2me6ab1uDXeeFHmhb+26KT0hOrWHg80zC6DA==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -7285,7 +7291,7 @@ snapshots:
     optionalDependencies:
       workerd: 1.20250829.0
 
-  '@cloudflare/vite-plugin@1.12.2(vite@7.1.2(@types/node@24.1.0)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3))(workerd@1.20250829.0)(wrangler@4.33.2)':
+  '@cloudflare/vite-plugin@1.12.2(vite@7.1.2(@types/node@24.1.0)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3))(workerd@1.20250829.0)(wrangler@4.33.2(@cloudflare/workers-types@4.20250902.0))':
     dependencies:
       '@cloudflare/unenv-preset': 2.7.1(unenv@2.0.0-rc.19)(workerd@1.20250829.0)
       '@remix-run/node-fetch-server': 0.8.0
@@ -7295,7 +7301,7 @@ snapshots:
       tinyglobby: 0.2.14
       unenv: 2.0.0-rc.19
       vite: 7.1.2(@types/node@24.1.0)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)
-      wrangler: 4.33.2(@cloudflare/workers-types@4.20250812.0)
+      wrangler: 4.33.2(@cloudflare/workers-types@4.20250902.0)
       ws: 8.18.0
     transitivePeerDependencies:
       - bufferutil
@@ -7320,6 +7326,8 @@ snapshots:
   '@cloudflare/workers-types@4.20250726.0': {}
 
   '@cloudflare/workers-types@4.20250812.0': {}
+
+  '@cloudflare/workers-types@4.20250902.0': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -10221,9 +10229,20 @@ snapshots:
       pg: 8.16.3
       postgres: 3.4.7
 
-  drizzle-zod@0.8.3(drizzle-orm@0.44.4(@cloudflare/workers-types@4.20250812.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7))(zod@4.1.0):
+  drizzle-orm@0.44.4(@cloudflare/workers-types@4.20250902.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7):
+    optionalDependencies:
+      '@cloudflare/workers-types': 4.20250902.0
+      '@neondatabase/serverless': 1.0.1
+      '@opentelemetry/api': 1.9.0
+      '@planetscale/database': 1.19.0
+      '@types/pg': 8.15.5
+      kysely: 0.28.4
+      pg: 8.16.3
+      postgres: 3.4.7
+
+  drizzle-zod@0.8.3(drizzle-orm@0.44.4(@cloudflare/workers-types@4.20250902.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7))(zod@4.1.0):
     dependencies:
-      drizzle-orm: 0.44.4(@cloudflare/workers-types@4.20250812.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7)
+      drizzle-orm: 0.44.4(@cloudflare/workers-types@4.20250902.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7)
       zod: 4.1.0
 
   dunder-proto@1.0.1:
@@ -11983,6 +12002,23 @@ snapshots:
       workerd: 1.20250829.0
     optionalDependencies:
       '@cloudflare/workers-types': 4.20250812.0
+      fsevents: 2.3.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  wrangler@4.33.2(@cloudflare/workers-types@4.20250902.0):
+    dependencies:
+      '@cloudflare/kv-asset-handler': 0.4.0
+      '@cloudflare/unenv-preset': 2.7.1(unenv@2.0.0-rc.19)(workerd@1.20250829.0)
+      blake3-wasm: 2.1.5
+      esbuild: 0.25.4
+      miniflare: 4.20250829.0
+      path-to-regexp: 6.3.0
+      unenv: 2.0.0-rc.19
+      workerd: 1.20250829.0
+    optionalDependencies:
+      '@cloudflare/workers-types': 4.20250902.0
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil
