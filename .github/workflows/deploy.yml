@@ -53,6 +53,8 @@ jobs:
         run: doppler secrets --config=${{ github.ref_name }} --json | jq -c 'with_entries(.value = .value.computed)' | pnpm exec wrangler secret bulk -e ${{ github.ref_name }}
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy Dashboard
         working-directory: packages/dash
