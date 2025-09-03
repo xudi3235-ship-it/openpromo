@@ -21,6 +21,10 @@
       "path": "packages/dash"
     },
     {
+      "name": "🖥️ www",
+      "path": "packages/www"
+    },
+    {
       "name": "🎨 ui",
       "path": "packages/ui"
     },
