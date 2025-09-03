@@ -50,7 +50,7 @@ jobs:
 
       - name: Sync secrets to worker
         working-directory: packages/dash
-        run: doppler secrets --config=${{ github.ref_name }} --json | jq -c 'with_entries(.value = .value.computed)' | wrangler secret bulk -e ${{ github.ref_name }}
+        run: doppler secrets --config=${{ github.ref_name }} --json | jq -c 'with_entries(.value = .value.computed)' | pnpm exec wrangler secret bulk -e ${{ github.ref_name }}
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
 
