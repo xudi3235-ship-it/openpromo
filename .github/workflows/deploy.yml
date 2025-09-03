@@ -1,111 +1,83 @@
-# name: Deployment
+name: Deployment
 
-# on:
-#   push:
-#     branches:
-#       - dev
-#       - production
+on:
+  push:
+    branches:
+      - dev
+      - production
 
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.ref }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
 
-# jobs:
-#   deploy:
-#     runs-on: blacksmith-2vcpu-ubuntu-2404
-#     permissions:
-#       id-token: write
-#       contents: read
-#     environment:
-#       name: ${{ github.ref == 'refs/heads/production' && 'production' || 'dev' }}
+jobs:
+  deploy:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    permissions:
+      id-token: write
+      contents: read
+    environment:
+      name: ${{ github.ref == 'refs/heads/production' && 'production' || 'dev' }}
 
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-#       - name: Setup Node.js and pnpm
-#         uses: ./.github/actions/setup-node-pnpm
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
 
-#       - if: github.ref == 'refs/heads/dev'
-#         name: Configure Dev AWS credentials
-#         uses: aws-actions/configure-aws-credentials@v4.3.1
-#         with:
-#           role-to-assume: arn:aws:iam::549182891830:role/openpromo-dev-github
-#           aws-region: us-east-1
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
 
-#       - if: github.ref == 'refs/heads/production'
-#         name: Configure Production AWS credentials
-#         uses: aws-actions/configure-aws-credentials@v4.3.1
-#         with:
-#           role-to-assume: arn:aws:iam::549182891830:role/openpromo-production-github
-#           aws-region: us-east-1
+      # - name: Wait for biome check
+      #   uses: fountainhead/action-wait-for-check@v1.2.0
+      #   id: biome-check
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     checkName: biome-check
 
-#       - name: Install Doppler CLI
-#         uses: dopplerhq/cli-action@v3
+      # - name: Wait for typecheck
+      #   uses: fountainhead/action-wait-for-check@v1.2.0
+      #   id: typecheck
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     checkName: typecheck
 
-#       - name: Wait for biome check
-#         uses: fountainhead/action-wait-for-check@v1.2.0
-#         id: biome-check
-#         with:
-#           token: ${{ secrets.GITHUB_TOKEN }}
-#           checkName: biome-check
+      # - name: Exit if code quality checks failed
+      #   if: steps.biome-check.outputs.conclusion != 'success' || steps.typecheck.outputs.conclusion != 'success'
+      #   run: |
+      #     echo "Code quality checks failed"
+      #     exit 1
+      - name: Deploy Dashboard
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          commands: |
+            pnpm install
+            cd packages/dash && pnpm build:${{ env.APP_STAGE }} && pnpm deploy:${{ env.APP_STAGE }}
+            cd packages/core && doppler run -- pnpm db migrate --print-logs
+        env: 
+          APP_STAGE: ${{ github.ref == 'refs/heads/production' && 'production' || 'staging' }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
 
-#       - name: Wait for typecheck
-#         uses: fountainhead/action-wait-for-check@v1.2.0
-#         id: typecheck
-#         with:
-#           token: ${{ secrets.GITHUB_TOKEN }}
-#           checkName: typecheck
+      - name: Send success notification to Discord
+        if: success()
+        uses: appleboy/discord-action@v1.2.0
+        with:
+          webhook_url: ${{ secrets.DISCORD_DEPLOYMENT_WEBHOOK_URL }}
+          message: |
+            **[Success] Openpromo Deployed**
+            - **Branch:** `${{ github.ref_name }}`
+            - **Commit:** [${{ github.event.head_commit.message }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) (`${{ github.sha }}`)
 
-#       - name: Exit if code quality checks failed
-#         if: steps.biome-check.outputs.conclusion != 'success' || steps.typecheck.outputs.conclusion != 'success'
-#         run: |
-#           echo "Code quality checks failed"
-#           exit 1
-
-#       - name: Deploy
-#         id: deploy
-#         env:
-#           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-#           # STRIPE_API_KEY: ${{ github.ref == 'refs/heads/production' && secrets.PRODUCTION_STRIPE_API_KEY || secrets.DEV_STRIPE_API_KEY }}
-#           PLANETSCALE_SERVICE_TOKEN_NAME: ${{ secrets.PLANETSCALE_SERVICE_TOKEN_NAME }}
-#           PLANETSCALE_SERVICE_TOKEN: ${{ secrets.PLANETSCALE_SERVICE_TOKEN }}
-#           PLANETSCALE_SERVICE_TOKEN_ID: ${{secrets.PLANETSCALE_SERVICE_TOKEN_ID}}
-#           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
-#           SST_STAGE: ${{ github.ref == 'refs/heads/production' && 'production' || 'dev' }}
-#         run: |
-#           pnpm sst install
-#           doppler run -- pnpm sync_secrets
-#           doppler run -- pnpm sst deploy --stage=${GITHUB_REF_NAME}
-
-#       - name: Run database migrations
-#         id: db-migrate
-#         if: success()
-#         env:
-#           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
-#           SST_STAGE: ${{ github.ref == 'refs/heads/production' && 'production' || 'dev' }}
-#         working-directory: packages/core
-#         run: |
-#           echo "Running database migrations for ${{ github.ref_name }}"
-#           doppler run -- pnpm db:migrate --print-logs
-
-#       - name: Send success notification to Discord
-#         if: success()
-#         uses: appleboy/discord-action@v1.2.0
-#         with:
-#           webhook_url: ${{ secrets.DISCORD_DEPLOYMENT_WEBHOOK_URL }}
-#           message: |
-#             **[Success] Openpromo Deployed**
-#             - **Branch:** `${{ github.ref_name }}`
-#             - **Commit:** [${{ github.event.head_commit.message }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) (`${{ github.sha }}`)
-
-#       - name: Send failure notification to Discord
-#         if: failure()
-#         uses: appleboy/discord-action@v1.2.0
-#         with:
-#           webhook_url: ${{ secrets.DISCORD_DEPLOYMENT_WEBHOOK_URL }}
-#           message: |
-#             **[Failed] Openpromo ${{steps.db-migrate.conclusion == 'failure' && 'Database Migration' || 'Deployment'}} Failed** ❌
-#             - **Branch:** `${{ github.ref_name }}`
-#             - **Commit:** [${{ github.event.head_commit.message }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) (`${{ github.sha }}`)
-#             - **Job:** [${{ github.job }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-#             - **Error:** Check the workflow logs for details
+      - name: Send failure notification to Discord
+        if: failure()
+        uses: appleboy/discord-action@v1.2.0
+        with:
+          webhook_url: ${{ secrets.DISCORD_DEPLOYMENT_WEBHOOK_URL }}
+          message: |
+            **[Failed] Openpromo ${{steps.db-migrate.conclusion == 'failure' && 'Database Migration' || 'Deployment'}} Failed** ❌
+            - **Branch:** `${{ github.ref_name }}`
+            - **Commit:** [${{ github.event.head_commit.message }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) (`${{ github.sha }}`)
+            - **Job:** [${{ github.job }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - **Error:** Check the workflow logs for details

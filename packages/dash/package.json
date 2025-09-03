@@ -4,7 +4,11 @@
   "scripts": {
     "dev": "vite --port 3000",
     "build": "vite build",
-    "deploy": "pnpm run build && wrangler deploy",
+    "build:staging": "CLOUDFLARE_ENV=staging vite build",
+    "build:production": "CLOUDFLARE_ENV=production vite build",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "pnpm build:staging && wrangler deploy",
+    "deploy:production": "pnpm build:production && wrangler deploy",
     "cf-typegen": "wrangler types ./worker/worker-configuration.d.ts"
   },
   "dependencies": {
