@@ -1,14 +1,22 @@
 {
-  "name": "packages-www",
+  "name": "www",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+    "preview": "astro build && wrangler dev",
+    "astro": "astro",
+    "deploy:staging": "astro build && wrangler deploy -e staging",
+    "deploy:production": "astro build && wrangler deploy -e production",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^12.6.7",
     "astro": "^5.13.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.17.1",
+    "wrangler": "^4.33.2"
   }
 }

@@ -2,11 +2,18 @@
   "root": false,
   "extends": "//",
   "linter": {
-    "enabled": true,
     "rules": {
+      "suspicious": {
+        "noConsole": "off",
+        "noEmptyInterface": "off",
+        "noExplicitAny": "off"
+      },
       "correctness": {
         "noUnusedImports": "off"
       }
     }
+  },
+  "files": {
+    "includes": ["!**/*.d.ts"]
   }
 }
