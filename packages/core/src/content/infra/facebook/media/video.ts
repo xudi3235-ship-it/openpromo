@@ -1,4 +1,3 @@
-import type { ReadStream } from "node:fs";
 import { z } from "zod";
 import { type CreateVideoParams, CreateVideoSchema } from "../types";
 import { API_VERSION } from "./constant";
@@ -47,7 +46,7 @@ export namespace FacebookVideoProvider {
   export async function uploadVideo(
     config: FacebookVideoProviderConfig,
     uploadSessionId: string,
-    videoStream: ReadStream,
+    videoStream: ReadableStream,
     fileSize: number,
   ) {
     const { accessToken } = config;

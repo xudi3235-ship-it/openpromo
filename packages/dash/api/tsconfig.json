@@ -4,6 +4,10 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["@cloudflare/workers-types", "node"]
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "types": ["vite/client", "./worker-configuration.d.ts"],
+    "erasableSyntaxOnly": false,
+    "noEmit": true
   }
 }

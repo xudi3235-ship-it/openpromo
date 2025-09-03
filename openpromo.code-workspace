@@ -17,12 +17,12 @@
       "path": "packages/functions"
     },
     {
-      "name": "🎨 web-ui",
-      "path": "packages/web-ui"
+      "name": "🖥️ dash",
+      "path": "packages/dash"
     },
     {
-      "name": "🔗 web-api",
-      "path": "packages/web-api"
+      "name": "🎨 ui",
+      "path": "packages/ui"
     },
     {
       "name": "📜 scripts",

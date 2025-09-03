@@ -45,7 +45,7 @@ export namespace Storage {
     PartNumber: number;
   };
 
-  function s3Url(key?: string): string {
+  function s3Url(_key?: string): string {
     // const region = process.env.AWS_REGION || DEFAULT_AWS_REGION;
     // FIXME: move to R2 instead, no need for these.
     throw new Error("TODO: move to R2, off aws");

@@ -11,7 +11,6 @@ export const env = createEnv({
     ADMIN_API_TOKEN: z.string().min(1),
     FACEBOOK_APP_ID: z.string().min(1),
     FACEBOOK_APP_SECRET: z.string().min(1),
-    FACEBOOK_REDIRECT_URI: z.string().min(1),
     STRIPE_SECRET_KEY: z.string().min(1),
     WORKOS_CLIENT_ID: z.string().min(1),
     WORKOS_API_KEY: z.string().min(1),

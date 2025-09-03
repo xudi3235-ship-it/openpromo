@@ -40,7 +40,7 @@
     "zod-openapi": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250902.0",
+    "@cloudflare/workers-types": "catalog:",
     "@types/facebook-nodejs-business-sdk": "^22.0.0",
     "drizzle-kit": "^0.31.4",
     "tsx": "^4.20.3",

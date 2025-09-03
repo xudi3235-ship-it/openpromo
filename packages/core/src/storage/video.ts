@@ -46,14 +46,21 @@ export namespace VideoStorage {
   export async function createResumableUpload(request: Request) {
     const endpoint = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_DEFAULT_ACCOUNT_ID}/stream?direct_user=true`;
 
+    const uploadLength = request.headers.get("Upload-Length");
+    const uploadMetadata = request.headers.get("Upload-Metadata");
+    if (!uploadLength || !uploadMetadata) {
+      throw new Error(
+        "Missing required TUS headers: Upload-Length or Upload-Metadata",
+      );
+    }
+
     const response = await fetch(endpoint, {
       method: "POST",
-      // @ts-expect-error temporary
       headers: {
         Authorization: `bearer ${env.CLOUDFLARE_API_TOKEN}`,
         "Tus-Resumable": "1.0.0",
-        "Upload-Length": request.headers.get("Upload-Length"),
-        "Upload-Metadata": request.headers.get("Upload-Metadata"),
+        "Upload-Length": uploadLength,
+        "Upload-Metadata": uploadMetadata,
       },
     });
 

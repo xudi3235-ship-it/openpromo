@@ -14,7 +14,6 @@
   "devDependencies": {
     "@hey-api/openapi-ts": "0.81.1",
     "@openpromo/core": "workspace:*",
-    "@types/node": "^22",
     "tsx": "^4"
   }
 }

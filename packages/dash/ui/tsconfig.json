@@ -1,0 +1,12 @@
+{
+  "extends": "@tsconfig/vite-react/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@api/*": ["../api/src/*"]
+    },
+    "types": ["vite/client"],
+    "erasableSyntaxOnly": false
+  }
+}

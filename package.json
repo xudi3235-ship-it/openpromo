@@ -8,7 +8,7 @@
     "sso": "aws sso login --sso-session=promobase-dev-ray --no-browser",
     "sync_secrets": "bash scripts/sync_secrets.sh",
     "postinstall": "lefthook install",
-    "typecheck": "pnpm run --parallel -r typecheck --erasableSyntaxOnly false"
+    "typecheck": "pnpm run --parallel -r typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "2.1.4",
@@ -18,12 +18,19 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.85.5",
     "cloudflare": "^4.5.0",
+    "date-fns": "^4.1.0",
     "sst": "3.17.12",
-    "wrangler": "^4.33.2",
-    "valibot": "^1.1.0"
+    "valibot": "^1.1.0",
+    "wrangler": "^4.33.2"
   },
   "engines": {
     "node": ">=22"
+  },
+  "pnpm": {
+    "overrides": {
+      "iron-webcrypto": "0.4.0"
+    }
   }
 }

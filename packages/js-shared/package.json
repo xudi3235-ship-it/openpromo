@@ -12,7 +12,6 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^22",
     "tsx": "^4"
   },
   "exports": {
