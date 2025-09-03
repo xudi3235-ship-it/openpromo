@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.17.1",
+    "vite-tsconfig-paths": "^5.1.4",
     "wrangler": "^4.33.2"
   }
 }
