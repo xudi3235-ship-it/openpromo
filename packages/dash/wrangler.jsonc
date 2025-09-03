@@ -23,6 +23,12 @@
           "pattern": "dash.staging.openpromo.app",
           "custom_domain": true
         }
+      ],
+      "hyperdrive": [
+        {
+          "id": "a5943f8b4ea54aaea305c57f60866f9d",
+          "binding": "HYPERDRIVE"
+        }
       ]
     },
     "production": {
