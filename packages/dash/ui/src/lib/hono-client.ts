@@ -1,4 +1,3 @@
-import type { ApiRoutes } from "@api/types";
 import {
   type UseMutationOptions,
   type UseQueryOptions,
@@ -7,6 +6,7 @@ import {
   useQuery,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import type { ApiRoutes } from "@worker/types";
 import { type ClientResponse, hc } from "hono/client";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/constants";

@@ -1,7 +1,7 @@
 import {
   type PopupRelayMessage,
   popupRelayMessageSchema,
-} from "@api/routes/api/popup-relay/constants";
+} from "@worker/routes/api/popup-relay/constants";
 
 interface OpenPopupProps {
   url: string;

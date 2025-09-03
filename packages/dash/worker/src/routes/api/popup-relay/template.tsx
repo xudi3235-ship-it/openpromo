@@ -1,7 +1,6 @@
 /** @jsxImportSource hono/jsx */
 
-// @ts-ignore .raw.js file is configured to be imported as a string via esbuild
-// import scriptRaw from "./script.raw.js";
+import scriptRaw from "./script.raw.js?raw";
 
 export function PopupRelay({ message }: { message: string }) {
   return (
@@ -13,8 +12,8 @@ export function PopupRelay({ message }: { message: string }) {
       </head>
       <body>
         <p>{message}</p>
-
-        {/* <script dangerouslySetInnerHTML={{ __html: scriptRaw }}></script> */}
+        {/** biome-ignore lint/security/noDangerouslySetInnerHtml: script is provided by the server */}
+        <script dangerouslySetInnerHTML={{ __html: scriptRaw }}></script>
       </body>
     </html>
   );

@@ -71,8 +71,7 @@ export class FacebookOAuthService {
   ];
 
   private redirectUri(workspaceSlug: string): string {
-    throw new Error("TODO: migrate off Resource.Urls.site" + workspaceSlug);
-    // return `${Resource.Urls.site}/api/workspaces/${workspaceSlug}/connected_accounts/facebook/callback`;
+    return `${env.DASHBOARD_URL}/api/workspaces/${workspaceSlug}/connected_accounts/facebook/callback`;
   }
 
   private get appId(): string {

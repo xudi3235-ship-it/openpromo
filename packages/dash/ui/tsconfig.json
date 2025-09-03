@@ -4,7 +4,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@api/*": ["../api/src/*"]
+      "@worker/*": ["../worker/src/*"]
     },
     "types": ["vite/client"],
     "erasableSyntaxOnly": false
