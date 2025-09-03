@@ -15,6 +15,13 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*", "/auth/*"]
   },
+  "workflows": [
+    {
+      "class_name": "PendingContentPublishWorkflow",
+      "binding": "WORKFLOW",
+      "name": "PendingContentPublishWorkflow"
+    }
+  ],
   "env": {
     "staging": {
       "name": "openpromo-dash-staging",
@@ -28,6 +35,13 @@
         {
           "id": "a5943f8b4ea54aaea305c57f60866f9d",
           "binding": "HYPERDRIVE"
+        }
+      ],
+      "workflows": [
+        {
+          "class_name": "PendingContentPublishWorkflow",
+          "binding": "WORKFLOW",
+          "name": "PendingContentPublishWorkflow"
         }
       ]
     },

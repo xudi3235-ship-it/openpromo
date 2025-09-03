@@ -26,7 +26,10 @@ import {
 } from "cloudflare:workers";
 import type { ApiEnv } from "./types";
 
-export class MyWorkflow extends WorkflowEntrypoint<ApiEnv["Bindings"], Params> {
+export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
+  ApiEnv["Bindings"],
+  Params
+> {
   async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
     // Steps here
     console.log("Running cloudflare workflow");
