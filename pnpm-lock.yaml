@@ -683,9 +683,27 @@ importers:
       '@astrojs/cloudflare':
         specifier: ^12.6.7
         version: 12.6.7(@types/node@22.17.1)(astro@5.13.5(@planetscale/database@1.19.0)(@types/node@22.17.1)(aws4fetch@1.0.20)(jiti@2.4.2)(lightningcss@1.30.1)(rollup@4.45.1)(terser@5.43.1)(tsx@4.20.3)(typescript@5.9.2))(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)
+      '@astrojs/react':
+        specifier: ^4.3.0
+        version: 4.3.0(@types/node@22.17.1)(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(jiti@2.4.2)(lightningcss@1.30.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(terser@5.43.1)(tsx@4.20.3)
+      '@openpromo/ui':
+        specifier: workspace:*
+        version: link:../ui
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.1.10
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.1.7(@types/react@19.1.10)
       astro:
         specifier: ^5.13.5
         version: 5.13.5(@planetscale/database@1.19.0)(@types/node@22.17.1)(aws4fetch@1.0.20)(jiti@2.4.2)(lightningcss@1.30.1)(rollup@4.45.1)(terser@5.43.1)(tsx@4.20.3)(typescript@5.9.2)
+      react:
+        specifier: 'catalog:'
+        version: 19.1.1
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.1.1(react@19.1.1)
     devDependencies:
       '@types/node':
         specifier: ^22.17.1
@@ -724,6 +742,15 @@ packages:
   '@astrojs/prism@3.3.0':
     resolution: {integrity: sha512-q8VwfU/fDZNoDOf+r7jUnMC2//H2l0TuQ6FkGJL8vD8nw/q5KiL3DS1KKBI3QhI9UQhpJ5dc7AtqfbXWuOgLCQ==}
     engines: {node: 18.20.8 || ^20.3.0 || >=22.0.0}
+
+  '@astrojs/react@4.3.0':
+    resolution: {integrity: sha512-N02aj52Iezn69qHyx5+XvPqgsPMEnel9mI5JMbGiRMTzzLMuNaxRVoQTaq2024Dpr7BLsxCjqMkNvelqMDhaHA==}
+    engines: {node: 18.20.8 || ^20.3.0 || >=22.0.0}
+    peerDependencies:
+      '@types/react': ^17.0.50 || ^18.0.21 || ^19.0.0
+      '@types/react-dom': ^17.0.17 || ^18.0.6 || ^19.0.0
+      react: ^17.0.2 || ^18.0.0 || ^19.0.0
+      react-dom: ^17.0.2 || ^18.0.0 || ^19.0.0
 
   '@astrojs/telemetry@3.3.0':
     resolution: {integrity: sha512-UFBgfeldP06qu6khs/yY+q1cDAaArM2/7AEIqQ9Cuvf7B1hNLq0xDrZkct+QoIGyjq56y8IaE2I3CTvG99mlhQ==}
@@ -3572,6 +3599,9 @@ packages:
     peerDependencies:
       react: '>=18.2.0'
 
+  '@rolldown/pluginutils@1.0.0-beta.27':
+    resolution: {integrity: sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA==}
+
   '@rolldown/pluginutils@1.0.0-beta.30':
     resolution: {integrity: sha512-whXaSoNUFiyDAjkUF8OBpOm77Szdbk5lGNqFe6CbVbJFrhCCPinCbRA3NjawwlNHla1No7xvXXh+CpSxnPfUEw==}
 
@@ -4437,6 +4467,12 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+
+  '@vitejs/plugin-react@4.7.0':
+    resolution: {integrity: sha512-gUu9hwfWvvEDBBmgtAowQCojwZmJ5mcLn3aufeCsitijs3+f2NsrPtlAWIR6OPiqljl96GVCUbLe0HyqIpVaoA==}
+    engines: {node: ^14.18.0 || >=16.0.0}
+    peerDependencies:
+      vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
 
   '@vitejs/plugin-react@5.0.0':
     resolution: {integrity: sha512-Jx9JfsTa05bYkS9xo0hkofp2dCmp1blrKjw9JONs5BTHOvJCgLbaPSuZLGSVJW6u2qe0tc4eevY0+gSNNi0YCw==}
@@ -7665,6 +7701,29 @@ snapshots:
   '@astrojs/prism@3.3.0':
     dependencies:
       prismjs: 1.30.0
+
+  '@astrojs/react@4.3.0(@types/node@22.17.1)(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(jiti@2.4.2)(lightningcss@1.30.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(terser@5.43.1)(tsx@4.20.3)':
+    dependencies:
+      '@types/react': 19.1.10
+      '@types/react-dom': 19.1.7(@types/react@19.1.10)
+      '@vitejs/plugin-react': 4.7.0(vite@6.3.5(@types/node@22.17.1)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3))
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
+      ultrahtml: 1.6.0
+      vite: 6.3.5(@types/node@22.17.1)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)
+    transitivePeerDependencies:
+      - '@types/node'
+      - jiti
+      - less
+      - lightningcss
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+      - tsx
+      - yaml
 
   '@astrojs/telemetry@3.3.0':
     dependencies:
@@ -11289,6 +11348,8 @@ snapshots:
     dependencies:
       react: 19.1.1
 
+  '@rolldown/pluginutils@1.0.0-beta.27': {}
+
   '@rolldown/pluginutils@1.0.0-beta.30': {}
 
   '@rolldown/pluginutils@1.0.0-beta.34': {}
@@ -12413,6 +12474,18 @@ snapshots:
       react-dom: 19.1.1(react@19.1.1)
 
   '@ungap/structured-clone@1.3.0': {}
+
+  '@vitejs/plugin-react@4.7.0(vite@6.3.5(@types/node@22.17.1)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3))':
+    dependencies:
+      '@babel/core': 7.28.3
+      '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.3)
+      '@babel/plugin-transform-react-jsx-source': 7.27.1(@babel/core@7.28.3)
+      '@rolldown/pluginutils': 1.0.0-beta.27
+      '@types/babel__core': 7.20.5
+      react-refresh: 0.17.0
+      vite: 6.3.5(@types/node@22.17.1)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)
+    transitivePeerDependencies:
+      - supports-color
 
   '@vitejs/plugin-react@5.0.0(vite@7.1.2(@types/node@24.1.0)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3))':
     dependencies:

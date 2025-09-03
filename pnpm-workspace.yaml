@@ -2,10 +2,10 @@ packages:
   - packages/*
 
 catalog:
-  "@types/react": 19.1.10
-  "@types/react-dom": 19.1.7
-  "@workos-inc/node": ^7.66.0
-  "@cloudflare/workers-types": ^4.20250903.0
+  '@cloudflare/workers-types': ^4.20250903.0
+  '@types/react': 19.1.10
+  '@types/react-dom': 19.1.7
+  '@workos-inc/node': ^7.66.0
   drizzle-orm: ^0.44.4
   hono: ^4.9.1
   react: 19.1.1
@@ -14,8 +14,8 @@ catalog:
   zod-openapi: ^5.3.1
 
 onlyBuiltDependencies:
-  - "@parcel/watcher"
-  - "@tailwindcss/oxide"
+  - '@parcel/watcher'
+  - '@tailwindcss/oxide'
   - aws-sdk
   - sharp
   - esbuild
