@@ -4,13 +4,13 @@
   "version": "0.0.0",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "db": "sst shell drizzle-kit",
-    "db:script": "sst shell -- tsx",
+    "db": "doppler run drizzle-kit",
+    "db:script": "doppler run -- tsx",
     "db:push": "pnpm db push",
     "db:generate": "pnpm db generate",
     "db:migrate": "pnpm db migrate",
     "db:studio": "pnpm db studio",
-    "test": "sst shell vitest"
+    "test": "doppler run vitest"
   },
   "exports": {
     "./*": [
