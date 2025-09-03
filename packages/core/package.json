@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "db": "doppler run drizzle-kit",
+    "db": "doppler run -- drizzle-kit",
     "db:script": "doppler run -- tsx",
     "db:push": "pnpm db push",
     "db:generate": "pnpm db generate",

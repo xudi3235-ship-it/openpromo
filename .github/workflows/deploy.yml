@@ -3,7 +3,7 @@ name: Deployment
 on:
   push:
     branches:
-      - dev
+      - staging
       - production
 
 concurrency:
@@ -16,7 +16,7 @@ jobs:
       id-token: write
       contents: read
     environment:
-      name: ${{ github.ref == 'refs/heads/production' && 'production' || 'staging' }}
+      name: ${{ github.ref_name }}
 
     steps:
       - name: Checkout code
@@ -47,18 +47,28 @@ jobs:
       #   run: |
       #     echo "Code quality checks failed"
       #     exit 1
-      - name: Deploy Dashboard
-        run: |
-          cd packages/dash && pnpm build:${{ env.APP_STAGE }} && pnpm deploy:${{ env.APP_STAGE }}
-          cd ../core && pnpm db:migrate
+
+      - name: Sync secrets to worker
+        working-directory: packages/dash
+        run: doppler secrets --config=${{ github.ref_name }} --json | jq -c 'with_entries(.value = .value.computed)' | wrangler secret bulk -e ${{ github.ref_name }}
         env:
-          APP_STAGE: ${{ github.ref == 'refs/heads/production' && 'production' || 'staging' }}
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+
+      - name: Deploy Dashboard
+        working-directory: packages/dash
+        run: pnpm deploy:${{ github.ref_name }}
+        env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Database migrations
+        id: db-migrate
+        working-directory: packages/core
+        run: pnpm db:migrate
+        env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
 
       - name: Send success notification to Discord
-        if: success()
         uses: appleboy/discord-action@v1.2.0
         with:
           webhook_url: ${{ secrets.DISCORD_DEPLOYMENT_WEBHOOK_URL }}
