@@ -51,7 +51,7 @@ jobs:
         run: |
           pnpm install
           cd packages/dash && pnpm build:${{ env.APP_STAGE }} && pnpm deploy:${{ env.APP_STAGE }}
-          cd packages/core && doppler run -- pnpm db migrate --print-logs
+          cd ../core && doppler run -- pnpm db migrate --print-logs
         env: 
           APP_STAGE: ${{ github.ref == 'refs/heads/production' && 'production' || 'staging' }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
