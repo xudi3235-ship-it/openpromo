@@ -55,6 +55,7 @@ jobs:
         env: 
           APP_STAGE: ${{ github.ref == 'refs/heads/production' && 'production' || 'staging' }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
 
       - name: Send success notification to Discord
