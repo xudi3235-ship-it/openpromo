@@ -48,13 +48,10 @@ jobs:
       #     echo "Code quality checks failed"
       #     exit 1
       - name: Deploy Dashboard
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          commands: |
-            pnpm install
-            cd packages/dash && pnpm build:${{ env.APP_STAGE }} && pnpm deploy:${{ env.APP_STAGE }}
-            cd packages/core && doppler run -- pnpm db migrate --print-logs
+        run: |
+          pnpm install
+          cd packages/dash && pnpm build:${{ env.APP_STAGE }} && pnpm deploy:${{ env.APP_STAGE }}
+          cd packages/core && doppler run -- pnpm db migrate --print-logs
         env: 
           APP_STAGE: ${{ github.ref == 'refs/heads/production' && 'production' || 'staging' }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
