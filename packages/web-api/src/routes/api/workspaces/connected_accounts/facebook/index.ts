@@ -4,7 +4,7 @@ import { ConnectedAccount } from "@openpromo/core/connected_account/connected_ac
 import { facebookOAuthService } from "@openpromo/core/connected_account/facebook";
 import { Platform } from "@openpromo/core/schema/connected_account.sql";
 import { Hono } from "hono";
-import { z } from "zod";
+import * as z from "zod";
 import {
   clearAuthStateCookie,
   getAuthState,

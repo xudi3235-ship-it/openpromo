@@ -7,7 +7,7 @@ import "@/components/styles/globals.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
-import ReactDOM from "react-dom/client";
+import { createRoot } from "react-dom/client";
 import GeneralError from "./components/errors/general-error";
 import NotFoundError from "./components/errors/not-found-error";
 import { useAuth } from "./hooks/useAuth";
@@ -40,7 +40,7 @@ const RouteProviderWithContext = () => {
 
 const rootElement = document.getElementById("root");
 if (rootElement && !rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
+  const root = createRoot(rootElement);
   root.render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>

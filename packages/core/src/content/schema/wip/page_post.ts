@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 export namespace PagePostSchema {
   // Basic object with an ID, often used for 'from', 'to', 'tags', etc.

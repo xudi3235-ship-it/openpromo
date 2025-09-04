@@ -1,4 +1,4 @@
-import z from "zod";
+import * as z from "zod";
 import { Actor } from "../../../actor";
 
 export const FBPlacement = {

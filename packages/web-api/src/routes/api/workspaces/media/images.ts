@@ -3,7 +3,7 @@ import { Actor } from "@openpromo/core/actor";
 import { ImageStorage } from "@openpromo/core/storage/image";
 import { WORKSPACE_ROLE } from "@openpromo/core/workspace/auth";
 import { Hono } from "hono";
-import { z } from "zod";
+import * as z from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import type { ApiEnv } from "../../../../types";
 

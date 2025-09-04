@@ -10,7 +10,7 @@ import {
 } from "@openpromo/core/workspace/auth";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { z } from "zod";
+import * as z from "zod";
 import { assertOrg, assertUser } from "../../../helpers/auth";
 import { AppError } from "../../../helpers/error";
 import { createWorkspace } from "../../../helpers/workspace";

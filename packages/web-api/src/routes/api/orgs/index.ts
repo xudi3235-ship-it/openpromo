@@ -3,7 +3,7 @@ import { env } from "@openpromo/core/env/index";
 import { getWorkOS } from "@openpromo/core/workos/index";
 import { Hono } from "hono";
 import { getCookie } from "hono/cookie";
-import { z } from "zod";
+import * as z from "zod";
 import {
   assertOrg,
   assertUser,

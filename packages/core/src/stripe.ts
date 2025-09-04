@@ -1,7 +1,7 @@
 // import { eq } from "drizzle-orm";
 // import { Resource } from "sst";
 // import { Stripe as StripeClient } from "stripe";
-// import { z } from "zod";
+// import * as z from "zod";
 // import { useTransaction } from "./drizzle/transaction";
 // import { userTable } from "./user/user.sql";
 // import { fn } from "./util/fn";

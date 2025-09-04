@@ -1,4 +1,4 @@
-import z from "zod";
+import * as z from "zod";
 
 export namespace IGUserSchema {
   // The main Zod schema for a Shadow Instagram User object.

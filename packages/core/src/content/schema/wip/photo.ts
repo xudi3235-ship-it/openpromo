@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 export namespace PhotoSchema {
   const IdNameObject = z.object({

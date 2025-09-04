@@ -1,4 +1,4 @@
-import z from "zod";
+import * as z from "zod";
 import { Actor } from "../actor";
 import { and, db, eq, gt, lt } from "../drizzle";
 import { withPagination } from "../drizzle/query";

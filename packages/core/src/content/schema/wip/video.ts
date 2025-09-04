@@ -1,4 +1,4 @@
-import z from "zod";
+import * as z from "zod";
 
 export namespace VideoSchema {
   // Basic object with an ID and optional name, used for related objects.

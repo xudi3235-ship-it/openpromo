@@ -12,7 +12,7 @@ import {
   createSelectSchema,
   createUpdateSchema,
 } from "drizzle-zod";
-import z from "zod";
+import * as z from "zod";
 import { AllPlacement, type PlacementSpec } from "../content/schema/placement";
 import { id, timestamps, ulid } from "../drizzle/types";
 import { connectedAccountId } from "./connected_account.sql";

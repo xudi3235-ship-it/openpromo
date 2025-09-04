@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { createContext } from "./context";
 import { ErrorCodes, VisibleError } from "./error";
 import { Log } from "./util/log";

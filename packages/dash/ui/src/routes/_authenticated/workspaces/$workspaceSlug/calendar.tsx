@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { addDays, setHours, setMinutes, subDays } from "date-fns";
 import { useState } from "react";
-import z from "zod";
+import * as z from "zod";
 import { type CalendarEvent, EventCalendar } from "@/components/calendar";
 import { CalendarViews } from "@/components/calendar/types";
 

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 // very wip schemas, mostly taken from
 // official docs: https://developers.facebook.com/docs/graph-api/reference/page/photos/#upload

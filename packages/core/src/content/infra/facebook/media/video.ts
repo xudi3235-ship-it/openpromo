@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { type CreateVideoParams, CreateVideoSchema } from "../types";
 import { API_VERSION } from "./constant";
 

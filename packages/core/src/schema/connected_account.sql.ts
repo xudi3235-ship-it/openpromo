@@ -7,7 +7,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { createSelectSchema } from "drizzle-zod";
-import { z } from "zod";
+import * as z from "zod";
 import { id, timestamp, timestamps, ulid } from "../drizzle/types";
 import { workspaceID } from "./workspaces.sql";
 

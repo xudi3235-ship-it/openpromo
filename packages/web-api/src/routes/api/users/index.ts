@@ -3,7 +3,7 @@ import { getDbClient } from "@openpromo/core/drizzle/index";
 import { usersTable } from "@openpromo/core/schema/users.sql";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { z } from "zod";
+import * as z from "zod";
 import { assertUser } from "../../../helpers/auth";
 import { withAuth } from "../../../middleware/with-auth";
 import type { ApiEnv } from "../../../types";

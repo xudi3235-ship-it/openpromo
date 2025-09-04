@@ -20,7 +20,7 @@ import { Input } from "@openpromo/ui/components/input";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouteContext } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import * as z from "zod";
 import { useHonoMutation, type Workspace } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
 

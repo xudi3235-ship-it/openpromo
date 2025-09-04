@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * IG uses this for unified media object to represent reel, story, and feed.
