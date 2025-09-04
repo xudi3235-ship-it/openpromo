@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { analyzer } from "vite-bundle-analyzer";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig(() => ({
@@ -10,6 +11,7 @@ export default defineConfig(() => ({
     port: 3000,
   },
   plugins: [
+    analyzer({ enabled: false }),
     tsconfigPaths(),
     tanstackRouter({
       target: "react",
@@ -19,8 +21,6 @@ export default defineConfig(() => ({
     }),
     react(),
     tailwindcss(),
-    cloudflare({
-      configPath: "./wrangler.jsonc",
-    }),
+    cloudflare({ configPath: "./wrangler.jsonc" }),
   ],
 }));
