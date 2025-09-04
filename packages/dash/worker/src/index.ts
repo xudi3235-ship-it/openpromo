@@ -49,4 +49,12 @@ export class MyDurableObject extends DurableObject<ApiEnv["Bindings"]> {
       .one();
     return result.greeting as string;
   }
+  async schedule(): Promise<string> {
+    this.ctx.storage.setAlarm(Date.now() + 10 * 1000); // 10 seconds from now
+    return "scheduled";
+  }
+  async alarm() {
+    // will be invoked on alarm, this is core of our scheduling infra.
+    console.log("Alarm fired!");
+  }
 }

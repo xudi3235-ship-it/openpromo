@@ -15,5 +15,6 @@ export const examplesRoute = new Hono<ApiEnv>()
     // example of calling DO
     const stub = c.env.DURABLE_OBJECT.getByName("foo");
     const res = await stub.sayHello();
-    return c.text(res);
+    const schedule = await stub.schedule();
+    return c.json({ res, schedule });
   });
