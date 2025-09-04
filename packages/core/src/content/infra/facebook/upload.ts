@@ -94,7 +94,7 @@ export class FacebookUploader {
           Authorization: `OAuth ${this.accessToken}`,
           file_offset: offset.toString(),
         },
-        // @ts-ignore
+        // @ts-expect-error
         body: fileData,
       });
 

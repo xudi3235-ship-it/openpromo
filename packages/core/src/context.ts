@@ -9,7 +9,6 @@ export function createContext<T>() {
       return result;
     },
     provide<R>(value: T, fn: () => R) {
-      // @ts-ignore
       return storage.run<R>(value, fn);
     },
   };

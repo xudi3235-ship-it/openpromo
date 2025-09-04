@@ -82,7 +82,6 @@ export namespace Email {
           FromEmailAddress: `OpenPromo <${from}>`,
           Content: {
             Raw: {
-              // @ts-ignore
               Data: Buffer.from(rawMessage),
             },
           },

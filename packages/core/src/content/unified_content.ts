@@ -86,7 +86,7 @@ export namespace UnifiedContent {
     const workspaceId = Actor.workspaceID();
     await db()
       .update(unifiedContentTable)
-      // @ts-ignore might be a bad idea
+      // @ts-expect-error might be a bad idea
       .set(data)
       .where(
         and(

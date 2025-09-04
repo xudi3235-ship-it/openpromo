@@ -1,6 +1,4 @@
 /** @jsxImportSource hono/jsx */
-
-// @ts-ignore .raw.js file is configured to be imported as a string via esbuild
 import scriptRaw from "./script.raw.js";
 
 export function PopupRelay({ message }: { message: string }) {
