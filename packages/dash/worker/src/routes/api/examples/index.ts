@@ -1,4 +1,4 @@
-import type { ApiEnv } from "@openpromo/core/actors/index";
+import { type ApiEnv, Binding } from "@openpromo/core/actors/index";
 import { Hono } from "hono";
 import { withAuth } from "../../../middleware/with-auth";
 
@@ -17,4 +17,11 @@ export const examplesRoute = new Hono<ApiEnv>()
     const res = await stub.sayHello();
     const schedule = await stub.schedule();
     return c.json({ res, schedule });
+  })
+  .get("/binding", async (c) => {
+    // test binding ctx
+    const bindings = Binding.use();
+    const stub = bindings.Scheduler.getByName("foo");
+    const res = await stub.sayHello();
+    return c.text(res);
   });

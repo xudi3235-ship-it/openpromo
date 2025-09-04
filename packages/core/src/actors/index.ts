@@ -6,6 +6,7 @@ import {
 } from "cloudflare:workers";
 import type { User } from "@workos-inc/node";
 import type { Actor } from "../actor";
+import { createContext } from "../context";
 import type { OrganizationRole } from "../workspace/auth";
 
 export type ApiEnv = {
@@ -22,6 +23,25 @@ export type ApiEnv = {
 };
 
 type Bindings = ApiEnv["Bindings"];
+
+export namespace Binding {
+  export const Context = createContext<Bindings>();
+  export function use(): Bindings {
+    try {
+      return Context.use();
+    } catch {
+      throw new Error("No runtime bindings found in context");
+    }
+  }
+  export function provide<
+    T extends Bindings,
+    // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
+    Next extends (...args: any) => any,
+  >(bindings: T, fn: Next) {
+    // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
+    return Context.provide(bindings as any, () => fn());
+  }
+}
 
 type ContentPublishJob = {
   unifiedContentID: string;
