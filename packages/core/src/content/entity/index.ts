@@ -242,30 +242,7 @@ class EntPendingContentGroup {
             const spec = content.schedulingSpec;
             // not a scheduled content, skip
             if (!spec?.scheduledPublishAt) return;
-            console.log("!! 3. scheduling event");
-            // const scheduledEvt = await Scheduler.createSchedule(
-            //   this.Events().Publish,
-            //   {
-            //     groupID: pendingContentGroup.id,
-            //     contentID: content.id,
-            //   },
-            //   // publish time
-            //   spec.scheduledPublishAt,
-            // );
-            // console.log("!! 4. event for bus");
-            // 4. now event is scheduled, we need to store the
-            // scheduled instance, delegating to event handler
-            // bus.publish(
-            //   "FIXME!! move off aws bus --- we can't depend on sst here",
-            //   // Resource.Bus,
-            //   this.Events().Scheduled,
-            //   {
-            //     groupID: pendingContentGroup.id,
-            //     contentID: content.id,
-            //     scheduleName: scheduledEvt.scheduleName,
-            //     scheduleArn: scheduledEvt.scheduleArn,
-            //   },
-            // );
+            // TODO: implement scheduling logic
           });
         });
         return { pendingContentGroup, unifiedContents };
