@@ -59,7 +59,7 @@
     "editor.defaultFormatter": "astro-build.astro-vscode",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-      "source.fixAll.astro": "explicit"
+      "source.fixAll": "explicit"
     }
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
