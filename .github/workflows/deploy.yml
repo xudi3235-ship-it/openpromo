@@ -28,25 +28,25 @@ jobs:
       - name: Install Doppler CLI
         uses: dopplerhq/cli-action@v3
 
-      # - name: Wait for biome check
-      #   uses: fountainhead/action-wait-for-check@v1.2.0
-      #   id: biome-check
-      #   with:
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-      #     checkName: biome-check
+      - name: Wait for biome check
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        id: biome-check
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: biome-check
 
-      # - name: Wait for typecheck
-      #   uses: fountainhead/action-wait-for-check@v1.2.0
-      #   id: typecheck
-      #   with:
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-      #     checkName: typecheck
+      - name: Wait for typecheck
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        id: typecheck
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: typecheck
 
-      # - name: Exit if code quality checks failed
-      #   if: steps.biome-check.outputs.conclusion != 'success' || steps.typecheck.outputs.conclusion != 'success'
-      #   run: |
-      #     echo "Code quality checks failed"
-      #     exit 1
+      - name: Exit if code quality checks failed
+        if: steps.biome-check.outputs.conclusion != 'success' || steps.typecheck.outputs.conclusion != 'success'
+        run: |
+          echo "Code quality checks failed"
+          exit 1
 
       - name: Sync secrets to worker
         working-directory: packages/dash
