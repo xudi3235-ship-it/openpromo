@@ -1,11 +1,11 @@
 import { zValidator } from "@hono/zod-validator";
 import { Actor } from "@openpromo/core/actor";
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import { ImageStorage } from "@openpromo/core/storage/image";
 import { WORKSPACE_ROLE } from "@openpromo/core/workspace/auth";
 import { Hono } from "hono";
 import { z } from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
-import type { ApiEnv } from "../../../../types";
 
 const createDirectUploadSchema = z.object({
   metadata: z.record(z.string(), z.string()).optional(),

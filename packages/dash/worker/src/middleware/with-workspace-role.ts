@@ -1,4 +1,5 @@
 import { Actor } from "@openpromo/core/actor";
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import { getDbClient } from "@openpromo/core/drizzle/index";
 import {
   type Workspace,
@@ -15,7 +16,6 @@ import type { MiddlewareHandler } from "hono/types";
 import { assertOrg, assertUser } from "../helpers/auth";
 import { AppError } from "../helpers/error";
 import { getWorkspaceRole, hasWorkspaceRole } from "../helpers/role";
-import type { ApiEnv } from "../types";
 
 /**
  * Middleware to check if the user has the required workspace role

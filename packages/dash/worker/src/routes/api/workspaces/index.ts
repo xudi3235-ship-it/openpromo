@@ -1,4 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import { getDbClient } from "@openpromo/core/drizzle/index";
 import { usersTable } from "@openpromo/core/schema/users.sql";
 import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace_role_assignments.sql";
@@ -16,7 +17,6 @@ import { createWorkspace } from "../../../helpers/workspace";
 import { withAuth } from "../../../middleware/with-auth";
 import { withOrgRole } from "../../../middleware/with-org-role";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
-import type { ApiEnv } from "../../../types";
 import { connectedAccountsRoute } from "./connected_accounts";
 import { mediaRoute } from "./media";
 

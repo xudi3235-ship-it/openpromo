@@ -1,6 +1,6 @@
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import { Hono } from "hono";
 import { withAuth } from "../../../middleware/with-auth";
-import type { ApiEnv } from "../../../types";
 
 export const examplesRoute = new Hono<ApiEnv>()
   .use(withAuth())

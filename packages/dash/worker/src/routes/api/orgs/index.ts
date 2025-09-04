@@ -1,4 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import { env } from "@openpromo/core/env/index";
 import { getWorkOS } from "@openpromo/core/workos/index";
 import { Hono } from "hono";
@@ -12,7 +13,6 @@ import {
 } from "../../../helpers/auth";
 import { AppError } from "../../../helpers/error";
 import { withAuth } from "../../../middleware/with-auth";
-import type { ApiEnv } from "../../../types";
 
 export const orgsRoute = new Hono<ApiEnv>()
   .use(withAuth())

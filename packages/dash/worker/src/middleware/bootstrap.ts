@@ -1,8 +1,8 @@
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import { Database } from "@openpromo/core/drizzle/index";
 import { env } from "@openpromo/core/env/index";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";
-import type { ApiEnv } from "../types";
 
 export const bootstrap =
   (): MiddlewareHandler => async (c: Context<ApiEnv>, next) => {

@@ -1,5 +1,5 @@
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import { Hono } from "hono";
-import type { ApiEnv } from "../../../../types";
 import { imagesRoute } from "./images.js";
 
 export const mediaRoute = new Hono<ApiEnv>().route("/images", imagesRoute);

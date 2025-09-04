@@ -1,11 +1,11 @@
 import { zValidator } from "@hono/zod-validator";
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import { ConnectedAccount } from "@openpromo/core/connected_account/connected_account";
 import { WORKSPACE_ROLE } from "@openpromo/core/workspace/auth";
 import { Hono } from "hono";
 import z from "zod";
 import { withAuth } from "../../../../middleware/with-auth";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
-import type { ApiEnv } from "../../../../types";
 import { facebookConnectedAccountRoute } from "./facebook";
 
 export const connectedAccountsRoute = new Hono<ApiEnv>()

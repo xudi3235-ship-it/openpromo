@@ -1,8 +1,8 @@
 /** @jsxImportSource hono/jsx */
 
 import { zValidator } from "@hono/zod-validator";
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import { Hono } from "hono";
-import type { ApiEnv } from "../../../types";
 import { popupRelayQuerySchema } from "./constants";
 import { PopupRelay } from "./template";
 

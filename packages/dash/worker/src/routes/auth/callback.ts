@@ -1,3 +1,4 @@
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import { getDbClient } from "@openpromo/core/drizzle/index";
 import { env } from "@openpromo/core/env/index";
 import { usersTable } from "@openpromo/core/schema/users.sql";
@@ -12,7 +13,6 @@ import {
 } from "../../helpers/auth";
 import { AppError } from "../../helpers/error";
 import { createWorkspace } from "../../helpers/workspace";
-import type { ApiEnv } from "../../types";
 
 const bootstrapNewUser = async (
   user: User,
