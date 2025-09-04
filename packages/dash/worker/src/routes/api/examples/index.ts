@@ -13,7 +13,7 @@ export const examplesRoute = new Hono<ApiEnv>()
   })
   .get("/schedule", async (c) => {
     // example of calling DO
-    const stub = c.env.DURABLE_OBJECT.getByName("foo");
+    const stub = c.env.Scheduler.getByName("foo");
     const res = await stub.sayHello();
     const schedule = await stub.schedule();
     return c.json({ res, schedule });

@@ -20,21 +20,9 @@ export type Routes = typeof app;
 export type ApiRoutes = typeof apiRoutes;
 
 import {
-  WorkflowEntrypoint,
-  type WorkflowEvent,
-  type WorkflowStep,
-} from "cloudflare:workers";
-import { type ApiEnv, MyDurableObject } from "@openpromo/core/actors/index";
+  PendingContentPublishWorkflow,
+  Scheduler,
+} from "@openpromo/core/actors/index";
 
-export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
-  ApiEnv["Bindings"],
-  Params
-> {
-  async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
-    // Steps here
-    console.log("Running cloudflare workflow");
-    console.log({ event, step });
-  }
-}
-
-export { MyDurableObject };
+// bindings for DO, workflow, etc
+export { PendingContentPublishWorkflow, Scheduler };

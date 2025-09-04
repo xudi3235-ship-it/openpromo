@@ -1,4 +1,9 @@
-import { DurableObject } from "cloudflare:workers";
+import {
+  DurableObject,
+  WorkflowEntrypoint,
+  type WorkflowEvent,
+  type WorkflowStep,
+} from "cloudflare:workers";
 import type { User } from "@workos-inc/node";
 import type { OrganizationRole } from "../workspace/auth";
 
@@ -11,12 +16,14 @@ export type ApiEnv = {
   Bindings: {
     HYPERDRIVE: Hyperdrive;
     WORKFLOW: Workflow;
-    DURABLE_OBJECT: DurableObjectNamespace<MyDurableObject>;
+    Scheduler: DurableObjectNamespace<Scheduler>;
   };
 };
 
-export class MyDurableObject extends DurableObject<ApiEnv["Bindings"]> {
-  constructor(ctx: DurableObjectState, env: ApiEnv["Bindings"]) {
+type Bindings = ApiEnv["Bindings"];
+
+export class Scheduler extends DurableObject<Bindings> {
+  constructor(ctx: DurableObjectState, env: Bindings) {
     // Required, as we're extending the base class.
     super(ctx, env);
   }
@@ -27,11 +34,22 @@ export class MyDurableObject extends DurableObject<ApiEnv["Bindings"]> {
     return result.greeting as string;
   }
   async schedule(): Promise<string> {
-    this.ctx.storage.setAlarm(Date.now() + 10 * 1000); // 10 seconds from now
+    this.ctx.storage.setAlarm(Date.now() + 3 * 1000); // 3 seconds from now
     return "scheduled";
   }
   async alarm() {
     // will be invoked on alarm, this is core of our scheduling infra.
     console.log("Alarm fired!");
+  }
+}
+
+export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
+  Bindings,
+  Params
+> {
+  async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
+    // Steps here
+    console.log("Running cloudflare workflow");
+    console.log({ event, step });
   }
 }
