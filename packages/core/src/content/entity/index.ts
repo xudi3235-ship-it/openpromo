@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { Actor } from "../../actor";
+import { Binding } from "../../actors";
 import { and, db, eq } from "../../drizzle";
 import {
   afterTx,
@@ -238,11 +239,19 @@ class EntPendingContentGroup {
 
         // 3. handle scheduled contents
         await afterTx(async () => {
+          const scheduler = Binding.getScheduler();
           unifiedContents.map(async (content) => {
             const spec = content.schedulingSpec;
             // not a scheduled content, skip
             if (!spec?.scheduledPublishAt) return;
             // TODO: implement scheduling logic
+            scheduler.scheduleContent({
+              metadata: {
+                actor: Actor.assert("workspace_user"),
+              },
+              unifiedContentID: content.id,
+              pendingContentGroupID: pendingContentGroup.id,
+            });
           });
         });
         return { pendingContentGroup, unifiedContents };

@@ -5,7 +5,7 @@ import {
   type WorkflowStep,
 } from "cloudflare:workers";
 import type { User } from "@workos-inc/node";
-import type { Actor } from "../actor";
+import { Actor } from "../actor";
 import { createContext } from "../context";
 import type { OrganizationRole } from "../workspace/auth";
 
@@ -40,6 +40,12 @@ export namespace Binding {
   >(bindings: T, fn: Next) {
     // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
     return Context.provide(bindings as any, () => fn());
+  }
+  export function getScheduler() {
+    const { Scheduler } = use();
+    const actor = Actor.assert("workspace_user");
+    // each tenant uses one DO scheduler
+    return Scheduler.getByName(actor.properties.organizationID);
   }
 }
 
