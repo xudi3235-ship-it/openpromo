@@ -1,20 +1,8 @@
 {
+  "$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
   "root": false,
   "extends": "//",
-  "linter": {
-    "rules": {
-      "suspicious": {
-        "noConsole": "off",
-        "noEmptyInterface": "off",
-        "noExplicitAny": "off"
-      },
-      "correctness": {
-        "noUnusedImports": "off",
-        "noUnusedVariables": "off"
-      }
-    }
-  },
   "files": {
-    "includes": ["!**/*.d.ts"]
+    "includes": ["**", "!**/*.astro"]
   }
 }

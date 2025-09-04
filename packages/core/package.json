@@ -28,6 +28,7 @@
     "@t3-oss/env-core": "^0.13.8",
     "@workos-inc/node": "catalog:",
     "aws4fetch": "^1.0.20",
+    "cloudflare": "catalog:",
     "drizzle-orm": "catalog:",
     "drizzle-zod": "^0.8.3",
     "facebook-nodejs-business-sdk": "^23.0.1",
@@ -40,7 +41,6 @@
     "zod-openapi": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "catalog:",
     "@types/facebook-nodejs-business-sdk": "^22.0.0",
     "drizzle-kit": "^0.31.4",
     "tsx": "^4.20.3",

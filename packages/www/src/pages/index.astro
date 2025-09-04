@@ -3,18 +3,11 @@ import { Button } from "@openpromo/ui/components/button";
 import Welcome from "../components/Welcome.astro";
 import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
-const dashboardUrl =
-  process.env.NODE_ENV === "development"
-    ? `http://localhost:3000`
-    : process.env.DASHBOARD_URL;
 ---
-<Layout>
 
-	<a data-dashboard-link href={dashboardUrl}>
-		<Button>Button from packages/ui</Button>
-	</a>
-	<Welcome />
+<Layout>
+  <a data-dashboard-link href={import.meta.env.SITE}>
+    <Button>Button from packages/ui</Button>
+  </a>
+  <Welcome />
 </Layout>

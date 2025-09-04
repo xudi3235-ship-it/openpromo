@@ -5,23 +5,15 @@
       "path": "."
     },
     {
-      "name": "🧱 infra",
-      "path": "infra"
-    },
-    {
       "name": "🧠 core",
       "path": "packages/core"
-    },
-    {
-      "name": "⚙️ functions",
-      "path": "packages/functions"
     },
     {
       "name": "🖥️ dash",
       "path": "packages/dash"
     },
     {
-      "name": "🖥️ www",
+      "name": "🌐 www",
       "path": "packages/www"
     },
     {
@@ -32,5 +24,81 @@
       "name": "📜 scripts",
       "path": "packages/scripts"
     }
-  ]
+  ],
+  "settings": {
+    "[javascript]": {
+      "editor.defaultFormatter": "biomejs.biome",
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.biome": "explicit"
+      }
+    },
+    "[typescript]": {
+      "editor.defaultFormatter": "biomejs.biome",
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.biome": "explicit"
+      }
+    },
+    "[javascriptreact]": {
+      "editor.defaultFormatter": "biomejs.biome",
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.biome": "explicit"
+      }
+    },
+    "[typescriptreact]": {
+      "editor.defaultFormatter": "biomejs.biome",
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.biome": "explicit"
+      }
+    },
+    "[json]": {
+      "editor.defaultFormatter": "biomejs.biome",
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.biome": "explicit"
+      }
+    },
+    "[jsonc]": {
+      "editor.defaultFormatter": "biomejs.biome",
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.biome": "explicit"
+      }
+    },
+    "[css]": {
+      "editor.defaultFormatter": "biomejs.biome",
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.biome": "explicit"
+      }
+    },
+    "[python]": {
+      "editor.defaultFormatter": "charliermarsh.ruff",
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit"
+      }
+    },
+    "[astro]": {
+      "editor.defaultFormatter": "astro-build.astro-vscode",
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.astro": "explicit"
+      }
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "extensions": {
+    "recommendations": [
+      "biomejs.biome",
+      "bradlc.vscode-tailwindcss",
+      "esbenp.prettier-vscode",
+      "charliermarsh.ruff",
+      "astro-build.astro-vscode"
+    ]
+  }
 }

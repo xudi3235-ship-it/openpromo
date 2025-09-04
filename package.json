@@ -11,17 +11,11 @@
     "typecheck": "pnpm run --parallel -r typecheck"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.1.4",
+    "@biomejs/biome": "^2.2.2",
     "@tsconfig/node22": "^22.0.2",
     "@types/node": "^22.17.1",
     "lefthook": "^1.12.3",
-    "typescript": "^5.9.2"
-  },
-  "dependencies": {
-    "@tanstack/react-query": "^5.85.5",
-    "cloudflare": "^4.5.0",
-    "date-fns": "^4.1.0",
-    "valibot": "^1.1.0",
+    "typescript": "^5.9.2",
     "wrangler": "^4.33.2"
   },
   "engines": {

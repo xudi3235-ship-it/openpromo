@@ -3,6 +3,7 @@
     "biomejs.biome",
     "bradlc.vscode-tailwindcss",
     "esbenp.prettier-vscode",
-    "charliermarsh.ruff"
+    "charliermarsh.ruff",
+    "astro-build.astro-vscode"
   ]
 }

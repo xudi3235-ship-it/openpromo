@@ -1,4 +1,3 @@
-import type { Hyperdrive, Workflow } from "@cloudflare/workers-types";
 import type { OrganizationRole } from "@openpromo/core/workspace/auth";
 import type { User } from "@workos-inc/node";
 import type { apiRoutes } from "./routes/api";
