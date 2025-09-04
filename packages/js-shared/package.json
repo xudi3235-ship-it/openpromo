@@ -4,9 +4,7 @@
   "description": "shared JS lib, no external deps",
   "type": "module",
   "sideEffects": false,
-  "dependencies": {
-    "sst": "3.17.12"
-  },
+  "dependencies": {},
   "scripts": {
     "shell": "sst shell tsx",
     "typecheck": "tsc --noEmit"

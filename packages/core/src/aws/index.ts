@@ -1,4 +1,4 @@
-import type { AwsOptions } from "sst/aws/client";
+import type { AwsOptions } from "./client";
 
 export const DEFAULT_AWS_REGION = "us-east-1";
 export function getAwsConfig(): AwsOptions {

@@ -1,7 +1,5 @@
-import { bus } from "sst/aws/bus";
 import z from "zod";
 import { Actor } from "../../actor";
-import { getAwsConfig } from "../../aws";
 import { and, db, eq } from "../../drizzle";
 import {
   afterTx,
@@ -10,7 +8,6 @@ import {
 } from "../../drizzle/transaction";
 import { NotImplementedError } from "../../error";
 import { defineEvent } from "../../event";
-import { Scheduler } from "../../event/scheduler";
 import {
   PendingContentGroupInsert,
   type PendingContentGroupSelect,
@@ -246,32 +243,29 @@ class EntPendingContentGroup {
             // not a scheduled content, skip
             if (!spec?.scheduledPublishAt) return;
             console.log("!! 3. scheduling event");
-            const scheduledEvt = await Scheduler.createSchedule(
-              this.Events().Publish,
-              {
-                groupID: pendingContentGroup.id,
-                contentID: content.id,
-              },
-              // publish time
-              spec.scheduledPublishAt,
-            );
-            console.log("!! 4. event for bus");
+            // const scheduledEvt = await Scheduler.createSchedule(
+            //   this.Events().Publish,
+            //   {
+            //     groupID: pendingContentGroup.id,
+            //     contentID: content.id,
+            //   },
+            //   // publish time
+            //   spec.scheduledPublishAt,
+            // );
+            // console.log("!! 4. event for bus");
             // 4. now event is scheduled, we need to store the
             // scheduled instance, delegating to event handler
-            bus.publish(
-              "FIXME!! move off aws bus --- we can't depend on sst here",
-              // Resource.Bus,
-              this.Events().Scheduled,
-              {
-                groupID: pendingContentGroup.id,
-                contentID: content.id,
-                scheduleName: scheduledEvt.scheduleName,
-                scheduleArn: scheduledEvt.scheduleArn,
-              },
-              {
-                aws: getAwsConfig(),
-              },
-            );
+            // bus.publish(
+            //   "FIXME!! move off aws bus --- we can't depend on sst here",
+            //   // Resource.Bus,
+            //   this.Events().Scheduled,
+            //   {
+            //     groupID: pendingContentGroup.id,
+            //     contentID: content.id,
+            //     scheduleName: scheduledEvt.scheduleName,
+            //     scheduleArn: scheduledEvt.scheduleArn,
+            //   },
+            // );
           });
         });
         return { pendingContentGroup, unifiedContents };

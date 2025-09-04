@@ -4,11 +4,9 @@
   "type": "module",
   "sideEffects": false,
   "dependencies": {
-    "@openpromo/core": "workspace:*",
-    "sst": "3.17.12"
+    "@openpromo/core": "workspace:*"
   },
   "scripts": {
-    "shell": "sst shell tsx",
     "codegen": "doppler run tsx src/codegen.ts"
   },
   "devDependencies": {

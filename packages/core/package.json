@@ -33,7 +33,6 @@
     "hono": "catalog:",
     "nanoid": "^5.1.5",
     "postgres": "^3.4.7",
-    "sst": "3.17.12",
     "stripe": "^18.3.0",
     "ulid": "^3.0.1",
     "zod": "catalog:",
