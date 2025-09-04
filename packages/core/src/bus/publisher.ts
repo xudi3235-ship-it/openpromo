@@ -1,6 +1,6 @@
 // src/cf-bus/publisher.ts
 /** biome-ignore-all lint/suspicious/noExplicitAny: lib */
-import type { Event } from "../event";
+import type { Event } from "./def";
 
 export type CfBusEnv = {
   TopicActor: DurableObjectNamespace;

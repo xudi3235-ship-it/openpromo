@@ -1,4 +1,4 @@
-import type { Event } from "../event";
+import type { Event } from "./def";
 export type HttpBusClientOptions = {
   baseUrl: string; // e.g. 'https://bus.example.com'
   getHeaders?: () => Record<string, string> | Promise<Record<string, string>>;

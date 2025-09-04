@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: lib */
-import type { Event } from "../event";
+import type { Event } from "./def";
 
 type UnionOf<T extends readonly any[]> = T[number];
 
