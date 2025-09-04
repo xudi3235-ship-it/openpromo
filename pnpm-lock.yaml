@@ -90,6 +90,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.859.0
         version: 3.879.0
+      '@cloudflare/actors':
+        specifier: 0.0.1-beta.5
+        version: 0.0.1-beta.5
       '@neondatabase/serverless':
         specifier: ^1.0.1
         version: 1.0.1
@@ -1309,6 +1312,10 @@ packages:
 
   '@capsizecss/unpack@2.4.0':
     resolution: {integrity: sha512-GrSU71meACqcmIUxPYOJvGKF0yryjN/L1aCuE9DViCTJI7bfkjgYDPD1zbNDcINJwSSP6UaBZY9GAbYDO7re0Q==}
+
+  '@cloudflare/actors@0.0.1-beta.5':
+    resolution: {integrity: sha512-84nqrQb9hb2b0tymYSDunR+a1u4+RHHK9rrXB0q15uclKbIUDh/JGOD/IkZprfnYzoXMgK642vjx4UV1RDoh6A==}
+    engines: {node: '>=18.0.0'}
 
   '@cloudflare/kv-asset-handler@0.4.0':
     resolution: {integrity: sha512-+tv3z+SPp+gqTIcImN9o0hqE9xyfQjI1XD9pL6NuKjua9B1y7mNYv0S9cP+QEbA4ppVgGZEmKOvHX5G5Ei1CVA==}
@@ -4856,6 +4863,10 @@ packages:
 
   cookie@1.0.2:
     resolution: {integrity: sha512-9Kr/j4O16ISv8zBBhJoi4bXOYNTkFLOqSL3UDB0njXxCXNezjeyVrJyGOWtgfs/q2km1gwBcfH8q1yEGoMYunA==}
+    engines: {node: '>=18'}
+
+  cron-schedule@5.0.4:
+    resolution: {integrity: sha512-nH0a49E/kSVk6BeFgKZy4uUsy6D2A16p120h5bYD9ILBhQu7o2sJFH+WI4R731TSBQ0dB1Ik7inB/dRAB4C8QQ==}
     engines: {node: '>=18'}
 
   cross-fetch@3.2.0:
@@ -9012,6 +9023,11 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
+  '@cloudflare/actors@0.0.1-beta.5':
+    optionalDependencies:
+      cron-schedule: 5.0.4
+      nanoid: 5.1.5
+
   '@cloudflare/kv-asset-handler@0.4.0':
     dependencies:
       mime: 3.0.0
@@ -12787,6 +12803,9 @@ snapshots:
   cookie@0.7.2: {}
 
   cookie@1.0.2: {}
+
+  cron-schedule@5.0.4:
+    optional: true
 
   cross-fetch@3.2.0:
     dependencies:
