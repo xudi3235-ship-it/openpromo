@@ -6,7 +6,7 @@ export const examplesRoute = new Hono<ApiEnv>()
   .use(withAuth())
   .get("/workflow", async (c) => {
     const instance = await c.env.WORKFLOW.create();
-    return Response.json({
+    return c.json({
       id: instance.id,
       details: await instance.status(),
     });
@@ -20,8 +20,7 @@ export const examplesRoute = new Hono<ApiEnv>()
   })
   .get("/binding", async (c) => {
     // test binding ctx
-    const bindings = Binding.use();
-    const stub = bindings.Scheduler.getByName("foo");
-    const res = await stub.sayHello();
+    const scheduler = Binding.getScheduler();
+    const res = await scheduler.sayHello();
     return c.text(res);
   });
