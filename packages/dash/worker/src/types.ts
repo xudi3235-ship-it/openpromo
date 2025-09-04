@@ -1,6 +1,7 @@
 import type { Hyperdrive, Workflow } from "@cloudflare/workers-types";
 import type { OrganizationRole } from "@openpromo/core/workspace/auth";
 import type { User } from "@workos-inc/node";
+import type { MyDurableObject } from ".";
 import type { apiRoutes } from "./routes/api";
 import type { authRoutes } from "./routes/auth";
 
@@ -13,6 +14,7 @@ export type ApiEnv = {
   Bindings: {
     HYPERDRIVE: Hyperdrive;
     WORKFLOW: Workflow;
+    DURABLE_OBJECT: DurableObjectNamespace<MyDurableObject>;
   };
 };
 

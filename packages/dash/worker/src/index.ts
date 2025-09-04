@@ -20,6 +20,7 @@ export type Routes = typeof app;
 export type ApiRoutes = typeof apiRoutes;
 
 import {
+  DurableObject,
   WorkflowEntrypoint,
   type WorkflowEvent,
   type WorkflowStep,
@@ -34,5 +35,18 @@ export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
     // Steps here
     console.log("Running cloudflare workflow");
     console.log({ event, step });
+  }
+}
+
+export class MyDurableObject extends DurableObject<ApiEnv["Bindings"]> {
+  constructor(ctx: DurableObjectState, env: ApiEnv["Bindings"]) {
+    // Required, as we're extending the base class.
+    super(ctx, env);
+  }
+  async sayHello(): Promise<string> {
+    const result = this.ctx.storage.sql
+      .exec("SELECT 'hello from Durable Object!' as greeting")
+      .one();
+    return result.greeting as string;
   }
 }

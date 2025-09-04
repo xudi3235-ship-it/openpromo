@@ -5,7 +5,6 @@ import type { ApiEnv } from "../../../types";
 export const examplesRoute = new Hono<ApiEnv>()
   .use(withAuth())
   .get("/workflow", async (c) => {
-    // return c.text("not ready");
     const instance = await c.env.WORKFLOW.create();
     return Response.json({
       id: instance.id,
@@ -13,5 +12,8 @@ export const examplesRoute = new Hono<ApiEnv>()
     });
   })
   .get("/schedule", async (c) => {
-    return c.text("test scheduler");
+    // example of calling DO
+    const stub = c.env.DURABLE_OBJECT.getByName("foo");
+    const res = await stub.sayHello();
+    return c.text(res);
   });
