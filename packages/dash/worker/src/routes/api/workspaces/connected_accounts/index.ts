@@ -7,11 +7,13 @@ import * as z from "zod";
 import { withAuth } from "../../../../middleware/with-auth";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { facebookConnectedAccountRoute } from "./facebook";
+import { instagramConnectedAccountRoute } from "./instagram";
 
 export const connectedAccountsRoute = new Hono<ApiEnv>()
   .use(withAuth())
   .use(withWorkspaceRole(WORKSPACE_ROLE.ADMIN))
   .route("/facebook", facebookConnectedAccountRoute)
+  .route("/instagram", instagramConnectedAccountRoute)
   .get("/", async (c) => {
     const accounts = await ConnectedAccount.list();
     return c.json({ accounts });

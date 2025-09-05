@@ -25,7 +25,7 @@ const availablePlatforms = [
     name: "Instagram",
     description: "Share photos and stories to Instagram",
     icon: "https://logo.clearbit.com/instagram.com",
-    status: "coming_soon",
+    status: "available",
   },
   {
     id: "tiktok",
@@ -159,7 +159,7 @@ export function ConnectedAccountsPage() {
   }, [queryClient, workspace.slug]);
 
   // Facebook OAuth mutation
-  const { mutate: initiateFacebookOAuth, isPending: isConnecting } =
+  const { mutate: initiateFacebookOAuth, isPending: isConnectingFacebook } =
     useHonoMutation({
       mutationFn: (api, variables: { state?: string }) =>
         api.workspaces[":workspaceSlug"].connected_accounts.facebook.auth.$get({
@@ -179,9 +179,38 @@ export function ConnectedAccountsPage() {
       },
     });
 
+  // Instagram OAuth mutation
+  const { mutate: initiateInstagramOAuth, isPending: isConnectingInstagram } =
+    useHonoMutation({
+      mutationFn: (api, variables: { state?: string }) =>
+        api.workspaces[":workspaceSlug"].connected_accounts.instagram.auth.$get(
+          {
+            query: { state: variables.state },
+            param: { workspaceSlug: workspace.slug },
+          },
+        ),
+      onError: (error) => {
+        toast.error(`Failed to initiate Instagram OAuth: ${error.message}`);
+      },
+      onSuccess({ data: { url } }) {
+        openPopup({
+          url,
+          target: "instagram-oauth",
+          width: 600,
+          height: 800,
+        });
+      },
+    });
+
   const handleConnectFacebook = () => {
     initiateFacebookOAuth({});
   };
+
+  const handleConnectInstagram = () => {
+    initiateInstagramOAuth({});
+  };
+
+  const isConnecting = isConnectingFacebook || isConnectingInstagram;
 
   return (
     <div className="page-container">
@@ -274,6 +303,7 @@ export function ConnectedAccountsPage() {
         open={isConnectDialogOpen}
         onOpenChange={setIsConnectDialogOpen}
         onConnectFacebook={handleConnectFacebook}
+        onConnectInstagram={handleConnectInstagram}
         isConnecting={isConnecting}
       />
     </div>

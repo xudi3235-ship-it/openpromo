@@ -14,6 +14,7 @@ interface ConnectPlatformDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConnectFacebook: () => void;
+  onConnectInstagram: () => void;
   isConnecting: boolean;
 }
 
@@ -32,7 +33,13 @@ const platforms = [
     name: "Instagram",
     description: "Share photos and stories to your Instagram Business account",
     icon: "https://logo.clearbit.com/instagram.com",
-    available: false,
+    available: true,
+    permissions: [
+      "Basic Access",
+      "Content Publishing",
+      "Manage Comments",
+      "Manage Messages",
+    ],
   },
   {
     id: "tiktok",
@@ -47,11 +54,15 @@ export function ConnectPlatformDialog({
   open,
   onOpenChange,
   onConnectFacebook,
+  onConnectInstagram,
   isConnecting,
 }: ConnectPlatformDialogProps) {
   const handleConnect = (platformId: string) => {
     if (platformId === "facebook") {
       onConnectFacebook();
+      onOpenChange(false);
+    } else if (platformId === "instagram") {
+      onConnectInstagram();
       onOpenChange(false);
     }
   };
@@ -118,13 +129,17 @@ export function ConnectPlatformDialog({
                   variant={platform.available ? "default" : "secondary"}
                   disabled={
                     !platform.available ||
-                    (platform.id === "facebook" && isConnecting)
+                    ((platform.id === "facebook" ||
+                      platform.id === "instagram") &&
+                      isConnecting)
                   }
                   onClick={() => handleConnect(platform.id)}
                   className="shrink-0"
                 >
                   {platform.available ? (
-                    platform.id === "facebook" && isConnecting ? (
+                    (platform.id === "facebook" ||
+                      platform.id === "instagram") &&
+                    isConnecting ? (
                       "Connecting..."
                     ) : (
                       <>
