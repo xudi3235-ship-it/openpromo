@@ -1,7 +1,7 @@
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import { Hono } from "hono";
 import { onError } from "../../helpers/error";
 import { workOSAuth } from "../../middleware/workos-auth";
-import type { ApiEnv } from "../../types";
 import { examplesRoute } from "./examples";
 import { orgsRoute } from "./orgs";
 import { popupRelayRoute } from "./popup-relay";

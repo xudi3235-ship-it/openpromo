@@ -1,6 +1,6 @@
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import type { ApiEnv } from "../types";
 import { AppError } from "./error";
 
 export const WORKOS_SESSION_COOKIE_NAME = "wos-session";
