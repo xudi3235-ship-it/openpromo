@@ -2,6 +2,7 @@ import type { ApiEnv } from "@openpromo/core/actors/index";
 import { Hono } from "hono";
 import { onError } from "../../helpers/error";
 import { workOSAuth } from "../../middleware/workos-auth";
+import { connectedAccountsRoute } from "./connected_accounts";
 import { examplesRoute } from "./examples";
 import { orgsRoute } from "./orgs";
 import { popupRelayRoute } from "./popup-relay";
@@ -16,5 +17,6 @@ export const apiRoutes = new Hono<ApiEnv>()
   .route("/users", usersRoute)
   .route("/workspaces", workspacesRoute)
   .route("/orgs", orgsRoute)
+  .route("/connected_accounts", connectedAccountsRoute)
   .route("/popup-relay", popupRelayRoute)
   .onError(onError);

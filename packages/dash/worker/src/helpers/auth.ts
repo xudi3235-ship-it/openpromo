@@ -1,3 +1,4 @@
+import type { Actor } from "@openpromo/core/actor";
 import type { ApiEnv } from "@openpromo/core/actors/index";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
@@ -31,12 +32,14 @@ export function clearSessionCookie(c: Context) {
 type AuthState = {
   nonce: string;
   returnTo?: string;
+  actor?: Actor.WorkspaceUser;
 };
 
 function serializeAuthState(state: AuthState): string {
   const params = new URLSearchParams();
   params.set("nonce", state.nonce);
   if (state.returnTo) params.set("returnTo", state.returnTo);
+  if (state.actor) params.set("actor", JSON.stringify(state.actor));
   return params.toString();
 }
 
@@ -49,7 +52,12 @@ function deserializeAuthState(
     const nonce = params.get("nonce") ?? undefined;
     if (!nonce) return undefined;
     const returnTo = params.get("returnTo") ?? undefined;
-    return { nonce, returnTo };
+    const actorStr = params.get("actor") ?? undefined;
+    const actor = actorStr
+      ? (JSON.parse(actorStr) as Actor.WorkspaceUser)
+      : undefined;
+
+    return { nonce, returnTo, actor };
   } catch {
     return undefined;
   }

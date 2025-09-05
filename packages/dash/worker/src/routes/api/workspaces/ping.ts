@@ -1,3 +1,4 @@
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import { EntPendingContentGroup } from "@openpromo/core/content/entity/index";
 import type {
   PendingContentGroupInsert,
@@ -7,7 +8,6 @@ import { WORKSPACE_ROLE } from "@openpromo/core/workspace/auth";
 import { Hono } from "hono";
 import { withAuth } from "../../../middleware/with-auth";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
-import type { ApiEnv } from "../../../types";
 // import { ping } from "../../generated/api/sdk.gen";
 // import { createLiquidClient } from "../../helpers/rpc";
 // const client = createLiquidClient();
