@@ -40,12 +40,9 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>()
     });
   })
   .post("/reconnect", zValidator("json", ReconnectBodySchema), async (ctx) => {
-    const { accountId, accessToken } = ctx.req.valid("json");
+    const { accessToken } = ctx.req.valid("json");
 
-    const reconnectResult = await instagramOAuthService.reConnect(
-      accountId,
-      accessToken,
-    );
+    const reconnectResult = await instagramOAuthService.reConnect(accessToken);
 
     return ctx.json({
       success: true,
