@@ -15,11 +15,9 @@ interface InstagramProfile {
 }
 
 interface InstagramTokenResponse {
-  data: Array<{
-    access_token: string;
-    user_id: string;
-    permissions: string;
-  }>;
+  access_token: string;
+  user_id: string;
+  permissions: string;
 }
 
 interface InstagramLongLivedTokenResponse {
@@ -158,15 +156,14 @@ export class InstagramOAuthService {
    * Get user profile information using access token
    * Uses Instagram Graph API
    */
-  async getUserProfile(
-    accessToken: string,
-    userId: string,
-  ): Promise<InstagramProfile> {
+  async getUserProfile(accessToken: string): Promise<InstagramProfile> {
     const response = await fetch(
-      `https://graph.instagram.com/${userId}?fields=id,username,account_type,media_count,followers_count,follows_count,name,biography,profile_picture_url,website&access_token=${accessToken}`,
+      `https://graph.instagram.com/v23.0/me?fields=id,username,account_type,media_count,followers_count,follows_count,name,biography,profile_picture_url,website&access_token=${accessToken}`,
     );
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Failed to get user profile", { errorText });
       throw new Error(`Failed to get user profile: ${response.statusText}`);
     }
 
@@ -181,25 +178,21 @@ export class InstagramOAuthService {
     workspaceSlug: string;
     refresh?: string;
   }): Promise<AuthTokenDetails> {
-    log.info("authenticate");
+    log.info("1. authenticate");
 
     // Get short-lived access token
     const shortTokenResponse = await this.getAccessToken(params.code);
-    const shortTokenData = shortTokenResponse.data[0];
 
-    log.info("Short-lived access token obtained");
+    log.info("2. Short-lived access token obtained");
 
     // Exchange for long-lived token
     const longToken = await this.exchangeForLongLivedToken(
-      shortTokenData.access_token,
+      shortTokenResponse.access_token,
     );
     log.info("Long-lived access token obtained");
 
     // Get user profile using the user ID from the token response
-    const profile = await this.getUserProfile(
-      longToken.access_token,
-      shortTokenData.user_id,
-    );
+    const profile = await this.getUserProfile(longToken.access_token);
     log.info("User profile obtained");
 
     return {
@@ -216,11 +209,8 @@ export class InstagramOAuthService {
   /**
    * Reconnect to a specific Instagram account
    */
-  async reConnect(
-    requiredId: string,
-    accessToken: string,
-  ): Promise<AuthTokenDetails> {
-    const profile = await this.getUserProfile(accessToken, requiredId);
+  async reConnect(accessToken: string): Promise<AuthTokenDetails> {
+    const profile = await this.getUserProfile(accessToken);
 
     // Calculate expiration (60 days)
     const expiresIn = 5184000; // 60 days
