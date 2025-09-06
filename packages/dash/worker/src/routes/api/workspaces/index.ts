@@ -1,13 +1,13 @@
 import { zValidator } from "@hono/zod-validator";
 import type { ApiEnv } from "@openpromo/core/actors/index";
-import { getDbClient } from "@openpromo/core/db/index";
-import { usersTable } from "@openpromo/core/db/schema/users.sql";
-import { workspaceRoleAssignmentsTable } from "@openpromo/core/db/schema/workspace_role_assignments.sql";
-import { workspacesTable } from "@openpromo/core/db/schema/workspaces.sql";
 import {
   ORGANIZATION_ROLE,
   WORKSPACE_ROLE,
-} from "@openpromo/core/workspace/auth";
+} from "@openpromo/core/domain/workspace/auth";
+import { getDbClient } from "@openpromo/core/helpers/db/index";
+import { usersTable } from "@openpromo/core/schema/users.sql";
+import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace_role_assignments.sql";
+import { workspacesTable } from "@openpromo/core/schema/workspaces.sql";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";

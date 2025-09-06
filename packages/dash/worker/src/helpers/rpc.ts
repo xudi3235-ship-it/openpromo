@@ -1,4 +1,4 @@
-import { env } from "@openpromo/core/env/index";
+import { env } from "@openpromo/core/helpers/env";
 import {
   type ClientOptions,
   createClient,

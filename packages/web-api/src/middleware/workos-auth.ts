@@ -1,7 +1,7 @@
 import { Actor } from "@openpromo/core/actor";
+import type { OrganizationRole } from "@openpromo/core/domain/workspace/auth";
 import { env } from "@openpromo/core/env/index";
 import { getWorkOS } from "@openpromo/core/workos/index";
-import type { OrganizationRole } from "@openpromo/core/workspace/auth";
 import { getCookie } from "hono/cookie";
 import type { MiddlewareHandler } from "hono/types";
 import {

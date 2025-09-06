@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import { Actor } from "@openpromo/core/actor";
 import type { ApiEnv } from "@openpromo/core/actors/index";
-import { instagramOAuthService } from "@openpromo/core/connected_account/instagram";
+import { instagramOAuthService } from "@openpromo/core/domain/connected_account/instagram";
 import { Hono } from "hono";
 import * as z from "zod";
 import { setAuthStateCookie } from "../../../../../helpers/auth";

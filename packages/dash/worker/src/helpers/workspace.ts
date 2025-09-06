@@ -1,8 +1,8 @@
-import type { DbClient } from "@openpromo/core/db/index";
-import { workspaceRoleAssignmentsTable } from "@openpromo/core/db/schema/workspace_role_assignments.sql";
-import { workspaceRolesTable } from "@openpromo/core/db/schema/workspace_roles.sql";
-import { workspacesTable } from "@openpromo/core/db/schema/workspaces.sql";
-import { WORKSPACE_ROLE } from "@openpromo/core/workspace/auth";
+import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
+import type { DbClient } from "@openpromo/core/helpers/db/index";
+import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace_role_assignments.sql";
+import { workspaceRolesTable } from "@openpromo/core/schema/workspace_roles.sql";
+import { workspacesTable } from "@openpromo/core/schema/workspaces.sql";
 import { eq } from "drizzle-orm";
 import { generateSlug } from "./db";
 import { AppError } from "./error";

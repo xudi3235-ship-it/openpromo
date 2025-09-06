@@ -8,7 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createSelectSchema } from "drizzle-zod";
 import * as z from "zod";
-import { id, timestamp, timestamps, ulid } from "../types";
+import { id, timestamp, timestamps, ulid } from "../helpers/db/types";
 import { workspaceID } from "./workspaces.sql";
 
 // Platform enum for supported social media platforms

@@ -1,4 +1,4 @@
-import type { OrganizationRole } from "@openpromo/core/workspace/auth";
+import type { OrganizationRole } from "@openpromo/core/domain/workspace/auth";
 import type { User } from "@workos-inc/node";
 import type { apiRoutes } from "./routes/api";
 import type { authRoutes } from "./routes/auth";

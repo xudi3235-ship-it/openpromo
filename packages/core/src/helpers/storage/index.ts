@@ -3,8 +3,8 @@ import type {
   PutObjectCommandInput,
   CompletedPart as S3CompletedPart,
 } from "@aws-sdk/client-s3";
-import { getAwsClient } from "../providers";
-import { Log } from "../util/log";
+import { getAwsClient } from "../../providers";
+import { Log } from "../../util/log";
 
 export namespace Storage {
   const log = Log.create({ namespace: "storage" });

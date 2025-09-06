@@ -1,8 +1,8 @@
+import { ORGANIZATION_ROLE } from "@openpromo/core/domain/workspace/auth";
 import { getDbClient } from "@openpromo/core/drizzle/index";
 import { env } from "@openpromo/core/env/index";
 import { usersTable } from "@openpromo/core/schema/users.sql";
 import { getWorkOS } from "@openpromo/core/workos/index";
-import { ORGANIZATION_ROLE } from "@openpromo/core/workspace/auth";
 import type { User } from "@workos-inc/node";
 import { type Context, Hono } from "hono";
 import {

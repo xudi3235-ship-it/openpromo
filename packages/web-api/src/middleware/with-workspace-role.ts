@@ -1,14 +1,14 @@
 import { Actor } from "@openpromo/core/actor";
+import {
+  ORGANIZATION_ROLE,
+  type OrganizationRole,
+  type WorkspaceRole,
+} from "@openpromo/core/domain/workspace/auth";
 import { getDbClient } from "@openpromo/core/drizzle/index";
 import {
   type Workspace,
   workspacesTable,
 } from "@openpromo/core/schema/workspaces.sql";
-import {
-  ORGANIZATION_ROLE,
-  type OrganizationRole,
-  type WorkspaceRole,
-} from "@openpromo/core/workspace/auth";
 import { and, eq } from "drizzle-orm";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";

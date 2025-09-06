@@ -1,7 +1,7 @@
 import type { ExtractTablesWithRelations } from "drizzle-orm";
 import type { PgTransaction, PgTransactionConfig } from "drizzle-orm/pg-core";
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
-import { createContext } from "@/context";
+import { createContext } from "@/helpers/context";
 import { type DbClient, getDbClient } from "./db";
 
 export type Transaction = PgTransaction<

@@ -1,10 +1,10 @@
 import type { ApiEnv } from "@openpromo/core/actors/index";
-import { EntPendingContentGroup } from "@openpromo/core/content/entity/index";
+import { EntPendingContentGroup } from "@openpromo/core/domain/content/entity/index";
+import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
 import type {
   PendingContentGroupInsert,
   UnifiedContentInsert,
 } from "@openpromo/core/schema/content.sql";
-import { WORKSPACE_ROLE } from "@openpromo/core/workspace/auth";
 import { Hono } from "hono";
 import { withAuth } from "../../../middleware/with-auth";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";

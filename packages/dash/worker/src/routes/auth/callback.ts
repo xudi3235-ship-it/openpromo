@@ -1,9 +1,9 @@
 import type { ApiEnv } from "@openpromo/core/actors/index";
-import { getDbClient } from "@openpromo/core/db/index";
-import { usersTable } from "@openpromo/core/db/schema/users.sql";
-import { env } from "@openpromo/core/env/index";
+import { ORGANIZATION_ROLE } from "@openpromo/core/domain/workspace/auth";
+import { getDbClient } from "@openpromo/core/helpers/db/index";
+import { env } from "@openpromo/core/helpers/env";
 import { getWorkOS } from "@openpromo/core/providers/workos";
-import { ORGANIZATION_ROLE } from "@openpromo/core/workspace/auth";
+import { usersTable } from "@openpromo/core/schema/users.sql";
 import type { User } from "@workos-inc/node";
 import { type Context, Hono } from "hono";
 import {

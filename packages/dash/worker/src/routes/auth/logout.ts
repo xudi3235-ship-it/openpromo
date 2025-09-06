@@ -1,4 +1,4 @@
-import { env } from "@openpromo/core/env/index";
+import { env } from "@openpromo/core/helpers/env";
 import { getWorkOS } from "@openpromo/core/providers/workos";
 import { Hono } from "hono";
 import { getCookie } from "hono/cookie";

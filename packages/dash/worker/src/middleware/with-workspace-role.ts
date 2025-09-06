@@ -1,15 +1,15 @@
 import { Actor } from "@openpromo/core/actor";
 import type { ApiEnv } from "@openpromo/core/actors/index";
-import { getDbClient } from "@openpromo/core/db/index";
-import {
-  type Workspace,
-  workspacesTable,
-} from "@openpromo/core/db/schema/workspaces.sql";
 import {
   ORGANIZATION_ROLE,
   type OrganizationRole,
   type WorkspaceRole,
-} from "@openpromo/core/workspace/auth";
+} from "@openpromo/core/domain/workspace/auth";
+import { getDbClient } from "@openpromo/core/helpers/db/index";
+import {
+  type Workspace,
+  workspacesTable,
+} from "@openpromo/core/schema/workspaces.sql";
 import { and, eq } from "drizzle-orm";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";

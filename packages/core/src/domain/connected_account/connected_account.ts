@@ -1,13 +1,13 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "@/db";
-import { Actor } from "../actor";
+import { db } from "@/helpers/db";
+import { Actor } from "../../actor";
 import {
   type ConnectedAccountSelect,
   ConnectedAccountSelectSchema,
   connectedAccount,
   type Platform,
-} from "../db/schema/connected_account.sql";
-import { fn } from "../util/fn";
+} from "../../schema/connected_account.sql";
+import { fn } from "../../util/fn";
 
 export namespace ConnectedAccount {
   export const Info = ConnectedAccountSelectSchema;

@@ -5,7 +5,10 @@ import {
 } from "cloudflare:workers";
 import z from "zod";
 import { Actor } from "../actor";
-import { EntPendingContent, PendingContentPublisher } from "../content/entity";
+import {
+  EntPendingContent,
+  PendingContentPublisher,
+} from "../domain/content/entity";
 import { Log } from "../util/log";
 import type { Bindings } from ".";
 

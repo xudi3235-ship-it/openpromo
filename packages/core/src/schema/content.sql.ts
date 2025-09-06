@@ -16,8 +16,8 @@ import * as z from "zod";
 import {
   AllPlacement,
   type PlacementSpec,
-} from "../../content/schema/placement";
-import { id, timestamps, ulid } from "../types";
+} from "../domain/content/schema/placement";
+import { id, timestamps, ulid } from "../helpers/db/types";
 import { connectedAccountId } from "./connected_account.sql";
 import { workspaceID } from "./workspaces.sql";
 
