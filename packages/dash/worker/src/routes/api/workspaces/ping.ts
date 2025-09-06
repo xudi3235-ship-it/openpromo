@@ -4,7 +4,7 @@ import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
 import type {
   PendingContentGroupInsert,
   UnifiedContentInsert,
-} from "@openpromo/core/schema/content.sql";
+} from "@openpromo/core/schemas/content.sql";
 import { Hono } from "hono";
 import { withAuth } from "../../../middleware/with-auth";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";

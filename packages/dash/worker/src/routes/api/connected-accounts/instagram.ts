@@ -3,7 +3,7 @@ import { Actor } from "@openpromo/core/actor";
 import type { ApiEnv } from "@openpromo/core/actors/index";
 import { ConnectedAccount } from "@openpromo/core/domain/connected-account/connected-account";
 import { instagramOAuthService } from "@openpromo/core/domain/connected-account/instagram";
-import { Platform } from "@openpromo/core/schema/connected-account.sql";
+import { Platform } from "@openpromo/core/schemas/connected-account.sql";
 import { Hono } from "hono";
 import * as z from "zod";
 import { clearAuthStateCookie, getAuthState } from "../../../helpers/auth";

@@ -1,4 +1,4 @@
-import { createContext } from "../helpers/context";
+import { createContext } from "./context";
 
 export namespace Log {
   const ctx = createContext<{

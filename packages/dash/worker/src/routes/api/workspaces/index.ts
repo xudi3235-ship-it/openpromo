@@ -5,9 +5,9 @@ import {
   WORKSPACE_ROLE,
 } from "@openpromo/core/domain/workspace/auth";
 import { getDbClient } from "@openpromo/core/helpers/db/index";
-import { usersTable } from "@openpromo/core/schema/users.sql";
-import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace-role-assignments.sql";
-import { workspacesTable } from "@openpromo/core/schema/workspaces.sql";
+import { usersTable } from "@openpromo/core/schemas/users.sql";
+import { workspaceRoleAssignmentsTable } from "@openpromo/core/schemas/workspace-role-assignments.sql";
+import { workspacesTable } from "@openpromo/core/schemas/workspaces.sql";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";

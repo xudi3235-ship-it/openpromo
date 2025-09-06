@@ -1,5 +1,5 @@
 import type { User } from "@workos-inc/node";
-import type { OrganizationRole } from "../domain/workspace/auth";
+import type { OrganizationRole } from "@/domain/workspace/auth";
 import type { Scheduler } from "./scheduler";
 
 export type ApiEnv = {
@@ -17,8 +17,8 @@ export type ApiEnv = {
 
 export type Bindings = ApiEnv["Bindings"];
 
+import { createContext } from "@/utils/context";
 import { Actor } from "../actor";
-import { createContext } from "../helpers/context";
 import type { PublishWorkflowParams } from "./workflow";
 export namespace Binding {
   export const Context = createContext<Bindings>();

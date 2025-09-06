@@ -13,11 +13,11 @@ import {
   createUpdateSchema,
 } from "drizzle-zod";
 import * as z from "zod";
-import { id, timestamps, ulid } from "@/helpers/db";
 import {
   AllPlacement,
   type PlacementSpec,
-} from "../domain/content/schema/placement";
+} from "@/domain/content/schema/placement";
+import { id, timestamps, ulid } from "@/helpers/db";
 import { connectedAccountId } from "./connected-account.sql";
 import { workspaceID } from "./workspaces.sql";
 

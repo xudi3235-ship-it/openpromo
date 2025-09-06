@@ -9,7 +9,7 @@ import { getDbClient } from "@openpromo/core/helpers/db/index";
 import {
   type Workspace,
   workspacesTable,
-} from "@openpromo/core/schema/workspaces.sql";
+} from "@openpromo/core/schemas/workspaces.sql";
 import { and, eq } from "drizzle-orm";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";

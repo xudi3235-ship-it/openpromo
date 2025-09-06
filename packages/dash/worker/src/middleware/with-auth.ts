@@ -1,5 +1,5 @@
 import type { ApiEnv } from "@openpromo/core/actors/index";
-import { env } from "@openpromo/core/helpers/env";
+import { env } from "@openpromo/core/utils/env";
 import type { Context, MiddlewareHandler } from "hono";
 import { AppError } from "../helpers/error";
 

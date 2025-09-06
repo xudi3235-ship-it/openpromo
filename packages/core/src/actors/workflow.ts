@@ -4,12 +4,12 @@ import {
   type WorkflowStep,
 } from "cloudflare:workers";
 import z from "zod";
-import { Actor } from "../actor";
 import {
   EntPendingContent,
   PendingContentPublisher,
-} from "../domain/content/entity";
-import { Log } from "../util/log";
+} from "@/domain/content/entity";
+import { Log } from "@/utils/log";
+import { Actor } from "../actor";
 import type { Bindings } from ".";
 
 const PublishWorkflowParams = z.object({
