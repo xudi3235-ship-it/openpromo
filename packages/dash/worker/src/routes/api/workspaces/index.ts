@@ -18,6 +18,7 @@ import { withAuth } from "../../../middleware/with-auth";
 import { withOrgRole } from "../../../middleware/with-org-role";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
 import { connectedAccountsRoute } from "./connected_accounts";
+import { contentRoute } from "./content";
 import { mediaRoute } from "./media";
 
 export const workspacesRoute = new Hono<ApiEnv>()
@@ -139,4 +140,5 @@ export const workspacesRoute = new Hono<ApiEnv>()
     },
   )
   .route("/:workspaceSlug/connected_accounts", connectedAccountsRoute)
-  .route("/:workspaceSlug/media", mediaRoute);
+  .route("/:workspaceSlug/media", mediaRoute)
+  .route("/:workspaceSlug/content", contentRoute);
