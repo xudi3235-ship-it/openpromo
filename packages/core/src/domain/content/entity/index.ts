@@ -1,6 +1,7 @@
 import type { WorkflowStep } from "cloudflare:workers";
 import { nullThrows } from "@openpromo/js-shared/common";
 import * as z from "zod";
+import { stepWithActor } from "@/actors/workflow";
 import { ConnectedAccount } from "@/domain/connected-account/connected-account";
 import { NotImplementedError } from "@/error";
 import {
@@ -444,9 +445,21 @@ class FacebookPostPublisher extends PendingContentPublisher {
     return "FB_FEED" as AllPlacement;
   }
   async publish(step: WorkflowStep): Promise<void> {
+    // we pass in step, publisher internally will handle the subsequent workflows
     await step.do("foo", async () => {
       console.log("bar");
     });
+    await step.do("publish to FB", async () => {
+      console.log("publishing to FB...");
+    });
+    await stepWithActor(
+      step,
+      "nested actor step",
+      Actor.assert("workspace_user"),
+      async () => {
+        console.log("inside nested actor step");
+      },
+    );
     throw new NotImplementedError();
   }
 }

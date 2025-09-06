@@ -19,35 +19,36 @@ const PublishWorkflowParams = z.object({
 
 export type PublishWorkflowParams = z.infer<typeof PublishWorkflowParams>;
 const log = Log.create({ namespace: "workflow" });
+export async function stepWithActor<T>(
+  step: WorkflowStep,
+  name: string,
+  actor: Actor.WorkspaceUser,
+  fn: () => Promise<T>,
+): Promise<T> {
+  return step.do(name, async () =>
+    Actor.provide("workspace_user", { ...actor.properties }, fn),
+  );
+}
+
+export async function stepWithPublisher<T>(
+  step: WorkflowStep,
+  name: string,
+  actor: Actor.WorkspaceUser,
+  pendingContentID: string,
+  fn: (p: PendingContentPublisher) => Promise<T>,
+): Promise<T> {
+  return stepWithActor(step, name, actor, async () => {
+    const p =
+      await PendingContentPublisher.fromPendingContentID(pendingContentID);
+    return fn(p);
+  });
+}
 
 export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
   Bindings,
   PublishWorkflowParams
 > {
   // context provider helpers
-  private async stepWithActor<T>(
-    step: WorkflowStep,
-    name: string,
-    actor: Actor.WorkspaceUser,
-    fn: () => Promise<T>,
-  ): Promise<T> {
-    return step.do(name, async () =>
-      Actor.provide("workspace_user", { ...actor.properties }, fn),
-    );
-  }
-  private async stepWithPublisher<T>(
-    step: WorkflowStep,
-    name: string,
-    actor: Actor.WorkspaceUser,
-    pendingContentID: string,
-    fn: (p: PendingContentPublisher) => Promise<T>,
-  ): Promise<T> {
-    return this.stepWithActor(step, name, actor, async () => {
-      const p =
-        await PendingContentPublisher.fromPendingContentID(pendingContentID);
-      return fn(p);
-    });
-  }
 
   async run(event: WorkflowEvent<PublishWorkflowParams>, step: WorkflowStep) {
     console.log("// Starting workflow");
@@ -55,7 +56,7 @@ export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
     const pendingContentID = event.payload.pendingContentID;
 
     // 0. Fetch and return minimal data (ID + key info) to minimize serialization
-    const contentInfo = await this.stepWithActor(
+    const contentInfo = await stepWithActor(
       step,
       "fetch content info",
       actor,
@@ -86,18 +87,19 @@ export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
     log.info("time to publish");
 
     // 2. Publisher Step 1: Validate (re-fetch publisher to avoid serialization)
-    await this.stepWithPublisher(
+    await stepWithPublisher(
       step,
       "validate publisher",
       actor,
       pendingContentID,
       async (p) => {
-        log.info("publisher validated", { p });
+        const res = await p.publish(step);
+        log.info("res", { res });
       },
     );
 
     // 3. Publisher Step 2: Execute Publish
-    await this.stepWithPublisher(
+    await stepWithPublisher(
       step,
       "execute publish",
       actor,
