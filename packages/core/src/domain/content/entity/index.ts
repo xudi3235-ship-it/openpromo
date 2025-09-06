@@ -1,6 +1,7 @@
 import type { WorkflowStep } from "cloudflare:workers";
 import { nullThrows } from "@openpromo/js-shared/common";
 import * as z from "zod";
+import { ConnectedAccount } from "@/domain/connected-account/connected-account";
 import { NotImplementedError } from "@/error";
 import {
   afterTx,
@@ -31,7 +32,9 @@ abstract class EntUnifiedContentBase {
   constructor(data: UnifiedContentSelect) {
     this.data = data;
   }
-  abstract toJSON(): UnifiedContentSelect;
+  toJSON() {
+    return this.data;
+  }
   static Schemas() {
     return {
       create: UnifiedContentInsert.omit({
@@ -79,6 +82,7 @@ abstract class EntUnifiedContentBase {
         ),
       )
       .limit(1);
+    console.log("// post: " + post);
     if (!post) throw new Error(`UnifiedContent ${id} not found`);
     return post;
   }
@@ -143,9 +147,6 @@ abstract class EntUnifiedContentBase {
 }
 
 class EntPendingContent extends EntUnifiedContentBase {
-  toJSON(): UnifiedContentSelect {
-    return this.data;
-  }
   protected deleteSrc(): Promise<void> {
     // noop.
     return Promise.resolve();
@@ -161,6 +162,18 @@ class EntPendingContent extends EntUnifiedContentBase {
   }
   toScheduledContent(): EntScheduledContent {
     return new EntScheduledContent(this.data);
+  }
+  static async _createDummy(): Promise<EntPendingContent> {
+    const acc = await ConnectedAccount._createDummy();
+    const content = await EntPendingContent.create({
+      placement: "FB_FEED",
+      connectedAccountId: acc.id,
+      publishingStatus: "SCHEDULED",
+      schedulingSpec: {
+        scheduledPublishAt: new Date(Date.now() + 5 * 1000), // 5 seconds later
+      },
+    });
+    return new EntPendingContent(content);
   }
 }
 
@@ -407,6 +420,11 @@ abstract class PendingContentPublisher {
           `No publisher for placement ${content.placement()}`,
         );
     }
+  }
+  static async fromPendingContentID(id: string) {
+    return EntPendingContent.fromID(id).then((content) =>
+      PendingContentPublisher.fromPendingContent(content),
+    );
   }
   abstract placement(): AllPlacement | AllPlacement[];
   abstract publish(step: WorkflowStep): Promise<void>;

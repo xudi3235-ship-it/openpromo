@@ -78,4 +78,33 @@ export namespace ConnectedAccount {
       )
       .execute();
   }
+  export async function _createDummy(): Promise<ConnectedAccountSelect> {
+    const accountName = `[Internal] dummy account`;
+    // check if exists
+    const workspaceId = Actor.workspaceID();
+    const existing = await db()
+      .select()
+      .from(connectedAccount)
+      .where(
+        and(
+          eq(connectedAccount.workspaceId, workspaceId),
+          eq(connectedAccount.accountName, accountName),
+        ),
+      )
+      .limit(1);
+    if (existing.length > 0) {
+      return existing[0];
+    }
+    return await ConnectedAccount.create({
+      platform: "FACEBOOK",
+      externalAccountId: "dummy",
+      accountName,
+      externalUrl: "https://facebook.com/dummy",
+      encryptedAccessToken: "dummy-token",
+      refreshToken: "dummy-refresh",
+      tokenExpiresAt: new Date(Date.now() + 3600 * 1000),
+      metadata: {},
+      profilePicUrl: null,
+    });
+  }
 }

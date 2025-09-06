@@ -20,43 +20,91 @@ const PublishWorkflowParams = z.object({
 export type PublishWorkflowParams = z.infer<typeof PublishWorkflowParams>;
 const log = Log.create({ namespace: "workflow" });
 
-/**
- * publish workflow 1:1 map to a piece of content. It deals with scheduling,
- * drafts, publish now in one place. For a x-plat group with N contents, it will
- * be N workflows. Callers manage the lifecycle of the workflow.
- */
 export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
   Bindings,
   PublishWorkflowParams
 > {
-  async run(event: WorkflowEvent<PublishWorkflowParams>, step: WorkflowStep) {
-    // 0. read pending content group
-    const content = await step.do("read pending content", async () => {
-      return EntPendingContent.fromID(event.payload.pendingContentID);
+  // context provider helpers
+  private async stepWithActor<T>(
+    step: WorkflowStep,
+    name: string,
+    actor: Actor.WorkspaceUser,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    return step.do(name, async () =>
+      Actor.provide("workspace_user", { ...actor.properties }, fn),
+    );
+  }
+  private async stepWithPublisher<T>(
+    step: WorkflowStep,
+    name: string,
+    actor: Actor.WorkspaceUser,
+    pendingContentID: string,
+    fn: (p: PendingContentPublisher) => Promise<T>,
+  ): Promise<T> {
+    return this.stepWithActor(step, name, actor, async () => {
+      const p =
+        await PendingContentPublisher.fromPendingContentID(pendingContentID);
+      return fn(p);
     });
+  }
 
-    // 1. scheduled posts
-    if (content.isScheduled()) {
+  async run(event: WorkflowEvent<PublishWorkflowParams>, step: WorkflowStep) {
+    console.log("// Starting workflow");
+    const actor = event.payload.actor;
+    const pendingContentID = event.payload.pendingContentID;
+
+    // 0. Fetch and return minimal data (ID + key info) to minimize serialization
+    const contentInfo = await this.stepWithActor(
+      step,
+      "fetch content info",
+      actor,
+      async () => {
+        const c = await EntPendingContent.fromID(pendingContentID);
+        return {
+          id: c.data.id,
+          scheduledTime: c.data.schedulingSpec?.scheduledPublishAt,
+          isDraft: c.isDraft(),
+        }; // Only pass what's needed, no full serialize
+      },
+    );
+
+    log.info("got content info", { contentInfo });
+
+    // 1. Handle scheduling/drafts (no need to deserialize here)
+    if (contentInfo.scheduledTime) {
       log.info("wait until scheduled time to publish");
-      await step.sleepUntil(
-        "sleep until time to publish",
-        content.toScheduledContent().getScheduledAt(),
-      );
-    } else if (content.isDraft()) {
-      // 2. draft posts, event driven
-      log.info("draft post");
-      await step.waitForEvent("wait for publish event", {
-        type: "publish_pending_content",
+      const threeSec = new Date(Date.now() + 3000);
+      await step.sleepUntil("sleep until time to publish", threeSec);
+    } else if (contentInfo.isDraft) {
+      log.info("is draft");
+      await step.waitForEvent("wait for draft publish event", {
+        type: "publish_draft",
       });
     }
-    // 3. publish now, which can be transitioned from 1 or 2, or just publish now directly
-    const publisher = await step.do("init publisher", async () => {
-      return PendingContentPublisher.fromPendingContent(content);
-    });
-    // 3. do some work on the publisher, validate, etc.
-    await publisher.publish(step);
 
-    console.log("Running cloudflare workflow");
-    console.log({ event, step });
+    log.info("time to publish");
+
+    // 2. Publisher Step 1: Validate (re-fetch publisher to avoid serialization)
+    await this.stepWithPublisher(
+      step,
+      "validate publisher",
+      actor,
+      pendingContentID,
+      async (p) => {
+        log.info("publisher validated", { p });
+      },
+    );
+
+    // 3. Publisher Step 2: Execute Publish
+    await this.stepWithPublisher(
+      step,
+      "execute publish",
+      actor,
+      pendingContentID,
+      async (p) => {
+        log.info("publish executed", { p });
+      },
+    );
   }
 }
