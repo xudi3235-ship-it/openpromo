@@ -3,6 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 3000",
+    "typecheck": "tsc --noEmit",
     "build": "vite build",
     "build:staging": "CLOUDFLARE_ENV=staging vite build",
     "build:production": "CLOUDFLARE_ENV=production vite build",
