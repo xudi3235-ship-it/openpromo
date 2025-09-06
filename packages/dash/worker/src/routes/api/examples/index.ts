@@ -1,3 +1,4 @@
+import { Actor } from "@openpromo/core/actor";
 import { type ApiEnv, Binding } from "@openpromo/core/actors/index";
 import { Hono } from "hono";
 import { withAuth } from "../../../middleware/with-auth";
@@ -5,7 +6,12 @@ import { withAuth } from "../../../middleware/with-auth";
 export const examplesRoute = new Hono<ApiEnv>()
   .use(withAuth())
   .get("/workflow", async (c) => {
-    const instance = await c.env.WORKFLOW.create();
+    const instance = await c.env.WORKFLOW.create({
+      params: {
+        actor: Actor.assert("workspace_user"),
+        pendingContentID: "example-content-id",
+      },
+    });
     return c.json({
       id: instance.id,
       details: await instance.status(),

@@ -1,3 +1,4 @@
+import type { WorkflowStep } from "cloudflare:workers";
 import { nullThrows } from "@openpromo/js-shared/common";
 import * as z from "zod";
 import { Actor } from "../../actor";
@@ -406,7 +407,7 @@ abstract class PendingContentPublisher {
     }
   }
   abstract placement(): AllPlacement | AllPlacement[];
-  abstract publish(): Promise<void>;
+  abstract publish(step: WorkflowStep): Promise<void>;
 }
 
 class FacebookPostPublisher extends PendingContentPublisher {
@@ -422,8 +423,10 @@ class FacebookPostPublisher extends PendingContentPublisher {
   placement() {
     return "FB_FEED" as AllPlacement;
   }
-  async publish(): Promise<void> {
-    console.log("publishing Facebook post", this.content.data.id);
+  async publish(step: WorkflowStep): Promise<void> {
+    await step.do("foo", async () => {
+      console.log("bar");
+    });
     throw new NotImplementedError();
   }
 }
@@ -440,8 +443,10 @@ class InstagramPostPublisher extends PendingContentPublisher {
   placement() {
     return "IG_FEED" as AllPlacement;
   }
-  async publish(): Promise<void> {
-    console.log("publishing Instagram post", this.content.data.id);
+  async publish(step: WorkflowStep): Promise<void> {
+    await step.do("foo", async () => {
+      console.log("bar");
+    });
     throw new NotImplementedError();
   }
 }

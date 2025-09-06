@@ -10,7 +10,7 @@ export type ApiEnv = {
   };
   Bindings: {
     HYPERDRIVE: Hyperdrive;
-    WORKFLOW: Workflow;
+    WORKFLOW: Workflow<PublishWorkflowParams>;
     Scheduler: DurableObjectNamespace<Scheduler>;
   };
 };
@@ -19,6 +19,7 @@ export type Bindings = ApiEnv["Bindings"];
 
 import { Actor } from "../actor";
 import { createContext } from "../context";
+import type { PublishWorkflowParams } from "./workflow";
 export namespace Binding {
   export const Context = createContext<Bindings>();
   export function use(): Bindings {

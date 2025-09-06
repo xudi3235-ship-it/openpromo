@@ -1,6 +1,6 @@
+import type { ApiEnv } from "@openpromo/core/actors/index";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-import type { ApiEnv } from "../types";
 
 type AppErrorStatus = 400 | 401 | 403 | 404 | 500;
 

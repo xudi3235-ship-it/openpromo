@@ -12,11 +12,9 @@ import type { Bindings } from ".";
 const PublishWorkflowParams = z.object({
   actor: Actor.WorkspaceUserSchema,
   pendingContentID: z.string(),
-  pendingContentGroupID: z.string(),
-  event: z.enum(["publish_draft"]),
 });
 
-type PublishWorkflowParams = z.infer<typeof PublishWorkflowParams>;
+export type PublishWorkflowParams = z.infer<typeof PublishWorkflowParams>;
 const log = Log.create({ namespace: "workflow" });
 
 /**
@@ -53,7 +51,7 @@ export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
       return PendingContentPublisher.fromPendingContent(content);
     });
     // 3. do some work on the publisher, validate, etc.
-    await step.do("do some work", publisher.publish);
+    await publisher.publish(step);
 
     console.log("Running cloudflare workflow");
     console.log({ event, step });
