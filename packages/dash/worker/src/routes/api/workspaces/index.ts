@@ -1,9 +1,9 @@
 import { zValidator } from "@hono/zod-validator";
 import type { ApiEnv } from "@openpromo/core/actors/index";
-import { getDbClient } from "@openpromo/core/drizzle/index";
-import { usersTable } from "@openpromo/core/schema/users.sql";
-import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace_role_assignments.sql";
-import { workspacesTable } from "@openpromo/core/schema/workspaces.sql";
+import { getDbClient } from "@openpromo/core/db/index";
+import { usersTable } from "@openpromo/core/db/schema/users.sql";
+import { workspaceRoleAssignmentsTable } from "@openpromo/core/db/schema/workspace_role_assignments.sql";
+import { workspacesTable } from "@openpromo/core/db/schema/workspaces.sql";
 import {
   ORGANIZATION_ROLE,
   WORKSPACE_ROLE,

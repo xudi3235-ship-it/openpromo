@@ -1,16 +1,9 @@
 import type { WorkflowStep } from "cloudflare:workers";
 import { nullThrows } from "@openpromo/js-shared/common";
 import * as z from "zod";
+import { afterTx, and, createTransaction, db, eq, useTransaction } from "@/db";
 import { Actor } from "../../actor";
 import { Binding } from "../../actors";
-import { and, db, eq } from "../../drizzle";
-import {
-  afterTx,
-  createTransaction,
-  useTransaction,
-} from "../../drizzle/transaction";
-import { NotImplementedError } from "../../error";
-import { defineEvent } from "../../event";
 import {
   PendingContentGroupInsert,
   type PendingContentGroupSelect,
@@ -20,7 +13,9 @@ import {
   type UnifiedContentInstagramPost,
   type UnifiedContentSelect,
   unifiedContentTable,
-} from "../../schema/content.sql";
+} from "../../db/schema/content.sql";
+import { NotImplementedError } from "../../error";
+import { defineEvent } from "../../event";
 import { fn } from "../../util/fn";
 import type { AllPlacement } from "../schema/placement";
 

@@ -3,7 +3,7 @@ import type {
   PutObjectCommandInput,
   CompletedPart as S3CompletedPart,
 } from "@aws-sdk/client-s3";
-import { client } from "../aws/client";
+import { getAwsClient } from "../providers";
 import { Log } from "../util/log";
 
 export namespace Storage {
@@ -183,7 +183,7 @@ export namespace Storage {
   ): Promise<{ key: string; url: string }> {
     log.info("uploading file", { key, size: body.length });
 
-    const c = await client();
+    const c = await getAwsClient();
     const headers: Record<string, string> = {};
 
     if (options.contentType) {
@@ -295,7 +295,7 @@ export namespace Storage {
   ): Promise<MultipartUpload> {
     log.info("initiating multipart upload", { key });
 
-    const c = await client();
+    const c = await getAwsClient();
     const headers: Record<string, string> = {};
 
     if (options.contentType) {
@@ -359,7 +359,7 @@ export namespace Storage {
       size: body.length,
     });
 
-    const c = await client();
+    const c = await getAwsClient();
     const response = await c.fetch(
       `${s3Url(key)}?partNumber=${partNumber}&uploadId=${uploadId}`,
       {
@@ -402,7 +402,7 @@ export namespace Storage {
   export async function get(key: string): Promise<Buffer> {
     log.info("getting file", { key });
 
-    const c = await client();
+    const c = await getAwsClient();
     const response = await c.fetch(s3Url(key), {
       method: "GET",
     });
@@ -428,7 +428,7 @@ export namespace Storage {
   export async function deleteFile(key: string): Promise<void> {
     log.info("deleting file", { key });
 
-    const c = await client();
+    const c = await getAwsClient();
     const response = await c.fetch(s3Url(key), {
       method: "DELETE",
     });
@@ -454,7 +454,7 @@ export namespace Storage {
 
     log.info("generating presigned URL", { key, operation, expiresIn });
 
-    const c = await client();
+    const c = await getAwsClient();
     const method = operation === "put" ? "PUT" : "GET";
     const url = s3Url(key);
 
@@ -494,7 +494,7 @@ export namespace Storage {
     const { uploadId } = multipartUpload;
     const urls: string[] = [];
 
-    const c = await client();
+    const c = await getAwsClient();
 
     // Generate presigned URLs for each part
     for (let i = 1; i <= partCount; i++) {
@@ -528,7 +528,7 @@ export namespace Storage {
       partCount: parts.length,
     });
 
-    const c = await client();
+    const c = await getAwsClient();
 
     // Sort parts by PartNumber
     const sortedParts = parts.sort((a, b) => a.PartNumber - b.PartNumber);
@@ -578,7 +578,7 @@ ${sortedParts
   ): Promise<void> {
     log.info("aborting multipart upload", { key, uploadId });
 
-    const c = await client();
+    const c = await getAwsClient();
     const response = await c.fetch(`${s3Url(key)}?uploadId=${uploadId}`, {
       method: "DELETE",
     });

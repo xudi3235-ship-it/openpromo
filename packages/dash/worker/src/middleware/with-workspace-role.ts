@@ -1,10 +1,10 @@
 import { Actor } from "@openpromo/core/actor";
 import type { ApiEnv } from "@openpromo/core/actors/index";
-import { getDbClient } from "@openpromo/core/drizzle/index";
+import { getDbClient } from "@openpromo/core/db/index";
 import {
   type Workspace,
   workspacesTable,
-} from "@openpromo/core/schema/workspaces.sql";
+} from "@openpromo/core/db/schema/workspaces.sql";
 import {
   ORGANIZATION_ROLE,
   type OrganizationRole,

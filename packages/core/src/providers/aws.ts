@@ -1,7 +1,16 @@
 import { AwsClient } from "aws4fetch";
-import { DEFAULT_AWS_REGION } from ".";
 
-export async function client(): Promise<AwsClient> {
+export const DEFAULT_AWS_REGION = "us-east-1";
+
+export function getAwsConfig(): AwsOptions {
+  return {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION || DEFAULT_AWS_REGION,
+  };
+}
+
+export async function getAwsClient(): Promise<AwsClient> {
   if (
     process.env.AWS_ACCESS_KEY_ID?.trim() &&
     process.env.AWS_SECRET_ACCESS_KEY?.trim()

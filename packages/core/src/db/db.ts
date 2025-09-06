@@ -1,10 +1,8 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { createContext } from "../context";
-import { env } from "../env";
-import { Log } from "../util/log";
-
-export * from "drizzle-orm";
+import { createContext } from "@/context";
+import { env } from "@/env";
+import { Log } from "@/util/log";
 
 const log = Log.create({ namespace: "drizzle" });
 
@@ -38,7 +36,7 @@ export namespace Database {
   }
 }
 
-export const db = () => {
+export const getDbClient = () => {
   const { connectionString } = Database.use();
   return drizzle(postgres(connectionString), {
     casing: "snake_case",
@@ -54,5 +52,5 @@ export const db = () => {
   });
 };
 
-export const getDbClient = db;
-export type DbClient = ReturnType<typeof db>;
+export type DbClient = ReturnType<typeof getDbClient>;
+export const db = getDbClient;

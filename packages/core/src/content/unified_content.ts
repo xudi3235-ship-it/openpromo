@@ -1,13 +1,12 @@
 import * as z from "zod";
-import { Actor } from "../actor";
-import { and, db, eq, gt, lt } from "../drizzle";
-import { withPagination } from "../drizzle/query";
-import { NotImplementedError } from "../error";
-import { defineEvent } from "../event";
+import { and, db, eq, gt, lt, withPagination } from "@/db";
 import {
   type UnifiedContentUpdate,
   unifiedContentTable,
-} from "../schema/content.sql";
+} from "@/db/schema/content.sql";
+import { Actor } from "../actor";
+import { NotImplementedError } from "../error";
+import { defineEvent } from "../event";
 
 export namespace UnifiedContent {
   export const Event = {

@@ -5,7 +5,7 @@ export default defineConfig({
   strict: true,
   out: "./migrations",
   dialect: "postgresql",
-  schema: "./src/schema/*.sql.ts",
+  schema: "./src/db/schema/*.sql.ts",
   casing: "snake_case",
   dbCredentials: {
     url: env.DATABASE_URL,

@@ -1,5 +1,5 @@
 import { type ApiEnv, Binding } from "@openpromo/core/actors/index";
-import { Database } from "@openpromo/core/drizzle/index";
+import { Database } from "@openpromo/core/db/index";
 import { env } from "@openpromo/core/env/index";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";

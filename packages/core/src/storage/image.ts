@@ -6,8 +6,8 @@ import type {
   V2ListParams,
   V2ListResponse,
 } from "cloudflare/resources/images/v2/v2.mjs";
-import { getCloudflareClient } from "../cloudflare";
 import { env } from "../env";
+import { getCloudflareClient } from "../providers";
 
 // wraps the Cloudflare Images API
 // https://developers.cloudflare.com/images/

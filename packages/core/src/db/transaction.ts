@@ -1,8 +1,8 @@
 import type { ExtractTablesWithRelations } from "drizzle-orm";
 import type { PgTransaction, PgTransactionConfig } from "drizzle-orm/pg-core";
 import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
-import { createContext } from "../context";
-import { db } from ".";
+import { createContext } from "@/context";
+import { type DbClient, getDbClient } from "./db";
 
 export type Transaction = PgTransaction<
   PostgresJsQueryResultHKT,
@@ -10,7 +10,7 @@ export type Transaction = PgTransaction<
   ExtractTablesWithRelations<Record<string, never>>
 >;
 
-type TxOrDb = Transaction | ReturnType<typeof db>;
+type TxOrDb = Transaction | DbClient;
 
 const TransactionContext = createContext<{
   tx: Transaction;
@@ -22,7 +22,7 @@ export async function useTransaction<T>(callback: (trx: TxOrDb) => Promise<T>) {
     const { tx } = TransactionContext.use();
     return callback(tx);
   } catch {
-    return callback(db());
+    return callback(getDbClient());
   }
 }
 
@@ -45,7 +45,7 @@ export async function createTransaction<T>(
     return callback(tx);
   } catch {
     const effects: (() => void | Promise<void>)[] = [];
-    const result = await db().transaction(
+    const result = await getDbClient().transaction(
       async (tx) => {
         return TransactionContext.provide({ tx, effects }, () => callback(tx));
       },

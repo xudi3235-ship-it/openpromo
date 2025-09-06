@@ -13,8 +13,11 @@ import {
   createUpdateSchema,
 } from "drizzle-zod";
 import * as z from "zod";
-import { AllPlacement, type PlacementSpec } from "../content/schema/placement";
-import { id, timestamps, ulid } from "../drizzle/types";
+import {
+  AllPlacement,
+  type PlacementSpec,
+} from "../../content/schema/placement";
+import { id, timestamps, ulid } from "../types";
 import { connectedAccountId } from "./connected_account.sql";
 import { workspaceID } from "./workspaces.sql";
 

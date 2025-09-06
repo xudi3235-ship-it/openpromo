@@ -1,5 +1,5 @@
 import { index, pgEnum, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
-import { id, timestamps, ulid } from "../drizzle/types";
+import { id, timestamps, ulid } from "../types";
 import { workspaceRolesTable } from "./workspace_roles.sql";
 import { workspaceID } from "./workspaces.sql";
 

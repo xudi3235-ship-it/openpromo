@@ -1,5 +1,5 @@
 import { env } from "@openpromo/core/env/index";
-import { getWorkOS } from "@openpromo/core/workos/index";
+import { getWorkOS } from "@openpromo/core/providers/workos";
 import { Hono } from "hono";
 import { getCookie } from "hono/cookie";
 import {

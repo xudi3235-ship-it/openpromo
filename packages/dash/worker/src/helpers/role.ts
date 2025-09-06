@@ -1,6 +1,6 @@
-import type { DbClient } from "@openpromo/core/drizzle/index";
-import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace_role_assignments.sql";
-import { workspaceRolesTable } from "@openpromo/core/schema/workspace_roles.sql";
+import type { DbClient } from "@openpromo/core/db/index";
+import { workspaceRoleAssignmentsTable } from "@openpromo/core/db/schema/workspace_role_assignments.sql";
+import { workspaceRolesTable } from "@openpromo/core/db/schema/workspace_roles.sql";
 import {
   ORGANIZATION_ROLE,
   type OrganizationRole,

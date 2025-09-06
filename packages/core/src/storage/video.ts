@@ -2,8 +2,8 @@ import type {
   DirectUploadCreateParams,
   DirectUploadCreateResponse,
 } from "cloudflare/resources/stream/direct-upload.mjs";
-import { getCloudflareClient } from "../cloudflare";
 import { env } from "../env";
+import { getCloudflareClient } from "../providers";
 
 // using cloudflare stream service.
 export namespace VideoStorage {

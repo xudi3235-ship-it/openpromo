@@ -1,7 +1,7 @@
 import { Actor } from "@openpromo/core/actor";
 import type { ApiEnv } from "@openpromo/core/actors/index";
 import { env } from "@openpromo/core/env/index";
-import { getWorkOS } from "@openpromo/core/workos/index";
+import { getWorkOS } from "@openpromo/core/providers/workos";
 import type { OrganizationRole } from "@openpromo/core/workspace/auth";
 import { getCookie } from "hono/cookie";
 import type { MiddlewareHandler } from "hono/types";
