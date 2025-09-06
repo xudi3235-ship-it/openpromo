@@ -6,7 +6,7 @@ import {
 } from "@openpromo/core/domain/workspace/auth";
 import { getDbClient } from "@openpromo/core/helpers/db/index";
 import { usersTable } from "@openpromo/core/schema/users.sql";
-import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace_role_assignments.sql";
+import { workspaceRoleAssignmentsTable } from "@openpromo/core/schema/workspace-role-assignments.sql";
 import { workspacesTable } from "@openpromo/core/schema/workspaces.sql";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
@@ -17,7 +17,7 @@ import { createWorkspace } from "../../../helpers/workspace";
 import { withAuth } from "../../../middleware/with-auth";
 import { withOrgRole } from "../../../middleware/with-org-role";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
-import { connectedAccountsRoute } from "./connected_accounts";
+import { connectedAccountsRoute } from "./connected-accounts";
 import { contentRoute } from "./content";
 import { mediaRoute } from "./media";
 

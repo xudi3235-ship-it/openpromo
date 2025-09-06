@@ -6,7 +6,7 @@ import {
   ConnectedAccountSelectSchema,
   connectedAccount,
   type Platform,
-} from "../../schema/connected_account.sql";
+} from "../../schema/connected-account.sql";
 import { fn } from "../../util/fn";
 
 export namespace ConnectedAccount {

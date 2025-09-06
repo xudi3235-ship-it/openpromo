@@ -1,5 +1,5 @@
 import { pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
-import { id, timestamps } from "../helpers/db/types";
+import { id, timestamps } from "@/helpers/db";
 
 export const usersTable = pgTable(
   "users",

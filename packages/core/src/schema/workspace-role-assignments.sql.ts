@@ -1,6 +1,6 @@
 import { index, pgEnum, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
-import { id, timestamps, ulid } from "../helpers/db/types";
-import { workspaceRolesTable } from "./workspace_roles.sql";
+import { id, timestamps, ulid } from "@/helpers/db";
+import { workspaceRolesTable } from "./workspace-roles.sql";
 import { workspaceID } from "./workspaces.sql";
 
 export const assigneeType = pgEnum("assignee_type", ["user", "group"]);

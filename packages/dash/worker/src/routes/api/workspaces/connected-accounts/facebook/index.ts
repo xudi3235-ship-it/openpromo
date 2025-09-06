@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import { Actor } from "@openpromo/core/actor";
 import type { ApiEnv } from "@openpromo/core/actors/index";
-import { instagramOAuthService } from "@openpromo/core/domain/connected_account/instagram";
+import { facebookOAuthService } from "@openpromo/core/domain/connected-account/facebook";
 import { Hono } from "hono";
 import * as z from "zod";
 import { setAuthStateCookie } from "../../../../../helpers/auth";
@@ -12,11 +12,11 @@ const AuthQuerySchema = z.object({
 });
 
 const ReconnectBodySchema = z.object({
-  accountId: z.string().min(1, "Account ID is required"),
+  pageId: z.string().min(1, "Page ID is required"),
   accessToken: z.string().min(1, "Access token is required"),
 });
 
-export const instagramConnectedAccountRoute = new Hono<ApiEnv>()
+export const facebookConnectedAccountRoute = new Hono<ApiEnv>()
   .use(withAuth())
   .get("/auth", zValidator("query", AuthQuerySchema), async (ctx) => {
     const { state } = ctx.req.valid("query");
@@ -30,7 +30,7 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>()
       returnTo: undefined, // You can add returnTo logic if needed
       actor: Actor.assert("workspace_user"),
     });
-    const authData = await instagramOAuthService.getLoginUrl(
+    const authData = await facebookOAuthService.getLoginUrl(
       authState,
       codeVerifier,
     );
@@ -40,9 +40,12 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>()
     });
   })
   .post("/reconnect", zValidator("json", ReconnectBodySchema), async (ctx) => {
-    const { accessToken } = ctx.req.valid("json");
+    const { pageId, accessToken } = ctx.req.valid("json");
 
-    const reconnectResult = await instagramOAuthService.reConnect(accessToken);
+    const reconnectResult = await facebookOAuthService.reConnect(
+      pageId,
+      accessToken,
+    );
 
     return ctx.json({
       success: true,
