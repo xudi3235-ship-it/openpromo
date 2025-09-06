@@ -1,3 +1,4 @@
+import { nullThrows } from "@openpromo/js-shared/common";
 import * as z from "zod";
 import { Actor } from "../../actor";
 import { Binding } from "../../actors";
@@ -20,6 +21,7 @@ import {
   unifiedContentTable,
 } from "../../schema/content.sql";
 import { fn } from "../../util/fn";
+import type { AllPlacement } from "../schema/placement";
 
 abstract class EntUnifiedContentBase {
   data: UnifiedContentSelect;
@@ -62,7 +64,7 @@ abstract class EntUnifiedContentBase {
   static createMany = fn(this.Schemas().create.array(), async (inputArray) => {
     return inputArray.map(async (input) => this.create(input));
   });
-  public async fromID(id: string): Promise<UnifiedContentSelect> {
+  public static async _fromID(id: string): Promise<UnifiedContentSelect> {
     const workspaceID = Actor.workspaceID();
     const [post] = await db()
       .select()
@@ -74,12 +76,12 @@ abstract class EntUnifiedContentBase {
         ),
       )
       .limit(1);
-    if (!post) throw new Error(`EntFacebookPost ${id} not found`);
+    if (!post) throw new Error(`UnifiedContent ${id} not found`);
     return post;
   }
   // Abstract method for platform-specific deletion
   protected abstract deleteSrc(): Promise<void>;
-  public async delete(): Promise<UnifiedContentSelect> {
+  public async _delete(): Promise<UnifiedContentSelect> {
     // TODO: how do we enforce consistency here??
     const workspaceID = Actor.workspaceID();
 
@@ -132,6 +134,9 @@ abstract class EntUnifiedContentBase {
       .limit(1);
     return g;
   }
+  public placement(): AllPlacement {
+    return this.data.placement;
+  }
 }
 
 class EntPendingContent extends EntUnifiedContentBase {
@@ -141,6 +146,35 @@ class EntPendingContent extends EntUnifiedContentBase {
   protected deleteSrc(): Promise<void> {
     // noop.
     return Promise.resolve();
+  }
+  override isPublished(): boolean {
+    return false; // not possible
+  }
+  static async fromID(id: string): Promise<EntPendingContent> {
+    return new EntPendingContent(await EntUnifiedContentBase._fromID(id));
+  }
+  static fromUnifiedContent(data: UnifiedContentSelect): EntUnifiedContentBase {
+    return new EntPendingContent(data);
+  }
+  toScheduledContent(): EntScheduledContent {
+    return new EntScheduledContent(this.data);
+  }
+}
+
+class EntScheduledContent extends EntPendingContent {
+  constructor(data: UnifiedContentSelect) {
+    super(data);
+    if (!this.isScheduled()) {
+      throw new Error(`Content ${data.id} is not scheduled`);
+    }
+    const spec = this.data.schedulingSpec;
+    if (!spec?.scheduledPublishAt) {
+      throw new Error(`Content ${this.data.id} missing schedulingSpec`);
+    }
+  }
+  public getScheduledAt(): Date {
+    const spec = nullThrows(this.data.schedulingSpec);
+    return spec.scheduledPublishAt;
   }
 }
 
@@ -315,14 +349,14 @@ export class EntFacebookPost extends EntUnifiedContentBase {
   }
 
   public async fromUnifiedContentID(id: string): Promise<EntFacebookPost> {
-    return new EntFacebookPost(await super.fromID(id));
+    return new EntFacebookPost(await EntUnifiedContentBase._fromID(id));
   }
   protected async deleteSrc(): Promise<void> {
     throw new NotImplementedError("Facebook post deletion not yet implemented");
   }
 
-  public async delete(): Promise<UnifiedContentFacebookPost> {
-    return (await super.delete()) as UnifiedContentFacebookPost;
+  public async _delete(): Promise<UnifiedContentFacebookPost> {
+    return (await super._delete()) as UnifiedContentFacebookPost;
   }
 }
 
@@ -335,7 +369,7 @@ export class EntInstagramPost extends EntUnifiedContentBase {
   }
 
   async fromUnifiedContentID(id: string): Promise<EntInstagramPost> {
-    return new EntInstagramPost(await super.fromID(id));
+    return new EntInstagramPost(await EntUnifiedContentBase._fromID(id));
   }
   protected async deleteSrc(): Promise<void> {
     throw new NotImplementedError(
@@ -343,52 +377,71 @@ export class EntInstagramPost extends EntUnifiedContentBase {
     );
   }
 
-  public async delete(): Promise<UnifiedContentInstagramPost> {
-    return (await super.delete()) as UnifiedContentInstagramPost;
+  public async _delete(): Promise<UnifiedContentInstagramPost> {
+    return (await super._delete()) as UnifiedContentInstagramPost;
   }
 }
 
 // ================== publishers ==================
 
-/**
- * publisher for scheduled contents / drafts.
- */
-class PendingContentGroupPublisher {
-  private group: EntPendingContentGroup;
-
-  constructor(group: EntPendingContentGroup) {
-    this.group = group;
-  }
-  public async publish() {
-    const contents = await this.group.getContents();
-    for (const content of contents) {
-      await new PendingContentPublisher(content).publish();
-    }
-  }
-}
-
 // TODO: make this a base / abstract class
 // delegate platform logics for each platform/placement's publisher
 // e.g. FacebookPostPublisher, InstagramReelPublisher, etc?
-class PendingContentPublisher {
-  private content: EntPendingContent;
+abstract class PendingContentPublisher {
+  protected content: EntPendingContent;
 
   constructor(content: EntPendingContent) {
     this.content = content;
   }
-  /**
-   * heart of publishing a pending content. This api is called for both
-   * scheduled and draft contents.
-   * We will do a tons of transformations + api calls here.
-   * 1. we read the placement specc, e.g. is this FB post? IG reel? etc.
-   * 2. we validate the content against the platform's requirements.
-   * 3. transform the publishing steps for sequence of api calls. E.g. for video uploading first.
-   * 4. execute the api calls.
-   * 5. update the content status, e.g. to published, or failed.
-   * 6. handle any side effects, e.g. notifications, webhooks, etc.
-   */
-  public async publish() {
-    console.log("publishing content", this.content.data.id);
+  static fromPendingContent(content: EntPendingContent) {
+    switch (content.placement()) {
+      case "FB_FEED":
+        return new FacebookPostPublisher(content);
+      case "IG_FEED":
+        return new InstagramPostPublisher(content);
+      default:
+        throw new NotImplementedError(
+          `No publisher for placement ${content.placement()}`,
+        );
+    }
+  }
+  abstract placement(): AllPlacement | AllPlacement[];
+  abstract publish(): Promise<void>;
+}
+
+class FacebookPostPublisher extends PendingContentPublisher {
+  constructor(content: EntPendingContent) {
+    super(content);
+    if (content.placement() !== "FB_FEED") {
+      throw new Error(
+        `Content ${content.data.id} is not a Facebook post, cannot create FacebookPostPublisher`,
+      );
+    }
+  }
+
+  placement() {
+    return "FB_FEED" as AllPlacement;
+  }
+  async publish(): Promise<void> {
+    console.log("publishing Facebook post", this.content.data.id);
+    throw new NotImplementedError();
+  }
+}
+
+class InstagramPostPublisher extends PendingContentPublisher {
+  constructor(content: EntPendingContent) {
+    super(content);
+    if (content.placement() !== "IG_FEED") {
+      throw new Error(
+        `Content ${content.data.id} is not an Instagram post, cannot create InstagramPostPublisher`,
+      );
+    }
+  }
+  placement() {
+    return "IG_FEED" as AllPlacement;
+  }
+  async publish(): Promise<void> {
+    console.log("publishing Instagram post", this.content.data.id);
     throw new NotImplementedError();
   }
 }
@@ -397,5 +450,8 @@ class PendingContentPublisher {
 export {
   EntPendingContent,
   EntPendingContentGroup,
-  PendingContentGroupPublisher,
+  EntScheduledContent,
+  FacebookPostPublisher,
+  InstagramPostPublisher,
+  PendingContentPublisher,
 };

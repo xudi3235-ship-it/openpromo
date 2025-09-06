@@ -136,12 +136,6 @@ export type PendingContentGroupSelect = z.infer<
 // scheduling spec is bound at the content level.
 const SchedulingSpec = z.object({
   scheduledPublishAt: z.date(),
-  eventInfo: z
-    .object({
-      scheduleArn: z.string(),
-      scheduleName: z.string(),
-    })
-    .optional(),
 });
 
 type SchedulingSpec = z.infer<typeof SchedulingSpec>;
