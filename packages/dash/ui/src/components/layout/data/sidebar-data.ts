@@ -5,6 +5,7 @@ import {
   GalleryVerticalEnd,
   Home,
   Inbox,
+  LayoutList,
   SquarePen,
   TrendingUp,
   Users,
@@ -47,6 +48,11 @@ export const sidebarData: SidebarData = {
           title: "Create Post",
           url: "/workspaces/$workspaceSlug/composer",
           icon: SquarePen,
+        },
+        {
+          title: "Content",
+          url: "/workspaces/$workspaceSlug/content",
+          icon: LayoutList,
         },
         {
           title: "Calendar",
