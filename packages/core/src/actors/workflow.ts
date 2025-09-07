@@ -4,10 +4,7 @@ import {
   type WorkflowStep,
 } from "cloudflare:workers";
 import z from "zod";
-import {
-  EntPendingContent,
-  PendingContentPublisher,
-} from "@/domain/content/entity";
+import { EntPendingContent } from "@/domain/content/entity";
 import { Log } from "@/utils/log";
 import { Actor } from "../actor";
 import type { Bindings } from ".";
@@ -20,16 +17,8 @@ const PublishWorkflowParams = z.object({
 export type PublishWorkflowParams = z.infer<typeof PublishWorkflowParams>;
 const log = Log.create({ namespace: "workflow" });
 
-/**
- * Manages dependency injection for a single workflow step.
- * It is created within a step's execution and is not serialized.
- */
 class WorkflowContext {
   private constructor(public readonly actor: Actor.WorkspaceUser) {}
-
-  /**
-   * Creates and provides the context for a workflow step.
-   */
   static provide<T>(
     actor: Actor.WorkspaceUser,
     fn: (ctx: WorkflowContext) => Promise<T>,
@@ -39,33 +28,18 @@ class WorkflowContext {
       return fn(ctx);
     });
   }
-
-  /**
-   * Loads a PendingContentPublisher for the given ID.
-   */
-  getPublisher(pendingContentID: string): Promise<PendingContentPublisher> {
-    return PendingContentPublisher.fromPendingContentID(pendingContentID);
-  }
 }
 
-abstract class BaseWorkflow<TBindings, TParams> extends WorkflowEntrypoint<
-  TBindings,
-  TParams
-> {
-  /**
-   * Executes a workflow step with a managed context for dependency injection.
-   */
-  protected stepWithContext<T extends Rpc.Serializable<T>>(
-    step: WorkflowStep,
-    name: string,
-    actor: Actor.WorkspaceUser,
-    fn: (ctx: WorkflowContext) => Promise<T>,
-  ): Promise<T> {
-    return step.do(name, () => WorkflowContext.provide(actor, fn));
-  }
+export async function stepWithContext<T extends Rpc.Serializable<T>>(
+  step: WorkflowStep,
+  name: string,
+  actor: Actor.WorkspaceUser,
+  fn: (ctx: WorkflowContext) => Promise<T>,
+): Promise<T> {
+  return step.do(name, () => WorkflowContext.provide(actor, fn));
 }
 
-export class PendingContentPublishWorkflow extends BaseWorkflow<
+export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
   Bindings,
   PublishWorkflowParams
 > {
@@ -73,7 +47,7 @@ export class PendingContentPublishWorkflow extends BaseWorkflow<
     console.log("// Starting workflow");
     const { actor, pendingContentID } = event.payload;
 
-    const contentInfo = await this.stepWithContext(
+    const { scheduledTime, placement, isDraft } = await stepWithContext(
       step,
       "fetch content info",
       actor,
@@ -83,39 +57,23 @@ export class PendingContentPublishWorkflow extends BaseWorkflow<
           id: c.data.id,
           scheduledTime: c.data.schedulingSpec?.scheduledPublishAt,
           isDraft: c.isDraft(),
+          placement: c.placement(),
         };
       },
     );
+    console.log({ placement });
 
-    log.info("got content info", { contentInfo });
-
-    if (contentInfo.scheduledTime) {
+    if (scheduledTime) {
       log.info("wait until scheduled time to publish");
       await step.sleepUntil(
         "sleep until time to publish",
         new Date(Date.now() + 3000),
       );
-    } else if (contentInfo.isDraft) {
+    } else if (isDraft) {
       log.info("is draft");
       await step.waitForEvent("wait for draft publish event", {
         type: "publish_draft",
       });
     }
-
-    log.info("time to publish");
-
-    await this.stepWithContext(
-      step,
-      "validate and publish",
-      actor,
-      async (ctx) => {
-        await ctx.getPublisher(pendingContentID);
-      },
-    );
-
-    await this.stepWithContext(step, "execute publish", actor, async (ctx) => {
-      const publisher = await ctx.getPublisher(pendingContentID);
-      log.info("publish executed", { p: publisher });
-    });
   }
 }

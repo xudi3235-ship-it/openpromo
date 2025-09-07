@@ -185,6 +185,21 @@ class EntPendingContent extends EntUnifiedContentBase {
     });
     return new EntPendingContent(content);
   }
+  facebookFeedPlacementSpec(): FBFeedPlacementSpec {
+    const p = this.placement();
+    if (p !== "FB_FEED") {
+      throw new Error(`Content ${this.data.id} is not FB_FEED placement`);
+    }
+    const {
+      data: spec,
+      success,
+      error,
+    } = FBFeedPlacementSpec.safeParse(this.data.placementSpec);
+    if (!spec || !success || error) {
+      throw new Error(`Invalid placementSpec for content ${this.data.id}`);
+    }
+    return spec;
+  }
 }
 
 class EntScheduledContent extends EntPendingContent {
@@ -408,93 +423,5 @@ export class EntInstagramPost extends EntUnifiedContentBase {
   }
 }
 
-// ================== publishers ==================
-
-// TODO: make this a base / abstract class
-// delegate platform logics for each platform/placement's publisher
-// e.g. FacebookPostPublisher, InstagramReelPublisher, etc?
-abstract class PendingContentPublisher {
-  protected content: EntPendingContent;
-
-  constructor(content: EntPendingContent) {
-    this.content = content;
-  }
-  static fromPendingContent(content: EntPendingContent) {
-    switch (content.placement()) {
-      case "FB_FEED":
-        return new FacebookPostPublisher(content);
-      case "IG_FEED":
-        return new InstagramPostPublisher(content);
-      default:
-        throw new NotImplementedError(
-          `No publisher for placement ${content.placement()}`,
-        );
-    }
-  }
-  static async fromPendingContentID(id: string) {
-    return EntPendingContent.fromID(id).then((content) =>
-      PendingContentPublisher.fromPendingContent(content),
-    );
-  }
-
-  serialize() {
-    return {
-      data: this.content.data,
-    };
-  }
-
-  abstract placement(): AllPlacement | AllPlacement[];
-}
-
-class FacebookPostPublisher extends PendingContentPublisher {
-  spec: FBFeedPlacementSpec;
-  constructor(content: EntPendingContent) {
-    super(content);
-    if (content.placement() !== "FB_FEED") {
-      throw new Error(
-        `Content ${content.data.id} is not a Facebook post, cannot create FacebookPostPublisher`,
-      );
-    }
-    const { data, success, error } = FBFeedPlacementSpec.safeParse(
-      content.data.placementSpec,
-    );
-    if (!data || !success) {
-      console.error(error);
-    }
-    // @ts-expect-error fix this type
-    this.spec = data;
-  }
-  static deserialize({ data }: { data: UnifiedContentSelect }) {
-    return new FacebookPostPublisher(
-      EntPendingContent.fromUnifiedContent(data) as EntPendingContent,
-    );
-  }
-
-  placement() {
-    return "FB_FEED" as AllPlacement;
-  }
-}
-
-class InstagramPostPublisher extends PendingContentPublisher {
-  constructor(content: EntPendingContent) {
-    super(content);
-    if (content.placement() !== "IG_FEED") {
-      throw new Error(
-        `Content ${content.data.id} is not an Instagram post, cannot create InstagramPostPublisher`,
-      );
-    }
-  }
-  placement() {
-    return "IG_FEED" as AllPlacement;
-  }
-}
-
 // ================== exports ==================
-export {
-  EntPendingContent,
-  EntPendingContentGroup,
-  EntScheduledContent,
-  FacebookPostPublisher,
-  InstagramPostPublisher,
-  PendingContentPublisher,
-};
+export { EntPendingContent, EntPendingContentGroup, EntScheduledContent };

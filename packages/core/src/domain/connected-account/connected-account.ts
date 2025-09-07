@@ -78,6 +78,23 @@ export namespace ConnectedAccount {
       )
       .execute();
   }
+  export async function fromFBPageID(id: string) {
+    const workspaceId = Actor.workspaceID();
+    const [acc] = await db()
+      .select()
+      .from(connectedAccount)
+      .where(
+        and(
+          eq(connectedAccount.externalAccountId, id),
+          eq(connectedAccount.platform, "FACEBOOK"),
+          eq(connectedAccount.workspaceId, workspaceId),
+        ),
+      )
+      .limit(1);
+    if (!acc) throw new Error("connected account not found");
+    return acc;
+  }
+  // ------------------------------ internal ------------------------------
   export async function _createDummy(): Promise<ConnectedAccountSelect> {
     const accountName = `[Internal] dummy account`;
     // check if exists
