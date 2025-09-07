@@ -33,7 +33,7 @@ export const onError = (error: Error, c: Context<ApiEnv>) => {
 
   // Log the error if it has a message
   if (error.message) {
-    console.error({ user: user, orgId: orgId, error: error.message });
+    console.error({ user: user, orgId: orgId, error });
   }
 
   // Handle our custom AppError
