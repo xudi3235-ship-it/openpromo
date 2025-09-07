@@ -7,7 +7,8 @@
     "@openpromo/core": "workspace:*"
   },
   "scripts": {
-    "codegen": "doppler run tsx src/codegen.ts"
+    "codegen": "doppler run tsx src/codegen.ts",
+    "setup-facebook-subscription": "doppler run tsx src/setup-facebook-subscription.ts"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "0.81.1",
