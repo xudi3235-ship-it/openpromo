@@ -11,6 +11,7 @@ export const env = createEnv({
     ADMIN_API_TOKEN: z.string().min(1),
     FACEBOOK_APP_ID: z.string().min(1),
     FACEBOOK_APP_SECRET: z.string().min(1),
+    FACEBOOK_WEBHOOK_VERIFY_TOKEN: z.string().min(1),
     INSTAGRAM_APP_ID: z.string().min(1),
     INSTAGRAM_APP_SECRET: z.string().min(1),
     STRIPE_SECRET_KEY: z.string().min(1),
