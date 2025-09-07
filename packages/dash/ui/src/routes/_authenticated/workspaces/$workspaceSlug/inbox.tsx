@@ -1,11 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Inbox } from "@/components/inbox";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/inbox",
 )({
-  component: RouteComponent,
+  component: Inbox,
 });
-
-function RouteComponent() {
-  return <div>Hello "/_authenticated/workspaces/$workspaceSlug/inbox"!</div>;
-}
