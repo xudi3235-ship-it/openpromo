@@ -26,7 +26,7 @@ import { fn } from "@/utils/fn";
 import { Actor } from "../../../actor";
 import { Binding } from "../../../actors";
 import { defineEvent } from "../../../event";
-import type { AllPlacement } from "../schema/placement";
+import { type AllPlacement, FBFeedPlacementSpec } from "../schema/placement";
 
 abstract class EntUnifiedContentBase {
   data: UnifiedContentSelect;
@@ -170,6 +170,17 @@ class EntPendingContent extends EntUnifiedContentBase {
       placement: "FB_FEED",
       connectedAccountId: acc.id,
       publishingStatus: "SCHEDULED",
+      placementSpec: {
+        identity: {
+          pageId: acc.externalAccountId,
+          userId: "dummy_user_id",
+        },
+        actor: Actor.assert("workspace_user"),
+        placement: "FB_FEED",
+        postSpec: {
+          message: "This is a dummy scheduled post",
+        },
+      },
       schedulingSpec: {
         scheduledPublishAt: new Date(Date.now() + 5 * 1000), // 5 seconds later
       },
@@ -432,6 +443,7 @@ abstract class PendingContentPublisher {
 }
 
 class FacebookPostPublisher extends PendingContentPublisher {
+  spec: FBFeedPlacementSpec;
   constructor(content: EntPendingContent) {
     super(content);
     if (content.placement() !== "FB_FEED") {
@@ -439,13 +451,23 @@ class FacebookPostPublisher extends PendingContentPublisher {
         `Content ${content.data.id} is not a Facebook post, cannot create FacebookPostPublisher`,
       );
     }
+    const { data, success, error } = FBFeedPlacementSpec.safeParse(
+      content.data.placementSpec,
+    );
+    if (!data || !success) {
+      console.error(error);
+    }
+    // @ts-expect-error fix this type
+    this.spec = data;
   }
 
   placement() {
     return "FB_FEED" as AllPlacement;
   }
   async publish(step: WorkflowStep): Promise<void> {
-    // we pass in step, publisher internally will handle the subsequent workflows
+    // in the publisher, each step STILL needs to be wrapped
+    // in actor context.
+    // await stepWithPublisher(step, "publish text post",actor,  )
     await step.do("foo", async () => {
       console.log("bar");
     });

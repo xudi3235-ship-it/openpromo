@@ -115,6 +115,7 @@ export const FBFeedPlacementSpec = BaseFBPlacementSpec.extend({
   placement: z.literal(FBPlacement.FB_FEED),
   postSpec: postSpec,
 });
+export type FBFeedPlacementSpec = z.infer<typeof FBFeedPlacementSpec>;
 
 // ========================= Instagram =========================
 export const IGPlacementSpec = BasePlacementSpec.extend({
