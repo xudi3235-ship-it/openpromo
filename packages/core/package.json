@@ -45,6 +45,7 @@
     "@types/facebook-nodejs-business-sdk": "^22.0.0",
     "drizzle-kit": "^0.31.4",
     "tsx": "^4.20.3",
-    "vitest": "^2"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
   }
 }
