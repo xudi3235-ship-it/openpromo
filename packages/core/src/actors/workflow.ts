@@ -132,5 +132,9 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
         type: "publish_draft",
       });
     }
+    step.do("publish to placements", async () => {
+      const actor = Actor.assert("workspace_user");
+      console.log(`finally ${actor}`);
+    });
   }
 }
