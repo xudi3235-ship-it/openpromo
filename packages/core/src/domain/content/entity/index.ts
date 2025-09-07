@@ -1,7 +1,5 @@
-import type { WorkflowStep } from "cloudflare:workers";
 import { nullThrows } from "@openpromo/js-shared/common";
 import * as z from "zod";
-import { stepWithActor } from "@/actors/workflow";
 import { ConnectedAccount } from "@/domain/connected-account/connected-account";
 import { NotImplementedError } from "@/error";
 import {
@@ -438,8 +436,14 @@ abstract class PendingContentPublisher {
       PendingContentPublisher.fromPendingContent(content),
     );
   }
+
+  serialize() {
+    return {
+      data: this.content.data,
+    };
+  }
+
   abstract placement(): AllPlacement | AllPlacement[];
-  abstract publish(step: WorkflowStep): Promise<void>;
 }
 
 class FacebookPostPublisher extends PendingContentPublisher {
@@ -460,29 +464,14 @@ class FacebookPostPublisher extends PendingContentPublisher {
     // @ts-expect-error fix this type
     this.spec = data;
   }
+  static deserialize({ data }: { data: UnifiedContentSelect }) {
+    return new FacebookPostPublisher(
+      EntPendingContent.fromUnifiedContent(data) as EntPendingContent,
+    );
+  }
 
   placement() {
     return "FB_FEED" as AllPlacement;
-  }
-  async publish(step: WorkflowStep): Promise<void> {
-    // in the publisher, each step STILL needs to be wrapped
-    // in actor context.
-    // await stepWithPublisher(step, "publish text post",actor,  )
-    await step.do("foo", async () => {
-      console.log("bar");
-    });
-    await step.do("publish to FB", async () => {
-      console.log("publishing to FB...");
-    });
-    await stepWithActor(
-      step,
-      "nested actor step",
-      Actor.assert("workspace_user"),
-      async () => {
-        console.log("inside nested actor step");
-      },
-    );
-    throw new NotImplementedError();
   }
 }
 
@@ -497,12 +486,6 @@ class InstagramPostPublisher extends PendingContentPublisher {
   }
   placement() {
     return "IG_FEED" as AllPlacement;
-  }
-  async publish(step: WorkflowStep): Promise<void> {
-    await step.do("foo", async () => {
-      console.log("bar");
-    });
-    throw new NotImplementedError();
   }
 }
 

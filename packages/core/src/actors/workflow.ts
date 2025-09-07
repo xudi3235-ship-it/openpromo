@@ -19,44 +19,61 @@ const PublishWorkflowParams = z.object({
 
 export type PublishWorkflowParams = z.infer<typeof PublishWorkflowParams>;
 const log = Log.create({ namespace: "workflow" });
-export async function stepWithActor<T>(
-  step: WorkflowStep,
-  name: string,
-  actor: Actor.WorkspaceUser,
-  fn: () => Promise<T>,
-): Promise<T> {
-  return step.do(name, async () =>
-    Actor.provide("workspace_user", { ...actor.properties }, fn),
-  );
+
+/**
+ * Manages dependency injection for a single workflow step.
+ * It is created within a step's execution and is not serialized.
+ */
+class WorkflowContext {
+  private constructor(public readonly actor: Actor.WorkspaceUser) {}
+
+  /**
+   * Creates and provides the context for a workflow step.
+   */
+  static provide<T>(
+    actor: Actor.WorkspaceUser,
+    fn: (ctx: WorkflowContext) => Promise<T>,
+  ): Promise<T> {
+    return Actor.provide("workspace_user", { ...actor.properties }, () => {
+      const ctx = new WorkflowContext(actor);
+      return fn(ctx);
+    });
+  }
+
+  /**
+   * Loads a PendingContentPublisher for the given ID.
+   */
+  getPublisher(pendingContentID: string): Promise<PendingContentPublisher> {
+    return PendingContentPublisher.fromPendingContentID(pendingContentID);
+  }
 }
 
-export async function stepWithPublisher<T>(
-  step: WorkflowStep,
-  name: string,
-  actor: Actor.WorkspaceUser,
-  pendingContentID: string,
-  fn: (p: PendingContentPublisher) => Promise<T>,
-): Promise<T> {
-  return stepWithActor(step, name, actor, async () => {
-    const p =
-      await PendingContentPublisher.fromPendingContentID(pendingContentID);
-    return fn(p);
-  });
+abstract class BaseWorkflow<TBindings, TParams> extends WorkflowEntrypoint<
+  TBindings,
+  TParams
+> {
+  /**
+   * Executes a workflow step with a managed context for dependency injection.
+   */
+  protected stepWithContext<T extends Rpc.Serializable<T>>(
+    step: WorkflowStep,
+    name: string,
+    actor: Actor.WorkspaceUser,
+    fn: (ctx: WorkflowContext) => Promise<T>,
+  ): Promise<T> {
+    return step.do(name, () => WorkflowContext.provide(actor, fn));
+  }
 }
 
-export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
+export class PendingContentPublishWorkflow extends BaseWorkflow<
   Bindings,
   PublishWorkflowParams
 > {
-  // context provider helpers
-
   async run(event: WorkflowEvent<PublishWorkflowParams>, step: WorkflowStep) {
     console.log("// Starting workflow");
-    const actor = event.payload.actor;
-    const pendingContentID = event.payload.pendingContentID;
+    const { actor, pendingContentID } = event.payload;
 
-    // 0. Fetch and return minimal data (ID + key info) to minimize serialization
-    const contentInfo = await stepWithActor(
+    const contentInfo = await this.stepWithContext(
       step,
       "fetch content info",
       actor,
@@ -66,17 +83,18 @@ export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
           id: c.data.id,
           scheduledTime: c.data.schedulingSpec?.scheduledPublishAt,
           isDraft: c.isDraft(),
-        }; // Only pass what's needed, no full serialize
+        };
       },
     );
 
     log.info("got content info", { contentInfo });
 
-    // 1. Handle scheduling/drafts (no need to deserialize here)
     if (contentInfo.scheduledTime) {
       log.info("wait until scheduled time to publish");
-      const threeSec = new Date(Date.now() + 3000);
-      await step.sleepUntil("sleep until time to publish", threeSec);
+      await step.sleepUntil(
+        "sleep until time to publish",
+        new Date(Date.now() + 3000),
+      );
     } else if (contentInfo.isDraft) {
       log.info("is draft");
       await step.waitForEvent("wait for draft publish event", {
@@ -86,27 +104,18 @@ export class PendingContentPublishWorkflow extends WorkflowEntrypoint<
 
     log.info("time to publish");
 
-    // 2. Publisher Step 1: Validate (re-fetch publisher to avoid serialization)
-    await stepWithPublisher(
+    await this.stepWithContext(
       step,
-      "validate publisher",
+      "validate and publish",
       actor,
-      pendingContentID,
-      async (p) => {
-        const res = await p.publish(step);
-        log.info("res", { res });
+      async (ctx) => {
+        await ctx.getPublisher(pendingContentID);
       },
     );
 
-    // 3. Publisher Step 2: Execute Publish
-    await stepWithPublisher(
-      step,
-      "execute publish",
-      actor,
-      pendingContentID,
-      async (p) => {
-        log.info("publish executed", { p });
-      },
-    );
+    await this.stepWithContext(step, "execute publish", actor, async (ctx) => {
+      const publisher = await ctx.getPublisher(pendingContentID);
+      log.info("publish executed", { p: publisher });
+    });
   }
 }
