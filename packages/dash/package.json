@@ -2,6 +2,7 @@
   "name": "@openpromo/dash",
   "type": "module",
   "scripts": {
+    "predev": "pnpm -w --filter @openpromo/core run db:migrate",
     "dev": "vite --port 3000",
     "typecheck": "tsc --noEmit",
     "build": "vite build",
