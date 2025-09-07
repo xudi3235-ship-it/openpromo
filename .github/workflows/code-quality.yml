@@ -7,6 +7,9 @@ on:
       - production
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   biome-check:
     runs-on: blacksmith-2vcpu-ubuntu-2404
