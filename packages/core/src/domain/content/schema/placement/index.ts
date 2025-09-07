@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { Actor } from "../../../../actor";
+import { Actor } from "../../../../helpers/actor";
 
 export const FBPlacement = {
   FB_FEED: "FB_FEED",

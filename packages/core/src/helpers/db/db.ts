@@ -38,6 +38,7 @@ export namespace Database {
 
 export const getDbClient = () => {
   const { connectionString } = Database.use();
+  console.log("connectionString", connectionString);
   return drizzle(postgres(connectionString), {
     casing: "snake_case",
     logger:

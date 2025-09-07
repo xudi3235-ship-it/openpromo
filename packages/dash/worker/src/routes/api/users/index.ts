@@ -1,4 +1,4 @@
-import type { ApiEnv } from "@openpromo/core/actors/index";
+import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { eq, getDbClient } from "@openpromo/core/helpers/db/index";
 import { usersTable } from "@openpromo/core/schemas/users.sql";
 import { Hono } from "hono";

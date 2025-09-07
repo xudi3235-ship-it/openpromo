@@ -1,6 +1,6 @@
-import type { ApiEnv } from "@openpromo/core/actors/index";
 import { ConnectedAccount } from "@openpromo/core/domain/connected-account/connected-account";
 import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
+import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { Hono } from "hono";
 import * as z from "zod";
 import { withAuth } from "../../../../middleware/with-auth";

@@ -1,6 +1,9 @@
 import type { User } from "@workos-inc/node";
+import type { PublishWorkflowParams } from "@/domain/content/workflows/content-publish-workflow";
 import type { OrganizationRole } from "@/domain/workspace/auth";
-import type { Scheduler } from "./scheduler";
+import { Actor } from "@/helpers/actor";
+import { createContext } from "@/utils/context";
+import type { Scheduler } from "../experimental/scheduler";
 
 export type ApiEnv = {
   Variables: {
@@ -17,9 +20,6 @@ export type ApiEnv = {
 
 export type Bindings = ApiEnv["Bindings"];
 
-import { createContext } from "@/utils/context";
-import { Actor } from "../actor";
-import type { PublishWorkflowParams } from "./workflow";
 export namespace Binding {
   export const Context = createContext<Bindings>();
   export function use(): Bindings {

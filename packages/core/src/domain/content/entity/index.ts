@@ -1,7 +1,6 @@
 import { nullThrows } from "@openpromo/js-shared/common";
 import * as z from "zod";
 import { ConnectedAccount } from "@/domain/connected-account/connected-account";
-import { NotImplementedError } from "@/error";
 import {
   afterTx,
   and,
@@ -20,10 +19,10 @@ import {
   type UnifiedContentSelect,
   unifiedContentTable,
 } from "@/schemas/content.sql";
+import { NotImplementedError } from "@/utils/error";
 import { fn } from "@/utils/fn";
-import { Actor } from "../../../actor";
-import { Binding } from "../../../actors";
-import { defineEvent } from "../../../event";
+import { defineEvent } from "../../../experimental/event";
+import { Actor } from "../../../helpers/actor";
 import { type AllPlacement, FBFeedPlacementSpec } from "../schema/placement";
 
 export type Constructor<T, Def extends unknown[] = unknown[]> = new (
@@ -340,7 +339,7 @@ class EntPendingContentGroup {
 
         // 3. handle scheduled contents
         await afterTx(async () => {
-          Binding.getScheduler();
+          // Binding.getScheduler();
           unifiedContents.map(async (content) => {
             const spec = content.schedulingSpec;
             // not a scheduled content, skip

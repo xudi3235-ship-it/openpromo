@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { Alarms } from "@cloudflare/actors/alarms";
 import { Storage } from "@cloudflare/actors/storage";
-import type { Bindings } from ".";
+import type { Bindings } from "@/helpers/api-env";
 
 export class Scheduler extends DurableObject<Bindings> {
   storage: Storage;

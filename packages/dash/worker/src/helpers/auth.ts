@@ -1,5 +1,5 @@
-import type { Actor } from "@openpromo/core/actor";
-import type { ApiEnv } from "@openpromo/core/actors/index";
+import type { Actor } from "@openpromo/core/helpers/actor";
+import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { AppError } from "./error";

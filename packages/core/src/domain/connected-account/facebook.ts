@@ -44,7 +44,7 @@ interface FacebookPage {
   fan_count?: number;
 }
 
-export interface AuthTokenDetails {
+export interface FacebookAuthTokenDetails {
   refreshToken: string;
   expiresIn: number;
   accessToken: string;
@@ -268,7 +268,7 @@ export class FacebookOAuthService {
     code: string;
     workspaceSlug: string;
     refresh?: string;
-  }): Promise<AuthTokenDetails> {
+  }): Promise<FacebookAuthTokenDetails> {
     log.info("authenticate");
     // Get short-lived access token
     const shortToken = await this.getAccessToken(params.code);
@@ -308,7 +308,7 @@ export class FacebookOAuthService {
   async reConnect(
     requiredId: string,
     accessToken: string,
-  ): Promise<AuthTokenDetails> {
+  ): Promise<FacebookAuthTokenDetails> {
     const pageInfo = await this.getPageInformation(accessToken, requiredId);
 
     // Calculate expiration (60 days)

@@ -1,5 +1,5 @@
-import { Actor } from "@openpromo/core/actor";
-import { type ApiEnv, Binding } from "@openpromo/core/actors/index";
+import { Actor } from "@openpromo/core/helpers/actor";
+import { type ApiEnv, Binding } from "@openpromo/core/helpers/api-env";
 import { Hono } from "hono";
 import { withAuth } from "../../../middleware/with-auth";
 

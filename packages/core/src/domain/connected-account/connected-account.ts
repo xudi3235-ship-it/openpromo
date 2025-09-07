@@ -7,7 +7,7 @@ import {
   type Platform,
 } from "@/schemas/connected-account.sql";
 import { fn } from "@/utils/fn";
-import { Actor } from "../../actor";
+import { Actor } from "../../helpers/actor";
 
 export namespace ConnectedAccount {
   export const Info = ConnectedAccountSelectSchema;

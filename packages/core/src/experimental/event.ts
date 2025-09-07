@@ -1,5 +1,5 @@
-import { Actor } from "./actor";
-import { Event } from "./experimental/bus/def";
+import { Actor } from "../helpers/actor";
+import { Event } from "./bus/def";
 
 export const defineEvent = Event.builder({
   validator: Event.zodValidator,

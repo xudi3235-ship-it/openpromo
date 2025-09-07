@@ -1,7 +1,7 @@
-import { Actor } from "@openpromo/core/actor";
-import type { ApiEnv } from "@openpromo/core/actors/index";
 import { ConnectedAccount } from "@openpromo/core/domain/connected-account/connected-account";
 import { facebookOAuthService } from "@openpromo/core/domain/connected-account/facebook";
+import { Actor } from "@openpromo/core/helpers/actor";
+import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { Platform } from "@openpromo/core/schemas/connected-account.sql";
 import { Hono } from "hono";
 import * as z from "zod";

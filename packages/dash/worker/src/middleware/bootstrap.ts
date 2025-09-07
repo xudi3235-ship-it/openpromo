@@ -1,4 +1,4 @@
-import { type ApiEnv, Binding } from "@openpromo/core/actors/index";
+import { type ApiEnv, Binding } from "@openpromo/core/helpers/api-env";
 import { Database } from "@openpromo/core/helpers/db/index";
 import { env } from "@openpromo/core/utils/env";
 import type { Context } from "hono";

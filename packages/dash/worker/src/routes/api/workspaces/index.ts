@@ -1,8 +1,8 @@
-import type { ApiEnv } from "@openpromo/core/actors/index";
 import {
   ORGANIZATION_ROLE,
   WORKSPACE_ROLE,
 } from "@openpromo/core/domain/workspace/auth";
+import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { getDbClient } from "@openpromo/core/helpers/db/index";
 import { usersTable } from "@openpromo/core/schemas/users.sql";
 import { workspaceRoleAssignmentsTable } from "@openpromo/core/schemas/workspace-role-assignments.sql";

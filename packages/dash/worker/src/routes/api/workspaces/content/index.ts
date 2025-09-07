@@ -1,7 +1,7 @@
-import { Actor } from "@openpromo/core/actor";
-import type { ApiEnv } from "@openpromo/core/actors/index";
 import { EntPendingContent } from "@openpromo/core/domain/content/entity/index";
 import { FacebookMutation } from "@openpromo/core/domain/content/entity/mutation";
+import { Actor } from "@openpromo/core/helpers/actor";
+import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { db } from "@openpromo/core/helpers/db/db";
 import { connectedAccount } from "@openpromo/core/schemas/connected-account.sql";
 import { and, eq } from "drizzle-orm";

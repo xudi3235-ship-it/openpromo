@@ -1,10 +1,10 @@
-import { Actor } from "@openpromo/core/actor";
-import type { ApiEnv } from "@openpromo/core/actors/index";
 import {
   ORGANIZATION_ROLE,
   type OrganizationRole,
   type WorkspaceRole,
 } from "@openpromo/core/domain/workspace/auth";
+import { Actor } from "@openpromo/core/helpers/actor";
+import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { getDbClient } from "@openpromo/core/helpers/db/index";
 import {
   type Workspace,

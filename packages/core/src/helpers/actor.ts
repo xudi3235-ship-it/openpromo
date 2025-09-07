@@ -1,8 +1,8 @@
 import * as z from "zod";
-import type { OrganizationRole } from "./domain/workspace/auth";
-import { ErrorCodes, VisibleError } from "./error";
-import { createContext } from "./utils/context";
-import { Log } from "./utils/log";
+import type { OrganizationRole } from "../domain/workspace/auth";
+import { createContext } from "../utils/context";
+import { ErrorCodes, VisibleError } from "../utils/error";
+import { Log } from "../utils/log";
 
 export namespace Actor {
   export const UserSchema = z.object({

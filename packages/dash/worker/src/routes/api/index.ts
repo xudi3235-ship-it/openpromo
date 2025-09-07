@@ -1,4 +1,4 @@
-import type { ApiEnv } from "@openpromo/core/actors/index";
+import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { Hono } from "hono";
 import { onError } from "../../helpers/error";
 import { workOSAuth } from "../../middleware/workos-auth";

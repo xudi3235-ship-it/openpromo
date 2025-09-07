@@ -1,4 +1,4 @@
-import type { ApiEnv } from "@openpromo/core/actors/index";
+import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 

@@ -32,7 +32,7 @@ interface InstagramTokenError {
   error_message: string;
 }
 
-export interface AuthTokenDetails {
+export interface InstagramAuthTokenDetails {
   refreshToken: string;
   expiresIn: number;
   accessToken: string;
@@ -177,7 +177,7 @@ export class InstagramOAuthService {
     code: string;
     workspaceSlug: string;
     refresh?: string;
-  }): Promise<AuthTokenDetails> {
+  }): Promise<InstagramAuthTokenDetails> {
     log.info("1. authenticate");
 
     // Get short-lived access token
@@ -209,7 +209,7 @@ export class InstagramOAuthService {
   /**
    * Reconnect to a specific Instagram account
    */
-  async reConnect(accessToken: string): Promise<AuthTokenDetails> {
+  async reConnect(accessToken: string): Promise<InstagramAuthTokenDetails> {
     const profile = await this.getUserProfile(accessToken);
 
     // Calculate expiration (60 days)
