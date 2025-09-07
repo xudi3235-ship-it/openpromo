@@ -1,11 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ContentPage } from "@/components/content/page";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/content",
 )({
-  component: RouteComponent,
+  component: ContentPage,
 });
-
-function RouteComponent() {
-  return <div>Hello "/_authenticated/workspaces/$workspaceSlug/content"!</div>;
-}

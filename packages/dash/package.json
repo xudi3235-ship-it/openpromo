@@ -27,6 +27,7 @@
     "@tanstack/react-query-devtools": "^5.85.5",
     "@tanstack/react-router": "^1.131.7",
     "@tanstack/react-router-devtools": "^1.131.7",
+    "@tanstack/react-table": "^8.21.3",
     "@workos-inc/node": "catalog:",
     "date-fns": "^4.1.0",
     "drizzle-orm": "catalog:",
