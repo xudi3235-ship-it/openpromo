@@ -7,6 +7,7 @@ import { cfMetadata } from "./middleware/cf-metadata";
 import { noCache } from "./middleware/no-cache";
 import { apiRoutes } from "./routes/api";
 import { authRoutes } from "./routes/auth";
+import { webhooksRoutes } from "./routes/webhooks";
 
 const app = new Hono()
   .use(logger())
@@ -14,8 +15,8 @@ const app = new Hono()
   .use(noCache())
   .use(bootstrap())
   .route("/api", apiRoutes)
-  .route("/auth", authRoutes);
-
+  .route("/auth", authRoutes)
+  .route("/webhooks", webhooksRoutes);
 export default app;
 
 export type Routes = typeof app;
