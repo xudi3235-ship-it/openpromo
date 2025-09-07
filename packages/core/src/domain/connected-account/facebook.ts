@@ -145,28 +145,22 @@ export class FacebookOAuthService {
   async exchangeForLongLivedToken(
     shortLivedToken: string,
   ): Promise<FacebookTokenResponse> {
-    const response = await fetch(`${this.baseUrl}/oauth/access_token`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+    const params = new URLSearchParams({
+      grant_type: "fb_exchange_token",
+      client_id: this.appId,
+      client_secret: this.appSecret,
+      fb_exchange_token: shortLivedToken,
     });
 
-    const url = new URL(response.url);
-    url.searchParams.set("grant_type", "fb_exchange_token");
-    url.searchParams.set("client_id", this.appId);
-    url.searchParams.set("client_secret", this.appSecret);
-    url.searchParams.set("fb_exchange_token", shortLivedToken);
+    const response = await fetch(
+      `${this.baseUrl}/oauth/access_token?${params.toString()}`,
+    );
 
-    const longLivedResponse = await fetch(url.toString());
-
-    if (!longLivedResponse.ok) {
-      throw new Error(
-        `Failed to exchange token: ${longLivedResponse.statusText}`,
-      );
+    if (!response.ok) {
+      throw new Error(`Failed to exchange token: ${response.statusText}`);
     }
 
-    const tokenData = (await longLivedResponse.json()) as FacebookTokenResponse;
+    const tokenData = (await response.json()) as FacebookTokenResponse;
 
     if (tokenData.error) {
       throw new Error(`Token exchange error: ${tokenData.error.message}`);

@@ -58,6 +58,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
         const userPages = await facebookOAuthService.getUserPages(
           authResult.accessToken,
         );
+        console.log({ userPages });
 
         // 3. For each linked page, create a connected account
         const accounts = await Promise.allSettled(

@@ -2,6 +2,10 @@ import { zValidator } from "@hono/zod-validator";
 import { Actor } from "@openpromo/core/actor";
 import type { ApiEnv } from "@openpromo/core/actors/index";
 import { EntPendingContent } from "@openpromo/core/domain/content/entity/index";
+import { FacebookMutation } from "@openpromo/core/domain/content/entity/mutation";
+import { db } from "@openpromo/core/helpers/db/db";
+import { connectedAccount } from "@openpromo/core/schemas/connected-account.sql";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
@@ -22,6 +26,28 @@ export const contentRoute = new Hono<ApiEnv>()
       },
     });
     return c.json({ content, wf });
+  })
+  // create text post
+  .get("/text", async (c) => {
+    const myPageId = "198964309975614"; // my test page.
+    // 1. load our FB account
+    const [acc] = await db()
+      .select()
+      .from(connectedAccount)
+      .where(
+        and(
+          eq(connectedAccount.platform, "FACEBOOK"),
+          eq(connectedAccount.workspaceId, Actor.workspaceID()),
+          eq(connectedAccount.externalAccountId, myPageId), // my test page.
+        ),
+      )
+      .limit(1);
+    console.log({ acc });
+    // 2. create a dummy pending content
+    const content = await EntPendingContent._createDummy(acc.externalAccountId);
+    // 3. publish it to page
+    await FacebookMutation.createTextPost(content.data.id);
+    return c.json({ acc });
   })
   // create, schedule, or draft a content x-plat.
   .post("/", zValidator("json", z.object({ text: z.string() })), async (c) => {

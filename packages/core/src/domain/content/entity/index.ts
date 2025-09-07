@@ -162,7 +162,7 @@ class EntPendingContent extends EntUnifiedContentBase {
   toScheduledContent(): EntScheduledContent {
     return new EntScheduledContent(this.data);
   }
-  static async _createDummy(): Promise<EntPendingContent> {
+  static async _createDummy(pageID?: string): Promise<EntPendingContent> {
     const acc = await ConnectedAccount._createDummy();
     const content = await EntPendingContent.create({
       placement: "FB_FEED",
@@ -170,7 +170,7 @@ class EntPendingContent extends EntUnifiedContentBase {
       publishingStatus: "SCHEDULED",
       placementSpec: {
         identity: {
-          pageId: acc.externalAccountId,
+          pageId: pageID ?? acc.externalAccountId,
           userId: "dummy_user_id",
         },
         actor: Actor.assert("workspace_user"),
