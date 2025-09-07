@@ -1,4 +1,3 @@
-import { zValidator } from "@hono/zod-validator";
 import { Actor } from "@openpromo/core/actor";
 import type { ApiEnv } from "@openpromo/core/actors/index";
 import { EntPendingContent } from "@openpromo/core/domain/content/entity/index";
@@ -9,6 +8,7 @@ import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
+import { zValidator } from "../../../../middleware/zod-validator";
 
 export const contentRoute = new Hono<ApiEnv>()
   .use(withWorkspaceRole("workspace_editor"))

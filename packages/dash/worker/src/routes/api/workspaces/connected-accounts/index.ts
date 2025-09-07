@@ -1,4 +1,3 @@
-import { zValidator } from "@hono/zod-validator";
 import type { ApiEnv } from "@openpromo/core/actors/index";
 import { ConnectedAccount } from "@openpromo/core/domain/connected-account/connected-account";
 import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
@@ -6,6 +5,7 @@ import { Hono } from "hono";
 import * as z from "zod";
 import { withAuth } from "../../../../middleware/with-auth";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
+import { zValidator } from "../../../../middleware/zod-validator";
 import { facebookConnectedAccountRoute } from "./facebook";
 import { instagramConnectedAccountRoute } from "./instagram";
 

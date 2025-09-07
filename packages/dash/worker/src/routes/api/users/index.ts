@@ -1,4 +1,3 @@
-import { zValidator } from "@hono/zod-validator";
 import type { ApiEnv } from "@openpromo/core/actors/index";
 import { eq, getDbClient } from "@openpromo/core/helpers/db/index";
 import { usersTable } from "@openpromo/core/schemas/users.sql";
@@ -6,6 +5,7 @@ import { Hono } from "hono";
 import * as z from "zod";
 import { assertUser } from "../../../helpers/auth";
 import { withAuth } from "../../../middleware/with-auth";
+import { zValidator } from "../../../middleware/zod-validator";
 
 export const usersRoute = new Hono<ApiEnv>()
   .use(withAuth())

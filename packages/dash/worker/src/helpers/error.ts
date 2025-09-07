@@ -13,13 +13,17 @@ type AppErrorOptions = {
    * The error message to be shown to the user.
    */
   userMessage?: string;
+  /**
+   * The cause of the error.
+   */
+  cause?: unknown;
 };
 
 export class AppError extends HTTPException {
   readonly userMessage: string | undefined;
 
   constructor(status: AppErrorStatus, options?: AppErrorOptions) {
-    super(status, { message: options?.message });
+    super(status, { message: options?.message, cause: options?.cause });
     this.userMessage = options?.userMessage;
   }
 }

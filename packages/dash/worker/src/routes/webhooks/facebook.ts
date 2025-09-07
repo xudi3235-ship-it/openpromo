@@ -1,9 +1,9 @@
-import { zValidator } from "@hono/zod-validator";
 import type { ApiEnv } from "@openpromo/core/actors/index";
 import { env } from "@openpromo/core/utils/env";
 import { Hono } from "hono";
 import * as z from "zod";
 import { AppError } from "../../helpers/error";
+import { zValidator } from "../../middleware/zod-validator";
 
 const facebookWebhooksQuerySchema = z.object({
   "hub.mode": z.literal("subscribe"),

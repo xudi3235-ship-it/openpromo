@@ -1,4 +1,3 @@
-import { zValidator } from "@hono/zod-validator";
 import { Actor } from "@openpromo/core/actor";
 import type { ApiEnv } from "@openpromo/core/actors/index";
 import { ConnectedAccount } from "@openpromo/core/domain/connected-account/connected-account";
@@ -8,6 +7,7 @@ import { Hono } from "hono";
 import * as z from "zod";
 import { clearAuthStateCookie, getAuthState } from "../../../helpers/auth";
 import { AppError } from "../../../helpers/error";
+import { zValidator } from "../../../middleware/zod-validator";
 import type { PopupRelayQuery } from "../popup-relay/constants";
 
 // Validation schemas

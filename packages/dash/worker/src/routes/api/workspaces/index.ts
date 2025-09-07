@@ -1,4 +1,3 @@
-import { zValidator } from "@hono/zod-validator";
 import type { ApiEnv } from "@openpromo/core/actors/index";
 import {
   ORGANIZATION_ROLE,
@@ -17,6 +16,7 @@ import { createWorkspace } from "../../../helpers/workspace";
 import { withAuth } from "../../../middleware/with-auth";
 import { withOrgRole } from "../../../middleware/with-org-role";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
+import { zValidator } from "../../../middleware/zod-validator";
 import { connectedAccountsRoute } from "./connected-accounts";
 import { contentRoute } from "./content";
 import { mediaRoute } from "./media";
