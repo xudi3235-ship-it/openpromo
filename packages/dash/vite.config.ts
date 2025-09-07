@@ -1,5 +1,6 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
+import { devtools } from "@tanstack/devtools-vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -20,6 +21,7 @@ export default defineConfig(() => ({
     // @ts-expect-error
     flags.useLocalHttps && mkcert({ hosts: [] }),
     analyzer({ enabled: false }),
+    devtools(),
     tsconfigPaths(),
     tanstackRouter({
       target: "react",

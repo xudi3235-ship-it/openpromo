@@ -1,7 +1,8 @@
 import { Toaster } from "@openpromo/ui/components/sonner";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { TanStackDevtools } from "@tanstack/react-devtools";
+import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { useTheme } from "@/context/theme-provider";
 import type { AuthContext } from "@/hooks/useAuth";
@@ -25,10 +26,33 @@ function RootLayout() {
       <Toaster richColors theme={theme} />
       <Outlet />
       {import.meta.env.MODE === "development" && (
-        <>
-          <ReactQueryDevtools buttonPosition="bottom-right" />
-          <TanStackRouterDevtools position="bottom-right" />
-        </>
+        <TanStackDevtools
+          plugins={[
+            {
+              name: "TanStack Query",
+              render: <ReactQueryDevtoolsPanel />,
+            },
+            {
+              name: "TanStack Router",
+              render: <TanStackRouterDevtoolsPanel />,
+            },
+            {
+              name: "Drizzle Studio",
+              render: () => (
+                <iframe
+                  src="https://local.drizzle.studio"
+                  title="Drizzle Studio"
+                  style={{
+                    flexGrow: 1,
+                    width: "100%",
+                    height: "100%",
+                    border: 0,
+                  }}
+                />
+              ),
+            },
+          ]}
+        />
       )}
     </>
   );
