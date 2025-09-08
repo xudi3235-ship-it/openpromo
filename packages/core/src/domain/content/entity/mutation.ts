@@ -1,3 +1,4 @@
+import { FacebookAdsApi, Page } from "facebook-nodejs-business-sdk";
 import { ConnectedAccount } from "@/domain/connected-account/connected-account";
 import { EntPendingContent } from ".";
 
@@ -14,10 +15,7 @@ export namespace FacebookMutation {
     const api = initApi(acc.encryptedAccessToken);
     // 2. create post using sdk.
     // probably fetch is easier TBH
-    const page = new (await import("facebook-nodejs-business-sdk")).Page(
-      pageId,
-      api,
-    );
+    const page = new Page(pageId, api);
     const post = await page.createFeed([], {
       message: text,
     });
@@ -38,8 +36,6 @@ export namespace FacebookMutation {
     return await r.json();
   };
   const initApi = async (accessToken: string) => {
-    return (await import("facebook-nodejs-business-sdk")).FacebookAdsApi.init(
-      accessToken,
-    ).setDebug(true);
+    return FacebookAdsApi.init(accessToken).setDebug(true);
   };
 }

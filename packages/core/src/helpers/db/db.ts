@@ -19,6 +19,7 @@ export namespace Database {
     try {
       return Context.use();
     } catch {
+      log.warn("no hyperdrive, falling back to pooled conn");
       // fallback to pooled conn.
       return {
         connectionString: env.DATABASE_URL,
@@ -38,7 +39,6 @@ export namespace Database {
 
 export const getDbClient = () => {
   const { connectionString } = Database.use();
-  console.log("connectionString", connectionString);
   return drizzle(postgres(connectionString), {
     casing: "snake_case",
     logger:
