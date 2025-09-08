@@ -1,5 +1,6 @@
 import { ConnectedAccount } from "@openpromo/core/domain/connected-account/connected-account";
 import { facebookOAuthService } from "@openpromo/core/domain/connected-account/facebook";
+import { FacebookMutation } from "@openpromo/core/domain/content/entity/mutation";
 import { Actor } from "@openpromo/core/helpers/actor";
 import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { Platform } from "@openpromo/core/schemas/connected-account.sql";
@@ -63,8 +64,13 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
 
         // 3. For each linked page, create a connected account
         const accounts = await Promise.allSettled(
-          userPages.map((page) =>
-            ConnectedAccount.create({
+          userPages.map(async (page) => {
+            if (!page.access_token) {
+              throw new AppError(500, {
+                message: `No access token for page: ${page.id}`,
+              });
+            }
+            const acc = await ConnectedAccount.create({
               platform: Platform.enum.FACEBOOK,
               externalAccountId: page.id,
               accountName: page.name,
@@ -85,16 +91,18 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
                 userAccessToken: authResult.accessToken,
                 userRefreshToken: authResult.refreshToken,
               },
-            }),
-          ),
+            });
+            await FacebookMutation.setupWebhook(page.id, page.access_token);
+            return acc;
+          }),
         );
 
-        const failedCount = accounts.filter(
-          (a) => a.status === "rejected",
-        ).length;
-        if (failedCount > 0) {
+        const failed = accounts
+          .filter((a) => a.status === "rejected")
+          .map((a) => a.reason);
+        if (failed.length > 0) {
           throw new AppError(400, {
-            message: `Failed to create ${failedCount} connected accounts.`,
+            message: `Failed to create ${failed.length} connected accounts. Reasons:\n${failed.join("\n")}`,
           });
         }
 

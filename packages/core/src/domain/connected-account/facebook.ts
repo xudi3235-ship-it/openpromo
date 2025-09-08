@@ -66,6 +66,8 @@ export class FacebookOAuthService {
     "business_management",
     "pages_manage_posts",
     "pages_manage_engagement",
+    "pages_manage_metadata",
+    "pages_messaging",
     "pages_read_engagement",
     "read_insights",
   ];

@@ -1,3 +1,4 @@
+import { FacebookMutation } from "@core/domain/content/entity/mutation";
 import { ConnectedAccount } from "@openpromo/core/domain/connected-account/connected-account";
 import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
 import type { ApiEnv } from "@openpromo/core/helpers/api-env";
@@ -28,6 +29,18 @@ export const connectedAccountsRoute = new Hono<ApiEnv>()
     ),
     async (ctx) => {
       const { accountId } = ctx.req.valid("param");
+      const account = await ConnectedAccount.fromID(accountId);
+      switch (account.platform) {
+        case "FACEBOOK":
+          await FacebookMutation.teardownWebhook(
+            account.externalAccountId,
+            account.encryptedAccessToken,
+          );
+          break;
+        case "INSTAGRAM":
+          // TODO: implement
+          break;
+      }
       await ConnectedAccount.deleteById(accountId);
       return ctx.json({
         success: true,

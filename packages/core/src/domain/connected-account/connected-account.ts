@@ -78,6 +78,20 @@ export namespace ConnectedAccount {
       )
       .execute();
   }
+  export async function fromID(id: string) {
+    const workspaceId = Actor.workspaceID();
+    const [acc] = await db()
+      .select()
+      .from(connectedAccount)
+      .where(
+        and(
+          eq(connectedAccount.id, id),
+          eq(connectedAccount.workspaceId, workspaceId),
+        ),
+      );
+    if (!acc) throw new Error("connected account not found");
+    return acc;
+  }
   export async function fromFBPageID(id: string) {
     const workspaceId = Actor.workspaceID();
     const [acc] = await db()

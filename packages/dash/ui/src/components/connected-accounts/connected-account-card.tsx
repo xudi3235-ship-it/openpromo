@@ -7,7 +7,11 @@ import {
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
 import { Typography } from "@openpromo/ui/components/typography";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, MoreHorizontal, Users } from "lucide-react";
+import { toast } from "sonner";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { useHonoMutation } from "@/lib/hono-client";
 
 interface ConnectedAccount {
   id: string;
@@ -25,6 +29,22 @@ interface ConnectedAccountCardProps {
 }
 
 export function ConnectedAccountCard({ account }: ConnectedAccountCardProps) {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+  const { mutate: disconnectAccount } = useHonoMutation({
+    mutationFn: (api, accountId: string) =>
+      api.workspaces[":workspaceSlug"].connected_accounts[":accountId"].$delete(
+        {
+          param: { workspaceSlug: workspace.slug, accountId: accountId },
+        },
+      ),
+    onSuccess: () => {
+      toast.success("Account disconnected successfully");
+      queryClient.invalidateQueries({
+        queryKey: [workspace.slug, "connected_accounts"],
+      });
+    },
+  });
   const formatFollowers = (count: number) => {
     if (count >= 1000000) {
       return `${(count / 1000000).toFixed(1)}M`;
@@ -68,7 +88,12 @@ export function ConnectedAccountCard({ account }: ConnectedAccountCardProps) {
             <DropdownMenuItem>View Settings</DropdownMenuItem>
             <DropdownMenuItem>Refresh Connection</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => {
+                disconnectAccount(account.id);
+              }}
+            >
               Disconnect
             </DropdownMenuItem>
           </DropdownMenuContent>
