@@ -35,3 +35,28 @@ export function decrypt(encryptedData: string, secretKey: string): string {
 
   return decrypted;
 }
+
+/**
+ * Verify that the signature is valid for the given data and secret using HMAC SHA256
+ * @param secret - The secret to use for the HMAC
+ * @param data - The data to verify
+ * @param signature - The signature to verify
+ * @returns True if the signature is valid, false otherwise
+ */
+export const hmacSha256Verify = async (
+  secret: string,
+  data: crypto.BinaryLike,
+  signature: string,
+) => {
+  const hmac = crypto.createHmac("sha256", secret);
+  hmac.update(data);
+  const digest = hmac.digest("hex");
+
+  const valid =
+    digest.length === signature.length &&
+    crypto.timingSafeEqual(
+      Buffer.from(digest, "hex"),
+      Buffer.from(signature, "hex"),
+    );
+  return valid;
+};
