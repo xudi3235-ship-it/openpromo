@@ -27,7 +27,7 @@ export type AllPlacement = (typeof AllPlacement)[keyof typeof AllPlacement];
  */
 // Base attachment schema
 export const BaseAttachmentSpec = z.object({
-  id: z.string().optional(),
+  id: z.string(),
   presignedUrl: z.string().optional(),
   s3Key: z.string().optional(),
   thumbnailUrl: z.string().optional(),

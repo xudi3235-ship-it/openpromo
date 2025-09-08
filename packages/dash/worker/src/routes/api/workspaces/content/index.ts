@@ -49,7 +49,7 @@ export const contentRoute = new Hono<ApiEnv>()
     const content = await EntPendingContent._createDummy(acc.externalAccountId);
     const fbContent = EntFBFeedPendingContent.fromPendingContent(content);
     // 3. publish it to page
-    await fbContent.createTextPost();
+    await fbContent.createPhotoPost();
     return c.json({ acc });
   })
   // create, schedule, or draft a content x-plat.

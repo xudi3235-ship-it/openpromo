@@ -20,7 +20,7 @@ import {
 import { NotImplementedError } from "@core/utils/error";
 import { fn } from "@core/utils/fn";
 import { nullThrows } from "@openpromo/js-shared/common";
-import { FacebookAdsApi, Page } from "facebook-nodejs-business-sdk";
+import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
 import * as z from "zod";
 import { defineEvent } from "../../../experimental/event";
 import { Actor } from "../../../helpers/actor";
@@ -202,7 +202,13 @@ class EntPendingContent extends EntUnifiedContentBase {
         actor: Actor.assert("workspace_user"),
         placement: "FB_FEED",
         postSpec: {
-          message: "This is a dummy scheduled post",
+          message: "trust me bro",
+          attachments: [
+            {
+              type: "photo",
+              id: "your_mom",
+            },
+          ],
         },
       },
       schedulingSpec: {
@@ -255,28 +261,64 @@ class EntFBFeedPendingContent extends EntPendingContent {
   static fromPendingContent(c: EntPendingContent): EntFBFeedPendingContent {
     return new EntFBFeedPendingContent(c.data);
   }
+  /**
+   * we expose composable steps to create different types of posts.
+   * Workflows should orchestrate these steps.
+   */
   async createTextPost() {
     const text = this.spec.postSpec.message;
     if (!text) throw new Error("no text provided");
-    // 0. ensure identity is connected and valid
-    const acc = await ConnectedAccount.fromFBPageID(this.pageID);
-    // 1. init api with page access token
-    const api = this.api(acc.encryptedAccessToken);
-    // 2. create post using sdk.
-    const page = new Page(this.pageID, api);
+    // 0. get page with scoped access token
+    const { page } = await this.identity();
+    // 1. create post
     const post = await page.createFeed([], {
       message: text,
     });
     console.log("// created post", post);
   }
   async createPhotoPost() {
-    throw new NotImplementedError();
+    // ref: https://developers.facebook.com/docs/graph-api/reference/page/photos/
+    // 0. read page access token
+    const { page } = await this.identity();
+    const photos =
+      this.spec.postSpec.attachments?.filter((a) => a.type === "photo") ?? [];
+    if (photos.length === 0) {
+      throw new Error("no photo attachment provided");
+    }
+    // 1. create N unpublished photos
+    // NOTE: ensure the ordering.
+    const fbPhotos = await Promise.all(
+      photos.map(async (_p) => {
+        // fake it for now
+        // const cdnUrl = await ImageStorage.getImageDeliveryUrl(p.id);
+        const cdnUrl = "https://picsum.photos/200/300";
+        const photo = await page.createPhoto([Photo.Fields.id], {
+          url: cdnUrl,
+          published: false,
+        });
+        return photo;
+      }),
+    );
+    // 2. create post with attached photos
+    const post = await page.createFeed([Page.Fields.id], {
+      message: this.spec.postSpec.message,
+      attached_media: fbPhotos.map((p) => ({ media_fbid: p.id })),
+    });
+    console.log("// created photo post", post);
+    return post;
   }
   async createVideoPost() {
-    throw new NotImplementedError();
+    throw new NotImplementedError("TODO");
   }
   protected async api(accessToken: string) {
     return FacebookAdsApi.init(accessToken).setDebug(true);
+  }
+  protected async identity() {
+    const acc = await ConnectedAccount.fromFBPageID(this.pageID);
+    if (!acc) throw new Error("no connected account found");
+    const api = this.api(acc.encryptedAccessToken);
+    const page = new Page(this.pageID, api);
+    return { page, acc, api };
   }
 }
 
