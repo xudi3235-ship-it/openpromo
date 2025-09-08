@@ -8,6 +8,7 @@ import type {
   V2ListParams,
   V2ListResponse,
 } from "cloudflare/resources/images/v2/v2.mjs";
+import { Actor } from "../actor";
 
 // wraps the Cloudflare Images API
 // https://developers.cloudflare.com/images/
@@ -20,9 +21,14 @@ export namespace ImageStorage {
     params: Omit<DirectUploadCreateParams, "account_id">,
   ): Promise<DirectUploadCreateResponse> {
     const c = getCloudflareClient();
+    const { metadata, ...rest } = params;
     const upload = await c.images.v2.directUploads.create({
       account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
-      ...params,
+      ...rest,
+      metadata: {
+        ...(metadata ?? {}),
+        actor: Actor.assert("workspace_user"),
+      },
     });
     return upload;
   }
