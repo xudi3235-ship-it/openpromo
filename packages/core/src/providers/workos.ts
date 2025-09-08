@@ -1,5 +1,5 @@
+import { env } from "@core/utils/env";
 import { WorkOS } from "@workos-inc/node";
-import { env } from "@/utils/env";
 
 export const getWorkOS = () => {
   return new WorkOS(env.WORKOS_API_KEY, {

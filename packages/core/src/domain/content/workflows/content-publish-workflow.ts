@@ -1,13 +1,13 @@
-import z from "zod";
-import { EntPendingContent } from "@/domain/content/entity";
-import { Actor } from "@/helpers/actor";
+import { EntPendingContent } from "@core/domain/content/entity";
+import { Actor } from "@core/helpers/actor";
 import {
   type CoreWorkflowContext,
   CoreWorkflowEntrypoint,
   type CoreWorkflowEvent,
   type CoreWorkflowStep,
-} from "@/helpers/workflow";
-import { Log } from "@/utils/log";
+} from "@core/helpers/workflow";
+import { Log } from "@core/utils/log";
+import z from "zod";
 
 const PublishWorkflowParams = z.object({
   actor: Actor.WorkspaceUserSchema,

@@ -1,5 +1,5 @@
+import { id, timestamps, ulid } from "@core/helpers/db";
 import { index, pgTable, text, unique } from "drizzle-orm/pg-core";
-import { id, timestamps, ulid } from "@/helpers/db";
 
 export const workspacesTable = pgTable(
   "workspaces",

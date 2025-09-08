@@ -1,7 +1,4 @@
-import { nullThrows } from "@openpromo/js-shared/common";
-import { FacebookAdsApi, Page } from "facebook-nodejs-business-sdk";
-import * as z from "zod";
-import { ConnectedAccount } from "@/domain/connected-account/connected-account";
+import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import {
   afterTx,
   and,
@@ -9,7 +6,7 @@ import {
   db,
   eq,
   useTransaction,
-} from "@/helpers/db";
+} from "@core/helpers/db";
 import {
   PendingContentGroupInsert,
   type PendingContentGroupSelect,
@@ -19,9 +16,12 @@ import {
   type UnifiedContentInstagramPost,
   type UnifiedContentSelect,
   unifiedContentTable,
-} from "@/schemas/content.sql";
-import { NotImplementedError } from "@/utils/error";
-import { fn } from "@/utils/fn";
+} from "@core/schemas/content.sql";
+import { NotImplementedError } from "@core/utils/error";
+import { fn } from "@core/utils/fn";
+import { nullThrows } from "@openpromo/js-shared/common";
+import { FacebookAdsApi, Page } from "facebook-nodejs-business-sdk";
+import * as z from "zod";
 import { defineEvent } from "../../../experimental/event";
 import { Actor } from "../../../helpers/actor";
 import { type AllPlacement, FBFeedPlacementSpec } from "../schema/placement";

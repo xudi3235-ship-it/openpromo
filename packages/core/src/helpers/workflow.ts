@@ -6,7 +6,7 @@ import {
   type WorkflowStepEvent,
   type WorkflowTimeoutDuration,
 } from "cloudflare:workers";
-import type { Bindings } from "@/helpers/api-env";
+import type { Bindings } from "@core/helpers/api-env";
 import { Actor } from "./actor";
 
 export class CoreWorkflowContext {

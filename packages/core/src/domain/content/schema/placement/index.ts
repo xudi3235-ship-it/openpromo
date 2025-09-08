@@ -77,7 +77,7 @@ export const BasePlacementSpec = z.object({
 export type BasePlacementSpec = z.infer<typeof BasePlacementSpec>;
 
 // ========================= Facebook =========================
-import { CreateFeedSchema } from "../../../../experimental/infra/facebook/types";
+import { CreateFeedSchema } from "@core/experimental/infra/facebook/types";
 
 /**
  * defines schema & validation logics for facebook placements,

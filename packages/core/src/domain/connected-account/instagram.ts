@@ -1,5 +1,5 @@
-import { env } from "@/utils/env";
-import { Log } from "@/utils/log";
+import { env } from "@core/utils/env";
+import { Log } from "@core/utils/log";
 
 interface InstagramProfile {
   id: string;

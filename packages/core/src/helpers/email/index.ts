@@ -1,5 +1,5 @@
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
-import { Log } from "@/utils/log";
+import { Log } from "@core/utils/log";
 
 export namespace Email {
   const log = Log.create({ namespace: "email" });

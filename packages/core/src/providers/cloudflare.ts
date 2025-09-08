@@ -1,5 +1,5 @@
+import { env } from "@core/utils/env";
 import Cloudflare from "cloudflare";
-import { env } from "@/utils/env";
 
 export const getCloudflareClient = () =>
   new Cloudflare({

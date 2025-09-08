@@ -1,3 +1,8 @@
+import {
+  AllPlacement,
+  type PlacementSpec,
+} from "@core/domain/content/schema/placement";
+import { id, timestamps, ulid } from "@core/helpers/db";
 import type { BuildExtraConfigColumns } from "drizzle-orm";
 import {
   jsonb,
@@ -13,11 +18,6 @@ import {
   createUpdateSchema,
 } from "drizzle-zod";
 import * as z from "zod";
-import {
-  AllPlacement,
-  type PlacementSpec,
-} from "@/domain/content/schema/placement";
-import { id, timestamps, ulid } from "@/helpers/db";
 import { connectedAccountId } from "./connected-account.sql";
 import { workspaceID } from "./workspaces.sql";
 
