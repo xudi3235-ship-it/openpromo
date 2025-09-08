@@ -26,6 +26,7 @@ import { NotImplementedError } from "@core/utils/error";
 import { fn } from "@core/utils/fn";
 import { nullThrows } from "@openpromo/js-shared/common";
 import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
+import type { ZodType } from "zod";
 import * as z from "zod";
 import {
   type AllPlacement,
@@ -442,6 +443,7 @@ class EntFBFeedPendingContent extends EntPendingContent {
 /**
  * a pending instagram feed content. NOTE: feed = post + reel
  * seems like platforms are merging both.
+ * ref: https://developers.facebook.com/docs/instagram-platform/content-publishing/
  */
 class EntIGFeedPendingContent extends EntPendingContent {
   static type = "instagram_pending_content";
@@ -468,6 +470,72 @@ class EntIGFeedPendingContent extends EntPendingContent {
     }
     this.spec = spec;
     this.igAccountID = spec.igAccountID;
+  }
+  async createSinglePhotoPost() {
+    // 1. create media container
+    await this.api(
+      "/<IGID>/media",
+      "POST",
+      {
+        caption: "trust me bro",
+        image_url: "https://picsum.photos/200/300",
+      },
+      z.object({ id: z.string().describe("media container id") }),
+      (res) => {
+        console.log("// created media container", res);
+        return res;
+      },
+    );
+    throw new NotImplementedError("TODO: support IG photo post");
+  }
+  protected async identity() {
+    const acc = await ConnectedAccount.fromIGAccountID(this.igAccountID);
+    return {
+      acc,
+      igAccountID: this.igAccountID,
+      accessToken: acc.encryptedAccessToken,
+    };
+  }
+  protected async api<
+    TOut extends ZodType,
+    // biome-ignore lint/suspicious/noExplicitAny: later
+    Callback extends (arg1: z.output<TOut>) => any,
+  >(
+    path: string,
+    method: "GET" | "POST" | "DELETE" | "PUT",
+    // biome-ignore lint/suspicious/noExplicitAny: later
+    body: any,
+    outSchema: TOut,
+    cb: Callback,
+  ) {
+    // IG has two login types, IG login and FB login.
+    // for now we built IG login only, hence can't use the FB sdk.
+    // wrapping the fetch for now.
+    const { accessToken } = await this.identity();
+    const base = `https://graph.instagram.com/v23.0/`;
+    const url = `${base}${path}&access_token=${accessToken}`;
+    console.log("// IG API request", { url, method, body });
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(
+        `IG API request failed: ${res.status} ${res.statusText} - ${errorText}`,
+      );
+    }
+    const resJson = await res.json();
+    console.log("// IG API response", resJson);
+    const result = (input: z.input<typeof outSchema>): ReturnType<Callback> => {
+      const parsed = outSchema.parse(input);
+      // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
+      return cb.apply(cb, [parsed as any]);
+    };
+    return result;
   }
 }
 

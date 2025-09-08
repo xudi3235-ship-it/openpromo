@@ -108,6 +108,22 @@ export namespace ConnectedAccount {
     if (!acc) throw new Error("connected account not found");
     return acc;
   }
+  export async function fromIGAccountID(id: string) {
+    const workspaceId = Actor.workspaceID();
+    const [acc] = await db()
+      .select()
+      .from(connectedAccount)
+      .where(
+        and(
+          eq(connectedAccount.externalAccountId, id),
+          eq(connectedAccount.platform, "INSTAGRAM"),
+          eq(connectedAccount.workspaceId, workspaceId),
+        ),
+      )
+      .limit(1);
+    if (!acc) throw new Error("connected account not found");
+    return acc;
+  }
   // ------------------------------ internal ------------------------------
   export async function _createDummy(): Promise<ConnectedAccountSelect> {
     const accountName = `[Internal] dummy account`;
