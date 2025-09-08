@@ -7,6 +7,7 @@ import {
   eq,
   useTransaction,
 } from "@core/helpers/db";
+import { VideoStorage } from "@core/helpers/storage/video";
 import {
   PendingContentGroupInsert,
   type PendingContentGroupSelect,
@@ -25,7 +26,6 @@ import * as z from "zod";
 import { defineEvent } from "../../../experimental/event";
 import { Actor } from "../../../helpers/actor";
 import { type AllPlacement, FBFeedPlacementSpec } from "../schema/placement";
-
 export type Constructor<T, Def extends unknown[] = unknown[]> = new (
   ...args: Def
 ) => T;
@@ -307,13 +307,77 @@ class EntFBFeedPendingContent extends EntPendingContent {
     console.log("// created photo post", post);
     return post;
   }
-  async createVideoPost() {
+  /**
+   * video related methods. Involves upload session, polling until
+   * encoding is ready, and then creating the reel.
+   * ref: https://developers.facebook.com/docs/video-api/guides/reels-publishing
+   */
+  async initVideoUploadSession() {
+    const { page } = await this.identity();
+    const session = await page.createVideoReel([], {});
+    console.log("// created video upload session", session);
+    // it should look like this
+    // {
+    // "video_id": "video-id",
+    // "upload_url": "https://rupload.facebook.com/video-upload/video-id",
+    // }
+    return session;
+  }
+  async uploadInternalVideoToSession(
+    internalVideoID: string,
+    uploadSessionUrl: string,
+  ) {
+    // 0. get video CDN url from our CF stream service
+    const res = await VideoStorage.createMP4Download(internalVideoID);
+    console.log("// got video download url", res);
+    const { acc } = await this.identity();
+
+    const cdnUrl = "FIXME: actual video cdn url";
+    // 1. upload the video
+    const response = await fetch(uploadSessionUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `OAuth ${acc.encryptedAccessToken}`,
+        file_url: cdnUrl,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to upload video: ${response.status} ${response.statusText} - ${errorText}`,
+      );
+    }
+    // 2. check if we got a success or not
+    const responseData = await response.json();
+    console.log("// video upload response", responseData);
+    throw new NotImplementedError("TODO");
+  }
+  async isVideoUploaded(_videoId: string) {
+    throw new NotImplementedError("TODO");
+  }
+  async publishReel(videoId: string, description: string) {
+    const { page } = await this.identity();
+    const response = await page.createVideoReel(
+      [], // fields
+      {
+        video_id: videoId,
+        description: description,
+        upload_phase: "finish",
+      },
+    );
+    console.log("// published reel", response);
+    return response;
+  }
+  async createReel() {
     throw new NotImplementedError("TODO");
   }
   protected async api(accessToken: string) {
     return FacebookAdsApi.init(accessToken).setDebug(true);
   }
   protected async identity() {
+    // TODO: need to handle the page access token short-lived issue.
+    // need a layer of robust token management.
     const acc = await ConnectedAccount.fromFBPageID(this.pageID);
     if (!acc) throw new Error("no connected account found");
     const api = this.api(acc.encryptedAccessToken);
