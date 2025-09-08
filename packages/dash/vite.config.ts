@@ -13,9 +13,12 @@ const flags = {
   useLocalHttps: true,
 };
 
-export default defineConfig(() => ({
+export default defineConfig({
   server: {
     port: 3000,
+  },
+  build: {
+    minify: "esbuild",
   },
   plugins: [
     // @ts-expect-error
@@ -33,4 +36,4 @@ export default defineConfig(() => ({
     tailwindcss(),
     cloudflare({ configPath: "./wrangler.jsonc" }),
   ],
-}));
+});
