@@ -8,7 +8,14 @@ export const examplesRoute = new Hono<ApiEnv>()
   .get("/workflow", async (c) => {
     const instance = await c.env.WORKFLOW.create({
       params: {
-        actor: Actor.assert("workspace_user"),
+        actor: Actor.create("workspace_user", {
+          userID: "example-user-id",
+          email: "example-email@example.com",
+          organizationID: "example-organization-id",
+          role: "org_admin",
+          workspaceID: "example-workspace-id",
+          workspaceSlug: "example-workspace-slug",
+        }),
         pendingContentID: "example-content-id",
       },
     });

@@ -1,4 +1,4 @@
-import type { ApiEnv } from "@openpromo/core/actors/index";
+import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { Hono } from "hono";
 import { imagesRoute } from "./images.js";
 
