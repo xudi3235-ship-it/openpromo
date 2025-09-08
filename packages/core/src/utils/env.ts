@@ -26,6 +26,8 @@ export const env = createEnv({
     CLOUDFLARE_IMAGE_ACCOUNT_HASH: z.string().min(1),
     // dashboard url
     DASHBOARD_URL: z.string().min(1),
+    // debug flag
+    DEBUG: z.string().optional().default("false"),
   },
   /*
    * Environment variables available on the client (and server).

@@ -18,6 +18,7 @@ import {
   type UnifiedContentSelect,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
+import { env } from "@core/utils/env";
 import { NotImplementedError } from "@core/utils/error";
 import { fn } from "@core/utils/fn";
 import { nullThrows } from "@openpromo/js-shared/common";
@@ -356,6 +357,11 @@ class EntFBFeedPendingContent extends EntPendingContent {
   async isVideoUploaded(_videoId: string) {
     throw new NotImplementedError("TODO");
   }
+  /**
+   * requires a FB video in a ready state.
+   * description, e.g. "What a beautiful day! #Tag"
+   * ref: https://developers.facebook.com/docs/video-api/guides/reels-publishing/
+   */
   async publishReel(videoId: string, description: string) {
     const { page } = await this.identity();
     const response = await page.createVideoReel(
@@ -364,16 +370,14 @@ class EntFBFeedPendingContent extends EntPendingContent {
         video_id: videoId,
         description: description,
         upload_phase: "finish",
+        video_state: "PUBLISHED",
       },
     );
     console.log("// published reel", response);
-    return response;
-  }
-  async createReel() {
     throw new NotImplementedError("TODO");
   }
   protected async api(accessToken: string) {
-    return FacebookAdsApi.init(accessToken).setDebug(true);
+    return FacebookAdsApi.init(accessToken).setDebug(env.DEBUG === "true");
   }
   protected async identity() {
     // TODO: need to handle the page access token short-lived issue.
