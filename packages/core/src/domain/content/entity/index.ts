@@ -472,20 +472,21 @@ class EntIGFeedPendingContent extends EntPendingContent {
     this.igAccountID = spec.igAccountID;
   }
   async createSinglePhotoPost() {
+    const { igAccountID } = await this.identity();
     // 1. create media container
-    await this.api(
-      "/<IGID>/media",
+    const { id: mediaContainerId } = await this.api(
+      `/${igAccountID}/media`,
       "POST",
       {
         caption: "trust me bro",
         image_url: "https://picsum.photos/200/300",
+        // media_type: "REEL", // only for video
+        // video_url: "your_video_url", // only for video
+        // is_carousel_item: false, // only for carousel
       },
       z.object({ id: z.string().describe("media container id") }),
-      (res) => {
-        console.log("// created media container", res);
-        return res;
-      },
     );
+    console.log("// created media container", { mediaContainerId });
     throw new NotImplementedError("TODO: support IG photo post");
   }
   protected async identity() {
@@ -496,17 +497,12 @@ class EntIGFeedPendingContent extends EntPendingContent {
       accessToken: acc.encryptedAccessToken,
     };
   }
-  protected async api<
-    TOut extends ZodType,
-    // biome-ignore lint/suspicious/noExplicitAny: later
-    Callback extends (arg1: z.output<TOut>) => any,
-  >(
+  protected async api<TOut extends ZodType>(
     path: string,
     method: "GET" | "POST" | "DELETE" | "PUT",
     // biome-ignore lint/suspicious/noExplicitAny: later
     body: any,
     outSchema: TOut,
-    cb: Callback,
   ) {
     // IG has two login types, IG login and FB login.
     // for now we built IG login only, hence can't use the FB sdk.
@@ -530,12 +526,12 @@ class EntIGFeedPendingContent extends EntPendingContent {
     }
     const resJson = await res.json();
     console.log("// IG API response", resJson);
-    const result = (input: z.input<typeof outSchema>): ReturnType<Callback> => {
-      const parsed = outSchema.parse(input);
-      // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
-      return cb.apply(cb, [parsed as any]);
-    };
-    return result;
+
+    const { data, success, error } = outSchema.safeParse(resJson);
+    if (!data || !success || error) {
+      throw new Error(`IG API response parse error: ${error?.message}`);
+    }
+    return data as z.output<TOut>;
   }
 }
 
