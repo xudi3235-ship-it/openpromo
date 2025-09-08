@@ -1,8 +1,8 @@
-import { ConnectedAccount } from "@openpromo/core/domain/connected-account/connected-account";
-import { instagramOAuthService } from "@openpromo/core/domain/connected-account/instagram";
-import { Actor } from "@openpromo/core/helpers/actor";
-import type { ApiEnv } from "@openpromo/core/helpers/api-env";
-import { Platform } from "@openpromo/core/schemas/connected-account.sql";
+import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
+import { instagramOAuthService } from "@core/domain/connected-account/instagram";
+import { Actor } from "@core/helpers/actor";
+import type { ApiEnv } from "@core/helpers/api-env";
+import { Platform } from "@core/schemas/connected-account.sql";
 import { Hono } from "hono";
 import * as z from "zod";
 import { clearAuthStateCookie, getAuthState } from "../../../helpers/auth";

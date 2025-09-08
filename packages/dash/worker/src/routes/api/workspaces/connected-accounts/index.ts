@@ -1,7 +1,7 @@
+import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { FacebookMutation } from "@core/domain/content/entity/mutation";
-import { ConnectedAccount } from "@openpromo/core/domain/connected-account/connected-account";
-import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
-import type { ApiEnv } from "@openpromo/core/helpers/api-env";
+import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
+import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
 import * as z from "zod";
 import { withAuth } from "../../../../middleware/with-auth";

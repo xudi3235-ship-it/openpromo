@@ -1,6 +1,6 @@
-import type { ApiEnv } from "@openpromo/core/helpers/api-env";
-import { eq, getDbClient } from "@openpromo/core/helpers/db/index";
-import { usersTable } from "@openpromo/core/schemas/users.sql";
+import type { ApiEnv } from "@core/helpers/api-env";
+import { eq, getDbClient } from "@core/helpers/db";
+import { usersTable } from "@core/schemas/users.sql";
 import { Hono } from "hono";
 import * as z from "zod";
 import { assertUser } from "../../../helpers/auth";

@@ -1,9 +1,9 @@
-import { ConnectedAccount } from "@openpromo/core/domain/connected-account/connected-account";
-import { facebookOAuthService } from "@openpromo/core/domain/connected-account/facebook";
-import { FacebookMutation } from "@openpromo/core/domain/content/entity/mutation";
-import { Actor } from "@openpromo/core/helpers/actor";
-import type { ApiEnv } from "@openpromo/core/helpers/api-env";
-import { Platform } from "@openpromo/core/schemas/connected-account.sql";
+import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
+import { facebookOAuthService } from "@core/domain/connected-account/facebook";
+import { FacebookMutation } from "@core/domain/content/entity/mutation";
+import { Actor } from "@core/helpers/actor";
+import type { ApiEnv } from "@core/helpers/api-env";
+import { Platform } from "@core/schemas/connected-account.sql";
 import { Hono } from "hono";
 import * as z from "zod";
 import { clearAuthStateCookie, getAuthState } from "../../../helpers/auth";

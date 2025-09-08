@@ -1,7 +1,7 @@
-import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
-import { Actor } from "@openpromo/core/helpers/actor";
-import type { ApiEnv } from "@openpromo/core/helpers/api-env";
-import { ImageStorage } from "@openpromo/core/helpers/storage/image";
+import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
+import { Actor } from "@core/helpers/actor";
+import type { ApiEnv } from "@core/helpers/api-env";
+import { ImageStorage } from "@core/helpers/storage/image";
 import { Hono } from "hono";
 import * as z from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";

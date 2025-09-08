@@ -1,4 +1,4 @@
-import type { ApiEnv } from "@openpromo/core/helpers/api-env";
+import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
 import { withAuth } from "../../../middleware/with-auth";
 import { facebookConnectedAccountRoute } from "./facebook";

@@ -1,4 +1,4 @@
-import { Scheduler } from "@openpromo/core/experimental/scheduler";
+import { Scheduler } from "@core/experimental/scheduler";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { bootstrap } from "./middleware/bootstrap";

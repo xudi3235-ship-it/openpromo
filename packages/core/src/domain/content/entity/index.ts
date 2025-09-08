@@ -1,4 +1,6 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
+import { defineEvent } from "@core/experimental/event";
+import { Actor } from "@core/helpers/actor";
 import {
   afterTx,
   and,
@@ -24,8 +26,6 @@ import { fn } from "@core/utils/fn";
 import { nullThrows } from "@openpromo/js-shared/common";
 import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
 import * as z from "zod";
-import { defineEvent } from "../../../experimental/event";
-import { Actor } from "../../../helpers/actor";
 import { type AllPlacement, FBFeedPlacementSpec } from "../schema/placement";
 export type Constructor<T, Def extends unknown[] = unknown[]> = new (
   ...args: Def

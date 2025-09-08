@@ -1,6 +1,6 @@
-import type { ApiEnv } from "@openpromo/core/helpers/api-env";
-import { getWorkOS } from "@openpromo/core/providers/workos";
-import { env } from "@openpromo/core/utils/env";
+import type { ApiEnv } from "@core/helpers/api-env";
+import { getWorkOS } from "@core/providers/workos";
+import { env } from "@core/utils/env";
 import { Hono } from "hono";
 import { getCookie } from "hono/cookie";
 import * as z from "zod";

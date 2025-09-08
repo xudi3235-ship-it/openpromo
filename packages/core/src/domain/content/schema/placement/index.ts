@@ -1,5 +1,5 @@
+import { Actor } from "@core/helpers/actor";
 import * as z from "zod";
-import { Actor } from "../../../../helpers/actor";
 
 export const FBPlacement = {
   FB_FEED: "FB_FEED",

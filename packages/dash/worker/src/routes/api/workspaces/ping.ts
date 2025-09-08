@@ -1,6 +1,6 @@
-import { EntPendingContentGroup } from "@openpromo/core/domain/content/entity/index";
-import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
-import type { ApiEnv } from "@openpromo/core/helpers/api-env";
+import { EntPendingContentGroup } from "@core/domain/content/entity/index";
+import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
+import type { ApiEnv } from "@core/helpers/api-env";
 import type {
   PendingContentGroupInsert,
   UnifiedContentInsert,

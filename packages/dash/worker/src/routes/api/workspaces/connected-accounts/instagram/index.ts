@@ -1,6 +1,6 @@
-import { instagramOAuthService } from "@openpromo/core/domain/connected-account/instagram";
-import { Actor } from "@openpromo/core/helpers/actor";
-import type { ApiEnv } from "@openpromo/core/helpers/api-env";
+import { instagramOAuthService } from "@core/domain/connected-account/instagram";
+import { Actor } from "@core/helpers/actor";
+import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
 import * as z from "zod";
 import { setAuthStateCookie } from "../../../../../helpers/auth";

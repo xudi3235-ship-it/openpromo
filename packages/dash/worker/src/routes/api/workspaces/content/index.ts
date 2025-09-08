@@ -1,11 +1,11 @@
 import {
   EntFBFeedPendingContent,
   EntPendingContent,
-} from "@openpromo/core/domain/content/entity/index";
-import { Actor } from "@openpromo/core/helpers/actor";
-import type { ApiEnv } from "@openpromo/core/helpers/api-env";
-import { db } from "@openpromo/core/helpers/db/db";
-import { connectedAccount } from "@openpromo/core/schemas/connected-account.sql";
+} from "@core/domain/content/entity/index";
+import { Actor } from "@core/helpers/actor";
+import type { ApiEnv } from "@core/helpers/api-env";
+import { db } from "@core/helpers/db/db";
+import { connectedAccount } from "@core/schemas/connected-account.sql";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
