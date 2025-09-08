@@ -29,8 +29,7 @@ export const contentRoute = new Hono<ApiEnv>()
     });
     return c.json({ content, wf });
   })
-  // create text post
-  .get("/text", async (c) => {
+  .get("/reel", async (c) => {
     const myPageId = "198964309975614"; // my test page.
     // 1. load our FB account
     const [acc] = await db()
@@ -48,9 +47,30 @@ export const contentRoute = new Hono<ApiEnv>()
     // 2. create a dummy pending content
     const content = await EntPendingContent._createDummy(acc.externalAccountId);
     const fbContent = EntFBFeedPendingContent.fromPendingContent(content);
-    // 3. publish it to page
-    await fbContent.createPhotoPost();
-    return c.json({ acc });
+
+    // 3. create a reel.
+    const { video_id, upload_url } = await fbContent.initVideoUploadSession();
+    // sample video
+    await fbContent.uploadInternalVideoToSession(
+      "0e859aa05d5af57db7b1d5888d6093ce",
+      upload_url,
+    );
+    let attempts = 10;
+    while (attempts > 0) {
+      const status = await fbContent.getVideoStatus(video_id);
+      attempts--;
+      if (status.uploading_phase.status === "complete") {
+        console.log("// video is ready");
+        break;
+      }
+      console.log(`// ${attempts} video not ready yet, wait 5s`, status);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+    // kick off publishing, at this point, video is upload_complete
+    // next it will start processing, then publishing. we need to still poll
+    // for the status and watch out for changes.
+    const reel = await fbContent.createReel(video_id);
+    return c.json({ video_id, reel });
   })
   // create, schedule, or draft a content x-plat.
   .post("/", zValidator("json", z.object({ text: z.string() })), async (c) => {

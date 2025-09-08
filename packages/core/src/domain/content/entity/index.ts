@@ -182,11 +182,15 @@ class EntPendingContent extends EntUnifiedContentBase {
         actor: Actor.assert("workspace_user"),
         placement: "FB_FEED",
         postSpec: {
-          message: "trust me bro",
+          message: "trust me bro - from openpromo",
           attachments: [
             {
               type: "photo",
               id: "your_mom",
+            },
+            {
+              type: "video",
+              id: "your_mom_again",
             },
           ],
         },
@@ -213,6 +217,39 @@ class EntPendingContent extends EntUnifiedContentBase {
     return spec;
   }
 }
+
+type FBVideoStatusResponse = {
+  status: {
+    video_status:
+      | "error"
+      | "expired"
+      | "processing"
+      | "ready"
+      | "uploading"
+      | "upload_failed"
+      | "upload_complete";
+    uploading_phase: {
+      status: "complete" | "error" | "not_started" | "in_progress";
+      bytes_transfered?: number;
+      errors?: unknown;
+      source_file_size?: number;
+    };
+    processing_phase: {
+      status: "complete" | "error" | "not_started" | "in_progress";
+      error?: {
+        message: string;
+      };
+    };
+    publishing_phase: {
+      status: "complete" | "error" | "not_started" | "in_progress";
+      error?: {
+        message: string;
+      };
+      publish_status?: "draft" | "error" | "published" | "scheduled";
+      publish_time?: number;
+    };
+  };
+};
 
 /**
  * a pending facebook feed content.
@@ -294,14 +331,17 @@ class EntFBFeedPendingContent extends EntPendingContent {
    */
   async initVideoUploadSession() {
     const { page } = await this.identity();
-    const session = await page.createVideoReel([], {});
+    const session = await page.createVideoReel([], {
+      upload_phase: "start",
+    });
     console.log("// created video upload session", session);
-    // it should look like this
-    // {
-    // "video_id": "video-id",
-    // "upload_url": "https://rupload.facebook.com/video-upload/video-id",
-    // }
-    return session;
+    return {
+      session,
+      //@ts-expect-error facebook sdk is missing these fields
+      video_id: session.video_id as string,
+      //@ts-expect-error facebook sdk is missing these fields
+      upload_url: session.upload_url as string,
+    };
   }
   async uploadInternalVideoToSession(
     internalVideoID: string,
@@ -311,8 +351,10 @@ class EntFBFeedPendingContent extends EntPendingContent {
     const res = await VideoStorage.createMP4Download(internalVideoID);
     console.log("// got video download url", res);
     const { acc } = await this.identity();
-
-    const cdnUrl = "FIXME: actual video cdn url";
+    const cdnUrl = res?.default?.url ?? null;
+    if (!cdnUrl) {
+      throw new Error("failed to get video CDN url");
+    }
     // 1. upload the video
     const response = await fetch(uploadSessionUrl, {
       method: "POST",
@@ -329,20 +371,44 @@ class EntFBFeedPendingContent extends EntPendingContent {
       );
     }
     // 2. check if we got a success or not
-    const responseData = await response.json();
-    console.log("// video upload response", responseData);
-    throw new NotImplementedError("TODO");
+    const uploadRes = (await response.json()) as {
+      message: string;
+      success: boolean;
+    };
+    if (!uploadRes.success) {
+      throw new Error(`Video upload failed: ${uploadRes.message}`);
+    }
+    return uploadRes;
   }
-  async isVideoUploaded(_videoId: string) {
-    throw new NotImplementedError("TODO");
+
+  async getVideoStatus(videoId: string) {
+    const { acc } = await this.identity();
+    const res = await fetch(
+      `https://graph.facebook.com/v23.0/${videoId}?fields=status&access_token=${acc.encryptedAccessToken}`,
+      { method: "GET" },
+    );
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(
+        `Failed to get video status: ${res.status} ${res.statusText} - ${errorText}`,
+      );
+    }
+    const resJson = (await res.json()) as FBVideoStatusResponse;
+    console.log("// video status", resJson);
+    return resJson.status;
   }
   /**
    * requires a FB video in a ready state.
    * description, e.g. "What a beautiful day! #Tag"
    * ref: https://developers.facebook.com/docs/video-api/guides/reels-publishing/
    */
-  async publishReel(videoId: string, description: string) {
+  async createReel(videoId: string) {
     const { page } = await this.identity();
+    const description = this.spec.postSpec.message;
+    if (!description) throw new Error("no description provided");
+    // this actually kicks off publishing
+    // it will be processed and published
+    // it's a async step.
     const response = await page.createVideoReel(
       [], // fields
       {
@@ -353,7 +419,7 @@ class EntFBFeedPendingContent extends EntPendingContent {
       },
     );
     console.log("// published reel", response);
-    throw new NotImplementedError("TODO");
+    return response;
   }
   protected async api(accessToken: string) {
     return FacebookAdsApi.init(accessToken).setDebug(env.DEBUG === "true");

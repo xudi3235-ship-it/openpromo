@@ -80,22 +80,15 @@ export namespace VideoStorage {
    */
   export async function createMP4Download(
     videoId: string,
-  ): Promise<DownloadResponse> {
-    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_DEFAULT_ACCOUNT_ID}/stream/${videoId}/downloads`;
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
+  ): Promise<DownloadResponse["result"]> {
+    const c = getCloudflareClient();
+    const res = await c.stream.downloads.create(videoId, {
+      account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
+      body: {},
     });
+    console.log({ res });
 
-    if (!response.ok) {
-      throw new Error(`Failed to create MP4 download: ${response.statusText}`);
-    }
-
-    return response.json() as Promise<DownloadResponse>;
+    return res as DownloadResponse["result"];
   }
 
   /**
