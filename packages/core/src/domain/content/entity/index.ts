@@ -27,7 +27,11 @@ import { fn } from "@core/utils/fn";
 import { nullThrows } from "@openpromo/js-shared/common";
 import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
 import * as z from "zod";
-import { type AllPlacement, FBFeedPlacementSpec } from "../schema/placement";
+import {
+  type AllPlacement,
+  FBFeedPlacementSpec,
+  IGFeedPlacementSpec,
+} from "../schema/placement";
 
 abstract class EntUnifiedContentBase extends Ent<UnifiedContentSelect> {
   static type = "unified_content";
@@ -435,6 +439,38 @@ class EntFBFeedPendingContent extends EntPendingContent {
   }
 }
 
+/**
+ * a pending instagram feed content. NOTE: feed = post + reel
+ * seems like platforms are merging both.
+ */
+class EntIGFeedPendingContent extends EntPendingContent {
+  static type = "instagram_pending_content";
+  spec: IGFeedPlacementSpec;
+  igAccountID: string;
+  constructor(data: UnifiedContentSelect) {
+    super(data);
+    const p = this.placement();
+    if (p !== "IG_FEED") {
+      throw new Error(`Content ${data.id} is not IG_FEED placement`);
+    }
+    const {
+      data: spec,
+      success,
+      error,
+    } = IGFeedPlacementSpec.safeParse(this.data.placementSpec);
+    if (!spec || !success || error) {
+      throw new Error(`Invalid placementSpec for content ${this.data.id}`);
+    }
+    if (!spec.igAccountID) {
+      throw new Error(
+        `IG placementSpec missing igAccountID for content ${this.data.id}`,
+      );
+    }
+    this.spec = spec;
+    this.igAccountID = spec.igAccountID;
+  }
+}
+
 class EntScheduledContent extends EntPendingContent {
   constructor(data: UnifiedContentSelect) {
     super(data);
@@ -659,6 +695,7 @@ export class EntInstagramPost extends EntUnifiedContentBase {
 // ================== exports ==================
 export {
   EntFBFeedPendingContent,
+  EntIGFeedPendingContent,
   EntPendingContent,
   EntPendingContentGroup,
   EntScheduledContent,

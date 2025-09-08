@@ -118,15 +118,20 @@ export const FBFeedPlacementSpec = BaseFBPlacementSpec.extend({
 export type FBFeedPlacementSpec = z.infer<typeof FBFeedPlacementSpec>;
 
 // ========================= Instagram =========================
-export const IGPlacementSpec = BasePlacementSpec.extend({
+export const BaseIGPlacementSpec = BasePlacementSpec.extend({
   placement: z.enum(Object.values(IGPlacement)),
   igAccountID: z.string().optional(),
-  fbAdAccountID: z.string().optional(),
 });
+export const IGFeedPlacementSpec = BaseIGPlacementSpec.extend({
+  placement: z.literal(IGPlacement.IG_FEED),
+  caption: z.string().optional(),
+  attachments: SharedAttachmentSpec.array().optional(),
+});
+export type IGFeedPlacementSpec = z.infer<typeof IGFeedPlacementSpec>;
 // ========================= Export =========================
 
 export const PlacementSpec = z.discriminatedUnion("placement", [
   FBFeedPlacementSpec,
-  IGPlacementSpec,
+  IGFeedPlacementSpec,
 ]);
 export type PlacementSpec = z.infer<typeof PlacementSpec>;
