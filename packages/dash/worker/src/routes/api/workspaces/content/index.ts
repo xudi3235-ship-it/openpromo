@@ -1,5 +1,7 @@
-import { EntPendingContent } from "@openpromo/core/domain/content/entity/index";
-import { FacebookMutation } from "@openpromo/core/domain/content/entity/mutation";
+import {
+  EntFBFeedPendingContent,
+  EntPendingContent,
+} from "@openpromo/core/domain/content/entity/index";
 import { Actor } from "@openpromo/core/helpers/actor";
 import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { db } from "@openpromo/core/helpers/db/db";
@@ -45,8 +47,9 @@ export const contentRoute = new Hono<ApiEnv>()
     console.log({ acc });
     // 2. create a dummy pending content
     const content = await EntPendingContent._createDummy(acc.externalAccountId);
+    const fbContent = EntFBFeedPendingContent.fromPendingContent(content);
     // 3. publish it to page
-    await FacebookMutation.createTextPost(content.data.id);
+    await fbContent.createTextPost();
     return c.json({ acc });
   })
   // create, schedule, or draft a content x-plat.

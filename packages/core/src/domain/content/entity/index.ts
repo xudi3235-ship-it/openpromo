@@ -1,4 +1,5 @@
 import { nullThrows } from "@openpromo/js-shared/common";
+import { FacebookAdsApi, Page } from "facebook-nodejs-business-sdk";
 import * as z from "zod";
 import { ConnectedAccount } from "@/domain/connected-account/connected-account";
 import {
@@ -227,6 +228,58 @@ class EntPendingContent extends EntUnifiedContentBase {
   }
 }
 
+/**
+ * a pending facebook feed content.
+ */
+class EntFBFeedPendingContent extends EntPendingContent {
+  static type = "facebook_pending_content";
+  spec: FBFeedPlacementSpec;
+  pageID: string;
+  constructor(data: UnifiedContentSelect) {
+    super(data);
+    const p = this.placement();
+    if (p !== "FB_FEED") {
+      throw new Error(`Content ${data.id} is not FB_FEED placement`);
+    }
+    const {
+      data: spec,
+      success,
+      error,
+    } = FBFeedPlacementSpec.safeParse(this.data.placementSpec);
+    if (!spec || !success || error) {
+      throw new Error(`Invalid placementSpec for content ${this.data.id}`);
+    }
+    this.spec = spec;
+    this.pageID = spec.identity.pageId;
+  }
+  static fromPendingContent(c: EntPendingContent): EntFBFeedPendingContent {
+    return new EntFBFeedPendingContent(c.data);
+  }
+  async createTextPost() {
+    const text = this.spec.postSpec.message;
+    if (!text) throw new Error("no text provided");
+    // 0. ensure identity is connected and valid
+    const acc = await ConnectedAccount.fromFBPageID(this.pageID);
+    // 1. init api with page access token
+    const api = this.api(acc.encryptedAccessToken);
+    // 2. create post using sdk.
+    const page = new Page(this.pageID, api);
+    const post = await page.createFeed([], {
+      message: text,
+    });
+    console.log("// created post", post);
+  }
+  async createPhotoPost() {
+    throw new NotImplementedError();
+  }
+  async createVideoPost() {
+    throw new NotImplementedError();
+  }
+  protected async api(accessToken: string) {
+    return FacebookAdsApi.init(accessToken).setDebug(true);
+  }
+}
+
 class EntScheduledContent extends EntPendingContent {
   constructor(data: UnifiedContentSelect) {
     super(data);
@@ -449,4 +502,9 @@ export class EntInstagramPost extends EntUnifiedContentBase {
 }
 
 // ================== exports ==================
-export { EntPendingContent, EntPendingContentGroup, EntScheduledContent };
+export {
+  EntFBFeedPendingContent,
+  EntPendingContent,
+  EntPendingContentGroup,
+  EntScheduledContent,
+};
