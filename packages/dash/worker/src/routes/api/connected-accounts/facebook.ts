@@ -49,6 +49,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
       const workspaceSlug = actor.properties.workspaceSlug;
       return Actor.provide("workspace_user", actor.properties, async () => {
         // 1. Authenticate with Facebook
+        // this is user access scope
         const authResult = await facebookOAuthService.authenticate({
           code,
           workspaceSlug,
@@ -56,7 +57,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
 
         // 2. Fetch list of pages user has granted access to
         const userPages = await facebookOAuthService.getUserPages(
-          authResult.accessToken,
+          authResult.accessToken, // user access token
         );
         console.log({ userPages });
 
@@ -69,9 +70,11 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
               accountName: page.name,
               externalUrl: `https://www.facebook.com/${page.id}`,
               profilePicUrl: page.picture?.data?.url ?? null,
+              // NOTE: this is page-level access token!!
+              // for now it seems like it's short-lived token only (lasts 2 hours)
               // TODO: implement encryption
-              encryptedAccessToken: authResult.accessToken,
-              refreshToken: authResult.refreshToken,
+              encryptedAccessToken: page.access_token,
+              refreshToken: null, // TODO: refresh token for page
               tokenExpiresAt: new Date(
                 Date.now() + authResult.expiresIn * 1000,
               ),
@@ -79,6 +82,8 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
                 pageId: page.id,
                 pageName: page.name,
                 followers: page.fan_count,
+                userAccessToken: authResult.accessToken,
+                userRefreshToken: authResult.refreshToken,
               },
             }),
           ),
