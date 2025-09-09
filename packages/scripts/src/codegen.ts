@@ -27,7 +27,6 @@ async function main() {
       console.error(`stderr: ${stderr}`);
       return;
     }
-    // biome-ignore lint/suspicious/noConsole: codegen
     console.debug(`stdout: ${stdout}`);
   });
 }
