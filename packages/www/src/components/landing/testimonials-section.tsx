@@ -1,6 +1,6 @@
+import { Button } from "@openpromo/ui/components/button";
+import { Typography } from "@openpromo/ui/components/typography";
 import { MessageCircleHeart, Plus } from "lucide-react";
-import { Button } from "@/components/button";
-import { Typography } from "@/components/typography";
 import { Container, Section, Stack } from "../_layout";
 
 const testimonials = [

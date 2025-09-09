@@ -1,7 +1,6 @@
+import { Typography } from "@openpromo/ui/components/typography";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { Typography } from "@/components/typography";
-// import dashboardPreview from "../../assets/dashboard.png";
 import dashboardPreview from "../../assets/dashboard.png";
 import { Container, Section } from "../_layout";
 import { CompaniesMarquee } from "../animations/companies-marquee";

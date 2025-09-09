@@ -1,12 +1,12 @@
-import { ChevronRight, HelpCircle } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/accordion";
-import { Button } from "@/components/button";
-import { Typography } from "@/components/typography";
+} from "@openpromo/ui/components/accordion";
+import { Button } from "@openpromo/ui/components/button";
+import { Typography } from "@openpromo/ui/components/typography";
+import { ChevronRight, HelpCircle } from "lucide-react";
 import { Container, Section, Stack } from "../_layout";
 
 const faqItems = [
