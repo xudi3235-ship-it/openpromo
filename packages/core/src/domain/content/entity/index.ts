@@ -25,6 +25,7 @@ import { env } from "@core/utils/env";
 import { NotImplementedError } from "@core/utils/error";
 import { fn } from "@core/utils/fn";
 import { nullThrows } from "@openpromo/js-shared/common";
+import { onlyOrThrow } from "@openpromo/js-shared/iterable";
 import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
 import type { ZodType } from "zod";
 import * as z from "zod";
@@ -533,12 +534,53 @@ class EntIGFeedPendingContent extends EntPendingContent {
     );
     return { postId };
   }
+  async createReel() {
+    const videos =
+      this.spec.attachments?.filter((a) => a.type === "video") ?? [];
+    if (videos.length !== 1) {
+      throw new Error("only support 1 video attachment for reel");
+    }
+    const video = onlyOrThrow(videos);
+    // 1. create media container for the video
+    const containerId = await this.createMediaContainer({
+      caption: "trust me bro - reel",
+      videoUrl: video.presignedUrl,
+      mediaType: "REELS",
+    });
+    // 2. poll until the container is ready
+    let attempts = 10;
+    let ready = false;
+    while (attempts > 0) {
+      const status = await this.getMediaContainerStatus(containerId);
+      console.log(`// ${attempts} media container status`, status);
+      if (status.status_code === "FINISHED") {
+        ready = true;
+        break;
+      }
+      attempts--;
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+    if (!ready) {
+      throw new Error("video media container is not ready in time");
+    }
+    // 3. publish reel
+    const { igAccountID } = await this.identity();
+    const { id: postId } = await this.api(
+      `/${igAccountID}/media_publish`,
+      "POST",
+      {
+        creation_id: containerId,
+      },
+      z.object({ id: z.string().describe("instagram post id") }),
+    );
+    return { postId };
+  }
   async createMediaContainer(params: {
     caption: string;
     imageUrl?: string;
     videoUrl?: string;
     isCarouselItem?: boolean;
-    mediaType?: "VIDEO" | "REEL" | "STORIES" | "CAROUSEL";
+    mediaType?: "VIDEO" | "REELS" | "STORIES" | "CAROUSEL";
     children?: string[]; // media container ids
   }) {
     const { igAccountID } = await this.identity();
@@ -661,17 +703,23 @@ class EntIGFeedPendingContent extends EntPendingContent {
         placement: "IG_FEED",
         caption: "dummy caption",
         attachments: [
+          // {
+          //   type: "photo",
+          //   id: "your_mom",
+          //   presignedUrl:
+          //     "https://videos.openai.com/vg-assets/assets%2Ftask_01k4mk41aaeg8vx466pehg1cr7%2F1757332857_img_0.webp?st=2025-09-09T02%3A20%3A03Z&se=2025-09-15T03%3A20%3A03Z&sks=b&skt=2025-09-09T02%3A20%3A03Z&ske=2025-09-15T03%3A20%3A03Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=3d249c53-07fa-4ba4-9b65-0bf8eb4ea46a&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=ggevPmmqW%2Bjs5epahYb%2Bx5EPRh4kTbVfi8OtOjnqE%2Fs%3D&az=oaivgprodscus",
+          // },
+          // {
+          //   type: "photo",
+          //   id: "your_mom_again",
+          //   presignedUrl:
+          //     "https://videos.openai.com/vg-assets/assets%2Ftask_01k4nqawy0f55sbcejpqxkzcfg%2F1757370783_img_1.webp?st=2025-09-09T02%3A23%3A11Z&se=2025-09-15T03%3A23%3A11Z&sks=b&skt=2025-09-09T02%3A23%3A11Z&ske=2025-09-15T03%3A23%3A11Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=3d249c53-07fa-4ba4-9b65-0bf8eb4ea46a&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=1hFzLeje5KTjKzSl%2FRj%2F7wNTEtrCLoEvL%2FOPMa%2F6x2Y%3D&az=oaivgprodscus",
+          // },
           {
-            type: "photo",
-            id: "your_mom",
+            type: "video",
+            id: "your_mom_video",
             presignedUrl:
-              "https://videos.openai.com/vg-assets/assets%2Ftask_01k4mk41aaeg8vx466pehg1cr7%2F1757332857_img_0.webp?st=2025-09-09T02%3A20%3A03Z&se=2025-09-15T03%3A20%3A03Z&sks=b&skt=2025-09-09T02%3A20%3A03Z&ske=2025-09-15T03%3A20%3A03Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=3d249c53-07fa-4ba4-9b65-0bf8eb4ea46a&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=ggevPmmqW%2Bjs5epahYb%2Bx5EPRh4kTbVfi8OtOjnqE%2Fs%3D&az=oaivgprodscus",
-          },
-          {
-            type: "photo",
-            id: "your_mom_again",
-            presignedUrl:
-              "https://videos.openai.com/vg-assets/assets%2Ftask_01k4nqawy0f55sbcejpqxkzcfg%2F1757370783_img_1.webp?st=2025-09-09T02%3A23%3A11Z&se=2025-09-15T03%3A23%3A11Z&sks=b&skt=2025-09-09T02%3A23%3A11Z&ske=2025-09-15T03%3A23%3A11Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=3d249c53-07fa-4ba4-9b65-0bf8eb4ea46a&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=1hFzLeje5KTjKzSl%2FRj%2F7wNTEtrCLoEvL%2FOPMa%2F6x2Y%3D&az=oaivgprodscus",
+              "https://customer-ebwkk8kv75vt1wbh.cloudflarestream.com/0e859aa05d5af57db7b1d5888d6093ce/downloads/default.mp4",
           },
         ],
       },
