@@ -479,7 +479,9 @@ class EntIGFeedPendingContent extends EntPendingContent {
       "POST",
       {
         caption: "trust me bro",
-        image_url: "https://picsum.photos/200/300",
+        // some random img
+        image_url:
+          "https://videos.openai.com/vg-assets/assets%2Ftask_01k4k36ycreev9qdkzctsrsxbg%2F1757282642_img_0.webp?st=2025-09-08T22%3A27%3A05Z&se=2025-09-14T23%3A27%3A05Z&sks=b&skt=2025-09-08T22%3A27%3A05Z&ske=2025-09-14T23%3A27%3A05Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=8ebb0df1-a278-4e2e-9c20-f2d373479b3a&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=Bt58qPWEscV5TSVmw%2BvJAoQqTHlMHCucawymOb5R7CM%3D&az=oaivgprodscus",
         // media_type: "REEL", // only for video
         // video_url: "your_video_url", // only for video
         // is_carousel_item: false, // only for carousel
@@ -487,7 +489,16 @@ class EntIGFeedPendingContent extends EntPendingContent {
       z.object({ id: z.string().describe("media container id") }),
     );
     console.log("// created media container", { mediaContainerId });
-    throw new NotImplementedError("TODO: support IG photo post");
+    // 2. publish media container
+    const { id: postId } = await this.api(
+      `/${igAccountID}/media_publish`,
+      "POST",
+      {
+        creation_id: mediaContainerId,
+      },
+      z.object({ id: z.string().describe("instagram post id") }),
+    );
+    return { postId };
   }
   protected async identity() {
     const acc = await ConnectedAccount.fromIGAccountID(this.igAccountID);
@@ -503,13 +514,14 @@ class EntIGFeedPendingContent extends EntPendingContent {
     // biome-ignore lint/suspicious/noExplicitAny: later
     body: any,
     outSchema: TOut,
+    params: URLSearchParams = new URLSearchParams({}),
   ) {
     // IG has two login types, IG login and FB login.
     // for now we built IG login only, hence can't use the FB sdk.
     // wrapping the fetch for now.
     const { accessToken } = await this.identity();
-    const base = `https://graph.instagram.com/v23.0/`;
-    const url = `${base}${path}&access_token=${accessToken}`;
+    const base = `https://graph.instagram.com/v23.0`;
+    const url = `${base}${path}?access_token=${accessToken}&${params.toString()}`;
     console.log("// IG API request", { url, method, body });
     const res = await fetch(url, {
       method,
@@ -532,6 +544,37 @@ class EntIGFeedPendingContent extends EntPendingContent {
       throw new Error(`IG API response parse error: ${error?.message}`);
     }
     return data as z.output<TOut>;
+  }
+  static async _createDummy(
+    igAccountID: string,
+  ): Promise<EntIGFeedPendingContent> {
+    // not in use, just a placeholder
+    const acc = await ConnectedAccount._createDummy();
+    const content = await EntPendingContent.create({
+      placement: "IG_FEED",
+      connectedAccountId: acc.id,
+      publishingStatus: "SCHEDULED",
+      placementSpec: {
+        igAccountID,
+        actor: Actor.assert("workspace_user"),
+        placement: "IG_FEED",
+        caption: "dummy caption",
+        attachments: [
+          {
+            type: "photo",
+            id: "your_mom",
+          },
+          {
+            type: "video",
+            id: "your_mom_again",
+          },
+        ],
+      },
+      schedulingSpec: {
+        scheduledPublishAt: new Date(Date.now() + 5 * 1000), // 5 seconds later
+      },
+    });
+    return new EntIGFeedPendingContent(content);
   }
 }
 

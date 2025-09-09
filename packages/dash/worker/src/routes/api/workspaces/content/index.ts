@@ -1,5 +1,6 @@
 import {
   EntFBFeedPendingContent,
+  EntIGFeedPendingContent,
   EntPendingContent,
 } from "@core/domain/content/entity/index";
 import { Actor } from "@core/helpers/actor";
@@ -28,6 +29,12 @@ export const contentRoute = new Hono<ApiEnv>()
       },
     });
     return c.json({ content, wf });
+  })
+  .get("/ig", async (c) => {
+    const myIGAcc = "25159999793598036";
+    const post = await EntIGFeedPendingContent._createDummy(myIGAcc);
+    const res = await post.createSinglePhotoPost();
+    return c.json({ post, res });
   })
   .get("/reel", async (c) => {
     const myPageId = "198964309975614"; // my test page.
