@@ -33,7 +33,8 @@ export const contentRoute = new Hono<ApiEnv>()
   .get("/ig", async (c) => {
     const myIGAcc = "25159999793598036";
     const post = await EntIGFeedPendingContent._createDummy(myIGAcc);
-    const res = await post.createSinglePhotoPost();
+    // const res = await post.createSinglePhotoPost();
+    const res = await post.createPhotoCarouselPost();
     return c.json({ post, res });
   })
   .get("/reel", async (c) => {
