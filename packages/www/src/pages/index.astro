@@ -1,6 +1,11 @@
 ---
-import { HeroSection } from "../components/landing/hero-section";
-import LandingNavbar from "../components/landing/landing-navbar";
+import { DashboardPreviewSection } from "src/components/landing/dashboard-preview-section";
+import { FaqSection } from "src/components/landing/faq-section";
+import { FeaturesSection } from "src/components/landing/features-section";
+import { FooterSection } from "src/components/landing/footer-section";
+import { HeroSection } from "src/components/landing/hero-section";
+import LandingNavbar from "src/components/landing/landing-navbar";
+import { TestimonialsSection } from "src/components/landing/testimonials-section";
 import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
 ---
@@ -9,8 +14,11 @@ import "../styles/global.css";
   <LandingNavbar />
   <!-- have to do client side rendering -->
   <HeroSection client:load onGetStartedClick={() => {}} />
-  <a data-dashboard-link href={import.meta.env.SITE}>
-    <!-- <Button>Button from packages/ui</Button> -->
-  </a>
-  <!-- <Welcome /> -->
+  <DashboardPreviewSection />
+  <FeaturesSection />
+  <TestimonialsSection />
+  <FaqSection />
+
+  <FooterSection onGetStartedClick={() => {}} />
+  <!-- <a data-dashboard-link href={import.meta.env.SITE}> </a> -->
 </Layout>

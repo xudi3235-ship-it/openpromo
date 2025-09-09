@@ -14,7 +14,7 @@ export function HeroSection({ onGetStartedClick }: HeroSectionProps) {
   const words = titleText.split(" ");
 
   return (
-    <Section spacing="md">
+    <Section spacing="sm">
       <Container size="xl">
         <Center direction="both">
           <motion.div
