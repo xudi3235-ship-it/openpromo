@@ -4,6 +4,7 @@ import type {
   DirectUploadCreateParams,
   DirectUploadCreateResponse,
 } from "cloudflare/resources/stream/direct-upload.mjs";
+import { Actor } from "../actor";
 
 // using cloudflare stream service.
 export namespace VideoStorage {
@@ -29,10 +30,15 @@ export namespace VideoStorage {
   export async function createDirectUpload(
     params: Omit<DirectUploadCreateParams, "account_id">,
   ): Promise<DirectUploadCreateResponse> {
+    const { meta, ...rest } = params;
     const c = getCloudflareClient();
     const directUpload = await c.stream.directUpload.create({
       account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
-      ...params,
+      ...rest,
+      meta: {
+        ...(meta ?? {}),
+        actor: Actor.assert("workspace_user"),
+      },
     });
     return directUpload;
   }
