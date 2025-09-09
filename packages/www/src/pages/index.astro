@@ -1,13 +1,16 @@
 ---
-import { Button } from "@openpromo/ui/components/button";
-import Welcome from "../components/Welcome.astro";
+import { HeroSection } from "../components/landing/hero-section";
+import LandingNavbar from "../components/landing/landing-navbar";
 import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
 ---
 
 <Layout>
+  <LandingNavbar />
+  <!-- have to do client side rendering -->
+  <HeroSection client:load onGetStartedClick={() => {}} />
   <a data-dashboard-link href={import.meta.env.SITE}>
-    <Button>Button from packages/ui</Button>
+    <!-- <Button>Button from packages/ui</Button> -->
   </a>
-  <Welcome />
+  <!-- <Welcome /> -->
 </Layout>
