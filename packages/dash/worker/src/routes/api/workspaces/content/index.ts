@@ -7,15 +7,40 @@ import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { db } from "@core/helpers/db/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
-import { and, eq } from "drizzle-orm";
+import { pendingContentGroupTable } from "@core/schemas/content.sql";
+import { and, asc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
 
+const listContentQuerySchema = z.object({
+  page: z.number().default(1),
+  pageSize: z.number().default(20),
+});
+
 export const contentRoute = new Hono<ApiEnv>()
   .use(withWorkspaceRole("workspace_editor"))
-  .get("/", async (c) => {
+  .get("/", zValidator("query", listContentQuerySchema), async (c) => {
+    // this will be a paginated list of contents, with filters, etc.
+    // used by content table view as well as calendar view.
+    // it returns a merged list of published, scheduled, draft contents.
+    // for pending contents, it use pending group
+    const { page, pageSize } = c.req.valid("query");
+    // 1. fetch all pending contents
+    const pendingContents = await db()
+      .select()
+      .from(pendingContentGroupTable)
+      .where(eq(pendingContentGroupTable.workspaceId, Actor.workspaceID()))
+      .orderBy(asc(pendingContentGroupTable.createdAt))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
+    console.log({ pendingContents });
+    // 2. fetch published contents using ents
+    // 3. merge, sort
+    return c.text("List content - Not implemented");
+  })
+  .get("/schedule", async (c) => {
     // tests our schedule flow
     // 1. create a dummy content
     const content = await EntPendingContent._createDummy();
