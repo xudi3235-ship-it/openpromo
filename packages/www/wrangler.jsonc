@@ -9,6 +9,7 @@
   "assets": {
     "directory": "./dist"
   },
+  "compatibility_flags": ["nodejs_compat"],
   "env": {
     "staging": {
       "name": "openpromo-www-staging",
