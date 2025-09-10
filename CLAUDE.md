@@ -34,8 +34,6 @@ remaining packages are not in active use, details TBD yet.
 │   │   ├── public
 │   │   ├── ui // ---> hono api
 │   │   └── worker// ---> react SPA, main dashboard
-│   ├── js-shared
-│   │   └── src
 │   ├── python (NOT IN USE yet)
 │   ├── scripts
 │   │   └── src

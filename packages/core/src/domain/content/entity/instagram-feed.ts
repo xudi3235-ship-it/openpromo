@@ -1,7 +1,7 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { Actor } from "@core/helpers/actor";
 import type { UnifiedContentSelect } from "@core/schemas/content.sql";
-import { onlyOrThrow } from "@openpromo/js-shared/iterable";
+import { onlyOrThrow } from "@core/utils/common";
 import type { ZodType } from "zod";
 import * as z from "zod";
 import { IGFeedPlacementSpec } from "../schema/placement";

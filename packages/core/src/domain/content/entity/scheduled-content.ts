@@ -1,5 +1,5 @@
 import type { UnifiedContentSelect } from "@core/schemas/content.sql";
-import { nullThrows } from "@openpromo/js-shared/common";
+import { nullThrows } from "@core/utils/common";
 import { EntPendingContent } from "./pending-content";
 
 export class EntScheduledContent extends EntPendingContent {
