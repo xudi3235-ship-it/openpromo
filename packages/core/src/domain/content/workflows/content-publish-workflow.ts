@@ -1,4 +1,7 @@
-import { EntPendingContent } from "@core/domain/content/entity";
+import {
+  EntFBFeedPendingContent,
+  EntPendingContent,
+} from "@core/domain/content/entity";
 import { Actor } from "@core/helpers/actor";
 import {
   type CoreWorkflowContext,
@@ -6,6 +9,7 @@ import {
   type CoreWorkflowEvent,
   type CoreWorkflowStep,
 } from "@core/helpers/workflow";
+import { NotImplementedError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 import z from "zod";
 
@@ -52,9 +56,55 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
         type: "publish_draft",
       });
     }
+    switch (placement) {
+      case "FB_FEED":
+        await this.handleFBFeedPublish(step, pendingContentID);
+        break;
+      default:
+        throw new Error(`unsupported placement ${placement}`);
+    }
     step.do("publish to placements", async () => {
       const actor = Actor.assert("workspace_user");
       console.log(`finally ${actor}`);
     });
+  }
+  async handleFBFeedPublish(step: CoreWorkflowStep, pendingContentID: string) {
+    const { isCarousel, isMultiPhoto, isSingleVideo, isTextOnly } =
+      await step.do("determine post type", async () => {
+        const c = await EntFBFeedPendingContent.fromID(pendingContentID);
+        return {
+          isTextOnly: c.isTextOnlyPost(),
+          isCarousel: c.isCarouselPost(),
+          isMultiPhoto: c.isMultiPhotoPost(),
+          isSingleVideo: c.isSingleVideoPost(),
+        };
+      });
+    if (isTextOnly) {
+      await step.do("create text post", async () => {
+        const c = await EntFBFeedPendingContent.fromID(pendingContentID);
+        const r = await c.createTextPost();
+        console.log({ r });
+      });
+      log.info("published text post");
+      return;
+    }
+    if (isMultiPhoto) {
+      await step.do("create multi-photo post", async () => {
+        const c = await EntFBFeedPendingContent.fromID(pendingContentID);
+        const r = await c.createPhotoPost();
+        console.log({ r });
+      });
+      log.info("published multi-photo post");
+      return;
+    }
+    if (isSingleVideo) {
+      throw new NotImplementedError("TODO");
+    }
+    if (isCarousel) {
+      throw new NotImplementedError("TODO");
+    }
+    throw new Error(
+      `unsupported post type for FB Feed content ${pendingContentID}`,
+    );
   }
 }

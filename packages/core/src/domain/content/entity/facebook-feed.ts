@@ -63,16 +63,61 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     this.spec = spec;
     this.pageID = spec.identity.pageId;
   }
+  static async fromID(id: string): Promise<EntFBFeedPendingContent> {
+    return EntFBFeedPendingContent.fromPendingContent(
+      await EntPendingContent.fromID(id),
+    );
+  }
   static fromPendingContent(c: EntPendingContent): EntFBFeedPendingContent {
     return new EntFBFeedPendingContent(c.data);
+  }
+  // helpers
+  isTextOnlyPost() {
+    const atts = this.spec.postSpec.attachments ?? [];
+    const msg = this.spec.postSpec.message;
+    if (msg && msg.trim().length > 0) return false;
+    return atts.length === 0;
+  }
+  isMultiPhotoPost() {
+    const atts = this.spec.postSpec.attachments ?? [];
+    const photoCount = atts.filter((a) => a.type === "photo").length;
+    return photoCount >= 1;
+  }
+  isSingleVideoPost() {
+    const atts = this.spec.postSpec.attachments ?? [];
+    const videoCount = atts.filter((a) => a.type === "video").length;
+    return videoCount === 1;
+  }
+  isCarouselPost() {
+    // mix of photo and video
+    const atts = this.spec.postSpec.attachments ?? [];
+    const photoCount = atts.filter((a) => a.type === "photo").length;
+    const videoCount = atts.filter((a) => a.type === "video").length;
+    return photoCount > 0 && videoCount > 0;
+  }
+  hasPhotoAttachment() {
+    const atts = this.spec.postSpec.attachments ?? [];
+    return atts.some((a) => a.type === "photo");
+  }
+  hasVideoAttachment() {
+    const atts = this.spec.postSpec.attachments ?? [];
+    return atts.some((a) => a.type === "video");
+  }
+  photoAttachments() {
+    const atts = this.spec.postSpec.attachments ?? [];
+    return atts.filter((a) => a.type === "photo");
+  }
+  videoAttachments() {
+    const atts = this.spec.postSpec.attachments ?? [];
+    return atts.filter((a) => a.type === "video");
   }
   /**
    * we expose composable steps to create different types of posts.
    * Workflows should orchestrate these steps.
    */
   async createTextPost() {
+    if (!this.isTextOnlyPost()) throw new Error("no text provided");
     const text = this.spec.postSpec.message;
-    if (!text) throw new Error("no text provided");
     // 0. get page with scoped access token
     const { page } = await this.identity();
     // 1. create post
@@ -85,11 +130,9 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     // ref: https://developers.facebook.com/docs/graph-api/reference/page/photos/
     // 0. read page access token
     const { page } = await this.identity();
-    const photos =
-      this.spec.postSpec.attachments?.filter((a) => a.type === "photo") ?? [];
-    if (photos.length === 0) {
+    if (!this.isMultiPhotoPost())
       throw new Error("no photo attachment provided");
-    }
+    const photos = this.photoAttachments();
     // 1. create N unpublished photos
     // NOTE: ensure the ordering.
     const fbPhotos = await Promise.all(
