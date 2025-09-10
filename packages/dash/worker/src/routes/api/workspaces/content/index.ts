@@ -38,13 +38,13 @@ const ContentEntity = z.object({
   type: z.literal("content"),
   entity: UnifiedContentSelect,
 });
+export type GroupEntity = z.infer<typeof GroupEntity>;
+export type ContentEntity = z.infer<typeof ContentEntity>;
 const MergedContentContainer = z.discriminatedUnion("type", [
   ContentEntity,
   GroupEntity,
 ]);
-export type MergedContentEntity = z.infer<
-  typeof ContentEntity | typeof GroupEntity
->;
+export type MergedContentEntity = z.infer<typeof MergedContentContainer>;
 
 export type MergedContentContainer = z.infer<typeof MergedContentContainer>;
 export async function createDummyPendingContent() {
@@ -53,22 +53,6 @@ export async function createDummyPendingContent() {
   }
 }
 
-export function matchEntity<T>(
-  entity: MergedContentEntity,
-  handlers: {
-    group: (entity: z.infer<typeof GroupEntity>) => T;
-    content: (entity: z.infer<typeof ContentEntity>) => T;
-  },
-): T {
-  switch (entity.type) {
-    case "group":
-      return handlers.group(entity);
-    case "content":
-      return handlers.content(entity);
-    default:
-      throw new Error("Unknown entity type");
-  }
-}
 export const contentRoute = new Hono<ApiEnv>()
   .use(withWorkspaceRole("workspace_editor"))
   .get("/", zValidator("query", listContentQuerySchema), async (c) => {

@@ -6,6 +6,11 @@ import {
   useQuery,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import type {
+  ContentEntity,
+  GroupEntity,
+  MergedContentEntity,
+} from "@worker/routes/api/workspaces/content";
 import type { ApiRoutes } from "@worker/types";
 import { type ClientResponse, hc } from "hono/client";
 import { toast } from "sonner";
@@ -206,3 +211,20 @@ export type Workspace = ApiResult<typeof apiClient.workspaces.$get>[0];
 export type ContentListResponse = ApiResult<
   (typeof apiClient.workspaces)[":workspaceSlug"]["content"]["$get"]
 >;
+
+export function matchEntity<T>(
+  entity: MergedContentEntity,
+  handlers: {
+    group: (entity: GroupEntity) => T;
+    content: (entity: ContentEntity) => T;
+  },
+): T {
+  switch (entity.type) {
+    case "group":
+      return handlers.group(entity);
+    case "content":
+      return handlers.content(entity);
+    default:
+      throw new Error("Unknown entity type");
+  }
+}

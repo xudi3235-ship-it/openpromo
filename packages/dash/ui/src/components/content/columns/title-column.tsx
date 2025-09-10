@@ -1,7 +1,7 @@
 import type { UnifiedContentSelect } from "@core/schemas/content.sql";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { matchEntity } from "@worker/routes/api/workspaces/content";
+import { matchEntity } from "@/lib/hono-client";
 
 function renderTitle(row: Row<MergedContentEntity>) {
   const data = row.original;

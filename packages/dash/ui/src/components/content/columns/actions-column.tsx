@@ -9,8 +9,8 @@ import {
 } from "@openpromo/ui/components/dropdown-menu";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { matchEntity } from "@worker/routes/api/workspaces/content";
 import { MoreHorizontal } from "lucide-react";
+import { matchEntity } from "@/lib/hono-client";
 
 export const actionsColumn: ColumnDef<MergedContentEntity> = {
   id: "actions",

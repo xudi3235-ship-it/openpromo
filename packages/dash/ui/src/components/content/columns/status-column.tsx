@@ -1,6 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { matchEntity } from "@worker/routes/api/workspaces/content";
+import { matchEntity } from "@/lib/hono-client";
 
 export const statusColumn: ColumnDef<MergedContentEntity> = {
   accessorKey: "Status",
