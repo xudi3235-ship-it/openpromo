@@ -90,6 +90,8 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
     }
     if (isMultiPhoto) {
       await step.do("create multi-photo post", async () => {
+        // TODO: get a published post ID
+        // sync it internally
         const c = await EntFBFeedPendingContent.fromID(pendingContentID);
         const r = await c.createPhotoPost();
         console.log({ r });
@@ -98,7 +100,58 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
       return;
     }
     if (isSingleVideo) {
-      throw new NotImplementedError("TODO");
+      log.info("publish single video post");
+      const { videoID } = await step.do(
+        "create single video post",
+        async () => {
+          const c = await EntFBFeedPendingContent.fromID(pendingContentID);
+          // 1. upload video from internal to FB
+          const { video_id: videoID, upload_url } =
+            await c.initVideoUploadSession();
+          // 2. upload to the upload_url
+          const { success, message } =
+            await c.uploadInternalVideoToSession(upload_url);
+          log.info("uploaded video to FB upload session", { success, message });
+          return {
+            videoID,
+            uploadSuccess: success,
+            uploadMessage: message,
+          };
+        },
+      );
+      // 3. wait for processing is done
+      const { videoID: uploadCompleteVideoID } = await step.do(
+        "wait for video upload",
+        async () => {
+          let attempts = 5;
+          const thirtySeconds = 30 * 1000;
+          const c = await EntFBFeedPendingContent.fromID(pendingContentID);
+          const isComplete = await c.isVideoUploadComplete(videoID);
+          while (!isComplete && attempts > 0) {
+            log.info("video processing not done, wait 30s and retry", {
+              attemptsLeft: attempts,
+            });
+            await new Promise((r) => setTimeout(r, thirtySeconds));
+            attempts -= 1;
+          }
+          if (!isComplete) {
+            throw new Error("video processing not done in time");
+          }
+          return { videoID };
+        },
+      );
+      // 4. create reel with the uploaded video ID
+      // reel == video post
+      await step.do("create reel", async () => {
+        const c = await EntFBFeedPendingContent.fromID(pendingContentID);
+        // TODO: error handle here
+        // sync it internally on success
+        const r = await c.createReel(uploadCompleteVideoID);
+        console.log({ r });
+      });
+
+      log.info("published single video post");
+      return;
     }
     if (isCarousel) {
       throw new NotImplementedError("TODO");

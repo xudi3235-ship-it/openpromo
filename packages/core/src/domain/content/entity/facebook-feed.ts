@@ -1,4 +1,5 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
+import { ImageStorage } from "@core/helpers/storage/image";
 import { VideoStorage } from "@core/helpers/storage/video";
 import type { UnifiedContentSelect } from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
@@ -52,6 +53,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     if (p !== "FB_FEED") {
       throw new Error(`Content ${data.id} is not FB_FEED placement`);
     }
+    if (this.isPublished()) throw new Error("Content is already published");
     const {
       data: spec,
       success,
@@ -136,13 +138,11 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     // 1. create N unpublished photos
     // NOTE: ensure the ordering.
     const fbPhotos = await Promise.all(
-      photos.map(async (_p) => {
-        // fake it for now
-        // const cdnUrl = await ImageStorage.getImageDeliveryUrl(p.id);
-        const cdnUrl = "https://picsum.photos/200/300";
+      photos.map(async (p) => {
+        const cdnUrl = await ImageStorage.getImageDeliveryUrl(p.id);
         const photo = await page.createPhoto([Photo.Fields.id], {
           url: cdnUrl,
-          published: false,
+          published: false, // unpulished, to be attached to post
         });
         return photo;
       }),
@@ -174,12 +174,14 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       upload_url: session.upload_url as string,
     };
   }
-  async uploadInternalVideoToSession(
-    internalVideoID: string,
-    uploadSessionUrl: string,
-  ) {
+  async uploadInternalVideoToSession(uploadSessionUrl: string) {
+    const videos = this.videoAttachments();
+    if (videos.length !== 1) {
+      throw new Error("only single video upload is supported");
+    }
+    const video = videos[0];
     // 0. get video CDN url from our CF stream service
-    const res = await VideoStorage.createMP4Download(internalVideoID);
+    const res = await VideoStorage.createMP4Download(video.id);
     console.log("// got video download url", res);
     const { acc } = await this.identity();
     const cdnUrl = res?.default?.url ?? null;
@@ -210,6 +212,10 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       throw new Error(`Video upload failed: ${uploadRes.message}`);
     }
     return uploadRes;
+  }
+  async isVideoUploadComplete(videoId: string) {
+    const status = await this.getVideoStatus(videoId);
+    return status.uploading_phase.status === "complete";
   }
 
   async getVideoStatus(videoId: string) {

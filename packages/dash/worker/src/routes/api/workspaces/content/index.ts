@@ -86,7 +86,7 @@ export const contentRoute = new Hono<ApiEnv>()
     const { video_id, upload_url } = await fbContent.initVideoUploadSession();
     // sample video
     await fbContent.uploadInternalVideoToSession(
-      "0e859aa05d5af57db7b1d5888d6093ce",
+      // "0e859aa05d5af57db7b1d5888d6093ce",
       upload_url,
     );
     let attempts = 10;
