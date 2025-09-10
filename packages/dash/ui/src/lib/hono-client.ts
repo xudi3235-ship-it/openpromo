@@ -193,10 +193,16 @@ export const useHonoSuspenseQuery = <T extends object>(
  * type Workspace = ApiResult<typeof apiClient.workspaces.$get>;
  */
 export type ApiResult<
-  T extends () => Promise<ClientResponse<unknown, number, "json">>,
+  T extends (
+    // biome-ignore lint/suspicious/noExplicitAny: lib
+    ...args: any[]
+  ) => Promise<ClientResponse<unknown, number, "json">>,
 > = Awaited<ReturnType<Awaited<ReturnType<T>>["json"]>>;
 
 // ------- types -------
 export type User = ApiResult<typeof apiClient.users.me.$get>;
 export type Org = ApiResult<typeof apiClient.orgs.$get>[0];
 export type Workspace = ApiResult<typeof apiClient.workspaces.$get>[0];
+export type ContentListResponse = ApiResult<
+  (typeof apiClient.workspaces)[":workspaceSlug"]["content"]["$get"]
+>;

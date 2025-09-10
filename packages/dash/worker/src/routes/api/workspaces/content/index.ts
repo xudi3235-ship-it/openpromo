@@ -29,17 +29,24 @@ const listContentQuerySchema = z.object({
   pageSize: z.coerce.number().default(3),
 });
 
+const GroupEntity = z.object({
+  type: z.literal("group"),
+  entity: PendingContentGroupSelect,
+  contents: UnifiedContentSelect.array(),
+});
+const ContentEntity = z.object({
+  type: z.literal("content"),
+  entity: UnifiedContentSelect,
+});
 const MergedContentContainer = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("group"),
-    entity: PendingContentGroupSelect,
-    contents: UnifiedContentSelect.array(),
-  }),
-  z.object({
-    type: z.literal("content"),
-    entity: UnifiedContentSelect,
-  }),
+  ContentEntity,
+  GroupEntity,
 ]);
+export type MergedContentEntity = z.infer<
+  typeof ContentEntity | typeof GroupEntity
+>;
+
+export type MergedContentContainer = z.infer<typeof MergedContentContainer>;
 export async function createDummyPendingContent() {
   for (let i = 0; i < 5; i++) {
     await EntPendingContent._createDummy();
@@ -49,7 +56,7 @@ export const contentRoute = new Hono<ApiEnv>()
   .use(withWorkspaceRole("workspace_editor"))
   .get("/", zValidator("query", listContentQuerySchema), async (c) => {
     const { page, pageSize } = c.req.valid("query");
-    await createDummyPendingContent();
+    // await createDummyPendingContent();
     const wsID = Actor.workspaceID();
     const raw = await db()
       .select()
