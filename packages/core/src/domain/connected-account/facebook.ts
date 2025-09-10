@@ -5,9 +5,9 @@ interface FacebookProfile {
   id: string;
   name: string;
   picture: {
-    data: {
-      url: string;
-    };
+    url: string;
+    width: number;
+    height: number;
   };
   email?: string;
 }
@@ -36,9 +36,9 @@ interface FacebookPage {
   username?: string;
   access_token?: string;
   picture?: {
-    data: {
-      url: string;
-    };
+    url: string;
+    width: number;
+    height: number;
   };
   category?: string;
   fan_count?: number;
@@ -258,7 +258,7 @@ export class FacebookOAuthService {
       id: pageData.id,
       name: pageData.name,
       access_token: pageData.access_token || "",
-      picture: pageData.picture?.data?.url || "",
+      picture: pageData.picture?.url || "",
       username: pageData.username || "",
     };
   }
@@ -272,18 +272,13 @@ export class FacebookOAuthService {
     refresh?: string;
   }): Promise<FacebookAuthTokenDetails> {
     log.info("authenticate");
-    // Get short-lived access token
+    // 1. get short-lived  user access token
     const shortToken = await this.getAccessToken(params.code);
-
-    log.info("Short-lived access token obtained", { shortToken });
-    // Exchange for long-lived token
+    // 2. exchange for long-lived user access token (60 days)
     const longToken = await this.exchangeForLongLivedToken(
       shortToken.access_token,
     );
-
-    log.info("Long-lived access token obtained", { longToken });
-
-    // Verify permissions
+    // 3. Verify permissions scopes
     await this.verifyPermissions(longToken.access_token);
 
     // Get user profile
@@ -299,7 +294,7 @@ export class FacebookOAuthService {
       accessToken: longToken.access_token,
       refreshToken: longToken.access_token, // Facebook doesn't provide separate refresh tokens
       expiresIn,
-      picture: profile.picture?.data?.url || "",
+      picture: profile.picture?.url || "",
       username: "",
     };
   }
@@ -308,10 +303,10 @@ export class FacebookOAuthService {
    * Reconnect to a specific page
    */
   async reConnect(
-    requiredId: string,
+    pageID: string,
     accessToken: string,
   ): Promise<FacebookAuthTokenDetails> {
-    const pageInfo = await this.getPageInformation(accessToken, requiredId);
+    const pageInfo = await this.getPageInformation(accessToken, pageID);
 
     // Calculate expiration (60 days)
     const expiresIn = 5184000; // 60 days

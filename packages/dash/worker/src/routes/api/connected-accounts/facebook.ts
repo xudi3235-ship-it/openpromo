@@ -60,11 +60,11 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
         const userPages = await facebookOAuthService.getUserPages(
           authResult.accessToken, // user access token
         );
-        console.log({ userPages });
 
         // 3. For each linked page, create a connected account
         const accounts = await Promise.allSettled(
           userPages.map(async (page) => {
+            console.log({ page });
             if (!page.access_token) {
               throw new AppError(500, {
                 message: `No access token for page: ${page.id}`,
@@ -75,12 +75,11 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
               externalAccountId: page.id,
               accountName: page.name,
               externalUrl: `https://www.facebook.com/${page.id}`,
-              profilePicUrl: page.picture?.data?.url ?? null,
+              profilePicUrl: page.picture?.url ?? null,
               // NOTE: this is page-level access token!!
-              // for now it seems like it's short-lived token only (lasts 2 hours)
               // TODO: implement encryption
               encryptedAccessToken: page.access_token,
-              refreshToken: null, // TODO: refresh token for page
+              refreshToken: page.access_token,
               tokenExpiresAt: new Date(
                 Date.now() + authResult.expiresIn * 1000,
               ),
