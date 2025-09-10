@@ -7,9 +7,14 @@ import {
 } from "@core/schemas/connected-account.sql";
 import { fn } from "@core/utils/fn";
 import { and, eq } from "drizzle-orm";
+import z from "zod";
 import { Actor } from "../../helpers/actor";
+import { facebookOAuthService } from "./facebook";
+import { instagramOAuthService } from "./instagram";
 
 export namespace ConnectedAccount {
+  const inAWeek = Date.now() + 7 * 24 * 3600 * 1000;
+  const sixtyDaysInSec = 60 * 24 * 3600;
   export const Info = ConnectedAccountSelectSchema;
 
   export const Event = {
@@ -106,7 +111,25 @@ export namespace ConnectedAccount {
       )
       .limit(1);
     if (!acc) throw new Error("connected account not found");
-    return acc;
+
+    if (acc.tokenExpiresAt && acc.tokenExpiresAt.getTime() >= inAWeek) {
+      return acc;
+    }
+    // if about to expire, refresh it
+    const newToken = await facebookOAuthService.exchangeForLongLivedToken(
+      acc.encryptedAccessToken,
+    );
+
+    const tokenExpiresAt = new Date(
+      Date.now() + (newToken.expires_in ?? sixtyDaysInSec) * 1000,
+    );
+    const newAcc = await updateAccessToken({
+      id: acc.id,
+      encryptedAccessToken: newToken.access_token,
+      refreshToken: newToken.access_token,
+      tokenExpiresAt,
+    });
+    return newAcc;
   }
   export async function fromIGAccountID(id: string) {
     const workspaceId = Actor.workspaceID();
@@ -122,8 +145,47 @@ export namespace ConnectedAccount {
       )
       .limit(1);
     if (!acc) throw new Error("connected account not found");
-    return acc;
+    if (acc.tokenExpiresAt && acc.tokenExpiresAt.getTime() >= inAWeek) {
+      return acc;
+    }
+    // refresh it if about to expire
+    const newToken = await instagramOAuthService.refreshAccessToken(
+      acc.encryptedAccessToken,
+    );
+    const tokenExpiresAt = new Date(
+      Date.now() + (newToken.expires_in ?? sixtyDaysInSec) * 1000,
+    );
+    const newAcc = await updateAccessToken({
+      id: acc.id,
+      encryptedAccessToken: newToken.access_token,
+      refreshToken: newToken.access_token,
+      tokenExpiresAt,
+    });
+    return newAcc;
   }
+  const updateAccessToken = fn(
+    z.object({
+      id: z.string(),
+      encryptedAccessToken: z.string(),
+      refreshToken: z.string(),
+      tokenExpiresAt: z.date(),
+    }),
+    async ({ id, ...rest }) => {
+      const workspaceId = Actor.workspaceID();
+      const [acc] = await db()
+        .update(connectedAccount)
+        .set(rest)
+        .where(
+          and(
+            eq(connectedAccount.id, id),
+            eq(connectedAccount.workspaceId, workspaceId),
+          ),
+        )
+        .returning();
+      if (!acc) throw new Error("connected account not found");
+      return acc;
+    },
+  );
   // ------------------------------ internal ------------------------------
   export async function _createDummy(): Promise<ConnectedAccountSelect> {
     const accountName = `[Internal] dummy account`;

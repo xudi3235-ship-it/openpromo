@@ -7,7 +7,11 @@ import {
   unique,
   varchar,
 } from "drizzle-orm/pg-core";
-import { createSelectSchema } from "drizzle-zod";
+import {
+  createInsertSchema,
+  createSelectSchema,
+  createUpdateSchema,
+} from "drizzle-zod";
 import * as z from "zod";
 import { workspaceID } from "./workspaces.sql";
 
@@ -50,3 +54,7 @@ export type ConnectedAccountInsert = typeof connectedAccount.$inferInsert;
 export type ConnectedAccountSelect = typeof connectedAccount.$inferSelect;
 export const ConnectedAccountSelectSchema =
   createSelectSchema(connectedAccount);
+export const ConnectedAccountInsertSchema =
+  createInsertSchema(connectedAccount);
+export const ConnectedAccountUpdateSchema =
+  createUpdateSchema(connectedAccount);
