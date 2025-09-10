@@ -52,6 +52,23 @@ export async function createDummyPendingContent() {
     await EntPendingContent._createDummy();
   }
 }
+
+export function matchEntity<T>(
+  entity: MergedContentEntity,
+  handlers: {
+    group: (entity: z.infer<typeof GroupEntity>) => T;
+    content: (entity: z.infer<typeof ContentEntity>) => T;
+  },
+): T {
+  switch (entity.type) {
+    case "group":
+      return handlers.group(entity);
+    case "content":
+      return handlers.content(entity);
+    default:
+      throw new Error("Unknown entity type");
+  }
+}
 export const contentRoute = new Hono<ApiEnv>()
   .use(withWorkspaceRole("workspace_editor"))
   .get("/", zValidator("query", listContentQuerySchema), async (c) => {
