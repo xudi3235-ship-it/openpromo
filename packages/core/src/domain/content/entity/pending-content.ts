@@ -1,6 +1,10 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { Actor } from "@core/helpers/actor";
-import type { UnifiedContentSelect } from "@core/schemas/content.sql";
+import { db } from "@core/helpers/db";
+import {
+  pendingContentGroupTable,
+  type UnifiedContentSelect,
+} from "@core/schemas/content.sql";
 import { FBFeedPlacementSpec } from "../schema/placement";
 import { EntUnifiedContentBase } from "./base";
 
@@ -59,6 +63,14 @@ export class EntPendingContent extends EntUnifiedContentBase {
         scheduledPublishAt: new Date(Date.now() + 5 * 1000), // 5 seconds later
       },
     });
+    // create a pending group that backs it
+    await db()
+      .insert(pendingContentGroupTable)
+      .values({
+        publishingStatus: "SCHEDULED",
+        workspaceId: Actor.workspaceID(),
+      })
+      .returning();
     return new EntPendingContent(content);
   }
   facebookFeedPlacementSpec(): FBFeedPlacementSpec {

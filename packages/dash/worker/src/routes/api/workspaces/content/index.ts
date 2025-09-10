@@ -15,8 +15,8 @@ import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
 
 const listContentQuerySchema = z.object({
-  page: z.number().default(1),
-  pageSize: z.number().default(20),
+  page: z.coerce.number().default(1),
+  pageSize: z.coerce.number().default(3),
 });
 
 export const contentRoute = new Hono<ApiEnv>()
@@ -27,6 +27,9 @@ export const contentRoute = new Hono<ApiEnv>()
     // it returns a merged list of published, scheduled, draft contents.
     // for pending contents, it use pending group
     const { page, pageSize } = c.req.valid("query");
+    // for (let i = 0; i < 5; i++) {
+    //   await EntPendingContent._createDummy();
+    // }
     // 1. fetch all pending contents
     const pendingContents = await db()
       .select()
@@ -35,10 +38,9 @@ export const contentRoute = new Hono<ApiEnv>()
       .orderBy(asc(pendingContentGroupTable.createdAt))
       .limit(pageSize)
       .offset((page - 1) * pageSize);
-    console.log({ pendingContents });
     // 2. fetch published contents using ents
     // 3. merge, sort
-    return c.text("List content - Not implemented");
+    return c.json({ contents: pendingContents });
   })
   .get("/schedule", async (c) => {
     // tests our schedule flow
