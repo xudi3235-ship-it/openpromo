@@ -1,0 +1,18 @@
+---
+import { FaqSection } from "src/components/landing/faq-section";
+import { FooterSection } from "src/components/landing/footer-section";
+import LandingNavbar from "src/components/landing/landing-navbar";
+import { ComparisonSection } from "src/components/pricing/comparison-section";
+import { PricingSection } from "src/components/pricing/pricing-section";
+import Layout from "../layouts/Layout.astro";
+import "../styles/global.css";
+---
+
+<Layout>
+  <LandingNavbar />
+  <PricingSection client:load />
+  <ComparisonSection client:load />
+  <FaqSection />
+  <FooterSection />
+</Layout>
+
