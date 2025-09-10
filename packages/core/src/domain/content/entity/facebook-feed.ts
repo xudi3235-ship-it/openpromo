@@ -1,8 +1,16 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
+import { Actor } from "@core/helpers/actor";
+import { Binding } from "@core/helpers/api-env";
+import { and, db, eq } from "@core/helpers/db";
 import { ImageStorage } from "@core/helpers/storage/image";
 import { VideoStorage } from "@core/helpers/storage/video";
-import type { UnifiedContentSelect } from "@core/schemas/content.sql";
+import {
+  type UnifiedContentSelect,
+  UnifiedContentUpdate,
+  unifiedContentTable,
+} from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
+import { fn } from "@core/utils/fn";
 import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
 import { FBFeedPlacementSpec } from "../schema/placement";
 import { EntPendingContent } from "./pending-content";
@@ -65,6 +73,50 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     this.spec = spec;
     this.pageID = spec.identity.pageId;
   }
+  update = fn(
+    UnifiedContentUpdate.pick({
+      placementSpec: true,
+      publishingStatus: true,
+      schedulingSpec: true,
+    }),
+    async (input) => {
+      // 1. update record
+      const [c] = await db()
+        .update(unifiedContentTable)
+        .set({
+          ...input,
+        })
+        .where(
+          and(
+            eq(unifiedContentTable.id, this.data.id),
+            eq(unifiedContentTable.workspaceId, Actor.workspaceID()),
+          ),
+        )
+        .returning();
+      if (!c) throw new Error("Failed to update content");
+      // 2. kill any existing workflow, and restart
+      const { WORKFLOW } = Binding.use();
+      try {
+        const wf = await WORKFLOW.get(c.id);
+        await wf.terminate();
+      } catch (e) {
+        console.warn("no existing workflow to terminate", e);
+      }
+      try {
+        const wf = await WORKFLOW.create({
+          id: `${c.id}`,
+          params: {
+            actor: Actor.assert("workspace_user"),
+            pendingContentID: c.id,
+          },
+        });
+        return { c, wf };
+      } catch (e) {
+        console.error("workflow already exists", e);
+        throw e;
+      }
+    },
+  );
   static async fromID(id: string): Promise<EntFBFeedPendingContent> {
     return EntFBFeedPendingContent.fromPendingContent(
       await EntPendingContent.fromID(id),

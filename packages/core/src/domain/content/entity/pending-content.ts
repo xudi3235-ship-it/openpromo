@@ -1,10 +1,14 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { Actor } from "@core/helpers/actor";
+import { Binding } from "@core/helpers/api-env";
 import { db } from "@core/helpers/db";
 import {
   pendingContentGroupTable,
+  UnifiedContentInsert,
   type UnifiedContentSelect,
+  unifiedContentTable,
 } from "@core/schemas/content.sql";
+import { fn } from "@core/utils/fn";
 import { FBFeedPlacementSpec } from "../schema/placement";
 import { EntUnifiedContentBase } from "./base";
 
@@ -32,6 +36,52 @@ export class EntPendingContent extends EntUnifiedContentBase {
     const { EntScheduledContent } = await import("./scheduled-content");
     return new EntScheduledContent(this.data);
   }
+  static createManyInternal = fn(
+    UnifiedContentInsert.omit({ workspaceId: true }).array(),
+    async (items) => {
+      return items.map((i) => EntPendingContent.createInternal(i));
+    },
+  );
+  static createInternal = fn(
+    UnifiedContentInsert.omit({ workspaceId: true }),
+    async ({
+      placementSpec,
+      publishingStatus,
+      pendingContentGroupId,
+      connectedAccountId,
+    }) => {
+      const actor = Actor.assert("workspace_user");
+      if (!placementSpec) throw new Error("Invalid placementSpec");
+      // 1. insert record
+      const [c] = await db()
+        .insert(unifiedContentTable)
+        .values({
+          placement: placementSpec.placement,
+          workspaceId: actor.properties.workspaceID,
+          connectedAccountId: connectedAccountId,
+          placementSpec: placementSpec,
+          pendingContentGroupId,
+          publishingStatus,
+        })
+        .returning();
+      // 2. kickoff workflow
+      const { WORKFLOW } = Binding.use();
+      try {
+        // TODO: better tenant based ID?
+        const wf = await WORKFLOW.create({
+          id: `${c.id}`,
+          params: {
+            actor,
+            pendingContentID: c.id,
+          },
+        });
+        return { c, wf };
+      } catch (e) {
+        console.error("workflow already exists", e);
+        throw e;
+      }
+    },
+  );
   static async _createDummy(pageID?: string): Promise<EntPendingContent> {
     const acc = await ConnectedAccount._createDummy();
     const content = await EntPendingContent.create({
@@ -43,7 +93,6 @@ export class EntPendingContent extends EntUnifiedContentBase {
           pageId: pageID ?? acc.externalAccountId,
           userId: "dummy_user_id",
         },
-        actor: Actor.assert("workspace_user"),
         placement: "FB_FEED",
         postSpec: {
           message: "trust me bro - from openpromo",

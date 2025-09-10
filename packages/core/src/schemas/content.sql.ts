@@ -61,11 +61,15 @@ export const ContentPublishingStatus = {
   SCHEDULED: "SCHEDULED",
   PUBLISHED: "PUBLISHED",
   FAILED_TO_PUBLISH: "FAILED_TO_PUBLISH",
+  PUBLISH_NOW: "PUBLISH_NOW",
 } as const;
 
 export type ContentPublishingStatus =
   (typeof ContentPublishingStatus)[keyof typeof ContentPublishingStatus];
 
+export const ContentPublishingStatusZod = z.enum([
+  ...Object.values(ContentPublishingStatus),
+]);
 // ----- enums -----
 export const publishingStatusPgEnum = pgEnum(
   "publishing_status",
@@ -187,4 +191,7 @@ export const UnifiedContentInsert = createInsertSchema(unifiedContentTable, {
   placement: z.enum([...Object.values(AllPlacement)]),
   publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
 });
-export const UnifiedContentUpdate = createUpdateSchema(unifiedContentTable);
+export const UnifiedContentUpdate = createUpdateSchema(unifiedContentTable, {
+  placement: z.enum([...Object.values(AllPlacement)]),
+  publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
+});

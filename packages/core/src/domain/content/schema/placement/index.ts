@@ -1,4 +1,3 @@
-import { Actor } from "@core/helpers/actor";
 import * as z from "zod";
 
 export const FBPlacement = {
@@ -65,8 +64,6 @@ export const SharedAttachmentSpec = z.discriminatedUnion("type", [
  * 2. normalized fields. This is for
  */
 export const BasePlacementSpec = z.object({
-  actor: Actor.WorkspaceUserSchema, // scoped under workspace user
-  // normalized fields.
   placement: z.enum([...Object.values(AllPlacement)]),
   title: z.string().optional(),
   thumbnailUrl: z.string().optional(),

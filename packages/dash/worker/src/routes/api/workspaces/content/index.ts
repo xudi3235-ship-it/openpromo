@@ -3,11 +3,18 @@ import {
   EntIGFeedPendingContent,
   EntPendingContent,
 } from "@core/domain/content/entity/index";
+import {
+  FBFeedPlacementSpec,
+  IGFeedPlacementSpec,
+} from "@core/domain/content/schema/placement";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { db } from "@core/helpers/db/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
-import { pendingContentGroupTable } from "@core/schemas/content.sql";
+import {
+  ContentPublishingStatusZod,
+  pendingContentGroupTable,
+} from "@core/schemas/content.sql";
 import { and, asc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
@@ -108,7 +115,79 @@ export const contentRoute = new Hono<ApiEnv>()
     const reel = await fbContent.createReel(video_id);
     return c.json({ video_id, reel });
   })
-  // create, schedule, or draft a content x-plat.
-  .post("/", zValidator("json", z.object({ text: z.string() })), async (c) => {
-    return c.text("Not implemented");
-  });
+  // heart of content creation endpoint
+  // enables cross-platform, scheduling, drafts, etc.
+  .post(
+    "/",
+    zValidator(
+      "json",
+      z.object({
+        base: z.object({
+          publishingStatus: ContentPublishingStatusZod,
+        }),
+        placements: z
+          .object({
+            facebookFeed: FBFeedPlacementSpec.optional(),
+            instagramFeed: IGFeedPlacementSpec.optional(),
+          })
+          .refine((val) => val.facebookFeed || val.instagramFeed, {
+            message: "At least one placement must be provided.",
+          }),
+      }),
+    ),
+    async (c) => {
+      const actor = Actor.assert("workspace_user");
+      const { placements, base } = c.req.valid("json");
+      const { publishingStatus } = base;
+      // use group for draft
+      if (publishingStatus in ["DRAFT"]) {
+        const [group] = await db()
+          .insert(pendingContentGroupTable)
+          .values({
+            workspaceId: actor.properties.workspaceID,
+            publishingStatus,
+          })
+          .returning();
+        if (placements.facebookFeed) {
+          await EntPendingContent.createInternal({
+            placement: "FB_FEED",
+            placementSpec: placements.facebookFeed,
+            publishingStatus,
+            pendingContentGroupId: group.id,
+            connectedAccountId: "TODO",
+          });
+        }
+        if (placements.instagramFeed) {
+          await EntPendingContent.createInternal({
+            placement: "IG_FEED",
+            placementSpec: placements.instagramFeed,
+            publishingStatus,
+            pendingContentGroupId: group.id,
+            connectedAccountId: "TODO",
+          });
+        }
+      }
+      // else, create pending content directly
+      if (publishingStatus in ["PUBLISH_NOW", "SCHEDULED"]) {
+        if (placements.facebookFeed) {
+          await EntPendingContent.createInternal({
+            placement: "FB_FEED",
+            placementSpec: placements.facebookFeed,
+            publishingStatus,
+            pendingContentGroupId: null, // no group
+            connectedAccountId: "TODO",
+          });
+        }
+        if (placements.instagramFeed) {
+          await EntPendingContent.createInternal({
+            placement: "IG_FEED",
+            placementSpec: placements.instagramFeed,
+            publishingStatus,
+            pendingContentGroupId: null, // no group
+            connectedAccountId: "TODO",
+          });
+        }
+      }
+      throw new Error("not supported");
+    },
+  );

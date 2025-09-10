@@ -1,5 +1,4 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { Actor } from "@core/helpers/actor";
 import type { UnifiedContentSelect } from "@core/schemas/content.sql";
 import { onlyOrThrow } from "@core/utils/common";
 import type { ZodType } from "zod";
@@ -265,7 +264,6 @@ export class EntIGFeedPendingContent extends EntPendingContent {
       publishingStatus: "SCHEDULED",
       placementSpec: {
         igAccountID,
-        actor: Actor.assert("workspace_user"),
         placement: "IG_FEED",
         caption: "dummy caption",
         attachments: [
