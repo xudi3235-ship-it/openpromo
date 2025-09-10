@@ -36,5 +36,5 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: |
-            --allowedTools "Bash(pnpm install),Bash(pnpm check),Bash(pnpm typecheck)"
-                  --model "claude-sonnet-4-20250514"
+            --allowedTools "Edit,MultiEdit,Write,Read,Glob,Grep,LS,Bash(git:*),Bash(pnpm:*),Bash(npm:*),Bash(npx:*),Bash(gh:*)"
+            --model "claude-sonnet-4-20250514"
