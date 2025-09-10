@@ -263,7 +263,6 @@ export function SlideFrom({
         return { x: distance, y: 0 };
       case "down":
         return { x: 0, y: -distance };
-      case "up":
       default:
         return { x: 0, y: distance };
     }
