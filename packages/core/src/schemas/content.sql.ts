@@ -195,3 +195,7 @@ export const UnifiedContentUpdate = createUpdateSchema(unifiedContentTable, {
   placement: z.enum([...Object.values(AllPlacement)]),
   publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
 });
+export const UnifiedContentSelect = createSelectSchema(unifiedContentTable, {
+  placement: z.enum([...Object.values(AllPlacement)]),
+  publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
+});

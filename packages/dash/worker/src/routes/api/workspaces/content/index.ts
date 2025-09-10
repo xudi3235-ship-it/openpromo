@@ -13,7 +13,10 @@ import { db } from "@core/helpers/db/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
 import {
   ContentPublishingStatusZod,
+  PendingContentGroupSelect,
   pendingContentGroupTable,
+  UnifiedContentSelect,
+  unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { and, asc, eq } from "drizzle-orm";
 import { Hono } from "hono";
@@ -26,28 +29,85 @@ const listContentQuerySchema = z.object({
   pageSize: z.coerce.number().default(3),
 });
 
+const MergedContentContainer = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("group"),
+    entity: PendingContentGroupSelect,
+    contents: UnifiedContentSelect.array(),
+  }),
+  z.object({
+    type: z.literal("content"),
+    entity: UnifiedContentSelect,
+  }),
+]);
+export async function createDummyPendingContent() {
+  for (let i = 0; i < 5; i++) {
+    await EntPendingContent._createDummy();
+  }
+}
 export const contentRoute = new Hono<ApiEnv>()
   .use(withWorkspaceRole("workspace_editor"))
   .get("/", zValidator("query", listContentQuerySchema), async (c) => {
-    // this will be a paginated list of contents, with filters, etc.
-    // used by content table view as well as calendar view.
-    // it returns a merged list of published, scheduled, draft contents.
-    // for pending contents, it use pending group
     const { page, pageSize } = c.req.valid("query");
-    // for (let i = 0; i < 5; i++) {
-    //   await EntPendingContent._createDummy();
-    // }
-    // 1. fetch all pending contents
-    const pendingContents = await db()
+    await createDummyPendingContent();
+    const wsID = Actor.workspaceID();
+    const raw = await db()
       .select()
-      .from(pendingContentGroupTable)
-      .where(eq(pendingContentGroupTable.workspaceId, Actor.workspaceID()))
-      .orderBy(asc(pendingContentGroupTable.createdAt))
+      .from(unifiedContentTable)
+      .leftJoin(
+        pendingContentGroupTable,
+        eq(
+          unifiedContentTable.pendingContentGroupId,
+          pendingContentGroupTable.id,
+        ),
+      )
+      .where(and(eq(unifiedContentTable.workspaceId, wsID)))
+      .orderBy(asc(unifiedContentTable.createdAt))
       .limit(pageSize)
       .offset((page - 1) * pageSize);
-    // 2. fetch published contents using ents
-    // 3. merge, sort
-    return c.json({ contents: pendingContents });
+
+    // Process and group by pendingContentGroupId
+    const entities = raw.reduce<z.infer<typeof MergedContentContainer>[]>(
+      (acc, row) => {
+        const { unified_content, pending_content_group } = row;
+
+        if (pending_content_group) {
+          // Content belongs to a group - find existing group or create new one
+          let existingGroup = acc.find(
+            (entity) =>
+              entity.type === "group" &&
+              entity.entity.id === pending_content_group.id,
+          );
+
+          if (!existingGroup) {
+            existingGroup = {
+              type: "group",
+              entity: pending_content_group,
+              contents: [],
+            };
+            acc.push(existingGroup);
+          }
+
+          if (existingGroup.type === "group") {
+            existingGroup.contents.push(unified_content);
+          }
+        } else {
+          // Individual content (no group)
+          acc.push({
+            type: "content",
+            entity: unified_content,
+          });
+        }
+
+        return acc;
+      },
+      [],
+    );
+
+    return c.json({
+      entities,
+      pagination: { page, pageSize, total: entities.length },
+    });
   })
   .get("/schedule", async (c) => {
     // tests our schedule flow

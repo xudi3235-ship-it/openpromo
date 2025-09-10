@@ -129,6 +129,7 @@ export class EntPendingContent extends EntUnifiedContentBase {
   );
   static async _createDummy(pageID?: string): Promise<EntPendingContent> {
     const acc = await ConnectedAccount._createDummy();
+    const thumbnailUrl = "https://picsum.photos/200/300";
     const content = await EntPendingContent.create({
       placement: "FB_FEED",
       connectedAccountId: acc.id,
@@ -145,10 +146,12 @@ export class EntPendingContent extends EntUnifiedContentBase {
             {
               type: "photo",
               id: "your_mom",
+              thumbnailUrl,
             },
             {
               type: "video",
               id: "your_mom_again",
+              thumbnailUrl,
             },
           ],
         },
