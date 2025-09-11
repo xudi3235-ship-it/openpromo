@@ -1,7 +1,7 @@
 import { Button } from "@openpromo/ui/components/button";
 import { useState } from "react";
-import { FBFeedPreview } from "./fb-feed-preview";
-import { IGFeedPreview } from "./ig-feed-preview";
+import { FBFeedPreview } from "@/components/composer/fb-feed-preview";
+import { IGFeedPreview } from "@/components/composer/ig-feed-preview";
 
 type PreviewType = "facebook" | "instagram";
 

@@ -1,8 +1,8 @@
-import { AccountSelection } from "./account-selection";
-import { ComposerFooter } from "./composer-footer";
-import { MediaUpload } from "./media-upload";
-import { PostDetails } from "./post-details";
-import { SchedulingOptions } from "./scheduling-options";
+import { AccountSelection } from "@/components/composer/account-selection";
+import { ComposerFooter } from "@/components/composer/composer-footer";
+import { MediaUpload } from "@/components/composer/media-upload";
+import { PostDetails } from "@/components/composer/post-details";
+import { SchedulingOptions } from "@/components/composer/scheduling-options";
 
 export function ComposerLeft() {
   return (
