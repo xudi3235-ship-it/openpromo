@@ -18,6 +18,7 @@ import {
   Smile,
   Users,
 } from "lucide-react";
+import { Dropzone, DropzoneEmptyState } from "@/components/dropzone";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
 export const Route = createFileRoute(
@@ -69,14 +70,18 @@ function ComposerComponent() {
               </p>
             </CardHeader>
             <CardContent>
-              <div className="border-2 border-dashed border-muted rounded-lg h-32 flex items-center justify-center">
-                <div className="text-center">
-                  <Image className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Add photo/video
-                  </p>
-                </div>
-              </div>
+              <Dropzone
+                accept={{ "image/*": [], "video/*": [] }}
+                maxFiles={10}
+                maxSize={50 * 1024 * 1024}
+                onDrop={(files) => {
+                  // biome-ignore lint/suspicious/noConsole: later
+                  console.log("Files dropped:", files);
+                }}
+                className="h-32"
+              >
+                <DropzoneEmptyState />
+              </Dropzone>
             </CardContent>
           </Card>
 
@@ -152,80 +157,6 @@ function ComposerComponent() {
                   Set date and time
                 </label>
                 <Switch id="schedule" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Collaborator Card */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  Collaborator
-                  <Button variant="ghost" size="sm" className="ml-2 p-1">
-                    <div className="w-3 h-3 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center">
-                      i
-                    </div>
-                  </Button>
-                </CardTitle>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Add a collaborator to your Facebook post and they will
-                automatically be invited.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <input
-                type="text"
-                placeholder="Add a collaborator by name or URL"
-                className="w-full p-2 border rounded-lg text-sm bg-background"
-              />
-            </CardContent>
-          </Card>
-
-          {/* Share to Story Card */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Share to your story</CardTitle>
-                <Switch />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                This is for Facebook only. Your story privacy is set to Public.
-                Anyone on Facebook can see your story.
-              </p>
-            </CardHeader>
-          </Card>
-
-          {/* Privacy Settings Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Privacy settings</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Adjust your privacy settings to control who can see your post in
-                News Feed, Watch, search results and on your profile.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-4 h-4 rounded-full border-2 border-blue-500 bg-blue-500 flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-white"></div>
-                </div>
-                <div>
-                  <p className="font-medium">Public</p>
-                  <p className="text-sm text-muted-foreground">
-                    Anyone on or off Facebook will be able to see your post.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-4 h-4 rounded-full border-2 border-muted"></div>
-                <div>
-                  <p className="font-medium">Restricted</p>
-                  <p className="text-sm text-muted-foreground">
-                    Choose certain people on Facebook who can see your post.
-                  </p>
-                </div>
               </div>
             </CardContent>
           </Card>
