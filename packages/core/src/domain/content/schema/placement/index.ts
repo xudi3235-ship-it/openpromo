@@ -32,6 +32,7 @@ export const BaseAttachmentSpec = z.object({
   thumbnailUrl: z.string().optional(),
   mimeType: z.string().optional(),
   metadata: z.record(z.any(), z.any()).optional(),
+  file: z.instanceof(File).optional(),
 });
 
 // Photo attachment
@@ -56,6 +57,8 @@ export const SharedAttachmentSpec = z.discriminatedUnion("type", [
   PhotoAttachmentSpec,
   VideoAttachmentSpec,
 ]);
+
+export type SharedAttachmentSpec = z.infer<typeof SharedAttachmentSpec>;
 
 /**
  * base spec for all content placements. Platform specific children will extend

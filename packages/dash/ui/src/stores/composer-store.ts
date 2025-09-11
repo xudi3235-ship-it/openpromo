@@ -2,6 +2,7 @@ import type {
   AllPlacement,
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
+  SharedAttachmentSpec,
 } from "@core/domain/content/schema/placement";
 import type { Platform } from "@core/schemas/connected-account.sql";
 import { create } from "zustand";
@@ -17,6 +18,9 @@ interface Account {
 interface ComposerState {
   placementSelected: AllPlacement | "ALL";
   placementSpecs: {
+    base: {
+      attachments: SharedAttachmentSpec[];
+    };
     facebookFeed: FBFeedPlacementSpec;
     instagramFeed: IGFeedPlacementSpec;
   };
@@ -31,6 +35,8 @@ interface ComposerActions {
   toggleAccount: (accountId: string) => void;
   toggleAllAccounts: () => void;
   setAccounts: (accounts: Account[]) => void;
+  addAttachments: (files: File[]) => void;
+  removeAttachment: (index: number) => void;
 }
 
 const mockAccounts: Account[] = [
@@ -44,6 +50,9 @@ export const useComposerStore = create<ComposerState & ComposerActions>()(
   immer((set) => ({
     placementSelected: "ALL",
     placementSpecs: {
+      base: {
+        attachments: [],
+      },
       facebookFeed: {} as FBFeedPlacementSpec,
       instagramFeed: {} as IGFeedPlacementSpec,
     },
@@ -80,6 +89,23 @@ export const useComposerStore = create<ComposerState & ComposerActions>()(
       set((state) => {
         state.accounts = accounts;
         state.selectedAccounts = accounts.map((account) => account.id);
+      }),
+    addAttachments: (files: File[]) =>
+      set((state) => {
+        const newAttachments = files.map((file, index) => ({
+          id: `attachment-${Date.now()}-${index}`,
+          type: file.type.startsWith("image/")
+            ? ("photo" as const)
+            : ("video" as const),
+          file,
+          mimeType: file.type,
+        }));
+        state.placementSpecs.base.attachments.push(...newAttachments);
+      }),
+    removeAttachment: (index: number) =>
+      set((state) => {
+        state.placementSpecs.base.attachments =
+          state.placementSpecs.base.attachments.filter((_, i) => i !== index);
       }),
   })),
 );
