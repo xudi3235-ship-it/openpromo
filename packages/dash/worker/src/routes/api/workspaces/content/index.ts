@@ -267,6 +267,6 @@ export const contentRoute = new Hono<ApiEnv>()
           });
         }
       }
-      throw new Error("not supported");
+      return c.json({ success: true });
     },
   );

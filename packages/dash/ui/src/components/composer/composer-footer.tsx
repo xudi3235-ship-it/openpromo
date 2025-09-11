@@ -2,25 +2,37 @@ import { Button } from "@openpromo/ui/components/button";
 import { Card, CardContent } from "@openpromo/ui/components/card";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { useHonoMutation } from "@/lib/hono-client";
 
 export function ComposerFooter() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
+  const { workspace } = useWorkspace();
 
-  const handlePublish = async () => {
-    setIsPublishing(true);
-    try {
-      // Mock publish logic
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      // TODO: Show success toast, redirect, etc.
-    } catch (error) {
-      console.error("Failed to publish:", error);
-      // TODO: Show error toast
-    } finally {
-      setIsPublishing(false);
-      setShowConfirmDialog(false);
-    }
-  };
+  const { mutate, isPending } = useHonoMutation({
+    mutationFn: (api) =>
+      api.workspaces[":workspaceSlug"].content.create.$post({
+        param: { workspaceSlug: workspace.slug },
+        json: {
+          base: {
+            publishingStatus: "PUBLISH_NOW",
+          },
+          placements: {
+            facebookFeed: {
+              identity: {
+                pageId: "TODO",
+                userId: "TODO",
+              },
+              placement: "FB_FEED",
+              postSpec: {
+                message: "TODO",
+              },
+            },
+          },
+        },
+      }),
+    onSettled: () => setShowConfirmDialog(false),
+  });
 
   return (
     <>
@@ -34,9 +46,9 @@ export function ComposerFooter() {
               </Button>
               <Button
                 onClick={() => setShowConfirmDialog(true)}
-                disabled={isPublishing}
+                disabled={isPending}
               >
-                {isPublishing ? "Publishing..." : "Publish"}
+                {isPending ? "Publishing..." : "Publish"}
               </Button>
             </div>
           </div>
@@ -49,8 +61,8 @@ export function ComposerFooter() {
         title="Publish Content"
         desc="Are you sure you want to publish this content to your selected social media accounts?"
         confirmText="Publish"
-        handleConfirm={handlePublish}
-        isLoading={isPublishing}
+        handleConfirm={() => mutate({})}
+        isLoading={isPending}
       />
     </>
   );
