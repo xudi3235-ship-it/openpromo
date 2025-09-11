@@ -11,12 +11,13 @@ import type {
   GroupEntity,
   MergedContentEntity,
 } from "@worker/routes/api/workspaces/content";
-import type { ApiRoutes } from "@worker/types";
-import { type ClientResponse, hc } from "hono/client";
+import { hcWithType } from "@worker/types";
+import type { ClientResponse } from "hono/client";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/constants";
 
-export const apiClient = hc<ApiRoutes>(API_BASE_URL);
+// export const apiClient = hc<ApiRoutes>(API_BASE_URL);
+export const apiClient = hcWithType(API_BASE_URL);
 
 function getDefaultErrorMessage(status: number) {
   switch (status) {
