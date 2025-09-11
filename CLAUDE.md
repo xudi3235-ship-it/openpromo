@@ -62,6 +62,12 @@ hosted on `dash.openpromo.app`, main dashboard for using app. react SPA using ta
 `worker`contains our hono api, importing core buisness logic, with routes, middlewares, etc.
 `ui` contains front end code, which uses hono RPC along with react query for type safety, see `ui/src/lib/hono-client.ts` for details.
 
+#### Rules for www developments:
+
+1. using tailwind css, ensure all color works for dark mode.
+2. ensure you run `pnpm check && pnpm typecheck` to ensure type checks are passing after changes
+
+
 ### `package/ui`
 
 building blocks, design system, ui components, from shadcn; open to customizations.

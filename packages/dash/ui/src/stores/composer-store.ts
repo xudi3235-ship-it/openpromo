@@ -1,4 +1,5 @@
 import type {
+  AllPlacement,
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
 } from "@core/domain/content/schema/placement";
@@ -6,6 +7,7 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
 interface ComposerState {
+  placementSelected: AllPlacement | "ALL";
   placementSpecs: {
     facebookFeed: FBFeedPlacementSpec;
     instagramFeed: IGFeedPlacementSpec;
@@ -20,6 +22,7 @@ interface ComposerActions {
 
 export const useComposerStore = create<ComposerState & ComposerActions>()(
   immer((set) => ({
+    placementSelected: "ALL",
     placementSpecs: {
       facebookFeed: {} as FBFeedPlacementSpec,
       instagramFeed: {} as IGFeedPlacementSpec,
