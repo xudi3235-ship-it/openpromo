@@ -14,6 +14,7 @@ interface ComposerState {
   placementSpecs: {
     base: {
       attachments: SharedAttachmentSpec[];
+      message: string;
     };
     facebookFeed: FBFeedPlacementSpec;
     instagramFeed: IGFeedPlacementSpec;
@@ -24,6 +25,10 @@ interface ComposerState {
 }
 interface ComposerActions {
   setPlacementSpecs: (specs: {
+    base?: {
+      attachments?: SharedAttachmentSpec[];
+      message?: string;
+    };
     facebookFeed?: FBFeedPlacementSpec;
     instagramFeed?: IGFeedPlacementSpec;
   }) => void;
@@ -41,6 +46,7 @@ export const useComposerStore = create<ComposerState & ComposerActions>()(
     placementSpecs: {
       base: {
         attachments: [],
+        message: "",
       },
       facebookFeed: {} as FBFeedPlacementSpec,
       instagramFeed: {} as IGFeedPlacementSpec,
@@ -50,6 +56,14 @@ export const useComposerStore = create<ComposerState & ComposerActions>()(
     selectedPreview: "FACEBOOK",
     setPlacementSpecs: (specs) =>
       set((state) => {
+        if (specs.base) {
+          if (specs.base.attachments !== undefined) {
+            state.placementSpecs.base.attachments = specs.base.attachments;
+          }
+          if (specs.base.message !== undefined) {
+            state.placementSpecs.base.message = specs.base.message;
+          }
+        }
         if (specs.facebookFeed) {
           state.placementSpecs.facebookFeed = specs.facebookFeed;
         }

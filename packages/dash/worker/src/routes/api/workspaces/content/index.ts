@@ -183,10 +183,21 @@ export const contentRoute = new Hono<ApiEnv>()
     const reel = await fbContent.createReel(video_id);
     return c.json({ video_id, reel });
   })
-  // heart of content creation endpoint
-  // enables cross-platform, scheduling, drafts, etc.
   .post(
-    "/",
+    "/test",
+    zValidator(
+      "json",
+      z.object({
+        pageId: z.string(),
+        message: z.string().optional(),
+      }),
+    ),
+    async (c) => {
+      c.req.valid("json");
+    },
+  )
+  .post(
+    "/create",
     zValidator(
       "json",
       z.object({
