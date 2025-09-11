@@ -7,13 +7,7 @@ import type {
 import type { Platform } from "@core/schemas/connected-account.sql";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-
-interface Account {
-  id: string;
-  name: string;
-  platform: Platform;
-  avatar?: string;
-}
+import type { ConnectedAccount } from "@/lib/hono-client";
 
 interface ComposerState {
   placementSelected: AllPlacement | "ALL";
@@ -25,7 +19,7 @@ interface ComposerState {
     instagramFeed: IGFeedPlacementSpec;
   };
   selectedAccounts: string[];
-  accounts: Account[];
+  accounts: ConnectedAccount[];
   selectedPreview: Platform;
 }
 interface ComposerActions {
@@ -35,18 +29,11 @@ interface ComposerActions {
   }) => void;
   toggleAccount: (accountId: string) => void;
   toggleAllAccounts: () => void;
-  setAccounts: (accounts: Account[]) => void;
+  setAccounts: (accounts: ConnectedAccount[]) => void;
   addAttachments: (files: File[]) => void;
   removeAttachment: (index: number) => void;
   setSelectedPreview: (preview: Platform) => void;
 }
-
-const mockAccounts: Account[] = [
-  { id: "fb1", name: "@business_page", platform: "FACEBOOK" },
-  { id: "ig1", name: "@brand_account", platform: "INSTAGRAM" },
-  { id: "tt1", name: "@company_tiktok", platform: "TIKTOK" },
-  { id: "ig2", name: "@personal_ig", platform: "INSTAGRAM" },
-];
 
 export const useComposerStore = create<ComposerState & ComposerActions>()(
   immer((set) => ({
@@ -58,8 +45,8 @@ export const useComposerStore = create<ComposerState & ComposerActions>()(
       facebookFeed: {} as FBFeedPlacementSpec,
       instagramFeed: {} as IGFeedPlacementSpec,
     },
-    selectedAccounts: mockAccounts.map((account) => account.id),
-    accounts: mockAccounts,
+    selectedAccounts: [],
+    accounts: [],
     selectedPreview: "FACEBOOK",
     setPlacementSpecs: (specs) =>
       set((state) => {
@@ -88,7 +75,7 @@ export const useComposerStore = create<ComposerState & ComposerActions>()(
           state.selectedAccounts = state.accounts.map((account) => account.id);
         }
       }),
-    setAccounts: (accounts) =>
+    setAccounts: (accounts: ConnectedAccount[]) =>
       set((state) => {
         state.accounts = accounts;
         state.selectedAccounts = accounts.map((account) => account.id);

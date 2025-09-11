@@ -7,8 +7,9 @@ import { Plus, Settings2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
+import { useHonoMutation } from "@/lib/hono-client";
 import { handlePopupMessage, openPopup } from "@/lib/popup";
+import { useConnectedAccounts } from "@/queries/connected-account";
 import { ConnectPlatformDialog } from "./connect-platform-dialog";
 import { ConnectedAccountCard } from "./connected-account-card";
 
@@ -78,18 +79,7 @@ function EmptyConnectedAccounts({ onConnect }: { onConnect: () => void }) {
 }
 
 function ConnectedAccountsContent({ onConnect }: { onConnect: () => void }) {
-  const { workspace } = useWorkspace();
-
-  // Get connected accounts with error handling
-  const { data: connectedAccountsData, isPending } = useHonoQuery({
-    queryKey: [workspace.slug, "connected_accounts"],
-    queryFn: (api) =>
-      api.workspaces[":workspaceSlug"].connected_accounts.$get({
-        param: { workspaceSlug: workspace.slug },
-      }),
-    errorMessage: "Failed to load connected accounts",
-  });
-
+  const { data: connectedAccountsData, isPending } = useConnectedAccounts();
   const connectedAccounts = connectedAccountsData?.accounts || [];
 
   return (

@@ -208,6 +208,9 @@ export type ApiResult<
 export type User = ApiResult<typeof apiClient.users.me.$get>;
 export type Org = ApiResult<typeof apiClient.orgs.$get>[0];
 export type Workspace = ApiResult<typeof apiClient.workspaces.$get>[0];
+export type ConnectedAccount = ApiResult<
+  (typeof apiClient.workspaces)[":workspaceSlug"]["connected_accounts"]["$get"]
+>["accounts"][0];
 export type ContentListResponse = ApiResult<
   (typeof apiClient.workspaces)[":workspaceSlug"]["content"]["$get"]
 >;

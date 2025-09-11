@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ComposerLeft } from "./composer-left";
-import { ComposerRight } from "./composer-right";
+import { ComposerLeft } from "@/components/composer/composer-left";
+import { ComposerRight } from "@/components/composer/composer-right";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/composer",

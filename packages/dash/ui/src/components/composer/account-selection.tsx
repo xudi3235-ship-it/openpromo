@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
 import { ChevronDown } from "lucide-react";
+import { useEffect } from "react";
+import { useConnectedAccounts } from "@/queries/connected-account";
 import { useComposerStore } from "@/stores/composer-store";
 
 function AccountIcon({
@@ -44,11 +46,56 @@ function AccountIcon({
 }
 
 export function AccountSelection() {
-  const { selectedAccounts, accounts, toggleAccount, toggleAllAccounts } =
-    useComposerStore();
+  const { data: connectedAccountsData, isPending } = useConnectedAccounts();
+  const {
+    selectedAccounts,
+    accounts,
+    toggleAccount,
+    toggleAllAccounts,
+    setAccounts,
+  } = useComposerStore();
 
-  const allSelected = selectedAccounts.length === accounts.length;
+  // Sync connected accounts data with store
+  useEffect(() => {
+    if (connectedAccountsData?.accounts) {
+      setAccounts(connectedAccountsData.accounts);
+    }
+  }, [connectedAccountsData?.accounts, setAccounts]);
+
+  const allSelected =
+    selectedAccounts.length === accounts.length && accounts.length > 0;
   const someSelected = selectedAccounts.length > 0;
+
+  if (isPending) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Post to</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-muted-foreground">
+            Loading accounts...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!accounts.length) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Post to</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-muted-foreground">
+            No connected accounts. Please connect your social media accounts
+            first.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -116,7 +163,9 @@ export function AccountSelection() {
                   platform={account.platform}
                   selected={selectedAccounts.includes(account.id)}
                 />
-                <span className="ml-2 text-sm">{account.name}</span>
+                <span className="ml-2 text-sm">
+                  {account.accountName || account.externalAccountId}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
