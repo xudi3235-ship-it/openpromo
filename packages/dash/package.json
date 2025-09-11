@@ -36,6 +36,7 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
+    "immer": "^10.1.3",
     "lucide-react": "^0.539.0",
     "nanoid": "^5.1.5",
     "react": "catalog:",
@@ -49,7 +50,8 @@
     "tw-animate-css": "^1.3.6",
     "uppy": "^5.1.1",
     "web-vitals": "^5.1.0",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.12.2",
