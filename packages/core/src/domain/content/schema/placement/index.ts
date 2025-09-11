@@ -74,7 +74,6 @@ export const BasePlacementSpec = z.object({
 export type BasePlacementSpec = z.infer<typeof BasePlacementSpec>;
 
 // ========================= Facebook =========================
-import { CreateFeedSchema } from "@core/experimental/infra/facebook/types";
 
 /**
  * defines schema & validation logics for facebook placements,
@@ -98,8 +97,6 @@ export const postSpec = z.object({
   message: z.string().optional(),
   link: z.string().optional(),
   attachments: SharedAttachmentSpec.array().optional(),
-  // internal
-  _createFeedSchema: CreateFeedSchema.optional(),
 });
 
 // placement specifics specs

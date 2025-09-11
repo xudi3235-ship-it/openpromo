@@ -12,7 +12,6 @@ export class FacebookPublishTransformer {
     // normalize the specs into creation params
     return {
       message: spec.postSpec.message,
-      published: spec.postSpec?._createFeedSchema?.published,
     } as CreateFeedParams;
   }
 }
