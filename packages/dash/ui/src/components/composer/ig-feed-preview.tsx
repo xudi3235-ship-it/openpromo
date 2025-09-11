@@ -1,6 +1,13 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Card, CardContent } from "@openpromo/ui/components/card";
-import { Heart, Image, MessageCircle, Send } from "lucide-react";
+import {
+  Bookmark,
+  Heart,
+  Image,
+  MessageCircle,
+  MoreHorizontal,
+  Send,
+} from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerStore } from "@/stores/composer-store";
 
@@ -10,20 +17,28 @@ export function IGFeedPreview() {
   const attachments = placementSpecs.base.attachments;
 
   return (
-    <Card className="max-w-sm">
+    <Card className="max-w-sm border-0 shadow-none">
       <CardContent className="p-0">
         {/* Post Header */}
-        <div className="flex items-center space-x-3 p-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400"></div>
-          <div className="flex-1">
-            <h4 className="font-semibold text-sm">
-              {workspace?.name || "your_page"}
-            </h4>
+        <div className="flex items-center justify-between p-3">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 p-0.5">
+              <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400"></div>
+              </div>
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm">
+                {workspace?.name?.toLowerCase().replace(/\s+/g, "_") ||
+                  "your_business"}
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                San Francisco, California
+              </p>
+            </div>
           </div>
           <Button variant="ghost" size="sm" className="p-1">
-            <div className="w-1 h-1 bg-current rounded-full"></div>
-            <div className="w-1 h-1 bg-current rounded-full mx-0.5"></div>
-            <div className="w-1 h-1 bg-current rounded-full"></div>
+            <MoreHorizontal className="w-4 h-4" />
           </Button>
         </div>
 
@@ -55,25 +70,60 @@ export function IGFeedPreview() {
 
         {/* Post Actions */}
         <div className="p-3">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="p-1">
-                <Heart className="w-5 h-5" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-0 hover:bg-transparent"
+              >
+                <Heart className="w-6 h-6" />
               </Button>
-              <Button variant="ghost" size="sm" className="p-1">
-                <MessageCircle className="w-5 h-5" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-0 hover:bg-transparent"
+              >
+                <MessageCircle className="w-6 h-6" />
               </Button>
-              <Button variant="ghost" size="sm" className="p-1">
-                <Send className="w-5 h-5" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-0 hover:bg-transparent"
+              >
+                <Send className="w-6 h-6" />
               </Button>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="p-0 hover:bg-transparent"
+            >
+              <Bookmark className="w-6 h-6" />
+            </Button>
           </div>
 
-          <div className="text-sm">
-            <span className="font-semibold">0 likes</span>
+          {/* Likes */}
+          <div className="text-sm font-semibold mb-1">1,247 likes</div>
+
+          {/* Caption */}
+          <div className="text-sm mb-2">
+            <span className="font-semibold">
+              {workspace?.name?.toLowerCase().replace(/\s+/g, "_") ||
+                "your_business"}
+            </span>{" "}
+            <span>Your caption text will appear here...</span>
           </div>
 
-          <div className="text-xs text-muted-foreground mt-1">Just now</div>
+          {/* Comments preview */}
+          <div className="text-sm text-muted-foreground mb-1">
+            View all 89 comments
+          </div>
+
+          {/* Timestamp */}
+          <div className="text-xs text-muted-foreground uppercase tracking-wide">
+            2 hours ago
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -1,6 +1,15 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Card, CardContent } from "@openpromo/ui/components/card";
-import { Image, Users } from "lucide-react";
+import {
+  Globe,
+  Heart,
+  Image,
+  MapPin,
+  MessageCircle,
+  MoreHorizontal,
+  Share,
+  ThumbsUp,
+} from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerStore } from "@/stores/composer-store";
 
@@ -13,18 +22,30 @@ export function FBFeedPreview() {
     <Card>
       <CardContent className="p-4">
         {/* Post Header */}
-        <div className="flex items-start space-x-3 mb-4">
+        <div className="flex items-start space-x-3 mb-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600"></div>
           <div className="flex-1">
-            <div className="flex items-center space-x-2">
-              <h4 className="font-semibold text-sm">
-                {workspace?.name || "Your Page"}
-              </h4>
-            </div>
-            <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-              <span>Just now</span>
-              <span>•</span>
-              <Users className="w-3 h-3" />
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h4 className="font-semibold text-sm">
+                    {workspace?.name || "Your Business Page"}
+                  </h4>
+                </div>
+                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                  <span>2 hours ago</span>
+                  <span>•</span>
+                  <div className="flex items-center space-x-1">
+                    <MapPin className="w-3 h-3" />
+                    <span>San Francisco, CA</span>
+                  </div>
+                  <span>•</span>
+                  <Globe className="w-3 h-3" />
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" className="p-1">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
@@ -57,16 +78,52 @@ export function FBFeedPreview() {
           )}
         </div>
 
+        {/* Engagement Stats */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
+              <div className="flex -space-x-1">
+                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                  <ThumbsUp className="w-2 h-2 text-white" />
+                </div>
+                <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
+                  <Heart className="w-2 h-2 text-white" />
+                </div>
+              </div>
+              <span>142 reactions</span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span>23 comments</span>
+            <span>8 shares</span>
+          </div>
+        </div>
+
         {/* Post Actions */}
-        <div className="flex items-center justify-between pt-2 border-t">
-          <Button variant="ghost" size="sm" className="flex-1">
-            👍 Like
+        <div className="flex items-center justify-between pt-3 border-t">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 text-muted-foreground hover:text-foreground"
+          >
+            <ThumbsUp className="w-4 h-4 mr-2" />
+            Like
           </Button>
-          <Button variant="ghost" size="sm" className="flex-1">
-            💬 Comment
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 text-muted-foreground hover:text-foreground"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            Comment
           </Button>
-          <Button variant="ghost" size="sm" className="flex-1">
-            📤 Share
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 text-muted-foreground hover:text-foreground"
+          >
+            <Share className="w-4 h-4 mr-2" />
+            Share
           </Button>
         </div>
       </CardContent>

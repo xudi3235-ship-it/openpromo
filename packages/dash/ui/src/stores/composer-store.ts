@@ -26,6 +26,7 @@ interface ComposerState {
   };
   selectedAccounts: string[];
   accounts: Account[];
+  selectedPreview: Platform;
 }
 interface ComposerActions {
   setPlacementSpecs: (specs: {
@@ -37,6 +38,7 @@ interface ComposerActions {
   setAccounts: (accounts: Account[]) => void;
   addAttachments: (files: File[]) => void;
   removeAttachment: (index: number) => void;
+  setSelectedPreview: (preview: Platform) => void;
 }
 
 const mockAccounts: Account[] = [
@@ -58,6 +60,7 @@ export const useComposerStore = create<ComposerState & ComposerActions>()(
     },
     selectedAccounts: mockAccounts.map((account) => account.id),
     accounts: mockAccounts,
+    selectedPreview: "FACEBOOK",
     setPlacementSpecs: (specs) =>
       set((state) => {
         if (specs.facebookFeed) {
@@ -106,6 +109,10 @@ export const useComposerStore = create<ComposerState & ComposerActions>()(
       set((state) => {
         state.placementSpecs.base.attachments =
           state.placementSpecs.base.attachments.filter((_, i) => i !== index);
+      }),
+    setSelectedPreview: (preview: Platform) =>
+      set((state) => {
+        state.selectedPreview = preview;
       }),
   })),
 );

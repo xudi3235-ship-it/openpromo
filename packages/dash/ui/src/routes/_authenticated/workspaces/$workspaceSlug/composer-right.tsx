@@ -1,13 +1,10 @@
 import { Button } from "@openpromo/ui/components/button";
-import { useState } from "react";
 import { FBFeedPreview } from "@/components/composer/fb-feed-preview";
 import { IGFeedPreview } from "@/components/composer/ig-feed-preview";
-
-type PreviewType = "facebook" | "instagram";
+import { useComposerStore } from "@/stores/composer-store";
 
 export function ComposerRight() {
-  const [selectedPreview, setSelectedPreview] =
-    useState<PreviewType>("facebook");
+  const { selectedPreview, setSelectedPreview } = useComposerStore();
 
   return (
     <div className="flex-1 p-6 bg-card border-l">
@@ -17,19 +14,19 @@ export function ComposerRight() {
           <h3 className="font-medium">Preview</h3>
           <div className="flex rounded-lg border">
             <Button
-              variant={selectedPreview === "facebook" ? "default" : "ghost"}
+              variant={selectedPreview === "FACEBOOK" ? "default" : "ghost"}
               size="sm"
               className="rounded-r-none"
-              onClick={() => setSelectedPreview("facebook")}
+              onClick={() => setSelectedPreview("FACEBOOK")}
             >
               <div className="w-4 h-4 bg-blue-600 rounded mr-2"></div>
               Facebook
             </Button>
             <Button
-              variant={selectedPreview === "instagram" ? "default" : "ghost"}
+              variant={selectedPreview === "INSTAGRAM" ? "default" : "ghost"}
               size="sm"
               className="rounded-l-none border-l"
-              onClick={() => setSelectedPreview("instagram")}
+              onClick={() => setSelectedPreview("INSTAGRAM")}
             >
               <div className="w-4 h-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded mr-2"></div>
               Instagram
@@ -39,8 +36,8 @@ export function ComposerRight() {
 
         {/* Platform Previews */}
         <div className="space-y-4">
-          {selectedPreview === "facebook" && <FBFeedPreview />}
-          {selectedPreview === "instagram" && <IGFeedPreview />}
+          {selectedPreview === "FACEBOOK" && <FBFeedPreview />}
+          {selectedPreview === "INSTAGRAM" && <IGFeedPreview />}
         </div>
       </div>
     </div>
