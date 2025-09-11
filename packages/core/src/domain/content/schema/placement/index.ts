@@ -72,6 +72,12 @@ export const BasePlacementSpec = z.object({
   thumbnailUrl: z.string().optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
+  identity: z.object({
+    connectedAccountID: z.string(),
+    igAccountID: z.string().optional(),
+    fbPageID: z.string().optional(),
+    metadata: z.record(z.any(), z.any()).optional(),
+  }),
 });
 
 export type BasePlacementSpec = z.infer<typeof BasePlacementSpec>;
@@ -88,13 +94,6 @@ export type BasePlacementSpec = z.infer<typeof BasePlacementSpec>;
  * we use this spec definitions in the front end for validation as well as preview rendering. In the backend, it's transformed into multiple api calls to eventually publish it.
  */
 
-// 1. identity specs, e.g. pageId, adAccountId
-const identitySpec = z.object({
-  pageId: z.string(),
-  userId: z.string(),
-  adAccountId: z.string().optional(),
-});
-
 // 2. post spec
 export const postSpec = z.object({
   message: z.string().optional(),
@@ -105,7 +104,6 @@ export const postSpec = z.object({
 // placement specifics specs
 export const BaseFBPlacementSpec = BasePlacementSpec.extend({
   placement: z.enum(Object.values(FBPlacement)),
-  identity: identitySpec,
 });
 
 export const FBFeedPlacementSpec = BaseFBPlacementSpec.extend({
@@ -117,7 +115,6 @@ export type FBFeedPlacementSpec = z.infer<typeof FBFeedPlacementSpec>;
 // ========================= Instagram =========================
 export const BaseIGPlacementSpec = BasePlacementSpec.extend({
   placement: z.enum(Object.values(IGPlacement)),
-  igAccountID: z.string().optional(),
 });
 export const IGFeedPlacementSpec = BaseIGPlacementSpec.extend({
   placement: z.literal(IGPlacement.IG_FEED),

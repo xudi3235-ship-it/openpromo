@@ -16,8 +16,9 @@ interface ComposerState {
       attachments: SharedAttachmentSpec[];
       message: string;
     };
-    facebookFeed: FBFeedPlacementSpec;
-    instagramFeed: IGFeedPlacementSpec;
+    // list, support N FB + M IG
+    facebookFeed: FBFeedPlacementSpec[];
+    instagramFeed: IGFeedPlacementSpec[];
   };
   selectedAccounts: string[];
   accounts: ConnectedAccount[];
@@ -29,8 +30,8 @@ interface ComposerActions {
       attachments?: SharedAttachmentSpec[];
       message?: string;
     };
-    facebookFeed?: FBFeedPlacementSpec;
-    instagramFeed?: IGFeedPlacementSpec;
+    facebookFeed?: FBFeedPlacementSpec[];
+    instagramFeed?: IGFeedPlacementSpec[];
   }) => void;
   toggleAccount: (accountId: string) => void;
   toggleAllAccounts: () => void;
@@ -48,8 +49,8 @@ export const useComposerStore = create<ComposerState & ComposerActions>()(
         attachments: [],
         message: "",
       },
-      facebookFeed: {} as FBFeedPlacementSpec,
-      instagramFeed: {} as IGFeedPlacementSpec,
+      facebookFeed: [] as FBFeedPlacementSpec[],
+      instagramFeed: [] as IGFeedPlacementSpec[],
     },
     selectedAccounts: [],
     accounts: [],

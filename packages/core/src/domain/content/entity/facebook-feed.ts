@@ -63,7 +63,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       throw new Error(`Invalid placementSpec for content ${this.data.id}`);
     }
     this.spec = spec;
-    this.pageID = spec.identity.pageId;
+    this.pageID = spec.identity.metadata?.pageID;
   }
 
   static async fromID(id: string): Promise<EntFBFeedPendingContent> {

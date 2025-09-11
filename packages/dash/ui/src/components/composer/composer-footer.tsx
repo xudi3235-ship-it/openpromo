@@ -4,12 +4,16 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation } from "@/lib/hono-client";
+import { useComposerStore } from "@/stores/composer-store";
 
-export function ComposerFooter() {
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+function useContentCreateMutation({
+  onSettled,
+}: {
+  onSettled?: () => void;
+} = {}) {
   const { workspace } = useWorkspace();
-
-  const { mutate, isPending } = useHonoMutation({
+  const { placementSpecs: _ } = useComposerStore();
+  return useHonoMutation({
     mutationFn: (api) =>
       api.workspaces[":workspaceSlug"].content.create.$post({
         param: { workspaceSlug: workspace.slug },
@@ -20,8 +24,7 @@ export function ComposerFooter() {
           placements: {
             facebookFeed: {
               identity: {
-                pageId: "TODO",
-                userId: "TODO",
+                connectedAccountID: "TODO",
               },
               placement: "FB_FEED",
               postSpec: {
@@ -31,7 +34,17 @@ export function ComposerFooter() {
           },
         },
       }),
-    onSettled: () => setShowConfirmDialog(false),
+    onSettled,
+  });
+}
+
+export function ComposerFooter() {
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  const { mutate, isPending } = useContentCreateMutation({
+    onSettled: () => {
+      setShowConfirmDialog(false);
+    },
   });
 
   return (

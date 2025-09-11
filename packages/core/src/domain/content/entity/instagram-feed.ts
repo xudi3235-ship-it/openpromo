@@ -29,13 +29,13 @@ export class EntIGFeedPendingContent extends EntPendingContent {
     if (!spec || !success || error) {
       throw new Error(`Invalid placementSpec for content ${this.data.id}`);
     }
-    if (!spec.igAccountID) {
+    if (!spec.identity.igAccountID) {
       throw new Error(
         `IG placementSpec missing igAccountID for content ${this.data.id}`,
       );
     }
     this.spec = spec;
-    this.igAccountID = spec.igAccountID;
+    this.igAccountID = spec.identity.igAccountID;
   }
   async createSinglePhotoPost() {
     const { igAccountID } = await this.identity();
@@ -263,7 +263,12 @@ export class EntIGFeedPendingContent extends EntPendingContent {
       connectedAccountId: acc.id,
       publishingStatus: "SCHEDULED",
       placementSpec: {
-        igAccountID,
+        identity: {
+          connectedAccountID: acc.id,
+          metadata: {
+            igAccountID,
+          },
+        },
         placement: "IG_FEED",
         caption: "dummy caption",
         attachments: [

@@ -136,8 +136,10 @@ export class EntPendingContent extends EntUnifiedContentBase {
       publishingStatus: "SCHEDULED",
       placementSpec: {
         identity: {
-          pageId: pageID ?? acc.externalAccountId,
-          userId: "dummy_user_id",
+          connectedAccountID: acc.id,
+          metadata: {
+            pageID: pageID ?? acc.externalAccountId,
+          },
         },
         placement: "FB_FEED",
         postSpec: {
