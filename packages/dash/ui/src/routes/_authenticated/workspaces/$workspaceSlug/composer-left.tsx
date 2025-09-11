@@ -8,7 +8,6 @@ import {
 import { Switch } from "@openpromo/ui/components/switch";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import {
-  ArrowUpDown,
   MapPin,
   MessageSquare,
   MoreHorizontal,
@@ -16,35 +15,12 @@ import {
   Smile,
 } from "lucide-react";
 import { Dropzone, DropzoneEmptyState } from "@/components/dropzone";
+import { AccountSelection } from "./account-selection";
 
 export function ComposerLeft() {
   return (
     <div className="w-[600px] p-6 space-y-4 overflow-y-auto max-h-screen">
-      {/* Platform Selection Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Post to</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-2 p-3 border rounded-lg">
-            <div className="flex -space-x-2">
-              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold relative z-10">
-                f
-              </div>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-                IG
-              </div>
-            </div>
-            <div>
-              <p className="font-medium">Facebook and Instagram</p>
-              <p className="text-sm text-muted-foreground">
-                Cross-platform posting
-              </p>
-            </div>
-            <ArrowUpDown className="w-4 h-4 ml-auto text-muted-foreground" />
-          </div>
-        </CardContent>
-      </Card>
+      <AccountSelection />
 
       {/* Media Upload Card */}
       <Card>
