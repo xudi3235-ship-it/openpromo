@@ -137,6 +137,7 @@ export class EntPendingContent extends EntUnifiedContentBase {
       placementSpec: {
         identity: {
           connectedAccountID: acc.id,
+          fbPageID: pageID ?? acc.externalAccountId,
           metadata: {
             pageID: pageID ?? acc.externalAccountId,
           },

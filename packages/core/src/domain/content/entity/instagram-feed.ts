@@ -265,6 +265,7 @@ export class EntIGFeedPendingContent extends EntPendingContent {
       placementSpec: {
         identity: {
           connectedAccountID: acc.id,
+          igAccountID,
           metadata: {
             igAccountID,
           },
