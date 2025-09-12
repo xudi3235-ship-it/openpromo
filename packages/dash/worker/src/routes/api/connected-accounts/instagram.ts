@@ -53,22 +53,23 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>().get(
           code,
           workspaceSlug,
         });
-
+        const profilePicUrl = authResult.picture ? authResult.picture : "";
         // 2. Create a connected account for the authenticated Instagram account
         const account = await ConnectedAccount.create({
           platform: Platform.enum.INSTAGRAM,
           externalAccountId: authResult.id,
           accountName: authResult.name,
           externalUrl: `https://www.instagram.com/${authResult.username}`,
-          profilePicUrl: authResult.picture ? authResult.picture : null,
+          profilePicUrl,
           // TODO: implement encryption
           encryptedAccessToken: authResult.accessToken,
           refreshToken: authResult.refreshToken,
           tokenExpiresAt: new Date(Date.now() + authResult.expiresIn * 1000),
           metadata: {
-            accountId: authResult.id,
+            igAccountID: authResult.id,
             username: authResult.username,
-            accountName: authResult.name,
+            profilePicUrl,
+            permissions: authResult.permissions,
           },
         });
 

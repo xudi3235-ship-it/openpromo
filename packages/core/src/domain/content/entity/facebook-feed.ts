@@ -68,14 +68,15 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       );
     }
     this.spec = spec;
-    this.pageID = spec.identity.metadata?.pageID;
-    if (!this.pageID) {
+    const pageID = spec.identity.fbPageID;
+    if (!pageID) {
       throw new VisibleError(
         "internal",
         ErrorCodes.Server.INTERNAL_ERROR,
         `no pageID found for content ${this.data.id}`,
       );
     }
+    this.pageID = pageID;
   }
 
   static async fromID(id: string): Promise<EntFBFeedPendingContent> {

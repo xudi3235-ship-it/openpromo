@@ -1,7 +1,7 @@
 import { id, timestamp, timestamps, ulid } from "@core/helpers/db";
 import {
   index,
-  json,
+  jsonb,
   pgTable,
   text,
   unique,
@@ -18,6 +18,29 @@ import { workspaceID } from "./workspaces.sql";
 // Platform enum for supported social media platforms
 export const Platform = z.enum(["FACEBOOK", "INSTAGRAM", "TIKTOK"]);
 export type Platform = z.infer<typeof Platform>;
+
+const FBPageMetadata = z.object({
+  pageID: z.string(),
+  pageName: z.string(),
+  profilePicUrl: z.string(),
+  followers: z.number().optional(),
+  permissions: z.string().array(),
+  // user 1:N pages on FB side.
+  user: z.object({
+    accessToken: z.string(),
+    refreshToken: z.string().optional(),
+    tokenExpiresAt: z.date().optional(),
+  }),
+});
+const IGAccountMetadata = z.object({
+  igAccountID: z.string().optional(),
+  username: z.string().optional(),
+  profilePicUrl: z.string(),
+  permissions: z.string().array(),
+});
+type FBPageMetadata = z.infer<typeof FBPageMetadata>;
+type IGAccountMetadata = z.infer<typeof IGAccountMetadata>;
+type ConnectedAccountMetadata = FBPageMetadata | IGAccountMetadata;
 
 export const connectedAccount = pgTable(
   "connected_account",
@@ -37,8 +60,7 @@ export const connectedAccount = pgTable(
     encryptedAccessToken: text("encrypted_access_token").notNull(),
     refreshToken: text("refresh_token"),
     tokenExpiresAt: timestamp(),
-    // tbd
-    metadata: json("metadata"),
+    metadata: jsonb("metadata").$type<ConnectedAccountMetadata>().notNull(),
   },
   (table) => [
     index("platform_idx").on(table.platform),

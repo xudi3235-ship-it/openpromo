@@ -84,11 +84,15 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
                 Date.now() + authResult.expiresIn * 1000,
               ),
               metadata: {
-                pageId: page.id,
+                pageID: page.id,
                 pageName: page.name,
+                permissions: authResult.permissions,
                 followers: page.fan_count,
-                userAccessToken: authResult.accessToken,
-                userRefreshToken: authResult.refreshToken,
+                profilePicUrl: page.picture?.url || "",
+                user: {
+                  accessToken: authResult.accessToken,
+                  refreshToken: authResult.refreshToken,
+                },
               },
             });
             await FacebookMutation.setupWebhook(page.id, page.access_token);

@@ -50,6 +50,7 @@ export interface FacebookAuthTokenDetails {
   accessToken: string;
   id: string;
   name: string;
+  permissions: string[];
   picture: string;
   username: string;
 }
@@ -296,6 +297,7 @@ export class FacebookOAuthService {
       expiresIn,
       picture: profile.picture?.url || "",
       username: "",
+      permissions: this.scopes,
     };
   }
 
@@ -319,6 +321,7 @@ export class FacebookOAuthService {
       expiresIn,
       picture: pageInfo.picture,
       username: pageInfo.username,
+      permissions: this.scopes,
     };
   }
 }

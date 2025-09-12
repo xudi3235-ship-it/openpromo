@@ -212,7 +212,15 @@ export namespace ConnectedAccount {
       encryptedAccessToken: "dummy-token",
       refreshToken: "dummy-refresh",
       tokenExpiresAt: new Date(Date.now() + 3600 * 1000),
-      metadata: {},
+      metadata: {
+        pageID: "dummy",
+        pageName: "dummy",
+        permissions: ["pages_show_list", "pages_read_engagement"],
+        profilePicUrl: "",
+        user: {
+          accessToken: "dummy",
+        },
+      },
       profilePicUrl: null,
     });
   }

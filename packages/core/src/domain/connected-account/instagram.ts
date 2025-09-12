@@ -40,6 +40,7 @@ export interface InstagramAuthTokenDetails {
   name: string;
   picture: string;
   username: string;
+  permissions: string[];
 }
 
 const log = Log.create({ namespace: "InstagramOAuthService" });
@@ -203,6 +204,7 @@ export class InstagramOAuthService {
       expiresIn: longToken.expires_in,
       picture: profile.profile_picture_url || "",
       username: profile.username,
+      permissions: this.scopes,
     };
   }
 
@@ -223,6 +225,7 @@ export class InstagramOAuthService {
       expiresIn,
       picture: profile.profile_picture_url || "",
       username: profile.username,
+      permissions: this.scopes,
     };
   }
 
