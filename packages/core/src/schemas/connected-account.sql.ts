@@ -33,14 +33,14 @@ const FBPageMetadata = z.object({
   }),
 });
 const IGAccountMetadata = z.object({
-  igAccountID: z.string().optional(),
+  igAccountID: z.string(),
   username: z.string().optional(),
   profilePicUrl: z.string(),
   permissions: z.string().array(),
 });
-type FBPageMetadata = z.infer<typeof FBPageMetadata>;
-type IGAccountMetadata = z.infer<typeof IGAccountMetadata>;
-type ConnectedAccountMetadata = FBPageMetadata | IGAccountMetadata;
+export type FBPageMetadata = z.infer<typeof FBPageMetadata>;
+export type IGAccountMetadata = z.infer<typeof IGAccountMetadata>;
+export type ConnectedAccountMetadata = FBPageMetadata | IGAccountMetadata;
 
 export const connectedAccount = pgTable(
   "connected_account",

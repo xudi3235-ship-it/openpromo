@@ -4,7 +4,11 @@ import type {
   IGFeedPlacementSpec,
   SharedAttachmentSpec,
 } from "@core/domain/content/schema/placement";
-import type { Platform } from "@core/schemas/connected-account.sql";
+import type {
+  FBPageMetadata,
+  IGAccountMetadata,
+  Platform,
+} from "@core/schemas/connected-account.sql";
 import { createContext, useContext } from "react";
 import { createStore, useStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
@@ -76,7 +80,7 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
       return {
         identity: {
           connectedAccountID: acc.id,
-          // fbPageID: acc.metadata?.pageID,
+          fbPageID: (acc.metadata as FBPageMetadata).pageID,
         },
         placement: "FB_FEED",
         postSpec: {
@@ -94,7 +98,7 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
       return {
         identity: {
           connectedAccountID: acc.id,
-          // igAccountID: acc.metadata?.igUserID,
+          igAccountID: (acc.metadata as IGAccountMetadata).igAccountID,
         },
         placement: "IG_FEED",
       } satisfies IGFeedPlacementSpec;
@@ -197,6 +201,7 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
               const fbSpec: FBFeedPlacementSpec = {
                 identity: {
                   connectedAccountID: account.id,
+                  fbPageID: (account.metadata as FBPageMetadata).pageID,
                 },
                 placement: "FB_FEED",
                 postSpec: {
@@ -211,6 +216,8 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
               const igSpec: IGFeedPlacementSpec = {
                 identity: {
                   connectedAccountID: account.id,
+                  igAccountID: (account.metadata as IGAccountMetadata)
+                    .igAccountID,
                 },
                 placement: "IG_FEED",
               };
@@ -239,6 +246,7 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
                   ({
                     identity: {
                       connectedAccountID: acc.id,
+                      fbPageID: (acc.metadata as FBPageMetadata).pageID,
                     },
                     placement: "FB_FEED",
                     postSpec: {
@@ -254,6 +262,8 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
                   ({
                     identity: {
                       connectedAccountID: acc.id,
+                      igAccountID: (acc.metadata as IGAccountMetadata)
+                        .igAccountID,
                     },
                     placement: "IG_FEED",
                   }) satisfies IGFeedPlacementSpec,
@@ -273,30 +283,30 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
           // Sync the placement specs with the new accounts (select all by default)
           const facebookFeed = accounts
             .filter((acc) => acc.platform === "FACEBOOK")
-            .map(
-              (acc) =>
-                ({
-                  identity: {
-                    connectedAccountID: acc.id,
-                  },
-                  placement: "FB_FEED",
-                  postSpec: {
-                    message: state.contentCreateData.base.message || "",
-                  },
-                }) satisfies FBFeedPlacementSpec,
-            );
+            .map((acc) => {
+              return {
+                identity: {
+                  connectedAccountID: acc.id,
+                  fbPageID: (acc.metadata as FBPageMetadata).pageID,
+                },
+                placement: "FB_FEED",
+                postSpec: {
+                  message: state.contentCreateData.base.message || "",
+                },
+              } satisfies FBFeedPlacementSpec;
+            });
 
           const instagramFeed = accounts
             .filter((acc) => acc.platform === "INSTAGRAM")
-            .map(
-              (acc) =>
-                ({
-                  identity: {
-                    connectedAccountID: acc.id,
-                  },
-                  placement: "IG_FEED",
-                }) satisfies IGFeedPlacementSpec,
-            );
+            .map((acc) => {
+              return {
+                identity: {
+                  connectedAccountID: acc.id,
+                  igAccountID: (acc.metadata as IGAccountMetadata).igAccountID,
+                },
+                placement: "IG_FEED",
+              } satisfies IGFeedPlacementSpec;
+            });
 
           state.contentCreateData.placements.facebookFeed = facebookFeed;
           state.contentCreateData.placements.instagramFeed = instagramFeed;

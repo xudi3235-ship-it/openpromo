@@ -77,8 +77,6 @@ export const BasePlacementSpec = z.object({
   updatedAt: z.date().optional(),
   identity: z.object({
     connectedAccountID: z.string(),
-    igAccountID: z.string().optional(),
-    fbPageID: z.string().optional(),
     metadata: z.record(z.any(), z.any()).optional(),
   }),
   attachments: SharedAttachmentSpec.array().optional(),
@@ -108,6 +106,11 @@ export const postSpec = z.object({
 // placement specifics specs
 export const BaseFBPlacementSpec = BasePlacementSpec.extend({
   placement: z.enum(Object.values(FBPlacement)),
+  identity: z.object({
+    connectedAccountID: z.string(),
+    fbPageID: z.string(),
+    metadata: z.record(z.any(), z.any()).optional(),
+  }),
 });
 
 export const FBFeedPlacementSpec = BaseFBPlacementSpec.extend({
@@ -119,6 +122,11 @@ export type FBFeedPlacementSpec = z.infer<typeof FBFeedPlacementSpec>;
 // ========================= Instagram =========================
 export const BaseIGPlacementSpec = BasePlacementSpec.extend({
   placement: z.enum(Object.values(IGPlacement)),
+  identity: z.object({
+    connectedAccountID: z.string(),
+    igAccountID: z.string(),
+    metadata: z.record(z.any(), z.any()).optional(),
+  }),
 });
 export const IGFeedPlacementSpec = BaseIGPlacementSpec.extend({
   placement: z.literal(IGPlacement.IG_FEED),
