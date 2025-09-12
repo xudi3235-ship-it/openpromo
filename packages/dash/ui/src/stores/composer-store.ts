@@ -22,9 +22,12 @@ export interface ComposerProps {
 interface ComposerState {
   placementSelected: AllPlacement | "ALL";
   contentCreateData: ContentCreateData;
-  selectedAccounts: string[];
-  accounts: ConnectedAccount[];
   selectedPreview: Platform;
+  // Keep track of full account objects for UI display
+  accountsMap: Map<string, ConnectedAccount>;
+  // Derived properties for backward compatibility
+  accounts: ConnectedAccount[];
+  selectedAccounts: string[];
 }
 
 interface ComposerActions {
@@ -42,6 +45,9 @@ interface ComposerActions {
   addAttachments: (files: File[]) => void;
   removeAttachment: (index: number) => void;
   setSelectedPreview: (preview: Platform) => void;
+  // Internal getters (not exposed in the public API)
+  _getAccounts: () => ConnectedAccount[];
+  _getSelectedAccounts: () => string[];
 }
 
 export type ComposerStore = ReturnType<typeof createComposerStore>;
@@ -56,8 +62,39 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
 
   const props = { ...DEFAULT_PROPS, ...initProps };
 
+  const facebookFeed = props.initialAccounts
+    ?.map((acc) => {
+      if (acc.platform !== "FACEBOOK") {
+        return null;
+      }
+      return {
+        identity: {
+          connectedAccountID: acc.id,
+          // fbPageID: acc.metadata?.pageID,
+        },
+        placement: "FB_FEED",
+        postSpec: {},
+      } satisfies FBFeedPlacementSpec;
+    })
+    .filter((s) => s != null) as FBFeedPlacementSpec[];
+
+  const instagramFeed = props.initialAccounts
+    ?.map((acc) => {
+      if (acc.platform !== "INSTAGRAM") {
+        return null;
+      }
+      return {
+        identity: {
+          connectedAccountID: acc.id,
+          // igAccountID: acc.metadata?.igUserID,
+        },
+        placement: "IG_FEED",
+      } satisfies IGFeedPlacementSpec;
+    })
+    .filter((s) => s != null) as IGFeedPlacementSpec[];
+
   return createStore<ComposerState & ComposerActions>()(
-    immer((set) => ({
+    immer((set, get) => ({
       placementSelected: props.initialPlacementSelected || "ALL",
       contentCreateData: {
         base: {
@@ -66,14 +103,46 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
           message: props.initialMessage || "",
         },
         placements: {
-          facebookFeed: [],
-          instagramFeed: [],
+          facebookFeed,
+          instagramFeed,
         },
       },
-      selectedAccounts:
-        props.initialAccounts?.map((account) => account.id) || [],
-      accounts: props.initialAccounts || [],
       selectedPreview: props.initialSelectedPreview || "FACEBOOK",
+      accountsMap: new Map(
+        props.initialAccounts?.map((account) => [account.id, account]) || [],
+      ),
+
+      // Derived properties - these are computed each time they're accessed
+      get accounts() {
+        return Array.from(this.accountsMap.values());
+      },
+      get selectedAccounts() {
+        const fbAccounts =
+          this.contentCreateData.placements.facebookFeed?.map(
+            (spec) => spec.identity.connectedAccountID,
+          ) || [];
+        const igAccounts =
+          this.contentCreateData.placements.instagramFeed?.map(
+            (spec) => spec.identity.connectedAccountID,
+          ) || [];
+        return [...fbAccounts, ...igAccounts];
+      },
+
+      // Internal getters for use within actions
+      _getAccounts: () => Array.from(get().accountsMap.values()),
+      _getSelectedAccounts: () => {
+        const state = get();
+        const fbAccounts =
+          state.contentCreateData.placements.facebookFeed?.map(
+            (spec) => spec.identity.connectedAccountID,
+          ) || [];
+        const igAccounts =
+          state.contentCreateData.placements.instagramFeed?.map(
+            (spec) => spec.identity.connectedAccountID,
+          ) || [];
+        return [...fbAccounts, ...igAccounts];
+      },
+
       setPlacementSpecs: (specs) =>
         set((state) => {
           if (specs.base) {
@@ -92,28 +161,131 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
         }),
       toggleAccount: (accountId) =>
         set((state) => {
-          if (state.selectedAccounts.includes(accountId)) {
-            state.selectedAccounts = state.selectedAccounts.filter(
-              (id) => id !== accountId,
-            );
+          const account = state.accountsMap.get(accountId);
+          if (!account) return;
+
+          const selectedAccounts = get()._getSelectedAccounts();
+
+          if (selectedAccounts.includes(accountId)) {
+            // Remove account from placements
+            if (account.platform === "FACEBOOK") {
+              if (state.contentCreateData.placements.facebookFeed) {
+                state.contentCreateData.placements.facebookFeed =
+                  state.contentCreateData.placements.facebookFeed.filter(
+                    (spec) => spec.identity.connectedAccountID !== accountId,
+                  );
+              }
+            } else if (account.platform === "INSTAGRAM") {
+              if (state.contentCreateData.placements.instagramFeed) {
+                state.contentCreateData.placements.instagramFeed =
+                  state.contentCreateData.placements.instagramFeed.filter(
+                    (spec) => spec.identity.connectedAccountID !== accountId,
+                  );
+              }
+            }
           } else {
-            state.selectedAccounts.push(accountId);
+            // Add account to placements
+            if (account.platform === "FACEBOOK") {
+              const fbSpec: FBFeedPlacementSpec = {
+                identity: {
+                  connectedAccountID: account.id,
+                },
+                placement: "FB_FEED",
+                postSpec: {},
+              };
+              if (!state.contentCreateData.placements.facebookFeed) {
+                state.contentCreateData.placements.facebookFeed = [];
+              }
+              state.contentCreateData.placements.facebookFeed.push(fbSpec);
+            } else if (account.platform === "INSTAGRAM") {
+              const igSpec: IGFeedPlacementSpec = {
+                identity: {
+                  connectedAccountID: account.id,
+                },
+                placement: "IG_FEED",
+              };
+              if (!state.contentCreateData.placements.instagramFeed) {
+                state.contentCreateData.placements.instagramFeed = [];
+              }
+              state.contentCreateData.placements.instagramFeed.push(igSpec);
+            }
           }
         }),
       toggleAllAccounts: () =>
         set((state) => {
-          if (state.selectedAccounts.length === state.accounts.length) {
-            state.selectedAccounts = [];
+          const allAccounts = Array.from(state.accountsMap.values());
+          const selectedAccounts = get()._getSelectedAccounts();
+
+          if (selectedAccounts.length === allAccounts.length) {
+            // Deselect all accounts - clear all placement specs
+            state.contentCreateData.placements.facebookFeed = [];
+            state.contentCreateData.placements.instagramFeed = [];
           } else {
-            state.selectedAccounts = state.accounts.map(
-              (account) => account.id,
-            );
+            // Select all accounts - create specs for all accounts
+            const facebookFeed = allAccounts
+              .filter((acc) => acc.platform === "FACEBOOK")
+              .map(
+                (acc) =>
+                  ({
+                    identity: {
+                      connectedAccountID: acc.id,
+                    },
+                    placement: "FB_FEED",
+                    postSpec: {},
+                  }) satisfies FBFeedPlacementSpec,
+              );
+
+            const instagramFeed = allAccounts
+              .filter((acc) => acc.platform === "INSTAGRAM")
+              .map(
+                (acc) =>
+                  ({
+                    identity: {
+                      connectedAccountID: acc.id,
+                    },
+                    placement: "IG_FEED",
+                  }) satisfies IGFeedPlacementSpec,
+              );
+
+            state.contentCreateData.placements.facebookFeed = facebookFeed;
+            state.contentCreateData.placements.instagramFeed = instagramFeed;
           }
         }),
       setAccounts: (accounts: ConnectedAccount[]) =>
         set((state) => {
-          state.accounts = accounts;
-          state.selectedAccounts = accounts.map((account) => account.id);
+          // Update the accounts map
+          state.accountsMap = new Map(
+            accounts.map((account) => [account.id, account]),
+          );
+
+          // Sync the placement specs with the new accounts (select all by default)
+          const facebookFeed = accounts
+            .filter((acc) => acc.platform === "FACEBOOK")
+            .map(
+              (acc) =>
+                ({
+                  identity: {
+                    connectedAccountID: acc.id,
+                  },
+                  placement: "FB_FEED",
+                  postSpec: {},
+                }) satisfies FBFeedPlacementSpec,
+            );
+
+          const instagramFeed = accounts
+            .filter((acc) => acc.platform === "INSTAGRAM")
+            .map(
+              (acc) =>
+                ({
+                  identity: {
+                    connectedAccountID: acc.id,
+                  },
+                  placement: "IG_FEED",
+                }) satisfies IGFeedPlacementSpec,
+            );
+
+          state.contentCreateData.placements.facebookFeed = facebookFeed;
+          state.contentCreateData.placements.instagramFeed = instagramFeed;
         }),
       addAttachments: (files: File[]) =>
         set((state) => {
@@ -142,10 +314,8 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
   );
 };
 
-// Create context
 export const ComposerContext = createContext<ComposerStore | null>(null);
 
-// Custom hook to mimic the hook returned by `create`
 export function useComposerStore<T = ComposerState & ComposerActions>(
   selector?: (state: ComposerState & ComposerActions) => T,
 ): T {
