@@ -43,6 +43,12 @@ interface ComposerActions {
   toggleAllAccounts: () => void;
   setAccounts: (accounts: ConnectedAccount[]) => void;
   addAttachments: (files: File[]) => void;
+  /**
+   * Upload files via workspace media image API and add as attachments.
+   * Performs sequential uploads (can be optimized to parallel later) and
+   * updates attachment entries with delivery URL & metadata.
+   */
+  uploadAttachments: (files: File[], workspaceSlug: string) => Promise<void>;
   removeAttachment: (index: number) => void;
   setSelectedPreview: (preview: Platform) => void;
   // Internal getters (not exposed in the public API)
@@ -299,6 +305,80 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
           }));
           state.contentCreateData.base.attachments.push(...newAttachments);
         }),
+      uploadAttachments: async (files: File[], workspaceSlug: string) => {
+        // lazily import client to avoid circular deps
+        const { apiClient } = await import("@/lib/hono-client");
+        // 1. optimistic add placeholders with uploading flag
+        const placeholderIds: string[] = [];
+        set((state) => {
+          files.forEach((file, idx) => {
+            const id = `attachment-${Date.now()}-${idx}`;
+            placeholderIds.push(id);
+            state.contentCreateData.base.attachments.push({
+              id,
+              type: file.type.startsWith("image/") ? "photo" : "video",
+              file,
+              mimeType: file.type,
+              metadata: { uploading: true },
+            });
+          });
+        });
+        // 2. sequentially upload (keeps CF rate limits simple); collect updates
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const localId = placeholderIds[i];
+          try {
+            // a) get direct upload URL
+            const res = await apiClient.workspaces[
+              ":workspaceSlug"
+            ].media.images["upload-url"].$post({
+              param: { workspaceSlug },
+              json: { requireSignedURLs: false },
+            });
+            if (!res.ok) throw new Error("Failed to get upload URL");
+            const { id: imageId, uploadURL } = (await res.json()) as {
+              id: string;
+              uploadURL: string;
+            };
+            // b) upload file to Cloudflare direct upload URL
+            const form = new FormData();
+            form.append("file", file, file.name);
+            const uploadResp = await fetch(uploadURL, {
+              method: "POST",
+              body: form,
+            });
+            if (!uploadResp.ok) throw new Error("Upload failed");
+            // c) update attachment entry (keep local file preview, just store cloud image id)
+            set((state) => {
+              const att = state.contentCreateData.base.attachments.find(
+                (a) => a.id === localId,
+              );
+              if (att) {
+                att.id = imageId; // replace placeholder id with imageId
+                att.metadata = {
+                  ...(att.metadata || {}),
+                  cfImageId: imageId,
+                  uploading: false,
+                };
+              }
+            });
+          } catch (err) {
+            // mark failed
+            set((state) => {
+              const att = state.contentCreateData.base.attachments.find(
+                (a) => a.id === localId,
+              );
+              if (att) {
+                att.metadata = {
+                  ...(att.metadata || {}),
+                  uploading: false,
+                  error: (err as Error).message,
+                };
+              }
+            });
+          }
+        }
+      },
       removeAttachment: (index: number) =>
         set((state) => {
           state.contentCreateData.base.attachments =

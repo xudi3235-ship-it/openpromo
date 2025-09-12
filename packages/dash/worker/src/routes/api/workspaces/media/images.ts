@@ -1,5 +1,4 @@
 import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
-import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { ImageStorage } from "@core/helpers/storage/image";
 import { Hono } from "hono";
@@ -8,7 +7,6 @@ import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
 
 const createDirectUploadSchema = z.object({
-  metadata: z.record(z.string(), z.string()).optional(),
   requireSignedURLs: z.boolean().optional(),
   expiry: z.string().datetime().optional(),
 });
@@ -24,16 +22,9 @@ export const imagesRoute = new Hono<ApiEnv>()
     withWorkspaceRole(WORKSPACE_ROLE.EDITOR),
     zValidator("json", createDirectUploadSchema),
     async (ctx) => {
-      const { metadata, requireSignedURLs, expiry } = ctx.req.valid("json");
-      const workspaceID = Actor.workspaceID();
-      const enhancedMetadata = {
-        ...metadata,
-        workspaceID,
-        actor: Actor.use(),
-      };
-
+      const { requireSignedURLs, expiry } = ctx.req.valid("json");
       const { id, uploadURL } = await ImageStorage.createDirectUpload({
-        metadata: enhancedMetadata,
+        metadata: {},
         requireSignedURLs,
         expiry,
       });

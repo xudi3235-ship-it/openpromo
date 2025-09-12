@@ -23,12 +23,12 @@ export namespace ImageStorage {
     const c = getCloudflareClient();
     const { metadata, ...rest } = params;
     const upload = await c.images.v2.directUploads.create({
+      creator: Actor.workspaceID(), // assets are owned by workspace
       account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
       ...rest,
-      metadata: {
+      metadata: JSON.stringify({
         ...(metadata ?? {}),
-        actor: Actor.assert("workspace_user"),
-      },
+      }),
     });
     return upload;
   }

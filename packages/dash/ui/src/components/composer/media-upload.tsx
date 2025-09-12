@@ -8,12 +8,14 @@ import {
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Dropzone, DropzoneEmptyState } from "@/components/dropzone";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerStore } from "@/stores/composer-store";
 
 interface MediaPreview {
-  file: File;
+  file: File; // may be an empty placeholder for remote assets
   url: string;
   aspectRatio: string;
+  mimeType: string;
 }
 
 const generatePreview = async (file: File): Promise<MediaPreview> => {
@@ -24,63 +26,68 @@ const generatePreview = async (file: File): Promise<MediaPreview> => {
       const img = new Image();
       img.onload = () => {
         const aspectRatio = `${img.width}:${img.height}`;
-        resolve({ file, url, aspectRatio });
+        resolve({ file, url, aspectRatio, mimeType: file.type });
       };
       img.src = url;
     } else if (file.type.startsWith("video/")) {
       const video = document.createElement("video");
       video.onloadedmetadata = () => {
         const aspectRatio = `${video.videoWidth}:${video.videoHeight}`;
-        resolve({ file, url, aspectRatio });
+        resolve({ file, url, aspectRatio, mimeType: file.type });
       };
       video.src = url;
     } else {
-      resolve({ file, url, aspectRatio: "Unknown" });
+      resolve({ file, url, aspectRatio: "Unknown", mimeType: file.type });
     }
   });
 };
 
 export function MediaUpload() {
-  const { contentCreateData, addAttachments, removeAttachment } =
+  const { contentCreateData, uploadAttachments, removeAttachment } =
     useComposerStore();
+  const { workspace } = useWorkspace();
   const [previews, setPreviews] = useState<MediaPreview[]>([]);
 
   const attachments = contentCreateData.base.attachments;
 
+  // regenerate previews whenever attachments change
   useEffect(() => {
-    const generatePreviews = async () => {
-      const filesWithAttachments = attachments
-        .map((attachment) => attachment.file)
-        .filter((file): file is File => file !== undefined);
-
-      const newPreviews = await Promise.all(
-        filesWithAttachments.map((file) => generatePreview(file)),
-      );
-      setPreviews(newPreviews);
+    let cancelled = false;
+    const build = async () => {
+      // cleanup old previews
+      previews.forEach((p) => {
+        if (p.url.startsWith("blob:")) {
+          URL.revokeObjectURL(p.url);
+        }
+      });
+      const generated: MediaPreview[] = [];
+      for (const att of attachments) {
+        if (att.file) {
+          generated.push(await generatePreview(att.file));
+        }
+      }
+      if (!cancelled) setPreviews(generated);
     };
-
-    if (attachments.length > 0) {
-      generatePreviews();
-    } else {
-      // Clean up existing previews
-      previews.forEach((preview) => {
-        if (preview.url.startsWith("blob:")) {
-          URL.revokeObjectURL(preview.url);
+    if (attachments.length) build();
+    else {
+      previews.forEach((p) => {
+        if (p.url.startsWith("blob:")) {
+          URL.revokeObjectURL(p.url);
         }
       });
       setPreviews([]);
     }
-  }, [
-    attachments, // Clean up existing previews
-    previews.forEach,
-  ]);
+    return () => {
+      cancelled = true;
+    };
+  }, [attachments, previews]);
 
-  // Cleanup on unmount
+  // cleanup on unmount
   useEffect(() => {
     return () => {
-      previews.forEach((preview) => {
-        if (preview.url.startsWith("blob:")) {
-          URL.revokeObjectURL(preview.url);
+      previews.forEach((p) => {
+        if (p.url.startsWith("blob:")) {
+          URL.revokeObjectURL(p.url);
         }
       });
     };
@@ -88,9 +95,7 @@ export function MediaUpload() {
 
   const handleRemove = (index: number) => {
     const preview = previews[index];
-    if (preview?.url.startsWith("blob:")) {
-      URL.revokeObjectURL(preview.url);
-    }
+    if (preview?.url.startsWith("blob:")) URL.revokeObjectURL(preview.url);
     removeAttachment(index);
   };
 
@@ -107,8 +112,9 @@ export function MediaUpload() {
           accept={{ "image/*": [], "video/*": [] }}
           maxFiles={10}
           maxSize={50 * 1024 * 1024}
-          onDrop={(files) => {
-            addAttachments(files);
+          onDrop={async (files) => {
+            if (!workspace?.slug) return;
+            await uploadAttachments(files, workspace.slug);
           }}
           className="h-32"
         >
@@ -121,57 +127,84 @@ export function MediaUpload() {
               Selected files ({previews.length})
             </h4>
             <div className="space-y-3">
-              {previews.map((preview, index) => (
-                <div
-                  key={`${preview.file.name}-${preview.file.size}-${index}`}
-                  className="flex items-center gap-3 p-3 bg-muted rounded-lg"
-                >
-                  {/* Thumbnail */}
-                  <div className="w-16 h-16 rounded overflow-hidden bg-gray-200 flex-shrink-0">
-                    {preview.file.type.startsWith("image/") ? (
-                      <img
-                        src={preview.url}
-                        alt={preview.file.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : preview.file.type.startsWith("video/") ? (
-                      <video
-                        src={preview.url}
-                        className="w-full h-full object-cover"
-                        muted
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                        File
-                      </div>
-                    )}
-                  </div>
-
-                  {/* File info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {preview.file.name}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>
-                        {(preview.file.size / (1024 * 1024)).toFixed(1)}MB
-                      </span>
-                      <span>•</span>
-                      <span>{preview.aspectRatio}</span>
-                    </div>
-                  </div>
-
-                  {/* Remove button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemove(index)}
-                    className="flex-shrink-0 h-8 w-8 p-0"
+              {previews.map((preview, index) => {
+                const att = attachments[index];
+                const meta = (att?.metadata || {}) as Record<string, unknown>;
+                const uploading = Boolean(meta.uploading);
+                const error = meta.error as string | undefined;
+                const isImage =
+                  preview.mimeType.startsWith("image/") ||
+                  (att?.mimeType ?? "").startsWith("image/");
+                const isVideo =
+                  preview.mimeType.startsWith("video/") ||
+                  (att?.mimeType ?? "").startsWith("video/");
+                return (
+                  <div
+                    key={`${att?.id || preview.file.name}-${index}`}
+                    className="flex items-center gap-3 p-3 bg-muted rounded-lg relative"
                   >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+                    {/* Thumbnail */}
+                    <div className="w-16 h-16 rounded overflow-hidden bg-gray-200 flex-shrink-0">
+                      {isImage ? (
+                        <img
+                          src={preview.url}
+                          alt={att?.id || "image"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : isVideo ? (
+                        <video
+                          src={preview.url}
+                          className="w-full h-full object-cover"
+                          muted
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+                          File
+                        </div>
+                      )}
+                    </div>
+
+                    {/* File info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {preview.file.name || att?.id}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {preview.file.size ? (
+                          <span>
+                            {(preview.file.size / (1024 * 1024)).toFixed(1)}MB
+                          </span>
+                        ) : null}
+                        <span>•</span>
+                        <span>{preview.aspectRatio}</span>
+                        {uploading && (
+                          <>
+                            <span>•</span>
+                            <span className="text-blue-600">Uploading...</span>
+                          </>
+                        )}
+                        {error && (
+                          <>
+                            <span>•</span>
+                            <span className="text-red-600">Failed</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Remove button */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemove(index)}
+                      className="flex-shrink-0 h-8 w-8 p-0"
+                      disabled={uploading}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
