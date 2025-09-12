@@ -1,7 +1,7 @@
 {
   "name": "openpromo",
   "version": "0.0.0",
-  "packageManager": "pnpm@10.15.1",
+  "packageManager": "pnpm@10.16.0",
   "scripts": {
     "dev": "sst dev",
     "check": "biome check --write --diagnostic-level=warn",
@@ -14,10 +14,10 @@
     "@biomejs/biome": "^2.2.2",
     "@tsconfig/node22": "^22.0.2",
     "@types/node": "^22.17.1",
+    "@typescript/native-preview": "7.0.0-dev.20250910.1",
     "lefthook": "^1.12.3",
     "typescript": "^5.9.2",
-    "wrangler": "^4.34.0",
-    "@typescript/native-preview": "7.0.0-dev.20250910.1"
+    "wrangler": "^4.34.0"
   },
   "engines": {
     "node": ">=22"
