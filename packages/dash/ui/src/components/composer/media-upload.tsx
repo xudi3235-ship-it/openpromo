@@ -55,11 +55,15 @@ export function MediaUpload() {
     let cancelled = false;
     const build = async () => {
       // cleanup old previews
-      previews.forEach((p) => {
-        if (p.url.startsWith("blob:")) {
-          URL.revokeObjectURL(p.url);
-        }
+      setPreviews((currentPreviews) => {
+        currentPreviews.forEach((p) => {
+          if (p.url.startsWith("blob:")) {
+            URL.revokeObjectURL(p.url);
+          }
+        });
+        return [];
       });
+
       const generated: MediaPreview[] = [];
       for (const att of attachments) {
         if (att.file) {
@@ -68,30 +72,38 @@ export function MediaUpload() {
       }
       if (!cancelled) setPreviews(generated);
     };
-    if (attachments.length) build();
-    else {
-      previews.forEach((p) => {
-        if (p.url.startsWith("blob:")) {
-          URL.revokeObjectURL(p.url);
-        }
+
+    if (attachments.length) {
+      build();
+    } else {
+      setPreviews((currentPreviews) => {
+        currentPreviews.forEach((p) => {
+          if (p.url.startsWith("blob:")) {
+            URL.revokeObjectURL(p.url);
+          }
+        });
+        return [];
       });
-      setPreviews([]);
     }
+
     return () => {
       cancelled = true;
     };
-  }, [attachments, previews]);
+  }, [attachments]);
 
   // cleanup on unmount
   useEffect(() => {
     return () => {
-      previews.forEach((p) => {
-        if (p.url.startsWith("blob:")) {
-          URL.revokeObjectURL(p.url);
-        }
+      setPreviews((currentPreviews) => {
+        currentPreviews.forEach((p) => {
+          if (p.url.startsWith("blob:")) {
+            URL.revokeObjectURL(p.url);
+          }
+        });
+        return currentPreviews;
       });
     };
-  }, [previews]);
+  }, []);
 
   const handleRemove = (index: number) => {
     const preview = previews[index];
