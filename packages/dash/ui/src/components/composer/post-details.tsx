@@ -16,12 +16,11 @@ import {
 import { useComposerStore } from "@/stores/composer-store";
 
 export function PostDetails() {
-  const { placementSpecs, setPlacementSpecs } = useComposerStore();
+  const { contentCreateData, setPlacementSpecs } = useComposerStore();
 
   const handleMessageChange = (value: string) => {
     setPlacementSpecs({
       base: {
-        ...placementSpecs.base,
         message: value,
       },
     });
@@ -40,7 +39,7 @@ export function PostDetails() {
             <Textarea
               placeholder="Write something..."
               className="border-0 resize-none min-h-[100px]"
-              value={placementSpecs.base.message}
+              value={contentCreateData.base.message}
               onChange={(e) => handleMessageChange(e.target.value)}
             />
             <div className="border-t p-2 flex items-center justify-between">

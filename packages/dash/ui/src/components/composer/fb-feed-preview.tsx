@@ -15,8 +15,8 @@ import { useComposerStore } from "@/stores/composer-store";
 
 export function FBFeedPreview() {
   const { workspace } = useWorkspace();
-  const { placementSpecs } = useComposerStore();
-  const attachments = placementSpecs.base.attachments;
+  const { contentCreateData } = useComposerStore();
+  const attachments = contentCreateData.base.attachments;
 
   return (
     <Card>

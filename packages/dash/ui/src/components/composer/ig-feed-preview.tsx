@@ -13,8 +13,8 @@ import { useComposerStore } from "@/stores/composer-store";
 
 export function IGFeedPreview() {
   const { workspace } = useWorkspace();
-  const { placementSpecs } = useComposerStore();
-  const attachments = placementSpecs.base.attachments;
+  const { contentCreateData } = useComposerStore();
+  const attachments = contentCreateData.base.attachments;
 
   return (
     <Card className="max-w-sm border-0 shadow-none">

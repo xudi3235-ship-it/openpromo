@@ -12,27 +12,12 @@ function useContentCreateMutation({
   onSettled?: () => void;
 } = {}) {
   const { workspace } = useWorkspace();
-  const { placementSpecs: _ } = useComposerStore();
+  const { contentCreateData } = useComposerStore();
   return useHonoMutation({
     mutationFn: (api) =>
       api.workspaces[":workspaceSlug"].content.create.$post({
         param: { workspaceSlug: workspace.slug },
-        json: {
-          base: {
-            publishingStatus: "PUBLISH_NOW",
-          },
-          placements: {
-            facebookFeed: {
-              identity: {
-                connectedAccountID: "TODO",
-              },
-              placement: "FB_FEED",
-              postSpec: {
-                message: "TODO",
-              },
-            },
-          },
-        },
+        json: contentCreateData,
       }),
     onSettled,
   });

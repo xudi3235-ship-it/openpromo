@@ -41,11 +41,11 @@ const generatePreview = async (file: File): Promise<MediaPreview> => {
 };
 
 export function MediaUpload() {
-  const { placementSpecs, addAttachments, removeAttachment } =
+  const { contentCreateData, addAttachments, removeAttachment } =
     useComposerStore();
   const [previews, setPreviews] = useState<MediaPreview[]>([]);
 
-  const attachments = placementSpecs.base.attachments;
+  const attachments = contentCreateData.base.attachments;
 
   useEffect(() => {
     const generatePreviews = async () => {
