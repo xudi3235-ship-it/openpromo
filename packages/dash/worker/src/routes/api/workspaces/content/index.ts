@@ -22,6 +22,7 @@ import {
 import { and, asc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
+import { withContentCreateData } from "../../../../middleware/validate-content-create";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
 
@@ -214,7 +215,8 @@ export const contentRoute = new Hono<ApiEnv>()
       c.req.valid("json");
     },
   )
-  .post("/create", zValidator("json", ContentCreateData), async (c) => {
+  .post("/create", withContentCreateData(), async (c) => {
+    console.log("// creating content", c.req.valid("json"));
     const actor = Actor.assert("workspace_user");
     const { placements, base } = c.req.valid("json");
     const { publishingStatus } = base;

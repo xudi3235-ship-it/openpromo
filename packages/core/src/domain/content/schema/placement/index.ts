@@ -32,7 +32,10 @@ export const BaseAttachmentSpec = z.object({
   thumbnailUrl: z.string().optional(),
   mimeType: z.string().optional(),
   metadata: z.record(z.any(), z.any()).optional(),
-  file: z.instanceof(File).optional(),
+  file: z
+    .instanceof(File)
+    .optional()
+    .catch(() => undefined),
 });
 
 // Photo attachment
