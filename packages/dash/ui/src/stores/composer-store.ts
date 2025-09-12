@@ -8,18 +8,11 @@ import type { Platform } from "@core/schemas/connected-account.sql";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import type { ConnectedAccount } from "@/lib/hono-client";
+import type { ContentCreateData } from "../../../worker/src/routes/api/workspaces/content/index";
 
 interface ComposerState {
   placementSelected: AllPlacement | "ALL";
-  placementSpecs: {
-    base: {
-      attachments: SharedAttachmentSpec[];
-      message: string;
-    };
-    // list, support N FB + M IG
-    facebookFeed: FBFeedPlacementSpec[];
-    instagramFeed: IGFeedPlacementSpec[];
-  };
+  contentCreateData: ContentCreateData;
   selectedAccounts: string[];
   accounts: ConnectedAccount[];
   selectedPreview: Platform;
@@ -44,13 +37,16 @@ interface ComposerActions {
 export const useComposerStore = create<ComposerState & ComposerActions>()(
   immer((set) => ({
     placementSelected: "ALL",
-    placementSpecs: {
+    contentCreateData: {
       base: {
+        publishingStatus: "PUBLISH_NOW",
         attachments: [],
         message: "",
       },
-      facebookFeed: [] as FBFeedPlacementSpec[],
-      instagramFeed: [] as IGFeedPlacementSpec[],
+      placements: {
+        facebookFeed: [],
+        instagramFeed: [],
+      },
     },
     selectedAccounts: [],
     accounts: [],
@@ -58,18 +54,16 @@ export const useComposerStore = create<ComposerState & ComposerActions>()(
     setPlacementSpecs: (specs) =>
       set((state) => {
         if (specs.base) {
-          if (specs.base.attachments !== undefined) {
-            state.placementSpecs.base.attachments = specs.base.attachments;
-          }
           if (specs.base.message !== undefined) {
-            state.placementSpecs.base.message = specs.base.message;
+            state.contentCreateData.base.message = specs.base.message;
           }
         }
         if (specs.facebookFeed) {
-          state.placementSpecs.facebookFeed = specs.facebookFeed;
+          state.contentCreateData.placements.facebookFeed = specs.facebookFeed;
         }
         if (specs.instagramFeed) {
-          state.placementSpecs.instagramFeed = specs.instagramFeed;
+          state.contentCreateData.placements.instagramFeed =
+            specs.instagramFeed;
         }
       }),
     toggleAccount: (accountId) =>
@@ -105,12 +99,14 @@ export const useComposerStore = create<ComposerState & ComposerActions>()(
           file,
           mimeType: file.type,
         }));
-        state.placementSpecs.base.attachments.push(...newAttachments);
+        state.contentCreateData.base.attachments.push(...newAttachments);
       }),
     removeAttachment: (index: number) =>
       set((state) => {
-        state.placementSpecs.base.attachments =
-          state.placementSpecs.base.attachments.filter((_, i) => i !== index);
+        state.contentCreateData.base.attachments =
+          state.contentCreateData.base.attachments.filter(
+            (_, i) => i !== index,
+          );
       }),
     setSelectedPreview: (preview: Platform) =>
       set((state) => {

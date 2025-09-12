@@ -6,6 +6,7 @@ import {
 import {
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
+  SharedAttachmentSpec,
 } from "@core/domain/content/schema/placement";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
@@ -52,6 +53,23 @@ export async function createDummyPendingContent() {
     await EntPendingContent._createDummy();
   }
 }
+
+export const ContentCreateData = z.object({
+  base: z.object({
+    publishingStatus: ContentPublishingStatusZod,
+    message: z.string(),
+    attachments: SharedAttachmentSpec.array(),
+  }),
+  placements: z
+    .object({
+      facebookFeed: FBFeedPlacementSpec.array().optional(),
+      instagramFeed: IGFeedPlacementSpec.array().optional(),
+    })
+    .refine((val) => val.facebookFeed || val.instagramFeed, {
+      message: "At least one placement must be provided.",
+    }),
+});
+export type ContentCreateData = z.infer<typeof ContentCreateData>;
 
 export const contentRoute = new Hono<ApiEnv>()
   .use(withWorkspaceRole("workspace_editor"))
@@ -196,77 +214,67 @@ export const contentRoute = new Hono<ApiEnv>()
       c.req.valid("json");
     },
   )
-  .post(
-    "/create",
-    zValidator(
-      "json",
-      z.object({
-        base: z.object({
-          publishingStatus: ContentPublishingStatusZod,
-        }),
-        placements: z
-          .object({
-            facebookFeed: FBFeedPlacementSpec.optional(),
-            instagramFeed: IGFeedPlacementSpec.optional(),
-          })
-          .refine((val) => val.facebookFeed || val.instagramFeed, {
-            message: "At least one placement must be provided.",
-          }),
-      }),
-    ),
-    async (c) => {
-      const actor = Actor.assert("workspace_user");
-      const { placements, base } = c.req.valid("json");
-      const { publishingStatus } = base;
-      // use group for draft
-      if (publishingStatus in ["DRAFT"]) {
-        const [group] = await db()
-          .insert(pendingContentGroupTable)
-          .values({
-            workspaceId: actor.properties.workspaceID,
-            publishingStatus,
-          })
-          .returning();
-        if (placements.facebookFeed) {
+  .post("/create", zValidator("json", ContentCreateData), async (c) => {
+    const actor = Actor.assert("workspace_user");
+    const { placements, base } = c.req.valid("json");
+    const { publishingStatus } = base;
+    // use group for draft
+    if (publishingStatus in ["DRAFT"]) {
+      const [group] = await db()
+        .insert(pendingContentGroupTable)
+        .values({
+          workspaceId: actor.properties.workspaceID,
+          publishingStatus,
+        })
+        .returning();
+      if (placements.facebookFeed) {
+        for (const spec of placements.facebookFeed) {
           await EntPendingContent.createInternal({
             placement: "FB_FEED",
-            placementSpec: placements.facebookFeed,
+            placementSpec: spec,
             publishingStatus,
             pendingContentGroupId: group.id,
-            connectedAccountId: "TODO",
-          });
-        }
-        if (placements.instagramFeed) {
-          await EntPendingContent.createInternal({
-            placement: "IG_FEED",
-            placementSpec: placements.instagramFeed,
-            publishingStatus,
-            pendingContentGroupId: group.id,
-            connectedAccountId: "TODO",
+            connectedAccountId: spec.identity.connectedAccountID,
           });
         }
       }
-      // else, create pending content directly
-      if (publishingStatus in ["PUBLISH_NOW", "SCHEDULED"]) {
-        if (placements.facebookFeed) {
-          await EntPendingContent.createInternal({
-            placement: "FB_FEED",
-            placementSpec: placements.facebookFeed,
-            publishingStatus,
-            pendingContentGroupId: null, // no group
-            connectedAccountId: "TODO",
-          });
-        }
-        if (placements.instagramFeed) {
+      if (placements.instagramFeed) {
+        for (const spec of placements.instagramFeed) {
           await EntPendingContent.createInternal({
             placement: "IG_FEED",
-            placementSpec: placements.instagramFeed,
+            placementSpec: spec,
             publishingStatus,
-            pendingContentGroupId: null, // no group
-            connectedAccountId: "TODO",
+            pendingContentGroupId: group.id,
+            connectedAccountId: spec.identity.connectedAccountID,
           });
         }
       }
-      return c.json({ success: true });
-    },
-  );
+      return c.json({ success: true, groupId: group.id });
+    }
+    // else, create pending content directly
+    if (publishingStatus in ["PUBLISH_NOW", "SCHEDULED"]) {
+      if (placements.facebookFeed) {
+        for (const spec of placements.facebookFeed) {
+          await EntPendingContent.createInternal({
+            placement: "FB_FEED",
+            placementSpec: spec,
+            publishingStatus,
+            pendingContentGroupId: null, // no group
+            connectedAccountId: spec.identity.connectedAccountID,
+          });
+        }
+      }
+      if (placements.instagramFeed) {
+        for (const spec of placements.instagramFeed) {
+          await EntPendingContent.createInternal({
+            placement: "IG_FEED",
+            placementSpec: spec,
+            publishingStatus,
+            pendingContentGroupId: null, // no group
+            connectedAccountId: spec.identity.connectedAccountID,
+          });
+        }
+      }
+    }
+    return c.json({ success: true });
+  });

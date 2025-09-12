@@ -78,6 +78,7 @@ export const BasePlacementSpec = z.object({
     fbPageID: z.string().optional(),
     metadata: z.record(z.any(), z.any()).optional(),
   }),
+  attachments: SharedAttachmentSpec.array().optional(),
 });
 
 export type BasePlacementSpec = z.infer<typeof BasePlacementSpec>;
