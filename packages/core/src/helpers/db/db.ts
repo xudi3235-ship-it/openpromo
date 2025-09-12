@@ -19,11 +19,9 @@ export namespace Database {
     try {
       return Context.use();
     } catch {
-      log.warn("no hyperdrive, falling back to pooled conn");
       // fallback to pooled conn.
       return {
         connectionString: env.DATABASE_URL,
-        // connectionString: `postgresql://${Resource.Database.username}:${Resource.Database.password}@${Resource.Database.host}/${Resource.Database.database}?sslmode=require`,
       } as Info;
     }
   }

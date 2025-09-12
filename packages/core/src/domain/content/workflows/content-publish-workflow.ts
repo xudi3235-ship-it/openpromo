@@ -23,12 +23,13 @@ const log = Log.create({ namespace: "workflow" });
 
 export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<PublishWorkflowParams> {
   async runWithContext(
-    _ctx: CoreWorkflowContext,
+    ctx: CoreWorkflowContext,
     event: CoreWorkflowEvent<PublishWorkflowParams>,
     step: CoreWorkflowStep,
   ) {
     console.log("// Starting workflow");
     const { pendingContentID } = event.payload;
+    console.log({ actor: ctx.actor, payload: event.payload });
 
     const { scheduledTime, placement, isDraft } = await step.do(
       "fetch content info",
@@ -42,7 +43,6 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
         };
       },
     );
-    console.log({ placement });
 
     if (scheduledTime) {
       log.info("wait until scheduled time to publish");
@@ -58,7 +58,7 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
     }
     switch (placement) {
       case "FB_FEED":
-        await this.handleFBFeedPublish(step, pendingContentID);
+        await this.handleFBFeedPublish(ctx, step, pendingContentID);
         break;
       default:
         throw new Error(`unsupported placement ${placement}`);
@@ -68,7 +68,13 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
       console.log(`finally ${actor}`);
     });
   }
-  async handleFBFeedPublish(step: CoreWorkflowStep, pendingContentID: string) {
+  async handleFBFeedPublish(
+    ctx: CoreWorkflowContext,
+    step: CoreWorkflowStep,
+    pendingContentID: string,
+  ) {
+    console.log("before determine post type", ctx);
+
     const { isCarousel, isMultiPhoto, isSingleVideo, isTextOnly } =
       await step.do("determine post type", async () => {
         const c = await EntFBFeedPendingContent.fromID(pendingContentID);

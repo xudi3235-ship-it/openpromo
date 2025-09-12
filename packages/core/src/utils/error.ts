@@ -3,41 +3,39 @@ import * as z from "zod";
 /**
  * Standard error response schema used for OpenAPI documentation
  */
-export const ErrorResponse = z
-  .object({
-    type: z
-      .enum([
-        "validation",
-        "authentication",
-        "forbidden",
-        "not_found",
-        "rate_limit",
-        "internal",
-      ])
-      .meta({
-        description: "The error type category",
-        examples: ["validation", "authentication"],
-      }),
-    code: z.string().meta({
-      description: "Machine-readable error code identifier",
-      examples: ["invalid_parameter", "missing_required_field", "unauthorized"],
+export const ErrorResponse = z.object({
+  type: z
+    .enum([
+      "validation",
+      "authentication",
+      "forbidden",
+      "not_found",
+      "rate_limit",
+      "internal",
+    ])
+    .meta({
+      description: "The error type category",
+      examples: ["validation", "authentication"],
     }),
-    message: z.string().meta({
-      description: "Human-readable error message",
-      examples: ["The request was invalid", "Authentication required"],
+  code: z.string().meta({
+    description: "Machine-readable error code identifier",
+    examples: ["invalid_parameter", "missing_required_field", "unauthorized"],
+  }),
+  message: z.string().meta({
+    description: "Human-readable error message",
+    examples: ["The request was invalid", "Authentication required"],
+  }),
+  param: z
+    .string()
+    .optional()
+    .meta({
+      description: "The parameter that caused the error (if applicable)",
+      examples: ["email", "user_id"],
     }),
-    param: z
-      .string()
-      .optional()
-      .meta({
-        description: "The parameter that caused the error (if applicable)",
-        examples: ["email", "user_id"],
-      }),
-    details: z.any().optional().meta({
-      description: "Additional error context information",
-    }),
-  })
-  .meta({ id: "ErrorResponse" });
+  details: z.any().optional().meta({
+    description: "Additional error context information",
+  }),
+});
 
 export type ErrorResponseType = z.infer<typeof ErrorResponse>;
 
@@ -108,6 +106,8 @@ export class VisibleError extends Error {
     details?: any,
   ) {
     super(message);
+    // log it here before throw, since cloudflare workflow does not log uncaught error stack
+    console.error(`[${type}] ${code}: ${message}`);
     this.type = type;
     this.code = code;
     this.param = param;

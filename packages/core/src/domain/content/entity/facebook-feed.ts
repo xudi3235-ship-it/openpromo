@@ -3,6 +3,7 @@ import { ImageStorage } from "@core/helpers/storage/image";
 import { VideoStorage } from "@core/helpers/storage/video";
 import type { UnifiedContentSelect } from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
+import { ErrorCodes, VisibleError } from "@core/utils/error";
 import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
 import { FBFeedPlacementSpec } from "../schema/placement";
 import { EntPendingContent } from "./pending-content";
@@ -60,10 +61,21 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       error,
     } = FBFeedPlacementSpec.safeParse(this.data.placementSpec);
     if (!spec || !success || error) {
-      throw new Error(`Invalid placementSpec for content ${this.data.id}`);
+      throw new VisibleError(
+        "internal",
+        ErrorCodes.Server.INTERNAL_ERROR,
+        `invalid FBFeedPlacementSpec for content ${data.id}: ${error}`,
+      );
     }
     this.spec = spec;
     this.pageID = spec.identity.metadata?.pageID;
+    if (!this.pageID) {
+      throw new VisibleError(
+        "internal",
+        ErrorCodes.Server.INTERNAL_ERROR,
+        `no pageID found for content ${this.data.id}`,
+      );
+    }
   }
 
   static async fromID(id: string): Promise<EntFBFeedPendingContent> {

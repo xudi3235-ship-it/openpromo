@@ -221,7 +221,7 @@ export const contentRoute = new Hono<ApiEnv>()
     const { placements, base } = c.req.valid("json");
     const { publishingStatus } = base;
     // use group for draft
-    if (publishingStatus in ["DRAFT"]) {
+    if (publishingStatus === "DRAFT") {
       const [group] = await db()
         .insert(pendingContentGroupTable)
         .values({
@@ -254,7 +254,10 @@ export const contentRoute = new Hono<ApiEnv>()
       return c.json({ success: true, groupId: group.id });
     }
     // else, create pending content directly
-    if (publishingStatus in ["PUBLISH_NOW", "SCHEDULED"]) {
+    if (
+      publishingStatus === "PUBLISH_NOW" ||
+      publishingStatus === "SCHEDULED"
+    ) {
       if (placements.facebookFeed) {
         for (const spec of placements.facebookFeed) {
           await EntPendingContent.createInternal({
