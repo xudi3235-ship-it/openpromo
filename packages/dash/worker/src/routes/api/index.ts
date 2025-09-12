@@ -7,6 +7,7 @@ import { examplesRoute } from "./examples";
 import { orgsRoute } from "./orgs";
 import { popupRelayRoute } from "./popup-relay";
 import { usersRoute } from "./users";
+import { websocketsRoute } from "./websockets";
 import { workspacesRoute } from "./workspaces";
 import { pingRoute } from "./workspaces/ping";
 
@@ -19,4 +20,5 @@ export const apiRoutes = new Hono<ApiEnv>()
   .route("/orgs", orgsRoute)
   .route("/connected_accounts", connectedAccountsRoute)
   .route("/popup-relay", popupRelayRoute)
+  .route("/ws", websocketsRoute)
   .onError(onError);

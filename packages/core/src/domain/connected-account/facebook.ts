@@ -74,7 +74,7 @@ export class FacebookOAuthService {
   ];
 
   private redirectUri(): string {
-    return `${env.DASHBOARD_URL}/api/connected_accounts/facebook/callback`;
+    return `${env.VITE_DASHBOARD_URL}/api/connected_accounts/facebook/callback`;
   }
 
   private get appId(): string {

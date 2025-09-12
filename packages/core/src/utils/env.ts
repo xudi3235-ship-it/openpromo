@@ -24,8 +24,6 @@ export const env = createEnv({
     CLOUDFLARE_API_TOKEN: z.string().min(1),
     CLOUDFLARE_DEFAULT_ACCOUNT_ID: z.string().min(1),
     CLOUDFLARE_IMAGE_ACCOUNT_HASH: z.string().min(1),
-    // dashboard url
-    DASHBOARD_URL: z.string().min(1),
     // debug flag
     DEBUG: z.string().optional().default("false"),
   },
@@ -35,7 +33,9 @@ export const env = createEnv({
    * 💡 You'll get type errors if these are not prefixed with VITE_.
    */
   clientPrefix: "VITE_",
-  client: {},
+  client: {
+    VITE_DASHBOARD_URL: z.string().min(1),
+  },
   /*
    * Specify what values should be validated by your schemas above.
    */

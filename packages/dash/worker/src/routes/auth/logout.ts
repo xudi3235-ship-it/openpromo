@@ -12,7 +12,7 @@ export const logoutRoute = new Hono().get("/", async (c) => {
 
   const sessionCookie = getCookie(c, WORKOS_SESSION_COOKIE_NAME);
   if (!sessionCookie) {
-    return c.redirect(env.DASHBOARD_URL);
+    return c.redirect(env.VITE_DASHBOARD_URL);
   }
 
   try {
@@ -22,7 +22,7 @@ export const logoutRoute = new Hono().get("/", async (c) => {
     });
 
     const logoutUrl = await session.getLogoutUrl({
-      returnTo: env.DASHBOARD_URL,
+      returnTo: env.VITE_DASHBOARD_URL,
     });
 
     clearSessionCookie(c);
@@ -32,6 +32,6 @@ export const logoutRoute = new Hono().get("/", async (c) => {
 
     // if the session is invalid, clear the session cookie and redirect to the site
     clearSessionCookie(c);
-    return c.redirect(env.DASHBOARD_URL);
+    return c.redirect(env.VITE_DASHBOARD_URL);
   }
 });

@@ -13,7 +13,7 @@ export const loginRoute = new Hono().get("/", (c) => {
 
   const authorizationUrl = workOS.userManagement.getAuthorizationUrl({
     provider: "authkit",
-    redirectUri: `${env.DASHBOARD_URL}/auth/callback`,
+    redirectUri: `${env.VITE_DASHBOARD_URL}/auth/callback`,
     clientId: env.WORKOS_CLIENT_ID,
     state: nonce,
   });

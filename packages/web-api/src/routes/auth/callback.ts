@@ -109,10 +109,10 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
       await bootstrapNewUser(user, c, sealedSession);
     }
 
-    const redirectUrl = new URL(returnTo ?? "/", env.DASHBOARD_URL);
+    const redirectUrl = new URL(returnTo ?? "/", env.VITE_DASHBOARD_URL);
     return c.redirect(redirectUrl.toString());
   } catch (error) {
     console.error(error);
-    return c.redirect(`${env.DASHBOARD_URL}#login-error`);
+    return c.redirect(`${env.VITE_DASHBOARD_URL}#login-error`);
   }
 });

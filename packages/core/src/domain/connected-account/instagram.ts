@@ -56,7 +56,7 @@ export class InstagramOAuthService {
   ];
 
   private redirectUri(): string {
-    return `${env.DASHBOARD_URL}/api/connected_accounts/instagram/callback`;
+    return `${env.VITE_DASHBOARD_URL}/api/connected_accounts/instagram/callback`;
   }
 
   private get appId(): string {
