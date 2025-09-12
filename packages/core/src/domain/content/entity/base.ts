@@ -69,7 +69,6 @@ export abstract class EntUnifiedContentBase extends Ent<UnifiedContentSelect> {
         ),
       )
       .limit(1);
-    console.log(`// post: ${post}`);
     if (!post) throw new Error(`UnifiedContent ${id} not found`);
     return post;
   }

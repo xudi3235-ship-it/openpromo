@@ -1,0 +1,1 @@
+ALTER TYPE "public"."publishing_status" ADD VALUE 'PUBLISH_NOW';

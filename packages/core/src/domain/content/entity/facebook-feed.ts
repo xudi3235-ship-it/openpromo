@@ -78,8 +78,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
   isTextOnlyPost() {
     const atts = this.spec.postSpec.attachments ?? [];
     const msg = this.spec.postSpec.message;
-    if (msg && msg.trim().length > 0) return false;
-    return atts.length === 0;
+    return atts.length === 0 && msg && msg.trim().length > 0;
   }
   isMultiPhotoPost() {
     const atts = this.spec.postSpec.attachments ?? [];
@@ -120,9 +119,13 @@ export class EntFBFeedPendingContent extends EntPendingContent {
    */
   async createTextPost() {
     if (!this.isTextOnlyPost()) throw new Error("no text provided");
+    console.log("//1.");
     const text = this.spec.postSpec.message;
+    console.log("//2.");
     // 0. get page with scoped access token
     const { page } = await this.identity();
+    console.log("//2.", page);
+    console.log("// creating text post", { text });
     // 1. create post
     const post = await page.createFeed([], {
       message: text,
@@ -263,11 +266,11 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     return FacebookAdsApi.init(accessToken).setDebug(env.DEBUG === "true");
   }
   protected async identity() {
-    // TODO: need to handle the page access token short-lived issue.
-    // need a layer of robust token management.
     const acc = await ConnectedAccount.fromFBPageID(this.pageID);
+    console.log({ acc });
     if (!acc) throw new Error("no connected account found");
     const api = this.api(acc.encryptedAccessToken);
+    console.log({ api });
     const page = new Page(this.pageID, api);
     return { page, acc, api };
   }

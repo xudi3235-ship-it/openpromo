@@ -100,7 +100,7 @@ export type BasePlacementSpec = z.infer<typeof BasePlacementSpec>;
 
 // 2. post spec
 export const postSpec = z.object({
-  message: z.string().optional(),
+  message: z.string(),
   link: z.string().optional(),
   attachments: SharedAttachmentSpec.array().optional(),
 });

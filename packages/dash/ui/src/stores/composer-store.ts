@@ -79,7 +79,9 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
           // fbPageID: acc.metadata?.pageID,
         },
         placement: "FB_FEED",
-        postSpec: {},
+        postSpec: {
+          message: props.initialMessage || "",
+        },
       } satisfies FBFeedPlacementSpec;
     })
     .filter((s) => s != null) as FBFeedPlacementSpec[];
@@ -197,7 +199,9 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
                   connectedAccountID: account.id,
                 },
                 placement: "FB_FEED",
-                postSpec: {},
+                postSpec: {
+                  message: state.contentCreateData.base.message || "",
+                },
               };
               if (!state.contentCreateData.placements.facebookFeed) {
                 state.contentCreateData.placements.facebookFeed = [];
@@ -237,7 +241,9 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
                       connectedAccountID: acc.id,
                     },
                     placement: "FB_FEED",
-                    postSpec: {},
+                    postSpec: {
+                      message: state.contentCreateData.base.message || "",
+                    },
                   }) satisfies FBFeedPlacementSpec,
               );
 
@@ -274,7 +280,9 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
                     connectedAccountID: acc.id,
                   },
                   placement: "FB_FEED",
-                  postSpec: {},
+                  postSpec: {
+                    message: state.contentCreateData.base.message || "",
+                  },
                 }) satisfies FBFeedPlacementSpec,
             );
 
