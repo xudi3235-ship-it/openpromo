@@ -1,4 +1,7 @@
-import type { AllPlacement } from "@core/domain/content/schema/placement";
+import type {
+  AllPlacement,
+  SharedAttachmentSpec,
+} from "@core/domain/content/schema/placement";
 import type { Platform } from "@core/schemas/connected-account.sql";
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import { createContext, useContext } from "react";
@@ -16,14 +19,20 @@ export interface ComposerProps {
 export interface ComposerState {
   placementSelected: AllPlacement | "ALL";
   selectedPreview: Platform;
-  accountsMap: Map<string, ConnectedAccount>;
   accounts: ConnectedAccount[];
-  selectedAccounts: string[];
   contentCreateData: ContentCreateData;
 }
 
 export interface ComposerActions {
   setSelectedPreview: (platform: Platform) => void;
+  setMessage: (message: string) => void;
+  addAttachments: (files: File[]) => void;
+  removeAttachment: (index: number) => void;
+  updateAttachment: (
+    index: number,
+    updates: Partial<SharedAttachmentSpec>,
+  ) => void;
+  clearAttachments: () => void;
 }
 
 export type ComposerStore = ComposerState & ComposerActions;
@@ -38,13 +47,11 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
   const props = { ...DEFAULT_PROPS, ...initProps } satisfies ComposerProps;
 
   return createStore<ComposerState & ComposerActions>()(
-    immer((set, get) => ({
+    immer((set) => ({
       // state
       placementSelected: props.initialPlacementSelected || "ALL",
       selectedPreview: props.initialSelectedPreview || "FACEBOOK",
-      accountsMap: new Map(props.initialAccounts?.map((a) => [a.id, a]) || []),
-      accounts: Array.from(get().accountsMap.values()),
-      selectedAccounts: props.initialAccounts?.map((a) => a.id) || [],
+      accounts: props.initialAccounts || [],
       contentCreateData: {
         base: {
           message: props.initialMessage || "",
@@ -61,11 +68,43 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
         set((state) => {
           state.selectedPreview = platform;
         }),
+      setMessage: (message) =>
+        set((state) => {
+          state.contentCreateData.base.message = message;
+        }),
+      addAttachments: (files) =>
+        set((state) => {
+          const newAttachments = files.map((file, index) => ({
+            id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}-${index}`,
+            type: file.type.startsWith("video/")
+              ? ("video" as const)
+              : ("photo" as const),
+            file,
+            mimeType: file.type,
+            metadata: { uploading: true },
+          }));
+          state.contentCreateData.base.attachments.push(...newAttachments);
+        }),
+      removeAttachment: (index) =>
+        set((state) => {
+          state.contentCreateData.base.attachments.splice(index, 1);
+        }),
+      updateAttachment: (index, updates) =>
+        set((state) => {
+          const attachment = state.contentCreateData.base.attachments[index];
+          if (attachment) {
+            Object.assign(attachment, updates);
+          }
+        }),
+      clearAttachments: () =>
+        set((state) => {
+          state.contentCreateData.base.attachments = [];
+        }),
     })),
   );
 };
 
-type ComposerStoreType = ReturnType<typeof createComposerStore>;
+export type ComposerStoreType = ReturnType<typeof createComposerStore>;
 
 export const ComposerContext = createContext<ComposerStoreType | null>(null);
 export function useComposerStore<T = ComposerState & ComposerActions>(
