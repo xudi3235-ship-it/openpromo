@@ -1,13 +1,6 @@
-import { Button } from "@openpromo/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@openpromo/ui/components/card";
-import { X } from "lucide-react";
+import { File, Upload, Video, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Dropzone, DropzoneEmptyState } from "@/components/dropzone";
+import { Dropzone } from "@/components/dropzone";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerStore } from "@/stores/composer-store";
 
@@ -48,7 +41,7 @@ export function MediaUpload() {
   const { workspace } = useWorkspace();
   const [previews, setPreviews] = useState<MediaPreview[]>([]);
 
-  const attachments = contentCreateData.base.attachments;
+  const attachments = contentCreateData.base.attachments ?? [];
 
   // regenerate previews whenever attachments change
   useEffect(() => {
@@ -112,117 +105,111 @@ export function MediaUpload() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Media</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Share photos and videos. Instagram posts can't exceed 10 photos.
-        </p>
-      </CardHeader>
-      <CardContent>
+    <div className="space-y-3">
+      {/* Section Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-foreground">Media</h3>
+        {previews.length > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {previews.length}/10 files
+          </span>
+        )}
+      </div>
+
+      {/* Compact Upload Area */}
+      <div className="space-y-2">
+        {/* Upload Zone */}
         <Dropzone
           accept={{ "image/*": [], "video/*": [] }}
           maxFiles={10}
           maxSize={50 * 1024 * 1024}
           onDrop={async (files) => {
             if (!workspace?.slug) return;
-
-            // Use the new uploadAttachments action from the store
             await uploadAttachments(files, workspace.slug);
           }}
-          className="h-32"
+          className="h-20 border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors"
         >
-          <DropzoneEmptyState />
+          <div className="flex items-center justify-center gap-2 text-muted-foreground">
+            <Upload className="h-4 w-4" />
+            <span className="text-sm">Drop files or click to upload</span>
+          </div>
         </Dropzone>
 
+        {/* File Grid */}
         {previews.length > 0 && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium mb-2">
-              Selected files ({previews.length})
-            </h4>
-            <div className="space-y-3">
-              {previews.map((preview, index) => {
-                const att = attachments[index];
-                const meta = (att?.metadata || {}) as Record<string, unknown>;
-                const uploading = Boolean(meta.uploading);
-                const error = meta.error as string | undefined;
-                const isImage =
-                  preview.mimeType.startsWith("image/") ||
-                  (att?.mimeType ?? "").startsWith("image/");
-                const isVideo =
-                  preview.mimeType.startsWith("video/") ||
-                  (att?.mimeType ?? "").startsWith("video/");
-                return (
-                  <div
-                    key={`${att?.id || preview.file.name}-${index}`}
-                    className="flex items-center gap-3 p-3 bg-muted rounded-lg relative"
-                  >
-                    {/* Thumbnail */}
-                    <div className="w-16 h-16 rounded overflow-hidden bg-gray-200 flex-shrink-0">
-                      {isImage ? (
-                        <img
-                          src={preview.url}
-                          alt={att?.id || "image"}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : isVideo ? (
-                        <video
-                          src={preview.url}
-                          className="w-full h-full object-cover"
-                          muted
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                          File
-                        </div>
-                      )}
-                    </div>
+          <div className="grid grid-cols-4 gap-2">
+            {previews.map((preview, index) => {
+              const att = attachments[index];
+              const meta = (att?.metadata || {}) as Record<string, unknown>;
+              const uploading = Boolean(meta.uploading);
+              const error = meta.error as string | undefined;
+              const isImage =
+                preview.mimeType.startsWith("image/") ||
+                (att?.mimeType ?? "").startsWith("image/");
+              const isVideo =
+                preview.mimeType.startsWith("video/") ||
+                (att?.mimeType ?? "").startsWith("video/");
 
-                    {/* File info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {preview.file.name || att?.id}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {preview.file.size ? (
-                          <span>
-                            {(preview.file.size / (1024 * 1024)).toFixed(1)}MB
-                          </span>
-                        ) : null}
-                        <span>•</span>
-                        <span>{preview.aspectRatio}</span>
-                        {uploading && (
-                          <>
-                            <span>•</span>
-                            <span className="text-blue-600">Uploading...</span>
-                          </>
-                        )}
-                        {error && (
-                          <>
-                            <span>•</span>
-                            <span className="text-red-600">Failed</span>
-                          </>
-                        )}
+              return (
+                <div
+                  key={`${att?.id || preview.file.name}-${index}`}
+                  className="relative aspect-square group rounded-lg overflow-hidden bg-muted"
+                >
+                  {/* Media Preview */}
+                  {isImage ? (
+                    <img
+                      src={preview.url}
+                      alt={att?.id || "image"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : isVideo ? (
+                    <>
+                      <video
+                        src={preview.url}
+                        className="w-full h-full object-cover"
+                        muted
+                      />
+                      <div className="absolute bottom-1 right-1 bg-black/50 rounded p-1">
+                        <Video className="h-3 w-3 text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <File className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+
+                  {/* Status Overlay */}
+                  {(uploading || error) && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="text-white text-xs font-medium">
+                        {uploading ? "Uploading..." : "Failed"}
                       </div>
                     </div>
+                  )}
 
-                    {/* Remove button */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemove(index)}
-                      className="flex-shrink-0 h-8 w-8 p-0"
-                      disabled={uploading}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
+                  {/* Remove Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(index)}
+                    disabled={uploading}
+                    className="absolute top-1 right-1 w-6 h-6 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none focus:opacity-100 disabled:opacity-50"
+                  >
+                    <X className="h-3 w-3 text-white" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Help Text */}
+      {previews.length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          Share photos and videos • Max 10 files, 50MB each
+        </p>
+      )}
+    </div>
   );
 }
