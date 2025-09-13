@@ -5,9 +5,11 @@ import type {
 import type { Platform } from "@core/schemas/connected-account.sql";
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import { createContext, useContext } from "react";
+import { toast } from "sonner";
 import { createStore, useStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import type { ConnectedAccount } from "@/lib/hono-client";
+import { apiClient } from "@/lib/hono-client";
 
 export interface ComposerProps {
   initialAccounts?: ConnectedAccount[];
@@ -33,6 +35,7 @@ export interface ComposerActions {
     updates: Partial<SharedAttachmentSpec>,
   ) => void;
   clearAttachments: () => void;
+  uploadAttachments: (files: File[], workspaceSlug: string) => Promise<void>;
 }
 
 export type ComposerStore = ComposerState & ComposerActions;
@@ -47,7 +50,7 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
   const props = { ...DEFAULT_PROPS, ...initProps } satisfies ComposerProps;
 
   return createStore<ComposerState & ComposerActions>()(
-    immer((set) => ({
+    immer((set, get) => ({
       // state
       placementSelected: props.initialPlacementSelected || "ALL",
       selectedPreview: props.initialSelectedPreview || "FACEBOOK",
@@ -100,6 +103,96 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
         set((state) => {
           state.contentCreateData.base.attachments = [];
         }),
+      uploadAttachments: async (files, workspaceSlug) => {
+        // First, get the current number of attachments
+        const startingIndex = get().contentCreateData.base.attachments.length;
+
+        set((state) => {
+          const newAttachments = files.map((file, index) => ({
+            id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}-${index}`,
+            type: file.type.startsWith("video/")
+              ? ("video" as const)
+              : ("photo" as const),
+            file,
+            mimeType: file.type,
+            metadata: { uploading: true },
+          }));
+          state.contentCreateData.base.attachments.push(...newAttachments);
+        });
+
+        // Then upload each file
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const attachmentIndex = startingIndex + i;
+
+          try {
+            // Get presigned URL for upload
+            const uploadResponse = await apiClient.workspaces[
+              ":workspaceSlug"
+            ].media.images["upload-url"].$post({
+              param: { workspaceSlug },
+              json: { requireSignedURLs: false },
+            });
+
+            if (!uploadResponse.ok) {
+              throw new Error(
+                `Failed to get upload URL: ${uploadResponse.status}`,
+              );
+            }
+
+            const { id, uploadURL } = await uploadResponse.json();
+
+            if (!uploadURL || !id) {
+              throw new Error(
+                "Invalid response from server: missing uploadURL or id",
+              );
+            }
+
+            // Upload the file to the presigned URL
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const uploadFileResponse = await fetch(uploadURL, {
+              method: "POST",
+              body: formData,
+            });
+
+            if (!uploadFileResponse.ok) {
+              throw new Error(
+                `Failed to upload file: ${uploadFileResponse.status}`,
+              );
+            }
+
+            // Update the attachment with success state
+            set((state) => {
+              const attachment =
+                state.contentCreateData.base.attachments[attachmentIndex];
+              if (attachment) {
+                attachment.id = id;
+                attachment.s3Key = id;
+                attachment.metadata = { uploading: false };
+              }
+            });
+
+            toast.success(`${file.name} uploaded successfully`);
+          } catch (error) {
+            console.error("Upload error:", error);
+            // Update the attachment with error state
+            set((state) => {
+              const attachment =
+                state.contentCreateData.base.attachments[attachmentIndex];
+              if (attachment) {
+                attachment.metadata = {
+                  uploading: false,
+                  error: "Upload failed",
+                };
+              }
+            });
+
+            toast.error(`Failed to upload ${file.name}`);
+          }
+        }
+      },
     })),
   );
 };

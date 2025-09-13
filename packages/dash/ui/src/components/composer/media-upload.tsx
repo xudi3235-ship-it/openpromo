@@ -7,10 +7,8 @@ import {
 } from "@openpromo/ui/components/card";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { Dropzone, DropzoneEmptyState } from "@/components/dropzone";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { apiClient } from "@/lib/hono-client";
 import { useComposerStore } from "@/stores/composer-store";
 
 interface MediaPreview {
@@ -44,59 +42,9 @@ const generatePreview = async (file: File): Promise<MediaPreview> => {
   });
 };
 
-// Helper function to upload a file to the server
-const uploadFileToServer = async (
-  file: File,
-  workspaceSlug: string,
-): Promise<string> => {
-  try {
-    // Get presigned URL for upload
-    const uploadResponse = await apiClient.workspaces[
-      ":workspaceSlug"
-    ].media.images["upload-url"].$post({
-      param: { workspaceSlug },
-      json: {
-        requireSignedURLs: false,
-      },
-    });
-
-    if (!uploadResponse.ok) {
-      throw new Error(`Failed to get upload URL: ${uploadResponse.status}`);
-    }
-
-    const { id, uploadURL } = await uploadResponse.json();
-
-    if (!uploadURL || !id) {
-      throw new Error("Invalid response from server: missing uploadURL or id");
-    }
-
-    // Upload the file to the presigned URL
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const uploadFileResponse = await fetch(uploadURL, {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!uploadFileResponse.ok) {
-      throw new Error(`Failed to upload file: ${uploadFileResponse.status}`);
-    }
-
-    return id;
-  } catch (error) {
-    console.error("Failed to upload file:", error);
-    throw error;
-  }
-};
-
 export function MediaUpload() {
-  const {
-    contentCreateData,
-    addAttachments,
-    removeAttachment,
-    updateAttachment,
-  } = useComposerStore();
+  const { contentCreateData, removeAttachment, uploadAttachments } =
+    useComposerStore();
   const { workspace } = useWorkspace();
   const [previews, setPreviews] = useState<MediaPreview[]>([]);
 
@@ -179,36 +127,8 @@ export function MediaUpload() {
           onDrop={async (files) => {
             if (!workspace?.slug) return;
 
-            // Add files to store immediately with uploading state
-            addAttachments(files);
-
-            // Upload each file and update the store
-            for (let i = 0; i < files.length; i++) {
-              const file = files[i];
-              const attachmentIndex = attachments.length - files.length + i; // Calculate the index in the attachments array
-
-              try {
-                const imageId = await uploadFileToServer(file, workspace.slug);
-
-                // Update the attachment with the server response
-                updateAttachment(attachmentIndex, {
-                  id: imageId,
-                  metadata: { uploading: false },
-                  s3Key: imageId, // Assuming the imageId is the S3 key
-                });
-
-                toast.success(`${file.name} uploaded successfully`);
-              } catch (error) {
-                console.error("Failed to upload file:", error);
-
-                // Update the attachment with error state
-                updateAttachment(attachmentIndex, {
-                  metadata: { uploading: false, error: "Upload failed" },
-                });
-
-                toast.error(`Failed to upload ${file.name}`);
-              }
-            }
+            // Use the new uploadAttachments action from the store
+            await uploadAttachments(files, workspace.slug);
           }}
           className="h-32"
         >

@@ -2,6 +2,8 @@ import { Button } from "@openpromo/ui/components/button";
 import { Card, CardContent } from "@openpromo/ui/components/card";
 import {
   Bookmark,
+  ChevronLeft,
+  ChevronRight,
   Heart,
   Image,
   MessageCircle,
@@ -70,7 +72,7 @@ export function IGFeedPreview() {
 
         {/* Post Content */}
         <div
-          className="aspect-square relative focus:outline-none"
+          className="aspect-square relative focus:outline-none group"
           tabIndex={attachments.length > 1 ? 0 : -1}
           onKeyDown={handleKeyDown}
           role="region"
@@ -114,6 +116,31 @@ export function IGFeedPreview() {
                     />
                   ))}
                 </div>
+              )}
+
+              {/* Arrow Navigation */}
+              {attachments.length > 1 && (
+                <>
+                  {/* Left Arrow */}
+                  <button
+                    type="button"
+                    onClick={prevSlide}
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full p-2 transition-all opacity-0 hover:opacity-100 group-hover:opacity-100"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+
+                  {/* Right Arrow */}
+                  <button
+                    type="button"
+                    onClick={nextSlide}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full p-2 transition-all opacity-0 hover:opacity-100 group-hover:opacity-100"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
               )}
 
               {/* Multiple Images Indicator */}
