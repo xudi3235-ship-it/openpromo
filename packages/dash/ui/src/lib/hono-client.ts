@@ -1,4 +1,4 @@
-import type { PlacementSpec } from "@core/domain/content/schema/placement";
+import type { PlacementSpec } from "@core/schemas/content.sql";
 import {
   type UseMutationOptions,
   type UseQueryOptions,
