@@ -41,7 +41,7 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: "Home",
-          url: "/workspaces",
+          url: "/workspaces/$workspaceSlug",
           icon: Home,
         },
         {

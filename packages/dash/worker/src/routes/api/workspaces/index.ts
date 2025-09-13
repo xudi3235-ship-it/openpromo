@@ -1,4 +1,5 @@
 import { ORGANIZATION_ROLE, WORKSPACE_ROLE } from "@core/domain/workspace/auth";
+import { WorkspacePusher } from "@core/domain/workspace/workspace-pusher";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { getDbClient } from "@core/helpers/db";
 import { usersTable } from "@core/schemas/users.sql";
@@ -136,6 +137,10 @@ export const workspacesRoute = new Hono<ApiEnv>()
       return ctx.json({ workspaceId: result?.id });
     },
   )
+  .get("/:workspaceSlug/pusher", async (ctx) => {
+    const pusher = WorkspacePusher.get(ctx.req.param("workspaceSlug"));
+    return pusher.fetch(ctx.req.raw);
+  })
   .route("/:workspaceSlug/connected_accounts", connectedAccountsRoute)
   .route("/:workspaceSlug/media", mediaRoute)
   .route("/:workspaceSlug/content", contentRoute);

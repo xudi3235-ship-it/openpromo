@@ -25,17 +25,17 @@
   "durable_objects": {
     "bindings": [
       {
-        "name": "Scheduler",
-        "class_name": "Scheduler"
+        "name": "WorkspacePusher",
+        "class_name": "WorkspacePusher"
       }
     ]
   },
   // required for DO
   "migrations": [
     {
-      "tag": "v2",
-      "new_sqlite_classes": ["Scheduler"]
-      // "deleted_classes": ["MyDurableObject"]
+      "tag": "v3",
+      "new_sqlite_classes": ["WorkspacePusher"]
+      // "deleted_classes": ["Scheduler"]
     }
   ],
   "env": {
