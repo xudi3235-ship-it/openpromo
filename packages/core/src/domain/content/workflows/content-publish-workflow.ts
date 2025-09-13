@@ -21,7 +21,7 @@ const PublishWorkflowParams = z.object({
 
 const CONFIG = {
   retries: {
-    limit: 1,
+    limit: 0,
     delay: 5000,
   },
 } satisfies WorkflowStepConfig;
@@ -101,7 +101,6 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
       console.log("publish text post");
       await step.do("create text post", CONFIG, async () => {
         const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-        console.log({ c });
         const nc = await c.createTextPost();
         console.log({ nc });
       });

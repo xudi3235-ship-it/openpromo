@@ -10,6 +10,7 @@ import {
   type PgTableExtraConfigValue,
   pgEnum,
   pgTable,
+  text,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import {
@@ -155,7 +156,7 @@ export const unifiedContentTable = pgTable(
     ...timestamps,
     ...connectedAccountId,
     // external content id, for published content / backfilled.
-    sourceContentId: ulid("source_content_id"),
+    sourceContentId: text("source_content_id"),
     // declaration of the source platform's spec, json object
     // that defines what a post looks like on src plat.
     // for scheduled contents: the spec will be translated into multiple api calls, kinda like IaC, due to the dependency graph it needs to sort out, e.g. for a carousel IG posts, we need to create videos 1-3 first, then create a media container for these videos, finally we can create a IGMedia.

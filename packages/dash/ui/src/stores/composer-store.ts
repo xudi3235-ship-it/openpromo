@@ -76,6 +76,44 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
     }
   };
 
+  const initFacebookFeed = props.initialAccounts
+    ?.map((acc) => {
+      if (acc.platform === "FACEBOOK") {
+        return {
+          identity: {
+            connectedAccountID: acc.id,
+            fbPageID: (acc.metadata as { pageID: string }).pageID,
+          },
+          placement: "FB_FEED" as const,
+          postSpec: {
+            message: props.initialMessage || "",
+            attachments: [],
+          },
+          customized: false,
+        } as FBFeedPlacementSpec;
+      }
+      return null;
+    })
+    .filter(Boolean) as FBFeedPlacementSpec[];
+
+  const initInstagramFeed = props.initialAccounts
+    ?.map((acc) => {
+      if (acc.platform === "INSTAGRAM") {
+        return {
+          identity: {
+            connectedAccountID: acc.id,
+            igAccountID: (acc.metadata as { igAccountID: string }).igAccountID,
+          },
+          placement: "IG_FEED" as const,
+          caption: props.initialMessage || "",
+          attachments: [],
+          customized: false,
+        } as IGFeedPlacementSpec;
+      }
+      return null;
+    })
+    .filter(Boolean) as IGFeedPlacementSpec[];
+
   return createStore<ComposerState & ComposerActions>()(
     immer((set, get) => ({
       // state
@@ -89,8 +127,8 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
           attachments: [],
         },
         placements: {
-          facebookFeed: [],
-          instagramFeed: [],
+          facebookFeed: initFacebookFeed || [],
+          instagramFeed: initInstagramFeed || [],
         },
       },
       // actions

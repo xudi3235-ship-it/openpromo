@@ -159,10 +159,12 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     // format: <page_id>_<post_id>
     const rawID = post.id;
     const postID = rawID?.split("_")[1];
+    console.log({ rawID, postID });
     if (!rawID || !postID)
       throw new WorkflowError(
         `failed to create text post, no post ID returned`,
       );
+    console.log("L168");
     return await this.markAsPublished(postID);
   }
   async createPhotoPost(): Promise<this> {

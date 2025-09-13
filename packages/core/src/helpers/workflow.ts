@@ -7,7 +7,6 @@ import {
   type WorkflowTimeoutDuration,
 } from "cloudflare:workers";
 import type { Bindings } from "@core/helpers/api-env";
-import { WorkflowError } from "@core/utils/error";
 import { Actor } from "./actor";
 
 export class CoreWorkflowContext {
@@ -49,8 +48,7 @@ export class CoreWorkflowStep {
         return this.step.do(name, () => this.ctx.provide(fn));
       }
     } catch (e) {
-      if (e instanceof WorkflowError) {
-      }
+      console.error(`// Workflow step "${name}" failed: ${e}`);
       throw e;
     }
   }

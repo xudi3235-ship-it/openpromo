@@ -1,0 +1,1 @@
+ALTER TABLE "unified_content" ALTER COLUMN "source_content_id" SET DATA TYPE text;
