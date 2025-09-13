@@ -44,6 +44,7 @@ import {
   WeekView,
 } from "@/components/calendar";
 import { Route as CalendarRoute } from "@/routes/_authenticated/workspaces/$workspaceSlug/calendar";
+import ComposerDialog from "../composer/modal";
 
 export interface EventCalendarProps {
   events: MergedContentEntity[];
@@ -401,13 +402,19 @@ export function ContentCalendar({
 
         <EventDialog
           event={selectedEvent}
-          isOpen={isEventDialogOpen}
+          isOpen={false}
           onClose={() => {
             setIsEventDialogOpen(false);
             setSelectedEvent(null);
           }}
           onSave={handleEventSave}
           onDelete={handleEventDelete}
+        />
+        <ComposerDialog
+          isOpen={isEventDialogOpen}
+          onClose={() => {
+            setIsEventDialogOpen(false);
+          }}
         />
       </CalendarDndProvider>
     </div>
