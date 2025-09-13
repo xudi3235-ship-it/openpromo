@@ -22,24 +22,24 @@ export function FBFeedPreview() {
     <div className="border rounded-lg p-3 bg-background">
       {/* Post Header */}
       <div className="flex items-start space-x-3 mb-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600"></div>
-        <div className="flex-1">
+        <div className="w-10 h-10 flex-shrink-0 rounded-full bg-gradient-to-br from-blue-400 to-blue-600"></div>
+        <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="flex items-center space-x-2">
-                <h4 className="font-semibold text-sm">
+                <h4 className="font-semibold text-sm truncate">
                   {workspace?.name || "Your Business Page"}
                 </h4>
               </div>
               <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                 <span>2 hours ago</span>
                 <span>•</span>
-                <div className="flex items-center space-x-1">
-                  <MapPin className="w-3 h-3" />
-                  <span>San Francisco, CA</span>
+                <div className="flex items-center space-x-1 min-w-0">
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">San Francisco, CA</span>
                 </div>
                 <span>•</span>
-                <Globe className="w-3 h-3" />
+                <Globe className="w-3 h-3 flex-shrink-0" />
               </div>
             </div>
             <Button variant="ghost" size="sm" className="p-1">
@@ -50,7 +50,7 @@ export function FBFeedPreview() {
       </div>
 
       {/* Post Message */}
-      <div className="mb-3 whitespace-pre-wrap text-sm">
+      <div className="mb-3 whitespace-pre-wrap text-sm break-words">
         {message || (
           <span className="text-muted-foreground">
             Start typing your post...
@@ -227,10 +227,10 @@ export function FBFeedPreview() {
       </div>
 
       {/* Engagement Stats */}
-      <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1">
-            <div className="flex -space-x-1">
+      <div className="flex items-center justify-between text-xs text-muted-foreground mb-3 min-w-0">
+        <div className="flex items-center space-x-2 min-w-0 flex-1">
+          <div className="flex items-center space-x-1 min-w-0">
+            <div className="flex -space-x-1 flex-shrink-0">
               <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
                 <ThumbsUp className="w-2 h-2 text-white" />
               </div>
@@ -238,40 +238,40 @@ export function FBFeedPreview() {
                 <Heart className="w-2 h-2 text-white" />
               </div>
             </div>
-            <span>142 reactions</span>
+            <span className="truncate">142 reactions</span>
           </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <span>23 comments</span>
-          <span>8 shares</span>
+        <div className="flex items-center space-x-2 flex-shrink-0">
+          <span className="whitespace-nowrap">23 comments</span>
+          <span className="whitespace-nowrap">8 shares</span>
         </div>
       </div>
 
       {/* Post Actions */}
-      <div className="flex items-center justify-between pt-3 border-t">
+      <div className="flex items-center pt-3 border-t min-w-0">
         <Button
           variant="ghost"
           size="sm"
-          className="flex-1 text-muted-foreground hover:text-foreground"
+          className="flex-1 text-muted-foreground hover:text-foreground min-w-0"
         >
-          <ThumbsUp className="w-4 h-4 mr-2" />
-          Like
+          <ThumbsUp className="w-4 h-4 mr-1 flex-shrink-0" />
+          <span className="truncate">Like</span>
         </Button>
         <Button
           variant="ghost"
           size="sm"
-          className="flex-1 text-muted-foreground hover:text-foreground"
+          className="flex-1 text-muted-foreground hover:text-foreground min-w-0"
         >
-          <MessageCircle className="w-4 h-4 mr-2" />
-          Comment
+          <MessageCircle className="w-4 h-4 mr-1 flex-shrink-0" />
+          <span className="truncate">Comment</span>
         </Button>
         <Button
           variant="ghost"
           size="sm"
-          className="flex-1 text-muted-foreground hover:text-foreground"
+          className="flex-1 text-muted-foreground hover:text-foreground min-w-0"
         >
-          <Share className="w-4 h-4 mr-2" />
-          Share
+          <Share className="w-4 h-4 mr-1 flex-shrink-0" />
+          <span className="truncate">Share</span>
         </Button>
       </div>
     </div>

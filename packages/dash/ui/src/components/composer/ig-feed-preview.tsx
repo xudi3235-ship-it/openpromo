@@ -48,17 +48,17 @@ export function IGFeedPreview() {
       {/* Post Header */}
       <div className="flex items-center justify-between p-3">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 p-0.5">
+          <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 p-0.5">
             <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
               <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400"></div>
             </div>
           </div>
-          <div>
-            <h4 className="font-semibold text-sm">
+          <div className="min-w-0 flex-1">
+            <h4 className="font-semibold text-sm truncate">
               {workspace?.name?.toLowerCase().replace(/\s+/g, "_") ||
                 "your_business"}
             </h4>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               San Francisco, California
             </p>
           </div>
@@ -204,7 +204,7 @@ export function IGFeedPreview() {
         <div className="text-sm font-semibold mb-1">1,247 likes</div>
 
         {/* Caption */}
-        <div className="text-sm mb-2 whitespace-pre-wrap">
+        <div className="text-sm mb-2 whitespace-pre-wrap break-words">
           <span className="font-semibold">
             {workspace?.name?.toLowerCase().replace(/\s+/g, "_") ||
               "your_business"}
