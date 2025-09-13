@@ -31,7 +31,7 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
     const { pendingContentID } = event.payload;
     console.log({ actor: ctx.actor, payload: event.payload });
 
-    const { scheduledTime, placement, isDraft } = await step.do(
+    const { scheduledTime, placement, isDraft, isPublished } = await step.do(
       "fetch content info",
       async () => {
         const c = await EntPendingContent.fromID(pendingContentID);
@@ -40,9 +40,14 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
           scheduledTime: c.data.schedulingSpec?.scheduledPublishAt,
           isDraft: c.isDraft(),
           placement: c.placement(),
+          isPublished: c.isPublished(),
         };
       },
     );
+    if (isPublished) {
+      log.info("content already published, skip workflow");
+      return;
+    }
 
     if (scheduledTime) {
       log.info("wait until scheduled time to publish");
@@ -99,8 +104,8 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
         // TODO: get a published post ID
         // sync it internally
         const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-        const r = await c.createPhotoPost();
-        console.log({ r });
+        const nc = await c.createPhotoPost();
+        console.log({ nc });
       });
       log.info("published multi-photo post");
       return;

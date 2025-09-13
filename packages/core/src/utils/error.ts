@@ -106,8 +106,6 @@ export class VisibleError extends Error {
     details?: any,
   ) {
     super(message);
-    // log it here before throw, since cloudflare workflow does not log uncaught error stack
-    console.error(`[${type}] ${code}: ${message}`);
     this.type = type;
     this.code = code;
     this.param = param;
@@ -156,5 +154,12 @@ export class VisibleError extends Error {
 export class NotImplementedError extends VisibleError {
   constructor(message: string = "This feature is not implemented yet") {
     super("internal", "not_implemented", message);
+  }
+}
+export class WorkflowError extends Error {
+  constructor(message: string = "Workflow Runtime error") {
+    // log it here before throw, since cloudflare workflow does not log uncaught error stack
+    console.error(`[workflow] ${message}`);
+    super(message);
   }
 }

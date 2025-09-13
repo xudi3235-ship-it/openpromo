@@ -19,7 +19,9 @@ export class EntPendingContent extends EntUnifiedContentBase {
     return Promise.resolve();
   }
   override isPublished(): boolean {
-    return false; // not possible
+    return (
+      this.data.publishingStatus === "PUBLISHED" && !!this.data.sourceContentId
+    );
   }
   static async fromID(id: string): Promise<EntPendingContent> {
     return new EntPendingContent(await EntUnifiedContentBase._fromID(id));

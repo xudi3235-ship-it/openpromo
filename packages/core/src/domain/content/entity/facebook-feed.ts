@@ -7,7 +7,7 @@ import {
   unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
-import { ErrorCodes, VisibleError } from "@core/utils/error";
+import { WorkflowError } from "@core/utils/error";
 import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
 import { FBFeedPlacementSpec } from "../schema/placement";
 import { EntPendingContent } from "./pending-content";
@@ -56,38 +56,26 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     super(data);
     const p = this.placement();
     if (p !== "FB_FEED") {
-      throw new VisibleError(
-        "internal",
-        ErrorCodes.Server.INTERNAL_ERROR,
+      throw new WorkflowError(
         `Content ${data.id} is not FB_FEED placement, got ${p}`,
       );
     }
     if (this.isPublished())
-      throw new VisibleError(
-        "internal",
-        ErrorCodes.Server.INTERNAL_ERROR,
-        `Content ${data.id} is already published`,
-      );
+      throw new WorkflowError(`Content ${data.id} is already published`);
     const {
       data: spec,
       success,
       error,
     } = FBFeedPlacementSpec.safeParse(this.data.placementSpec);
     if (!spec || !success || error) {
-      throw new VisibleError(
-        "internal",
-        ErrorCodes.Server.INTERNAL_ERROR,
+      throw new WorkflowError(
         `invalid FBFeedPlacementSpec for content ${data.id}: ${error}`,
       );
     }
     this.spec = spec;
     const pageID = spec.identity.fbPageID;
     if (!pageID) {
-      throw new VisibleError(
-        "internal",
-        ErrorCodes.Server.INTERNAL_ERROR,
-        `no pageID found for content ${this.data.id}`,
-      );
+      throw new WorkflowError(`no pageID found for content ${this.data.id}`);
     }
     this.pageID = pageID;
   }
@@ -149,9 +137,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       .where(eq(unifiedContentTable.id, this.data.id))
       .returning();
     if (!newContent)
-      throw new VisibleError(
-        "internal",
-        ErrorCodes.Server.INTERNAL_ERROR,
+      throw new WorkflowError(
         `failed to mark content ${this.data.id} as published`,
       );
     this.data = newContent;
@@ -181,9 +167,8 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       throw new Error(`failed to create text post, no post ID returned`);
     return await this.markAsPublished(postID);
   }
-  async createPhotoPost() {
+  async createPhotoPost(): Promise<this> {
     // ref: https://developers.facebook.com/docs/graph-api/reference/page/photos/
-    // 0. read page access token
     const { page } = await this.identity();
     if (!this.isMultiPhotoPost())
       throw new Error("no photo attachment provided");
@@ -205,8 +190,12 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       message: this.spec.postSpec.message,
       attached_media: fbPhotos.map((p) => ({ media_fbid: p.id })),
     });
-    console.log("// created photo post", post);
-    return post;
+    const postID = post.id?.split("_")[1] ?? null;
+    if (!postID)
+      throw new WorkflowError(
+        `failed to create photo post, no post ID returned`,
+      );
+    return await this.markAsPublished(postID);
   }
   /**
    * video related methods. Involves upload session, polling until
