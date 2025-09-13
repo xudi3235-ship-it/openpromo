@@ -19,40 +19,45 @@ export const actionsColumn: ColumnDef<MergedContentEntity> = {
     const entity = row.original;
 
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem
-            onClick={() => navigator.clipboard.writeText(entity.entity.id)}
-          >
+      <div className="flex items-center gap-2">
+        <Button size="sm" variant={"outline"} onClick={() => {}}>
+          Open
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => navigator.clipboard.writeText(entity.entity.id)}
+            >
+              {matchEntity(entity, {
+                content: () => "Copy content ID",
+                group: () => "Copy group ID",
+              })}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             {matchEntity(entity, {
-              content: () => "Copy content ID",
-              group: () => "Copy group ID",
+              content: () => (
+                <>
+                  <DropdownMenuItem>View content</DropdownMenuItem>
+                  <DropdownMenuItem>Edit content</DropdownMenuItem>
+                </>
+              ),
+              group: () => (
+                <>
+                  <DropdownMenuItem>View group</DropdownMenuItem>
+                  <DropdownMenuItem>Edit group</DropdownMenuItem>
+                </>
+              ),
             })}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          {matchEntity(entity, {
-            content: () => (
-              <>
-                <DropdownMenuItem>View content</DropdownMenuItem>
-                <DropdownMenuItem>Edit content</DropdownMenuItem>
-              </>
-            ),
-            group: () => (
-              <>
-                <DropdownMenuItem>View group</DropdownMenuItem>
-                <DropdownMenuItem>Edit group</DropdownMenuItem>
-              </>
-            ),
-          })}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     );
   },
 };

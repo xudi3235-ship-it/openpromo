@@ -1,0 +1,53 @@
+import type { ColumnDef } from "@tanstack/react-table";
+import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import { Eye } from "lucide-react";
+import { matchEntity } from "@/lib/hono-client";
+
+// Generate dummy reach data
+function generateReachData() {
+  return {
+    impressions: Math.floor(Math.random() * 10000) + 100,
+    reach: Math.floor(Math.random() * 8000) + 80,
+  };
+}
+
+function formatNumber(num: number): string {
+  if (num >= 1000000) {
+    return `${(num / 1000000).toFixed(1)}M`;
+  }
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}k`;
+  }
+  return num.toString();
+}
+
+export const reachColumn: ColumnDef<MergedContentEntity> = {
+  accessorKey: "reach",
+  header: "Reach",
+  cell: ({ row }) => {
+    const entity = row.original;
+
+    return matchEntity(entity, {
+      content: () => {
+        const { impressions, reach } = generateReachData();
+
+        return (
+          <div className="text-sm">
+            <div className="flex items-center space-x-1 text-gray-900 dark:text-gray-100">
+              <Eye className="w-4 h-4 text-purple-500" />
+              <span className="font-medium">{formatNumber(reach)}</span>
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {formatNumber(impressions)} impressions
+            </div>
+          </div>
+        );
+      },
+      group: () => (
+        <div className="text-sm text-gray-500 dark:text-gray-400">
+          Group reach
+        </div>
+      ),
+    });
+  },
+};

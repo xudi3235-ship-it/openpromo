@@ -238,6 +238,9 @@ importers:
       react-top-loading-bar:
         specifier: ^3.0.2
         version: 3.0.2(react@19.1.1)
+      simple-icons:
+        specifier: ^15.14.0
+        version: 15.14.0
       slugify:
         specifier: ^1.6.6
         version: 1.6.6
@@ -6941,6 +6944,10 @@ packages:
 
   signal-exit@3.0.7:
     resolution: {integrity: sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==}
+
+  simple-icons@15.14.0:
+    resolution: {integrity: sha512-eTBZiiwDFN8RPkcmHKoUz1+sckeqNQXv5ujQcgQddDzp3xuDIFWeZh/i0oEv1StOPsf9NPMC0gTBxUzhPqHzag==}
+    engines: {node: '>=0.12.18'}
 
   simple-swizzle@0.2.2:
     resolution: {integrity: sha512-JA//kQgZtbuY83m+xT+tXJkmJncGMTFT+C+g2h2R9uxkYIrE2yy9sgmcLhCnw57/WSD+Eh3J97FPEDFnbXnDUg==}
@@ -15642,6 +15649,8 @@ snapshots:
   siginfo@2.0.0: {}
 
   signal-exit@3.0.7: {}
+
+  simple-icons@15.14.0: {}
 
   simple-swizzle@0.2.2:
     dependencies:

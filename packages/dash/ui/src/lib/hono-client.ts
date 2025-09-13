@@ -1,3 +1,4 @@
+import type { PlacementSpec } from "@core/domain/content/schema/placement";
 import {
   type UseMutationOptions,
   type UseQueryOptions,
@@ -230,5 +231,26 @@ export function matchEntity<T>(
       return handlers.content(entity);
     default:
       throw new Error("Unknown entity type");
+  }
+}
+
+export function matchPlacementSpec<T>(
+  spec: PlacementSpec,
+  handlers: {
+    FBFeed: (spec: Extract<PlacementSpec, { placement: "FB_FEED" }>) => T;
+    IGFeed: (spec: Extract<PlacementSpec, { placement: "IG_FEED" }>) => T;
+  },
+) {
+  switch (spec.placement) {
+    case "FB_FEED":
+      return handlers.FBFeed(
+        spec as Extract<PlacementSpec, { placement: "FB_FEED" }>,
+      );
+    case "IG_FEED":
+      return handlers.IGFeed(
+        spec as Extract<PlacementSpec, { placement: "IG_FEED" }>,
+      );
+    default:
+      throw new Error("Unknown placement spec");
   }
 }
