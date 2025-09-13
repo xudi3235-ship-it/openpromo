@@ -3,6 +3,7 @@
 // Component exports
 export { AgendaView } from "./agenda-view";
 export { CalendarDndProvider, useCalendarDnd } from "./calendar-dnd-context";
+export { CalendarSkeleton } from "./calendar-skeleton";
 // Constants and utility exports
 export * from "./constants";
 export { DayView } from "./day-view";

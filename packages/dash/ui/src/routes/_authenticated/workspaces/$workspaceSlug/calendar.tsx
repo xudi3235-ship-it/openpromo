@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { useState } from "react";
 import * as z from "zod";
-import { EventCalendar } from "@/components/calendar";
+import { CalendarSkeleton, EventCalendar } from "@/components/calendar";
 import { CalendarViews } from "@/components/calendar/types";
 import { useContentListQuery } from "@/queries/content";
 
@@ -18,7 +18,7 @@ export const Route = createFileRoute(
 });
 
 export default function CalendarPage() {
-  const { data } = useContentListQuery();
+  const { data, isLoading } = useContentListQuery();
   const [events, setEvents] = useState<MergedContentEntity[]>([]);
 
   const handleEventAdd = (event: MergedContentEntity) => {
@@ -36,6 +36,10 @@ export default function CalendarPage() {
   const handleEventDelete = (eventId: string) => {
     setEvents(events.filter((event) => String(event.entity.id) !== eventId));
   };
+
+  if (isLoading) {
+    return <CalendarSkeleton />;
+  }
 
   return (
     <EventCalendar
