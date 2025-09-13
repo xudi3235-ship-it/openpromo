@@ -105,7 +105,7 @@ function ComposerComponent() {
   }
 
   // Show null state when no accounts are connected
-  if (!data?.accounts || data.accounts.length !== 0) {
+  if (!data?.accounts || data.accounts.length === 0) {
     return (
       <ComposerNullState
         onConnectFacebook={handleConnectFacebook}

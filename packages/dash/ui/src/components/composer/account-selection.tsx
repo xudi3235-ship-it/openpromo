@@ -4,7 +4,13 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
-import { Plus } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { toast } from "sonner";
+import { AvailablePlatformsRow } from "@/components/connected-accounts/available-platforms-row";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { useHonoMutation } from "@/lib/hono-client";
+import { handlePopupMessage, openPopup } from "@/lib/popup";
 import { useComposerStore } from "@/stores/composer-store";
 
 function getPlatformColors(platform: Platform) {
@@ -34,7 +40,7 @@ function getPlatformFallback(platform: Platform) {
 }
 
 interface CompactAvatarProps {
-  account?: {
+  account: {
     id: string;
     platform: Platform;
     accountName?: string | null;
@@ -44,7 +50,6 @@ interface CompactAvatarProps {
   active: boolean;
   onToggleSelected: () => void;
   onSetActive: () => void;
-  isAddButton?: boolean;
 }
 
 function CompactAvatar({
@@ -53,29 +58,7 @@ function CompactAvatar({
   active,
   onToggleSelected,
   onSetActive,
-  isAddButton = false,
 }: CompactAvatarProps) {
-  if (isAddButton) {
-    return (
-      <div className="relative group">
-        <button
-          type="button"
-          className="relative w-8 h-8 rounded-full bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center border-2 border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 transition-all focus:outline-none focus:ring-2 focus:ring-ring"
-          onClick={onToggleSelected}
-        >
-          <Plus className="h-3 w-3 text-muted-foreground" />
-        </button>
-
-        {/* Tooltip */}
-        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-          Add account
-        </div>
-      </div>
-    );
-  }
-
-  if (!account) return null;
-
   const gradientColors = getPlatformColors(account.platform);
   const fallback = getPlatformFallback(account.platform);
 
@@ -166,6 +149,79 @@ export function AccountSelection() {
     activeAccount,
     setActiveAccount,
   } = useComposerStore();
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    function handleMessage(event: MessageEvent<unknown>) {
+      const payload = handlePopupMessage(event, "accounts_connected");
+      if (!payload) return;
+
+      queryClient.invalidateQueries({
+        queryKey: [workspace.slug, "connected_accounts"],
+      });
+      toast[payload.status](payload.message);
+    }
+
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [queryClient, workspace.slug]);
+
+  // Facebook OAuth mutation
+  const { mutate: initiateFacebookOAuth, isPending: isConnectingFacebook } =
+    useHonoMutation({
+      mutationFn: (api, variables: { state?: string }) =>
+        api.workspaces[":workspaceSlug"].connected_accounts.facebook.auth.$get({
+          query: { state: variables.state },
+          param: { workspaceSlug: workspace.slug },
+        }),
+      onError: (error) => {
+        toast.error(`Failed to initiate Facebook OAuth: ${error.message}`);
+      },
+      onSuccess({ data: { url } }) {
+        openPopup({
+          url,
+          target: "facebook-oauth",
+          width: 600,
+          height: 800,
+        });
+      },
+    });
+
+  // Instagram OAuth mutation
+  const { mutate: initiateInstagramOAuth, isPending: isConnectingInstagram } =
+    useHonoMutation({
+      mutationFn: (api, variables: { state?: string }) =>
+        api.workspaces[":workspaceSlug"].connected_accounts.instagram.auth.$get(
+          {
+            query: { state: variables.state },
+            param: { workspaceSlug: workspace.slug },
+          },
+        ),
+      onError: (error) => {
+        toast.error(`Failed to initiate Instagram OAuth: ${error.message}`);
+      },
+      onSuccess({ data: { url } }) {
+        openPopup({
+          url,
+          target: "instagram-oauth",
+          width: 600,
+          height: 800,
+        });
+      },
+    });
+
+  const handleConnectFacebook = () => {
+    initiateFacebookOAuth({});
+  };
+
+  const handleConnectInstagram = () => {
+    initiateInstagramOAuth({});
+  };
+
+  const isConnecting = isConnectingFacebook || isConnectingInstagram;
 
   const handleToggleAccount = (accountId: string) => {
     const newSelection = selectedAccounts.includes(accountId)
@@ -178,11 +234,6 @@ export function AccountSelection() {
     if (selectedAccounts.includes(accountId)) {
       setActiveAccount(accountId);
     }
-  };
-
-  const handleAddAccountClick = () => {
-    // This will be handled by the parent component if needed
-    // For now, just a placeholder since the main connect flow is in the composer null state
   };
 
   return (
@@ -206,12 +257,11 @@ export function AccountSelection() {
       {/* Horizontal Account Row */}
       {accounts.length === 0 ? (
         <div className="flex items-center justify-center py-4">
-          <CompactAvatar
-            isAddButton
-            selected={false}
-            active={false}
-            onToggleSelected={handleAddAccountClick}
-            onSetActive={() => {}}
+          <AvailablePlatformsRow
+            onConnectFacebook={handleConnectFacebook}
+            onConnectInstagram={handleConnectInstagram}
+            isConnecting={isConnecting}
+            size="md"
           />
         </div>
       ) : (
@@ -243,12 +293,11 @@ export function AccountSelection() {
 
           {/* Add button with separator */}
           <div className="w-px h-4 bg-border" />
-          <CompactAvatar
-            isAddButton
-            selected={false}
-            active={false}
-            onToggleSelected={handleAddAccountClick}
-            onSetActive={() => {}}
+          <AvailablePlatformsRow
+            onConnectFacebook={handleConnectFacebook}
+            onConnectInstagram={handleConnectInstagram}
+            isConnecting={isConnecting}
+            size="md"
           />
         </div>
       )}
