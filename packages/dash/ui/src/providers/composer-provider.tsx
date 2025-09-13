@@ -1,19 +1,20 @@
-import { useRef } from "react";
 import {
   ComposerContext,
   type ComposerProps,
-  type ComposerStore,
   createComposerStore,
-} from "@/stores/composer-store";
+} from "@/stores/composer";
 
-// Provider component props
+type ComposerStoreInstance = ReturnType<typeof createComposerStore>;
+
+import { useRef } from "react";
+
 type ComposerProviderProps = React.PropsWithChildren<ComposerProps>;
 
 export function ComposerProvider({
   children,
   ...props
 }: ComposerProviderProps) {
-  const storeRef = useRef<ComposerStore | null>(null);
+  const storeRef = useRef<ComposerStoreInstance | null>(null);
 
   if (!storeRef.current) {
     storeRef.current = createComposerStore(props);
