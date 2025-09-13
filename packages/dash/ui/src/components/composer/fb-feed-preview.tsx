@@ -17,7 +17,7 @@ export function FBFeedPreview() {
   const { workspace } = useWorkspace();
   const contentCreateData = useComposerStore((s) => s.contentCreateData);
   const attachments = contentCreateData.base.attachments;
-  const message = "TODO";
+  const message = contentCreateData.base.message;
 
   return (
     <Card>
@@ -62,22 +62,160 @@ export function FBFeedPreview() {
 
         {/* Post Content (media) */}
         <div className="mb-4">
-          {attachments.length > 0 && attachments[0]?.file ? (
+          {attachments.length > 0 ? (
             <div className="w-full rounded-lg overflow-hidden">
-              {attachments[0].file.type.startsWith("image/") ? (
-                <img
-                  src={URL.createObjectURL(attachments[0].file)}
-                  alt="Preview"
-                  className="w-full h-64 object-cover"
-                />
-              ) : attachments[0].file.type.startsWith("video/") ? (
-                <video
-                  src={URL.createObjectURL(attachments[0].file)}
-                  className="w-full h-64 object-cover"
-                  controls
-                >
-                  <track kind="captions" label="auto-generated" />
-                </video>
+              {attachments.length === 1 && attachments[0]?.file ? (
+                // Single attachment - full width
+                attachments[0].file.type.startsWith("image/") ? (
+                  <img
+                    src={URL.createObjectURL(attachments[0].file)}
+                    alt="Preview"
+                    className="w-full h-64 object-cover"
+                  />
+                ) : attachments[0].file.type.startsWith("video/") ? (
+                  <video
+                    src={URL.createObjectURL(attachments[0].file)}
+                    className="w-full h-64 object-cover"
+                    controls
+                  >
+                    <track kind="captions" label="auto-generated" />
+                  </video>
+                ) : null
+              ) : attachments.length === 2 ? (
+                // Two attachments - side by side
+                <div className="grid grid-cols-2 gap-1 h-64">
+                  {attachments.slice(0, 2).map(
+                    (attachment, index) =>
+                      attachment?.file && (
+                        <div
+                          key={attachment.id || `attachment-${index}`}
+                          className="w-full h-full"
+                        >
+                          {attachment.file.type.startsWith("image/") ? (
+                            <img
+                              src={URL.createObjectURL(attachment.file)}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : attachment.file.type.startsWith("video/") ? (
+                            <video
+                              src={URL.createObjectURL(attachment.file)}
+                              className="w-full h-full object-cover"
+                              muted
+                            >
+                              <track kind="captions" label="auto-generated" />
+                            </video>
+                          ) : null}
+                        </div>
+                      ),
+                  )}
+                </div>
+              ) : attachments.length === 3 ? (
+                // Three attachments - large left, two stacked right
+                <div className="grid grid-cols-2 gap-1 h-64">
+                  {attachments[0]?.file && (
+                    <div className="w-full h-full">
+                      {attachments[0].file.type.startsWith("image/") ? (
+                        <img
+                          src={URL.createObjectURL(attachments[0].file)}
+                          alt="Preview 1"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : attachments[0].file.type.startsWith("video/") ? (
+                        <video
+                          src={URL.createObjectURL(attachments[0].file)}
+                          className="w-full h-full object-cover"
+                          muted
+                        >
+                          <track kind="captions" label="auto-generated" />
+                        </video>
+                      ) : null}
+                    </div>
+                  )}
+                  <div className="grid grid-rows-2 gap-1 h-full">
+                    {attachments.slice(1, 3).map(
+                      (attachment, index) =>
+                        attachment?.file && (
+                          <div
+                            key={attachment.id || `attachment-${index + 1}`}
+                            className="w-full h-full"
+                          >
+                            {attachment.file.type.startsWith("image/") ? (
+                              <img
+                                src={URL.createObjectURL(attachment.file)}
+                                alt={`Preview ${index + 2}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : attachment.file.type.startsWith("video/") ? (
+                              <video
+                                src={URL.createObjectURL(attachment.file)}
+                                className="w-full h-full object-cover"
+                                muted
+                              >
+                                <track kind="captions" label="auto-generated" />
+                              </video>
+                            ) : null}
+                          </div>
+                        ),
+                    )}
+                  </div>
+                </div>
+              ) : attachments.length >= 4 ? (
+                // Four or more attachments - 2x2 grid with "+X more" overlay
+                <div className="grid grid-cols-2 gap-1 h-64">
+                  {attachments.slice(0, 3).map(
+                    (attachment, index) =>
+                      attachment?.file && (
+                        <div
+                          key={attachment.id || `attachment-${index}`}
+                          className="w-full h-full"
+                        >
+                          {attachment.file.type.startsWith("image/") ? (
+                            <img
+                              src={URL.createObjectURL(attachment.file)}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : attachment.file.type.startsWith("video/") ? (
+                            <video
+                              src={URL.createObjectURL(attachment.file)}
+                              className="w-full h-full object-cover"
+                              muted
+                            >
+                              <track kind="captions" label="auto-generated" />
+                            </video>
+                          ) : null}
+                        </div>
+                      ),
+                  )}
+                  {/* Fourth attachment with overlay */}
+                  {attachments[3]?.file && (
+                    <div className="relative w-full h-full">
+                      {attachments[3].file.type.startsWith("image/") ? (
+                        <img
+                          src={URL.createObjectURL(attachments[3].file)}
+                          alt="Preview 4"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : attachments[3].file.type.startsWith("video/") ? (
+                        <video
+                          src={URL.createObjectURL(attachments[3].file)}
+                          className="w-full h-full object-cover"
+                          muted
+                        >
+                          <track kind="captions" label="auto-generated" />
+                        </video>
+                      ) : null}
+                      {attachments.length > 4 && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                          <span className="text-white font-semibold text-lg">
+                            +{attachments.length - 4}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               ) : null}
             </div>
           ) : (

@@ -8,6 +8,7 @@ import {
   MoreHorizontal,
   Send,
 } from "lucide-react";
+import { useState } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerStore } from "@/stores/composer-store";
 
@@ -15,7 +16,31 @@ export function IGFeedPreview() {
   const { workspace } = useWorkspace();
   const contentCreateData = useComposerStore((s) => s.contentCreateData);
   const attachments = contentCreateData.base.attachments;
-  const caption = "FIXME";
+  const caption = contentCreateData.base.message;
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Navigation functions
+  const nextSlide = () => {
+    if (attachments.length > 1) {
+      setCurrentSlide((prev) => (prev + 1) % attachments.length);
+    }
+  };
+
+  const prevSlide = () => {
+    if (attachments.length > 1) {
+      setCurrentSlide(
+        (prev) => (prev - 1 + attachments.length) % attachments.length,
+      );
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") {
+      prevSlide();
+    } else if (e.key === "ArrowRight") {
+      nextSlide();
+    }
+  };
 
   return (
     <Card className="max-w-sm border-0 shadow-none">
@@ -44,21 +69,69 @@ export function IGFeedPreview() {
         </div>
 
         {/* Post Content */}
-        <div className="aspect-square">
-          {attachments.length > 0 && attachments[0]?.file ? (
-            attachments[0].file.type.startsWith("image/") ? (
-              <img
-                src={URL.createObjectURL(attachments[0].file)}
-                alt="Preview"
-                className="w-full h-full object-cover"
-              />
-            ) : attachments[0].file.type.startsWith("video/") ? (
-              <video
-                src={URL.createObjectURL(attachments[0].file)}
-                className="w-full h-full object-cover"
-                controls
-              />
-            ) : null
+        <div
+          className="aspect-square relative focus:outline-none"
+          tabIndex={attachments.length > 1 ? 0 : -1}
+          onKeyDown={handleKeyDown}
+          role="region"
+          aria-label="Image carousel"
+        >
+          {attachments.length > 0 ? (
+            <>
+              {/* Main Content Display */}
+              <div className="w-full h-full overflow-hidden">
+                {attachments[currentSlide]?.file ? (
+                  attachments[currentSlide].file.type.startsWith("image/") ? (
+                    <img
+                      src={URL.createObjectURL(attachments[currentSlide].file)}
+                      alt={`Preview ${currentSlide + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : attachments[currentSlide].file.type.startsWith(
+                      "video/",
+                    ) ? (
+                    <video
+                      src={URL.createObjectURL(attachments[currentSlide].file)}
+                      className="w-full h-full object-cover"
+                      controls
+                    />
+                  ) : null
+                ) : null}
+              </div>
+
+              {/* Carousel Navigation Dots */}
+              {attachments.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                  {attachments.map((attachment, index) => (
+                    <button
+                      key={attachment.id || `dot-${index}`}
+                      type="button"
+                      onClick={() => setCurrentSlide(index)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        index === currentSlide ? "bg-white" : "bg-white/50"
+                      }`}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Multiple Images Indicator */}
+              {attachments.length > 1 && (
+                <div className="absolute top-4 right-4">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-5 h-5 flex items-center justify-center">
+                      <div className="grid grid-cols-2 gap-0.5">
+                        <div className="w-1 h-1 bg-white/80 rounded-sm"></div>
+                        <div className="w-1 h-1 bg-white/80 rounded-sm"></div>
+                        <div className="w-1 h-1 bg-white/80 rounded-sm"></div>
+                        <div className="w-1 h-1 bg-white/80 rounded-sm"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="w-full h-full bg-muted flex items-center justify-center">
               <div className="text-center text-muted-foreground">

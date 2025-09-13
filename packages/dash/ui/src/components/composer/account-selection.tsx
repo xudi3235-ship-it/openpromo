@@ -44,11 +44,7 @@ function AccountIcon({
 }
 
 export function AccountSelection() {
-  const { selectedAccounts, accounts } = useComposerStore();
-
-  const allSelected =
-    selectedAccounts.length === accounts.length && accounts.length > 0;
-  const someSelected = selectedAccounts.length > 0;
+  const { accounts } = useComposerStore();
 
   if (!accounts.length) {
     return (
@@ -77,30 +73,22 @@ export function AccountSelection() {
             <Button variant="outline" className="w-full justify-between">
               <div className="flex items-center space-x-2">
                 <div className="flex -space-x-1">
-                  {selectedAccounts.slice(0, 3).map((accountId, index) => {
-                    const account = accounts.find((a) => a.id === accountId);
-                    if (!account) return null;
-                    return (
-                      <div key={accountId} style={{ zIndex: 10 - index }}>
-                        <AccountIcon
-                          platform={account.platform}
-                          selected={true}
-                        />
-                      </div>
-                    );
-                  })}
-                  {selectedAccounts.length > 3 && (
+                  {accounts.slice(0, 3).map((account, index) => (
+                    <div key={account.id} style={{ zIndex: 10 - index }}>
+                      <AccountIcon
+                        platform={account.platform}
+                        selected={true}
+                      />
+                    </div>
+                  ))}
+                  {accounts.length > 3 && (
                     <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium border-2 border-background">
-                      +{selectedAccounts.length - 3}
+                      +{accounts.length - 3}
                     </div>
                   )}
                 </div>
                 <span className="text-sm">
-                  {allSelected
-                    ? "All accounts"
-                    : someSelected
-                      ? `${selectedAccounts.length} accounts`
-                      : "No accounts"}
+                  {accounts.length > 0 ? "All accounts" : "No accounts"}
                 </span>
               </div>
               <ChevronDown className="h-4 w-4 opacity-50" />
@@ -112,7 +100,7 @@ export function AccountSelection() {
                 e.preventDefault();
               }}
             >
-              <Checkbox checked={allSelected} className="mr-2" />
+              <Checkbox checked={true} className="mr-2" />
               <span className="font-medium">All accounts</span>
             </DropdownMenuItem>
             {accounts.map((account) => (
@@ -122,14 +110,8 @@ export function AccountSelection() {
                   e.preventDefault();
                 }}
               >
-                <Checkbox
-                  checked={selectedAccounts.includes(account.id)}
-                  className="mr-2"
-                />
-                <AccountIcon
-                  platform={account.platform}
-                  selected={selectedAccounts.includes(account.id)}
-                />
+                <Checkbox checked={true} className="mr-2" />
+                <AccountIcon platform={account.platform} selected={true} />
                 <span className="ml-2 text-sm">
                   {account.accountName || account.externalAccountId}
                 </span>
