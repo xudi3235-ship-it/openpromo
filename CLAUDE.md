@@ -66,6 +66,7 @@ hosted on `dash.openpromo.app`, main dashboard for using app. react SPA using ta
 
 1. using tailwind css, ensure all color works for dark mode.
 2. ensure you run `pnpm check && pnpm typecheck` to ensure type checks are passing after changes
+3. when designing UI, use mimal, optimzied for UX, elegant, flat design principles.
 
 
 ### `package/ui`

@@ -1,10 +1,4 @@
 import { Button } from "@openpromo/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@openpromo/ui/components/card";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import {
   MapPin,
@@ -19,58 +13,75 @@ export function PostDetails() {
   const { contentCreateData, setMessage } = useComposerStore();
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Post details</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Text Editor */}
-        <div>
-          <h4 className="text-sm font-medium mb-2">Text</h4>
-          <div className="border rounded-lg">
-            <Textarea
-              placeholder="Write something..."
-              className="border-0 resize-none min-h-[100px]"
-              value={contentCreateData.base.message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-            <div className="border-t p-2 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm">
-                  #
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Smile className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+    <div className="space-y-3">
+      {/* Section Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-foreground">Text</h3>
+      </div>
+
+      {/* Text Editor */}
+      <div className="border rounded-lg">
+        <Textarea
+          placeholder="Write something..."
+          className="border-0 resize-none min-h-[80px]"
+          value={contentCreateData.base.message}
+          onChange={(e) => setMessage(e.target.value)}
+        />
+        <div className="border-t p-2 flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="h-6 px-2">
+              #
+            </Button>
+            <Button variant="ghost" size="sm" className="h-6 px-2">
+              <Smile className="w-3 h-3" />
+            </Button>
           </div>
         </div>
+      </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm">
-            <Smile className="w-4 h-4 mr-2" />
-            Feeling/activity
-          </Button>
-          <Button variant="outline" size="sm">
-            <MapPin className="w-4 h-4 mr-2" />
-            Location
-          </Button>
-          <Button variant="outline" size="sm">
-            <MessageSquare className="w-4 h-4 mr-2" />
-            Get messages
-          </Button>
-          <Button variant="outline" size="sm">
-            <Phone className="w-4 h-4 mr-2" />
-            Get calls
-          </Button>
-          <Button variant="outline" size="sm">
-            <MoreHorizontal className="w-4 h-4 mr-2" />
-            More features
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Action Buttons */}
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 p-0"
+          title="Feeling/activity"
+        >
+          <Smile className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 p-0"
+          title="Location"
+        >
+          <MapPin className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 p-0"
+          title="Get messages"
+        >
+          <MessageSquare className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 p-0"
+          title="Get calls"
+        >
+          <Phone className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 p-0"
+          title="More features"
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
   );
 }

@@ -1,25 +1,31 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@openpromo/ui/components/card";
 import { Switch } from "@openpromo/ui/components/switch";
+import { DateTimePicker } from "@openpromo/ui/components/time/date-time-picker";
+import { useState } from "react";
 
 export function SchedulingOptions() {
+  const [isScheduled, setIsScheduled] = useState(false);
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Scheduling options</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between">
-          <label htmlFor="schedule" className="text-sm font-medium">
-            Set date and time
-          </label>
-          <Switch id="schedule" />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      {/* Section Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-foreground">Scheduling</h3>
+      </div>
+
+      {/* Schedule Toggle */}
+      <div className="flex items-center justify-between">
+        <label htmlFor="schedule" className="text-sm text-muted-foreground">
+          Set date and time
+        </label>
+        <Switch
+          id="schedule"
+          checked={isScheduled}
+          onCheckedChange={setIsScheduled}
+        />
+      </div>
+
+      {/* Date/Time Picker */}
+      {isScheduled && <DateTimePicker />}
+    </div>
   );
 }

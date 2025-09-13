@@ -1,5 +1,4 @@
 import { Button } from "@openpromo/ui/components/button";
-import { Card, CardContent } from "@openpromo/ui/components/card";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -34,24 +33,23 @@ export function ComposerFooter() {
 
   return (
     <>
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex justify-end">
-            <div className="flex items-center space-x-2">
-              <Button variant="outline">Cancel</Button>
-              <Button variant="outline" disabled>
-                Finish later
-              </Button>
-              <Button
-                onClick={() => setShowConfirmDialog(true)}
-                disabled={isPending}
-              >
-                {isPending ? "Publishing..." : "Publish"}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="border-t bg-background p-4">
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm">
+            Cancel
+          </Button>
+          <Button variant="outline" size="sm" disabled>
+            Save draft
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setShowConfirmDialog(true)}
+            disabled={isPending}
+          >
+            {isPending ? "Publishing..." : "Publish"}
+          </Button>
+        </div>
+      </div>
 
       <ConfirmDialog
         open={showConfirmDialog}
