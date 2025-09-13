@@ -1,10 +1,10 @@
+import type { Platform } from "@core/schemas/connected-account.sql";
 import type {
   AllPlacement,
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
   SharedAttachmentSpec,
-} from "@core/domain/content/schema/placement";
-import type { Platform } from "@core/schemas/connected-account.sql";
+} from "@core/schemas/content.sql";
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import { createContext, useContext } from "react";
 import { toast } from "sonner";

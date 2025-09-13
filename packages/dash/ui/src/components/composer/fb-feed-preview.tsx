@@ -16,7 +16,7 @@ import { useComposerStore } from "@/stores/composer-store";
 export function FBFeedPreview() {
   const { workspace } = useWorkspace();
   const contentCreateData = useComposerStore((s) => s.contentCreateData);
-  const attachments = contentCreateData.base.attachments;
+  const attachments = contentCreateData.base.attachments ?? [];
   const message = contentCreateData.base.message;
 
   return (
@@ -62,7 +62,7 @@ export function FBFeedPreview() {
 
         {/* Post Content (media) */}
         <div className="mb-4">
-          {attachments.length > 0 ? (
+          {!!attachments && attachments.length > 0 ? (
             <div className="w-full rounded-lg overflow-hidden">
               {attachments.length === 1 && attachments[0]?.file ? (
                 // Single attachment - full width

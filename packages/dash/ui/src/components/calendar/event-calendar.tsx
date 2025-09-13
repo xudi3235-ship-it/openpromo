@@ -174,9 +174,6 @@ export function ContentCalendar({
         placement: "FB_FEED" as const,
         placementSpec: null,
         publishingStatus: "DRAFT" as const,
-        schedulingSpec: {
-          scheduledPublishAt: startTime.toISOString(),
-        },
         createdAt: new Date(),
         updatedAt: new Date(),
       },

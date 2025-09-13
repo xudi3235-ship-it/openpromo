@@ -1,9 +1,11 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import type { UnifiedContentSelect } from "@core/schemas/content.sql";
+import {
+  IGFeedPlacementSpec,
+  type UnifiedContentSelect,
+} from "@core/schemas/content.sql";
 import { onlyOrThrow } from "@core/utils/common";
 import type { ZodType } from "zod";
 import * as z from "zod";
-import { IGFeedPlacementSpec } from "../schema/placement";
 import { EntPendingContent } from "./pending-content";
 
 /**

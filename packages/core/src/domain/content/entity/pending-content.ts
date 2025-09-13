@@ -3,6 +3,7 @@ import { Actor } from "@core/helpers/actor";
 import { Binding } from "@core/helpers/api-env";
 import { and, db, eq } from "@core/helpers/db";
 import {
+  FBFeedPlacementSpec,
   pendingContentGroupTable,
   UnifiedContentInsert,
   type UnifiedContentSelect,
@@ -10,7 +11,6 @@ import {
   unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { fn } from "@core/utils/fn";
-import { FBFeedPlacementSpec } from "../schema/placement";
 import { EntUnifiedContentBase } from "./base";
 
 export class EntPendingContent extends EntUnifiedContentBase {

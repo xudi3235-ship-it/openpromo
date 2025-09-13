@@ -3,13 +3,13 @@ import { db, eq } from "@core/helpers/db";
 import { ImageStorage } from "@core/helpers/storage/image";
 import { VideoStorage } from "@core/helpers/storage/video";
 import {
+  FBFeedPlacementSpec,
   type UnifiedContentSelect,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
 import { WorkflowError } from "@core/utils/error";
 import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
-import { FBFeedPlacementSpec } from "../schema/placement";
 import { EntPendingContent } from "./pending-content";
 
 type FBVideoStatusResponse = {

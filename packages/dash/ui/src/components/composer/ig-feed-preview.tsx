@@ -17,7 +17,7 @@ import { useComposerStore } from "@/stores/composer-store";
 export function IGFeedPreview() {
   const { workspace } = useWorkspace();
   const contentCreateData = useComposerStore((s) => s.contentCreateData);
-  const attachments = contentCreateData.base.attachments;
+  const attachments = contentCreateData.base.attachments ?? [];
   const caption = contentCreateData.base.message;
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -29,7 +29,7 @@ export function IGFeedPreview() {
   };
 
   const prevSlide = () => {
-    if (attachments.length > 1) {
+    if (attachments?.length > 1) {
       setCurrentSlide(
         (prev) => (prev - 1 + attachments.length) % attachments.length,
       );

@@ -3,16 +3,15 @@ import {
   EntIGFeedPendingContent,
   EntPendingContent,
 } from "@core/domain/content/entity/index";
-import {
-  BasePlacementSpec,
-  FBFeedPlacementSpec,
-  IGFeedPlacementSpec,
-} from "@core/domain/content/schema/placement";
+
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { db } from "@core/helpers/db/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
 import {
+  BasePlacementSpec,
+  FBFeedPlacementSpec,
+  IGFeedPlacementSpec,
   PendingContentGroupSelect,
   pendingContentGroupTable,
   UnifiedContentSelect,

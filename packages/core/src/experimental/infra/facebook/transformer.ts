@@ -1,5 +1,5 @@
+import type { FBFeedPlacementSpec } from "@core/schemas/content.sql";
 import type z from "zod";
-import type { FBFeedPlacementSpec } from "../../../domain/content/schema/placement";
 import type { CreateFeedParams } from "./types";
 
 // transforms from/to publishing params and our unified specs

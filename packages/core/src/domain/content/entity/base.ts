@@ -2,6 +2,7 @@ import { Actor } from "@core/helpers/actor";
 import { afterTx, and, db, eq, useTransaction } from "@core/helpers/db";
 import { Ent } from "@core/helpers/ent";
 import {
+  type AllPlacement,
   pendingContentGroupTable,
   UnifiedContentInsert,
   type UnifiedContentSelect,
@@ -9,7 +10,6 @@ import {
 } from "@core/schemas/content.sql";
 import { NotImplementedError } from "@core/utils/error";
 import { fn } from "@core/utils/fn";
-import type { AllPlacement } from "../schema/placement";
 
 export abstract class EntUnifiedContentBase extends Ent<UnifiedContentSelect> {
   static type = "unified_content";
