@@ -1,3 +1,4 @@
+import type { WorkflowStepConfig } from "cloudflare:workers";
 import {
   EntFBFeedPendingContent,
   EntPendingContent,
@@ -18,6 +19,13 @@ const PublishWorkflowParams = z.object({
   pendingContentID: z.string(),
 });
 
+const CONFIG = {
+  retries: {
+    limit: 1,
+    delay: 5000,
+  },
+} satisfies WorkflowStepConfig;
+
 export type PublishWorkflowParams = z.infer<typeof PublishWorkflowParams>;
 const log = Log.create({ namespace: "workflow" });
 
@@ -29,7 +37,6 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
   ) {
     console.log("// Starting workflow");
     const { pendingContentID } = event.payload;
-    console.log({ actor: ctx.actor, payload: event.payload });
 
     const { scheduledTime, placement, isDraft, isPublished } = await step.do(
       "fetch content info",
@@ -91,10 +98,12 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
         };
       });
     if (isTextOnly) {
-      await step.do("create text post", async () => {
+      console.log("publish text post");
+      await step.do("create text post", CONFIG, async () => {
         const c = await EntFBFeedPendingContent.fromID(pendingContentID);
+        console.log({ c });
         const nc = await c.createTextPost();
-        nc.deserialize;
+        console.log({ nc });
       });
       log.info("published text post");
       return;

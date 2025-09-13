@@ -148,14 +148,10 @@ export class EntFBFeedPendingContent extends EntPendingContent {
    * Workflows should orchestrate these steps.
    */
   async createTextPost(): Promise<this> {
-    if (!this.isTextOnlyPost()) throw new Error("no text provided");
-    console.log("//1.");
+    if (!this.isTextOnlyPost()) throw new WorkflowError("no text provided");
     const text = this.spec.postSpec.message;
-    console.log("//2.");
     // 0. get page with scoped access token
     const { page } = await this.identity();
-    console.log("//2.", page);
-    console.log("// creating text post", { text });
     // 1. create post
     const post = await page.createFeed([], {
       message: text,
@@ -164,7 +160,9 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     const rawID = post.id;
     const postID = rawID?.split("_")[1];
     if (!rawID || !postID)
-      throw new Error(`failed to create text post, no post ID returned`);
+      throw new WorkflowError(
+        `failed to create text post, no post ID returned`,
+      );
     return await this.markAsPublished(postID);
   }
   async createPhotoPost(): Promise<this> {
@@ -305,10 +303,8 @@ export class EntFBFeedPendingContent extends EntPendingContent {
   }
   protected async identity() {
     const acc = await ConnectedAccount.fromFBPageID(this.pageID);
-    console.log({ acc });
     if (!acc) throw new Error("no connected account found");
     const api = this.api(acc.encryptedAccessToken);
-    console.log({ api });
     const page = new Page(this.pageID, api);
     return { page, acc, api };
   }

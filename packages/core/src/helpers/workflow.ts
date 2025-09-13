@@ -7,6 +7,7 @@ import {
   type WorkflowTimeoutDuration,
 } from "cloudflare:workers";
 import type { Bindings } from "@core/helpers/api-env";
+import { WorkflowError } from "@core/utils/error";
 import { Actor } from "./actor";
 
 export class CoreWorkflowContext {
@@ -38,13 +39,19 @@ export class CoreWorkflowStep {
     arg2: WorkflowStepConfig | (() => Promise<T>),
     arg3?: () => Promise<T> | undefined,
   ): Promise<T> {
-    if (typeof arg3 === "function") {
-      const config = arg2 as WorkflowStepConfig;
-      const fn = arg3 as () => Promise<T>;
-      return this.step.do(name, config, () => this.ctx.provide(fn));
-    } else {
-      const fn = arg2 as () => Promise<T>;
-      return this.step.do(name, () => this.ctx.provide(fn));
+    try {
+      if (typeof arg3 === "function") {
+        const config = arg2 as WorkflowStepConfig;
+        const fn = arg3 as () => Promise<T>;
+        return this.step.do(name, config, () => this.ctx.provide(fn));
+      } else {
+        const fn = arg2 as () => Promise<T>;
+        return this.step.do(name, () => this.ctx.provide(fn));
+      }
+    } catch (e) {
+      if (e instanceof WorkflowError) {
+      }
+      throw e;
     }
   }
 

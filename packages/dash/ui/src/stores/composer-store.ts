@@ -43,6 +43,19 @@ interface ComposerActions {
     facebookFeed?: FBFeedPlacementSpec[];
     instagramFeed?: IGFeedPlacementSpec[];
   }) => void;
+  /** Update the base (shared) message. Propagates to all placement specs that have not been customized. */
+  updateBaseMessage: (message: string) => void;
+  /** Override a placement specific message/caption; breaks future auto-sync until reset. */
+  overridePlacementMessage: (
+    placement: "FB_FEED" | "IG_FEED",
+    connectedAccountID: string,
+    message: string,
+  ) => void;
+  /** Reset a placement specific message/caption to current base and re-enable auto-sync (by making it equal). */
+  resetPlacementMessage: (
+    placement: "FB_FEED" | "IG_FEED",
+    connectedAccountID: string,
+  ) => void;
   toggleAccount: (accountId: string) => void;
   toggleAllAccounts: () => void;
   setAccounts: (accounts: ConnectedAccount[]) => void;
@@ -171,6 +184,52 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
               specs.instagramFeed;
           }
         }),
+      updateBaseMessage: (message: string) =>
+        set((state) => {
+          const oldMessage = state.contentCreateData.base.message;
+          state.contentCreateData.base.message = message;
+          // propagate to FB specs if unchanged / unspecific (equal to old message)
+          state.contentCreateData.placements.facebookFeed?.forEach((spec) => {
+            if (spec.postSpec.message === oldMessage) {
+              spec.postSpec.message = message;
+            }
+          });
+          // propagate to IG specs: caption is optional; treat undefined or equal to old as sync candidate
+          state.contentCreateData.placements.instagramFeed?.forEach((spec) => {
+            if (spec.caption == null || spec.caption === oldMessage) {
+              spec.caption = message;
+            }
+          });
+        }),
+      overridePlacementMessage: (placement, connectedAccountID, message) =>
+        set((state) => {
+          if (placement === "FB_FEED") {
+            const spec = state.contentCreateData.placements.facebookFeed?.find(
+              (s) => s.identity.connectedAccountID === connectedAccountID,
+            );
+            if (spec) spec.postSpec.message = message;
+          } else if (placement === "IG_FEED") {
+            const spec = state.contentCreateData.placements.instagramFeed?.find(
+              (s) => s.identity.connectedAccountID === connectedAccountID,
+            );
+            if (spec) spec.caption = message;
+          }
+        }),
+      resetPlacementMessage: (placement, connectedAccountID) =>
+        set((state) => {
+          const baseMsg = state.contentCreateData.base.message;
+          if (placement === "FB_FEED") {
+            const spec = state.contentCreateData.placements.facebookFeed?.find(
+              (s) => s.identity.connectedAccountID === connectedAccountID,
+            );
+            if (spec) spec.postSpec.message = baseMsg;
+          } else if (placement === "IG_FEED") {
+            const spec = state.contentCreateData.placements.instagramFeed?.find(
+              (s) => s.identity.connectedAccountID === connectedAccountID,
+            );
+            if (spec) spec.caption = baseMsg;
+          }
+        }),
       toggleAccount: (accountId) =>
         set((state) => {
           const account = state.accountsMap.get(accountId);
@@ -206,6 +265,9 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
                 placement: "FB_FEED",
                 postSpec: {
                   message: state.contentCreateData.base.message || "",
+                  attachments: state.contentCreateData.base.attachments.map(
+                    (a) => ({ ...a }),
+                  ),
                 },
               };
               if (!state.contentCreateData.placements.facebookFeed) {
@@ -220,6 +282,10 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
                     .igAccountID,
                 },
                 placement: "IG_FEED",
+                caption: state.contentCreateData.base.message || "",
+                attachments: state.contentCreateData.base.attachments.map(
+                  (a) => ({ ...a }),
+                ),
               };
               if (!state.contentCreateData.placements.instagramFeed) {
                 state.contentCreateData.placements.instagramFeed = [];
@@ -251,6 +317,9 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
                     placement: "FB_FEED",
                     postSpec: {
                       message: state.contentCreateData.base.message || "",
+                      attachments: state.contentCreateData.base.attachments.map(
+                        (a) => ({ ...a }),
+                      ),
                     },
                   }) satisfies FBFeedPlacementSpec,
               );
@@ -266,6 +335,10 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
                         .igAccountID,
                     },
                     placement: "IG_FEED",
+                    caption: state.contentCreateData.base.message || "",
+                    attachments: state.contentCreateData.base.attachments.map(
+                      (a) => ({ ...a }),
+                    ),
                   }) satisfies IGFeedPlacementSpec,
               );
 
@@ -292,6 +365,9 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
                 placement: "FB_FEED",
                 postSpec: {
                   message: state.contentCreateData.base.message || "",
+                  attachments: state.contentCreateData.base.attachments.map(
+                    (a) => ({ ...a }),
+                  ),
                 },
               } satisfies FBFeedPlacementSpec;
             });
@@ -305,6 +381,10 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
                   igAccountID: (acc.metadata as IGAccountMetadata).igAccountID,
                 },
                 placement: "IG_FEED",
+                caption: state.contentCreateData.base.message || "",
+                attachments: state.contentCreateData.base.attachments.map(
+                  (a) => ({ ...a }),
+                ),
               } satisfies IGFeedPlacementSpec;
             });
 
@@ -313,6 +393,9 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
         }),
       addAttachments: (files: File[]) =>
         set((state) => {
+          const oldBase = state.contentCreateData.base.attachments
+            .map((a) => a.id)
+            .join("|");
           const newAttachments = files.map((file, index) => ({
             id: `attachment-${Date.now()}-${index}`,
             type: file.type.startsWith("image/")
@@ -322,6 +405,22 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
             mimeType: file.type,
           }));
           state.contentCreateData.base.attachments.push(...newAttachments);
+          const newBase = state.contentCreateData.base.attachments;
+          // Propagate to placement specs that have not customized attachments (defined as identical to old base sequence or undefined)
+          const shouldSync = (current?: SharedAttachmentSpec[]) => {
+            if (!current) return true;
+            return current.map((a) => a.id).join("|") === oldBase;
+          };
+          state.contentCreateData.placements.facebookFeed?.forEach((spec) => {
+            if (shouldSync(spec.postSpec.attachments)) {
+              spec.postSpec.attachments = newBase.map((a) => ({ ...a }));
+            }
+          });
+          state.contentCreateData.placements.instagramFeed?.forEach((spec) => {
+            if (shouldSync(spec.attachments)) {
+              spec.attachments = newBase.map((a) => ({ ...a }));
+            }
+          });
         }),
       uploadAttachments: async (files: File[], workspaceSlug: string) => {
         // lazily import client to avoid circular deps
@@ -339,6 +438,28 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
               mimeType: file.type,
               metadata: { uploading: true },
             });
+          });
+          // propagate optimistic attachments if target specs are still in sync
+          const syncIf = (current?: SharedAttachmentSpec[]) => {
+            if (!current) return true;
+            // treat equal length subset? Here strict equality of ids indicates unsynced; but since we just appended, old specs won't match new yet; we instead detect if they were identical before appending by removing placeholder set; simple approach: if current length + files.length === base length => we assume in sync.
+            return (
+              current.length + files.length ===
+              state.contentCreateData.base.attachments.length
+            );
+          };
+          state.contentCreateData.placements.facebookFeed?.forEach((spec) => {
+            if (syncIf(spec.postSpec.attachments)) {
+              spec.postSpec.attachments =
+                state.contentCreateData.base.attachments.map((a) => ({ ...a }));
+            }
+          });
+          state.contentCreateData.placements.instagramFeed?.forEach((spec) => {
+            if (syncIf(spec.attachments)) {
+              spec.attachments = state.contentCreateData.base.attachments.map(
+                (a) => ({ ...a }),
+              );
+            }
           });
         });
         // 2. sequentially upload (keeps CF rate limits simple); collect updates
@@ -379,6 +500,36 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
                   uploading: false,
                 };
               }
+              // After successful upload, propagate renamed IDs where specs were still in sync
+              const baseIds = state.contentCreateData.base.attachments
+                .map((a) => a.id)
+                .join("|");
+              const syncIf = (current?: SharedAttachmentSpec[]) => {
+                if (!current) return true;
+                return current
+                  .map((x) => x.id)
+                  .every((id) => baseIds.includes(id));
+              };
+              state.contentCreateData.placements.facebookFeed?.forEach(
+                (spec) => {
+                  if (syncIf(spec.postSpec.attachments)) {
+                    spec.postSpec.attachments =
+                      state.contentCreateData.base.attachments.map((a) => ({
+                        ...a,
+                      }));
+                  }
+                },
+              );
+              state.contentCreateData.placements.instagramFeed?.forEach(
+                (spec) => {
+                  if (syncIf(spec.attachments)) {
+                    spec.attachments =
+                      state.contentCreateData.base.attachments.map((a) => ({
+                        ...a,
+                      }));
+                  }
+                },
+              );
             });
           } catch (err) {
             // mark failed
@@ -399,10 +550,29 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
       },
       removeAttachment: (index: number) =>
         set((state) => {
+          const oldIds = state.contentCreateData.base.attachments
+            .map((a) => a.id)
+            .join("|");
           state.contentCreateData.base.attachments =
             state.contentCreateData.base.attachments.filter(
               (_, i) => i !== index,
             );
+          const newBase = state.contentCreateData.base.attachments;
+          // propagate removal if specs were in sync previously
+          const wasSynced = (current?: SharedAttachmentSpec[]) => {
+            if (!current) return true;
+            return current.map((a) => a.id).join("|") === oldIds;
+          };
+          state.contentCreateData.placements.facebookFeed?.forEach((spec) => {
+            if (wasSynced(spec.postSpec.attachments)) {
+              spec.postSpec.attachments = newBase.map((a) => ({ ...a }));
+            }
+          });
+          state.contentCreateData.placements.instagramFeed?.forEach((spec) => {
+            if (wasSynced(spec.attachments)) {
+              spec.attachments = newBase.map((a) => ({ ...a }));
+            }
+          });
         }),
       setSelectedPreview: (preview: Platform) =>
         set((state) => {
