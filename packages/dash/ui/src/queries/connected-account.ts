@@ -10,5 +10,6 @@ export const useConnectedAccounts = () => {
         param: { workspaceSlug: workspace.slug },
       }),
     errorMessage: "Failed to load connected accounts",
+    refetchOnMount: true,
   });
 };

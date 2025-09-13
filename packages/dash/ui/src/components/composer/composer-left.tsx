@@ -6,7 +6,7 @@ import { SchedulingOptions } from "@/components/composer/scheduling-options";
 
 export function ComposerLeft() {
   return (
-    <div className="w-[600px] p-6 space-y-4 overflow-y-auto flex-shrink-0">
+    <div className="w-full md:w-[500px] lg:w-[600px] p-4 md:p-6 space-y-4 overflow-y-auto flex-shrink-0">
       <AccountSelection />
       <MediaUpload />
       <PostDetails />
