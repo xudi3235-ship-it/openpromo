@@ -108,13 +108,7 @@ export class EntPendingContentGroup {
 
         // 3. handle scheduled contents
         await afterTx(async () => {
-          // Binding.getScheduler();
-          unifiedContents.map(async (content) => {
-            const spec = content.schedulingSpec;
-            // not a scheduled content, skip
-            if (!spec?.scheduledPublishAt) return;
-            // TODO: implement scheduling logic
-          });
+          // TODO: implement scheduling logic
         });
         return { pendingContentGroup, unifiedContents };
       });

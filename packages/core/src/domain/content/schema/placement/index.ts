@@ -1,3 +1,4 @@
+import { ContentPublishingStatusZod } from "@core/schemas/content.sql";
 import * as z from "zod";
 
 export const FBPlacement = {
@@ -63,41 +64,37 @@ export const SharedAttachmentSpec = z.discriminatedUnion("type", [
 
 export type SharedAttachmentSpec = z.infer<typeof SharedAttachmentSpec>;
 
-/**
- * base spec for all content placements. Platform specific children will extend
- * this and override the fields. On high level, we break down to the following
- * 1. actor context, workspace-scoped actor for this action.
- * 2. normalized fields. This is for
- */
+export const SchedulingSpec = z.object({
+  publishAt: z.date().optional(),
+});
+export type SchedulingSpec = z.infer<typeof SchedulingSpec>;
+// ------------------------ Base Placement Spec ------------------------
 export const BasePlacementSpec = z.object({
-  placement: z.enum([...Object.values(AllPlacement)]),
-  customized: z.boolean().optional(),
-  title: z.string().optional(),
+  placement: z.enum([...Object.values(AllPlacement)]).optional(),
+  publishingStatus: ContentPublishingStatusZod.optional(),
+  customized: z
+    .boolean()
+    .optional()
+    .describe("where this spec is customized compared to base"),
+  // normalized fields
+  message: z.string().optional(),
   thumbnailUrl: z.string().optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
-  identity: z.object({
-    connectedAccountID: z.string(),
-    metadata: z.record(z.any(), z.any()).optional(),
-  }),
+  identity: z
+    .object({
+      connectedAccountID: z.string(),
+      metadata: z.record(z.any(), z.any()).optional(),
+    })
+    .optional(),
   attachments: SharedAttachmentSpec.array().optional(),
+  schedulingSpec: SchedulingSpec.optional(),
 });
 
 export type BasePlacementSpec = z.infer<typeof BasePlacementSpec>;
 
 // ========================= Facebook =========================
 
-/**
- * defines schema & validation logics for facebook placements,
- * it'll be used in both client & server side to valiate the inputs
- * eventually, this will be transformed to sdk calls to facebook graph api
- * targeting creating facebook posts, reels, stories.
- * this is organic for now, for ads, we handle these separately.
- *
- * we use this spec definitions in the front end for validation as well as preview rendering. In the backend, it's transformed into multiple api calls to eventually publish it.
- */
-
-// 2. post spec
 export const postSpec = z.object({
   message: z.string(),
   link: z.string().optional(),

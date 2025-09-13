@@ -38,6 +38,10 @@ export interface ComposerActions {
   ) => void;
   clearAttachments: () => void;
   uploadAttachments: (files: File[], workspaceSlug: string) => Promise<void>;
+  setPublishingStatus: (
+    status: ContentCreateData["base"]["publishingStatus"],
+    schedulingSpec?: ContentCreateData["base"]["schedulingSpec"],
+  ) => void;
 }
 
 export type ComposerStore = ComposerState & ComposerActions;
@@ -159,9 +163,11 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
             mimeType: file.type,
             metadata: { uploading: true },
           }));
-          state.contentCreateData.base.attachments.push(...newAttachments);
+          state.contentCreateData.base.attachments?.push(...newAttachments);
 
-          const baseAttachments = [...state.contentCreateData.base.attachments];
+          const baseAttachments = [
+            ...(state.contentCreateData.base.attachments ?? []),
+          ];
           syncToNonCustomizedPlacements(state, {
             facebook: (spec) => {
               spec.attachments = baseAttachments;
@@ -173,9 +179,11 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
         }),
       removeAttachment: (index) =>
         set((state) => {
-          state.contentCreateData.base.attachments.splice(index, 1);
+          state.contentCreateData.base.attachments?.splice(index, 1);
 
-          const baseAttachments = [...state.contentCreateData.base.attachments];
+          const baseAttachments = [
+            ...(state.contentCreateData.base.attachments ?? []),
+          ];
           syncToNonCustomizedPlacements(state, {
             facebook: (spec) => {
               spec.attachments = baseAttachments;
@@ -187,12 +195,14 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
         }),
       updateAttachment: (index, updates) =>
         set((state) => {
-          const attachment = state.contentCreateData.base.attachments[index];
+          const attachment = state.contentCreateData.base.attachments?.[index];
           if (attachment) {
             Object.assign(attachment, updates);
           }
 
-          const baseAttachments = [...state.contentCreateData.base.attachments];
+          const baseAttachments = [
+            ...(state.contentCreateData.base.attachments ?? []),
+          ];
           syncToNonCustomizedPlacements(state, {
             facebook: (spec) => {
               spec.attachments = baseAttachments;
@@ -217,7 +227,8 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
         }),
       uploadAttachments: async (files, workspaceSlug) => {
         // First, get the current number of attachments
-        const startingIndex = get().contentCreateData.base.attachments.length;
+        const startingIndex =
+          get().contentCreateData.base.attachments?.length ?? 0;
 
         set((state) => {
           const newAttachments = files.map((file, index) => ({
@@ -229,7 +240,7 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
             mimeType: file.type,
             metadata: { uploading: true },
           }));
-          state.contentCreateData.base.attachments.push(...newAttachments);
+          state.contentCreateData.base.attachments?.push(...newAttachments);
         });
 
         // Then upload each file
@@ -278,7 +289,7 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
             // Update the attachment with success state
             set((state) => {
               const attachment =
-                state.contentCreateData.base.attachments[attachmentIndex];
+                state.contentCreateData.base.attachments?.[attachmentIndex];
               if (attachment) {
                 attachment.id = id;
                 attachment.s3Key = id;
@@ -292,7 +303,7 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
             // Update the attachment with error state
             set((state) => {
               const attachment =
-                state.contentCreateData.base.attachments[attachmentIndex];
+                state.contentCreateData.base.attachments?.[attachmentIndex];
               if (attachment) {
                 attachment.metadata = {
                   uploading: false,
@@ -305,6 +316,10 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
           }
         }
       },
+      setPublishingStatus: (status) =>
+        set((state) => {
+          state.contentCreateData.base.publishingStatus = status;
+        }),
     })),
   );
 };

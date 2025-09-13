@@ -4,16 +4,15 @@ import {
   EntPendingContent,
 } from "@core/domain/content/entity/index";
 import {
+  BasePlacementSpec,
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
-  SharedAttachmentSpec,
 } from "@core/domain/content/schema/placement";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { db } from "@core/helpers/db/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
 import {
-  ContentPublishingStatusZod,
   PendingContentGroupSelect,
   pendingContentGroupTable,
   UnifiedContentSelect,
@@ -55,11 +54,7 @@ export async function createDummyPendingContent() {
 }
 
 export const ContentCreateData = z.object({
-  base: z.object({
-    publishingStatus: ContentPublishingStatusZod,
-    message: z.string(),
-    attachments: SharedAttachmentSpec.array(),
-  }),
+  base: BasePlacementSpec,
   placements: z
     .object({
       facebookFeed: FBFeedPlacementSpec.array().optional(),
@@ -227,6 +222,7 @@ export const contentRoute = new Hono<ApiEnv>()
           publishingStatus,
         })
         .returning();
+      // TODO: migrate to use inset many operations instead.
       if (placements.facebookFeed) {
         for (const spec of placements.facebookFeed) {
           await EntPendingContent.createInternal({

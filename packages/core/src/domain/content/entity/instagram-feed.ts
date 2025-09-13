@@ -294,9 +294,6 @@ export class EntIGFeedPendingContent extends EntPendingContent {
           },
         ],
       },
-      schedulingSpec: {
-        scheduledPublishAt: new Date(Date.now() + 5 * 1000), // 5 seconds later
-      },
     });
     return new EntIGFeedPendingContent(content);
   }

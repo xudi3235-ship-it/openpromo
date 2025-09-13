@@ -44,7 +44,7 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
         const c = await EntPendingContent.fromID(pendingContentID);
         return {
           id: c.data.id,
-          scheduledTime: c.data.schedulingSpec?.scheduledPublishAt,
+          scheduledTime: c.data.placementSpec?.schedulingSpec?.publishAt,
           isDraft: c.isDraft(),
           placement: c.placement(),
           isPublished: c.isPublished(),

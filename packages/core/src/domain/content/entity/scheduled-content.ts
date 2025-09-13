@@ -8,13 +8,13 @@ export class EntScheduledContent extends EntPendingContent {
     if (!this.isScheduled()) {
       throw new Error(`Content ${data.id} is not scheduled`);
     }
-    const spec = this.data.schedulingSpec;
-    if (!spec?.scheduledPublishAt) {
+    const spec = this.data.placementSpec?.schedulingSpec;
+    if (!spec?.publishAt) {
       throw new Error(`Content ${this.data.id} missing schedulingSpec`);
     }
   }
   public getScheduledAt(): Date {
-    const spec = nullThrows(this.data.schedulingSpec);
-    return spec.scheduledPublishAt;
+    const d = nullThrows(this.data.placementSpec?.schedulingSpec?.publishAt);
+    return new Date(d);
   }
 }

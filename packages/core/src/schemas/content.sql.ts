@@ -141,13 +141,6 @@ export type PendingContentGroupSelect = z.infer<
  * For backfilled contents, upstream services should transform to placement spec.
  */
 
-// scheduling spec is bound at the content level.
-const SchedulingSpec = z.object({
-  scheduledPublishAt: z.date(),
-});
-
-type SchedulingSpec = z.infer<typeof SchedulingSpec>;
-
 export const unifiedContentTable = pgTable(
   "unified_content",
   {
@@ -166,9 +159,6 @@ export const unifiedContentTable = pgTable(
     // internal, where this is going to
     placement: placementPgEnum().notNull(),
     publishingStatus: publishingStatusPgEnum().notNull(),
-    // scheduling spec
-    schedulingSpec: jsonb("scheduling_spec").$type<SchedulingSpec>(),
-    // this is optional, for cascading deletions, app-layer handles it
     pendingContentGroupId: ulid("pending_content_group_id").references(
       () => pendingContentGroupTable.id,
     ),
