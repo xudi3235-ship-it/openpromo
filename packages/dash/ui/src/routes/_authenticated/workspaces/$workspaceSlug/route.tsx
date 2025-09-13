@@ -4,12 +4,8 @@ import {
   notFound,
   Outlet,
   useNavigate,
-  useRouteContext,
 } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Header } from "@/components/layout/header";
-import { ProfileDropdown } from "@/components/profile-dropdown";
-import { ThemeSwitch } from "@/components/theme-switcher";
 import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
 
@@ -37,7 +33,6 @@ export const Route = createFileRoute(
 });
 
 function WorkspaceComponent() {
-  const { user } = useRouteContext({ from: "/_authenticated" });
   const { workspace } = Route.useLoaderData();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -57,19 +52,8 @@ function WorkspaceComponent() {
   });
 
   return (
-    <>
-      <Header>
-        <div className="ms-auto flex items-center space-x-4">
-          {/* <Search />
-          <ConfigDrawer /> */}
-          <ThemeSwitch />
-          <ProfileDropdown user={user} />
-        </div>
-      </Header>
-
-      <div className="min-h-0 flex-1">
-        <Outlet />
-      </div>
-    </>
+    <div className="flex-1">
+      <Outlet />
+    </div>
   );
 }

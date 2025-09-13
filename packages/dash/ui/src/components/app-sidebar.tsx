@@ -4,6 +4,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarTrigger,
   useSidebar,
 } from "@openpromo/ui/components/sidebar";
 import { useParams, useRouteContext } from "@tanstack/react-router";
@@ -32,25 +33,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props} collapsible={collapsible} variant={variant}>
       <SidebarHeader>
-        {isPending ? (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-sidebar-accent animate-pulse rounded-xl shrink-0" />
-            {state === "expanded" && (
+        <div className="flex items-center justify-between gap-2">
+          {isPending ? (
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-8 h-8 bg-sidebar-accent animate-pulse rounded-xl shrink-0" />
+              {state === "expanded" && (
+                <div className="flex-1">
+                  <div className="h-3 bg-sidebar-accent animate-pulse rounded mb-1" />
+                  <div className="h-2 bg-sidebar-accent/50 animate-pulse rounded w-20" />
+                </div>
+              )}
+            </div>
+          ) : (
+            workspaces && (
               <div className="flex-1">
-                <div className="h-3 bg-sidebar-accent animate-pulse rounded mb-1" />
-                <div className="h-2 bg-sidebar-accent/50 animate-pulse rounded w-20" />
+                <WorkspaceSwitcher
+                  currentWorkspaceSlug={currentWorkspaceSlug}
+                  workspaces={workspaces}
+                  defaultWorkspaceSlug={user.defaultWorkspaceSlug}
+                />
               </div>
-            )}
-          </div>
-        ) : (
-          workspaces && (
-            <WorkspaceSwitcher
-              currentWorkspaceSlug={currentWorkspaceSlug}
-              workspaces={workspaces}
-              defaultWorkspaceSlug={user.defaultWorkspaceSlug}
-            />
-          )
-        )}
+            )
+          )}
+          <SidebarTrigger
+            variant="outline"
+            className="max-md:scale-125 shrink-0"
+          />
+        </div>
       </SidebarHeader>
       <SidebarContent>
         {sidebarData.navGroups.map((props) => (

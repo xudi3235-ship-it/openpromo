@@ -19,15 +19,20 @@ import {
   useSidebar,
 } from "@openpromo/ui/components/sidebar";
 import useDialogState from "@openpromo/ui/hooks/use-dialog-state";
+import { cn } from "@openpromo/ui/lib/utils";
 import { Link } from "@tanstack/react-router";
 import {
   BadgeCheck,
   Bell,
+  Check,
   ChevronsUpDown,
   CreditCard,
   LogOut,
+  Moon,
   Sparkles,
+  Sun,
 } from "lucide-react";
+import { useTheme } from "@/context/theme-provider";
 import type { User } from "@/lib/hono-client";
 import { SignOutDialog } from "../signout-dialog";
 
@@ -38,6 +43,7 @@ type NavUserProps = {
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar();
   const [open, setOpen] = useDialogState();
+  const { theme, setTheme } = useTheme();
 
   return (
     <>
@@ -114,6 +120,34 @@ export function NavUser({ user }: NavUserProps) {
                     <Bell />
                     Notifications
                   </Link>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => setTheme("light")}>
+                  <Sun />
+                  Light
+                  <Check
+                    size={14}
+                    className={cn("ms-auto", theme !== "light" && "hidden")}
+                  />
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")}>
+                  <Moon />
+                  Dark
+                  <Check
+                    size={14}
+                    className={cn("ms-auto", theme !== "dark" && "hidden")}
+                  />
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("system")}>
+                  <Sun className="size-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+                  <Moon className="absolute size-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+                  System
+                  <Check
+                    size={14}
+                    className={cn("ms-auto", theme !== "system" && "hidden")}
+                  />
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
