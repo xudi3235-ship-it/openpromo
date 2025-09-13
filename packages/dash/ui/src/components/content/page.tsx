@@ -26,8 +26,9 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import * as React from "react";
+import ComposerDialog from "@/components/composer/modal";
 import { useContentListQuery } from "@/queries/content";
 import { columns } from "./columns";
 
@@ -39,6 +40,7 @@ export function ContentPage() {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const [isComposerOpen, setIsComposerOpen] = React.useState(false);
   const { data, isLoading } = useContentListQuery();
   const table = useReactTable({
     data: (data?.entities as unknown as MergedContentEntity[]) ?? [],
@@ -70,32 +72,38 @@ export function ContentPage() {
           }
           className="max-w-sm"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="ml-auto flex gap-2">
+          <Button onClick={() => setIsComposerOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Create Post
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                Columns <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <div className="overflow-hidden rounded-md border">
         <Table>
@@ -180,6 +188,11 @@ export function ContentPage() {
           </Button>
         </div>
       </div>
+
+      <ComposerDialog
+        isOpen={isComposerOpen}
+        onClose={() => setIsComposerOpen(false)}
+      />
     </div>
   );
 }
