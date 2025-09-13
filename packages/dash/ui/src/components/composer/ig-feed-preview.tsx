@@ -9,17 +9,13 @@ import {
   Send,
 } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useComposerStore } from "@/stores/composer";
+import { useComposerStore } from "@/stores/composer-store";
 
 export function IGFeedPreview() {
   const { workspace } = useWorkspace();
-  const { contentCreateDataDerived, draft } = useComposerStore((s) => ({
-    contentCreateDataDerived: s.contentCreateDataDerived,
-    draft: s.draft,
-  }));
-  const attachments = contentCreateDataDerived.base.attachments;
-  const igPlacement = contentCreateDataDerived.placements.instagramFeed?.[0];
-  const caption = igPlacement?.caption || draft.message;
+  const contentCreateData = useComposerStore((s) => s.contentCreateData);
+  const attachments = contentCreateData.base.attachments;
+  const caption = "FIXME";
 
   return (
     <Card className="max-w-sm border-0 shadow-none">

@@ -43,8 +43,7 @@ const generatePreview = async (file: File): Promise<MediaPreview> => {
 };
 
 export function MediaUpload() {
-  const { contentCreateData, uploadAttachments, removeAttachment } =
-    useComposerStore();
+  const { contentCreateData } = useComposerStore();
   const { workspace } = useWorkspace();
   const [previews, setPreviews] = useState<MediaPreview[]>([]);
 
@@ -108,7 +107,7 @@ export function MediaUpload() {
   const handleRemove = (index: number) => {
     const preview = previews[index];
     if (preview?.url.startsWith("blob:")) URL.revokeObjectURL(preview.url);
-    removeAttachment(index);
+    // removeAttachment(index);
   };
 
   return (
@@ -124,9 +123,9 @@ export function MediaUpload() {
           accept={{ "image/*": [], "video/*": [] }}
           maxFiles={10}
           maxSize={50 * 1024 * 1024}
-          onDrop={async (files) => {
+          onDrop={async (_files) => {
             if (!workspace?.slug) return;
-            await uploadAttachments(files, workspace.slug);
+            // await uploadAttachments(files, workspace.slug);
           }}
           className="h-32"
         >

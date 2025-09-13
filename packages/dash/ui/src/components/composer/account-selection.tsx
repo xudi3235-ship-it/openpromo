@@ -44,8 +44,7 @@ function AccountIcon({
 }
 
 export function AccountSelection() {
-  const { selectedAccounts, accounts, toggleAccount, toggleAllAccounts } =
-    useComposerStore();
+  const { selectedAccounts, accounts } = useComposerStore();
 
   const allSelected =
     selectedAccounts.length === accounts.length && accounts.length > 0;
@@ -111,7 +110,6 @@ export function AccountSelection() {
             <DropdownMenuItem
               onClick={(e) => {
                 e.preventDefault();
-                toggleAllAccounts();
               }}
             >
               <Checkbox checked={allSelected} className="mr-2" />
@@ -122,7 +120,6 @@ export function AccountSelection() {
                 key={account.id}
                 onClick={(e) => {
                   e.preventDefault();
-                  toggleAccount(account.id);
                 }}
               >
                 <Checkbox

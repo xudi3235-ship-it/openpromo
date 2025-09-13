@@ -16,14 +16,10 @@ import {
 import { useComposerStore } from "@/stores/composer-store";
 
 export function PostDetails() {
-  const { contentCreateData, setPlacementSpecs } = useComposerStore();
+  const { contentCreateData } = useComposerStore();
 
-  const handleMessageChange = (value: string) => {
-    setPlacementSpecs({
-      base: {
-        message: value,
-      },
-    });
+  const handleMessageChange = (_value: string) => {
+    // TODO: handle message change
   };
 
   return (

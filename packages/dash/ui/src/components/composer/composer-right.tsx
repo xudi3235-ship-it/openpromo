@@ -1,7 +1,7 @@
 import { Button } from "@openpromo/ui/components/button";
 import { FBFeedPreview } from "@/components/composer/fb-feed-preview";
 import { IGFeedPreview } from "@/components/composer/ig-feed-preview";
-import { useComposerStore } from "@/stores/composer";
+import { useComposerStore } from "@/stores/composer-store";
 
 export function ComposerRight() {
   const { selectedPreview, setSelectedPreview } = useComposerStore();

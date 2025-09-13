@@ -11,18 +11,13 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useComposerStore } from "@/stores/composer";
+import { useComposerStore } from "@/stores/composer-store";
 
 export function FBFeedPreview() {
   const { workspace } = useWorkspace();
-  const { contentCreateDataDerived, draft } = useComposerStore((s) => ({
-    contentCreateDataDerived: s.contentCreateDataDerived,
-    draft: s.draft,
-  }));
-  const attachments = contentCreateDataDerived.base.attachments;
-  // Pick first facebook placement to show override if present
-  const fbPlacement = contentCreateDataDerived.placements.facebookFeed?.[0];
-  const message = fbPlacement?.postSpec.message || draft.message;
+  const contentCreateData = useComposerStore((s) => s.contentCreateData);
+  const attachments = contentCreateData.base.attachments;
+  const message = "TODO";
 
   return (
     <Card>

@@ -1,13 +1,11 @@
+import { useRef } from "react";
 import {
   ComposerContext,
   type ComposerProps,
   createComposerStore,
-} from "@/stores/composer";
+} from "@/stores/composer-store";
 
 type ComposerStoreInstance = ReturnType<typeof createComposerStore>;
-
-import { useRef } from "react";
-
 type ComposerProviderProps = React.PropsWithChildren<ComposerProps>;
 
 export function ComposerProvider({
