@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
 import { cn } from "@openpromo/ui/lib/utils";
+import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import {
   addDays,
   addMonths,
@@ -32,9 +33,7 @@ import { toast } from "sonner";
 import {
   AgendaDaysToShow,
   AgendaView,
-  addHoursToDate,
   CalendarDndProvider,
-  type CalendarEvent,
   type CalendarView,
   DayView,
   EventDialog,
@@ -47,15 +46,15 @@ import {
 import { Route as CalendarRoute } from "@/routes/_authenticated/workspaces/$workspaceSlug/calendar";
 
 export interface EventCalendarProps {
-  events?: CalendarEvent[];
-  onEventAdd?: (event: CalendarEvent) => void;
-  onEventUpdate?: (event: CalendarEvent) => void;
+  events?: MergedContentEntity[];
+  onEventAdd?: (event: MergedContentEntity) => void;
+  onEventUpdate?: (event: MergedContentEntity) => void;
   onEventDelete?: (eventId: string) => void;
   className?: string;
   initialView?: CalendarView;
 }
 
-export function EventCalendar({
+export function ContentCalendar({
   events = [],
   onEventAdd,
   onEventUpdate,
@@ -64,9 +63,8 @@ export function EventCalendar({
 }: EventCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
-    null,
-  );
+  const [selectedEvent, setSelectedEvent] =
+    useState<MergedContentEntity | null>(null);
 
   const { view } = CalendarRoute.useSearch();
   const navigate = CalendarRoute.useNavigate();
@@ -146,15 +144,12 @@ export function EventCalendar({
     setCurrentDate(new Date());
   };
 
-  const handleEventSelect = (event: CalendarEvent) => {
-    // console.log("Event selected:", event); // Debug log
+  const handleEventSelect = (event: MergedContentEntity) => {
     setSelectedEvent(event);
     setIsEventDialogOpen(true);
   };
 
   const handleEventCreate = (startTime: Date) => {
-    // console.log("Creating new event at:", startTime); // Debug log
-
     // Snap to 15-minute intervals
     const minutes = startTime.getMinutes();
     const remainder = minutes % 15;
@@ -170,33 +165,45 @@ export function EventCalendar({
       startTime.setMilliseconds(0);
     }
 
-    const newEvent: CalendarEvent = {
-      id: "",
-      title: "",
-      start: startTime,
-      end: addHoursToDate(startTime, 1),
-      allDay: false,
-    };
+    const newEvent = {
+      type: "content" as const,
+      entity: {
+        id: "",
+        sourceContentId: null,
+        placement: "FB_FEED" as const,
+        placementSpec: null,
+        publishingStatus: "DRAFT" as const,
+        schedulingSpec: {
+          scheduledPublishAt: startTime.toISOString(),
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    } as MergedContentEntity;
     setSelectedEvent(newEvent);
     setIsEventDialogOpen(true);
   };
 
-  const handleEventSave = (event: CalendarEvent) => {
-    if (event.id) {
+  const handleEventSave = (event: MergedContentEntity) => {
+    if (event.entity?.id) {
       onEventUpdate?.(event);
       // Show toast notification when an event is updated
-      toast(`Event "${event.title}" updated`, {
-        description: format(new Date(event.start), "MMM d, yyyy"),
+      toast(`Content updated`, {
+        description: format(new Date(), "MMM d, yyyy"),
         position: "bottom-left",
       });
     } else {
-      onEventAdd?.({
+      const eventWithId = {
         ...event,
-        id: Math.random().toString(36).substring(2, 11),
-      });
+        entity: {
+          ...event.entity,
+          id: Math.random().toString(36).substring(2, 11),
+        },
+      } as MergedContentEntity;
+      onEventAdd?.(eventWithId);
       // Show toast notification when an event is added
-      toast(`Event "${event.title}" added`, {
-        description: format(new Date(event.start), "MMM d, yyyy"),
+      toast(`Content added`, {
+        description: format(new Date(), "MMM d, yyyy"),
         position: "bottom-left",
       });
     }
@@ -205,26 +212,26 @@ export function EventCalendar({
   };
 
   const handleEventDelete = (eventId: string) => {
-    const deletedEvent = events.find((e) => e.id === eventId);
+    const deletedEvent = events.find((e) => String(e.entity?.id) === eventId);
     onEventDelete?.(eventId);
     setIsEventDialogOpen(false);
     setSelectedEvent(null);
 
     // Show toast notification when an event is deleted
     if (deletedEvent) {
-      toast(`Event "${deletedEvent.title}" deleted`, {
-        description: format(new Date(deletedEvent.start), "MMM d, yyyy"),
+      toast(`Content deleted`, {
+        description: format(new Date(), "MMM d, yyyy"),
         position: "bottom-left",
       });
     }
   };
 
-  const handleEventUpdate = (updatedEvent: CalendarEvent) => {
+  const handleEventUpdate = (updatedEvent: MergedContentEntity) => {
     onEventUpdate?.(updatedEvent);
 
     // Show toast notification when an event is updated via drag and drop
-    toast(`Event "${updatedEvent.title}" moved`, {
-      description: format(new Date(updatedEvent.start), "MMM d, yyyy"),
+    toast(`Content moved`, {
+      description: format(new Date(), "MMM d, yyyy"),
       position: "bottom-left",
     });
   };
@@ -337,9 +344,6 @@ export function EventCalendar({
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setView("day")}>
                   Day <DropdownMenuShortcut>D</DropdownMenuShortcut>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setView("agenda")}>
-                  Agenda <DropdownMenuShortcut>A</DropdownMenuShortcut>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

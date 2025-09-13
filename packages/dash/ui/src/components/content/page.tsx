@@ -28,8 +28,7 @@ import {
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { ChevronDown } from "lucide-react";
 import * as React from "react";
-import { useWorkspace } from "@/hooks/useWorkspace";
-import { useHonoQuery } from "@/lib/hono-client";
+import { useContentListQuery } from "@/queries/content";
 import { columns } from "./columns";
 
 export function ContentPage() {
@@ -40,16 +39,7 @@ export function ContentPage() {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-  const { workspace } = useWorkspace();
-  const { data, isLoading } = useHonoQuery({
-    queryKey: ["content-list"],
-    queryFn: (api) =>
-      api.workspaces[":workspaceSlug"].content.$get({
-        query: { page: "1", pageSize: "20" },
-        param: { workspaceSlug: workspace.slug },
-      }),
-  });
-
+  const { data, isLoading } = useContentListQuery();
   const table = useReactTable({
     data: (data?.entities as unknown as MergedContentEntity[]) ?? [],
     columns,

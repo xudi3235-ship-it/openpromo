@@ -19,6 +19,7 @@ import {
   DraggableEvent,
   DroppableCell,
   EventItem,
+  getEventData,
   isMultiDayEvent,
   useCurrentTimeIndicator,
   WeekCellsHeight,
@@ -58,8 +59,9 @@ export function DayView({
   const dayEvents = useMemo(() => {
     return events
       .filter((event) => {
-        const eventStart = new Date(event.start);
-        const eventEnd = new Date(event.end);
+        const eventData = getEventData(event);
+        const eventStart = new Date(eventData.start);
+        const eventEnd = new Date(eventData.end);
         return (
           isSameDay(currentDate, eventStart) ||
           isSameDay(currentDate, eventEnd) ||
@@ -75,7 +77,8 @@ export function DayView({
   const allDayEvents = useMemo(() => {
     return dayEvents.filter((event) => {
       // Include explicitly marked all-day events or multi-day events
-      return event.allDay || isMultiDayEvent(event);
+      const eventData = getEventData(event);
+      return eventData.allDay || isMultiDayEvent(event);
     });
   }, [dayEvents]);
 
@@ -83,7 +86,8 @@ export function DayView({
   const timeEvents = useMemo(() => {
     return dayEvents.filter((event) => {
       // Exclude all-day events and multi-day events
-      return !event.allDay && !isMultiDayEvent(event);
+      const eventData = getEventData(event);
+      return !eventData.allDay && !isMultiDayEvent(event);
     });
   }, [dayEvents]);
 
@@ -144,7 +148,10 @@ export function DayView({
           const overlaps = col.some((c) =>
             areIntervalsOverlapping(
               { start: adjustedStart, end: adjustedEnd },
-              { start: new Date(c.event.start), end: new Date(c.event.end) },
+              {
+                start: new Date(getEventData(c.event).start),
+                end: new Date(getEventData(c.event).end),
+              },
             ),
           );
           if (!overlaps) {
@@ -207,7 +214,7 @@ export function DayView({
 
                 return (
                   <EventItem
-                    key={`spanning-${event.id}`}
+                    key={`spanning-${getEventData(event).id}`}
                     onClick={(e) => handleEventClick(event, e)}
                     event={event}
                     view="month"
@@ -215,7 +222,7 @@ export function DayView({
                     isLastDay={isLastDay}
                   >
                     {/* Always show the title in day view for better usability */}
-                    <div>{event.title}</div>
+                    <div>{getEventData(event).title}</div>
                   </EventItem>
                 );
               })}
@@ -244,7 +251,7 @@ export function DayView({
           {/* Positioned events */}
           {positionedEvents.map((positionedEvent) => (
             <div
-              key={positionedEvent.event.id}
+              key={getEventData(positionedEvent.event).id}
               className="absolute z-10 px-0.5"
               style={{
                 top: `${positionedEvent.top}px`,

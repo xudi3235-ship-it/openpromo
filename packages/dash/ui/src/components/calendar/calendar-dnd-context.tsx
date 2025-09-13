@@ -13,7 +13,6 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { addMinutes, differenceInMinutes } from "date-fns";
 import {
   createContext,
   type ReactNode,
@@ -23,7 +22,11 @@ import {
   useState,
 } from "react";
 
-import { type CalendarEvent, EventItem } from "@/components/calendar";
+import {
+  type CalendarEvent,
+  EventItem,
+  getEventData,
+} from "@/components/calendar";
 
 type CalendarDndContextType = {
   activeEvent: CalendarEvent | null;
@@ -150,7 +153,8 @@ export function CalendarDndProvider({
     setActiveEvent(calendarEvent);
     setActiveId(active.id);
     setActiveView(view);
-    setCurrentTime(new Date(calendarEvent.start));
+    const eventData = getEventData(calendarEvent);
+    setCurrentTime(new Date(eventData.start));
     setIsMultiDay(eventIsMultiDay || false);
     setMultiDayWidth(eventMultiDayWidth || null);
     setDragHandlePosition(eventDragHandlePosition || null);
@@ -285,11 +289,9 @@ export function CalendarDndProvider({
         );
       }
 
-      // Calculate new end time based on the original duration
-      const originalStart = new Date(calendarEvent.start);
-      const originalEnd = new Date(calendarEvent.end);
-      const durationMinutes = differenceInMinutes(originalEnd, originalStart);
-      const newEnd = addMinutes(newStart, durationMinutes);
+      // Calculate original start time for comparison
+      const eventData = getEventData(calendarEvent);
+      const originalStart = new Date(eventData.start);
 
       // Only update if the start time has actually changed
       const hasStartTimeChanged =
@@ -300,12 +302,18 @@ export function CalendarDndProvider({
         originalStart.getMinutes() !== newStart.getMinutes();
 
       if (hasStartTimeChanged) {
-        // Update the event only if the time has changed
-        onEventUpdate({
+        // Update the event with new scheduling info
+        const updatedEvent: CalendarEvent = {
           ...calendarEvent,
-          start: newStart,
-          end: newEnd,
-        });
+          entity: {
+            ...calendarEvent.entity,
+            schedulingSpec: {
+              ...calendarEvent.entity.schedulingSpec,
+              scheduledPublishAt: newStart.toISOString(),
+            },
+          },
+        } as CalendarEvent;
+        onEventUpdate(updatedEvent);
       }
     } catch (error) {
       console.error("Error in drag end handler:", error);

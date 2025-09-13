@@ -24,6 +24,7 @@ import {
   DraggableEvent,
   DroppableCell,
   EventItem,
+  getEventData,
   isMultiDayEvent,
   useCurrentTimeIndicator,
   WeekCellsHeight,
@@ -76,11 +77,13 @@ export function WeekView({
     return events
       .filter((event) => {
         // Include explicitly marked all-day events or multi-day events
-        return event.allDay || isMultiDayEvent(event);
+        const eventData = getEventData(event);
+        return eventData.allDay || isMultiDayEvent(event);
       })
       .filter((event) => {
-        const eventStart = new Date(event.start);
-        const eventEnd = new Date(event.end);
+        const eventData = getEventData(event);
+        const eventStart = new Date(eventData.start);
+        const eventEnd = new Date(eventData.end);
         return days.some(
           (day) =>
             isSameDay(day, eventStart) ||
@@ -96,10 +99,11 @@ export function WeekView({
       // Get events for this day that are not all-day events or multi-day events
       const dayEvents = events.filter((event) => {
         // Skip all-day events and multi-day events
-        if (event.allDay || isMultiDayEvent(event)) return false;
+        const eventData = getEventData(event);
+        if (eventData.allDay || isMultiDayEvent(event)) return false;
 
-        const eventStart = new Date(event.start);
-        const eventEnd = new Date(event.end);
+        const eventStart = new Date(eventData.start);
+        const eventEnd = new Date(eventData.end);
 
         // Check if event is on this day
         return (
@@ -134,8 +138,9 @@ export function WeekView({
       const columns: { event: CalendarEvent; end: Date }[][] = [];
 
       sortedEvents.forEach((event) => {
-        const eventStart = new Date(event.start);
-        const eventEnd = new Date(event.end);
+        const eventData = getEventData(event);
+        const eventStart = new Date(eventData.start);
+        const eventEnd = new Date(eventData.end);
 
         // Adjust start and end times if they're outside this day
         const adjustedStart = isSameDay(day, eventStart)
@@ -168,8 +173,8 @@ export function WeekView({
               areIntervalsOverlapping(
                 { start: adjustedStart, end: adjustedEnd },
                 {
-                  start: new Date(c.event.start),
-                  end: new Date(c.event.end),
+                  start: new Date(getEventData(c.event).start),
+                  end: new Date(getEventData(c.event).end),
                 },
               ),
             );
@@ -247,8 +252,9 @@ export function WeekView({
             </div>
             {days.map((day, dayIndex) => {
               const dayAllDayEvents = allDayEvents.filter((event) => {
-                const eventStart = new Date(event.start);
-                const eventEnd = new Date(event.end);
+                const eventData = getEventData(event);
+                const eventStart = new Date(eventData.start);
+                const eventEnd = new Date(eventData.end);
                 return (
                   isSameDay(day, eventStart) ||
                   (day > eventStart && day < eventEnd) ||
@@ -263,8 +269,9 @@ export function WeekView({
                   data-today={isToday(day) || undefined}
                 >
                   {dayAllDayEvents.map((event) => {
-                    const eventStart = new Date(event.start);
-                    const eventEnd = new Date(event.end);
+                    const eventData = getEventData(event);
+                    const eventStart = new Date(eventData.start);
+                    const eventEnd = new Date(eventData.end);
                     const isFirstDay = isSameDay(day, eventStart);
                     const isLastDay = isSameDay(day, eventEnd);
 
@@ -275,7 +282,7 @@ export function WeekView({
 
                     return (
                       <EventItem
-                        key={`spanning-${event.id}`}
+                        key={`spanning-${getEventData(event).id}`}
                         onClick={(e) => handleEventClick(event, e)}
                         event={event}
                         view="month"
@@ -290,7 +297,7 @@ export function WeekView({
                           )}
                           aria-hidden={!shouldShowTitle}
                         >
-                          {event.title}
+                          {getEventData(event).title}
                         </div>
                       </EventItem>
                     );
@@ -327,7 +334,7 @@ export function WeekView({
             {/* Positioned events */}
             {(processedDayEvents[dayIndex] ?? []).map((positionedEvent) => (
               <div
-                key={positionedEvent.event.id}
+                key={getEventData(positionedEvent.event).id}
                 className="absolute z-10 px-0.5"
                 style={{
                   top: `${positionedEvent.top}px`,

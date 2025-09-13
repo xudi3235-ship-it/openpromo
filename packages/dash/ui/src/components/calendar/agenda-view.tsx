@@ -9,6 +9,7 @@ import {
   type CalendarEvent,
   EventItem,
   getAgendaEventsForDay,
+  getEventData,
 } from "@/components/calendar";
 
 interface AgendaViewProps {
@@ -76,7 +77,7 @@ export function AgendaView({
               <div className="mt-6 space-y-2">
                 {dayEvents.map((event) => (
                   <EventItem
-                    key={event.id}
+                    key={getEventData(event).id}
                     event={event}
                     view="agenda"
                     onClick={(e) => handleEventClick(event, e)}
