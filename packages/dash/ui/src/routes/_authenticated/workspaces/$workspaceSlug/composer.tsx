@@ -2,14 +2,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { ComposerLeft } from "@/components/composer/composer-left";
 import { ComposerNullState } from "@/components/composer/composer-null-state";
-import { ComposerRight } from "@/components/composer/composer-right";
 import { ComposerSkeleton } from "@/components/composer/composer-skeleton";
+import { ResizableComposer } from "@/components/composer/resizable-composer";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation } from "@/lib/hono-client";
 import { handlePopupMessage, openPopup } from "@/lib/popup";
-import { ComposerProvider } from "@/providers/composer-provider";
 import { useConnectedAccounts } from "@/queries/connected-account";
 
 export const Route = createFileRoute(
@@ -117,17 +115,7 @@ function ComposerComponent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="flex max-w-7xl mx-auto">
-        <ComposerProvider
-          initialAccounts={data.accounts}
-          initialPlacementSelected="ALL"
-          initialSelectedPreview="FACEBOOK"
-          initialMessage="Hello world!"
-        >
-          <ComposerLeft />
-          <ComposerRight />
-        </ComposerProvider>
-      </div>
+      <ResizableComposer accounts={data.accounts} className="min-h-screen" />
     </div>
   );
 }

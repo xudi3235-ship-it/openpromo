@@ -12,7 +12,7 @@ export function ComposerRight() {
   const [viewMode, setViewMode] = useState<ViewMode>("collage");
 
   return (
-    <div className="flex-1 p-4 bg-background border-l">
+    <div className="h-full p-4 bg-background overflow-y-auto">
       <div className="space-y-4">
         {/* Preview Header */}
         <div className="flex items-center justify-between">

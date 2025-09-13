@@ -5,11 +5,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
-import { ComposerProvider } from "@/providers/composer-provider";
 import { useConnectedAccounts } from "@/queries/connected-account";
-import { ComposerLeft } from "../composer-left";
-import { ComposerRight } from "../composer-right";
 import { ComposerSkeleton } from "../composer-skeleton";
+import { ResizableComposer } from "../resizable-composer";
 
 interface ComposerDialogProps {
   isOpen: boolean;
@@ -31,19 +29,11 @@ export default function ComposerDialog({
             Create and schedule content for your social media accounts
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden">
           {isLoading ? (
             <ComposerSkeleton />
           ) : (
-            <ComposerProvider
-              initialAccounts={data?.accounts ?? []}
-              initialPlacementSelected="ALL"
-              initialSelectedPreview="FACEBOOK"
-              initialMessage="Hello world!"
-            >
-              <ComposerLeft />
-              <ComposerRight />
-            </ComposerProvider>
+            <ResizableComposer accounts={data?.accounts ?? []} />
           )}
         </div>
       </DialogContent>
