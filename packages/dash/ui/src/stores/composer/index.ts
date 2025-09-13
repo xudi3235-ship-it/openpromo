@@ -6,6 +6,7 @@ import type {
   FBPageMetadata,
   IGAccountMetadata,
 } from "@core/schemas/connected-account.sql";
+import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import { createContext, useContext } from "react";
 import { createStore, useStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
@@ -14,12 +15,7 @@ import { createAttachmentActions } from "./actions/attachmentActions";
 import { createMessageActions } from "./actions/messageActions";
 import { createPlacementActions } from "./actions/placementActions";
 import { createUIActions } from "./actions/uiActions";
-import type {
-  ComposerActions,
-  ComposerProps,
-  ComposerState,
-  ContentCreateData,
-} from "./types";
+import type { ComposerActions, ComposerProps, ComposerState } from "./types";
 
 // factory
 export const createComposerStore = (initProps?: Partial<ComposerProps>) => {

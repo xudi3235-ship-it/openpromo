@@ -5,19 +5,8 @@ import type {
   SharedAttachmentSpec,
 } from "@core/domain/content/schema/placement";
 import type { Platform } from "@core/schemas/connected-account.sql";
+import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import type { ConnectedAccount } from "@/lib/hono-client";
-// Duplicated lightweight version of worker's ContentCreateData to avoid cross-package import.
-export interface ContentCreateData {
-  base: {
-    publishingStatus: string;
-    message: string;
-    attachments: SharedAttachmentSpec[];
-  };
-  placements: {
-    facebookFeed?: FBFeedPlacementSpec[];
-    instagramFeed?: IGFeedPlacementSpec[];
-  };
-}
 
 export interface ComposerProps {
   initialAccounts?: ConnectedAccount[];
