@@ -181,7 +181,8 @@ export function AccountSelection() {
   };
 
   const handleAddAccountClick = () => {
-    // TODO: Open connect account dialog
+    // This will be handled by the parent component if needed
+    // For now, just a placeholder since the main connect flow is in the composer null state
   };
 
   return (
