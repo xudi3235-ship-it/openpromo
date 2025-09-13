@@ -46,7 +46,7 @@ import {
 import { Route as CalendarRoute } from "@/routes/_authenticated/workspaces/$workspaceSlug/calendar";
 
 export interface EventCalendarProps {
-  events?: MergedContentEntity[];
+  events: MergedContentEntity[];
   onEventAdd?: (event: MergedContentEntity) => void;
   onEventUpdate?: (event: MergedContentEntity) => void;
   onEventDelete?: (eventId: string) => void;

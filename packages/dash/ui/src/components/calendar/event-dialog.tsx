@@ -39,8 +39,9 @@ import {
   DefaultEndHour,
   DefaultStartHour,
   EndHour,
+  getEventData,
   StartHour,
-} from "@/components/calendar/constants";
+} from "@/components/calendar";
 
 interface EventDialogProps {
   event: CalendarEvent | null;
@@ -79,19 +80,20 @@ export function EventDialog({
   // biome-ignore lint/correctness/useExhaustiveDependencies: TODO
   useEffect(() => {
     if (event) {
-      setTitle(event.title || "");
-      setDescription(event.description || "");
+      const eventData = getEventData(event);
+      setTitle(eventData.title || "");
+      setDescription(""); // Content entities don't have descriptions in calendar context
 
-      const start = new Date(event.start);
-      const end = new Date(event.end);
+      const start = new Date(eventData.start);
+      const end = new Date(eventData.end);
 
       setStartDate(start);
       setEndDate(end);
       setStartTime(formatTimeForInput(start));
       setEndTime(formatTimeForInput(end));
-      setAllDay(event.allDay || false);
-      setLocation(event.location || "");
-      setColor((event.color as EventColor) || "sky");
+      setAllDay(eventData.allDay || false);
+      setLocation(""); // Content entities don't have locations in calendar context
+      setColor((eventData.color as EventColor) || "sky");
       setError(null); // Reset error when opening dialog
     } else {
       resetForm();
@@ -169,24 +171,50 @@ export function EventDialog({
       return;
     }
 
-    // Use generic title if empty
-    const eventTitle = title.trim() ? title : "(no title)";
-
-    onSave({
-      id: event?.id || "",
-      title: eventTitle,
-      description,
-      start,
-      end,
-      allDay,
-      location,
-      color,
-    });
+    // Create updated content entity structure
+    if (event) {
+      const updatedEvent = {
+        ...event,
+        entity: {
+          ...event.entity,
+          publishingStatus: allDay
+            ? ("DRAFT" as const)
+            : ("SCHEDULED" as const),
+          schedulingSpec: {
+            ...event.entity,
+            scheduledPublishAt: start.toISOString(),
+          },
+          updatedAt: new Date(),
+        },
+      } as CalendarEvent;
+      onSave(updatedEvent);
+    } else {
+      // Create new content entity - use the same structure as handleEventCreate
+      const newEvent = {
+        type: "content" as const,
+        entity: {
+          id: "",
+          sourceContentId: null,
+          placement: "FB_FEED" as const,
+          placementSpec: null,
+          publishingStatus: allDay
+            ? ("DRAFT" as const)
+            : ("SCHEDULED" as const),
+          schedulingSpec: {
+            scheduledPublishAt: start.toISOString(),
+          },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      } as CalendarEvent;
+      onSave(newEvent);
+    }
   };
 
   const handleDelete = () => {
-    if (event?.id) {
-      onDelete(event.id);
+    if (event) {
+      const eventData = getEventData(event);
+      onDelete(eventData.id);
     }
   };
 
@@ -239,11 +267,11 @@ export function EventDialog({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{event?.id ? "Edit Event" : "Create Event"}</DialogTitle>
+          <DialogTitle>{event ? "Edit Content" : "Create Content"}</DialogTitle>
           <DialogDescription className="sr-only">
-            {event?.id
-              ? "Edit the details of this event"
-              : "Add a new event to your calendar"}
+            {event
+              ? "Edit the details of this content"
+              : "Add new content to your calendar"}
           </DialogDescription>
         </DialogHeader>
         {error && (
@@ -448,7 +476,7 @@ export function EventDialog({
           </fieldset>
         </div>
         <DialogFooter className="flex-row sm:justify-between">
-          {event?.id && (
+          {event && (
             <Button
               variant="outline"
               size="icon"
