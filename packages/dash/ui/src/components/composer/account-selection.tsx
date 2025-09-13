@@ -1,125 +1,256 @@
 import type { Platform } from "@core/schemas/connected-account.sql";
-import { Button } from "@openpromo/ui/components/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@openpromo/ui/components/card";
-import { Checkbox } from "@openpromo/ui/components/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@openpromo/ui/components/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@openpromo/ui/components/avatar";
+import { Plus } from "lucide-react";
 import { useComposerStore } from "@/stores/composer-store";
 
-function AccountIcon({
-  platform,
-  selected,
-}: {
-  platform: Platform;
-  selected: boolean;
-}) {
-  const baseClasses =
-    "w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold transition-opacity";
-  const opacity = selected ? "opacity-100" : "opacity-40";
-
+function getPlatformColors(platform: Platform) {
   switch (platform) {
     case "FACEBOOK":
-      return <div className={`${baseClasses} bg-blue-600 ${opacity}`}>f</div>;
+      return "from-blue-500 to-blue-600";
     case "INSTAGRAM":
-      return (
-        <div
-          className={`${baseClasses} bg-gradient-to-br from-purple-500 to-pink-500 ${opacity}`}
-        >
-          IG
-        </div>
-      );
+      return "from-purple-500 via-pink-500 to-orange-500";
     case "TIKTOK":
-      return <div className={`${baseClasses} bg-black ${opacity}`}>TT</div>;
+      return "from-black to-gray-800";
+    default:
+      return "from-gray-400 to-gray-500";
   }
 }
 
-export function AccountSelection() {
-  const { accounts } = useComposerStore();
+function getPlatformFallback(platform: Platform) {
+  switch (platform) {
+    case "FACEBOOK":
+      return "FB";
+    case "INSTAGRAM":
+      return "IG";
+    case "TIKTOK":
+      return "TT";
+    default:
+      return "?";
+  }
+}
 
-  if (!accounts.length) {
+interface CompactAvatarProps {
+  account?: {
+    id: string;
+    platform: Platform;
+    accountName?: string | null;
+    profilePictureUrl?: string | null;
+  };
+  selected: boolean;
+  active: boolean;
+  onToggleSelected: () => void;
+  onSetActive: () => void;
+  isAddButton?: boolean;
+}
+
+function CompactAvatar({
+  account,
+  selected,
+  active,
+  onToggleSelected,
+  onSetActive,
+  isAddButton = false,
+}: CompactAvatarProps) {
+  if (isAddButton) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Post to</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-muted-foreground">
-            No connected accounts. Please connect your social media accounts
-            first.
-          </div>
-        </CardContent>
-      </Card>
+      <div className="relative group">
+        <button
+          type="button"
+          className="relative w-8 h-8 rounded-full bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center border-2 border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 transition-all focus:outline-none focus:ring-2 focus:ring-ring"
+          onClick={onToggleSelected}
+        >
+          <Plus className="h-3 w-3 text-muted-foreground" />
+        </button>
+
+        {/* Tooltip */}
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+          Add account
+        </div>
+      </div>
     );
   }
 
+  if (!account) return null;
+
+  const gradientColors = getPlatformColors(account.platform);
+  const fallback = getPlatformFallback(account.platform);
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Post to</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="flex -space-x-1">
-                  {accounts.slice(0, 3).map((account, index) => (
-                    <div key={account.id} style={{ zIndex: 10 - index }}>
-                      <AccountIcon
-                        platform={account.platform}
-                        selected={true}
-                      />
-                    </div>
-                  ))}
-                  {accounts.length > 3 && (
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium border-2 border-background">
-                      +{accounts.length - 3}
-                    </div>
-                  )}
-                </div>
-                <span className="text-sm">
-                  {accounts.length > 0 ? "All accounts" : "No accounts"}
-                </span>
-              </div>
-              <ChevronDown className="h-4 w-4 opacity-50" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-80" align="start">
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.preventDefault();
-              }}
+    <div className="relative group flex flex-col items-center gap-1">
+      {/* Avatar */}
+      <button
+        type="button"
+        className="relative w-8 h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-ring transition-all hover:scale-105"
+        onClick={onToggleSelected}
+        aria-label={`${selected ? "Disable" : "Enable"} posting to ${account.accountName || account.platform}`}
+      >
+        <div
+          className={`w-8 h-8 rounded-full bg-gradient-to-r ${gradientColors} p-0.5 transition-all ${
+            selected ? "opacity-100" : "opacity-40"
+          }`}
+        >
+          <div className="w-full h-full bg-background rounded-full p-0.5">
+            <Avatar className="w-full h-full">
+              <AvatarImage
+                src={account.profilePictureUrl || ""}
+                alt={account.accountName || "Account"}
+              />
+              <AvatarFallback className="text-xs font-semibold">
+                {fallback}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+
+        {/* Selection indicator */}
+        {selected && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border border-background rounded-full flex items-center justify-center">
+            <svg
+              className="w-1.5 h-1.5 text-white"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
             >
-              <Checkbox checked={true} className="mr-2" />
-              <span className="font-medium">All accounts</span>
-            </DropdownMenuItem>
-            {accounts.map((account) => (
-              <DropdownMenuItem
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+        )}
+      </button>
+
+      {/* Active indicator below avatar */}
+      {selected && (
+        <button
+          type="button"
+          className={`w-6 h-1 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
+            active
+              ? "bg-primary shadow-sm"
+              : "bg-muted hover:bg-muted-foreground/30"
+          }`}
+          onClick={onSetActive}
+          aria-label={`${active ? "Stop customizing" : "Start customizing"} ${account.accountName || account.platform}`}
+        />
+      )}
+
+      {/* Tooltip on hover */}
+      <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-30">
+        <div className="text-center">
+          <div className="font-medium">
+            {account.accountName || account.platform}
+          </div>
+          <div className="text-muted-foreground">
+            {!selected
+              ? "Click to enable"
+              : active
+                ? "Customizing • Click bar to stop"
+                : "Click bar to customize"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function AccountSelection() {
+  const {
+    accounts,
+    selectedAccounts,
+    setSelectedAccounts,
+    activeAccount,
+    setActiveAccount,
+  } = useComposerStore();
+
+  const handleToggleAccount = (accountId: string) => {
+    const newSelection = selectedAccounts.includes(accountId)
+      ? selectedAccounts.filter((id: string) => id !== accountId)
+      : [...selectedAccounts, accountId];
+    setSelectedAccounts(newSelection);
+  };
+
+  const handleSetActive = (accountId: string) => {
+    if (selectedAccounts.includes(accountId)) {
+      setActiveAccount(accountId);
+    }
+  };
+
+  const handleAddAccountClick = () => {
+    // TODO: Open connect account dialog
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Section Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-foreground">Accounts</h3>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>
+            {selectedAccounts.length}/{accounts.length}
+          </span>
+          {activeAccount && (
+            <>
+              <span>•</span>
+              <span className="text-primary">customizing</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Horizontal Account Row */}
+      {accounts.length === 0 ? (
+        <div className="flex items-center justify-center py-4">
+          <CompactAvatar
+            isAddButton
+            selected={false}
+            active={false}
+            onToggleSelected={handleAddAccountClick}
+            onSetActive={() => {}}
+          />
+        </div>
+      ) : (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            {accounts.map((account, index) => (
+              <div
                 key={account.id}
-                onClick={(e) => {
-                  e.preventDefault();
+                className={`relative ${activeAccount === account.id ? "z-30" : selectedAccounts.includes(account.id) ? "z-20" : "z-10"}`}
+                style={{
+                  zIndex:
+                    activeAccount === account.id
+                      ? 30
+                      : selectedAccounts.includes(account.id)
+                        ? 20 + index
+                        : 10 + index,
                 }}
               >
-                <Checkbox checked={true} className="mr-2" />
-                <AccountIcon platform={account.platform} selected={true} />
-                <span className="ml-2 text-sm">
-                  {account.accountName || account.externalAccountId}
-                </span>
-              </DropdownMenuItem>
+                <CompactAvatar
+                  account={account}
+                  selected={selectedAccounts.includes(account.id)}
+                  active={activeAccount === account.id}
+                  onToggleSelected={() => handleToggleAccount(account.id)}
+                  onSetActive={() => handleSetActive(account.id)}
+                />
+              </div>
             ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardContent>
-    </Card>
+          </div>
+
+          {/* Add button with separator */}
+          <div className="w-px h-4 bg-border" />
+          <CompactAvatar
+            isAddButton
+            selected={false}
+            active={false}
+            onToggleSelected={handleAddAccountClick}
+            onSetActive={() => {}}
+          />
+        </div>
+      )}
+    </div>
   );
 }

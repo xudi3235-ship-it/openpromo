@@ -24,12 +24,16 @@ export interface ComposerState {
   placementSelected: AllPlacement | "ALL";
   selectedPreview: Platform;
   accounts: ConnectedAccount[];
+  selectedAccounts: string[];
+  activeAccount: string | null;
   contentCreateData: ContentCreateData;
 }
 
 export interface ComposerActions {
   setSelectedPreview: (platform: Platform) => void;
   setMessage: (message: string) => void;
+  setSelectedAccounts: (accountIds: string[]) => void;
+  setActiveAccount: (accountId: string | null) => void;
   addAttachments: (files: File[]) => void;
   removeAttachment: (index: number) => void;
   updateAttachment: (
@@ -124,6 +128,8 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
       placementSelected: props.initialPlacementSelected || "ALL",
       selectedPreview: props.initialSelectedPreview || "FACEBOOK",
       accounts: props.initialAccounts || [],
+      selectedAccounts: props.initialAccounts?.map((acc) => acc.id) || [],
+      activeAccount: props.initialAccounts?.[0]?.id || null,
       contentCreateData: {
         base: {
           message: props.initialMessage || "",
@@ -139,6 +145,21 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
       setSelectedPreview: (platform) =>
         set((state) => {
           state.selectedPreview = platform;
+        }),
+      setSelectedAccounts: (accountIds) =>
+        set((state) => {
+          state.selectedAccounts = accountIds;
+          // If active account is not in selected accounts, reset it
+          if (
+            state.activeAccount &&
+            !accountIds.includes(state.activeAccount)
+          ) {
+            state.activeAccount = accountIds[0] || null;
+          }
+        }),
+      setActiveAccount: (accountId) =>
+        set((state) => {
+          state.activeAccount = accountId;
         }),
       setMessage: (message) =>
         set((state) => {
