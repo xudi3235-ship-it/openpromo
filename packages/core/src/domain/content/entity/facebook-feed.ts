@@ -1,7 +1,11 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
+import { db, eq } from "@core/helpers/db";
 import { ImageStorage } from "@core/helpers/storage/image";
 import { VideoStorage } from "@core/helpers/storage/video";
-import type { UnifiedContentSelect } from "@core/schemas/content.sql";
+import {
+  type UnifiedContentSelect,
+  unifiedContentTable,
+} from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
 import { ErrorCodes, VisibleError } from "@core/utils/error";
 import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
@@ -52,9 +56,18 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     super(data);
     const p = this.placement();
     if (p !== "FB_FEED") {
-      throw new Error(`Content ${data.id} is not FB_FEED placement`);
+      throw new VisibleError(
+        "internal",
+        ErrorCodes.Server.INTERNAL_ERROR,
+        `Content ${data.id} is not FB_FEED placement, got ${p}`,
+      );
     }
-    if (this.isPublished()) throw new Error("Content is already published");
+    if (this.isPublished())
+      throw new VisibleError(
+        "internal",
+        ErrorCodes.Server.INTERNAL_ERROR,
+        `Content ${data.id} is already published`,
+      );
     const {
       data: spec,
       success,
@@ -126,11 +139,29 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     const atts = this.spec.postSpec.attachments ?? [];
     return atts.filter((a) => a.type === "video");
   }
+  async markAsPublished(publishedContentID: string): Promise<this> {
+    const [newContent] = await db()
+      .update(unifiedContentTable)
+      .set({
+        publishingStatus: "PUBLISHED",
+        sourceContentId: publishedContentID,
+      })
+      .where(eq(unifiedContentTable.id, this.data.id))
+      .returning();
+    if (!newContent)
+      throw new VisibleError(
+        "internal",
+        ErrorCodes.Server.INTERNAL_ERROR,
+        `failed to mark content ${this.data.id} as published`,
+      );
+    this.data = newContent;
+    return this;
+  }
   /**
    * we expose composable steps to create different types of posts.
    * Workflows should orchestrate these steps.
    */
-  async createTextPost() {
+  async createTextPost(): Promise<this> {
     if (!this.isTextOnlyPost()) throw new Error("no text provided");
     console.log("//1.");
     const text = this.spec.postSpec.message;
@@ -143,7 +174,12 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     const post = await page.createFeed([], {
       message: text,
     });
-    console.log("// created post", post);
+    // format: <page_id>_<post_id>
+    const rawID = post.id;
+    const postID = rawID?.split("_")[1];
+    if (!rawID || !postID)
+      throw new Error(`failed to create text post, no post ID returned`);
+    return await this.markAsPublished(postID);
   }
   async createPhotoPost() {
     // ref: https://developers.facebook.com/docs/graph-api/reference/page/photos/

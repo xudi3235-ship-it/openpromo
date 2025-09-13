@@ -88,8 +88,8 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
     if (isTextOnly) {
       await step.do("create text post", async () => {
         const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-        const r = await c.createTextPost();
-        console.log({ r });
+        const nc = await c.createTextPost();
+        nc.deserialize;
       });
       log.info("published text post");
       return;
