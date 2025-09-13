@@ -71,6 +71,7 @@ export type SharedAttachmentSpec = z.infer<typeof SharedAttachmentSpec>;
  */
 export const BasePlacementSpec = z.object({
   placement: z.enum([...Object.values(AllPlacement)]),
+  customized: z.boolean().optional(),
   title: z.string().optional(),
   thumbnailUrl: z.string().optional(),
   createdAt: z.date().optional(),

@@ -263,6 +263,7 @@ export class EntIGFeedPendingContent extends EntPendingContent {
       connectedAccountId: acc.id,
       publishingStatus: "SCHEDULED",
       placementSpec: {
+        customized: false,
         identity: {
           connectedAccountID: acc.id,
           igAccountID,

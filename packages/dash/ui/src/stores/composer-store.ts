@@ -1,5 +1,7 @@
 import type {
   AllPlacement,
+  FBFeedPlacementSpec,
+  IGFeedPlacementSpec,
   SharedAttachmentSpec,
 } from "@core/domain/content/schema/placement";
 import type { Platform } from "@core/schemas/connected-account.sql";
@@ -49,6 +51,31 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
   };
   const props = { ...DEFAULT_PROPS, ...initProps } satisfies ComposerProps;
 
+  // Generic helper to update non-customized placements
+  const syncToNonCustomizedPlacements = (
+    state: ComposerState,
+    updateFn: {
+      facebook?: (spec: FBFeedPlacementSpec) => void;
+      instagram?: (spec: IGFeedPlacementSpec) => void;
+    },
+  ) => {
+    if (updateFn.facebook) {
+      state.contentCreateData.placements.facebookFeed?.forEach((spec) => {
+        if (!spec.customized && updateFn.facebook) {
+          updateFn.facebook(spec);
+        }
+      });
+    }
+
+    if (updateFn.instagram) {
+      state.contentCreateData.placements.instagramFeed?.forEach((spec) => {
+        if (!spec.customized && updateFn.instagram) {
+          updateFn.instagram(spec);
+        }
+      });
+    }
+  };
+
   return createStore<ComposerState & ComposerActions>()(
     immer((set, get) => ({
       // state
@@ -74,6 +101,14 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
       setMessage: (message) =>
         set((state) => {
           state.contentCreateData.base.message = message;
+          syncToNonCustomizedPlacements(state, {
+            facebook: (spec) => {
+              spec.postSpec.message = message;
+            },
+            instagram: (spec) => {
+              spec.caption = message;
+            },
+          });
         }),
       addAttachments: (files) =>
         set((state) => {
@@ -87,10 +122,30 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
             metadata: { uploading: true },
           }));
           state.contentCreateData.base.attachments.push(...newAttachments);
+
+          const baseAttachments = [...state.contentCreateData.base.attachments];
+          syncToNonCustomizedPlacements(state, {
+            facebook: (spec) => {
+              spec.attachments = baseAttachments;
+            },
+            instagram: (spec) => {
+              spec.attachments = baseAttachments;
+            },
+          });
         }),
       removeAttachment: (index) =>
         set((state) => {
           state.contentCreateData.base.attachments.splice(index, 1);
+
+          const baseAttachments = [...state.contentCreateData.base.attachments];
+          syncToNonCustomizedPlacements(state, {
+            facebook: (spec) => {
+              spec.attachments = baseAttachments;
+            },
+            instagram: (spec) => {
+              spec.attachments = baseAttachments;
+            },
+          });
         }),
       updateAttachment: (index, updates) =>
         set((state) => {
@@ -98,10 +153,29 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
           if (attachment) {
             Object.assign(attachment, updates);
           }
+
+          const baseAttachments = [...state.contentCreateData.base.attachments];
+          syncToNonCustomizedPlacements(state, {
+            facebook: (spec) => {
+              spec.attachments = baseAttachments;
+            },
+            instagram: (spec) => {
+              spec.attachments = baseAttachments;
+            },
+          });
         }),
       clearAttachments: () =>
         set((state) => {
           state.contentCreateData.base.attachments = [];
+
+          syncToNonCustomizedPlacements(state, {
+            facebook: (spec) => {
+              spec.attachments = [];
+            },
+            instagram: (spec) => {
+              spec.attachments = [];
+            },
+          });
         }),
       uploadAttachments: async (files, workspaceSlug) => {
         // First, get the current number of attachments
