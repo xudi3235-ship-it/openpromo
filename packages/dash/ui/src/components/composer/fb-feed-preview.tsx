@@ -11,12 +11,18 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useComposerStore } from "@/stores/composer-store";
+import { useComposerStore } from "@/stores/composer";
 
 export function FBFeedPreview() {
   const { workspace } = useWorkspace();
-  const { contentCreateData } = useComposerStore();
-  const attachments = contentCreateData.base.attachments;
+  const { contentCreateDataDerived, draft } = useComposerStore((s) => ({
+    contentCreateDataDerived: s.contentCreateDataDerived,
+    draft: s.draft,
+  }));
+  const attachments = contentCreateDataDerived.base.attachments;
+  // Pick first facebook placement to show override if present
+  const fbPlacement = contentCreateDataDerived.placements.facebookFeed?.[0];
+  const message = fbPlacement?.postSpec.message || draft.message;
 
   return (
     <Card>
@@ -50,7 +56,16 @@ export function FBFeedPreview() {
           </div>
         </div>
 
-        {/* Post Content */}
+        {/* Post Message */}
+        <div className="mb-3 whitespace-pre-wrap text-sm">
+          {message || (
+            <span className="text-muted-foreground">
+              Start typing your post...
+            </span>
+          )}
+        </div>
+
+        {/* Post Content (media) */}
         <div className="mb-4">
           {attachments.length > 0 && attachments[0]?.file ? (
             <div className="w-full rounded-lg overflow-hidden">
@@ -65,7 +80,9 @@ export function FBFeedPreview() {
                   src={URL.createObjectURL(attachments[0].file)}
                   className="w-full h-64 object-cover"
                   controls
-                />
+                >
+                  <track kind="captions" label="auto-generated" />
+                </video>
               ) : null}
             </div>
           ) : (

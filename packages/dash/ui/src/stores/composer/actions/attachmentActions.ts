@@ -1,6 +1,14 @@
-import type { SharedAttachmentSpec } from "@core/domain/content/schema/placement";
 import type { StateCreator } from "zustand";
+import { buildNewAttachment } from "../domain/attachments";
 import type { ComposerActions, ComposerState } from "../types";
+
+interface AttachmentDraft {
+  id: string;
+  type: "photo" | "video";
+  file?: File;
+  mimeType?: string;
+  metadata?: Record<string, unknown>;
+}
 
 export const createAttachmentActions: StateCreator<
   ComposerState & ComposerActions,
@@ -13,60 +21,24 @@ export const createAttachmentActions: StateCreator<
 > = (set) => ({
   addAttachments: (files: File[]) =>
     set((state) => {
-      const oldBase = state.contentCreateData.base.attachments
-        .map((a) => a.id)
-        .join("|");
-      const newAttachments = files.map((file, index) => ({
-        id: `attachment-${Date.now()}-${index}`,
-        type: file.type.startsWith("image/")
-          ? ("photo" as const)
-          : ("video" as const),
-        file,
-        mimeType: file.type,
-      }));
-      state.contentCreateData.base.attachments.push(...newAttachments);
-      const newBase = state.contentCreateData.base.attachments;
-      const shouldSync = (current?: SharedAttachmentSpec[]) =>
-        !current || current.map((a) => a.id).join("|") === oldBase;
-      state.contentCreateData.placements.facebookFeed?.forEach((spec) => {
-        if (shouldSync(spec.postSpec.attachments))
-          spec.postSpec.attachments = newBase.map((a) => ({ ...a }));
+      files.forEach((file, index) => {
+        state.draft.attachments.push(buildNewAttachment(file, index));
       });
-      state.contentCreateData.placements.instagramFeed?.forEach((spec) => {
-        if (shouldSync(spec.attachments))
-          spec.attachments = newBase.map((a) => ({ ...a }));
-      });
+      state.draftVersion++;
     }),
   uploadAttachments: async (files: File[], workspaceSlug: string) => {
     const { apiClient } = await import("@/lib/hono-client");
     const placeholderIds: string[] = [];
     set((state) => {
       files.forEach((file, idx) => {
-        const id = `attachment-${Date.now()}-${idx}`;
-        placeholderIds.push(id);
-        state.contentCreateData.base.attachments.push({
-          id,
-          type: file.type.startsWith("image/") ? "photo" : "video",
-          file,
-          mimeType: file.type,
+        const att = buildNewAttachment(file, idx);
+        placeholderIds.push(att.id);
+        state.draft.attachments.push({
+          ...(att as AttachmentDraft),
           metadata: { uploading: true },
         });
       });
-      const syncIf = (current?: SharedAttachmentSpec[]) =>
-        !current ||
-        current.length + files.length ===
-          state.contentCreateData.base.attachments.length;
-      state.contentCreateData.placements.facebookFeed?.forEach((spec) => {
-        if (syncIf(spec.postSpec.attachments))
-          spec.postSpec.attachments =
-            state.contentCreateData.base.attachments.map((a) => ({ ...a }));
-      });
-      state.contentCreateData.placements.instagramFeed?.forEach((spec) => {
-        if (syncIf(spec.attachments))
-          spec.attachments = state.contentCreateData.base.attachments.map(
-            (a) => ({ ...a }),
-          );
-      });
+      state.draftVersion++;
     });
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -91,67 +63,36 @@ export const createAttachmentActions: StateCreator<
         });
         if (!uploadResp.ok) throw new Error("Upload failed");
         set((state) => {
-          const att = state.contentCreateData.base.attachments.find(
-            (a) => a.id === localId,
-          );
+          const att = state.draft.attachments.find((a) => a.id === localId);
           if (att) {
             att.id = imageId;
-            att.metadata = {
-              ...(att.metadata || {}),
+            (att as AttachmentDraft).metadata = {
+              ...((att as AttachmentDraft).metadata || {}),
               cfImageId: imageId,
               uploading: false,
             };
           }
-          const baseIds = state.contentCreateData.base.attachments
-            .map((a) => a.id)
-            .join("|");
-          const syncIf = (current?: SharedAttachmentSpec[]) =>
-            !current ||
-            current.map((x) => x.id).every((id) => baseIds.includes(id));
-          state.contentCreateData.placements.facebookFeed?.forEach((spec) => {
-            if (syncIf(spec.postSpec.attachments))
-              spec.postSpec.attachments =
-                state.contentCreateData.base.attachments.map((a) => ({ ...a }));
-          });
-          state.contentCreateData.placements.instagramFeed?.forEach((spec) => {
-            if (syncIf(spec.attachments))
-              spec.attachments = state.contentCreateData.base.attachments.map(
-                (a) => ({ ...a }),
-              );
-          });
+          state.draftVersion++;
         });
       } catch (err) {
         set((state) => {
-          const att = state.contentCreateData.base.attachments.find(
-            (a) => a.id === localId,
-          );
+          const att = state.draft.attachments.find((a) => a.id === localId);
           if (att)
-            att.metadata = {
-              ...(att.metadata || {}),
+            (att as AttachmentDraft).metadata = {
+              ...((att as AttachmentDraft).metadata || {}),
               uploading: false,
               error: (err as Error).message,
             };
+          state.draftVersion++;
         });
       }
     }
   },
   removeAttachment: (index: number) =>
     set((state) => {
-      const oldIds = state.contentCreateData.base.attachments
-        .map((a) => a.id)
-        .join("|");
-      state.contentCreateData.base.attachments =
-        state.contentCreateData.base.attachments.filter((_, i) => i !== index);
-      const newBase = state.contentCreateData.base.attachments;
-      const wasSynced = (current?: SharedAttachmentSpec[]) =>
-        !current || current.map((a) => a.id).join("|") === oldIds;
-      state.contentCreateData.placements.facebookFeed?.forEach((spec) => {
-        if (wasSynced(spec.postSpec.attachments))
-          spec.postSpec.attachments = newBase.map((a) => ({ ...a }));
-      });
-      state.contentCreateData.placements.instagramFeed?.forEach((spec) => {
-        if (wasSynced(spec.attachments))
-          spec.attachments = newBase.map((a) => ({ ...a }));
-      });
+      state.draft.attachments = state.draft.attachments.filter(
+        (_, i) => i !== index,
+      );
+      state.draftVersion++;
     }),
 });

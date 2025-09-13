@@ -9,12 +9,17 @@ import {
   Send,
 } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useComposerStore } from "@/stores/composer-store";
+import { useComposerStore } from "@/stores/composer";
 
 export function IGFeedPreview() {
   const { workspace } = useWorkspace();
-  const { contentCreateData } = useComposerStore();
-  const attachments = contentCreateData.base.attachments;
+  const { contentCreateDataDerived, draft } = useComposerStore((s) => ({
+    contentCreateDataDerived: s.contentCreateDataDerived,
+    draft: s.draft,
+  }));
+  const attachments = contentCreateDataDerived.base.attachments;
+  const igPlacement = contentCreateDataDerived.placements.instagramFeed?.[0];
+  const caption = igPlacement?.caption || draft.message;
 
   return (
     <Card className="max-w-sm border-0 shadow-none">
@@ -107,12 +112,18 @@ export function IGFeedPreview() {
           <div className="text-sm font-semibold mb-1">1,247 likes</div>
 
           {/* Caption */}
-          <div className="text-sm mb-2">
+          <div className="text-sm mb-2 whitespace-pre-wrap">
             <span className="font-semibold">
               {workspace?.name?.toLowerCase().replace(/\s+/g, "_") ||
                 "your_business"}
             </span>{" "}
-            <span>Your caption text will appear here...</span>
+            <span>
+              {caption || (
+                <span className="text-muted-foreground">
+                  Start typing your caption...
+                </span>
+              )}
+            </span>
           </div>
 
           {/* Comments preview */}

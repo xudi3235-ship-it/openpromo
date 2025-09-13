@@ -1,11 +1,3 @@
-import type {
-  FBFeedPlacementSpec,
-  IGFeedPlacementSpec,
-} from "@core/domain/content/schema/placement";
-import type {
-  FBPageMetadata,
-  IGAccountMetadata,
-} from "@core/schemas/connected-account.sql";
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import { createContext, useContext } from "react";
 import { createStore, useStore } from "zustand";
@@ -15,6 +7,7 @@ import { createAttachmentActions } from "./actions/attachmentActions";
 import { createMessageActions } from "./actions/messageActions";
 import { createPlacementActions } from "./actions/placementActions";
 import { createUIActions } from "./actions/uiActions";
+import { buildContentFromDraft, createInitialDraft } from "./domain/draft";
 import type { ComposerActions, ComposerProps, ComposerState } from "./types";
 
 // factory
@@ -27,45 +20,17 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
   };
   const props = { ...DEFAULT_PROPS, ...initProps };
 
-  const facebookFeed = props.initialAccounts
-    ?.filter((a) => a.platform === "FACEBOOK")
-    .map(
-      (acc) =>
-        ({
-          identity: {
-            connectedAccountID: acc.id,
-            fbPageID: (acc.metadata as FBPageMetadata).pageID,
-          },
-          placement: "FB_FEED",
-          postSpec: { message: props.initialMessage || "" },
-        }) as FBFeedPlacementSpec,
-    );
-
-  const instagramFeed = props.initialAccounts
-    ?.filter((a) => a.platform === "INSTAGRAM")
-    .map(
-      (acc) =>
-        ({
-          identity: {
-            connectedAccountID: acc.id,
-            igAccountID: (acc.metadata as IGAccountMetadata).igAccountID,
-          },
-          placement: "IG_FEED",
-        }) as IGFeedPlacementSpec,
-    );
+  const draft = createInitialDraft(props.initialMessage || "");
+  draft.selectedAccountIds = props.initialAccounts?.map((a) => a.id) || [];
 
   return createStore<ComposerState & ComposerActions>()(
     immer((set, get, api) => ({
       // state
       placementSelected: props.initialPlacementSelected || "ALL",
-      contentCreateData: {
-        base: {
-          publishingStatus: "PUBLISH_NOW",
-          attachments: [],
-          message: props.initialMessage || "",
-        },
-        placements: { facebookFeed, instagramFeed },
-      } as ContentCreateData,
+      draft,
+      draftVersion: 0,
+      _cachedContentVersion: -1,
+      _cachedContentCreateData: undefined,
       selectedPreview: props.initialSelectedPreview || "FACEBOOK",
       accountsMap: new Map(props.initialAccounts?.map((a) => [a.id, a]) || []),
 
@@ -74,31 +39,26 @@ export const createComposerStore = (initProps?: Partial<ComposerProps>) => {
         return Array.from(this.accountsMap.values());
       },
       get selectedAccounts() {
-        const fb =
-          this.contentCreateData.placements.facebookFeed?.map(
-            (s) => s.identity.connectedAccountID,
-          ) || [];
-        const ig =
-          this.contentCreateData.placements.instagramFeed?.map(
-            (s) => s.identity.connectedAccountID,
-          ) || [];
-        return [...fb, ...ig];
+        return this.draft.selectedAccountIds;
+      },
+      get contentCreateDataDerived() {
+        // Memoize derived content based on draftVersion
+        if (this._cachedContentVersion !== this.draftVersion) {
+          this._cachedContentCreateData = buildContentFromDraft(
+            this.draft,
+            this.accountsMap,
+          ) as ContentCreateData;
+          this._cachedContentVersion = this.draftVersion;
+        }
+        return this._cachedContentCreateData as ContentCreateData;
       },
 
       // internal getters
       _getAccounts: () => Array.from(get().accountsMap.values()),
       _getSelectedAccounts: () => {
-        const state = get();
-        const fb =
-          state.contentCreateData.placements.facebookFeed?.map(
-            (s) => s.identity.connectedAccountID,
-          ) || [];
-        const ig =
-          state.contentCreateData.placements.instagramFeed?.map(
-            (s) => s.identity.connectedAccountID,
-          ) || [];
-        return [...fb, ...ig];
+        return get().draft.selectedAccountIds.slice();
       },
+      // no _rebuildContent needed anymore; draftVersion drives memo invalidation
       // actions placeholders (merged below)
       ...createPlacementActions(set, get, api),
       ...createMessageActions(set, get, api),
@@ -121,4 +81,5 @@ export function useComposerStore<T = ComposerState & ComposerActions>(
   return useStore(store, selector || ((s) => s as T));
 }
 
+export { finalizeDraft } from "./domain/draft";
 export type { ComposerActions, ComposerProps, ComposerState } from "./types";

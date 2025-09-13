@@ -7,6 +7,7 @@ import type {
 import type { Platform } from "@core/schemas/connected-account.sql";
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import type { ConnectedAccount } from "@/lib/hono-client";
+import type { ComposerDraft } from "./domain/draft";
 
 export interface ComposerProps {
   initialAccounts?: ConnectedAccount[];
@@ -17,7 +18,15 @@ export interface ComposerProps {
 
 export interface ComposerState {
   placementSelected: AllPlacement | "ALL";
-  contentCreateData: ContentCreateData;
+  // Derived variant of contentCreateData (read-only convenience, computed on demand)
+  readonly contentCreateDataDerived: ContentCreateData;
+  // Normalized draft representation (single source of truth)
+  draft: ComposerDraft;
+  // Incremented anytime draft mutates; used to invalidate derived memo
+  draftVersion: number;
+  // internal memoization slots (not for external use)
+  _cachedContentVersion: number;
+  _cachedContentCreateData?: ContentCreateData;
   selectedPreview: Platform;
   accountsMap: Map<string, ConnectedAccount>;
   accounts: ConnectedAccount[];

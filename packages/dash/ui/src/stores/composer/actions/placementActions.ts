@@ -1,9 +1,5 @@
-import type {
-  FBFeedPlacementSpec,
-  IGFeedPlacementSpec,
-  SharedAttachmentSpec,
-} from "@core/domain/content/schema/placement";
 import type { StateCreator } from "zustand";
+import { setMessageOverride } from "../domain/draft";
 import type { ComposerActions, ComposerState } from "../types";
 
 export const createPlacementActions: StateCreator<
@@ -15,15 +11,38 @@ export const createPlacementActions: StateCreator<
   setPlacementSpecs: (specs) =>
     set((state) => {
       if (specs.base?.message !== undefined)
-        state.contentCreateData.base.message = specs.base.message;
+        state.draft.message = specs.base.message;
       if (specs.base?.attachments !== undefined)
-        state.contentCreateData.base.attachments = specs.base
-          .attachments as SharedAttachmentSpec[];
-      if (specs.facebookFeed)
-        state.contentCreateData.placements.facebookFeed =
-          specs.facebookFeed as FBFeedPlacementSpec[];
-      if (specs.instagramFeed)
-        state.contentCreateData.placements.instagramFeed =
-          specs.instagramFeed as IGFeedPlacementSpec[];
+        state.draft.attachments = specs.base.attachments.map((a) => ({ ...a }));
+      // Hydrate selected account ids from provided placement specs (union of both)
+      const ids = new Set<string>();
+      specs.facebookFeed?.forEach((s) => {
+        ids.add(s.identity.connectedAccountID);
+      });
+      specs.instagramFeed?.forEach((s) => {
+        ids.add(s.identity.connectedAccountID);
+      });
+      if (ids.size > 0) state.draft.selectedAccountIds = Array.from(ids);
+      // Hydrate overrides by comparing with base message
+      const baseMsg = state.draft.message;
+      specs.facebookFeed?.forEach((s) => {
+        if (s.postSpec.message && s.postSpec.message !== baseMsg)
+          setMessageOverride(
+            state.draft,
+            "FB_FEED",
+            s.identity.connectedAccountID,
+            s.postSpec.message,
+          );
+      });
+      specs.instagramFeed?.forEach((s) => {
+        if (s.caption && s.caption !== baseMsg)
+          setMessageOverride(
+            state.draft,
+            "IG_FEED",
+            s.identity.connectedAccountID,
+            s.caption,
+          );
+      });
+      state.draftVersion++;
     }),
 });
