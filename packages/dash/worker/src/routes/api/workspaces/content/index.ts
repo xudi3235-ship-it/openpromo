@@ -211,6 +211,81 @@ export const contentRoute = new Hono<ApiEnv>()
       c.req.valid("json");
     },
   )
+  // update content group api
+  .patch("/group/:id", zValidator("json", ContentCreateData), async (c) => {
+    const { id } = c.req.param();
+    const actor = Actor.assert("workspace_user");
+    const { placements, base } = c.req.valid("json");
+    const { publishingStatus } = base;
+
+    if (!publishingStatus)
+      throw new AppError(400, { message: "publishingStatus is required" });
+
+    // First, verify the group exists and belongs to this workspace
+    const existingGroups = await db()
+      .select()
+      .from(pendingContentGroupTable)
+      .where(
+        and(
+          eq(pendingContentGroupTable.id, id),
+          eq(
+            pendingContentGroupTable.workspaceId,
+            actor.properties.workspaceID,
+          ),
+        ),
+      )
+      .limit(1);
+
+    if (existingGroups.length === 0) {
+      throw new AppError(404, { message: "Content group not found" });
+    }
+
+    // Update the group's base data
+    await db()
+      .update(pendingContentGroupTable)
+      .set({
+        publishingStatus,
+        pendingContentGroupSpec: {
+          baseMessage: base.message,
+          baseAttachments: base.attachments,
+          baseSchedulingSpec: base.schedulingSpec,
+        },
+        updatedAt: new Date(),
+      })
+      .where(eq(pendingContentGroupTable.id, id));
+
+    // Delete existing content entries for this group
+    await db()
+      .delete(unifiedContentTable)
+      .where(eq(unifiedContentTable.pendingContentGroupId, id));
+
+    // Recreate content entries with updated data
+    if (placements.facebookFeed) {
+      for (const spec of placements.facebookFeed) {
+        await EntPendingContent.createInternal({
+          placement: "FB_FEED",
+          placementSpec: spec,
+          publishingStatus,
+          pendingContentGroupId: id,
+          connectedAccountId: spec.identity.connectedAccountID,
+        });
+      }
+    }
+
+    if (placements.instagramFeed) {
+      for (const spec of placements.instagramFeed) {
+        await EntPendingContent.createInternal({
+          placement: "IG_FEED",
+          placementSpec: spec,
+          publishingStatus,
+          pendingContentGroupId: id,
+          connectedAccountId: spec.identity.connectedAccountID,
+        });
+      }
+    }
+
+    return c.json({ success: true, groupId: id });
+  })
   // create content api
   .post("/create", zValidator("json", ContentCreateData), async (c) => {
     const actor = Actor.assert("workspace_user");
