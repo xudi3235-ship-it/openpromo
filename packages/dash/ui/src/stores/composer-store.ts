@@ -354,6 +354,16 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
           state.contentCreateData.base.publishingStatus = status;
           if (schedulingSpec !== undefined) {
             state.contentCreateData.base.schedulingSpec = schedulingSpec;
+          } else if (
+            status === "SCHEDULED" &&
+            !state.contentCreateData.base.schedulingSpec
+          ) {
+            // Set default scheduling time to 20 minutes from now if none provided
+            const defaultDate = new Date();
+            defaultDate.setMinutes(defaultDate.getMinutes() + 20);
+            state.contentCreateData.base.schedulingSpec = {
+              publishAt: defaultDate,
+            };
           }
         }),
       setSchedulingSpec: (schedulingSpec) =>

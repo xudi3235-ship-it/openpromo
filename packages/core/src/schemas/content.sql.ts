@@ -103,7 +103,7 @@ export const SharedAttachmentSpec = z.discriminatedUnion("type", [
 export type SharedAttachmentSpec = z.infer<typeof SharedAttachmentSpec>;
 
 export const SchedulingSpec = z.object({
-  publishAt: z.date().optional(),
+  publishAt: z.coerce.date().optional(),
 });
 export type SchedulingSpec = z.infer<typeof SchedulingSpec>;
 // ------------------------ Base Placement Spec ------------------------
@@ -117,8 +117,8 @@ export const BasePlacementSpec = z.object({
   // normalized fields
   message: z.string().optional(),
   thumbnailUrl: z.string().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
   identity: z
     .object({
       connectedAccountID: z.string(),
