@@ -1,14 +1,26 @@
 import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  horizontalListSortingStrategy,
+  SortableContext,
+} from "@dnd-kit/sortable";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
-import { File, Upload, Video, X } from "lucide-react";
+import { File, Upload, Video } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Dropzone } from "@/components/dropzone";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerStore } from "@/stores/composer-store";
+import { DraggableMediaItem } from "./draggable-media-item";
 
 interface MediaPreview {
   file: File; // may be an empty placeholder for remote assets
@@ -42,11 +54,19 @@ const generatePreview = async (file: File): Promise<MediaPreview> => {
 };
 
 export function MediaUpload() {
-  const { contentCreateData, removeAttachment, uploadAttachments } =
-    useComposerStore();
+  const {
+    contentCreateData,
+    removeAttachment,
+    uploadAttachments,
+    reorderAttachments,
+  } = useComposerStore();
   const { workspace } = useWorkspace();
   const [previews, setPreviews] = useState<MediaPreview[]>([]);
   const [selectedMedia, setSelectedMedia] = useState<{
+    preview: MediaPreview;
+    index: number;
+  } | null>(null);
+  const [dragOverlay, setDragOverlay] = useState<{
     preview: MediaPreview;
     index: number;
   } | null>(null);
@@ -120,6 +140,24 @@ export function MediaUpload() {
     setSelectedMedia({ preview, index });
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const index = Number(active.id);
+    setDragOverlay({ preview: previews[index], index });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    setDragOverlay(null);
+
+    if (over && active.id !== over.id) {
+      const oldIndex = Number(active.id);
+      const newIndex = Number(over.id);
+      reorderAttachments(oldIndex, newIndex);
+    }
+  };
+
   return (
     <div className="space-y-3">
       {/* Section Header */}
@@ -162,41 +200,52 @@ export function MediaUpload() {
           </div>
         </Dropzone>
 
-        {/* Scrollable Thumbnails */}
+        {/* Scrollable Draggable Thumbnails */}
         {previews.length > 0 && (
           <div className="flex-1 overflow-x-auto">
-            <div className="flex gap-2">
-              {previews.map((preview, index) => {
-                const att = attachments?.[index];
-                const meta = (att?.metadata || {}) as Record<string, unknown>;
-                const uploading = Boolean(meta.uploading);
-                const error = meta.error as string | undefined;
-                const isImage =
-                  preview.mimeType.startsWith("image/") ||
-                  (att?.mimeType ?? "").startsWith("image/");
-                const isVideo =
-                  preview.mimeType.startsWith("video/") ||
-                  (att?.mimeType ?? "").startsWith("video/");
+            <DndContext
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={previews.map((_, index) => index.toString())}
+                strategy={horizontalListSortingStrategy}
+              >
+                <div className="flex gap-2">
+                  {previews.map((preview, index) => {
+                    const att = attachments?.[index];
+                    if (!att) return null;
 
-                return (
-                  <button
-                    key={`${att?.id || preview.file.name}-${index}`}
-                    type="button"
-                    className="relative flex-shrink-0 w-16 h-16 group rounded-lg overflow-hidden bg-muted cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring"
-                    onClick={() => handleMediaClick(preview, index)}
-                    title="Click to view details"
-                  >
-                    {/* Media Preview */}
-                    {isImage ? (
+                    return (
+                      <DraggableMediaItem
+                        key={`${att.id || preview.file.name}-${index}`}
+                        id={index.toString()}
+                        preview={preview}
+                        attachment={att}
+                        index={index}
+                        onRemove={handleRemove}
+                        onClick={handleMediaClick}
+                      />
+                    );
+                  })}
+                </div>
+              </SortableContext>
+
+              {/* Drag Overlay */}
+              <DragOverlay>
+                {dragOverlay && (
+                  <div className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted opacity-80">
+                    {dragOverlay.preview.mimeType.startsWith("image/") ? (
                       <img
-                        src={preview.url}
-                        alt={att?.id || "image"}
+                        src={dragOverlay.preview.url}
+                        alt="Dragging"
                         className="w-full h-full object-cover"
                       />
-                    ) : isVideo ? (
+                    ) : dragOverlay.preview.mimeType.startsWith("video/") ? (
                       <>
                         <video
-                          src={preview.url}
+                          src={dragOverlay.preview.url}
                           className="w-full h-full object-cover"
                           muted
                         />
@@ -209,32 +258,10 @@ export function MediaUpload() {
                         <File className="h-4 w-4 text-muted-foreground" />
                       </div>
                     )}
-
-                    {/* Status Overlay */}
-                    {(uploading || error) && (
-                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <div className="text-white text-xs font-medium">
-                          {uploading ? "..." : "!"}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Remove Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemove(index);
-                      }}
-                      disabled={uploading}
-                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none focus:opacity-100 disabled:opacity-50 z-10"
-                    >
-                      <X className="h-3 w-3 text-white" />
-                    </button>
-                  </button>
-                );
-              })}
-            </div>
+                  </div>
+                )}
+              </DragOverlay>
+            </DndContext>
           </div>
         )}
       </div>

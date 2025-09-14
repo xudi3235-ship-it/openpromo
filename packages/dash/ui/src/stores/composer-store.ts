@@ -43,6 +43,7 @@ export interface ComposerActions {
   ) => void;
   clearAttachments: () => void;
   uploadAttachments: (files: File[], workspaceSlug: string) => Promise<void>;
+  reorderAttachments: (fromIndex: number, toIndex: number) => void;
   setPublishingStatus: (
     status: ContentCreateData["base"]["publishingStatus"],
     schedulingSpec?: ContentCreateData["base"]["schedulingSpec"],
@@ -431,6 +432,26 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
           }
         }
       },
+      reorderAttachments: (fromIndex, toIndex) =>
+        set((state) => {
+          const attachments = state.contentCreateData.base.attachments;
+          if (!attachments || fromIndex === toIndex) return;
+
+          // Move the item from fromIndex to toIndex
+          const [removed] = attachments.splice(fromIndex, 1);
+          attachments.splice(toIndex, 0, removed);
+
+          // Sync with placement specs for non-customized placements
+          const reorderedAttachments = [...attachments];
+          syncToNonCustomizedPlacements(state, {
+            facebook: (spec) => {
+              spec.attachments = reorderedAttachments;
+            },
+            instagram: (spec) => {
+              spec.attachments = reorderedAttachments;
+            },
+          });
+        }),
       setPublishingStatus: (status, schedulingSpec) =>
         set((state) => {
           state.contentCreateData.base.publishingStatus = status;
