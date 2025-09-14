@@ -133,6 +133,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       .set({
         publishingStatus: "PUBLISHED",
         sourceContentId: publishedContentID,
+        pendingContentGroupId: null, // unlink from pending group.
       })
       .where(eq(unifiedContentTable.id, this.data.id))
       .returning();
