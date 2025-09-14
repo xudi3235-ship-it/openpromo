@@ -7,6 +7,7 @@ import { useHonoMutation } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
 import { useComposerStore } from "@/stores/composer-store";
 import { PublishingOverlay } from "./publishing-overlay";
+import { ValidationErrors } from "./validation-errors";
 
 function useContentCreateMutation({
   onSuccess,
@@ -41,7 +42,8 @@ export function ComposerFooter() {
     status: "loading" | "success" | "error";
   }>({ isVisible: false, status: "loading" });
 
-  const { setPublishingStatus, contentCreateData } = useComposerStore();
+  const { setPublishingStatus, contentCreateData, validation } =
+    useComposerStore();
 
   const { mutate, isPending } = useContentCreateMutation({
     onSuccess: () => {
@@ -120,11 +122,15 @@ export function ComposerFooter() {
             variant="outline"
             size="sm"
             onClick={handleSaveDraft}
-            disabled={isPending}
+            disabled={isPending || !validation.canPublish}
           >
             {isPending && actionType === "draft" ? "Saving..." : "Save draft"}
           </Button>
-          <Button size="sm" onClick={handlePublish} disabled={isPending}>
+          <Button
+            size="sm"
+            onClick={handlePublish}
+            disabled={isPending || !validation.canPublish}
+          >
             {isPending &&
             (actionType === "publish" || actionType === "schedule")
               ? actionType === "schedule"
@@ -135,6 +141,8 @@ export function ComposerFooter() {
                 : "Publish"}
           </Button>
         </div>
+
+        <ValidationErrors errors={validation.errors} />
       </div>
       {import.meta.env.DEV && (
         <div className="max-w-md mx-auto my-4 p-2 bg-muted rounded text-xs overflow-auto">

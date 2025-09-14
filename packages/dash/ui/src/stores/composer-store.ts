@@ -13,6 +13,26 @@ import { immer } from "zustand/middleware/immer";
 import type { ConnectedAccount } from "@/lib/hono-client";
 import { apiClient } from "@/lib/hono-client";
 
+export interface ValidationError {
+  type:
+    | "no_accounts"
+    | "no_message"
+    | "no_media"
+    | "invalid_scheduling"
+    | "upload_pending"
+    | "upload_failed"
+    | "platform_limit_exceeded";
+  message: string;
+  severity: "error" | "warning";
+  field?: string; // field that has the error, for targeting UI
+}
+
+export interface ValidationState {
+  isValid: boolean;
+  errors: ValidationError[];
+  canPublish: boolean;
+}
+
 export interface ComposerProps {
   initialAccounts?: ConnectedAccount[];
   initialPlacementSelected?: AllPlacement | "ALL";
@@ -28,6 +48,7 @@ export interface ComposerState {
   selectedAccounts: string[];
   activeAccount: string | null;
   contentCreateData: ContentCreateData;
+  validation: ValidationState;
 }
 
 export interface ComposerActions {
@@ -54,6 +75,108 @@ export interface ComposerActions {
 }
 
 export type ComposerStore = ComposerState & ComposerActions;
+
+// Validation logic
+const validateComposerState = (state: ComposerState): ValidationState => {
+  const errors: ValidationError[] = [];
+
+  // Check if no accounts are selected
+  if (state.selectedAccounts.length === 0) {
+    errors.push({
+      type: "no_accounts",
+      message: "Select at least one social media account to publish to",
+      severity: "error",
+      field: "accounts",
+    });
+  }
+
+  // Check if message is empty
+  if (!state.contentCreateData.base.message?.trim()) {
+    errors.push({
+      type: "no_message",
+      message: "Add a message to your post",
+      severity: "error",
+      field: "message",
+    });
+  }
+
+  // Check if no media is attached
+  if (!state.contentCreateData.base.attachments?.length) {
+    errors.push({
+      type: "no_media",
+      message: "Add at least one photo or video to your post",
+      severity: "warning",
+      field: "media",
+    });
+  }
+
+  // Check for pending uploads
+  const hasPendingUploads = state.contentCreateData.base.attachments?.some(
+    (att) =>
+      att.metadata &&
+      typeof att.metadata === "object" &&
+      "uploading" in att.metadata &&
+      att.metadata.uploading === true,
+  );
+  if (hasPendingUploads) {
+    errors.push({
+      type: "upload_pending",
+      message: "Wait for all media uploads to complete",
+      severity: "error",
+      field: "media",
+    });
+  }
+
+  // Check for failed uploads
+  const hasFailedUploads = state.contentCreateData.base.attachments?.some(
+    (att) =>
+      att.metadata &&
+      typeof att.metadata === "object" &&
+      "error" in att.metadata &&
+      att.metadata.error,
+  );
+  if (hasFailedUploads) {
+    errors.push({
+      type: "upload_failed",
+      message: "Some media uploads failed. Remove failed uploads or try again",
+      severity: "error",
+      field: "media",
+    });
+  }
+
+  // Check scheduling validation (only for scheduled posts)
+  if (state.contentCreateData.base.publishingStatus === "SCHEDULED") {
+    const publishAt = state.contentCreateData.base.schedulingSpec?.publishAt;
+    if (!publishAt || new Date(publishAt) <= new Date()) {
+      errors.push({
+        type: "invalid_scheduling",
+        message: "Scheduled time must be in the future",
+        severity: "error",
+        field: "scheduling",
+      });
+    }
+  }
+
+  // Check platform-specific limits (could be expanded)
+  const attachmentCount = state.contentCreateData.base.attachments?.length || 0;
+  if (attachmentCount > 10) {
+    errors.push({
+      type: "platform_limit_exceeded",
+      message: "Too many attachments. Maximum 10 files allowed",
+      severity: "error",
+      field: "media",
+    });
+  }
+
+  // Determine if can publish (no errors, warnings are OK)
+  const hasErrors = errors.some((error) => error.severity === "error");
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    canPublish: !hasErrors,
+  };
+};
 
 export const createComposerStore = (initProps: Partial<ComposerProps>) => {
   const DEFAULT_PROPS: ComposerProps = {
@@ -87,6 +210,11 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
         }
       });
     }
+  };
+
+  // Helper to update validation state
+  const updateValidation = (state: ComposerState) => {
+    state.validation = validateComposerState(state);
   };
 
   // If we have existing content data (editing mode), use it; otherwise create new placements
@@ -135,25 +263,33 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
       .filter(Boolean) as IGFeedPlacementSpec[]) ||
     [];
 
+  const initialState: ComposerState = {
+    placementSelected: props.initialPlacementSelected || "ALL",
+    selectedPreview: props.initialSelectedPreview || "FACEBOOK",
+    accounts: props.initialAccounts || [],
+    selectedAccounts: props.initialAccounts?.map((acc) => acc.id) || [],
+    activeAccount: props.initialAccounts?.[0]?.id || null,
+    contentCreateData: props.initContentCreateData || {
+      base: {
+        message: props.initialMessage || "",
+        publishingStatus: "PUBLISH_NOW",
+        attachments: [],
+      },
+      placements: {
+        facebookFeed: initFacebookFeed,
+        instagramFeed: initInstagramFeed,
+      },
+    },
+    validation: { isValid: false, errors: [], canPublish: false }, // Will be computed
+  };
+
+  // Compute initial validation
+  initialState.validation = validateComposerState(initialState);
+
   return createStore<ComposerState & ComposerActions>()(
     immer((set, get) => ({
       // state
-      placementSelected: props.initialPlacementSelected || "ALL",
-      selectedPreview: props.initialSelectedPreview || "FACEBOOK",
-      accounts: props.initialAccounts || [],
-      selectedAccounts: props.initialAccounts?.map((acc) => acc.id) || [],
-      activeAccount: props.initialAccounts?.[0]?.id || null,
-      contentCreateData: props.initContentCreateData || {
-        base: {
-          message: props.initialMessage || "",
-          publishingStatus: "PUBLISH_NOW",
-          attachments: [],
-        },
-        placements: {
-          facebookFeed: initFacebookFeed,
-          instagramFeed: initInstagramFeed,
-        },
-      },
+      ...initialState,
       // actions
       setSelectedPreview: (platform) =>
         set((state) => {
@@ -251,6 +387,9 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
               );
             }
           });
+
+          // Update validation after changes
+          updateValidation(state);
         }),
       setActiveAccount: (accountId) =>
         set((state) => {
@@ -267,6 +406,9 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
               spec.caption = message;
             },
           });
+
+          // Update validation after message change
+          updateValidation(state);
         }),
       addAttachments: (files) =>
         set((state) => {
@@ -292,6 +434,9 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
               spec.attachments = baseAttachments;
             },
           });
+
+          // Update validation after adding attachments
+          updateValidation(state);
         }),
       removeAttachment: (index) =>
         set((state) => {
@@ -308,6 +453,9 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
               spec.attachments = baseAttachments;
             },
           });
+
+          // Update validation after removing attachment
+          updateValidation(state);
         }),
       updateAttachment: (index, updates) =>
         set((state) => {
@@ -327,6 +475,9 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
               spec.attachments = baseAttachments;
             },
           });
+
+          // Update validation after updating attachment
+          updateValidation(state);
         }),
       clearAttachments: () =>
         set((state) => {
@@ -340,6 +491,9 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
               spec.attachments = [];
             },
           });
+
+          // Update validation after clearing attachments
+          updateValidation(state);
         }),
       uploadAttachments: async (files, workspaceSlug) => {
         // First, get the current number of attachments
@@ -411,6 +565,9 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
                 attachment.s3Key = id;
                 attachment.metadata = { uploading: false };
               }
+
+              // Update validation after upload success
+              updateValidation(state);
             });
 
             toast.success(`${file.name} uploaded successfully`);
@@ -426,6 +583,9 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
                   error: "Upload failed",
                 };
               }
+
+              // Update validation after upload failure
+              updateValidation(state);
             });
 
             toast.error(`Failed to upload ${file.name}`);
@@ -468,10 +628,16 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
               publishAt: defaultDate,
             };
           }
+
+          // Update validation after publishing status change
+          updateValidation(state);
         }),
       setSchedulingSpec: (schedulingSpec) =>
         set((state) => {
           state.contentCreateData.base.schedulingSpec = schedulingSpec;
+
+          // Update validation after scheduling spec change
+          updateValidation(state);
         }),
     })),
   );
