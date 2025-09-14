@@ -9,6 +9,7 @@ import { ConnectedAccountsRow } from "@/components/connected-accounts/connected-
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation } from "@/lib/hono-client";
 import { handlePopupMessage, openPopup } from "@/lib/popup";
+import { QUERY_KEYS } from "@/lib/query";
 import { useConnectedAccounts } from "@/queries/connected-account";
 
 export const Route = createFileRoute(
@@ -30,7 +31,7 @@ function WorkspaceIndex() {
       if (!payload) return;
 
       queryClient.invalidateQueries({
-        queryKey: [workspace.slug, "connected_accounts"],
+        queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
       });
       toast[payload.status](payload.message);
     }

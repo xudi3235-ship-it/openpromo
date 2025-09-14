@@ -12,6 +12,7 @@ import { ChevronRight, MoreHorizontal, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation } from "@/lib/hono-client";
+import { QUERY_KEYS } from "@/lib/query";
 
 interface ConnectedAccount {
   id: string;
@@ -41,7 +42,7 @@ export function ConnectedAccountCard({ account }: ConnectedAccountCardProps) {
     onSuccess: () => {
       toast.success("Account disconnected successfully");
       queryClient.invalidateQueries({
-        queryKey: [workspace.slug, "connected_accounts"],
+        queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
       });
     },
   });

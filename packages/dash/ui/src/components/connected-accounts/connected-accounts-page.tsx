@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation } from "@/lib/hono-client";
 import { handlePopupMessage, openPopup } from "@/lib/popup";
+import { QUERY_KEYS } from "@/lib/query";
 import { useConnectedAccounts } from "@/queries/connected-account";
 import { ConnectPlatformDialog } from "./connect-platform-dialog";
 import { ConnectedAccountCard } from "./connected-account-card";
@@ -137,7 +138,7 @@ export function ConnectedAccountsPage() {
       if (!payload) return;
 
       queryClient.invalidateQueries({
-        queryKey: [workspace.slug, "connected_accounts"],
+        queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
       });
       toast[payload.status](payload.message);
     }

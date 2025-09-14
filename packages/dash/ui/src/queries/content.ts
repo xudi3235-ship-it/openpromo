@@ -1,11 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
+import { QUERY_KEYS } from "@/lib/query";
 
 export const useContentListQuery = () => {
   const { workspace } = useWorkspace();
   return useHonoQuery({
-    queryKey: ["content-list"],
+    queryKey: QUERY_KEYS.CONTENT_LIST,
     queryFn: (api) =>
       api.workspaces[":workspaceSlug"].content.$get({
         query: { page: "1", pageSize: "20" },
@@ -17,7 +18,9 @@ export const useContentListQuery = () => {
 export const useContentGroupQuery = (contentGroupID: string | undefined) => {
   const { workspace } = useWorkspace();
   return useHonoQuery({
-    queryKey: ["content-group", contentGroupID],
+    queryKey: contentGroupID
+      ? QUERY_KEYS.CONTENT_GROUP(contentGroupID)
+      : ["content-group"],
     queryFn: (api) =>
       api.workspaces[":workspaceSlug"].content.group[":id"].$get({
         // biome-ignore lint/style/noNonNullAssertion: later
@@ -37,7 +40,7 @@ export const useContentGroupDeleteMutation = (onSettled?: () => void) => {
         param: { workspaceSlug: workspace.slug, id: contentGroupID },
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["content-list"] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CONTENT_LIST });
     },
     onSettled,
   });
@@ -53,7 +56,7 @@ export const useContentDeleteMutation = (onSettled?: () => void) => {
         param: { workspaceSlug: workspace.slug, id: contentID },
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["content-list"] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CONTENT_LIST });
     },
     onSettled,
   });

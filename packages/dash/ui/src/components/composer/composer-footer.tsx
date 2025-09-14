@@ -1,8 +1,10 @@
 import { Button } from "@openpromo/ui/components/button";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation } from "@/lib/hono-client";
+import { QUERY_KEYS } from "@/lib/query";
 import { useComposerStore } from "@/stores/composer-store";
 import { PublishingOverlay } from "./publishing-overlay";
 
@@ -15,6 +17,8 @@ function useContentCreateMutation({
 } = {}) {
   const { workspace } = useWorkspace();
   const { contentCreateData } = useComposerStore();
+  const queryClient = useQueryClient();
+
   return useHonoMutation({
     mutationFn: (api) =>
       api.workspaces[":workspaceSlug"].content.create.$post({
@@ -22,6 +26,7 @@ function useContentCreateMutation({
         json: contentCreateData,
       }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CONTENT_LIST });
       onSuccess?.();
     },
     onError: () => {

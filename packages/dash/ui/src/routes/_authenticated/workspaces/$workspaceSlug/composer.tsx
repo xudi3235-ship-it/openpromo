@@ -7,6 +7,7 @@ import { ComposerSkeleton } from "@/components/composer/composer-skeleton";
 import { ResizableComposer } from "@/components/composer/resizable-composer";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { handlePopupMessage } from "@/lib/popup";
+import { QUERY_KEYS } from "@/lib/query";
 import {
   useConnectedAccounts,
   useFacebookOauthMutation,
@@ -30,7 +31,7 @@ function ComposerComponent() {
       if (!payload) return;
 
       queryClient.invalidateQueries({
-        queryKey: [workspace.slug, "connected_accounts"],
+        queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
       });
       toast[payload.status](payload.message);
     }

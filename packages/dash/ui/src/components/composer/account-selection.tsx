@@ -11,6 +11,7 @@ import { AvailablePlatformsRow } from "@/components/connected-accounts/available
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation } from "@/lib/hono-client";
 import { handlePopupMessage, openPopup } from "@/lib/popup";
+import { QUERY_KEYS } from "@/lib/query";
 import { useComposerStore } from "@/stores/composer-store";
 
 function getPlatformColors(platform: Platform) {
@@ -158,7 +159,7 @@ export function AccountSelection() {
       if (!payload) return;
 
       queryClient.invalidateQueries({
-        queryKey: [workspace.slug, "connected_accounts"],
+        queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
       });
       toast[payload.status](payload.message);
     }

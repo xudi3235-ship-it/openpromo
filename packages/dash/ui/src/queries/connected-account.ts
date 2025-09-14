@@ -2,11 +2,12 @@ import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
 import { openPopup } from "@/lib/popup";
+import { QUERY_KEYS } from "@/lib/query";
 
 export const useConnectedAccounts = () => {
   const { workspace } = useWorkspace();
   return useHonoQuery({
-    queryKey: [workspace.slug, "connected_accounts"],
+    queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
     queryFn: (api) =>
       api.workspaces[":workspaceSlug"].connected_accounts.$get({
         param: { workspaceSlug: workspace.slug },
