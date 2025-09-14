@@ -31,6 +31,9 @@ export const workspacesRoute = new Hono<ApiEnv>()
     }
 
     const pusher = WorkspacePusher.get(workspaceSlug);
+
+    console.log("WebSocket upgrade for Workspace slug:", workspaceSlug);
+
     return pusher.fetch(ctx.req.raw);
   })
   // List all workspaces a user has access to
