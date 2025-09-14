@@ -28,7 +28,7 @@ import {
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { ChevronDown, Plus } from "lucide-react";
 import * as React from "react";
-import ComposerDialog from "@/components/composer/modal";
+import ComposerDialog from "@/components/composer/modal/dialog-composer";
 import { useContentListQuery } from "@/queries/content";
 import { columns } from "./columns";
 import { ContentTableSkeleton } from "./content-table-skeleton";

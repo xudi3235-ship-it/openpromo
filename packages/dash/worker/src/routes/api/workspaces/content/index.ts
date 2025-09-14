@@ -19,6 +19,7 @@ import {
 } from "@core/schemas/content.sql";
 import { and, asc, eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { AppError } from "packages/dash/worker/src/helpers/error";
 import * as z from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
@@ -67,6 +68,7 @@ export type ContentCreateData = z.infer<typeof ContentCreateData>;
 
 export const contentRoute = new Hono<ApiEnv>()
   .use(withWorkspaceRole("workspace_editor"))
+  // list content api
   .get("/", zValidator("query", listContentQuerySchema), async (c) => {
     const { page, pageSize } = c.req.valid("query");
     // await createDummyPendingContent();
@@ -208,6 +210,7 @@ export const contentRoute = new Hono<ApiEnv>()
       c.req.valid("json");
     },
   )
+  // create content api
   .post("/create", zValidator("json", ContentCreateData), async (c) => {
     const actor = Actor.assert("workspace_user");
     const { placements, base } = c.req.valid("json");
@@ -276,4 +279,66 @@ export const contentRoute = new Hono<ApiEnv>()
       }
     }
     return c.json({ success: true });
+  })
+  // read content group api
+  .get("/group/:id", async (c) => {
+    const { id } = c.req.param();
+    // read group and its contents
+    const results = await db()
+      .select()
+      .from(pendingContentGroupTable)
+      .leftJoin(
+        unifiedContentTable,
+        eq(
+          pendingContentGroupTable.id,
+          unifiedContentTable.pendingContentGroupId,
+        ),
+      )
+      .where(
+        and(
+          eq(pendingContentGroupTable.id, id),
+          eq(pendingContentGroupTable.workspaceId, Actor.workspaceID()),
+        ),
+      );
+
+    if (!results || results.length === 0) {
+      throw new AppError(404, { message: "Group not found" });
+    }
+
+    const group = results[0].pending_content_group;
+    if (!group) throw new AppError(404, { message: "Group not found" });
+
+    // Extract all contents from the results, filtering out null values
+    const contents = results
+      .map((row) => row.unified_content)
+      .filter(
+        (content): content is NonNullable<typeof content> => content !== null,
+      );
+
+    // Construct the placements object
+    const data: ContentCreateData = {
+      base: {
+        publishingStatus: group.publishingStatus,
+      },
+      placements: {},
+    };
+
+    for (const content of contents) {
+      const placementSpec = content.placementSpec;
+      if (!placementSpec) continue;
+
+      if (content.placement === "FB_FEED") {
+        if (!data.placements.facebookFeed) data.placements.facebookFeed = [];
+        data.placements.facebookFeed.push(placementSpec as FBFeedPlacementSpec);
+        continue;
+      }
+      if (content.placement === "IG_FEED") {
+        if (!data.placements.instagramFeed) data.placements.instagramFeed = [];
+        data.placements.instagramFeed.push(
+          placementSpec as IGFeedPlacementSpec,
+        );
+      }
+    }
+
+    return c.json({ contentCreateData: data });
   });

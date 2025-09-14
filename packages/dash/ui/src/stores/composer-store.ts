@@ -18,6 +18,7 @@ export interface ComposerProps {
   initialPlacementSelected?: AllPlacement | "ALL";
   initialSelectedPreview?: Platform;
   initialMessage?: string;
+  initContentCreateData?: ContentCreateData;
 }
 
 export interface ComposerState {

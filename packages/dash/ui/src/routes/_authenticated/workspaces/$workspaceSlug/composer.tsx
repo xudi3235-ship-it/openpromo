@@ -6,9 +6,12 @@ import { ComposerNullState } from "@/components/composer/composer-null-state";
 import { ComposerSkeleton } from "@/components/composer/composer-skeleton";
 import { ResizableComposer } from "@/components/composer/resizable-composer";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useHonoMutation } from "@/lib/hono-client";
-import { handlePopupMessage, openPopup } from "@/lib/popup";
-import { useConnectedAccounts } from "@/queries/connected-account";
+import { handlePopupMessage } from "@/lib/popup";
+import {
+  useConnectedAccounts,
+  useFacebookOauthMutation,
+  useInstagramOauthMutation,
+} from "@/queries/connected-account";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/composer",
@@ -40,47 +43,11 @@ function ComposerComponent() {
 
   // Facebook OAuth mutation
   const { mutate: initiateFacebookOAuth, isPending: isConnectingFacebook } =
-    useHonoMutation({
-      mutationFn: (api, variables: { state?: string }) =>
-        api.workspaces[":workspaceSlug"].connected_accounts.facebook.auth.$get({
-          query: { state: variables.state },
-          param: { workspaceSlug: workspace.slug },
-        }),
-      onError: (error) => {
-        toast.error(`Failed to initiate Facebook OAuth: ${error.message}`);
-      },
-      onSuccess({ data: { url } }) {
-        openPopup({
-          url,
-          target: "facebook-oauth",
-          width: 600,
-          height: 800,
-        });
-      },
-    });
+    useFacebookOauthMutation();
 
   // Instagram OAuth mutation
   const { mutate: initiateInstagramOAuth, isPending: isConnectingInstagram } =
-    useHonoMutation({
-      mutationFn: (api, variables: { state?: string }) =>
-        api.workspaces[":workspaceSlug"].connected_accounts.instagram.auth.$get(
-          {
-            query: { state: variables.state },
-            param: { workspaceSlug: workspace.slug },
-          },
-        ),
-      onError: (error) => {
-        toast.error(`Failed to initiate Instagram OAuth: ${error.message}`);
-      },
-      onSuccess({ data: { url } }) {
-        openPopup({
-          url,
-          target: "instagram-oauth",
-          width: 600,
-          height: 800,
-        });
-      },
-    });
+    useInstagramOauthMutation();
 
   const handleConnectFacebook = () => {
     initiateFacebookOAuth({});

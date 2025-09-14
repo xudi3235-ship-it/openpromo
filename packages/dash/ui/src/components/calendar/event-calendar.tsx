@@ -44,7 +44,7 @@ import {
   WeekView,
 } from "@/components/calendar";
 import { Route as CalendarRoute } from "@/routes/_authenticated/workspaces/$workspaceSlug/calendar";
-import ComposerDialog from "../composer/modal";
+import ComposerDialog from "../composer/modal/dialog-composer";
 
 export interface EventCalendarProps {
   events: MergedContentEntity[];

@@ -5,21 +5,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
+import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import { useConnectedAccounts } from "@/queries/connected-account";
+import { useContentGroupQuery } from "@/queries/content";
+import type { ComposerProps } from "@/stores/composer-store";
 import { ComposerSkeleton } from "../composer-skeleton";
 import { ResizableComposer } from "../resizable-composer";
 
 interface ComposerDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  pendingContentGroupID?: string;
 }
 
 export default function ComposerDialog({
   isOpen,
   onClose,
+  pendingContentGroupID,
 }: ComposerDialogProps) {
-  const { data, isLoading } = useConnectedAccounts();
+  const { data: accountsData, isLoading: accountsLoading } =
+    useConnectedAccounts();
+  const { data: contentGroupData, isLoading: contentGroupLoading } =
+    useContentGroupQuery(pendingContentGroupID);
+  const isLoading = accountsLoading || contentGroupLoading;
 
+  const initComposerProps = {
+    initContentCreateData:
+      contentGroupData?.contentCreateData as ContentCreateData,
+  } as ComposerProps;
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="!max-w-none w-full h-[90vh] p-0 flex flex-col overflow-hidden sm:w-[95vw] md:w-[90vw] lg:w-[85vw] xl:w-[80vw] 2xl:w-[1200px]">
@@ -33,7 +46,10 @@ export default function ComposerDialog({
           {isLoading ? (
             <ComposerSkeleton />
           ) : (
-            <ResizableComposer accounts={data?.accounts ?? []} />
+            <ResizableComposer
+              accounts={accountsData?.accounts ?? []}
+              initComposerProps={initComposerProps}
+            />
           )}
         </div>
       </DialogContent>
