@@ -34,8 +34,8 @@
   "migrations": [
     {
       "tag": "v3",
-      "new_sqlite_classes": ["WorkspacePusher"]
-      // "deleted_classes": ["Scheduler"]
+      "new_sqlite_classes": ["WorkspacePusher"],
+      "deleted_classes": ["Scheduler"]
     }
   ],
   "env": {
@@ -64,8 +64,8 @@
       "migrations": [
         {
           "tag": "v3",
-          "new_sqlite_classes": ["WorkspacePusher"]
-          // "deleted_classes": ["MyDurableObject"]
+          "new_sqlite_classes": ["WorkspacePusher"],
+          "deleted_classes": ["Scheduler"]
         }
       ],
       "workflows": [
