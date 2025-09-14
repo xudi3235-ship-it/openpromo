@@ -17,7 +17,7 @@ export interface ComposerProps {
   initialAccounts?: ConnectedAccount[];
   initialPlacementSelected?: AllPlacement | "ALL";
   initialSelectedPreview?: Platform;
-  initialMessage: string;
+  initialMessage?: string;
   initContentCreateData?: ContentCreateData;
 }
 
@@ -88,43 +88,51 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
     }
   };
 
-  const initFacebookFeed = props.initialAccounts
-    ?.map((acc) => {
-      if (acc.platform === "FACEBOOK") {
-        return {
-          identity: {
-            connectedAccountID: acc.id,
-            fbPageID: (acc.metadata as { pageID: string }).pageID,
-          },
-          placement: "FB_FEED" as const,
-          postSpec: {
-            message: props.initialMessage,
-            attachments: [],
-          },
-          customized: false,
-        } as FBFeedPlacementSpec;
-      }
-      return null;
-    })
-    .filter(Boolean) as FBFeedPlacementSpec[];
+  // If we have existing content data (editing mode), use it; otherwise create new placements
+  const initFacebookFeed =
+    props.initContentCreateData?.placements?.facebookFeed ||
+    (props.initialAccounts
+      ?.map((acc) => {
+        if (acc.platform === "FACEBOOK") {
+          return {
+            identity: {
+              connectedAccountID: acc.id,
+              fbPageID: (acc.metadata as { pageID: string }).pageID,
+            },
+            placement: "FB_FEED" as const,
+            postSpec: {
+              message: props.initialMessage || "",
+              attachments: [],
+            },
+            customized: false,
+          } as FBFeedPlacementSpec;
+        }
+        return null;
+      })
+      .filter(Boolean) as FBFeedPlacementSpec[]) ||
+    [];
 
-  const initInstagramFeed = props.initialAccounts
-    ?.map((acc) => {
-      if (acc.platform === "INSTAGRAM") {
-        return {
-          identity: {
-            connectedAccountID: acc.id,
-            igAccountID: (acc.metadata as { igAccountID: string }).igAccountID,
-          },
-          placement: "IG_FEED" as const,
-          caption: props.initialMessage,
-          attachments: [],
-          customized: false,
-        } as IGFeedPlacementSpec;
-      }
-      return null;
-    })
-    .filter(Boolean) as IGFeedPlacementSpec[];
+  const initInstagramFeed =
+    props.initContentCreateData?.placements?.instagramFeed ||
+    (props.initialAccounts
+      ?.map((acc) => {
+        if (acc.platform === "INSTAGRAM") {
+          return {
+            identity: {
+              connectedAccountID: acc.id,
+              igAccountID: (acc.metadata as { igAccountID: string })
+                .igAccountID,
+            },
+            placement: "IG_FEED" as const,
+            caption: props.initialMessage || "",
+            attachments: [],
+            customized: false,
+          } as IGFeedPlacementSpec;
+        }
+        return null;
+      })
+      .filter(Boolean) as IGFeedPlacementSpec[]) ||
+    [];
 
   return createStore<ComposerState & ComposerActions>()(
     immer((set, get) => ({
@@ -134,15 +142,15 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
       accounts: props.initialAccounts || [],
       selectedAccounts: props.initialAccounts?.map((acc) => acc.id) || [],
       activeAccount: props.initialAccounts?.[0]?.id || null,
-      contentCreateData: {
+      contentCreateData: props.initContentCreateData || {
         base: {
-          message: props.initialMessage,
+          message: props.initialMessage || "",
           publishingStatus: "PUBLISH_NOW",
           attachments: [],
         },
         placements: {
-          facebookFeed: initFacebookFeed || [],
-          instagramFeed: initInstagramFeed || [],
+          facebookFeed: initFacebookFeed,
+          instagramFeed: initInstagramFeed,
         },
       },
       // actions

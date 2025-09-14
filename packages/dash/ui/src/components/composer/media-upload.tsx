@@ -51,11 +51,13 @@ export function MediaUpload() {
     index: number;
   } | null>(null);
 
-  const attachments = contentCreateData.base.attachments ?? [];
+  const attachments = contentCreateData.base.attachments;
 
   // regenerate previews whenever attachments change
   useEffect(() => {
     let cancelled = false;
+    const currentAttachments = contentCreateData.base.attachments;
+
     const build = async () => {
       // cleanup old previews
       setPreviews((currentPreviews) => {
@@ -68,7 +70,7 @@ export function MediaUpload() {
       });
 
       const generated: MediaPreview[] = [];
-      for (const att of attachments) {
+      for (const att of currentAttachments || []) {
         if (att.file) {
           generated.push(await generatePreview(att.file));
         }
@@ -76,7 +78,7 @@ export function MediaUpload() {
       if (!cancelled) setPreviews(generated);
     };
 
-    if (attachments.length) {
+    if (currentAttachments?.length) {
       build();
     } else {
       setPreviews((currentPreviews) => {
@@ -92,7 +94,7 @@ export function MediaUpload() {
     return () => {
       cancelled = true;
     };
-  }, [attachments]);
+  }, [contentCreateData.base.attachments]);
 
   // cleanup on unmount
   useEffect(() => {
@@ -165,7 +167,7 @@ export function MediaUpload() {
           <div className="flex-1 overflow-x-auto">
             <div className="flex gap-2">
               {previews.map((preview, index) => {
-                const att = attachments[index];
+                const att = attachments?.[index];
                 const meta = (att?.metadata || {}) as Record<string, unknown>;
                 const uploading = Boolean(meta.uploading);
                 const error = meta.error as string | undefined;

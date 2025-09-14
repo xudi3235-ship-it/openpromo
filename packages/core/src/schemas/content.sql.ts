@@ -214,11 +214,16 @@ export const _notReadyYet = <
 };
 
 /**
- * specs for pending content group, a logical grouping of contents for scheduled or drafts. For such use case, this provides a unified config for different features.
- * Later it might include features like multi-user approval workflows, comments, etc.
- *
+ * Spec for pending content groups.
+ * Contains base content data that serves as the source of truth for the group.
+ * Individual placements can customize from this base.
  */
-const pendingContentGroupSpec = z.object({});
+const pendingContentGroupSpec = z.object({
+  // Base content data - source of truth for the group
+  baseMessage: z.string().optional(),
+  baseAttachments: SharedAttachmentSpec.array().optional(),
+  baseSchedulingSpec: SchedulingSpec.optional(),
+});
 
 type PendingContentGroupSpec = z.infer<typeof pendingContentGroupSpec>;
 

@@ -222,6 +222,11 @@ export const contentRoute = new Hono<ApiEnv>()
         .values({
           workspaceId: actor.properties.workspaceID,
           publishingStatus,
+          pendingContentGroupSpec: {
+            baseMessage: base.message,
+            baseAttachments: base.attachments,
+            baseSchedulingSpec: base.schedulingSpec,
+          },
         })
         .returning();
       // TODO: migrate to use inset many operations instead.
@@ -249,19 +254,29 @@ export const contentRoute = new Hono<ApiEnv>()
       }
       return c.json({ success: true, groupId: group.id });
     }
-    // else, create pending content directly
-    if (
-      publishingStatus === "PUBLISH_NOW" ||
-      publishingStatus === "SCHEDULED"
-    ) {
+    // For scheduled content, also create a group to maintain base data consistency
+    if (publishingStatus === "SCHEDULED") {
+      const [group] = await db()
+        .insert(pendingContentGroupTable)
+        .values({
+          workspaceId: actor.properties.workspaceID,
+          publishingStatus,
+          pendingContentGroupSpec: {
+            baseMessage: base.message,
+            baseAttachments: base.attachments,
+            baseSchedulingSpec: base.schedulingSpec,
+          },
+        })
+        .returning();
+
+      // Create content linked to group
       if (placements.facebookFeed) {
         for (const spec of placements.facebookFeed) {
-          console.log({ spec });
           await EntPendingContent.createInternal({
             placement: "FB_FEED",
             placementSpec: spec,
             publishingStatus,
-            pendingContentGroupId: null, // no group
+            pendingContentGroupId: group.id,
             connectedAccountId: spec.identity.connectedAccountID,
           });
         }
@@ -272,7 +287,34 @@ export const contentRoute = new Hono<ApiEnv>()
             placement: "IG_FEED",
             placementSpec: spec,
             publishingStatus,
-            pendingContentGroupId: null, // no group
+            pendingContentGroupId: group.id,
+            connectedAccountId: spec.identity.connectedAccountID,
+          });
+        }
+      }
+      return c.json({ success: true, groupId: group.id });
+    }
+    // For immediate publishing, create content directly without groups
+    if (publishingStatus === "PUBLISH_NOW") {
+      if (placements.facebookFeed) {
+        for (const spec of placements.facebookFeed) {
+          console.log({ spec });
+          await EntPendingContent.createInternal({
+            placement: "FB_FEED",
+            placementSpec: spec,
+            publishingStatus,
+            pendingContentGroupId: null, // no group for immediate publish
+            connectedAccountId: spec.identity.connectedAccountID,
+          });
+        }
+      }
+      if (placements.instagramFeed) {
+        for (const spec of placements.instagramFeed) {
+          await EntPendingContent.createInternal({
+            placement: "IG_FEED",
+            placementSpec: spec,
+            publishingStatus,
+            pendingContentGroupId: null, // no group for immediate publish
             connectedAccountId: spec.identity.connectedAccountID,
           });
         }
@@ -315,10 +357,14 @@ export const contentRoute = new Hono<ApiEnv>()
         (content): content is NonNullable<typeof content> => content !== null,
       );
 
-    // Construct the placements object
+    const groupSpec = group.pendingContentGroupSpec;
+
     const data: ContentCreateData = {
       base: {
         publishingStatus: group.publishingStatus,
+        message: groupSpec?.baseMessage || "",
+        attachments: groupSpec?.baseAttachments || [],
+        schedulingSpec: groupSpec?.baseSchedulingSpec,
       },
       placements: {},
     };
@@ -330,7 +376,6 @@ export const contentRoute = new Hono<ApiEnv>()
       if (content.placement === "FB_FEED") {
         if (!data.placements.facebookFeed) data.placements.facebookFeed = [];
         data.placements.facebookFeed.push(placementSpec as FBFeedPlacementSpec);
-        continue;
       }
       if (content.placement === "IG_FEED") {
         if (!data.placements.instagramFeed) data.placements.instagramFeed = [];

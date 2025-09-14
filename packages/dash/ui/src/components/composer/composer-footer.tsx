@@ -85,6 +85,7 @@ export function ComposerFooter() {
   };
 
   const config = dialogConfig[actionType];
+  const data = useComposerStore((s) => s.contentCreateData);
 
   return (
     <>
@@ -113,6 +114,11 @@ export function ComposerFooter() {
           </Button>
         </div>
       </div>
+      {import.meta.env.DEV && (
+        <div className="max-w-md mx-auto my-4 p-2 bg-muted rounded text-xs overflow-auto">
+          <pre>{JSON.stringify(data, null, 2)}</pre>
+        </div>
+      )}
 
       <ConfirmDialog
         open={showConfirmDialog}
