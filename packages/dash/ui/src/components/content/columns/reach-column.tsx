@@ -43,11 +43,21 @@ export const reachColumn: ColumnDef<MergedContentEntity> = {
           </div>
         );
       },
-      group: () => (
-        <div className="text-sm text-gray-500 dark:text-gray-400">
-          Group reach
-        </div>
-      ),
+      group: (entity) => {
+        return (
+          <div className="flex items-center justify-center py-2">
+            <div className="text-center">
+              <div className="text-sm text-gray-400 dark:text-gray-500 mb-1">
+                No reach data
+              </div>
+              <div className="text-xs text-gray-400 dark:text-gray-500">
+                {entity.contents.length} unpublished post
+                {entity.contents.length !== 1 ? "s" : ""}
+              </div>
+            </div>
+          </div>
+        );
+      },
     });
   },
 };

@@ -1,5 +1,7 @@
-import type { PlacementSpec } from "@core/domain/content/schema/placement";
-import type { UnifiedContentSelect } from "@core/schemas/content.sql";
+import type {
+  PlacementSpec,
+  UnifiedContentSelect,
+} from "@core/schemas/content.sql";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { matchEntity, matchPlacementSpec } from "@/lib/hono-client";
@@ -14,7 +16,7 @@ function renderTitle(row: Row<MergedContentEntity>) {
         // biome-ignore lint/suspicious/noExplicitAny: later
         entity.entity as any;
       const src =
-        placementSpec?.thumbnailUrl ?? "https://picsum.photos/200/300";
+        placementSpec?.thumbnailUrl ?? "https://picsum.photos/100/100";
       const platformIcon = getPlatformIcon(placement);
 
       const message = matchPlacementSpec(placementSpec as PlacementSpec, {
@@ -46,20 +48,78 @@ function renderTitle(row: Row<MergedContentEntity>) {
         </div>
       );
     },
-    group: () => (
-      <div className="flex items-center space-x-3">
-        <div className="w-15 h-15 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Group
-          </span>
+    group: (entity) => {
+      const { contents } = entity;
+
+      // Get unique platforms from the contents
+      const platforms = [
+        ...new Set(contents.map((content) => content.placement)),
+      ];
+
+      // Get the primary message (use first content's message as representative)
+      const primaryMessage =
+        contents.length > 0
+          ? matchPlacementSpec(contents[0].placementSpec as PlacementSpec, {
+              FBFeed: (s) => s.postSpec.message,
+              IGFeed: (s) => s.caption,
+            })
+          : "Untitled Group";
+
+      // Get first thumbnail or default
+      const thumbnailUrl =
+        contents.find((c) => c.placementSpec?.thumbnailUrl)?.placementSpec
+          ?.thumbnailUrl ?? "https://picsum.photos/100/100";
+
+      return (
+        <div className="flex items-center space-x-3">
+          <div className="relative inline-block">
+            <img
+              height={60}
+              width={60}
+              src={thumbnailUrl}
+              alt="Content thumbnail"
+              className="rounded-lg object-cover"
+            />
+            {/* Platform stack indicator */}
+            <div className="absolute -bottom-1 -right-1 flex">
+              {platforms.slice(0, 3).map((platform, index) => {
+                const platformIcon = getPlatformIcon(platform);
+                return platformIcon ? (
+                  <div
+                    key={platform}
+                    className="bg-white rounded-full p-1 shadow-sm border -ml-1 first:ml-0"
+                    style={{ zIndex: platforms.length - index }}
+                  >
+                    {platformIcon}
+                  </div>
+                ) : null;
+              })}
+              {platforms.length > 3 && (
+                <div className="bg-gray-100 dark:bg-gray-600 rounded-full p-1 shadow-sm border -ml-1 flex items-center justify-center min-w-6 h-6">
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                    +{platforms.length - 3}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                {primaryMessage}
+              </p>
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                Group
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {contents.length} placement{contents.length !== 1 ? "s" : ""} •{" "}
+              {platforms.length} platform{platforms.length !== 1 ? "s" : ""}
+            </p>
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-            Content Group
-          </p>
-        </div>
-      </div>
-    ),
+      );
+    },
   });
 }
 
