@@ -4,6 +4,7 @@ import { actionsColumn } from "./columns/actions-column";
 import { createdAtColumn } from "./columns/created-at-column";
 import { engagementColumn } from "./columns/engagement-column";
 import { reachColumn } from "./columns/reach-column";
+import { scheduledDateColumn } from "./columns/scheduled-date-column";
 import { selectColumn } from "./columns/select-column";
 import { statusColumn } from "./columns/status-column";
 import { titleColumn } from "./columns/title-column";
@@ -15,6 +16,7 @@ export const columns: ColumnDef<MergedContentEntity>[] = [
   actionsColumn,
   engagementColumn,
   reachColumn,
+  scheduledDateColumn,
   createdAtColumn,
   statusColumn,
 ];
