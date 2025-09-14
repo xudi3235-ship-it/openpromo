@@ -34,7 +34,11 @@ export function ComposerFooter() {
 
   // Derive action type from store's publishing status
   const actionType =
-    contentCreateData.base.publishingStatus === "DRAFT" ? "draft" : "publish";
+    contentCreateData.base.publishingStatus === "DRAFT"
+      ? "draft"
+      : contentCreateData.base.publishingStatus === "SCHEDULED"
+        ? "schedule"
+        : "publish";
 
   const handleSaveDraft = () => {
     setPublishingStatus("DRAFT");
@@ -42,7 +46,10 @@ export function ComposerFooter() {
   };
 
   const handlePublish = () => {
-    setPublishingStatus("PUBLISH_NOW");
+    // Only set to PUBLISH_NOW if not already scheduled
+    if (contentCreateData.base.publishingStatus !== "SCHEDULED") {
+      setPublishingStatus("PUBLISH_NOW");
+    }
     setShowConfirmDialog(true);
   };
 
@@ -50,11 +57,25 @@ export function ComposerFooter() {
     mutate({});
   };
 
+  const getScheduledDateTime = () => {
+    if (contentCreateData.base.schedulingSpec?.publishAt) {
+      return new Date(
+        contentCreateData.base.schedulingSpec.publishAt,
+      ).toLocaleString();
+    }
+    return "the scheduled time";
+  };
+
   const dialogConfig = {
     draft: {
       title: "Save Draft",
       desc: "Are you sure you want to save this content as a draft? You can publish it later.",
       confirmText: "Save Draft",
+    },
+    schedule: {
+      title: "Schedule Content",
+      desc: `Are you sure you want to schedule this content for ${getScheduledDateTime()}?`,
+      confirmText: "Schedule",
     },
     publish: {
       title: "Publish Content",
@@ -81,9 +102,14 @@ export function ComposerFooter() {
             {isPending && actionType === "draft" ? "Saving..." : "Save draft"}
           </Button>
           <Button size="sm" onClick={handlePublish} disabled={isPending}>
-            {isPending && actionType === "publish"
-              ? "Publishing..."
-              : "Publish"}
+            {isPending &&
+            (actionType === "publish" || actionType === "schedule")
+              ? actionType === "schedule"
+                ? "Scheduling..."
+                : "Publishing..."
+              : actionType === "schedule"
+                ? "Schedule"
+                : "Publish"}
           </Button>
         </div>
       </div>

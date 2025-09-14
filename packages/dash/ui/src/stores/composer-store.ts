@@ -46,6 +46,9 @@ export interface ComposerActions {
     status: ContentCreateData["base"]["publishingStatus"],
     schedulingSpec?: ContentCreateData["base"]["schedulingSpec"],
   ) => void;
+  setSchedulingSpec: (
+    schedulingSpec?: ContentCreateData["base"]["schedulingSpec"],
+  ) => void;
 }
 
 export type ComposerStore = ComposerState & ComposerActions;
@@ -337,9 +340,16 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
           }
         }
       },
-      setPublishingStatus: (status) =>
+      setPublishingStatus: (status, schedulingSpec) =>
         set((state) => {
           state.contentCreateData.base.publishingStatus = status;
+          if (schedulingSpec !== undefined) {
+            state.contentCreateData.base.schedulingSpec = schedulingSpec;
+          }
+        }),
+      setSchedulingSpec: (schedulingSpec) =>
+        set((state) => {
+          state.contentCreateData.base.schedulingSpec = schedulingSpec;
         }),
     })),
   );
