@@ -6,6 +6,7 @@ import {
   Home,
   Inbox,
   LayoutList,
+  Settings,
   SquarePen,
   TrendingUp,
 } from "lucide-react";
@@ -68,6 +69,11 @@ export const sidebarData: SidebarData = {
           url: "/workspaces/$workspaceSlug/insights",
           badge: "3",
           icon: TrendingUp,
+        },
+        {
+          title: "Playground",
+          url: "/workspaces/$workspaceSlug/playground",
+          icon: Settings,
         },
       ],
     },

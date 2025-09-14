@@ -26,7 +26,7 @@ export abstract class Pusher extends Actor<ApiEnv> {
   }
 
   protected onWebSocketConnect(_ws: WebSocket, _request: Request) {
-    console.log("Socket connected");
+    console.log("Base Pusher: Socket connected");
   }
 
   protected onWebSocketDisconnect(_ws: WebSocket) {

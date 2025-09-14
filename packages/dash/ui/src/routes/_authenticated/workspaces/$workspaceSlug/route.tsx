@@ -8,7 +8,6 @@ import {
 import { toast } from "sonner";
 import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
-import { WebSocketComponent } from "./websocket";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug",
@@ -54,7 +53,6 @@ function WorkspaceComponent() {
 
   return (
     <div className="flex-1">
-      <WebSocketComponent workspaceSlug={workspace.slug} />
       <Outlet />
     </div>
   );
