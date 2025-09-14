@@ -137,8 +137,8 @@ export const workspacesRoute = new Hono<ApiEnv>()
       return ctx.json({ workspaceId: result?.id });
     },
   )
-  .get("/:workspaceSlug/pusher", async (ctx) => {
-    const pusher = WorkspacePusher.get(ctx.req.param("workspaceSlug"));
+  .get("/pusher", async (ctx) => {
+    const pusher = WorkspacePusher.get("test-puhser");
     return pusher.fetch(ctx.req.raw);
   })
   .route("/:workspaceSlug/connected_accounts", connectedAccountsRoute)

@@ -24,4 +24,5 @@ export type ApiRoutes = typeof apiRoutes;
 // bindings for DO, workflow, etc
 export { Scheduler };
 
+export * from "@openpromo/core/durable-objects";
 export * from "@openpromo/core/workflows";
