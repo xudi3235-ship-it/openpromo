@@ -24,12 +24,46 @@ function useContentCreateMutation({
 
 export function ComposerFooter() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const { setPublishingStatus, contentCreateData } = useComposerStore();
 
   const { mutate, isPending } = useContentCreateMutation({
     onSettled: () => {
       setShowConfirmDialog(false);
     },
   });
+
+  // Derive action type from store's publishing status
+  const actionType =
+    contentCreateData.base.publishingStatus === "DRAFT" ? "draft" : "publish";
+
+  const handleSaveDraft = () => {
+    setPublishingStatus("DRAFT");
+    setShowConfirmDialog(true);
+  };
+
+  const handlePublish = () => {
+    setPublishingStatus("PUBLISH_NOW");
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirm = () => {
+    mutate({});
+  };
+
+  const dialogConfig = {
+    draft: {
+      title: "Save Draft",
+      desc: "Are you sure you want to save this content as a draft? You can publish it later.",
+      confirmText: "Save Draft",
+    },
+    publish: {
+      title: "Publish Content",
+      desc: "Are you sure you want to publish this content to your selected social media accounts?",
+      confirmText: "Publish",
+    },
+  };
+
+  const config = dialogConfig[actionType];
 
   return (
     <>
@@ -38,15 +72,18 @@ export function ComposerFooter() {
           <Button variant="outline" size="sm">
             Cancel
           </Button>
-          <Button variant="outline" size="sm" disabled>
-            Save draft
-          </Button>
           <Button
+            variant="outline"
             size="sm"
-            onClick={() => setShowConfirmDialog(true)}
+            onClick={handleSaveDraft}
             disabled={isPending}
           >
-            {isPending ? "Publishing..." : "Publish"}
+            {isPending && actionType === "draft" ? "Saving..." : "Save draft"}
+          </Button>
+          <Button size="sm" onClick={handlePublish} disabled={isPending}>
+            {isPending && actionType === "publish"
+              ? "Publishing..."
+              : "Publish"}
           </Button>
         </div>
       </div>
@@ -54,10 +91,10 @@ export function ComposerFooter() {
       <ConfirmDialog
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}
-        title="Publish Content"
-        desc="Are you sure you want to publish this content to your selected social media accounts?"
-        confirmText="Publish"
-        handleConfirm={() => mutate({})}
+        title={config.title}
+        desc={config.desc}
+        confirmText={config.confirmText}
+        handleConfirm={handleConfirm}
         isLoading={isPending}
       />
     </>
