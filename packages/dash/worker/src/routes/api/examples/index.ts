@@ -1,5 +1,5 @@
 import { Actor } from "@core/helpers/actor";
-import { type ApiEnv, Binding } from "@core/helpers/api-env";
+import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
 import { withAuth } from "../../../middleware/with-auth";
 
@@ -25,15 +25,5 @@ export const examplesRoute = new Hono<ApiEnv>()
     });
   })
   .get("/schedule", async (c) => {
-    // example of calling DO
-    const stub = c.env.Scheduler.getByName("foo");
-    const res = await stub.sayHello();
-    const schedule = await stub.schedule();
-    return c.json({ res, schedule });
-  })
-  .get("/binding", async (c) => {
-    // test binding ctx
-    const scheduler = Binding.getScheduler();
-    const res = await scheduler.sayHello();
-    return c.text(res);
+    return c.text("not implemented yet");
   });

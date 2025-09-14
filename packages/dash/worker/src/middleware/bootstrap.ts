@@ -16,7 +16,7 @@ export const bootstrap =
       Binding.provide(
         {
           HYPERDRIVE: c.env.HYPERDRIVE,
-          Scheduler: c.env.Scheduler,
+          WorkspacePusher: c.env.WorkspacePusher,
           WORKFLOW: c.env.WORKFLOW,
         },
         next,
