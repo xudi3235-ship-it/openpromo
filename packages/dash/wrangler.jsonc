@@ -35,7 +35,7 @@
     {
       "tag": "v3",
       "new_sqlite_classes": ["WorkspacePusher"],
-      "deleted_classes": ["Scheduler"]
+      "renamed_classes": ["Scheduler"]
     }
   ],
   "env": {
@@ -65,7 +65,7 @@
         {
           "tag": "v3",
           "new_sqlite_classes": ["WorkspacePusher"],
-          "deleted_classes": ["Scheduler"]
+          "renamed_classes": ["Scheduler"]
         }
       ],
       "workflows": [
