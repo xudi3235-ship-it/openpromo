@@ -1,14 +1,17 @@
 import { Button } from "@openpromo/ui/components/button";
 import { useState } from "react";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation } from "@/lib/hono-client";
 import { useComposerStore } from "@/stores/composer-store";
+import { PublishingOverlay } from "./publishing-overlay";
 
 function useContentCreateMutation({
-  onSettled,
+  onSuccess,
+  onError,
 }: {
-  onSettled?: () => void;
+  onSuccess?: () => void;
+  onError?: () => void;
 } = {}) {
   const { workspace } = useWorkspace();
   const { contentCreateData } = useComposerStore();
@@ -18,17 +21,31 @@ function useContentCreateMutation({
         param: { workspaceSlug: workspace.slug },
         json: contentCreateData,
       }),
-    onSettled,
+    onSuccess: () => {
+      onSuccess?.();
+    },
+    onError: () => {
+      onError?.();
+    },
   });
 }
 
 export function ComposerFooter() {
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [publishingState, setPublishingState] = useState<{
+    isVisible: boolean;
+    status: "loading" | "success" | "error";
+  }>({ isVisible: false, status: "loading" });
+
   const { setPublishingStatus, contentCreateData } = useComposerStore();
 
   const { mutate, isPending } = useContentCreateMutation({
-    onSettled: () => {
-      setShowConfirmDialog(false);
+    onSuccess: () => {
+      setPublishingState({ isVisible: true, status: "success" });
+      toast.success(getSuccessMessage());
+    },
+    onError: () => {
+      setPublishingState({ isVisible: true, status: "error" });
+      toast.error(getErrorMessage());
     },
   });
 
@@ -40,9 +57,36 @@ export function ComposerFooter() {
         ? "schedule"
         : "publish";
 
+  const getSuccessMessage = () => {
+    switch (actionType) {
+      case "draft":
+        return "Draft saved successfully!";
+      case "schedule":
+        return "Content scheduled successfully!";
+      case "publish":
+        return "Content published successfully!";
+      default:
+        return "Action completed successfully!";
+    }
+  };
+
+  const getErrorMessage = () => {
+    switch (actionType) {
+      case "draft":
+        return "Failed to save draft. Please try again.";
+      case "schedule":
+        return "Failed to schedule content. Please try again.";
+      case "publish":
+        return "Failed to publish content. Please try again.";
+      default:
+        return "Action failed. Please try again.";
+    }
+  };
+
   const handleSaveDraft = () => {
     setPublishingStatus("DRAFT");
-    setShowConfirmDialog(true);
+    setPublishingState({ isVisible: true, status: "loading" });
+    mutate({});
   };
 
   const handlePublish = () => {
@@ -50,41 +94,14 @@ export function ComposerFooter() {
     if (contentCreateData.base.publishingStatus !== "SCHEDULED") {
       setPublishingStatus("PUBLISH_NOW");
     }
-    setShowConfirmDialog(true);
-  };
-
-  const handleConfirm = () => {
+    setPublishingState({ isVisible: true, status: "loading" });
     mutate({});
   };
 
-  const getScheduledDateTime = () => {
-    if (contentCreateData.base.schedulingSpec?.publishAt) {
-      return new Date(
-        contentCreateData.base.schedulingSpec.publishAt,
-      ).toLocaleString();
-    }
-    return "the scheduled time";
+  const handleOverlayComplete = () => {
+    setPublishingState({ isVisible: false, status: "loading" });
   };
 
-  const dialogConfig = {
-    draft: {
-      title: "Save Draft",
-      desc: "Are you sure you want to save this content as a draft? You can publish it later.",
-      confirmText: "Save Draft",
-    },
-    schedule: {
-      title: "Schedule Content",
-      desc: `Are you sure you want to schedule this content for ${getScheduledDateTime()}?`,
-      confirmText: "Schedule",
-    },
-    publish: {
-      title: "Publish Content",
-      desc: "Are you sure you want to publish this content to your selected social media accounts?",
-      confirmText: "Publish",
-    },
-  };
-
-  const config = dialogConfig[actionType];
   const data = useComposerStore((s) => s.contentCreateData);
 
   return (
@@ -120,14 +137,11 @@ export function ComposerFooter() {
         </div>
       )}
 
-      <ConfirmDialog
-        open={showConfirmDialog}
-        onOpenChange={setShowConfirmDialog}
-        title={config.title}
-        desc={config.desc}
-        confirmText={config.confirmText}
-        handleConfirm={handleConfirm}
-        isLoading={isPending}
+      <PublishingOverlay
+        isVisible={publishingState.isVisible}
+        status={publishingState.status}
+        actionType={actionType}
+        onComplete={handleOverlayComplete}
       />
     </>
   );

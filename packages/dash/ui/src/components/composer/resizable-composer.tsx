@@ -27,18 +27,17 @@ export function ResizableComposer({
   } as ComposerProps;
   return (
     <ComposerProvider {...props}>
-      <ResizablePanelGroup
-        direction="horizontal"
-        className={`h-full ${className}`}
-      >
-        <ResizablePanel defaultSize={40} minSize={30} maxSize={60}>
-          <ComposerLeft />
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={60}>
-          <ComposerRight />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+      <div className={`relative h-full ${className}`}>
+        <ResizablePanelGroup direction="horizontal" className="h-full">
+          <ResizablePanel defaultSize={40} minSize={30} maxSize={60}>
+            <ComposerLeft />
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={60}>
+            <ComposerRight />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
     </ComposerProvider>
   );
 }
