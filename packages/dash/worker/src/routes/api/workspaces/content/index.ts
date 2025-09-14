@@ -2,6 +2,7 @@ import {
   EntFBFeedPendingContent,
   EntIGFeedPendingContent,
   EntPendingContent,
+  EntPendingContentGroup,
 } from "@core/domain/content/entity/index";
 
 import { Actor } from "@core/helpers/actor";
@@ -386,4 +387,17 @@ export const contentRoute = new Hono<ApiEnv>()
     }
 
     return c.json({ contentCreateData: data });
+  })
+  .delete("/group/:id", async (c) => {
+    const { id } = c.req.param();
+    const deleted = await EntPendingContentGroup.deleteByID(id);
+    return c.json({ success: !!deleted });
+  })
+  .delete("/content/:id", async (c) => {
+    const { id } = c.req.param();
+    const content = await EntPendingContent.fromID(id);
+    if (!content)
+      throw new AppError(404, { message: `Content ${id} not found` });
+    const deleted = await content._delete();
+    return c.json({ success: !!deleted });
   });

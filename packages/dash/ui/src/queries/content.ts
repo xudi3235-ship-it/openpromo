@@ -1,5 +1,6 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useHonoQuery } from "@/lib/hono-client";
+import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
 
 export const useContentListQuery = () => {
   const { workspace } = useWorkspace();
@@ -23,5 +24,37 @@ export const useContentGroupQuery = (contentGroupID: string | undefined) => {
         param: { workspaceSlug: workspace.slug, id: contentGroupID! },
       }),
     enabled: !!contentGroupID,
+  });
+};
+
+export const useContentGroupDeleteMutation = (onSettled?: () => void) => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation({
+    mutationFn: (api, contentGroupID: string) =>
+      api.workspaces[":workspaceSlug"].content.group[":id"].$delete({
+        param: { workspaceSlug: workspace.slug, id: contentGroupID },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["content-list"] });
+    },
+    onSettled,
+  });
+};
+
+export const useContentDeleteMutation = (onSettled?: () => void) => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation({
+    mutationFn: (api, contentID: string) =>
+      api.workspaces[":workspaceSlug"].content.content[":id"].$delete({
+        param: { workspaceSlug: workspace.slug, id: contentID },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["content-list"] });
+    },
+    onSettled,
   });
 };

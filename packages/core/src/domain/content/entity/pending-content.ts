@@ -14,9 +14,20 @@ import { fn } from "@core/utils/fn";
 import { EntUnifiedContentBase } from "./base";
 
 export class EntPendingContent extends EntUnifiedContentBase {
-  protected deleteSrc(): Promise<void> {
-    // noop.
+  protected async deleteSrc(): Promise<void> {
+    await EntPendingContent.killWorkflow(this.data.id);
     return Promise.resolve();
+  }
+  static async killWorkflow(id: string) {
+    const { WORKFLOW } = Binding.use();
+    try {
+      const wf = await WORKFLOW.get(id);
+      await wf.terminate();
+      return Promise.resolve();
+    } catch (e) {
+      console.warn("error when terminating workflow", e);
+      return Promise.resolve();
+    }
   }
   override isPublished(): boolean {
     return (

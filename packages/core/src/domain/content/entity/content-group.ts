@@ -59,6 +59,40 @@ export class EntPendingContentGroup {
       "paginated query for pending content groups.",
     );
   }
+  static async deleteByID(id: string) {
+    const workspaceID = Actor.workspaceID();
+    return createTransaction(async (tx) => {
+      // 1. First, delete the linked drafts/scheduled contents (foreign key dependencies)
+      const contents = await tx
+        .delete(unifiedContentTable)
+        .where(
+          and(
+            eq(unifiedContentTable.pendingContentGroupId, id),
+            eq(unifiedContentTable.workspaceId, workspaceID),
+          ),
+        )
+        .returning();
+
+      // 2. Then, delete the group (no more foreign key constraints)
+      const [deleted] = await tx
+        .delete(pendingContentGroupTable)
+        .where(
+          and(
+            eq(pendingContentGroupTable.id, id),
+            eq(pendingContentGroupTable.workspaceId, workspaceID),
+          ),
+        )
+        .returning();
+      if (!deleted) throw new Error(`EntPendingContentGroup ${id} not found`);
+      afterTx(async () => {
+        // TODO: terminate workflows for each content
+        await Promise.all(
+          contents.map((c) => EntPendingContent.killWorkflow(c.id)),
+        );
+      });
+      return deleted;
+    });
+  }
 
   public static async fromID(id: string) {
     const workspaceID = Actor.workspaceID();
@@ -123,9 +157,20 @@ export class EntPendingContentGroup {
     return this.data.publishingStatus === "DRAFT";
   }
   public async delete(): Promise<PendingContentGroupSelect> {
-    // 1. delete the pending group
     const workspaceID = Actor.workspaceID();
     return createTransaction(async (tx) => {
+      // 1. First, delete the linked drafts/scheduled contents (foreign key dependencies)
+      await tx
+        .delete(unifiedContentTable)
+        .where(
+          and(
+            eq(unifiedContentTable.pendingContentGroupId, this.data.id),
+            eq(unifiedContentTable.workspaceId, workspaceID),
+          ),
+        )
+        .returning();
+
+      // 2. Then, delete the group (no more foreign key constraints)
       const [deleted] = await tx
         .delete(pendingContentGroupTable)
         .where(
@@ -137,16 +182,6 @@ export class EntPendingContentGroup {
         .returning();
       if (!deleted)
         throw new Error(`EntPendingContentGroup ${this.data.id} not found`);
-      // 2. delete the linked drafts/scheduled contents
-      await tx
-        .delete(unifiedContentTable)
-        .where(
-          and(
-            eq(unifiedContentTable.pendingContentGroupId, this.data.id),
-            eq(unifiedContentTable.workspaceId, workspaceID),
-          ),
-        )
-        .returning();
       return deleted;
     });
   }

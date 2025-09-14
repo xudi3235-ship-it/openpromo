@@ -9,12 +9,59 @@ import {
 } from "@openpromo/ui/components/dropdown-menu";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { Edit, Eye, MoreHorizontal } from "lucide-react";
+import { Edit, Eye, MoreHorizontal, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { matchEntity } from "@/lib/hono-client";
+import {
+  useContentDeleteMutation,
+  useContentGroupDeleteMutation,
+} from "@/queries/content";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 
 const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
   const openDialog = useDialogComposerStore((state) => state.openDialog);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteAction, setDeleteAction] = useState<(() => void) | null>(null);
+  const [deleteTitle, setDeleteTitle] = useState("");
+  const [deleteDescription, setDeleteDescription] = useState("");
+
+  const deleteContent = useContentDeleteMutation(() => {
+    setShowDeleteConfirm(false);
+  });
+  const deleteContentGroup = useContentGroupDeleteMutation(() => {
+    setShowDeleteConfirm(false);
+  });
+
+  const handleDelete = () => {
+    matchEntity(entity, {
+      content: (contentEntity) => {
+        const content = contentEntity.entity;
+        setDeleteTitle("Delete Content");
+        setDeleteDescription(
+          "Are you sure you want to delete this content? This action cannot be undone.",
+        );
+        setDeleteAction(() => () => deleteContent.mutate(content.id));
+        setShowDeleteConfirm(true);
+      },
+      group: (groupEntity) => {
+        const group = groupEntity.entity;
+        setDeleteTitle("Delete Content Group");
+        setDeleteDescription(
+          "Are you sure you want to delete this content group? This will permanently delete all content in the group and cannot be undone.",
+        );
+        setDeleteAction(() => () => deleteContentGroup.mutate(group.id));
+        setShowDeleteConfirm(true);
+      },
+    });
+  };
+
+  const confirmDelete = () => {
+    if (deleteAction) {
+      deleteAction();
+      setDeleteAction(null);
+    }
+  };
 
   // Determine the primary action button based on content type and status
   const getPrimaryAction = () => {
@@ -107,6 +154,13 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
                   {content.publishingStatus === "DRAFT" && (
                     <DropdownMenuItem>Publish now</DropdownMenuItem>
                   )}
+                  <DropdownMenuItem
+                    onClick={handleDelete}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete content
+                  </DropdownMenuItem>
                 </>
               );
             },
@@ -119,12 +173,35 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
                     Edit group
                   </DropdownMenuItem>
                   <DropdownMenuItem>Publish now</DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleDelete}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete group
+                  </DropdownMenuItem>
                 </>
               );
             },
           })}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title={deleteTitle}
+        desc={deleteDescription}
+        confirmText={
+          deleteContent.isPending || deleteContentGroup.isPending
+            ? "Deleting..."
+            : "Delete"
+        }
+        destructive
+        isLoading={deleteContent.isPending || deleteContentGroup.isPending}
+        handleConfirm={confirmDelete}
+      />
     </div>
   );
 };
