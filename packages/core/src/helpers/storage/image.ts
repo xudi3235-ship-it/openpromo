@@ -73,9 +73,42 @@ export namespace ImageStorage {
     params: EditImageParams,
   ): Promise<Image> {
     const c = getCloudflareClient();
+    const { metadata, ...rest } = params;
     return await c.images.v1.edit(imageId, {
       account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
-      ...params,
+      ...rest,
+      metadata: metadata ? JSON.stringify(metadata) : undefined,
     });
+  }
+  export async function get(imageId: string): Promise<Image> {
+    const c = getCloudflareClient();
+    return await c.images.v1.get(imageId, {
+      account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
+    });
+  }
+  export async function markImageAfterPublish(
+    imageId: string,
+    contentId: string,
+  ): Promise<Image> {
+    const c = getCloudflareClient();
+    const img = await c.images.v1.edit(imageId, {
+      account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
+      metadata: JSON.stringify({
+        ...(await (async () => {
+          try {
+            const existing = await get(imageId);
+            if (existing.meta) {
+              return JSON.parse(existing.meta as string);
+            }
+          } catch (e) {
+            console.error("failed to get existing image meta", e);
+          }
+          return {};
+        })()),
+        publishedContentID: contentId,
+        publishedAt: new Date().toISOString(),
+      }),
+    });
+    return img;
   }
 }

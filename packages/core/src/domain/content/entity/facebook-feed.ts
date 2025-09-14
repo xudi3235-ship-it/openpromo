@@ -128,6 +128,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     return atts.filter((a) => a.type === "video");
   }
   async markAsPublished(publishedContentID: string): Promise<this> {
+    // 1. mark as published
     const [newContent] = await db()
       .update(unifiedContentTable)
       .set({
@@ -142,6 +143,12 @@ export class EntFBFeedPendingContent extends EntPendingContent {
         `failed to mark content ${this.data.id} as published`,
       );
     this.data = newContent;
+    // 2. tag attachments
+    const photos = this.photoAttachments();
+    for (const p of photos) {
+      await ImageStorage.markImageAfterPublish(p.id, this.data.id);
+    }
+    // 3. TODO: tag videos
     return this;
   }
   /**
