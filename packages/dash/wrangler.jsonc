@@ -35,7 +35,12 @@
     {
       "tag": "v3",
       "new_sqlite_classes": ["WorkspacePusher"],
-      "renamed_classes": ["Scheduler"]
+      "renamed_classes": [
+        {
+          "from": "Scheduler",
+          "to": "WorkspacePusher"
+        }
+      ]
     }
   ],
   "env": {
@@ -65,7 +70,12 @@
         {
           "tag": "v3",
           "new_sqlite_classes": ["WorkspacePusher"],
-          "renamed_classes": ["Scheduler"]
+          "renamed_classes": [
+            {
+              "from": "Scheduler",
+              "to": "WorkspacePusher"
+            }
+          ]
         }
       ],
       "workflows": [
