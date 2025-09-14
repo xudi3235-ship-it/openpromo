@@ -188,7 +188,9 @@ function PlaygroundPage() {
                               ? "bg-orange-100 text-orange-800"
                               : event.type === "server_to_all"
                                 ? "bg-red-100 text-red-800"
-                                : "bg-gray-100 text-gray-800"
+                                : event.type === "session_evicted"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-gray-100 text-gray-800"
                     }`}
                   >
                     {event.type}

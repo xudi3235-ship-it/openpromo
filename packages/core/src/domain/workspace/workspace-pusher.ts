@@ -6,6 +6,8 @@ import {
 import { Pusher } from "@core/helpers/pusher";
 import * as cookie from "cookie";
 
+const USER_SESSION_LIMIT = 10;
+
 export class WorkspacePusher extends Pusher {
   private _workspaceSlug: string = "default";
   private userWebSocketManager = new UserWebSocketManager();
@@ -185,40 +187,99 @@ export class WorkspacePusher extends Pusher {
   }
 }
 
+interface WebSocketSession {
+  socket: WebSocket;
+  createdAt: number;
+}
+
 class UserWebSocketManager {
-  private userIdToWebSocketsMap: Map<string, Set<WebSocket>> = new Map();
+  private userIdToWebSocketsMap: Map<string, WebSocketSession[]> = new Map();
 
   addWebSocket(userId: string, ws: WebSocket): void {
-    const webSockets = this.userIdToWebSocketsMap.get(userId) || new Set();
+    const sessions = this.userIdToWebSocketsMap.get(userId) || [];
     console.log(`Adding WebSocket for user ${userId}:`, ws);
-    webSockets.add(ws);
-    this.userIdToWebSocketsMap.set(userId, webSockets);
-    console.log(`Now have ${webSockets.size} sessions for user ${userId}`);
+
+    // Check if we need to evict an old session
+    if (sessions.length >= USER_SESSION_LIMIT) {
+      // Sort by creation time (oldest first) and evict the oldest
+      sessions.sort((a, b) => a.createdAt - b.createdAt);
+      const oldestSession = sessions.shift();
+      if (oldestSession) {
+        this.evictSession(userId, oldestSession);
+      }
+    }
+
+    // Add the new session
+    const newSession: WebSocketSession = {
+      socket: ws,
+      createdAt: Date.now(),
+    };
+    sessions.push(newSession);
+    this.userIdToWebSocketsMap.set(userId, sessions);
+
+    console.log(
+      `Now have ${sessions.length} sessions for user ${userId} (limit: ${USER_SESSION_LIMIT})`,
+    );
     console.log(
       `Total users: ${this.getTotalUsers()}, Total sessions: ${this.getTotalSessions()}`,
     );
+    console.log(`Session info:`, this.getSessionInfo());
+  }
+
+  private evictSession(userId: string, session: WebSocketSession): void {
+    const ws = session.socket;
+    if (ws.readyState === WebSocket.OPEN) {
+      console.log(`Evicting oldest session for user ${userId}`);
+
+      // Send graceful closure notification
+      const evictionMessage = JSON.stringify({
+        type: "session_evicted",
+        message:
+          "This session has been closed because you have exceeded the maximum number of concurrent sessions.",
+        timestamp: Date.now(),
+        reason: "max_sessions_exceeded",
+        maxSessions: USER_SESSION_LIMIT,
+      });
+
+      try {
+        ws.send(evictionMessage);
+        // Give a brief moment for the message to be sent before closing
+        setTimeout(() => {
+          ws.close(1000, "Session limit exceeded");
+        }, 100);
+      } catch (error) {
+        console.error("Failed to send eviction message:", error);
+        ws.close(1000, "Session limit exceeded");
+      }
+    }
   }
 
   removeWebSocket(userId: string, ws: WebSocket): void {
-    const webSockets = this.userIdToWebSocketsMap.get(userId);
-    if (webSockets) {
-      webSockets.delete(ws);
-      if (webSockets.size === 0) {
-        this.userIdToWebSocketsMap.delete(userId);
+    const sessions = this.userIdToWebSocketsMap.get(userId);
+    if (sessions) {
+      const index = sessions.findIndex((session) => session.socket === ws);
+      if (index !== -1) {
+        sessions.splice(index, 1);
+        if (sessions.length === 0) {
+          this.userIdToWebSocketsMap.delete(userId);
+        } else {
+          this.userIdToWebSocketsMap.set(userId, sessions);
+        }
       }
     }
   }
 
   getWebSocketsByUserId(userId: string): Set<WebSocket> {
-    return this.userIdToWebSocketsMap.get(userId) || new Set();
+    const sessions = this.userIdToWebSocketsMap.get(userId) || [];
+    return new Set(sessions.map((session) => session.socket));
   }
 
   getAllWebSockets(): Set<WebSocket> {
     const allWebSockets = new Set<WebSocket>();
 
-    for (const webSockets of this.userIdToWebSocketsMap.values()) {
-      webSockets.forEach((ws) => {
-        allWebSockets.add(ws);
+    for (const sessions of this.userIdToWebSocketsMap.values()) {
+      sessions.forEach((session) => {
+        allWebSockets.add(session.socket);
       });
     }
 
@@ -226,8 +287,8 @@ class UserWebSocketManager {
   }
 
   getUserIdFromWebSocket(ws: WebSocket): string | undefined {
-    for (const [userId, webSockets] of this.userIdToWebSocketsMap.entries()) {
-      if (webSockets.has(ws)) {
+    for (const [userId, sessions] of this.userIdToWebSocketsMap.entries()) {
+      if (sessions.some((session) => session.socket === ws)) {
         return userId;
       }
     }
@@ -240,9 +301,17 @@ class UserWebSocketManager {
 
   getTotalSessions(): number {
     let total = 0;
-    for (const webSockets of this.userIdToWebSocketsMap.values()) {
-      total += webSockets.size;
+    for (const sessions of this.userIdToWebSocketsMap.values()) {
+      total += sessions.length;
     }
     return total;
+  }
+
+  getSessionInfo(): Record<string, number> {
+    const info: Record<string, number> = {};
+    for (const [userId, sessions] of this.userIdToWebSocketsMap.entries()) {
+      info[userId] = sessions.length;
+    }
+    return info;
   }
 }
