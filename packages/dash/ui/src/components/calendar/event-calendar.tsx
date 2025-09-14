@@ -44,6 +44,7 @@ import {
   WeekView,
 } from "@/components/calendar";
 import { Route as CalendarRoute } from "@/routes/_authenticated/workspaces/$workspaceSlug/calendar";
+import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import ComposerDialog from "../composer/modal/dialog-composer";
 
 export interface EventCalendarProps {
@@ -63,7 +64,8 @@ export function ContentCalendar({
   className,
 }: EventCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+
+  const { isOpen, openDialog, closeDialog } = useDialogComposerStore();
   const [selectedEvent, setSelectedEvent] =
     useState<MergedContentEntity | null>(null);
 
@@ -84,7 +86,7 @@ export function ContentCalendar({
       // Skip if user is typing in an input, textarea or contentEditable element
       // or if the event dialog is open
       if (
-        isEventDialogOpen ||
+        isOpen ||
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
         (e.target instanceof HTMLElement && e.target.isContentEditable)
@@ -113,7 +115,7 @@ export function ContentCalendar({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isEventDialogOpen, setView]);
+  }, [isOpen, setView]);
 
   const handlePrevious = () => {
     if (view === "month") {
@@ -147,7 +149,8 @@ export function ContentCalendar({
 
   const handleEventSelect = (event: MergedContentEntity) => {
     setSelectedEvent(event);
-    setIsEventDialogOpen(true);
+    // TODO:
+    openDialog(event.entity?.id);
   };
 
   const handleEventCreate = (startTime: Date) => {
@@ -179,7 +182,7 @@ export function ContentCalendar({
       },
     } as MergedContentEntity;
     setSelectedEvent(newEvent);
-    setIsEventDialogOpen(true);
+    openDialog();
   };
 
   const handleEventSave = (event: MergedContentEntity) => {
@@ -205,14 +208,14 @@ export function ContentCalendar({
         position: "bottom-left",
       });
     }
-    setIsEventDialogOpen(false);
+    closeDialog();
     setSelectedEvent(null);
   };
 
   const handleEventDelete = (eventId: string) => {
     const deletedEvent = events.find((e) => String(e.entity?.id) === eventId);
     onEventDelete?.(eventId);
-    setIsEventDialogOpen(false);
+    closeDialog();
     setSelectedEvent(null);
 
     // Show toast notification when an event is deleted
@@ -350,7 +353,7 @@ export function ContentCalendar({
               size="sm"
               onClick={() => {
                 setSelectedEvent(null); // Ensure we're creating a new event
-                setIsEventDialogOpen(true);
+                openDialog();
               }}
             >
               <PlusIcon
@@ -401,18 +404,13 @@ export function ContentCalendar({
           event={selectedEvent}
           isOpen={false}
           onClose={() => {
-            setIsEventDialogOpen(false);
+            closeDialog();
             setSelectedEvent(null);
           }}
           onSave={handleEventSave}
           onDelete={handleEventDelete}
         />
-        <ComposerDialog
-          isOpen={isEventDialogOpen}
-          onClose={() => {
-            setIsEventDialogOpen(false);
-          }}
-        />
+        <ComposerDialog />
       </CalendarDndProvider>
     </div>
   );

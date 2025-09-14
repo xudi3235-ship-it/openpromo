@@ -30,6 +30,7 @@ import { ChevronDown, Plus } from "lucide-react";
 import * as React from "react";
 import ComposerDialog from "@/components/composer/modal/dialog-composer";
 import { useContentListQuery } from "@/queries/content";
+import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import { columns } from "./columns";
 import { ContentTableSkeleton } from "./content-table-skeleton";
 
@@ -41,7 +42,7 @@ export function ContentPage() {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-  const [isComposerOpen, setIsComposerOpen] = React.useState(false);
+  const openDialog = useDialogComposerStore((state) => state.openDialog);
   const { data, isLoading } = useContentListQuery();
   const table = useReactTable({
     data: (data?.entities as unknown as MergedContentEntity[]) ?? [],
@@ -74,7 +75,7 @@ export function ContentPage() {
           className="max-w-sm"
         />
         <div className="ml-auto flex gap-2">
-          <Button onClick={() => setIsComposerOpen(true)}>
+          <Button onClick={() => openDialog()}>
             <Plus className="h-4 w-4" />
             Create Post
           </Button>
@@ -185,10 +186,7 @@ export function ContentPage() {
         </div>
       </div>
 
-      <ComposerDialog
-        isOpen={isComposerOpen}
-        onClose={() => setIsComposerOpen(false)}
-      />
+      <ComposerDialog />
     </div>
   );
 }

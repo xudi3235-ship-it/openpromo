@@ -17,7 +17,7 @@ export interface ComposerProps {
   initialAccounts?: ConnectedAccount[];
   initialPlacementSelected?: AllPlacement | "ALL";
   initialSelectedPreview?: Platform;
-  initialMessage?: string;
+  initialMessage: string;
   initContentCreateData?: ContentCreateData;
 }
 
@@ -98,7 +98,7 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
           },
           placement: "FB_FEED" as const,
           postSpec: {
-            message: props.initialMessage || "",
+            message: props.initialMessage,
             attachments: [],
           },
           customized: false,
@@ -117,7 +117,7 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
             igAccountID: (acc.metadata as { igAccountID: string }).igAccountID,
           },
           placement: "IG_FEED" as const,
-          caption: props.initialMessage || "",
+          caption: props.initialMessage,
           attachments: [],
           customized: false,
         } as IGFeedPlacementSpec;
@@ -136,7 +136,7 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
       activeAccount: props.initialAccounts?.[0]?.id || null,
       contentCreateData: {
         base: {
-          message: props.initialMessage || "",
+          message: props.initialMessage,
           publishingStatus: "PUBLISH_NOW",
           attachments: [],
         },

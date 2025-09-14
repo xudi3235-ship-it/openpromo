@@ -9,20 +9,13 @@ import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import { useConnectedAccounts } from "@/queries/connected-account";
 import { useContentGroupQuery } from "@/queries/content";
 import type { ComposerProps } from "@/stores/composer-store";
+import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import { ComposerSkeleton } from "../composer-skeleton";
 import { ResizableComposer } from "../resizable-composer";
 
-interface ComposerDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  pendingContentGroupID?: string;
-}
-
-export default function ComposerDialog({
-  isOpen,
-  onClose,
-  pendingContentGroupID,
-}: ComposerDialogProps) {
+export default function ComposerDialog() {
+  const { isOpen, pendingContentGroupID, closeDialog } =
+    useDialogComposerStore();
   const { data: accountsData, isLoading: accountsLoading } =
     useConnectedAccounts();
   const { data: contentGroupData, isLoading: contentGroupLoading } =
@@ -34,7 +27,7 @@ export default function ComposerDialog({
       contentGroupData?.contentCreateData as ContentCreateData,
   } as ComposerProps;
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && closeDialog()}>
       <DialogContent className="!max-w-none w-full h-[90vh] p-0 flex flex-col overflow-hidden sm:w-[95vw] md:w-[90vw] lg:w-[85vw] xl:w-[80vw] 2xl:w-[1200px]">
         <DialogHeader className="sr-only">
           <DialogTitle>Create Post</DialogTitle>
