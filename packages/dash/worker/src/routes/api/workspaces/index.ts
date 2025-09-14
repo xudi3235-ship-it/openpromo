@@ -21,6 +21,18 @@ import { mediaRoute } from "./media";
 
 export const workspacesRoute = new Hono<ApiEnv>()
   .use(withAuth())
+  .get("/pusher", async (ctx) => {
+    const workspaceSlug = ctx.req.query("workspaceSlug");
+
+    if (!workspaceSlug) {
+      throw new AppError(400, {
+        message: "Workspace slug is required",
+      });
+    }
+
+    const pusher = WorkspacePusher.get(workspaceSlug);
+    return pusher.fetch(ctx.req.raw);
+  })
   // List all workspaces a user has access to
   .get("/", async (ctx) => {
     const db = getDbClient();
@@ -137,10 +149,6 @@ export const workspacesRoute = new Hono<ApiEnv>()
       return ctx.json({ workspaceId: result?.id });
     },
   )
-  .get("/pusher", async (ctx) => {
-    const pusher = WorkspacePusher.get("test-puhser");
-    return pusher.fetch(ctx.req.raw);
-  })
   .route("/:workspaceSlug/connected_accounts", connectedAccountsRoute)
   .route("/:workspaceSlug/media", mediaRoute)
   .route("/:workspaceSlug/content", contentRoute);

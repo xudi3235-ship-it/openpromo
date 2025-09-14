@@ -3,12 +3,14 @@ export type WebSocketProps = {
   workspaceSlug: string;
 };
 
-export function WebSocketComponent({ workspaceSlug: _ }: WebSocketProps) {
+export function WebSocketComponent({ workspaceSlug }: WebSocketProps) {
   useEffect(() => {
-    const socket = new WebSocket(`/api/workspaces/pusher`);
+    const socket = new WebSocket(
+      `/api/workspaces/pusher?workspaceSlug=${workspaceSlug}`,
+    );
 
     socket.onmessage = (event) => {
-      console.info(event.data);
+      console.info("WebSocket message received:", event.data);
     };
     socket.onopen = () => {
       console.info("WebSocket connected");
@@ -20,7 +22,7 @@ export function WebSocketComponent({ workspaceSlug: _ }: WebSocketProps) {
     return () => {
       socket.close();
     };
-  }, []);
+  }, [workspaceSlug]);
 
   return null;
 }
