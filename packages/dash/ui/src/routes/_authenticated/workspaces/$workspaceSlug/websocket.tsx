@@ -14,6 +14,7 @@ export function WebSocketComponent({ workspaceSlug }: WebSocketProps) {
     };
     socket.onopen = () => {
       console.info("WebSocket connected");
+      socket.send("Hello from client");
     };
     socket.onclose = () => {
       console.info("WebSocket closed");
