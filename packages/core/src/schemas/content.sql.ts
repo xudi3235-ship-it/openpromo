@@ -137,7 +137,6 @@ export type BasePlacementSpec = z.infer<typeof BasePlacementSpec>;
 export const postSpec = z.object({
   message: z.string(),
   link: z.string().optional(),
-  attachments: SharedAttachmentSpec.array().optional(),
 });
 
 // placement specifics specs

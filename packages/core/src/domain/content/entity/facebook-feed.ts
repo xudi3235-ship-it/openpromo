@@ -90,41 +90,41 @@ export class EntFBFeedPendingContent extends EntPendingContent {
   }
   // helpers
   isTextOnlyPost() {
-    const atts = this.spec.postSpec.attachments ?? [];
+    const atts = this.spec.attachments ?? [];
     const msg = this.spec.postSpec.message;
     return atts.length === 0 && msg && msg.trim().length > 0;
   }
   isMultiPhotoPost() {
-    const atts = this.spec.postSpec.attachments ?? [];
+    const atts = this.spec.attachments ?? [];
     const photoCount = atts.filter((a) => a.type === "photo").length;
     return photoCount >= 1;
   }
   isSingleVideoPost() {
-    const atts = this.spec.postSpec.attachments ?? [];
+    const atts = this.spec.attachments ?? [];
     const videoCount = atts.filter((a) => a.type === "video").length;
     return videoCount === 1;
   }
   isCarouselPost() {
     // mix of photo and video
-    const atts = this.spec.postSpec.attachments ?? [];
+    const atts = this.spec.attachments ?? [];
     const photoCount = atts.filter((a) => a.type === "photo").length;
     const videoCount = atts.filter((a) => a.type === "video").length;
     return photoCount > 0 && videoCount > 0;
   }
   hasPhotoAttachment() {
-    const atts = this.spec.postSpec.attachments ?? [];
+    const atts = this.spec.attachments ?? [];
     return atts.some((a) => a.type === "photo");
   }
   hasVideoAttachment() {
-    const atts = this.spec.postSpec.attachments ?? [];
+    const atts = this.spec.attachments ?? [];
     return atts.some((a) => a.type === "video");
   }
   photoAttachments() {
-    const atts = this.spec.postSpec.attachments ?? [];
+    const atts = this.spec.attachments ?? [];
     return atts.filter((a) => a.type === "photo");
   }
   videoAttachments() {
-    const atts = this.spec.postSpec.attachments ?? [];
+    const atts = this.spec.attachments ?? [];
     return atts.filter((a) => a.type === "video");
   }
   async markAsPublished(publishedContentID: string): Promise<this> {

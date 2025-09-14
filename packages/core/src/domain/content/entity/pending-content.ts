@@ -156,20 +156,20 @@ export class EntPendingContent extends EntUnifiedContentBase {
           },
         },
         placement: "FB_FEED",
+        attachments: [
+          {
+            type: "photo",
+            id: "your_mom",
+            thumbnailUrl,
+          },
+          {
+            type: "video",
+            id: "your_mom_again",
+            thumbnailUrl,
+          },
+        ],
         postSpec: {
           message: "trust me bro - from openpromo",
-          attachments: [
-            {
-              type: "photo",
-              id: "your_mom",
-              thumbnailUrl,
-            },
-            {
-              type: "video",
-              id: "your_mom_again",
-              thumbnailUrl,
-            },
-          ],
         },
       },
     });

@@ -231,7 +231,6 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
             placement: "FB_FEED" as const,
             postSpec: {
               message: props.initialMessage || "",
-              attachments: [],
             },
             customized: false,
           } as FBFeedPlacementSpec;
@@ -352,11 +351,11 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
                   fbPageID: (account.metadata as { pageID: string }).pageID,
                 },
                 placement: "FB_FEED" as const,
+                attachments: [
+                  ...(state.contentCreateData.base.attachments || []),
+                ],
                 postSpec: {
                   message: state.contentCreateData.base.message || "",
-                  attachments: [
-                    ...(state.contentCreateData.base.attachments || []),
-                  ],
                 },
                 customized: false,
               };
@@ -580,6 +579,31 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
                 attachment.publicUrl = publicUrl;
                 attachment.metadata = { uploading: false };
               }
+
+              // Sync updated attachments to placement specs
+              const baseAttachments = [
+                ...(state.contentCreateData.base.attachments ?? []),
+              ];
+
+              // Set thumbnailUrl to the first image's publicUrl if available
+              const firstImageUrl = baseAttachments.find(
+                (att) => att.type === "photo" && att.publicUrl,
+              )?.publicUrl;
+
+              syncToNonCustomizedPlacements(state, {
+                facebook: (spec) => {
+                  spec.attachments = baseAttachments;
+                  if (firstImageUrl && !spec.customized) {
+                    spec.thumbnailUrl = firstImageUrl;
+                  }
+                },
+                instagram: (spec) => {
+                  spec.attachments = baseAttachments;
+                  if (firstImageUrl && !spec.customized) {
+                    spec.thumbnailUrl = firstImageUrl;
+                  }
+                },
+              });
 
               // Update validation after upload success
               updateValidation(state);
