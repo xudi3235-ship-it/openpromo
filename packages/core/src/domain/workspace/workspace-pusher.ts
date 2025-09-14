@@ -1,95 +1,139 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: later */
-import { Actor } from "@cloudflare/actors";
 import type { ApiEnv } from "@core/helpers/api-env";
+import {
+  authenticateWithCookie,
+  WORKOS_SESSION_COOKIE_NAME,
+} from "@core/helpers/auth";
+import { Pusher } from "@core/helpers/pusher";
+import * as cookie from "cookie";
 
-export class WorkspacePusher extends Actor<ApiEnv> {
-  private periodicInterval: ReturnType<typeof setInterval> | null = null;
+export class WorkspacePusher extends Pusher {
+  private _workspaceSlug: string = "default";
+  private userWebSocketManager = new UserWebSocketManager();
 
-  constructor(ctx: any, env: any) {
-    super(ctx, env);
-    console.log("WorkspacePusher constructor called", this.identifier);
+  constructor(state: DurableObjectState, env: ApiEnv) {
+    super(state, env);
   }
 
-  protected onRequest(request: Request): Promise<Response> {
-    console.log("WorkspacePusher onRequest called", request.url);
+  get workspaceSlug() {
+    return this._workspaceSlug;
+  }
 
-    // Check if this is a WebSocket upgrade request
-    const upgradeHeader = request.headers.get("upgrade");
-    const connectionHeader = request.headers.get("connection");
+  init(workspaceSlug: string) {
+    this._workspaceSlug = workspaceSlug;
+  }
 
-    if (
-      upgradeHeader?.toLowerCase() === "websocket" &&
-      connectionHeader?.toLowerCase().includes("upgrade")
-    ) {
-      console.log("WebSocket upgrade detected in WorkspacePusher");
+  protected override async onRequest(_request: Request): Promise<Response> {
+    return Response.json({ message: "Workspace Pusher" });
+  }
 
-      // Extract workspace slug from URL
-      const url = new URL(request.url);
-      const workspaceSlug = url.searchParams.get("workspaceSlug");
+  protected override async onWebSocketDisconnect(ws: WebSocket): Promise<void> {
+    console.log("Workspace Pusher: WebSocket disconnected");
 
-      // Create WebSocket pair
-      const webSocketPair = new WebSocketPair();
-      const [client, server] = Object.values(webSocketPair);
+    // Find and remove the WebSocket from the manager
+    const userId = this.userWebSocketManager.getUserIdFromWebSocket(ws);
+    if (userId) {
+      this.userWebSocketManager.removeWebSocket(userId, ws);
+      console.log(`Removed WebSocket for user ${userId}`);
+    }
+  }
 
-      // Accept the WebSocket connection
-      server.accept();
+  protected override async onWebSocketConnect(ws: WebSocket, request: Request) {
+    const workspaceSlug = this.workspaceSlug;
 
-      // Set up event listeners
-      server.addEventListener("message", (event) => {
-        console.log(`Message from workspace ${workspaceSlug}:`, event.data);
+    const cookieString = request.headers.get("cookie");
 
-        // Echo the message back (you can modify this behavior)
-        server.send(`Echo from workspace ${workspaceSlug}: ${event.data}`);
-
-        // Here you can access Durable Object storage:
-        // this.storage.put("lastMessage", event.data);
-      });
-
-      server.addEventListener("close", () => {
-        console.log(`WebSocket disconnected from workspace: ${workspaceSlug}`);
-        // Clear interval when connection closes
-        if (this.periodicInterval) {
-          clearInterval(this.periodicInterval);
-          this.periodicInterval = null;
-        }
-      });
-
-      // Send initial connection message
-      console.log(`WebSocket connected to workspace: ${workspaceSlug}`);
-      server.send(
-        JSON.stringify({
-          type: "connection",
-          message: `Connected to workspace: ${workspaceSlug}`,
-          timestamp: Date.now(),
-          doId: this.identifier,
-        }),
-      );
-
-      // Start periodic events every 10 seconds
-      this.startPeriodicEvents(server, workspaceSlug);
-
-      // Return the WebSocket upgrade response
-      return Promise.resolve(
-        new Response(null, {
-          status: 101,
-          webSocket: client,
-        }),
-      );
+    if (!cookieString) {
+      throw new Error("Cookie not found");
     }
 
-    // For non-WebSocket requests, return a simple response
-    return Promise.resolve(
-      Response.json({
-        message: "WorkspacePusher Durable Object",
-        identifier: this.identifier,
+    const cookies = cookie.parse(cookieString);
+
+    const sessionCookie = cookies[WORKOS_SESSION_COOKIE_NAME];
+
+    if (!sessionCookie) {
+      throw new Error("Session cookie not found");
+    }
+
+    const result = await authenticateWithCookie({
+      cookie: sessionCookie,
+      withRefresh: false,
+    });
+
+    if (!result.authenticated) {
+      throw new Error("Failed to authenticate session");
+    }
+
+    const userId = result.user.id;
+
+    console.log(`Adding WebSocket for user ${userId}`);
+
+    this.userWebSocketManager.addWebSocket(userId, ws);
+
+    // Send welcome message
+    ws.send(
+      JSON.stringify({
+        type: "connect",
+        message: `Connected to workspace: ${workspaceSlug}`,
+        timestamp: Date.now(),
+        workspaceSlug,
       }),
+    );
+
+    await this.startPeriodicEvents(ws);
+  }
+
+  sendMessageToUser(userId: string, message: string) {
+    const webSockets = this.userWebSocketManager.getWebSocketsByUserId(userId);
+    let sentCount = 0;
+    for (const ws of webSockets) {
+      ws.send(message);
+      sentCount++;
+    }
+    console.log(`Sent message to ${sentCount} sessions:`, message);
+  }
+
+  sendMessageToAllUsers(message: string) {
+    const webSockets = this.userWebSocketManager.getAllWebSockets();
+    let sentCount = 0;
+    for (const ws of webSockets) {
+      ws.send(message);
+      sentCount++;
+    }
+    console.log(
+      `Sent message to ${sentCount} sessions from all users:`,
+      message,
     );
   }
 
-  private startPeriodicEvents(ws: WebSocket, workspaceSlug: string | null) {
+  protected override async onWebSocketMessage(ws: WebSocket, message: unknown) {
+    const workspaceSlug = this.workspaceSlug;
+    console.log(
+      "Workspace Pusher: Message received for workspace",
+      workspaceSlug,
+      "- message:",
+      message,
+    );
+
+    // Echo message back to sender (for now, can be extended for broadcasting)
+    try {
+      ws.send(
+        JSON.stringify({
+          type: "echo",
+          message: message,
+          timestamp: Date.now(),
+          workspaceSlug,
+        }),
+      );
+    } catch (error) {
+      console.error("Failed to send echo message:", error);
+    }
+  }
+
+  private async startPeriodicEvents(ws: WebSocket) {
+    const workspaceSlug = this.workspaceSlug;
     let eventCount = 0;
 
-    this.periodicInterval = setInterval(() => {
+    const periodicInterval = setInterval(() => {
       if (ws.readyState === WebSocket.OPEN) {
         eventCount++;
         const event = {
@@ -97,7 +141,7 @@ export class WorkspacePusher extends Actor<ApiEnv> {
           message: `Periodic event #${eventCount} from workspace ${workspaceSlug}`,
           timestamp: Date.now(),
           eventId: `event-${eventCount}`,
-          doId: this.identifier,
+          workspaceSlug,
         };
 
         ws.send(JSON.stringify(event));
@@ -106,13 +150,56 @@ export class WorkspacePusher extends Actor<ApiEnv> {
         );
       } else {
         console.log("WebSocket closed, clearing periodic events");
-        if (this.periodicInterval) {
-          clearInterval(this.periodicInterval);
-          this.periodicInterval = null;
-        }
+        clearInterval(periodicInterval);
       }
     }, 10000); // 10 seconds
 
     console.log(`Started periodic events for workspace ${workspaceSlug}`);
+  }
+}
+
+class UserWebSocketManager {
+  private userIdToWebSocketsMap: Map<string, Set<WebSocket>> = new Map();
+
+  addWebSocket(userId: string, ws: WebSocket): void {
+    const webSockets = this.userIdToWebSocketsMap.get(userId) || new Set();
+    console.log(`Adding WebSocket for user ${userId}:`, ws);
+    webSockets.add(ws);
+    this.userIdToWebSocketsMap.set(userId, webSockets);
+  }
+
+  removeWebSocket(userId: string, ws: WebSocket): void {
+    const webSockets = this.userIdToWebSocketsMap.get(userId);
+    if (webSockets) {
+      webSockets.delete(ws);
+      if (webSockets.size === 0) {
+        this.userIdToWebSocketsMap.delete(userId);
+      }
+    }
+  }
+
+  getWebSocketsByUserId(userId: string): Set<WebSocket> {
+    return this.userIdToWebSocketsMap.get(userId) || new Set();
+  }
+
+  getAllWebSockets(): Set<WebSocket> {
+    const allWebSockets = new Set<WebSocket>();
+
+    for (const webSockets of this.userIdToWebSocketsMap.values()) {
+      webSockets.forEach((ws) => {
+        allWebSockets.add(ws);
+      });
+    }
+
+    return allWebSockets;
+  }
+
+  getUserIdFromWebSocket(ws: WebSocket): string | undefined {
+    for (const [userId, webSockets] of this.userIdToWebSocketsMap.entries()) {
+      if (webSockets.has(ws)) {
+        return userId;
+      }
+    }
+    return undefined;
   }
 }

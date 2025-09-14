@@ -20,21 +20,6 @@ import { mediaRoute } from "./media";
 
 export const workspacesRoute = new Hono<ApiEnv>()
   .use(withAuth())
-  .get("/pusher", async (ctx) => {
-    const workspaceSlug = ctx.req.query("workspaceSlug");
-
-    if (!workspaceSlug) {
-      throw new AppError(400, {
-        message: "Workspace slug is required",
-      });
-    }
-
-    const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
-
-    console.log("WebSocket upgrade for Workspace slug:", workspaceSlug);
-
-    return pusher.fetch(ctx.req.raw);
-  })
   // List all workspaces a user has access to
   .get("/", async (ctx) => {
     const db = getDbClient();
@@ -149,6 +134,33 @@ export const workspacesRoute = new Hono<ApiEnv>()
         .returning();
 
       return ctx.json({ workspaceId: result?.id });
+    },
+  )
+  .get("/:workspaceSlug/pusher", async (ctx) => {
+    const workspaceSlug = ctx.req.param("workspaceSlug");
+    const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
+    // Always initialize the workspace slug to ensure it's set correctly
+    await pusher.init(workspaceSlug);
+    return pusher.fetch(ctx.req.raw);
+  })
+  .post(
+    "/:workspaceSlug/pusher/message/:userId",
+    zValidator("param", z.object({ userId: z.string() })),
+    zValidator("json", z.object({ message: z.string() })),
+    async (ctx) => {
+      const workspaceSlug = ctx.req.param("workspaceSlug");
+      const userId = ctx.req.param("userId");
+      const { message } = ctx.req.valid("json");
+
+      const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
+
+      if (userId === "all") {
+        await pusher.sendMessageToAllUsers(message);
+        return ctx.json({ message: "Message sent to all users" });
+      } else {
+        await pusher.sendMessageToUser(userId, message);
+        return ctx.json({ message: "Message sent to user" });
+      }
     },
   )
   .route("/:workspaceSlug/connected_accounts", connectedAccountsRoute)

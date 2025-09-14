@@ -1,10 +1,11 @@
 import type { Actor } from "@openpromo/core/helpers/actor";
 import type { ApiEnv } from "@openpromo/core/helpers/api-env";
+import { WORKOS_SESSION_COOKIE_NAME } from "@openpromo/core/helpers/auth";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { AppError } from "./error";
 
-export const WORKOS_SESSION_COOKIE_NAME = "wos-session";
+export { WORKOS_SESSION_COOKIE_NAME };
 export const AUTH_STATE_COOKIE_NAME = "wos-auth-state";
 
 const DEFAULT_COOKIE_OPTIONS = {

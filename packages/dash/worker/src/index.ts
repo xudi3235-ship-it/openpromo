@@ -1,4 +1,3 @@
-import { Scheduler } from "@core/experimental/scheduler";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { bootstrap } from "./middleware/bootstrap";
@@ -21,8 +20,12 @@ export default app;
 export type Routes = typeof app;
 export type ApiRoutes = typeof apiRoutes;
 
-// bindings for DO, workflow, etc
-export { Scheduler };
-
 export * from "@openpromo/core/durable-objects";
 export * from "@openpromo/core/workflows";
+
+// export const apiClient = hc<ApiRoutes>('');
+
+// apiClient.workspaces[":workspaceSlug"].pusher.message[":userId"].$post({
+//   param: {userId: 'all'},
+//   json: {message: 'Hello from client'}
+// })

@@ -1,6 +1,8 @@
 import { Button } from "@openpromo/ui/components/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useHonoMutation } from "@/lib/hono-client";
 
 type WebSocketEvent = {
   type: string;
@@ -12,15 +14,22 @@ type WebSocketEvent = {
 
 function PlaygroundPage() {
   const { workspaceSlug } = Route.useParams();
+  const { data: user } = useAuth();
   const socketRef = useRef<WebSocket | null>(null);
   const [events, setEvents] = useState<WebSocketEvent[]>([]);
   const [connectionStatus, setConnectionStatus] =
     useState<string>("Connecting...");
 
+  const sendMessageMutation = useHonoMutation({
+    mutationFn: (api, variables: { userId: string; message: string }) =>
+      api.workspaces[":workspaceSlug"].pusher.message[":userId"].$post({
+        param: { userId: variables.userId },
+        json: { message: variables.message },
+      }),
+  });
+
   useEffect(() => {
-    const socket = new WebSocket(
-      `/api/workspaces/pusher?workspaceSlug=${workspaceSlug}`,
-    );
+    const socket = new WebSocket(`/api/workspaces/${workspaceSlug}/pusher`);
 
     socketRef.current = socket;
 
@@ -112,6 +121,44 @@ function PlaygroundPage() {
           Send Dummy Event
         </Button>
 
+        <Button
+          onClick={() => {
+            if (user?.id) {
+              sendMessageMutation.mutate({
+                userId: user.id,
+                message: JSON.stringify({
+                  type: "server-to-user",
+                  message: `Server push to user ${user.id}`,
+                  timestamp: Date.now(),
+                }),
+              });
+            }
+          }}
+          disabled={!user?.id || sendMessageMutation.isPending}
+        >
+          {sendMessageMutation.isPending
+            ? "Sending..."
+            : "Test Server Push (Current User)"}
+        </Button>
+
+        <Button
+          onClick={() => {
+            sendMessageMutation.mutate({
+              userId: "all",
+              message: JSON.stringify({
+                type: "server-to-all",
+                message: "Server push to all users in workspace",
+                timestamp: Date.now(),
+              }),
+            });
+          }}
+          disabled={sendMessageMutation.isPending}
+        >
+          {sendMessageMutation.isPending
+            ? "Sending..."
+            : "Test Server Push (All Users)"}
+        </Button>
+
         <Button variant="outline" onClick={clearEvents}>
           Clear Events
         </Button>
@@ -131,13 +178,17 @@ function PlaygroundPage() {
                 <div className="flex justify-between items-start mb-1">
                   <span
                     className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      event.type === "connection"
+                      event.type === "connection" || event.type === "connect"
                         ? "bg-blue-100 text-blue-800"
                         : event.type === "periodic"
                           ? "bg-green-100 text-green-800"
                           : event.type === "dummy"
                             ? "bg-purple-100 text-purple-800"
-                            : "bg-gray-100 text-gray-800"
+                            : event.type === "server_to_user"
+                              ? "bg-orange-100 text-orange-800"
+                              : event.type === "server_to_all"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-gray-100 text-gray-800"
                     }`}
                   >
                     {event.type}
