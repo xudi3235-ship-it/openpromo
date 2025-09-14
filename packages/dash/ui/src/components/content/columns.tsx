@@ -12,11 +12,11 @@ import { titleColumn } from "./columns/title-column";
 export const columns: ColumnDef<MergedContentEntity>[] = [
   selectColumn,
   titleColumn,
+  statusColumn,
   // ensure action's position
   actionsColumn,
   engagementColumn,
   reachColumn,
   scheduledDateColumn,
   createdAtColumn,
-  statusColumn,
 ];
