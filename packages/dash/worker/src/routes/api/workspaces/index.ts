@@ -136,23 +136,42 @@ export const workspacesRoute = new Hono<ApiEnv>()
       return ctx.json({ workspaceId: result?.id });
     },
   )
-  .get("/:workspaceSlug/pusher", async (ctx) => {
-    const workspaceSlug = ctx.req.param("workspaceSlug");
-    const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
-    // Always initialize the workspace slug to ensure it's set correctly
-    await pusher.init(workspaceSlug);
-    return pusher.fetch(ctx.req.raw);
-  })
-  .post(
-    "/:workspaceSlug/pusher/message/:userId",
-    zValidator("param", z.object({ userId: z.string() })),
-    zValidator("json", z.object({ message: z.string() })),
+  .get(
+    "/:workspaceSlug/pusher",
+    zValidator("param", z.object({ workspaceSlug: z.string() })),
     async (ctx) => {
-      const workspaceSlug = ctx.req.param("workspaceSlug");
-      const userId = ctx.req.param("userId");
-      const { message } = ctx.req.valid("json");
+      const { workspaceSlug } = ctx.req.valid("param");
+      console.log(`WebSocket connection for workspace: ${workspaceSlug}`);
 
       const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
+      console.log(`WebSocket pusher DO ID: ${pusher.id}`);
+      // Always initialize the workspace slug to ensure it's set correctly
+      await pusher.init(workspaceSlug);
+      return pusher.fetch(ctx.req.raw);
+    },
+  )
+  .post(
+    "/:workspaceSlug/pusher/message/:userId",
+    zValidator(
+      "param",
+      z.object({
+        workspaceSlug: z.string(),
+        userId: z.string(),
+      }),
+    ),
+    zValidator("json", z.object({ message: z.string() })),
+    async (ctx) => {
+      const { workspaceSlug, userId } = ctx.req.valid("param");
+      const { message } = ctx.req.valid("json");
+
+      console.log(
+        `Sending message to workspace: ${workspaceSlug}, user: ${userId}`,
+      );
+
+      const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
+      console.log(`Message pusher DO ID: ${pusher.id}`);
+      // Ensure the pusher is initialized with the correct workspace slug
+      await pusher.init(workspaceSlug);
 
       if (userId === "all") {
         await pusher.sendMessageToAllUsers(message);

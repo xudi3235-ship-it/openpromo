@@ -19,6 +19,11 @@ export class WorkspacePusher extends Pusher {
   }
 
   init(workspaceSlug: string) {
+    console.log(`Initializing WorkspacePusher for workspace: ${workspaceSlug}`);
+    console.log(`Previous workspace: ${this._workspaceSlug}`);
+    console.log(
+      `Current sessions before init: ${this.userWebSocketManager.getTotalSessions()}`,
+    );
     this._workspaceSlug = workspaceSlug;
   }
 
@@ -83,21 +88,43 @@ export class WorkspacePusher extends Pusher {
   }
 
   sendMessageToUser(userId: string, message: string) {
+    console.log(
+      `Looking for user ${userId} in workspace ${this.workspaceSlug}`,
+    );
+    console.log(
+      `Total users in manager: ${this.userWebSocketManager.getTotalUsers()}`,
+    );
+    console.log(
+      `Total sessions: ${this.userWebSocketManager.getTotalSessions()}`,
+    );
+
     const webSockets = this.userWebSocketManager.getWebSocketsByUserId(userId);
     let sentCount = 0;
     for (const ws of webSockets) {
-      ws.send(message);
-      sentCount++;
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(message);
+        sentCount++;
+      }
     }
     console.log(`Sent message to ${sentCount} sessions:`, message);
   }
 
   sendMessageToAllUsers(message: string) {
+    console.log(`Sending to all users in workspace ${this.workspaceSlug}`);
+    console.log(
+      `Total users in manager: ${this.userWebSocketManager.getTotalUsers()}`,
+    );
+    console.log(
+      `Total sessions: ${this.userWebSocketManager.getTotalSessions()}`,
+    );
+
     const webSockets = this.userWebSocketManager.getAllWebSockets();
     let sentCount = 0;
     for (const ws of webSockets) {
-      ws.send(message);
-      sentCount++;
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(message);
+        sentCount++;
+      }
     }
     console.log(
       `Sent message to ${sentCount} sessions from all users:`,
@@ -166,6 +193,10 @@ class UserWebSocketManager {
     console.log(`Adding WebSocket for user ${userId}:`, ws);
     webSockets.add(ws);
     this.userIdToWebSocketsMap.set(userId, webSockets);
+    console.log(`Now have ${webSockets.size} sessions for user ${userId}`);
+    console.log(
+      `Total users: ${this.getTotalUsers()}, Total sessions: ${this.getTotalSessions()}`,
+    );
   }
 
   removeWebSocket(userId: string, ws: WebSocket): void {
@@ -201,5 +232,17 @@ class UserWebSocketManager {
       }
     }
     return undefined;
+  }
+
+  getTotalUsers(): number {
+    return this.userIdToWebSocketsMap.size;
+  }
+
+  getTotalSessions(): number {
+    let total = 0;
+    for (const webSockets of this.userIdToWebSocketsMap.values()) {
+      total += webSockets.size;
+    }
+    return total;
   }
 }
