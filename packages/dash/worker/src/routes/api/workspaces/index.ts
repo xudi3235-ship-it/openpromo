@@ -1,5 +1,4 @@
 import { ORGANIZATION_ROLE, WORKSPACE_ROLE } from "@core/domain/workspace/auth";
-import { WorkspacePusher } from "@core/domain/workspace/workspace-pusher";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { getDbClient } from "@core/helpers/db";
 import { usersTable } from "@core/schemas/users.sql";
@@ -30,7 +29,7 @@ export const workspacesRoute = new Hono<ApiEnv>()
       });
     }
 
-    const pusher = WorkspacePusher.get(workspaceSlug);
+    const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
 
     console.log("WebSocket upgrade for Workspace slug:", workspaceSlug);
 
