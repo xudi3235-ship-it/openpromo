@@ -43,7 +43,7 @@ export function ContentPage() {
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const openDialog = useDialogComposerStore((state) => state.openDialog);
-  const { data, isLoading } = useContentListQuery();
+  const { data, isLoading, isFetching } = useContentListQuery();
   const table = useReactTable({
     data: (data?.entities as unknown as MergedContentEntity[]) ?? [],
     columns,
@@ -136,6 +136,7 @@ export function ContentPage() {
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    className={isFetching ? "animate-pulse" : ""}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
