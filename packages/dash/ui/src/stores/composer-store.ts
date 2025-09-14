@@ -556,6 +556,20 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
               );
             }
 
+            // Get the public URL for the uploaded image
+            const publicUrlResponse = await apiClient.workspaces[
+              ":workspaceSlug"
+            ].media.images[":imageId"].url.$get({
+              param: { workspaceSlug, imageId: id },
+              query: { variant: "public" },
+            });
+
+            let publicUrl: string | undefined;
+            if (publicUrlResponse.ok) {
+              const { url } = await publicUrlResponse.json();
+              publicUrl = url;
+            }
+
             // Update the attachment with success state
             set((state) => {
               const attachment =
@@ -563,6 +577,7 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
               if (attachment) {
                 attachment.id = id;
                 attachment.s3Key = id;
+                attachment.publicUrl = publicUrl;
                 attachment.metadata = { uploading: false };
               }
 

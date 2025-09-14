@@ -1,3 +1,4 @@
+import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import { Button } from "@openpromo/ui/components/button";
 import {
   Bookmark,
@@ -12,6 +13,41 @@ import {
 import { useState } from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerStore } from "@/stores/composer-store";
+
+// Helper function to get the preview URL for an attachment
+const getAttachmentUrl = (attachment: SharedAttachmentSpec): string | null => {
+  if (attachment.publicUrl) {
+    return attachment.publicUrl;
+  }
+  if (attachment.file) {
+    return URL.createObjectURL(attachment.file);
+  }
+  return null;
+};
+
+// Helper to render a single attachment
+const renderAttachment = (
+  attachment: SharedAttachmentSpec,
+  className: string = "w-full h-full object-cover",
+  controls: boolean = false,
+) => {
+  const url = getAttachmentUrl(attachment);
+  if (!url) return null;
+
+  if (attachment.type === "photo") {
+    return <img src={url} alt="Preview" className={className} />;
+  }
+
+  if (attachment.type === "video") {
+    return (
+      <video src={url} className={className} controls={controls}>
+        <track kind="captions" label="auto-generated" />
+      </video>
+    );
+  }
+
+  return null;
+};
 
 export function IGFeedPreview() {
   const { workspace } = useWorkspace();
@@ -80,21 +116,14 @@ export function IGFeedPreview() {
           <>
             {/* Main Content Display */}
             <div className="w-full h-full overflow-hidden">
-              {attachments[currentSlide]?.file ? (
-                attachments[currentSlide].file.type.startsWith("image/") ? (
-                  <img
-                    src={URL.createObjectURL(attachments[currentSlide].file)}
-                    alt={`Preview ${currentSlide + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                ) : attachments[currentSlide].file.type.startsWith("video/") ? (
-                  <video
-                    src={URL.createObjectURL(attachments[currentSlide].file)}
-                    className="w-full h-full object-cover"
-                    controls
-                  />
-                ) : null
-              ) : null}
+              {attachments[currentSlide] &&
+              getAttachmentUrl(attachments[currentSlide])
+                ? renderAttachment(
+                    attachments[currentSlide],
+                    "w-full h-full object-cover",
+                    true,
+                  )
+                : null}
             </div>
 
             {/* Carousel Navigation Dots */}

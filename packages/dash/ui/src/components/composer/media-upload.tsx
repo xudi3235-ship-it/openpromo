@@ -29,8 +29,12 @@ interface MediaPreview {
   mimeType: string;
 }
 
-const generatePreview = async (file: File): Promise<MediaPreview> => {
-  const url = URL.createObjectURL(file);
+const generatePreview = async (
+  file: File,
+  publicUrl?: string,
+): Promise<MediaPreview> => {
+  // Use public URL if available, otherwise create blob URL
+  const url = publicUrl || URL.createObjectURL(file);
 
   return new Promise((resolve) => {
     if (file.type.startsWith("image/")) {
@@ -102,11 +106,27 @@ export function MediaUpload() {
           if (cached) {
             generated.push(cached);
           } else {
-            // Generate new preview and cache it
-            const newPreview = await generatePreview(att.file);
+            // Generate new preview and cache it, using publicUrl if available
+            const newPreview = await generatePreview(att.file, att.publicUrl);
             previewCacheRef.current.set(att.file, newPreview);
             generated.push(newPreview);
           }
+        } else if (att.publicUrl) {
+          // For existing attachments without file (edit mode), use publicUrl directly
+          // Create a minimal placeholder file object with the required properties
+          const placeholderFile = {
+            name: att.id || "unknown",
+            size: 0,
+            type: att.mimeType || "image/jpeg",
+            lastModified: Date.now(),
+          } as File;
+
+          generated.push({
+            file: placeholderFile,
+            url: att.publicUrl,
+            aspectRatio: "Unknown", // Could be enhanced to fetch dimensions
+            mimeType: att.mimeType || "image/jpeg",
+          });
         }
       }
 

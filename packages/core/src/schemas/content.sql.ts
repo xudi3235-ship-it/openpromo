@@ -67,6 +67,7 @@ export const placementPgEnum = pgEnum("placement", AllPlacement);
 export const BaseAttachmentSpec = z.object({
   id: z.string(),
   presignedUrl: z.string().optional(),
+  publicUrl: z.string().optional(),
   s3Key: z.string().optional(),
   thumbnailUrl: z.string().optional(),
   mimeType: z.string().optional(),
