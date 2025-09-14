@@ -23,7 +23,7 @@ function PlaygroundPage() {
   const sendMessageMutation = useHonoMutation({
     mutationFn: (api, variables: { userId: string; message: string }) =>
       api.workspaces[":workspaceSlug"].pusher.message[":userId"].$post({
-        param: { userId: variables.userId },
+        param: { workspaceSlug, userId: variables.userId },
         json: { message: variables.message },
       }),
   });
