@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
 import { File, Upload, Video } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Dropzone } from "@/components/dropzone";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerStore } from "@/stores/composer-store";
@@ -71,35 +71,77 @@ export function MediaUpload() {
     index: number;
   } | null>(null);
 
+  // Cache previews by file reference to prevent regeneration
+  const previewCacheRef = useRef(new Map<File, MediaPreview>());
+
   const attachments = contentCreateData.base.attachments;
 
-  // regenerate previews whenever attachments change
-  useEffect(() => {
-    let cancelled = false;
-    const currentAttachments = contentCreateData.base.attachments;
+  // Helper function to generate stable keys
+  const getStableKey = useCallback(
+    (preview: MediaPreview, index: number): string => {
+      const att = attachments?.[index];
+      return (
+        att?.id ||
+        `${preview.file.name}-${preview.file.size}-${preview.file.lastModified}`
+      );
+    },
+    [attachments],
+  );
 
-    const build = async () => {
-      // cleanup old previews
-      setPreviews((currentPreviews) => {
-        currentPreviews.forEach((p) => {
-          if (p.url.startsWith("blob:")) {
-            URL.revokeObjectURL(p.url);
-          }
-        });
-        return [];
-      });
+  // Memoized preview generator that reuses existing previews
+  const generatePreviewsForAttachments = useCallback(
+    async (attachments: typeof contentCreateData.base.attachments) => {
+      if (!attachments?.length) return [];
 
       const generated: MediaPreview[] = [];
-      for (const att of currentAttachments || []) {
+
+      for (const att of attachments) {
         if (att.file) {
-          generated.push(await generatePreview(att.file));
+          // Check cache first
+          const cached = previewCacheRef.current.get(att.file);
+          if (cached) {
+            generated.push(cached);
+          } else {
+            // Generate new preview and cache it
+            const newPreview = await generatePreview(att.file);
+            previewCacheRef.current.set(att.file, newPreview);
+            generated.push(newPreview);
+          }
         }
       }
-      if (!cancelled) setPreviews(generated);
+
+      return generated;
+    },
+    [],
+  );
+
+  // Update previews when attachments change - optimized to reduce flickering
+  useEffect(() => {
+    let cancelled = false;
+
+    const updatePreviews = async () => {
+      const newPreviews = await generatePreviewsForAttachments(
+        contentCreateData.base.attachments,
+      );
+
+      if (!cancelled) {
+        setPreviews((currentPreviews) => {
+          // Clean up URLs for previews that are no longer needed
+          const currentFiles = new Set(newPreviews.map((p) => p.file));
+          currentPreviews.forEach((p) => {
+            if (!currentFiles.has(p.file) && p.url.startsWith("blob:")) {
+              URL.revokeObjectURL(p.url);
+              previewCacheRef.current.delete(p.file);
+            }
+          });
+
+          return newPreviews;
+        });
+      }
     };
 
-    if (currentAttachments?.length) {
-      build();
+    if (contentCreateData.base.attachments?.length) {
+      updatePreviews();
     } else {
       setPreviews((currentPreviews) => {
         currentPreviews.forEach((p) => {
@@ -107,6 +149,7 @@ export function MediaUpload() {
             URL.revokeObjectURL(p.url);
           }
         });
+        previewCacheRef.current.clear();
         return [];
       });
     }
@@ -114,7 +157,7 @@ export function MediaUpload() {
     return () => {
       cancelled = true;
     };
-  }, [contentCreateData.base.attachments]);
+  }, [contentCreateData.base.attachments, generatePreviewsForAttachments]);
 
   // cleanup on unmount
   useEffect(() => {
@@ -142,8 +185,14 @@ export function MediaUpload() {
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    const index = Number(active.id);
-    setDragOverlay({ preview: previews[index], index });
+    // Find index by matching the stable key
+    const index = previews.findIndex(
+      (preview, idx) => getStableKey(preview, idx) === active.id,
+    );
+
+    if (index !== -1) {
+      setDragOverlay({ preview: previews[index], index });
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -152,9 +201,18 @@ export function MediaUpload() {
     setDragOverlay(null);
 
     if (over && active.id !== over.id) {
-      const oldIndex = Number(active.id);
-      const newIndex = Number(over.id);
-      reorderAttachments(oldIndex, newIndex);
+      // Find indices by matching stable keys
+      const oldIndex = previews.findIndex(
+        (preview, idx) => getStableKey(preview, idx) === active.id,
+      );
+
+      const newIndex = previews.findIndex(
+        (preview, idx) => getStableKey(preview, idx) === over.id,
+      );
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        reorderAttachments(oldIndex, newIndex);
+      }
     }
   };
 
@@ -209,7 +267,9 @@ export function MediaUpload() {
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={previews.map((_, index) => index.toString())}
+                items={previews.map((preview, index) =>
+                  getStableKey(preview, index),
+                )}
                 strategy={horizontalListSortingStrategy}
               >
                 <div className="flex gap-2">
@@ -217,10 +277,12 @@ export function MediaUpload() {
                     const att = attachments?.[index];
                     if (!att) return null;
 
+                    const stableKey = getStableKey(preview, index);
+
                     return (
                       <DraggableMediaItem
-                        key={`${att.id || preview.file.name}-${index}`}
-                        id={index.toString()}
+                        key={stableKey}
+                        id={stableKey}
                         preview={preview}
                         attachment={att}
                         index={index}
