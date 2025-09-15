@@ -1,0 +1,16 @@
+{
+  "name": "@openpromo/agent",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.113"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx src/index.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4"
+  }
+}

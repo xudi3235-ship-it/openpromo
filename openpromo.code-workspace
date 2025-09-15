@@ -23,6 +23,10 @@
     {
       "name": "📜 scripts",
       "path": "packages/scripts"
+    },
+    {
+      "name": "👹 agent",
+      "path": "packages/agent"
     }
   ],
   "settings": {
