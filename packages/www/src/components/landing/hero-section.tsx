@@ -38,7 +38,6 @@ export function HeroSection({ onGetStartedClick }: HeroSectionProps) {
                   <Typography.AnnouncementBadge>
                     NEW
                   </Typography.AnnouncementBadge>
-                  NEW
                 </Badge>
                 <Typography.Announcement>
                   Announcing API 2.0
