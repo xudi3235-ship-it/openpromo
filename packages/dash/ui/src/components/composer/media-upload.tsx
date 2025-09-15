@@ -1,10 +1,4 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  DragOverlay,
-  type DragStartEvent,
-} from "@dnd-kit/core";
+import { closestCenter, DndContext, DragOverlay } from "@dnd-kit/core";
 import {
   horizontalListSortingStrategy,
   SortableContext,
@@ -15,278 +9,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
-import Uppy from "@uppy/core";
 import { File, Upload, Video } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { Dropzone } from "@/components/dropzone";
-import { useWorkspace } from "@/hooks/useWorkspace";
-import { useComposerStore } from "@/stores/composer-store";
+import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { DraggableMediaItem } from "./draggable-media-item";
-
-interface MediaPreview {
-  file: File; // may be an empty placeholder for remote assets
-  url: string;
-  aspectRatio: string;
-  mimeType: string;
-}
-
-const generatePreview = async (
-  file: File,
-  publicUrl?: string,
-): Promise<MediaPreview> => {
-  // Use public URL if available, otherwise create blob URL
-  const url = publicUrl || URL.createObjectURL(file);
-
-  return new Promise((resolve) => {
-    if (file.type.startsWith("image/")) {
-      const img = new Image();
-      img.onload = () => {
-        const aspectRatio = `${img.width}:${img.height}`;
-        resolve({ file, url, aspectRatio, mimeType: file.type });
-      };
-      img.src = url;
-    } else if (file.type.startsWith("video/")) {
-      const video = document.createElement("video");
-      video.onloadedmetadata = () => {
-        const aspectRatio = `${video.videoWidth}:${video.videoHeight}`;
-        resolve({ file, url, aspectRatio, mimeType: file.type });
-      };
-      video.src = url;
-    } else {
-      resolve({ file, url, aspectRatio: "Unknown", mimeType: file.type });
-    }
-  });
-};
 
 export function MediaUpload() {
   const {
-    contentCreateData,
-    removeAttachment,
-    uploadAttachments,
-    reorderAttachments,
-  } = useComposerStore();
-  const { workspace } = useWorkspace();
-  const [previews, setPreviews] = useState<MediaPreview[]>([]);
-  const [selectedMedia, setSelectedMedia] = useState<{
-    preview: MediaPreview;
-    index: number;
-  } | null>(null);
-  const [dragOverlay, setDragOverlay] = useState<{
-    preview: MediaPreview;
-    index: number;
-  } | null>(null);
-
-  // Cache previews by file reference to prevent regeneration
-  const previewCacheRef = useRef(new Map<File, MediaPreview>());
-  const uppyRef = useRef<Uppy | null>(null);
-
-  const attachments = contentCreateData.base.attachments;
-
-  // Initialize Uppy for file validation (but use our UI)
-  useEffect(() => {
-    const uppy = new Uppy({
-      restrictions: {
-        maxFileSize: 50 * 1024 * 1024, // 50MB
-        maxNumberOfFiles: 10,
-        allowedFileTypes: ["image/*", "video/*"],
-      },
-      autoProceed: false,
-    });
-
-    uppyRef.current = uppy;
-
-    return () => {
-      uppy.destroy();
-    };
-  }, []);
-
-  // Enhanced file drop handler with Uppy validation
-  const handleFileDrop = async (files: File[]) => {
-    if (!workspace?.slug || !uppyRef.current) return;
-
-    // Use Uppy for validation only
-    const validatedFiles: File[] = [];
-
-    files.forEach((file) => {
-      try {
-        // Test if Uppy would accept this file
-        uppyRef.current?.addFile({
-          name: file.name,
-          type: file.type,
-          data: file,
-        });
-        // If no error thrown, file is valid
-        validatedFiles.push(file);
-      } catch (err) {
-        console.error("File validation failed:", err);
-        // Skip invalid files
-      }
-    });
-
-    // Clear Uppy's internal state (we don't need it to store files)
-    uppyRef.current.cancelAll();
-
-    // uploadAttachments handles both adding to store and uploading
-    if (validatedFiles.length > 0) {
-      await uploadAttachments(validatedFiles, workspace.slug);
-    }
-  };
-
-  // Helper function to generate stable keys
-  const getStableKey = useCallback(
-    (preview: MediaPreview, index: number): string => {
-      const att = attachments?.[index];
-      return (
-        att?.id ||
-        `${preview.file.name}-${preview.file.size}-${preview.file.lastModified}`
-      );
-    },
-    [attachments],
-  );
-
-  // Memoized preview generator that reuses existing previews
-  const generatePreviewsForAttachments = useCallback(
-    async (attachments: typeof contentCreateData.base.attachments) => {
-      if (!attachments?.length) return [];
-
-      const generated: MediaPreview[] = [];
-
-      for (const att of attachments) {
-        if (att.file) {
-          // Check cache first
-          const cached = previewCacheRef.current.get(att.file);
-          if (cached) {
-            generated.push(cached);
-          } else {
-            // Generate new preview and cache it, using publicUrl if available
-            const newPreview = await generatePreview(att.file, att.publicUrl);
-            previewCacheRef.current.set(att.file, newPreview);
-            generated.push(newPreview);
-          }
-        } else if (att.publicUrl) {
-          // For existing attachments without file (edit mode), use publicUrl directly
-          // Create a minimal placeholder file object with the required properties
-          const placeholderFile = {
-            name: att.id || "unknown",
-            size: 0,
-            type: att.mimeType || "image/jpeg",
-            lastModified: Date.now(),
-          } as File;
-
-          generated.push({
-            file: placeholderFile,
-            url: att.publicUrl,
-            aspectRatio: "Unknown", // Could be enhanced to fetch dimensions
-            mimeType: att.mimeType || "image/jpeg",
-          });
-        }
-      }
-
-      return generated;
-    },
-    [],
-  );
-
-  // Update previews when attachments change - optimized to reduce flickering
-  useEffect(() => {
-    let cancelled = false;
-
-    const updatePreviews = async () => {
-      const newPreviews = await generatePreviewsForAttachments(
-        contentCreateData.base.attachments,
-      );
-
-      if (!cancelled) {
-        setPreviews((currentPreviews) => {
-          // Clean up URLs for previews that are no longer needed
-          const currentFiles = new Set(newPreviews.map((p) => p.file));
-          currentPreviews.forEach((p) => {
-            if (!currentFiles.has(p.file) && p.url.startsWith("blob:")) {
-              URL.revokeObjectURL(p.url);
-              previewCacheRef.current.delete(p.file);
-            }
-          });
-
-          return newPreviews;
-        });
-      }
-    };
-
-    if (contentCreateData.base.attachments?.length) {
-      updatePreviews();
-    } else {
-      setPreviews((currentPreviews) => {
-        currentPreviews.forEach((p) => {
-          if (p.url.startsWith("blob:")) {
-            URL.revokeObjectURL(p.url);
-          }
-        });
-        previewCacheRef.current.clear();
-        return [];
-      });
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [contentCreateData.base.attachments, generatePreviewsForAttachments]);
-
-  // cleanup on unmount
-  useEffect(() => {
-    return () => {
-      setPreviews((currentPreviews) => {
-        currentPreviews.forEach((p) => {
-          if (p.url.startsWith("blob:")) {
-            URL.revokeObjectURL(p.url);
-          }
-        });
-        return currentPreviews;
-      });
-    };
-  }, []);
-
-  const handleRemove = (index: number) => {
-    const preview = previews[index];
-    if (preview?.url.startsWith("blob:")) URL.revokeObjectURL(preview.url);
-    removeAttachment(index);
-  };
-
-  const handleMediaClick = (preview: MediaPreview, index: number) => {
-    setSelectedMedia({ preview, index });
-  };
-
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    // Find index by matching the stable key
-    const index = previews.findIndex(
-      (preview, idx) => getStableKey(preview, idx) === active.id,
-    );
-
-    if (index !== -1) {
-      setDragOverlay({ preview: previews[index], index });
-    }
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    setDragOverlay(null);
-
-    if (over && active.id !== over.id) {
-      // Find indices by matching stable keys
-      const oldIndex = previews.findIndex(
-        (preview, idx) => getStableKey(preview, idx) === active.id,
-      );
-
-      const newIndex = previews.findIndex(
-        (preview, idx) => getStableKey(preview, idx) === over.id,
-      );
-
-      if (oldIndex !== -1 && newIndex !== -1) {
-        reorderAttachments(oldIndex, newIndex);
-      }
-    }
-  };
+    previews,
+    selectedMedia,
+    dragOverlay,
+    attachments,
+    config,
+    handleFileDrop,
+    handleRemove,
+    handleMediaClick,
+    handleDragStart,
+    handleDragEnd,
+    setSelectedMedia,
+    getStableKey,
+  } = useMediaUpload();
 
   return (
     <div className="space-y-3">
@@ -295,7 +37,7 @@ export function MediaUpload() {
         <h3 className="text-sm font-medium text-foreground">Media</h3>
         {previews.length > 0 && (
           <span className="text-xs text-muted-foreground">
-            {previews.length}/10 files
+            {previews.length}/{config.maxFiles} files
           </span>
         )}
       </div>
@@ -305,8 +47,8 @@ export function MediaUpload() {
         {/* Add Button - Full width when no media, compact when media exists */}
         <Dropzone
           accept={{ "image/*": [], "video/*": [] }}
-          maxFiles={10}
-          maxSize={50 * 1024 * 1024}
+          maxFiles={config.maxFiles}
+          maxSize={Math.max(config.maxVideoSize, config.maxImageSize)}
           onDrop={handleFileDrop}
           className={`${
             previews.length === 0 ? "flex-1 h-16" : "flex-shrink-0 w-16 h-16"
@@ -400,7 +142,9 @@ export function MediaUpload() {
       {/* Help Text */}
       {previews.length === 0 && (
         <p className="text-xs text-muted-foreground">
-          Share photos and videos • Max 10 files, 50MB each
+          Share photos and videos • Max {config.maxFiles} files • Images:{" "}
+          {config.maxImageSize / (1024 * 1024)}MB • Videos:{" "}
+          {config.maxVideoSize / (1024 * 1024)}MB
         </p>
       )}
 

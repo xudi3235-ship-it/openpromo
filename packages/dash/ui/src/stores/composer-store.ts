@@ -168,6 +168,25 @@ const validateComposerState = (state: ComposerState): ValidationState => {
     });
   }
 
+  // Check file size limits (100MB for videos, 10MB for images)
+  const hasOversizedFiles = state.contentCreateData.base.attachments?.some(
+    (att) => {
+      if (!att.file) return false;
+      const maxSize = att.file.type.startsWith("video/")
+        ? 100 * 1024 * 1024
+        : 10 * 1024 * 1024;
+      return att.file.size > maxSize;
+    },
+  );
+  if (hasOversizedFiles) {
+    errors.push({
+      type: "platform_limit_exceeded",
+      message: "File size too large. Max 100MB for videos, 10MB for images",
+      severity: "error",
+      field: "media",
+    });
+  }
+
   // Determine if can publish (no errors, warnings are OK)
   const hasErrors = errors.some((error) => error.severity === "error");
 
@@ -515,15 +534,29 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
         // Upload all files in parallel
         const uploadPromises = files.map(async (file, i) => {
           const attachmentIndex = startingIndex + i;
+          const isVideo = file.type.startsWith("video/");
 
           try {
-            // Get presigned URL for upload
-            const uploadResponse = await apiClient.workspaces[
-              ":workspaceSlug"
-            ].media.images["upload-url"].$post({
-              param: { workspaceSlug },
-              json: { requireSignedURLs: false },
-            });
+            let uploadResponse: Response;
+            let publicUrl: string | undefined;
+
+            if (isVideo) {
+              // Get presigned URL for video upload
+              uploadResponse = await apiClient.workspaces[
+                ":workspaceSlug"
+              ].media.videos["upload-url"].$post({
+                param: { workspaceSlug },
+                json: { requireSignedURLs: false, maxDurationSeconds: 60 },
+              });
+            } else {
+              // Get presigned URL for image upload
+              uploadResponse = await apiClient.workspaces[
+                ":workspaceSlug"
+              ].media.images["upload-url"].$post({
+                param: { workspaceSlug },
+                json: { requireSignedURLs: false },
+              });
+            }
 
             if (!uploadResponse.ok) {
               throw new Error(
@@ -554,18 +587,22 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
               );
             }
 
-            // Get the public URL for the uploaded image
-            const publicUrlResponse = await apiClient.workspaces[
-              ":workspaceSlug"
-            ].media.images[":imageId"].url.$get({
-              param: { workspaceSlug, imageId: id },
-              query: { variant: "public" },
-            });
+            // For images, get the public URL
+            if (!isVideo) {
+              const publicUrlResponse = await apiClient.workspaces[
+                ":workspaceSlug"
+              ].media.images[":imageId"].url.$get({
+                param: { workspaceSlug, imageId: id },
+                query: { variant: "public" },
+              });
 
-            let publicUrl: string | undefined;
-            if (publicUrlResponse.ok) {
-              const { url } = await publicUrlResponse.json();
-              publicUrl = url;
+              if (publicUrlResponse.ok) {
+                const { url } = await publicUrlResponse.json();
+                publicUrl = url;
+              }
+            } else {
+              // For videos, use Cloudflare Stream URL format
+              publicUrl = `https://customer-${id}.cloudflarestream.com/${id}/manifest/video.m3u8`;
             }
 
             return { attachmentIndex, id, publicUrl, file };
