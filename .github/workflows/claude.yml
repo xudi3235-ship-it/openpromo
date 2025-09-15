@@ -38,6 +38,6 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: |
-            --allowedTools "Edit,MultiEdit,Write,Read,Glob,Grep,LS,Bash(git:*),Bash(pnpm:*),Bash(npm:*),Bash(npx:*),Bash(gh:*)"
+            --allowedTools "Edit,MultiEdit,Write,Read,Glob,Grep,LS,Bash(git:*),Bash(pnpm:*),Bash(npm:*),Bash(npx:*),Bash(gh:*),mcp__playwright__browser_install,mcp__playwright__browser_navigate,mcp__playwright__browser_take_screenshot"
             --model "claude-sonnet-4-20250514"
             --mcp-config ".claude/mcp-config.json"
