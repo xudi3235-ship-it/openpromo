@@ -1,7 +1,8 @@
 import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { File, GripVertical, Video, X } from "lucide-react";
+import { GripVertical, X } from "lucide-react";
+import { MediaItemFactory, MediaRenderer } from "@/lib/media";
 
 interface MediaPreview {
   file: File;
@@ -46,12 +47,6 @@ export function DraggableMediaItem({
   const meta = (attachment?.metadata || {}) as Record<string, unknown>;
   const uploading = Boolean(meta.uploading);
   const error = meta.error as string | undefined;
-  const isImage =
-    preview.mimeType.startsWith("image/") ||
-    (attachment?.mimeType ?? "").startsWith("image/");
-  const isVideo =
-    preview.mimeType.startsWith("video/") ||
-    (attachment?.mimeType ?? "").startsWith("video/");
 
   return (
     <div
@@ -78,38 +73,10 @@ export function DraggableMediaItem({
         onClick={() => onClick(preview, index)}
         title="Click to view details"
       >
-        {/* Media Preview */}
-        {isImage ? (
-          <img
-            src={preview.url}
-            alt={attachment?.id || "image"}
-            className="w-full h-full object-cover"
-          />
-        ) : isVideo ? (
-          <>
-            {preview.isStreamVideo && preview.previewIframeUrl ? (
-              // For stream videos, show thumbnail in small preview
-              <img
-                src={preview.url}
-                alt="Video thumbnail"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              // Use local video preview for local files
-              <video
-                src={preview.url}
-                className="w-full h-full object-cover"
-                muted
-              />
-            )}
-            <div className="absolute bottom-1 right-1 bg-black/50 rounded p-0.5">
-              <Video className="h-2 w-2 text-white" />
-            </div>
-          </>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <File className="h-4 w-4 text-muted-foreground" />
-          </div>
+        {/* Media Preview - Using Unified MediaRenderer */}
+        {MediaRenderer.renderThumbnail(
+          MediaItemFactory.fromAttachment(attachment),
+          "w-full h-full object-cover",
         )}
 
         {/* Status Overlay */}

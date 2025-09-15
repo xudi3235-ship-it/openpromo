@@ -10,9 +10,10 @@ import { createContext, useContext } from "react";
 import { createStore, useStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import type { ConnectedAccount } from "@/lib/hono-client";
+import { MediaService } from "@/lib/media";
 import {
   processUploadResults,
-  uploadAttachments,
+  uploadAttachments as uploadAttachmentsService,
 } from "@/services/attachment-upload";
 
 export interface ValidationError {
@@ -516,32 +517,56 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
           updateValidation(state);
         }),
       uploadAttachments: async (files, workspaceSlug) => {
-        // First, get the current number of attachments
+        // First, get the current number of attachments for indexing
         const startingIndex =
           get().contentCreateData.base.attachments?.length ?? 0;
 
-        // Add files to state with uploading status
+        // Use MediaService for validation
+        const { validFiles, errors } = MediaService.validateFiles(files);
+
+        if (errors.length > 0) {
+          console.error("File validation errors:", errors);
+          // Could show toast notifications here
+          return;
+        }
+
+        // Add files to state with uploading status using MediaService
         set((state) => {
-          const newAttachments = files.map((file, index) => ({
-            id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}-${index}`,
-            type: file.type.startsWith("video/")
-              ? ("video" as const)
-              : ("photo" as const),
-            file,
-            mimeType: file.type,
-            metadata: { uploading: true },
-          }));
+          const mediaItems = MediaService.fromFiles(validFiles);
+          const newAttachments = MediaService.toAttachmentSpecs(mediaItems);
+
+          // Mark as uploading
+          newAttachments.forEach((att) => {
+            if (!att.metadata) att.metadata = {};
+            att.metadata.uploading = true;
+          });
+
           state.contentCreateData.base.attachments?.push(...newAttachments);
+
+          const baseAttachments = [
+            ...(state.contentCreateData.base.attachments ?? []),
+          ];
+          syncToNonCustomizedPlacements(state, {
+            facebook: (spec) => {
+              spec.attachments = baseAttachments;
+            },
+            instagram: (spec) => {
+              spec.attachments = baseAttachments;
+            },
+          });
+
+          // Update validation after adding attachments
+          updateValidation(state);
         });
 
-        // Upload files using the service
-        const results = await uploadAttachments(
-          files,
+        // Upload using the original service (which has proper progress handling)
+        const results = await uploadAttachmentsService(
+          validFiles,
           workspaceSlug,
           startingIndex,
         );
 
-        // Process results using the service
+        // Process results using the original service
         processUploadResults(
           results,
           // updateAttachment callback
@@ -565,23 +590,8 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
             ...(state.contentCreateData.base.attachments ?? []),
           ];
 
-          // Set thumbnailUrl to the first available thumbnail (image publicUrl or video thumbnailUrl)
-          const firstThumbnail = baseAttachments.find((att) => {
-            if (att.type === "photo" && att.publicUrl) {
-              return att.publicUrl;
-            }
-            if (att.type === "video" && att.metadata?.thumbnailUrl) {
-              return att.metadata.thumbnailUrl;
-            }
-            return null;
-          });
-
-          const thumbnailUrl =
-            firstThumbnail?.type === "photo"
-              ? firstThumbnail.publicUrl
-              : firstThumbnail?.type === "video"
-                ? (firstThumbnail.metadata?.thumbnailUrl as string)
-                : null;
+          // Set thumbnailUrl using MediaService
+          const thumbnailUrl = MediaService.getFirstThumbnail(baseAttachments);
 
           syncToNonCustomizedPlacements(state, {
             facebook: (spec) => {

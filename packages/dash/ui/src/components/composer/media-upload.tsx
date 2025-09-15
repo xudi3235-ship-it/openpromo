@@ -9,36 +9,106 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
-import { File, Upload, Video } from "lucide-react";
+import { Upload } from "lucide-react";
+import { useState } from "react";
 import { Dropzone } from "@/components/dropzone";
-import { useMediaUpload } from "@/hooks/useMediaUpload";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { MediaRenderer, MediaService } from "@/lib/media";
+import { useComposerStore } from "@/stores/composer-store";
 import { DraggableMediaItem } from "./draggable-media-item";
-import { StreamVideoPreview } from "./stream-video-preview";
 
 export function MediaUpload() {
+  const { workspace } = useWorkspace();
   const {
-    previews,
-    selectedMedia,
-    dragOverlay,
-    attachments,
-    config,
-    handleFileDrop,
-    handleRemove,
-    handleMediaClick,
-    handleDragStart,
-    handleDragEnd,
-    setSelectedMedia,
-    getStableKey,
-  } = useMediaUpload();
+    contentCreateData,
+    uploadAttachments,
+    removeAttachment,
+    reorderAttachments,
+  } = useComposerStore();
+
+  // Convert attachments to media items for unified rendering
+  const mediaItems = MediaService.fromAttachments(
+    contentCreateData.base.attachments || [],
+  );
+
+  // Local state for dialog and drag overlay
+  const [selectedMedia, setSelectedMedia] = useState<{
+    item: import("@/lib/media").MediaItem;
+    index: number;
+  } | null>(null);
+
+  const [dragOverlay, setDragOverlay] = useState<{
+    item: import("@/lib/media").MediaItem;
+    index: number;
+  } | null>(null);
+
+  // Configuration
+  const config = {
+    maxFiles: 10,
+    maxImageSize: 10 * 1024 * 1024,
+    maxVideoSize: 100 * 1024 * 1024,
+  };
+
+  // Helper to get stable key for drag and drop
+  const getStableKey = (
+    item: import("@/lib/media").MediaItem,
+    index: number,
+  ): string => {
+    return item.id || `media-${index}`;
+  };
+
+  // Event handlers
+  const handleFileDrop = async (files: File[]) => {
+    if (!workspace?.slug) return;
+    await uploadAttachments(files, workspace.slug);
+  };
+
+  const handleRemove = (index: number) => {
+    removeAttachment(index);
+  };
+
+  const handleMediaClick = (
+    item: import("@/lib/media").MediaItem,
+    index: number,
+  ) => {
+    setSelectedMedia({ item, index });
+  };
+
+  const handleDragStart = (event: import("@dnd-kit/core").DragStartEvent) => {
+    const { active } = event;
+    const index = mediaItems.findIndex(
+      (item, idx) => getStableKey(item, idx) === active.id,
+    );
+    if (index !== -1) {
+      setDragOverlay({ item: mediaItems[index], index });
+    }
+  };
+
+  const handleDragEnd = (event: import("@dnd-kit/core").DragEndEvent) => {
+    const { active, over } = event;
+    setDragOverlay(null);
+
+    if (over && active.id !== over.id) {
+      const oldIndex = mediaItems.findIndex(
+        (item, idx) => getStableKey(item, idx) === active.id,
+      );
+      const newIndex = mediaItems.findIndex(
+        (item, idx) => getStableKey(item, idx) === over.id,
+      );
+      if (oldIndex !== -1 && newIndex !== -1) {
+        reorderAttachments(oldIndex, newIndex);
+      }
+    }
+  };
 
   return (
     <div className="space-y-3">
       {/* Section Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-foreground">Media</h3>
-        {previews.length > 0 && (
+        {mediaItems.length > 0 && (
           <span className="text-xs text-muted-foreground">
-            {previews.length}/{config.maxFiles} files
+            {mediaItems.length}/{config.maxFiles} files
           </span>
         )}
       </div>
@@ -52,11 +122,11 @@ export function MediaUpload() {
           maxSize={Math.max(config.maxVideoSize, config.maxImageSize)}
           onDrop={handleFileDrop}
           className={`${
-            previews.length === 0 ? "flex-1 h-16" : "flex-shrink-0 w-16 h-16"
+            mediaItems.length === 0 ? "flex-1 h-16" : "flex-shrink-0 w-16 h-16"
           } border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors rounded-lg`}
         >
           <div className="flex items-center justify-center h-full text-muted-foreground gap-2">
-            {previews.length === 0 ? (
+            {mediaItems.length === 0 ? (
               <>
                 <Upload className="h-4 w-4" />
                 <span className="text-sm">Drop files or click to upload</span>
@@ -71,7 +141,7 @@ export function MediaUpload() {
         </Dropzone>
 
         {/* Scrollable Draggable Thumbnails */}
-        {previews.length > 0 && (
+        {mediaItems.length > 0 && (
           <div className="flex-1 overflow-x-auto">
             <DndContext
               collisionDetection={closestCenter}
@@ -79,27 +149,40 @@ export function MediaUpload() {
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={previews.map((preview, index) =>
-                  getStableKey(preview, index),
+                items={mediaItems.map((item, index) =>
+                  getStableKey(item, index),
                 )}
                 strategy={horizontalListSortingStrategy}
               >
                 <div className="flex gap-2">
-                  {previews.map((preview, index) => {
-                    const att = attachments?.[index];
-                    if (!att) return null;
+                  {mediaItems.map((item, index) => {
+                    const attachmentSpec = MediaService.toAttachmentSpecs([
+                      item,
+                    ])[0];
+                    if (!attachmentSpec) return null;
 
-                    const stableKey = getStableKey(preview, index);
+                    const stableKey = getStableKey(item, index);
+
+                    // Create a legacy preview object for DraggableMediaItem compatibility
+                    const legacyPreview = {
+                      file: item.file || ({} as File),
+                      url: item.urls.preview,
+                      aspectRatio: item.aspectRatio || "16:9",
+                      mimeType: item.mimeType,
+                      previewIframeUrl: item.urls.playback,
+                      isStreamVideo:
+                        item.state === "uploaded" && !!item.urls.playback,
+                    };
 
                     return (
                       <DraggableMediaItem
                         key={stableKey}
                         id={stableKey}
-                        preview={preview}
-                        attachment={att}
+                        preview={legacyPreview}
+                        attachment={attachmentSpec}
                         index={index}
                         onRemove={handleRemove}
-                        onClick={handleMediaClick}
+                        onClick={(_, idx) => handleMediaClick(item, idx)}
                       />
                     );
                   })}
@@ -110,27 +193,9 @@ export function MediaUpload() {
               <DragOverlay>
                 {dragOverlay && (
                   <div className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted opacity-80">
-                    {dragOverlay.preview.mimeType.startsWith("image/") ? (
-                      <img
-                        src={dragOverlay.preview.url}
-                        alt="Dragging"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : dragOverlay.preview.mimeType.startsWith("video/") ? (
-                      <>
-                        <video
-                          src={dragOverlay.preview.url}
-                          className="w-full h-full object-cover"
-                          muted
-                        />
-                        <div className="absolute bottom-1 right-1 bg-black/50 rounded p-0.5">
-                          <Video className="h-2 w-2 text-white" />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <File className="h-4 w-4 text-muted-foreground" />
-                      </div>
+                    {MediaRenderer.renderThumbnail(
+                      dragOverlay.item,
+                      "w-full h-full object-cover",
                     )}
                   </div>
                 )}
@@ -141,7 +206,7 @@ export function MediaUpload() {
       </div>
 
       {/* Help Text */}
-      {previews.length === 0 && (
+      {mediaItems.length === 0 && (
         <p className="text-xs text-muted-foreground">
           Share photos and videos • Max {config.maxFiles} files • Images:{" "}
           {config.maxImageSize / (1024 * 1024)}MB • Videos:{" "}
@@ -157,7 +222,8 @@ export function MediaUpload() {
         <DialogContent className="max-w-6xl max-h-[95vh] p-0">
           <DialogHeader className="p-4 pb-2">
             <DialogTitle>
-              {selectedMedia?.preview.isStreamVideo
+              {selectedMedia?.item.state === "uploaded" &&
+              selectedMedia?.item.urls.playback
                 ? "Video Player"
                 : "Media Details"}
             </DialogTitle>
@@ -166,92 +232,54 @@ export function MediaUpload() {
             <div className="flex flex-col overflow-hidden">
               {/* Media Display */}
               <div className="flex-1 flex items-center justify-center p-4 bg-muted/20">
-                {selectedMedia.preview.mimeType.startsWith("image/") ? (
-                  <img
-                    src={selectedMedia.preview.url}
-                    alt="Full size preview"
-                    className="max-w-full max-h-[70vh] object-contain rounded-lg"
-                  />
-                ) : selectedMedia.preview.mimeType.startsWith("video/") ? (
-                  selectedMedia.preview.isStreamVideo &&
-                  selectedMedia.preview.previewIframeUrl ? (
-                    // Use Cloudflare Stream player for uploaded videos - make it much larger
-                    <div
-                      className="w-full max-w-4xl"
-                      style={{ aspectRatio: "16/9" }}
-                    >
-                      <StreamVideoPreview
-                        iframeUrl={selectedMedia.preview.previewIframeUrl}
-                        aspectRatio={selectedMedia.preview.aspectRatio}
-                        className="rounded-lg w-full h-full"
-                      />
-                    </div>
-                  ) : (
-                    // Use local video preview for local files
-                    <video
-                      src={selectedMedia.preview.url}
-                      controls
-                      className="max-w-full max-h-[70vh] object-contain rounded-lg"
-                    >
-                      <track kind="captions" label="auto-generated" />
-                    </video>
-                  )
-                ) : (
-                  <div className="flex flex-col items-center gap-4 p-8">
-                    <File className="h-16 w-16 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                      {selectedMedia.preview.file.name}
-                    </p>
-                  </div>
-                )}
+                {MediaRenderer.renderPlayer(selectedMedia.item)}
               </div>
 
               {/* Media Info - Simplified for stream videos */}
-              {!selectedMedia.preview.isStreamVideo && (
+              {selectedMedia.item.file && !selectedMedia.item.urls.playback && (
                 <div className="border-t p-6 space-y-3">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Filename:</span>
                       <p className="font-medium">
-                        {selectedMedia.preview.file.name}
+                        {selectedMedia.item.file.name}
                       </p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">File size:</span>
                       <p className="font-medium">
-                        {(
-                          selectedMedia.preview.file.size /
-                          1024 /
-                          1024
-                        ).toFixed(2)}{" "}
+                        {(selectedMedia.item.file.size / 1024 / 1024).toFixed(
+                          2,
+                        )}{" "}
                         MB
                       </p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Type:</span>
                       <p className="font-medium">
-                        {selectedMedia.preview.file.type}
+                        {selectedMedia.item.file.type}
                       </p>
                     </div>
-                    {selectedMedia.preview.aspectRatio !== "Unknown" && (
-                      <div>
-                        <span className="text-muted-foreground">
-                          Aspect ratio:
-                        </span>
-                        <p className="font-medium">
-                          {selectedMedia.preview.aspectRatio}
-                        </p>
-                      </div>
-                    )}
+                    {selectedMedia.item.aspectRatio &&
+                      selectedMedia.item.aspectRatio !== "Unknown" && (
+                        <div>
+                          <span className="text-muted-foreground">
+                            Aspect ratio:
+                          </span>
+                          <p className="font-medium">
+                            {selectedMedia.item.aspectRatio}
+                          </p>
+                        </div>
+                      )}
                   </div>
                 </div>
               )}
 
               {/* Minimal info for stream videos */}
-              {selectedMedia.preview.isStreamVideo && (
+              {selectedMedia.item.urls.playback && (
                 <div className="border-t p-4">
                   <p className="text-sm text-muted-foreground text-center">
-                    {selectedMedia.preview.file.name}
+                    {selectedMedia.item.file?.name || "Uploaded Video"}
                   </p>
                 </div>
               )}

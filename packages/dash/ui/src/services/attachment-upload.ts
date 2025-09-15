@@ -2,7 +2,7 @@ import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/hono-client";
 
-interface ImageUploadResult {
+export interface ImageUploadResult {
   attachmentIndex: number;
   id: string;
   publicUrl?: string;
@@ -10,7 +10,7 @@ interface ImageUploadResult {
   file: File;
 }
 
-interface VideoUploadResult {
+export interface VideoUploadResult {
   attachmentIndex: number;
   id: string;
   publicUrl: string;
@@ -19,13 +19,16 @@ interface VideoUploadResult {
   file: File;
 }
 
-interface UploadErrorResult {
+export interface UploadErrorResult {
   attachmentIndex: number;
   error: Error;
   file: File;
 }
 
-type UploadResult = ImageUploadResult | VideoUploadResult | UploadErrorResult;
+export type UploadResult =
+  | ImageUploadResult
+  | VideoUploadResult
+  | UploadErrorResult;
 
 export async function uploadImages(
   imageFiles: { file: File; index: number }[],
