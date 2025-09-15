@@ -154,29 +154,36 @@ export function MediaUpload() {
         open={!!selectedMedia}
         onOpenChange={() => setSelectedMedia(null)}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
-          <DialogHeader className="p-6 pb-2">
-            <DialogTitle>Media Details</DialogTitle>
+        <DialogContent className="max-w-6xl max-h-[95vh] p-0">
+          <DialogHeader className="p-4 pb-2">
+            <DialogTitle>
+              {selectedMedia?.preview.isStreamVideo
+                ? "Video Player"
+                : "Media Details"}
+            </DialogTitle>
           </DialogHeader>
           {selectedMedia && (
             <div className="flex flex-col overflow-hidden">
               {/* Media Display */}
-              <div className="flex-1 flex items-center justify-center p-6 bg-muted/20">
+              <div className="flex-1 flex items-center justify-center p-4 bg-muted/20">
                 {selectedMedia.preview.mimeType.startsWith("image/") ? (
                   <img
                     src={selectedMedia.preview.url}
                     alt="Full size preview"
-                    className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                    className="max-w-full max-h-[70vh] object-contain rounded-lg"
                   />
                 ) : selectedMedia.preview.mimeType.startsWith("video/") ? (
                   selectedMedia.preview.isStreamVideo &&
                   selectedMedia.preview.previewIframeUrl ? (
-                    // Use Cloudflare Stream player for uploaded videos
-                    <div className="max-w-full max-h-[60vh]">
+                    // Use Cloudflare Stream player for uploaded videos - make it much larger
+                    <div
+                      className="w-full max-w-4xl"
+                      style={{ aspectRatio: "16/9" }}
+                    >
                       <StreamVideoPreview
                         iframeUrl={selectedMedia.preview.previewIframeUrl}
                         aspectRatio={selectedMedia.preview.aspectRatio}
-                        className="rounded-lg"
+                        className="rounded-lg w-full h-full"
                       />
                     </div>
                   ) : (
@@ -184,7 +191,7 @@ export function MediaUpload() {
                     <video
                       src={selectedMedia.preview.url}
                       controls
-                      className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                      className="max-w-full max-h-[70vh] object-contain rounded-lg"
                     >
                       <track kind="captions" label="auto-generated" />
                     </video>
@@ -199,42 +206,55 @@ export function MediaUpload() {
                 )}
               </div>
 
-              {/* Media Info */}
-              <div className="border-t p-6 space-y-3">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Filename:</span>
-                    <p className="font-medium">
-                      {selectedMedia.preview.file.name}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">File size:</span>
-                    <p className="font-medium">
-                      {(selectedMedia.preview.file.size / 1024 / 1024).toFixed(
-                        2,
-                      )}{" "}
-                      MB
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Type:</span>
-                    <p className="font-medium">
-                      {selectedMedia.preview.file.type}
-                    </p>
-                  </div>
-                  {selectedMedia.preview.aspectRatio !== "Unknown" && (
+              {/* Media Info - Simplified for stream videos */}
+              {!selectedMedia.preview.isStreamVideo && (
+                <div className="border-t p-6 space-y-3">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">
-                        Aspect ratio:
-                      </span>
+                      <span className="text-muted-foreground">Filename:</span>
                       <p className="font-medium">
-                        {selectedMedia.preview.aspectRatio}
+                        {selectedMedia.preview.file.name}
                       </p>
                     </div>
-                  )}
+                    <div>
+                      <span className="text-muted-foreground">File size:</span>
+                      <p className="font-medium">
+                        {(
+                          selectedMedia.preview.file.size /
+                          1024 /
+                          1024
+                        ).toFixed(2)}{" "}
+                        MB
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Type:</span>
+                      <p className="font-medium">
+                        {selectedMedia.preview.file.type}
+                      </p>
+                    </div>
+                    {selectedMedia.preview.aspectRatio !== "Unknown" && (
+                      <div>
+                        <span className="text-muted-foreground">
+                          Aspect ratio:
+                        </span>
+                        <p className="font-medium">
+                          {selectedMedia.preview.aspectRatio}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Minimal info for stream videos */}
+              {selectedMedia.preview.isStreamVideo && (
+                <div className="border-t p-4">
+                  <p className="text-sm text-muted-foreground text-center">
+                    {selectedMedia.preview.file.name}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

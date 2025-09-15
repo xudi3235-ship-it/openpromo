@@ -6,6 +6,7 @@ interface ImageUploadResult {
   attachmentIndex: number;
   id: string;
   publicUrl?: string;
+  thumbnailUrl?: string;
   file: File;
 }
 
@@ -82,7 +83,13 @@ export async function uploadImages(
           publicUrl = url;
         }
 
-        return { attachmentIndex, id, publicUrl, file } as ImageUploadResult;
+        return {
+          attachmentIndex,
+          id,
+          publicUrl,
+          file,
+          thumbnailUrl: publicUrl,
+        } as ImageUploadResult;
       } catch (error) {
         console.error("Image upload error:", error);
         return {
@@ -226,6 +233,7 @@ export function processUploadResults(
           id: result.id,
           s3Key: result.id,
           publicUrl: result.publicUrl,
+          thumbnailUrl: result.thumbnailUrl,
         },
         metadata,
       );
