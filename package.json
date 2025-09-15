@@ -17,7 +17,7 @@
     "@typescript/native-preview": "7.0.0-dev.20250910.1",
     "lefthook": "^1.12.3",
     "typescript": "^5.9.2",
-    "wrangler": "^4.34.0"
+    "wrangler": "catalog:"
   },
   "engines": {
     "node": ">=22"

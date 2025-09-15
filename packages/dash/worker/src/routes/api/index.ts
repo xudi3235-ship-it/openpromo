@@ -1,7 +1,5 @@
 import type { ApiEnv } from "@core/helpers/api-env";
-import { Scalar } from "@scalar/hono-api-reference";
 import { Hono } from "hono";
-import { openAPIRouteHandler } from "hono-openapi";
 import { onError } from "../../helpers/error";
 import { workOSAuth } from "../../middleware/workos-auth";
 import { connectedAccountsRoute } from "./connected-accounts";
@@ -24,19 +22,3 @@ export const apiRoutes = new Hono<ApiEnv>()
   .route("/popup-relay", popupRelayRoute)
   .route("/ws", websocketsRoute)
   .onError(onError);
-
-// specs
-apiRoutes
-  .get(
-    "/openapi.json",
-    openAPIRouteHandler(apiRoutes, {
-      documentation: {
-        info: {
-          title: "OpenpPromo API",
-          version: "0.0.1",
-          description: "API documentation for OpenpPromo",
-        },
-      },
-    }),
-  )
-  .get("/scalar", Scalar({ url: "/api/openapi.json" }));

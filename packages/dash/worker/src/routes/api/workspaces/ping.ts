@@ -6,7 +6,7 @@ import type {
   UnifiedContentInsert,
 } from "@openpromo/core/schemas/content.sql";
 import { Hono } from "hono";
-import { describeRoute } from "hono-openapi";
+// import { describeRoute } from "hono-openapi";
 import { withAuth } from "../../../middleware/with-auth";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
 // import { ping } from "../../generated/api/sdk.gen";
@@ -18,24 +18,24 @@ export const pingRoute = new Hono<ApiEnv>()
   .use(withWorkspaceRole(WORKSPACE_ROLE.ADMIN))
   .get(
     "/",
-    describeRoute({
-      responses: {
-        200: {
-          description: "pong",
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  message: { type: "string" },
-                },
-                required: ["message"],
-              },
-            },
-          },
-        },
-      },
-    }),
+    // describeRoute({
+    //   responses: {
+    //     200: {
+    //       description: "pong",
+    //       content: {
+    //         "application/json": {
+    //           schema: {
+    //             type: "object",
+    //             properties: {
+    //               message: { type: "string" },
+    //             },
+    //             required: ["message"],
+    //           },
+    //         },
+    //       },
+    //     },
+    //   },
+    // }),
     async (c) => {
       const conn = c.env.HYPERDRIVE.connectionString;
       const message = conn ? "pong from worker" : "no connection";

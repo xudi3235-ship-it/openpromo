@@ -37,8 +37,7 @@
     "postgres": "^3.4.7",
     "stripe": "^18.3.0",
     "ulid": "^3.0.1",
-    "zod": "catalog:",
-    "zod-openapi": "catalog:"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/facebook-nodejs-business-sdk": "^22.0.0",

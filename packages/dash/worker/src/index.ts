@@ -5,6 +5,7 @@ import { cfMetadata } from "./middleware/cf-metadata";
 import { noCache } from "./middleware/no-cache";
 import { apiRoutes } from "./routes/api";
 import { authRoutes } from "./routes/auth";
+// import { openapiRoutes } from "./routes/openapi";
 import { webhooksRoutes } from "./routes/webhooks";
 
 const app = new Hono()
@@ -14,6 +15,7 @@ const app = new Hono()
   .use(bootstrap())
   .route("/api", apiRoutes)
   .route("/auth", authRoutes)
+  // .route("/openapi", openapiRoutes)
   .route("/webhooks", webhooksRoutes);
 
 export default app;
@@ -23,10 +25,3 @@ export type ApiRoutes = typeof apiRoutes;
 
 export * from "@openpromo/core/durable-objects";
 export * from "@openpromo/core/workflows";
-
-// export const apiClient = hc<ApiRoutes>('');
-
-// apiClient.workspaces[":workspaceSlug"].pusher.message[":userId"].$post({
-//   param: {userId: 'all'},
-//   json: {message: 'Hello from client'}
-// })
