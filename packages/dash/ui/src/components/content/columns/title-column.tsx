@@ -112,7 +112,6 @@ function renderTitle(row: Row<MergedContentEntity>) {
               IGFeed: (s) => s.caption,
             })
           : "Untitled Group";
-
       // Get first thumbnail or default
       const contentWithThumbnail = contents.find((c) =>
         getThumbnailFromPlacement(c.placementSpec),

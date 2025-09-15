@@ -565,22 +565,35 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
             ...(state.contentCreateData.base.attachments ?? []),
           ];
 
-          // Set thumbnailUrl to the first image's publicUrl if available
-          const firstImageUrl = baseAttachments.find(
-            (att) => att.type === "photo" && att.publicUrl,
-          )?.publicUrl;
+          // Set thumbnailUrl to the first available thumbnail (image publicUrl or video thumbnailUrl)
+          const firstThumbnail = baseAttachments.find((att) => {
+            if (att.type === "photo" && att.publicUrl) {
+              return att.publicUrl;
+            }
+            if (att.type === "video" && att.metadata?.thumbnailUrl) {
+              return att.metadata.thumbnailUrl;
+            }
+            return null;
+          });
+
+          const thumbnailUrl =
+            firstThumbnail?.type === "photo"
+              ? firstThumbnail.publicUrl
+              : firstThumbnail?.type === "video"
+                ? (firstThumbnail.metadata?.thumbnailUrl as string)
+                : null;
 
           syncToNonCustomizedPlacements(state, {
             facebook: (spec) => {
               spec.attachments = baseAttachments;
-              if (firstImageUrl && !spec.customized) {
-                spec.thumbnailUrl = firstImageUrl;
+              if (thumbnailUrl && !spec.customized) {
+                spec.thumbnailUrl = thumbnailUrl;
               }
             },
             instagram: (spec) => {
               spec.attachments = baseAttachments;
-              if (firstImageUrl && !spec.customized) {
-                spec.thumbnailUrl = firstImageUrl;
+              if (thumbnailUrl && !spec.customized) {
+                spec.thumbnailUrl = thumbnailUrl;
               }
             },
           });

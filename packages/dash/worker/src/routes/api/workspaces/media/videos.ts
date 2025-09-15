@@ -28,8 +28,10 @@ export const videosRoute = new Hono<ApiEnv>()
         maxDurationSeconds,
         // meta: {},
       });
+      // used for stream playback
       const previewIframeUrl = `https://${env.CLOUDFLARE_STREAM_CUSTOMER_DOMAIN}/${uid}/iframe`;
-      const thumbnailUrl = `https://${env.CLOUDFLARE_STREAM_CUSTOMER_DOMAIN}/${uid}/thumbnails/thumbnail.jpg?time=1&height=400`;
+      // used for thumbnail generation
+      const thumbnailUrl = `https://${env.CLOUDFLARE_STREAM_CUSTOMER_DOMAIN}/${uid}/thumbnails/thumbnail.jpg?time=1&height=100`;
       return ctx.json({ id: uid, uploadURL, previewIframeUrl, thumbnailUrl });
     },
   );
