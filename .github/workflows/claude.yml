@@ -40,3 +40,4 @@ jobs:
           claude_args: |
             --allowedTools "Edit,MultiEdit,Write,Read,Glob,Grep,LS,Bash(git:*),Bash(pnpm:*),Bash(npm:*),Bash(npx:*),Bash(gh:*)"
             --model "claude-sonnet-4-20250514"
+            --mcp-config ".claude/mcp-config.json"
