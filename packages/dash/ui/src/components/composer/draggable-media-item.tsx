@@ -2,12 +2,15 @@ import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { File, GripVertical, Video, X } from "lucide-react";
+import { StreamVideoPreview } from "./stream-video-preview";
 
 interface MediaPreview {
   file: File;
   url: string;
   aspectRatio: string;
   mimeType: string;
+  previewIframeUrl?: string;
+  isStreamVideo?: boolean;
 }
 
 interface DraggableMediaItemProps {
@@ -85,11 +88,21 @@ export function DraggableMediaItem({
           />
         ) : isVideo ? (
           <>
-            <video
-              src={preview.url}
-              className="w-full h-full object-cover"
-              muted
-            />
+            {preview.isStreamVideo && preview.previewIframeUrl ? (
+              // Use Cloudflare Stream player for uploaded videos
+              <StreamVideoPreview
+                iframeUrl={preview.previewIframeUrl}
+                aspectRatio={preview.aspectRatio}
+                className="w-full h-full"
+              />
+            ) : (
+              // Use local video preview for local files
+              <video
+                src={preview.url}
+                className="w-full h-full object-cover"
+                muted
+              />
+            )}
             <div className="absolute bottom-1 right-1 bg-black/50 rounded p-0.5">
               <Video className="h-2 w-2 text-white" />
             </div>

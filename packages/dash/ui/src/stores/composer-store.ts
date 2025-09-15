@@ -7,11 +7,13 @@ import type {
 } from "@core/schemas/content.sql";
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import { createContext, useContext } from "react";
-import { toast } from "sonner";
 import { createStore, useStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import type { ConnectedAccount } from "@/lib/hono-client";
-import { apiClient } from "@/lib/hono-client";
+import {
+  processUploadResults,
+  uploadAttachments,
+} from "@/services/attachment-upload";
 
 export interface ValidationError {
   type:
@@ -518,6 +520,7 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
         const startingIndex =
           get().contentCreateData.base.attachments?.length ?? 0;
 
+        // Add files to state with uploading status
         set((state) => {
           const newAttachments = files.map((file, index) => ({
             id: `temp-${Date.now()}-${Math.random().toString(36).substring(2)}-${index}`,
@@ -531,126 +534,32 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
           state.contentCreateData.base.attachments?.push(...newAttachments);
         });
 
-        // Upload all files in parallel
-        const uploadPromises = files.map(async (file, i) => {
-          const attachmentIndex = startingIndex + i;
-          const isVideo = file.type.startsWith("video/");
+        // Upload files using the service
+        const results = await uploadAttachments(
+          files,
+          workspaceSlug,
+          startingIndex,
+        );
 
-          try {
-            let uploadResponse: Response;
-            let publicUrl: string | undefined;
-
-            if (isVideo) {
-              // Get presigned URL for video upload
-              uploadResponse = await apiClient.workspaces[
-                ":workspaceSlug"
-              ].media.videos["upload-url"].$post({
-                param: { workspaceSlug },
-                json: { requireSignedURLs: false, maxDurationSeconds: 60 },
-              });
-            } else {
-              // Get presigned URL for image upload
-              uploadResponse = await apiClient.workspaces[
-                ":workspaceSlug"
-              ].media.images["upload-url"].$post({
-                param: { workspaceSlug },
-                json: { requireSignedURLs: false },
-              });
-            }
-
-            if (!uploadResponse.ok) {
-              throw new Error(
-                `Failed to get upload URL: ${uploadResponse.status}`,
-              );
-            }
-
-            const { id, uploadURL } = await uploadResponse.json();
-
-            if (!uploadURL || !id) {
-              throw new Error(
-                "Invalid response from server: missing uploadURL or id",
-              );
-            }
-
-            // Upload the file to the presigned URL
-            const formData = new FormData();
-            formData.append("file", file);
-
-            const uploadFileResponse = await fetch(uploadURL, {
-              method: "POST",
-              body: formData,
-            });
-
-            if (!uploadFileResponse.ok) {
-              throw new Error(
-                `Failed to upload file: ${uploadFileResponse.status}`,
-              );
-            }
-
-            // For images, get the public URL
-            if (!isVideo) {
-              const publicUrlResponse = await apiClient.workspaces[
-                ":workspaceSlug"
-              ].media.images[":imageId"].url.$get({
-                param: { workspaceSlug, imageId: id },
-                query: { variant: "public" },
-              });
-
-              if (publicUrlResponse.ok) {
-                const { url } = await publicUrlResponse.json();
-                publicUrl = url;
-              }
-            } else {
-              // For videos, use Cloudflare Stream URL format
-              publicUrl = `https://customer-${id}.cloudflarestream.com/${id}/manifest/video.m3u8`;
-            }
-
-            return { attachmentIndex, id, publicUrl, file };
-          } catch (error) {
-            console.error("Upload error:", error);
-            return { attachmentIndex, error: error as Error, file };
-          }
-        });
-
-        // Wait for all uploads to complete
-        const results = await Promise.all(uploadPromises);
-
-        // Process results and update state
-        results.forEach((result) => {
-          if ("error" in result) {
-            // Handle upload failure
+        // Process results using the service
+        processUploadResults(
+          results,
+          // updateAttachment callback
+          (index, updates, meta) => {
             set((state) => {
               const attachment =
-                state.contentCreateData.base.attachments?.[
-                  result.attachmentIndex
-                ];
-              if (attachment) {
-                attachment.metadata = {
-                  uploading: false,
-                  error: "Upload failed",
-                };
+                state.contentCreateData.base.attachments?.[index];
+              if (!attachment) return;
+              Object.assign(attachment, updates);
+              if (!attachment.metadata) {
+                attachment.metadata = {};
               }
+              Object.assign(attachment.metadata, meta);
             });
-            toast.error(`Failed to upload ${result.file.name}`);
-          } else {
-            // Handle upload success
-            set((state) => {
-              const attachment =
-                state.contentCreateData.base.attachments?.[
-                  result.attachmentIndex
-                ];
-              if (attachment) {
-                attachment.id = result.id;
-                attachment.s3Key = result.id;
-                attachment.publicUrl = result.publicUrl;
-                attachment.metadata = { uploading: false };
-              }
-            });
-            toast.success(`${result.file.name} uploaded successfully`);
-          }
-        });
+          },
+        );
 
-        // Update placement specs and validation after all uploads are processed
+        // Update placement specs and validation after all uploads
         set((state) => {
           const baseAttachments = [
             ...(state.contentCreateData.base.attachments ?? []),

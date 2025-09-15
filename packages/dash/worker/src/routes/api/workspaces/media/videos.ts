@@ -1,6 +1,7 @@
 import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { VideoStorage } from "@core/helpers/storage/video";
+import { env } from "@core/utils/env";
 import { Hono } from "hono";
 import * as z from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
@@ -25,8 +26,10 @@ export const videosRoute = new Hono<ApiEnv>()
         requireSignedURLs,
         expiry,
         maxDurationSeconds,
-        meta: {},
+        // meta: {},
       });
-      return ctx.json({ id: uid, uploadURL });
+      const previewIframeUrl = `https://${env.CLOUDFLARE_STREAM_CUSTOMER_DOMAIN}/${uid}/iframe`;
+      const thumbnailUrl = `https://${env.CLOUDFLARE_STREAM_CUSTOMER_DOMAIN}/${uid}/thumbnails/thumbnail.jpg?time=1&height=400`;
+      return ctx.json({ id: uid, uploadURL, previewIframeUrl, thumbnailUrl });
     },
   );

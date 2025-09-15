@@ -28,19 +28,22 @@ export namespace VideoStorage {
    * for basic upload, file size < 200MB.
    */
   export async function createDirectUpload(
-    params: Omit<DirectUploadCreateParams, "account_id">,
+    params: Omit<DirectUploadCreateParams, "account_id" | "creator">,
   ): Promise<DirectUploadCreateResponse> {
     const { meta, ...rest } = params;
     const c = getCloudflareClient();
-    const directUpload = await c.stream.directUpload.create({
-      account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
-      ...rest,
-      meta: {
-        ...(meta ?? {}),
-        actor: Actor.assert("workspace_user"),
-      },
-    });
-    return directUpload;
+    try {
+      const directUpload = await c.stream.directUpload.create({
+        creator: Actor.workspaceID(),
+        account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
+        ...rest,
+        meta: meta ? JSON.stringify(meta) : undefined,
+      });
+      return directUpload;
+    } catch (error) {
+      console.error("Error creating direct upload:", error);
+      throw error;
+    }
   }
   /**
    * resumable upload for large files. This reads in request from web server

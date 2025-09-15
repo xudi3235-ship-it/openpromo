@@ -1,4 +1,3 @@
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import { Button } from "@openpromo/ui/components/button";
 import {
   Bookmark,
@@ -11,47 +10,14 @@ import {
   Send,
 } from "lucide-react";
 import { useState } from "react";
+import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerStore } from "@/stores/composer-store";
-
-// Helper function to get the preview URL for an attachment
-const getAttachmentUrl = (attachment: SharedAttachmentSpec): string | null => {
-  if (attachment.publicUrl) {
-    return attachment.publicUrl;
-  }
-  if (attachment.file) {
-    return URL.createObjectURL(attachment.file);
-  }
-  return null;
-};
-
-// Helper to render a single attachment
-const renderAttachment = (
-  attachment: SharedAttachmentSpec,
-  className: string = "w-full h-full object-cover",
-  controls: boolean = false,
-) => {
-  const url = getAttachmentUrl(attachment);
-  if (!url) return null;
-
-  if (attachment.type === "photo") {
-    return <img src={url} alt="Preview" className={className} />;
-  }
-
-  if (attachment.type === "video") {
-    return (
-      <video src={url} className={className} controls={controls}>
-        <track kind="captions" label="auto-generated" />
-      </video>
-    );
-  }
-
-  return null;
-};
 
 export function IGFeedPreview() {
   const { workspace } = useWorkspace();
   const contentCreateData = useComposerStore((s) => s.contentCreateData);
+  const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer();
   const attachments = contentCreateData.base.attachments ?? [];
   const caption = contentCreateData.base.message;
   const [currentSlide, setCurrentSlide] = useState(0);

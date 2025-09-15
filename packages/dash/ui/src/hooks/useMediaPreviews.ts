@@ -6,14 +6,20 @@ export interface MediaPreview {
   url: string;
   aspectRatio: string;
   mimeType: string;
+  previewIframeUrl?: string; // For Cloudflare Stream videos
+  isStreamVideo?: boolean; // Flag to identify stream videos
 }
 
 const generatePreview = async (
   file: File,
   publicUrl?: string,
+  previewIframeUrl?: string,
 ): Promise<MediaPreview> => {
-  // Use public URL if available, otherwise create blob URL
-  const url = publicUrl || URL.createObjectURL(file);
+  // For videos: prefer local file for preview, fallback to stream
+  const url =
+    file.type.startsWith("video/") && !publicUrl
+      ? URL.createObjectURL(file)
+      : publicUrl || URL.createObjectURL(file);
 
   return new Promise((resolve) => {
     if (file.type.startsWith("image/")) {
@@ -24,12 +30,66 @@ const generatePreview = async (
       };
       img.src = url;
     } else if (file.type.startsWith("video/")) {
-      const video = document.createElement("video");
-      video.onloadedmetadata = () => {
-        const aspectRatio = `${video.videoWidth}:${video.videoHeight}`;
-        resolve({ file, url, aspectRatio, mimeType: file.type });
-      };
-      video.src = url;
+      // Always prefer local file preview first, then fallback to stream
+      if (file.size > 0) {
+        // Use local preview for actual files
+        const video = document.createElement("video");
+        video.onloadedmetadata = () => {
+          const aspectRatio = `${video.videoWidth}:${video.videoHeight}`;
+          resolve({
+            file,
+            url: URL.createObjectURL(file),
+            aspectRatio,
+            mimeType: file.type,
+            previewIframeUrl,
+            isStreamVideo: false, // Use local preview
+          });
+        };
+        video.onerror = () => {
+          // If local video fails and we have stream preview, use that
+          if (previewIframeUrl) {
+            resolve({
+              file,
+              url,
+              aspectRatio: "16:9",
+              mimeType: file.type,
+              previewIframeUrl,
+              isStreamVideo: true,
+            });
+          } else {
+            // Fallback for broken video
+            resolve({
+              file,
+              url,
+              aspectRatio: "16:9",
+              mimeType: file.type,
+              previewIframeUrl,
+              isStreamVideo: false,
+            });
+          }
+        };
+        video.src = URL.createObjectURL(file);
+      } else if (previewIframeUrl) {
+        // For placeholder files (no actual file content), use stream preview
+        resolve({
+          file,
+          url,
+          aspectRatio: "16:9",
+          mimeType: file.type,
+          previewIframeUrl,
+          isStreamVideo: true,
+        });
+      } else {
+        // Fallback
+        resolve({
+          file,
+          url,
+          aspectRatio: "16:9",
+          mimeType: file.type,
+          previewIframeUrl,
+          isStreamVideo: false,
+        });
+      }
     } else {
       resolve({ file, url, aspectRatio: "Unknown", mimeType: file.type });
     }
@@ -54,8 +114,15 @@ export function useMediaPreviews(attachments?: SharedAttachmentSpec[]) {
           if (cached) {
             generated.push(cached);
           } else {
-            // Generate new preview and cache it, using publicUrl if available
-            const newPreview = await generatePreview(att.file, att.publicUrl);
+            // Generate new preview and cache it, using publicUrl and previewIframeUrl if available
+            const previewIframeUrl = att.metadata?.previewIframeUrl as
+              | string
+              | undefined;
+            const newPreview = await generatePreview(
+              att.file,
+              att.publicUrl,
+              previewIframeUrl,
+            );
             previewCacheRef.current.set(att.file, newPreview);
             generated.push(newPreview);
           }

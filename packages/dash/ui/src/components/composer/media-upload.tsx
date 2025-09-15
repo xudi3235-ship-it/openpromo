@@ -13,6 +13,7 @@ import { File, Upload, Video } from "lucide-react";
 import { Dropzone } from "@/components/dropzone";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { DraggableMediaItem } from "./draggable-media-item";
+import { StreamVideoPreview } from "./stream-video-preview";
 
 export function MediaUpload() {
   const {
@@ -168,13 +169,26 @@ export function MediaUpload() {
                     className="max-w-full max-h-[60vh] object-contain rounded-lg"
                   />
                 ) : selectedMedia.preview.mimeType.startsWith("video/") ? (
-                  <video
-                    src={selectedMedia.preview.url}
-                    controls
-                    className="max-w-full max-h-[60vh] object-contain rounded-lg"
-                  >
-                    <track kind="captions" label="auto-generated" />
-                  </video>
+                  selectedMedia.preview.isStreamVideo &&
+                  selectedMedia.preview.previewIframeUrl ? (
+                    // Use Cloudflare Stream player for uploaded videos
+                    <div className="max-w-full max-h-[60vh]">
+                      <StreamVideoPreview
+                        iframeUrl={selectedMedia.preview.previewIframeUrl}
+                        aspectRatio={selectedMedia.preview.aspectRatio}
+                        className="rounded-lg"
+                      />
+                    </div>
+                  ) : (
+                    // Use local video preview for local files
+                    <video
+                      src={selectedMedia.preview.url}
+                      controls
+                      className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                    >
+                      <track kind="captions" label="auto-generated" />
+                    </video>
+                  )
                 ) : (
                   <div className="flex flex-col items-center gap-4 p-8">
                     <File className="h-16 w-16 text-muted-foreground" />
