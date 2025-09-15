@@ -5,7 +5,7 @@ import { cfMetadata } from "./middleware/cf-metadata";
 import { noCache } from "./middleware/no-cache";
 import { apiRoutes } from "./routes/api";
 import { authRoutes } from "./routes/auth";
-// import { openapiRoutes } from "./routes/openapi";
+import { openapiRoutes } from "./routes/openapi";
 import { webhooksRoutes } from "./routes/webhooks";
 
 const app = new Hono()
@@ -15,7 +15,7 @@ const app = new Hono()
   .use(bootstrap())
   .route("/api", apiRoutes)
   .route("/auth", authRoutes)
-  // .route("/openapi", openapiRoutes)
+  .route("/openapi", openapiRoutes)
   .route("/webhooks", webhooksRoutes);
 
 export default app;
