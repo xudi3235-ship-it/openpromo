@@ -6,6 +6,7 @@ import type {
   UnifiedContentInsert,
 } from "@openpromo/core/schemas/content.sql";
 import { Hono } from "hono";
+import { describeRoute } from "hono-openapi";
 import { withAuth } from "../../../middleware/with-auth";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
 // import { ping } from "../../generated/api/sdk.gen";
@@ -15,27 +16,45 @@ import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
 export const pingRoute = new Hono<ApiEnv>()
   .use(withAuth())
   .use(withWorkspaceRole(WORKSPACE_ROLE.ADMIN))
-  .get("/", async (c) => {
-    const conn = c.env.HYPERDRIVE.connectionString;
-    const message = conn ? "pong from worker" : "no connection";
-
-    const group: PendingContentGroupInsert = {
-      workspaceId: "dummy",
-      publishingStatus: "SCHEDULED",
-      pendingContentGroupSpec: {},
-    };
-    const contents: UnifiedContentInsert[] = [
-      {
-        workspaceId: "dummy",
-        publishingStatus: "SCHEDULED",
-        placement: "FB_FEED",
-        connectedAccountId: "01K412AGBJJC1W2XXX9HSCH45Z",
-        schedulingSpec: {
-          scheduledPublishAt: new Date(Date.now() + 60 * 1000),
+  .get(
+    "/",
+    describeRoute({
+      responses: {
+        200: {
+          description: "pong",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: { type: "string" },
+                },
+                required: ["message"],
+              },
+            },
+          },
         },
       },
-    ];
-    await EntPendingContentGroup.create({ group, contents });
+    }),
+    async (c) => {
+      const conn = c.env.HYPERDRIVE.connectionString;
+      const message = conn ? "pong from worker" : "no connection";
 
-    return c.json({ message });
-  });
+      const group: PendingContentGroupInsert = {
+        workspaceId: "dummy",
+        publishingStatus: "SCHEDULED",
+        pendingContentGroupSpec: {},
+      };
+      const contents: UnifiedContentInsert[] = [
+        {
+          workspaceId: "dummy",
+          publishingStatus: "SCHEDULED",
+          placement: "FB_FEED",
+          connectedAccountId: "01K412AGBJJC1W2XXX9HSCH45Z",
+        },
+      ];
+      await EntPendingContentGroup.create({ group, contents });
+
+      return c.json({ message });
+    },
+  );

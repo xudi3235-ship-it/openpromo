@@ -15,6 +15,7 @@ const app = new Hono()
   .route("/api", apiRoutes)
   .route("/auth", authRoutes)
   .route("/webhooks", webhooksRoutes);
+
 export default app;
 
 export type Routes = typeof app;
