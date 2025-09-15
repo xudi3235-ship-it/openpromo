@@ -12,8 +12,8 @@ import logoSrc from "../../assets/logo.png";
 function Logo() {
   return (
     <div className="flex items-center gap-2">
-      <img src={logoSrc.src} alt="Openpromo" className="w-8 h-8" />
-      <span className="text-lg font-semibold text-neutral-900">Openpromo</span>
+      <img src={logoSrc.src} alt="OpenPromo" className="w-8 h-8" />
+      <span className="text-lg font-semibold text-neutral-900">OpenPromo</span>
     </div>
   );
 }

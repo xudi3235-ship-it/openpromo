@@ -67,7 +67,7 @@ export function FooterSection({ onGetStartedClick }: FooterProps) {
                 <div className="w-3 h-3 rounded-full bg-[#020A0F]" />
               </div>
               <span className="text-lg font-semibold text-white">
-                Openpromo
+                OpenPromo
               </span>
             </div>
 
@@ -141,7 +141,7 @@ export function FooterSection({ onGetStartedClick }: FooterProps) {
         <Container size="xl">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
             <p className="text-[#A4A8AF]">
-              © 2025 Openpromo. All rights reserved.
+              © 2025 OpenPromo. All rights reserved.
             </p>
 
             <div className="flex items-center gap-8">
