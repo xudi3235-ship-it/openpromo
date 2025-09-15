@@ -33,6 +33,7 @@
     "@tanstack/react-router": "^1.131.7",
     "@tanstack/react-router-devtools": "^1.131.7",
     "@tanstack/react-table": "^8.21.3",
+    "@uppy/core": "^5.0.1",
     "@workos-inc/node": "catalog:",
     "date-fns": "^4.1.0",
     "drizzle-orm": "catalog:",
@@ -50,7 +51,6 @@
     "sonner": "^2.0.7",
     "tailwindcss": "^4.1.11",
     "tw-animate-css": "^1.3.6",
-    "uppy": "^5.1.1",
     "web-vitals": "^5.1.0",
     "zod": "catalog:",
     "zustand": "^5.0.8"

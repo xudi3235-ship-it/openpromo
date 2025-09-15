@@ -98,7 +98,14 @@ export namespace ImageStorage {
           try {
             const existing = await get(imageId);
             if (existing.meta) {
-              return JSON.parse(existing.meta as string);
+              if (typeof existing.meta === "object") {
+                return existing.meta;
+              } else if (typeof existing.meta === "string") {
+                // try parse
+                return JSON.parse(existing.meta as string);
+              } else {
+                console.warn("unknown meta type", typeof existing.meta);
+              }
             }
           } catch (e) {
             console.error("failed to get existing image meta", e);

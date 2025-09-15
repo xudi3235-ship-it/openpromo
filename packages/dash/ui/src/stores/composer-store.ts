@@ -512,9 +512,8 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
           state.contentCreateData.base.attachments?.push(...newAttachments);
         });
 
-        // Then upload each file
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
+        // Upload all files in parallel
+        const uploadPromises = files.map(async (file, i) => {
           const attachmentIndex = startingIndex + i;
 
           try {
@@ -569,67 +568,80 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
               publicUrl = url;
             }
 
-            // Update the attachment with success state
-            set((state) => {
-              const attachment =
-                state.contentCreateData.base.attachments?.[attachmentIndex];
-              if (attachment) {
-                attachment.id = id;
-                attachment.s3Key = id;
-                attachment.publicUrl = publicUrl;
-                attachment.metadata = { uploading: false };
-              }
-
-              // Sync updated attachments to placement specs
-              const baseAttachments = [
-                ...(state.contentCreateData.base.attachments ?? []),
-              ];
-
-              // Set thumbnailUrl to the first image's publicUrl if available
-              const firstImageUrl = baseAttachments.find(
-                (att) => att.type === "photo" && att.publicUrl,
-              )?.publicUrl;
-
-              syncToNonCustomizedPlacements(state, {
-                facebook: (spec) => {
-                  spec.attachments = baseAttachments;
-                  if (firstImageUrl && !spec.customized) {
-                    spec.thumbnailUrl = firstImageUrl;
-                  }
-                },
-                instagram: (spec) => {
-                  spec.attachments = baseAttachments;
-                  if (firstImageUrl && !spec.customized) {
-                    spec.thumbnailUrl = firstImageUrl;
-                  }
-                },
-              });
-
-              // Update validation after upload success
-              updateValidation(state);
-            });
-
-            toast.success(`${file.name} uploaded successfully`);
+            return { attachmentIndex, id, publicUrl, file };
           } catch (error) {
             console.error("Upload error:", error);
-            // Update the attachment with error state
+            return { attachmentIndex, error: error as Error, file };
+          }
+        });
+
+        // Wait for all uploads to complete
+        const results = await Promise.all(uploadPromises);
+
+        // Process results and update state
+        results.forEach((result) => {
+          if ("error" in result) {
+            // Handle upload failure
             set((state) => {
               const attachment =
-                state.contentCreateData.base.attachments?.[attachmentIndex];
+                state.contentCreateData.base.attachments?.[
+                  result.attachmentIndex
+                ];
               if (attachment) {
                 attachment.metadata = {
                   uploading: false,
                   error: "Upload failed",
                 };
               }
-
-              // Update validation after upload failure
-              updateValidation(state);
             });
-
-            toast.error(`Failed to upload ${file.name}`);
+            toast.error(`Failed to upload ${result.file.name}`);
+          } else {
+            // Handle upload success
+            set((state) => {
+              const attachment =
+                state.contentCreateData.base.attachments?.[
+                  result.attachmentIndex
+                ];
+              if (attachment) {
+                attachment.id = result.id;
+                attachment.s3Key = result.id;
+                attachment.publicUrl = result.publicUrl;
+                attachment.metadata = { uploading: false };
+              }
+            });
+            toast.success(`${result.file.name} uploaded successfully`);
           }
-        }
+        });
+
+        // Update placement specs and validation after all uploads are processed
+        set((state) => {
+          const baseAttachments = [
+            ...(state.contentCreateData.base.attachments ?? []),
+          ];
+
+          // Set thumbnailUrl to the first image's publicUrl if available
+          const firstImageUrl = baseAttachments.find(
+            (att) => att.type === "photo" && att.publicUrl,
+          )?.publicUrl;
+
+          syncToNonCustomizedPlacements(state, {
+            facebook: (spec) => {
+              spec.attachments = baseAttachments;
+              if (firstImageUrl && !spec.customized) {
+                spec.thumbnailUrl = firstImageUrl;
+              }
+            },
+            instagram: (spec) => {
+              spec.attachments = baseAttachments;
+              if (firstImageUrl && !spec.customized) {
+                spec.thumbnailUrl = firstImageUrl;
+              }
+            },
+          });
+
+          // Update validation after all uploads
+          updateValidation(state);
+        });
       },
       reorderAttachments: (fromIndex, toIndex) =>
         set((state) => {

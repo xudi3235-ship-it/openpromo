@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
+import Uppy from "@uppy/core";
 import { File, Upload, Video } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Dropzone } from "@/components/dropzone";
@@ -77,8 +78,59 @@ export function MediaUpload() {
 
   // Cache previews by file reference to prevent regeneration
   const previewCacheRef = useRef(new Map<File, MediaPreview>());
+  const uppyRef = useRef<Uppy | null>(null);
 
   const attachments = contentCreateData.base.attachments;
+
+  // Initialize Uppy for file validation (but use our UI)
+  useEffect(() => {
+    const uppy = new Uppy({
+      restrictions: {
+        maxFileSize: 50 * 1024 * 1024, // 50MB
+        maxNumberOfFiles: 10,
+        allowedFileTypes: ["image/*", "video/*"],
+      },
+      autoProceed: false,
+    });
+
+    uppyRef.current = uppy;
+
+    return () => {
+      uppy.destroy();
+    };
+  }, []);
+
+  // Enhanced file drop handler with Uppy validation
+  const handleFileDrop = async (files: File[]) => {
+    if (!workspace?.slug || !uppyRef.current) return;
+
+    // Use Uppy for validation only
+    const validatedFiles: File[] = [];
+
+    files.forEach((file) => {
+      try {
+        // Test if Uppy would accept this file
+        uppyRef.current?.addFile({
+          name: file.name,
+          type: file.type,
+          data: file,
+        });
+        // If no error thrown, file is valid
+        validatedFiles.push(file);
+      } catch (err) {
+        console.error("File validation failed:", err);
+        // Skip invalid files
+      }
+    });
+
+    // Clear Uppy's internal state (we don't need it to store files)
+    uppyRef.current.cancelAll();
+
+    // uploadAttachments handles both adding to store and uploading
+    if (validatedFiles.length > 0) {
+      await uploadAttachments(validatedFiles, workspace.slug);
+    }
+  };
 
   // Helper function to generate stable keys
   const getStableKey = useCallback(
@@ -255,10 +307,7 @@ export function MediaUpload() {
           accept={{ "image/*": [], "video/*": [] }}
           maxFiles={10}
           maxSize={50 * 1024 * 1024}
-          onDrop={async (files) => {
-            if (!workspace?.slug) return;
-            await uploadAttachments(files, workspace.slug);
-          }}
+          onDrop={handleFileDrop}
           className={`${
             previews.length === 0 ? "flex-1 h-16" : "flex-shrink-0 w-16 h-16"
           } border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors rounded-lg`}
