@@ -1,6 +1,80 @@
 import { File, Play, Video } from "lucide-react";
+import { memo } from "react";
 import { StreamVideoPreview } from "@/components/composer/stream-video-preview";
 import type { MediaItem } from "./types";
+
+// Memoized video player component to prevent flicker
+const MemoizedVideoPlayer = memo(
+  function MemoizedVideoPlayer({
+    item,
+    className,
+  }: {
+    item: MediaItem;
+    className: string;
+  }) {
+    if (item.state === "uploaded" && item.urls.playback) {
+      // Use stream player for uploaded videos
+      return (
+        <div className="w-full max-w-4xl" style={{ aspectRatio: "16/9" }}>
+          <StreamVideoPreview
+            iframeUrl={item.urls.playback}
+            aspectRatio={item.aspectRatio || "16:9"}
+            className={`rounded-lg w-full h-full ${className}`}
+          />
+        </div>
+      );
+    } else {
+      // Use video element for local files
+      return (
+        <video
+          src={item.urls.preview}
+          controls
+          className={`max-w-full max-h-[70vh] object-contain rounded-lg ${className}`}
+        >
+          <track kind="captions" label="auto-generated" />
+        </video>
+      );
+    }
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison: only re-render if video-specific props change
+    return (
+      prevProps.item.id === nextProps.item.id &&
+      prevProps.item.urls.playback === nextProps.item.urls.playback &&
+      prevProps.item.urls.preview === nextProps.item.urls.preview &&
+      prevProps.item.aspectRatio === nextProps.item.aspectRatio &&
+      prevProps.item.state === nextProps.item.state &&
+      prevProps.className === nextProps.className
+    );
+  },
+);
+
+// Memoized image player component
+const MemoizedImagePlayer = memo(
+  function MemoizedImagePlayer({
+    item,
+    className,
+  }: {
+    item: MediaItem;
+    className: string;
+  }) {
+    return (
+      <img
+        src={item.urls.preview}
+        alt="Full size image"
+        className={`max-w-full max-h-[70vh] object-contain rounded-lg ${className}`}
+      />
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison: only re-render if image-specific props change
+    return (
+      prevProps.item.id === nextProps.item.id &&
+      prevProps.item.urls.preview === nextProps.item.urls.preview &&
+      prevProps.className === nextProps.className
+    );
+  },
+);
 
 // Image renderer
 export const ImageRenderer = {
@@ -18,12 +92,11 @@ export const ImageRenderer = {
     <img src={item.urls.preview} alt="Image preview" className={className} />
   ),
 
-  renderPlayer: (
-    item: MediaItem,
-    className = "max-w-full max-h-[70vh] object-contain rounded-lg",
-  ) => (
-    <img src={item.urls.preview} alt="Full size image" className={className} />
-  ),
+  renderPlayer: (item: MediaItem, className = "") => {
+    return (
+      <MemoizedImagePlayer key={item.id} item={item} className={className} />
+    );
+  },
 };
 
 // Video renderer
@@ -71,29 +144,9 @@ export const VideoRenderer = {
   },
 
   renderPlayer: (item: MediaItem, className = "") => {
-    if (item.state === "uploaded" && item.urls.playback) {
-      // Use stream player for uploaded videos
-      return (
-        <div className="w-full max-w-4xl" style={{ aspectRatio: "16/9" }}>
-          <StreamVideoPreview
-            iframeUrl={item.urls.playback}
-            aspectRatio={item.aspectRatio || "16:9"}
-            className={`rounded-lg w-full h-full ${className}`}
-          />
-        </div>
-      );
-    } else {
-      // Use video element for local files
-      return (
-        <video
-          src={item.urls.preview}
-          controls
-          className={`max-w-full max-h-[70vh] object-contain rounded-lg ${className}`}
-        >
-          <track kind="captions" label="auto-generated" />
-        </video>
-      );
-    }
+    return (
+      <MemoizedVideoPlayer key={item.id} item={item} className={className} />
+    );
   },
 };
 

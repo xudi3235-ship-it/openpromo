@@ -1,10 +1,12 @@
+import { memo } from "react";
+
 interface StreamVideoPreviewProps {
   iframeUrl: string;
   className?: string;
   aspectRatio?: string;
 }
 
-export function StreamVideoPreview({
+export const StreamVideoPreview = memo(function StreamVideoPreview({
   iframeUrl,
   className = "",
   aspectRatio = "16:9",
@@ -38,4 +40,4 @@ export function StreamVideoPreview({
       />
     </div>
   );
-}
+});

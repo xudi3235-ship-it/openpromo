@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
 import { Upload } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Dropzone } from "@/components/dropzone";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { MediaRenderer, MediaService } from "@/lib/media";
@@ -26,9 +26,11 @@ export function MediaUpload() {
     reorderAttachments,
   } = useComposerStore();
 
-  // Convert attachments to media items for unified rendering
-  const mediaItems = MediaService.fromAttachments(
-    contentCreateData.base.attachments || [],
+  // Convert attachments to media items for unified rendering (memoized to prevent flicker)
+  const mediaItems = useMemo(
+    () =>
+      MediaService.fromAttachments(contentCreateData.base.attachments || []),
+    [contentCreateData.base.attachments],
   );
 
   // Local state for dialog and drag overlay
