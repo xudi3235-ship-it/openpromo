@@ -55,7 +55,17 @@ export class EntPendingContent extends EntUnifiedContentBase {
   static createManyInternal = fn(
     UnifiedContentInsert.omit({ workspaceId: true }).array(),
     async (items) => {
-      return items.map((i) => EntPendingContent.createInternal(i));
+      const actor = Actor.assert("workspace_user");
+      if (items.length === 0) throw new Error("No items to create");
+      return await db()
+        .insert(unifiedContentTable)
+        .values(
+          items.map((item) => ({
+            ...item,
+            workspaceId: actor.properties.workspaceID,
+          })),
+        )
+        .returning();
     },
   );
   static createInternal = fn(

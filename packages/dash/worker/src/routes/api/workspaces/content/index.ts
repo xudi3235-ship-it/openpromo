@@ -189,19 +189,6 @@ export const contentRoute = new Hono<ApiEnv>()
     const reel = await fbContent.createReel(video_id);
     return c.json({ video_id, reel });
   })
-  .post(
-    "/test",
-    zValidator(
-      "json",
-      z.object({
-        pageId: z.string(),
-        message: z.string().optional(),
-      }),
-    ),
-    async (c) => {
-      c.req.valid("json");
-    },
-  )
   // update content group api
   .patch("/group/:id", zValidator("json", ContentCreateData), async (c) => {
     const { id } = c.req.param();
