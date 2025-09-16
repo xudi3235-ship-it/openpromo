@@ -1,6 +1,7 @@
 import type { WorkflowStepConfig } from "cloudflare:workers";
 import {
   EntFBFeedPendingContent,
+  EntIGFeedPendingContent,
   EntPendingContent,
 } from "@core/domain/content/entity";
 import { Actor } from "@core/helpers/actor";
@@ -71,6 +72,9 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
     switch (placement) {
       case "FB_FEED":
         await this.handleFBFeedPublish(ctx, step, pendingContentID);
+        break;
+      case "IG_FEED":
+        await this.handleIGFeedPublish(ctx, step, pendingContentID);
         break;
       default:
         throw new Error(`unsupported placement ${placement}`);
@@ -177,6 +181,41 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
     }
     throw new Error(
       `unsupported post type for FB Feed content ${pendingContentID}`,
+    );
+  }
+  async handleIGFeedPublish(
+    _ctx: CoreWorkflowContext,
+    step: CoreWorkflowStep,
+    pendingContentID: string,
+  ) {
+    const { isPhotoCarousel, isMixedCarousel, isSingleVideoReel } =
+      await step.do("determine IG feed post type", async () => {
+        const c = await EntIGFeedPendingContent.fromID(pendingContentID);
+        return {
+          isPhotoCarousel: c.isPhotoCarousel(),
+          isMixedCarousel: c.isMixedCarousel(),
+          isSingleVideoReel: c.isSingleVideoReel(),
+        };
+      });
+    // only one can be true
+    if (!isPhotoCarousel && !isMixedCarousel && !isSingleVideoReel)
+      throw new Error("no post type matched");
+
+    if (isPhotoCarousel) {
+      await step.do("create photo carousel", async () => {
+        const c = await EntIGFeedPendingContent.fromID(pendingContentID);
+        const { postId } = await c.createPhotoCarouselPost();
+        console.log({ postId });
+      });
+    }
+    if (isMixedCarousel) {
+      throw new NotImplementedError("TODO");
+    }
+    if (isSingleVideoReel) {
+      throw new NotImplementedError("TODO");
+    }
+    throw new Error(
+      `unsupported post type for IG Feed content ${pendingContentID}`,
     );
   }
 }

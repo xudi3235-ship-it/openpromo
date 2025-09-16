@@ -39,24 +39,46 @@ export class EntIGFeedPendingContent extends EntPendingContent {
     this.spec = spec;
     this.igAccountID = spec.identity.igAccountID;
   }
-  async createSinglePhotoPost() {
-    const { igAccountID } = await this.identity();
-    // 1. create media container
-    const containerId = await this.createMediaContainer({
-      caption: "trust me bro",
-      imageUrl:
-        "https://videos.openai.com/vg-assets/assets%2Ftask_01k4k36ycreev9qdkzctsrsxbg%2F1757282642_img_0.webp?st=2025-09-08T22%3A27%3A05Z&se=2025-09-14T23%3A27%3A05Z&sks=b&skt=2025-09-08T22%3A27%3A05Z&ske=2025-09-14T23%3A27%3A05Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=8ebb0df1-a278-4e2e-9c20-f2d373479b3a&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=Bt58qPWEscV5TSVmw%2BvJAoQqTHlMHCucawymOb5R7CM%3D&az=oaivgprodscus",
-    });
-    // 2. publish media container
-    const { id: postId } = await this.api(
-      `/${igAccountID}/media_publish`,
-      "POST",
-      {
-        creation_id: containerId,
-      },
-      z.object({ id: z.string().describe("instagram post id") }),
+  static async fromID(id: string): Promise<EntIGFeedPendingContent> {
+    return EntIGFeedPendingContent.fromPendingContent(
+      await EntPendingContent.fromID(id),
     );
-    return { postId };
+  }
+  static fromPendingContent(c: EntPendingContent): EntIGFeedPendingContent {
+    return new EntIGFeedPendingContent(c.data);
+  }
+  hasVideoAttachment() {
+    return this.spec.attachments?.some((a) => a.type === "video") ?? false;
+  }
+  hasPhotoAttachment() {
+    return this.spec.attachments?.some((a) => a.type === "photo") ?? false;
+  }
+  onlyOneAttachment() {
+    return (this.spec.attachments?.length ?? 0) === 1;
+  }
+  isSingleVideoReel() {
+    // might expand, reels might support photos too
+    return this.hasVideoAttachment() && this.onlyOneAttachment();
+  }
+  isPhotoCarousel() {
+    return !this.onlyOneAttachment() && this.hasPhotoAttachment();
+  }
+  isMixedCarousel() {
+    // mix of photo and video
+    return (
+      !this.onlyOneAttachment() &&
+      this.hasPhotoAttachment() &&
+      this.hasVideoAttachment()
+    );
+  }
+  photosAttachments() {
+    return this.spec.attachments?.filter((a) => a.type === "photo") ?? [];
+  }
+  attachments() {
+    return this.spec.attachments ?? [];
+  }
+  caption() {
+    return this.spec.caption as string;
   }
   /**
    * IG's carousel supports up 10, mix of photos and videos.
@@ -66,25 +88,22 @@ export class EntIGFeedPendingContent extends EntPendingContent {
   async createPhotoCarouselPost() {
     // !!NOTE: Jpeg is only supported image format.
     // ref: https://github.com/fbsamples/reels_publishing_apis/blob/main/insta_reels_publishing_api_sample/index.js#L276
-    const photos =
-      this.spec.attachments?.filter((a) => a.type === "photo") ?? [];
-    if (photos.length === 0) {
-      throw new Error("no photo attachment provided");
-    }
+    const photos = this.photosAttachments();
+    if (photos.length === 0) throw new Error("no photo attachment provided");
     const { igAccountID } = await this.identity();
     // 1. create media containers for each photo
     const containerIds = await Promise.all(
       photos.map(async (p) => {
         return await this.createMediaContainer({
-          caption: "TODO: caption for each item?",
-          imageUrl: p.presignedUrl,
+          caption: this.caption(),
+          imageUrl: p.publicUrl,
           isCarouselItem: true,
         });
       }),
     );
     // 2. create a carousel container
     const parentContainerId = await this.createMediaContainer({
-      caption: "trust me bro - carousel",
+      caption: this.caption(),
       mediaType: "CAROUSEL",
       children: containerIds,
     });
@@ -94,7 +113,7 @@ export class EntIGFeedPendingContent extends EntPendingContent {
       `/${igAccountID}/media_publish`,
       "POST",
       {
-        caption: "trust me bro - carousel from openpromo",
+        caption: this.caption(),
         creation_id: parentContainerId,
       },
       z.object({ id: z.string().describe("instagram post id") }),
