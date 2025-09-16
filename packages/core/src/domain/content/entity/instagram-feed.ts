@@ -120,36 +120,98 @@ export class EntIGFeedPendingContent extends EntPendingContent {
     );
     return { postId };
   }
-  async createReel() {
+  async createMixedCarouselContainers() {
+    // Mixed carousel supports up to 10 items, mix of photos and videos
+    // This method only creates containers, polling is handled by workflow
+    const attachments = this.attachments();
+    if (attachments.length === 0) throw new Error("no attachments provided");
+    if (attachments.length > 10)
+      throw new Error("carousel supports max 10 items");
+
+    const hasPhotos = attachments.some((a) => a.type === "photo");
+    const hasVideos = attachments.some((a) => a.type === "video");
+
+    if (!hasPhotos && !hasVideos) {
+      throw new Error("no valid photo or video attachments found");
+    }
+
+    // Create media containers in the same order as attachments to preserve order
+    const containerIds: string[] = [];
+    const videoContainerInfo: { id: string; index: number }[] = [];
+
+    for (let i = 0; i < attachments.length; i++) {
+      const attachment = attachments[i];
+
+      if (attachment.type === "photo") {
+        const containerId = await this.createMediaContainer({
+          caption: this.caption(),
+          imageUrl: attachment.publicUrl,
+          isCarouselItem: true,
+        });
+        containerIds.push(containerId);
+      } else if (attachment.type === "video") {
+        const containerId = await this.createMediaContainer({
+          caption: this.caption(),
+          videoUrl: attachment.presignedUrl,
+          mediaType: "VIDEO", // Use VIDEO for carousel items, not REELS
+          isCarouselItem: true,
+        });
+        containerIds.push(containerId);
+        videoContainerInfo.push({ id: containerId, index: i });
+      }
+    }
+
+    console.log("// created all media containers in order", { containerIds });
+
+    return {
+      containerIds,
+      videoContainerInfo,
+    };
+  }
+
+  async publishCarousel(containerIds: string[]) {
+    // Create the parent carousel container and publish
+    const parentContainerId = await this.createMediaContainer({
+      caption: this.caption(),
+      mediaType: "CAROUSEL",
+      children: containerIds,
+    });
+    console.log("// created carousel container", { parentContainerId });
+
+    // Publish the carousel
+    const { igAccountID } = await this.identity();
+    const { id: postId } = await this.api(
+      `/${igAccountID}/media_publish`,
+      "POST",
+      {
+        caption: this.caption(),
+        creation_id: parentContainerId,
+      },
+      z.object({ id: z.string().describe("instagram post id") }),
+    );
+
+    return { postId };
+  }
+  async createReelContainer() {
     const videos =
       this.spec.attachments?.filter((a) => a.type === "video") ?? [];
     if (videos.length !== 1) {
       throw new Error("only support 1 video attachment for reel");
     }
     const video = onlyOrThrow(videos);
-    // 1. create media container for the video
+
+    // Create media container for the video (no polling here)
     const containerId = await this.createMediaContainer({
-      caption: "trust me bro - reel",
+      caption: this.caption(),
       videoUrl: video.presignedUrl,
       mediaType: "REELS",
     });
-    // 2. poll until the container is ready
-    let attempts = 10;
-    let ready = false;
-    while (attempts > 0) {
-      const status = await this.getMediaContainerStatus(containerId);
-      console.log(`// ${attempts} media container status`, status);
-      if (status.status_code === "FINISHED") {
-        ready = true;
-        break;
-      }
-      attempts--;
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-    }
-    if (!ready) {
-      throw new Error("video media container is not ready in time");
-    }
-    // 3. publish reel
+
+    return { containerId };
+  }
+
+  async publishReelFromContainer(containerId: string) {
+    // Publish reel using the ready container
     const { igAccountID } = await this.identity();
     const { id: postId } = await this.api(
       `/${igAccountID}/media_publish`,
@@ -203,7 +265,7 @@ export class EntIGFeedPendingContent extends EntPendingContent {
     console.log("// created media container", { mediaContainerId });
     return mediaContainerId;
   }
-  protected async getMediaContainerStatus(containerId: string) {
+  async getMediaContainerStatus(containerId: string) {
     /**
      * If you are able to create a container for a video but the POST /<IG_ID>/media_publish endpoint does not return the published media ID, you can get the container's publishing status by querying the GET /<IG_CONTAINER_ID>?fields=status_code endpoint. This endpoint will return one of the following:
 
