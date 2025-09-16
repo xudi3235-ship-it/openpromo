@@ -1,7 +1,10 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
+import { db, eq } from "@core/helpers/db";
+import { VideoStorage } from "@core/helpers/storage/video";
 import {
   IGFeedPlacementSpec,
   type UnifiedContentSelect,
+  unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { onlyOrThrow } from "@core/utils/common";
 import type { ZodType } from "zod";
@@ -47,6 +50,104 @@ export class EntIGFeedPendingContent extends EntPendingContent {
   static fromPendingContent(c: EntPendingContent): EntIGFeedPendingContent {
     return new EntIGFeedPendingContent(c.data);
   }
+  async initiateVideoDownloads(): Promise<{ id: string; status: string }[]> {
+    const videos = this.videoAttachments();
+    if (videos.length === 0) {
+      return [];
+    }
+
+    const downloadStatuses: { id: string; status: string }[] = [];
+
+    for (const video of videos) {
+      const download = await VideoStorage.createMP4Download(video.id);
+      downloadStatuses.push({
+        id: video.id,
+        status: download.default?.status || "unknown",
+      });
+    }
+
+    return downloadStatuses;
+  }
+
+  async checkVideoDownloadStatus(videoId: string) {
+    const download = await VideoStorage.createMP4Download(videoId);
+
+    return {
+      id: videoId,
+      status: download.default?.status,
+      url: download.default?.url,
+    };
+  }
+
+  async getReadyVideoDownloads(): Promise<
+    { id: string; downloadUrl: string }[]
+  > {
+    const videos = this.videoAttachments();
+    const readyVideos: { id: string; downloadUrl: string }[] = [];
+
+    for (const video of videos) {
+      const status = await this.checkVideoDownloadStatus(video.id);
+
+      if (status.status === "ready") {
+        if (!status.url) {
+          throw new Error(
+            `Video download ${video.id} is ready but missing URL`,
+          );
+        }
+        readyVideos.push({
+          id: video.id,
+          downloadUrl: status.url,
+        });
+      } else if (status.status === "error") {
+        throw new Error(`Video download ${video.id} failed`);
+      }
+    }
+
+    return readyVideos;
+  }
+
+  async updateVideoAttachmentsWithUrls(
+    readyVideos: { id: string; downloadUrl: string }[],
+  ): Promise<EntIGFeedPendingContent> {
+    if (readyVideos.length === 0) return this;
+
+    // Create a map for quick lookup
+    const urlMap = new Map(readyVideos.map((v) => [v.id, v.downloadUrl]));
+
+    // Update the attachment specs with presigned URLs
+    const updatedAttachments = this.spec.attachments?.map((attachment) => {
+      if (attachment.type === "video" && urlMap.has(attachment.id)) {
+        return {
+          ...attachment,
+          presignedUrl: urlMap.get(attachment.id),
+        };
+      }
+      return attachment;
+    });
+
+    if (!updatedAttachments) return this;
+
+    // Update the placement spec in the database
+    const updatedPlacementSpec = {
+      ...this.spec,
+      attachments: updatedAttachments,
+    } satisfies IGFeedPlacementSpec;
+
+    const [newData] = await db()
+      .update(unifiedContentTable)
+      .set({
+        placementSpec: updatedPlacementSpec,
+      })
+      .where(eq(unifiedContentTable.id, this.data.id))
+      .returning();
+    if (!newData || !newData.placementSpec) {
+      throw new Error(
+        `Failed to update placementSpec for content ${this.data.id}`,
+      );
+    }
+    return new EntIGFeedPendingContent(newData);
+  }
+
   hasVideoAttachment() {
     return this.spec.attachments?.some((a) => a.type === "video") ?? false;
   }
@@ -73,6 +174,9 @@ export class EntIGFeedPendingContent extends EntPendingContent {
   }
   photosAttachments() {
     return this.spec.attachments?.filter((a) => a.type === "photo") ?? [];
+  }
+  videoAttachments() {
+    return this.spec.attachments?.filter((a) => a.type === "video") ?? [];
   }
   attachments() {
     return this.spec.attachments ?? [];
@@ -199,6 +303,8 @@ export class EntIGFeedPendingContent extends EntPendingContent {
       throw new Error("only support 1 video attachment for reel");
     }
     const video = onlyOrThrow(videos);
+    console.log({ video });
+    if (!video.presignedUrl) throw new Error("video missing presignedUrl");
 
     // Create media container for the video (no polling here)
     const containerId = await this.createMediaContainer({
@@ -328,7 +434,7 @@ export class EntIGFeedPendingContent extends EntPendingContent {
       );
     }
     const resJson = await res.json();
-    console.log("// IG API response", resJson);
+    console.log("// IG API response", JSON.stringify(resJson, null, 2));
 
     const { data, success, error } = outSchema.safeParse(resJson);
     if (!data || !success || error) {
@@ -360,14 +466,10 @@ export class EntIGFeedPendingContent extends EntPendingContent {
           // {
           //   type: "photo",
           //   id: "your_mom",
-          //   presignedUrl:
-          //     "https://videos.openai.com/vg-assets/assets%2Ftask_01k4mk41aaeg8vx466pehg1cr7%2F1757332857_img_0.webp?st=2025-09-09T02%3A20%3A03Z&se=2025-09-15T03%3A20%3A03Z&sks=b&skt=2025-09-09T02%3A20%3A03Z&ske=2025-09-15T03%3A20%3A03Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=3d249c53-07fa-4ba4-9b65-0bf8eb4ea46a&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=ggevPmmqW%2Bjs5epahYb%2Bx5EPRh4kTbVfi8OtOjnqE%2Fs%3D&az=oaivgprodscus",
           // },
           // {
           //   type: "photo",
           //   id: "your_mom_again",
-          //   presignedUrl:
-          //     "https://videos.openai.com/vg-assets/assets%2Ftask_01k4nqawy0f55sbcejpqxkzcfg%2F1757370783_img_1.webp?st=2025-09-09T02%3A23%3A11Z&se=2025-09-15T03%3A23%3A11Z&sks=b&skt=2025-09-09T02%3A23%3A11Z&ske=2025-09-15T03%3A23%3A11Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=3d249c53-07fa-4ba4-9b65-0bf8eb4ea46a&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=1hFzLeje5KTjKzSl%2FRj%2F7wNTEtrCLoEvL%2FOPMa%2F6x2Y%3D&az=oaivgprodscus",
           // },
           {
             type: "video",
