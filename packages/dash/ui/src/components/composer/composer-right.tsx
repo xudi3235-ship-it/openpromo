@@ -2,6 +2,7 @@ import { Button } from "@openpromo/ui/components/button";
 import { Grid3X3, List } from "lucide-react";
 import { useState } from "react";
 import { FBFeedPreview } from "@/components/composer/fb-feed-preview";
+import { FBReelPreview } from "@/components/composer/fb-reel-preview";
 import { IGFeedPreview } from "@/components/composer/ig-feed-preview";
 import { IGReelPreview } from "@/components/composer/ig-reel-preview";
 import { useComposerStore } from "@/stores/composer-store";
@@ -20,6 +21,7 @@ export function ComposerRight() {
   };
 
   const InstagramPreview = isReelContent() ? IGReelPreview : IGFeedPreview;
+  const FacebookPreview = isReelContent() ? FBReelPreview : FBFeedPreview;
 
   return (
     <div className="h-full p-4 bg-background overflow-y-auto">
@@ -57,9 +59,11 @@ export function ComposerRight() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 px-1">
                 <div className="w-3 h-3 bg-blue-600 rounded"></div>
-                <span className="text-xs text-muted-foreground">Facebook</span>
+                <span className="text-xs text-muted-foreground">
+                  Facebook {isReelContent() ? "Reel" : "Feed"}
+                </span>
               </div>
-              <FBFeedPreview />
+              <FacebookPreview />
             </div>
             <div className="space-y-2">
               <div className="flex items-center gap-2 px-1">
@@ -104,7 +108,7 @@ export function ComposerRight() {
 
             {/* Preview */}
             <div>
-              {selectedPreview === "FACEBOOK" && <FBFeedPreview />}
+              {selectedPreview === "FACEBOOK" && <FacebookPreview />}
               {selectedPreview === "INSTAGRAM" && <InstagramPreview />}
             </div>
           </div>
