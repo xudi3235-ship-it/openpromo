@@ -17,7 +17,7 @@ import { useComposerStore } from "@/stores/composer-store";
 export function FBReelPreview() {
   const { workspace } = useWorkspace();
   const contentCreateData = useComposerStore((s) => s.contentCreateData);
-  const { getAttachmentUrl } = useAttachmentRenderer();
+  const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer();
   const attachments = contentCreateData.base.attachments ?? [];
   const message = contentCreateData.base.message;
   const [isPlaying, setIsPlaying] = useState(true);
@@ -26,6 +26,10 @@ export function FBReelPreview() {
 
   // Get the first video attachment for the reel
   const videoAttachment = attachments.find((att) => att.type === "video");
+
+  // Check if we have a stream iframe (uploaded video) vs local file
+  const hasStreamIframe =
+    videoAttachment?.metadata?.previewIframeUrl && !videoAttachment.file;
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -57,48 +61,59 @@ export function FBReelPreview() {
       <div className="aspect-[9/16] relative group">
         {videoAttachment && getAttachmentUrl(videoAttachment) ? (
           <div className="w-full h-full relative">
-            <video
-              ref={videoRef}
-              src={getAttachmentUrl(videoAttachment) as string}
-              className="w-full h-full object-cover cursor-pointer"
-              autoPlay
-              loop
-              playsInline
-              muted={isMuted}
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
-              onClick={togglePlay}
-            >
-              <track kind="captions" />
-            </video>
-
-            {/* Play/Pause Overlay */}
-            {!isPlaying && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                <button
-                  type="button"
-                  onClick={togglePlay}
-                  className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/60 transition-colors"
-                  aria-label="Play video"
-                >
-                  <Play className="w-8 h-8 text-white ml-1" />
-                </button>
-              </div>
+            {/* Use renderAttachment for proper stream iframe vs local file handling */}
+            {renderAttachment(
+              videoAttachment,
+              "w-full h-full object-cover",
+              false,
             )}
 
-            {/* Volume Control */}
-            <button
-              type="button"
-              onClick={toggleMute}
-              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 flex items-center justify-center hover:bg-black/60 transition-colors opacity-0 group-hover:opacity-100"
-              aria-label={isMuted ? "Unmute" : "Mute"}
-            >
-              {isMuted ? (
-                <VolumeX className="w-5 h-5 text-white" />
-              ) : (
-                <Volume2 className="w-5 h-5 text-white" />
-              )}
-            </button>
+            {/* Only show custom controls for local files, not stream iframes */}
+            {!hasStreamIframe && (
+              <>
+                {/* Hidden video element for control (local files only) */}
+                <video
+                  ref={videoRef}
+                  src={getAttachmentUrl(videoAttachment) as string}
+                  className="hidden"
+                  loop
+                  playsInline
+                  muted={isMuted}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                >
+                  <track kind="captions" />
+                </video>
+
+                {/* Play/Pause Overlay */}
+                {!isPlaying && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <button
+                      type="button"
+                      onClick={togglePlay}
+                      className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/60 transition-colors"
+                      aria-label="Play video"
+                    >
+                      <Play className="w-8 h-8 text-white ml-1" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Volume Control */}
+                <button
+                  type="button"
+                  onClick={toggleMute}
+                  className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 flex items-center justify-center hover:bg-black/60 transition-colors opacity-0 group-hover:opacity-100"
+                  aria-label={isMuted ? "Unmute" : "Mute"}
+                >
+                  {isMuted ? (
+                    <VolumeX className="w-5 h-5 text-white" />
+                  ) : (
+                    <Volume2 className="w-5 h-5 text-white" />
+                  )}
+                </button>
+              </>
+            )}
 
             {/* Actions Sidebar */}
             <div className="absolute right-3 bottom-16 flex flex-col items-center space-y-2">
