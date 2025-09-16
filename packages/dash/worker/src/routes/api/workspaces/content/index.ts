@@ -462,8 +462,7 @@ export const contentRoute = new Hono<ApiEnv>()
         await ins.sendEvent({ type: "publish_draft", payload: {} });
       }
       if (ct.isScheduled()) {
-        // TODO: how do we handle scheduled publish?
-        // right now it's ahead of time, so we need to override or use event
+        await ins.sendEvent({ type: "publish_now", payload: {} });
       }
     });
   })
