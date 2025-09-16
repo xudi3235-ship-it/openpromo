@@ -3,13 +3,23 @@ import { Grid3X3, List } from "lucide-react";
 import { useState } from "react";
 import { FBFeedPreview } from "@/components/composer/fb-feed-preview";
 import { IGFeedPreview } from "@/components/composer/ig-feed-preview";
+import { IGReelPreview } from "@/components/composer/ig-reel-preview";
 import { useComposerStore } from "@/stores/composer-store";
 
 type ViewMode = "collage" | "list";
 
 export function ComposerRight() {
-  const { selectedPreview, setSelectedPreview } = useComposerStore();
+  const { selectedPreview, setSelectedPreview, contentCreateData } =
+    useComposerStore();
   const [viewMode, setViewMode] = useState<ViewMode>("collage");
+
+  // Helper to determine if content should be shown as a reel
+  const isReelContent = () => {
+    const attachments = contentCreateData.base.attachments ?? [];
+    return attachments.length === 1 && attachments[0]?.type === "video";
+  };
+
+  const InstagramPreview = isReelContent() ? IGReelPreview : IGFeedPreview;
 
   return (
     <div className="h-full p-4 bg-background overflow-y-auto">
@@ -54,9 +64,11 @@ export function ComposerRight() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 px-1">
                 <div className="w-3 h-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded"></div>
-                <span className="text-xs text-muted-foreground">Instagram</span>
+                <span className="text-xs text-muted-foreground">
+                  Instagram {isReelContent() ? "Reel" : "Feed"}
+                </span>
               </div>
-              <IGFeedPreview />
+              <InstagramPreview />
             </div>
           </div>
         ) : (
@@ -93,7 +105,7 @@ export function ComposerRight() {
             {/* Preview */}
             <div>
               {selectedPreview === "FACEBOOK" && <FBFeedPreview />}
-              {selectedPreview === "INSTAGRAM" && <IGFeedPreview />}
+              {selectedPreview === "INSTAGRAM" && <InstagramPreview />}
             </div>
           </div>
         )}

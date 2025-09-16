@@ -51,6 +51,9 @@ export function useAttachmentRenderer() {
             className={className}
             controls={controls}
             muted={!controls}
+            autoPlay
+            loop
+            playsInline
           >
             <track kind="captions" label="auto-generated" />
           </video>
