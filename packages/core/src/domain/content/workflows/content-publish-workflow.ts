@@ -1,6 +1,4 @@
-import type { WorkflowStepConfig } from "cloudflare:workers";
 import {
-  EntFBFeedPendingContent,
   EntIGFeedPendingContent,
   EntPendingContent,
 } from "@core/domain/content/entity";
@@ -14,18 +12,12 @@ import {
 import { NotImplementedError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 import z from "zod";
+import { FacebookPublisher } from "./facebook-publisher";
 
 const PublishWorkflowParams = z.object({
   actor: Actor.WorkspaceUserSchema,
   pendingContentID: z.string(),
 });
-
-const CONFIG = {
-  retries: {
-    limit: 0,
-    delay: 5000,
-  },
-} satisfies WorkflowStepConfig;
 
 export type PublishWorkflowParams = z.infer<typeof PublishWorkflowParams>;
 const log = Log.create({ namespace: "workflow" });
@@ -70,9 +62,11 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
       });
     }
     switch (placement) {
-      case "FB_FEED":
-        await this.handleFBFeedPublish(ctx, step, pendingContentID);
+      case "FB_FEED": {
+        const fbPublisher = new FacebookPublisher();
+        await fbPublisher.publish(ctx, step, pendingContentID);
         break;
+      }
       case "IG_FEED":
         await this.handleIGFeedPublish(ctx, step, pendingContentID);
         break;
@@ -83,105 +77,6 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
       const actor = Actor.assert("workspace_user");
       console.log(`finally ${actor}`);
     });
-  }
-  async handleFBFeedPublish(
-    ctx: CoreWorkflowContext,
-    step: CoreWorkflowStep,
-    pendingContentID: string,
-  ) {
-    console.log("before determine post type", ctx);
-
-    const { isCarousel, isMultiPhoto, isSingleVideo, isTextOnly } =
-      await step.do("determine post type", async () => {
-        const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-        return {
-          isTextOnly: c.isTextOnlyPost(),
-          isCarousel: c.isCarouselPost(),
-          isMultiPhoto: c.isMultiPhotoPost(),
-          isSingleVideo: c.isSingleVideoPost(),
-        };
-      });
-    if (isTextOnly) {
-      console.log("publish text post");
-      await step.do("create text post", CONFIG, async () => {
-        const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-        const nc = await c.createTextPost();
-        console.log({ nc });
-      });
-      log.info("published text post");
-      return;
-    }
-    if (isMultiPhoto) {
-      await step.do("create multi-photo post", async () => {
-        // TODO: get a published post ID
-        // sync it internally
-        const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-        const nc = await c.createPhotoPost();
-        console.log({ nc });
-      });
-      log.info("published multi-photo post");
-      return;
-    }
-    if (isSingleVideo) {
-      log.info("publish single video post");
-      const { videoID } = await step.do(
-        "create single video post",
-        async () => {
-          const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-          // 1. upload video from internal to FB
-          const { video_id: videoID, upload_url } =
-            await c.initVideoUploadSession();
-          // 2. upload to the upload_url
-          const { success, message } =
-            await c.uploadInternalVideoToSession(upload_url);
-          log.info("uploaded video to FB upload session", { success, message });
-          return {
-            videoID,
-            uploadSuccess: success,
-            uploadMessage: message,
-          };
-        },
-      );
-      // 3. wait for processing is done
-      const { videoID: uploadCompleteVideoID } = await step.do(
-        "wait for video upload",
-        async () => {
-          let attempts = 5;
-          const thirtySeconds = 30 * 1000;
-          const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-          const isComplete = await c.isVideoUploadComplete(videoID);
-          while (!isComplete && attempts > 0) {
-            log.info("video processing not done, wait 30s and retry", {
-              attemptsLeft: attempts,
-            });
-            await new Promise((r) => setTimeout(r, thirtySeconds));
-            attempts -= 1;
-          }
-          if (!isComplete) {
-            throw new Error("video processing not done in time");
-          }
-          return { videoID };
-        },
-      );
-      // 4. create reel with the uploaded video ID
-      // reel == video post
-      await step.do("create reel", async () => {
-        const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-        // TODO: error handle here
-        // sync it internally on success
-        const r = await c.createReel(uploadCompleteVideoID);
-        console.log({ r });
-      });
-
-      log.info("published single video post");
-      return;
-    }
-    if (isCarousel) {
-      throw new NotImplementedError("TODO");
-    }
-    throw new Error(
-      `unsupported post type for FB Feed content ${pendingContentID}`,
-    );
   }
   async handleIGFeedPublish(
     _ctx: CoreWorkflowContext,
