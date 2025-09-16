@@ -6,6 +6,7 @@ import type {
 } from "@core/helpers/workflow";
 import { NotImplementedError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
+import { BasePublisher } from "./base-publisher";
 
 const CONFIG = {
   retries: {
@@ -16,12 +17,15 @@ const CONFIG = {
 
 const log = Log.create({ namespace: "facebook-publisher" });
 
-export class FacebookPublisher {
+export class FacebookPublisher extends BasePublisher {
   async publish(
     ctx: CoreWorkflowContext,
     step: CoreWorkflowStep,
     pendingContentID: string,
   ) {
+    // Step 0: Prepare videos if needed (ensure downloads are ready and URLs are set)
+    await this.prepareVideosIfNeeded(step, pendingContentID);
+
     console.log("before determine post type", ctx);
 
     const { isCarousel, isMultiPhoto, isSingleVideo, isTextOnly } =

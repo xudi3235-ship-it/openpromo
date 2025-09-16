@@ -1,10 +1,7 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { db, eq } from "@core/helpers/db";
-import { VideoStorage } from "@core/helpers/storage/video";
 import {
   IGFeedPlacementSpec,
   type UnifiedContentSelect,
-  unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { onlyOrThrow } from "@core/utils/common";
 import type { ZodType } from "zod";
@@ -50,113 +47,7 @@ export class EntIGFeedPendingContent extends EntPendingContent {
   static fromPendingContent(c: EntPendingContent): EntIGFeedPendingContent {
     return new EntIGFeedPendingContent(c.data);
   }
-  async initiateVideoDownloads(): Promise<{ id: string; status: string }[]> {
-    const videos = this.videoAttachments();
-    if (videos.length === 0) {
-      return [];
-    }
 
-    const downloadStatuses: { id: string; status: string }[] = [];
-
-    for (const video of videos) {
-      const download = await VideoStorage.createMP4Download(video.id);
-      downloadStatuses.push({
-        id: video.id,
-        status: download.default?.status || "unknown",
-      });
-    }
-
-    return downloadStatuses;
-  }
-
-  async checkVideoDownloadStatus(videoId: string) {
-    const download = await VideoStorage.createMP4Download(videoId);
-
-    return {
-      id: videoId,
-      status: download.default?.status,
-      url: download.default?.url,
-    };
-  }
-
-  async getReadyVideoDownloads(): Promise<
-    { id: string; downloadUrl: string }[]
-  > {
-    const videos = this.videoAttachments();
-    const readyVideos: { id: string; downloadUrl: string }[] = [];
-
-    for (const video of videos) {
-      const status = await this.checkVideoDownloadStatus(video.id);
-
-      if (status.status === "ready") {
-        if (!status.url) {
-          throw new Error(
-            `Video download ${video.id} is ready but missing URL`,
-          );
-        }
-        readyVideos.push({
-          id: video.id,
-          downloadUrl: status.url,
-        });
-      } else if (status.status === "error") {
-        throw new Error(`Video download ${video.id} failed`);
-      }
-    }
-
-    return readyVideos;
-  }
-
-  async updateVideoAttachmentsWithUrls(
-    readyVideos: { id: string; downloadUrl: string }[],
-  ): Promise<EntIGFeedPendingContent> {
-    if (readyVideos.length === 0) return this;
-
-    // Create a map for quick lookup
-    const urlMap = new Map(readyVideos.map((v) => [v.id, v.downloadUrl]));
-
-    // Update the attachment specs with presigned URLs
-    const updatedAttachments = this.spec.attachments?.map((attachment) => {
-      if (attachment.type === "video" && urlMap.has(attachment.id)) {
-        return {
-          ...attachment,
-          presignedUrl: urlMap.get(attachment.id),
-        };
-      }
-      return attachment;
-    });
-
-    if (!updatedAttachments) return this;
-
-    // Update the placement spec in the database
-    const updatedPlacementSpec = {
-      ...this.spec,
-      attachments: updatedAttachments,
-    } satisfies IGFeedPlacementSpec;
-
-    const [newData] = await db()
-      .update(unifiedContentTable)
-      .set({
-        placementSpec: updatedPlacementSpec,
-      })
-      .where(eq(unifiedContentTable.id, this.data.id))
-      .returning();
-    if (!newData || !newData.placementSpec) {
-      throw new Error(
-        `Failed to update placementSpec for content ${this.data.id}`,
-      );
-    }
-    return new EntIGFeedPendingContent(newData);
-  }
-
-  hasVideoAttachment() {
-    return this.spec.attachments?.some((a) => a.type === "video") ?? false;
-  }
-  hasPhotoAttachment() {
-    return this.spec.attachments?.some((a) => a.type === "photo") ?? false;
-  }
-  onlyOneAttachment() {
-    return (this.spec.attachments?.length ?? 0) === 1;
-  }
   isSingleVideoReel() {
     // might expand, reels might support photos too
     return this.hasVideoAttachment() && this.onlyOneAttachment();
@@ -171,15 +62,6 @@ export class EntIGFeedPendingContent extends EntPendingContent {
       this.hasPhotoAttachment() &&
       this.hasVideoAttachment()
     );
-  }
-  photosAttachments() {
-    return this.spec.attachments?.filter((a) => a.type === "photo") ?? [];
-  }
-  videoAttachments() {
-    return this.spec.attachments?.filter((a) => a.type === "video") ?? [];
-  }
-  attachments() {
-    return this.spec.attachments ?? [];
   }
   caption() {
     return this.spec.caption as string;

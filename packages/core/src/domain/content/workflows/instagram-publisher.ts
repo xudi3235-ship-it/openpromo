@@ -4,14 +4,16 @@ import type {
   CoreWorkflowStep,
 } from "@core/helpers/workflow";
 import { Log } from "@core/utils/log";
+import { BasePublisher } from "./base-publisher";
 
 const log = Log.create({ namespace: "instagram-publisher" });
-export class InstagramPublisher {
+export class InstagramPublisher extends BasePublisher {
   async publish(
     _ctx: CoreWorkflowContext,
     step: CoreWorkflowStep,
     pendingContentID: string,
   ) {
+    console.log("// Starting IG Feed publish");
     // Step 0: Prepare videos if needed (ensure downloads are ready and URLs are set)
     await this.prepareVideosIfNeeded(step, pendingContentID);
 
@@ -173,82 +175,6 @@ export class InstagramPublisher {
 
     throw new Error(
       `Unknown status for video container ${containerId}: ${status.status_code}`,
-    );
-  }
-
-  private async prepareVideosIfNeeded(
-    step: CoreWorkflowStep,
-    pendingContentID: string,
-  ): Promise<void> {
-    // Check if content has video attachments
-    const hasVideos = await step.do("check for video attachments", async () => {
-      const c = await EntIGFeedPendingContent.fromID(pendingContentID);
-      return c.hasVideoAttachment();
-    });
-
-    if (!hasVideos) {
-      log.info("No video attachments, skipping video preparation");
-      return;
-    }
-
-    // Step 1: Initiate video downloads
-    const downloadStatuses = await step.do(
-      "initiate video downloads",
-      async () => {
-        const c = await EntIGFeedPendingContent.fromID(pendingContentID);
-        return await c.initiateVideoDownloads();
-      },
-    );
-
-    console.log("Video download statuses:", downloadStatuses);
-
-    // Step 2: Wait for all videos to be ready
-    for (const { id: videoId, status } of downloadStatuses) {
-      if (status !== "ready") {
-        await this.waitForVideoDownload(step, pendingContentID, videoId);
-      }
-    }
-
-    // Step 3: Get ready videos and update database
-    await step.do("update video URLs in database", async () => {
-      const c = await EntIGFeedPendingContent.fromID(pendingContentID);
-      const readyVideos = await c.getReadyVideoDownloads();
-      await c.updateVideoAttachmentsWithUrls(readyVideos);
-    });
-
-    log.info("Video preparation completed");
-  }
-
-  private async waitForVideoDownload(
-    step: CoreWorkflowStep,
-    pendingContentID: string,
-    videoId: string,
-  ): Promise<void> {
-    const status = await step.do(
-      `check video download ${videoId} status`,
-      async () => {
-        const c = await EntIGFeedPendingContent.fromID(pendingContentID);
-        return await c.checkVideoDownloadStatus(videoId);
-      },
-    );
-
-    if (status.status === "ready") {
-      log.info(`Video download ${videoId} is ready`);
-      return;
-    }
-
-    if (status.status === "error") {
-      throw new Error(`Video download ${videoId} failed`);
-    }
-
-    if (status.status === "inprogress") {
-      // Sleep and recursively call this method - workflow will handle retry
-      await step.sleep(`wait for video ${videoId} download`, 5000);
-      return await this.waitForVideoDownload(step, pendingContentID, videoId);
-    }
-
-    throw new Error(
-      `Unknown video download status for ${videoId}: ${status.status}`,
     );
   }
 }

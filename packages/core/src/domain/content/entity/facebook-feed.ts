@@ -111,22 +111,6 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     const videoCount = atts.filter((a) => a.type === "video").length;
     return photoCount > 0 && videoCount > 0;
   }
-  hasPhotoAttachment() {
-    const atts = this.spec.attachments ?? [];
-    return atts.some((a) => a.type === "photo");
-  }
-  hasVideoAttachment() {
-    const atts = this.spec.attachments ?? [];
-    return atts.some((a) => a.type === "video");
-  }
-  photoAttachments() {
-    const atts = this.spec.attachments ?? [];
-    return atts.filter((a) => a.type === "photo");
-  }
-  videoAttachments() {
-    const atts = this.spec.attachments ?? [];
-    return atts.filter((a) => a.type === "video");
-  }
   async markAsPublished(publishedContentID: string): Promise<this> {
     // 1. mark as published
     const [newContent] = await db()
@@ -144,7 +128,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       );
     this.data = newContent;
     // 2. tag attachments
-    const photos = this.photoAttachments();
+    const photos = this.photosAttachments();
     for (const p of photos) {
       await ImageStorage.markImageAfterPublish(p.id, this.data.id);
     }
@@ -180,7 +164,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     const { page } = await this.identity();
     if (!this.isMultiPhotoPost())
       throw new Error("no photo attachment provided");
-    const photos = this.photoAttachments();
+    const photos = this.photosAttachments();
     // 1. create N unpublished photos
     // NOTE: ensure the ordering.
     const fbPhotos = await Promise.all(
