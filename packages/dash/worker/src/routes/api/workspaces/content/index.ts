@@ -446,6 +446,27 @@ export const contentRoute = new Hono<ApiEnv>()
     const deleted = await EntPendingContentGroup.deleteByID(id);
     return c.json({ success: !!deleted });
   })
+  // publish
+  .post("/group/:id", async (c) => {
+    const { id } = c.req.param();
+    const g = await EntPendingContentGroup.fromID(id);
+    if (!g.isDraft() || !g.isScheduled()) {
+      throw new AppError(400, {
+        message: "Only draft or scheduled group can be published",
+      });
+    }
+    const contents = await g.getContents();
+    contents.forEach(async (ct) => {
+      const ins = await c.env.WORKFLOW.get(ct.data.id);
+      if (ct.isDraft()) {
+        await ins.sendEvent({ type: "publish_draft", payload: {} });
+      }
+      if (ct.isScheduled()) {
+        // TODO: how do we handle scheduled publish?
+        // right now it's ahead of time, so we need to override or use event
+      }
+    });
+  })
   .delete("/content/:id", async (c) => {
     const { id } = c.req.param();
     const content = await EntPendingContent.fromID(id);
