@@ -1,7 +1,4 @@
-import {
-  EntIGFeedPendingContent,
-  EntPendingContent,
-} from "@core/domain/content/entity";
+import { EntPendingContent } from "@core/domain/content/entity";
 import { Actor } from "@core/helpers/actor";
 import {
   type CoreWorkflowContext,
@@ -9,10 +6,10 @@ import {
   type CoreWorkflowEvent,
   type CoreWorkflowStep,
 } from "@core/helpers/workflow";
-import { NotImplementedError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 import z from "zod";
 import { FacebookPublisher } from "./facebook-publisher";
+import { InstagramPublisher } from "./instagram-publisher";
 
 const PublishWorkflowParams = z.object({
   actor: Actor.WorkspaceUserSchema,
@@ -67,9 +64,11 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
         await fbPublisher.publish(ctx, step, pendingContentID);
         break;
       }
-      case "IG_FEED":
-        await this.handleIGFeedPublish(ctx, step, pendingContentID);
+      case "IG_FEED": {
+        const igPublisher = new InstagramPublisher();
+        await igPublisher.publish(ctx, step, pendingContentID);
         break;
+      }
       default:
         throw new Error(`unsupported placement ${placement}`);
     }
@@ -77,40 +76,5 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
       const actor = Actor.assert("workspace_user");
       console.log(`finally ${actor}`);
     });
-  }
-  async handleIGFeedPublish(
-    _ctx: CoreWorkflowContext,
-    step: CoreWorkflowStep,
-    pendingContentID: string,
-  ) {
-    const { isPhotoCarousel, isMixedCarousel, isSingleVideoReel } =
-      await step.do("determine IG feed post type", async () => {
-        const c = await EntIGFeedPendingContent.fromID(pendingContentID);
-        return {
-          isPhotoCarousel: c.isPhotoCarousel(),
-          isMixedCarousel: c.isMixedCarousel(),
-          isSingleVideoReel: c.isSingleVideoReel(),
-        };
-      });
-    // only one can be true
-    if (!isPhotoCarousel && !isMixedCarousel && !isSingleVideoReel)
-      throw new Error("no post type matched");
-
-    if (isPhotoCarousel) {
-      await step.do("create photo carousel", async () => {
-        const c = await EntIGFeedPendingContent.fromID(pendingContentID);
-        const { postId } = await c.createPhotoCarouselPost();
-        console.log({ postId });
-      });
-    }
-    if (isMixedCarousel) {
-      throw new NotImplementedError("TODO");
-    }
-    if (isSingleVideoReel) {
-      throw new NotImplementedError("TODO");
-    }
-    throw new Error(
-      `unsupported post type for IG Feed content ${pendingContentID}`,
-    );
   }
 }
