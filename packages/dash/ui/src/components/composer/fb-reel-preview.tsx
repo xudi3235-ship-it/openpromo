@@ -5,86 +5,43 @@ import {
   MessageCircle,
   MoreHorizontal,
   Play,
-  Share,
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
-import { useWorkspace } from "@/hooks/useWorkspace";
-import { useComposerStore } from "@/stores/composer-store";
+import { useReelConfig } from "@/hooks/useReelConfig";
+import { useReelControls } from "@/hooks/useReelControls";
 
 export function FBReelPreview() {
-  const { workspace } = useWorkspace();
-  const contentCreateData = useComposerStore((s) => s.contentCreateData);
-  const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer();
-  const attachments = contentCreateData.base.attachments ?? [];
-  const message = contentCreateData.base.message;
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const {
+    isPlaying,
+    isMuted,
+    hasStreamIframe,
+    videoAttachment,
+    message,
+    togglePlay,
+    toggleMute,
+    renderVideo,
+    renderLocalVideoControls,
+  } = useReelControls();
 
-  // Get the first video attachment for the reel
-  const videoAttachment = attachments.find((att) => att.type === "video");
-
-  // Check if we have a stream iframe (uploaded video) vs local file
-  const hasStreamIframe =
-    videoAttachment?.metadata?.previewIframeUrl && !videoAttachment.file;
-
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-    }
-  }, [isMuted]);
+  const { config, username, renderAvatar } = useReelConfig("facebook");
+  const ShareIcon = config.icons.share;
 
   return (
     <div className="max-w-[280px] bg-black rounded-lg overflow-hidden relative">
       {/* Video Content */}
       <div className="aspect-[9/16] relative group">
-        {videoAttachment && getAttachmentUrl(videoAttachment) ? (
+        {videoAttachment ? (
           <div className="w-full h-full relative">
-            {/* Use renderAttachment for proper stream iframe vs local file handling */}
-            {renderAttachment(
-              videoAttachment,
-              "w-full h-full object-cover",
-              false,
-            )}
+            {/* Render video using hook */}
+            {renderVideo()}
+
+            {/* Local video controls (only for local files) */}
+            {renderLocalVideoControls()}
 
             {/* Only show custom controls for local files, not stream iframes */}
             {!hasStreamIframe && (
               <>
-                {/* Hidden video element for control (local files only) */}
-                <video
-                  ref={videoRef}
-                  src={getAttachmentUrl(videoAttachment) as string}
-                  className="hidden"
-                  loop
-                  playsInline
-                  muted={isMuted}
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
-                >
-                  <track kind="captions" />
-                </video>
-
                 {/* Play/Pause Overlay */}
                 {!isPlaying && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20">
@@ -127,7 +84,7 @@ export function FBReelPreview() {
                   <Heart className="w-6 h-6 text-white" />
                 </Button>
                 <span className="text-white text-[10px] font-semibold mt-0.5">
-                  2.1K
+                  {config.engagement.likes}
                 </span>
               </div>
 
@@ -141,7 +98,7 @@ export function FBReelPreview() {
                   <MessageCircle className="w-6 h-6 text-white" />
                 </Button>
                 <span className="text-white text-[10px] font-semibold mt-0.5">
-                  156
+                  {config.engagement.comments}
                 </span>
               </div>
 
@@ -152,11 +109,13 @@ export function FBReelPreview() {
                   size="sm"
                   className="p-0 hover:bg-transparent"
                 >
-                  <Share className="w-6 h-6 text-white" />
+                  <ShareIcon className="w-6 h-6 text-white" />
                 </Button>
-                <span className="text-white text-[10px] font-semibold mt-0.5">
-                  42
-                </span>
+                {config.engagement.shares && (
+                  <span className="text-white text-[10px] font-semibold mt-0.5">
+                    {config.engagement.shares}
+                  </span>
+                )}
               </div>
 
               {/* Save */}
@@ -187,14 +146,12 @@ export function FBReelPreview() {
               <div className="text-white space-y-2">
                 {/* Avatar + Username Row */}
                 <div className="flex items-center space-x-2">
-                  <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
-                    <div className="w-5 h-5 rounded-full bg-white"></div>
-                  </div>
-                  <span className="font-semibold text-sm">
-                    {workspace?.name || "Your Business Page"}
-                  </span>
-                  <span className="text-xs bg-blue-600 px-2 py-0.5 rounded font-medium">
-                    Follow
+                  {renderAvatar()}
+                  <span className="font-semibold text-sm">{username}</span>
+                  <span
+                    className={`text-xs ${config.colors.followButton} px-2 py-0.5 rounded font-medium`}
+                  >
+                    {config.text.followButton}
                   </span>
                 </div>
 
@@ -202,7 +159,7 @@ export function FBReelPreview() {
                 <div className="text-sm line-clamp-2">
                   {message || (
                     <span className="text-white/60">
-                      Add a description to your reel...
+                      {config.text.placeholder}
                     </span>
                   )}
                 </div>

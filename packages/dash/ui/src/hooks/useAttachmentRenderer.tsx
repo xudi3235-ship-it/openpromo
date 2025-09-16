@@ -41,6 +41,10 @@ export function useAttachmentRenderer() {
             iframeUrl={previewIframeUrl}
             className={className}
             aspectRatio="16:9"
+            autoplay={true}
+            controls={controls}
+            loop={true}
+            muted={!controls}
           />
         );
       } else {

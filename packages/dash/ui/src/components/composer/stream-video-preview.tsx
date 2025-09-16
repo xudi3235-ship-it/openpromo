@@ -1,42 +1,72 @@
+import { Stream } from "@cloudflare/stream-react";
 import { memo } from "react";
 
 interface StreamVideoPreviewProps {
-  iframeUrl: string;
+  iframeUrl?: string; // Keep for backward compatibility
+  videoId?: string; // New prop for direct video ID
   className?: string;
   aspectRatio?: string;
+  autoplay?: boolean;
+  controls?: boolean;
+  loop?: boolean;
+  muted?: boolean;
 }
 
 export const StreamVideoPreview = memo(function StreamVideoPreview({
   iframeUrl,
+  videoId,
   className = "",
   aspectRatio = "16:9",
+  autoplay = true,
+  controls = false,
+  loop = true,
+  muted = true,
 }: StreamVideoPreviewProps) {
-  // Calculate padding-top based on aspect ratio
-  const getPaddingTop = (ratio: string) => {
-    if (ratio === "16:9") return "56.25%";
-    if (ratio === "4:3") return "75%";
-    if (ratio === "1:1") return "100%";
+  // Extract video ID from iframe URL if not provided directly
+  const getVideoId = () => {
+    if (videoId) return videoId;
 
-    // Parse custom aspect ratios like "1920:1080"
-    const [width, height] = ratio.split(":").map(Number);
-    if (width && height) {
-      return `${(height / width) * 100}%`;
+    if (iframeUrl) {
+      // Extract video ID from iframe URL like:
+      // https://iframe.videodelivery.net/VIDEO_ID or
+      // https://customer-CODE.cloudflarestream.com/VIDEO_ID/iframe
+      const match = iframeUrl.match(/\/([a-f0-9]{32})/);
+      return match ? match[1] : null;
     }
 
-    return "56.25%"; // Default to 16:9
+    return null;
   };
 
+  const streamVideoId = getVideoId();
+
+  if (!streamVideoId) {
+    // Fallback to iframe for backward compatibility
+    return (
+      <div
+        className={`relative ${className}`}
+        style={{ paddingTop: aspectRatio === "16:9" ? "56.25%" : "100%" }}
+      >
+        <iframe
+          src={iframeUrl}
+          className="absolute inset-0 w-full h-full border-0 rounded-lg"
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+          allowFullScreen
+          title="Video preview"
+        />
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={`relative ${className}`}
-      style={{ paddingTop: getPaddingTop(aspectRatio) }}
-    >
-      <iframe
-        src={iframeUrl}
-        className="absolute inset-0 w-full h-full border-0 rounded-lg"
-        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-        allowFullScreen
-        title="Video preview"
+    <div className={className}>
+      <Stream
+        src={streamVideoId}
+        autoplay={autoplay}
+        controls={controls}
+        loop={loop}
+        muted={muted}
+        responsive={true}
+        preload="auto"
       />
     </div>
   );

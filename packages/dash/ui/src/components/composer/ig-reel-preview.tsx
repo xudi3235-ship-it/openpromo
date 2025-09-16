@@ -5,86 +5,43 @@ import {
   MessageCircle,
   MoreHorizontal,
   Play,
-  Send,
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
-import { useWorkspace } from "@/hooks/useWorkspace";
-import { useComposerStore } from "@/stores/composer-store";
+import { useReelConfig } from "@/hooks/useReelConfig";
+import { useReelControls } from "@/hooks/useReelControls";
 
 export function IGReelPreview() {
-  const { workspace } = useWorkspace();
-  const contentCreateData = useComposerStore((s) => s.contentCreateData);
-  const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer();
-  const attachments = contentCreateData.base.attachments ?? [];
-  const caption = contentCreateData.base.message;
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const {
+    isPlaying,
+    isMuted,
+    hasStreamIframe,
+    videoAttachment,
+    message,
+    togglePlay,
+    toggleMute,
+    renderVideo,
+    renderLocalVideoControls,
+  } = useReelControls();
 
-  // Get the first video attachment for the reel
-  const videoAttachment = attachments.find((att) => att.type === "video");
-
-  // Check if we have a stream iframe (uploaded video) vs local file
-  const hasStreamIframe =
-    videoAttachment?.metadata?.previewIframeUrl && !videoAttachment.file;
-
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-    }
-  }, [isMuted]);
+  const { config, username, renderAvatar } = useReelConfig("instagram");
+  const ShareIcon = config.icons.share;
 
   return (
     <div className="max-w-[280px] bg-black rounded-lg overflow-hidden relative">
       {/* Video Content */}
       <div className="aspect-[9/16] relative group">
-        {videoAttachment && getAttachmentUrl(videoAttachment) ? (
+        {videoAttachment ? (
           <div className="w-full h-full relative">
-            {/* Use renderAttachment for proper stream iframe vs local file handling */}
-            {renderAttachment(
-              videoAttachment,
-              "w-full h-full object-cover",
-              false,
-            )}
+            {/* Render video using hook */}
+            {renderVideo()}
+
+            {/* Local video controls (only for local files) */}
+            {renderLocalVideoControls()}
 
             {/* Only show custom controls for local files, not stream iframes */}
             {!hasStreamIframe && (
               <>
-                {/* Hidden video element for control (local files only) */}
-                <video
-                  ref={videoRef}
-                  src={getAttachmentUrl(videoAttachment) as string}
-                  className="hidden"
-                  loop
-                  playsInline
-                  muted={isMuted}
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
-                >
-                  <track kind="captions" />
-                </video>
-
                 {/* Play/Pause Overlay */}
                 {!isPlaying && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20">
@@ -127,7 +84,7 @@ export function IGReelPreview() {
                   <Heart className="w-6 h-6 text-white" />
                 </Button>
                 <span className="text-white text-[10px] font-semibold mt-0.5">
-                  1.2K
+                  {config.engagement.likes}
                 </span>
               </div>
 
@@ -141,7 +98,7 @@ export function IGReelPreview() {
                   <MessageCircle className="w-6 h-6 text-white" />
                 </Button>
                 <span className="text-white text-[10px] font-semibold mt-0.5">
-                  89
+                  {config.engagement.comments}
                 </span>
               </div>
 
@@ -152,8 +109,13 @@ export function IGReelPreview() {
                   size="sm"
                   className="p-0 hover:bg-transparent"
                 >
-                  <Send className="w-6 h-6 text-white" />
+                  <ShareIcon className="w-6 h-6 text-white" />
                 </Button>
+                {config.engagement.shares && (
+                  <span className="text-white text-[10px] font-semibold mt-0.5">
+                    {config.engagement.shares}
+                  </span>
+                )}
               </div>
 
               {/* Save */}
@@ -184,25 +146,20 @@ export function IGReelPreview() {
               <div className="text-white space-y-2">
                 {/* Avatar + Username Row */}
                 <div className="flex items-center space-x-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 p-0.5 flex-shrink-0">
-                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                      <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400"></div>
-                    </div>
-                  </div>
-                  <span className="font-semibold text-sm">
-                    {workspace?.name?.toLowerCase().replace(/\s+/g, "_") ||
-                      "your_business"}
-                  </span>
-                  <span className="text-xs bg-white/20 px-2 py-0.5 rounded font-medium">
-                    Follow
+                  {renderAvatar()}
+                  <span className="font-semibold text-sm">{username}</span>
+                  <span
+                    className={`text-xs ${config.colors.followButton} px-2 py-0.5 rounded font-medium`}
+                  >
+                    {config.text.followButton}
                   </span>
                 </div>
 
                 {/* Caption */}
                 <div className="text-sm line-clamp-2">
-                  {caption || (
+                  {message || (
                     <span className="text-white/60">
-                      Add a caption to describe your reel...
+                      {config.text.placeholder}
                     </span>
                   )}
                 </div>
