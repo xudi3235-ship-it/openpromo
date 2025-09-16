@@ -6,7 +6,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "openpromo-dash",
   "main": "worker/src/index.ts",
-  "compatibility_date": "2025-09-15",
+  // DO NOT bump this date, latest wrangler 4.37.0 +vite plugin has bug
+  "compatibility_date": "2025-08-29",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true, "head_sampling_rate": 1 },
   "placement": { "mode": "smart" },
