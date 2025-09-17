@@ -77,8 +77,8 @@ function EmptyConnectedAccounts({ onConnect }: { onConnect: () => void }) {
 }
 
 function ConnectedAccountsContent({ onConnect }: { onConnect: () => void }) {
-  const { data: connectedAccountsData, isPending } = useConnectedAccounts();
-  const connectedAccounts = connectedAccountsData?.accounts || [];
+  const { accounts: connectedAccounts, isLoading: isPending } =
+    useConnectedAccounts();
 
   return (
     <Stack spacing="md">

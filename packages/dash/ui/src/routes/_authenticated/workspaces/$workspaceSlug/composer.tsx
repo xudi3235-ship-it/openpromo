@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ComposerSkeleton } from "@/components/composer/composer-skeleton";
 import { ResizableComposer } from "@/components/composer/resizable-composer";
-import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
 import { useConnectedAccounts } from "@/queries/connected-account";
 
 export const Route = createFileRoute(
@@ -11,7 +10,7 @@ export const Route = createFileRoute(
 });
 
 function ComposerComponent() {
-  const { data, isLoading } = useConnectedAccounts();
+  const { accounts, isLoading } = useConnectedAccounts();
 
   if (isLoading) {
     return (
@@ -23,14 +22,11 @@ function ComposerComponent() {
     );
   }
 
-  // Show null state when no accounts are connected
-  if (!data?.accounts || data.accounts.length === 0) {
-    return <WorkspaceNullState />;
-  }
+  // Layout handles null state now, so we can assume we have accounts here
 
   return (
     <div className="min-h-screen bg-background">
-      <ResizableComposer accounts={data.accounts} className="min-h-screen" />
+      <ResizableComposer accounts={accounts} className="min-h-screen" />
     </div>
   );
 }

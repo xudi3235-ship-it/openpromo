@@ -8,7 +8,7 @@ import { QUERY_KEYS } from "@/lib/query";
 
 export const useConnectedAccounts = () => {
   const { workspace } = useWorkspace();
-  return useHonoQuery({
+  const query = useHonoQuery({
     queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
     queryFn: (api) =>
       api.workspaces[":workspaceSlug"].connected_accounts.$get({
@@ -17,6 +17,13 @@ export const useConnectedAccounts = () => {
     errorMessage: "Failed to load connected accounts",
     refetchOnMount: true,
   });
+
+  return {
+    accounts: query.data?.accounts || [],
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
 };
 
 // Facebook OAuth mutation

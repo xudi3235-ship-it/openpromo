@@ -6,8 +6,10 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
 import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
+import { useConnectedAccounts } from "@/queries/connected-account";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug",
@@ -36,6 +38,7 @@ function WorkspaceComponent() {
   const { workspace } = Route.useLoaderData();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { accounts, isLoading } = useConnectedAccounts();
 
   const { mutate: _ } = useHonoMutation({
     mutationFn: (api) =>
@@ -50,6 +53,16 @@ function WorkspaceComponent() {
       navigate({ to: "/workspaces" });
     },
   });
+
+  if (!isLoading && accounts.length === 0) {
+    return (
+      <WorkspaceNullState
+        title={`Welcome to ${workspace.name}`}
+        description="Connect your social media accounts to start creating and scheduling content"
+        footerText="Choose a platform above to get started"
+      />
+    );
+  }
 
   return (
     <div className="flex-1">

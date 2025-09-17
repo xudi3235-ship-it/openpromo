@@ -16,7 +16,7 @@ import { ResizableComposer } from "../resizable-composer";
 export default function ComposerDialog() {
   const { isOpen, pendingContentGroupID, closeDialog } =
     useDialogComposerStore();
-  const { data: accountsData, isLoading: accountsLoading } =
+  const { accounts: accountsData, isLoading: accountsLoading } =
     useConnectedAccounts();
   const { data: contentGroupData, isLoading: contentGroupLoading } =
     useContentGroupQuery(pendingContentGroupID);
@@ -40,7 +40,7 @@ export default function ComposerDialog() {
             <ComposerSkeleton />
           ) : (
             <ResizableComposer
-              accounts={accountsData?.accounts ?? []}
+              accounts={accountsData ?? []}
               initComposerProps={initComposerProps}
             />
           )}
