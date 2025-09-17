@@ -64,6 +64,43 @@ interface AccountAvatarProps {
   mouseX: MotionValue<number>;
 }
 
+function SkeletonAvatar({ mouseX }: { mouseX: MotionValue<number> }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const distance = useTransform(mouseX, (val: number) => {
+    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
+    return val - bounds.x - bounds.width / 2;
+  });
+
+  const widthSync = useTransform(distance, [-150, 0, 150], [32, 48, 32]);
+  const width = useSpring(widthSync, {
+    mass: 0.1,
+    stiffness: 150,
+    damping: 12,
+  });
+
+  return (
+    <motion.div ref={ref} style={{ width }} className="relative group">
+      <motion.div
+        style={{ width }}
+        className="aspect-square rounded-full bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 p-0.5"
+        animate={{
+          opacity: [0.5, 1, 0.5],
+        }}
+        transition={{
+          duration: 1.5,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: "easeInOut",
+        }}
+      >
+        <div className="w-full h-full bg-background rounded-full p-0.5">
+          <div className="w-full h-full bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full animate-pulse" />
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function AccountAvatar({
   account,
   showTooltip = false,
@@ -256,9 +293,35 @@ export function ConnectedAccountsRow({
           />
         ))}
 
-        {accounts.length > 0 && <div className="w-px h-6 bg-border mx-1" />}
-        <FacebookAddButton mouseX={mouseX} />
-        <InstagramAddButton mouseX={mouseX} />
+        {showAddButton && (
+          <>
+            {accounts.length > 0 && <div className="w-px h-6 bg-border mx-1" />}
+            <FacebookAddButton mouseX={mouseX} />
+            <InstagramAddButton mouseX={mouseX} />
+          </>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
+export function ConnectedAccountsRowSkeleton({
+  className = "",
+}: {
+  className?: string;
+}) {
+  const mouseX = useMotionValue(Infinity);
+
+  return (
+    <div className={className}>
+      <motion.div
+        className="flex items-center gap-2 bg-card border border-border/40 rounded-2xl px-4 py-3"
+        onMouseMove={({ pageX }) => mouseX.set(pageX)}
+        onMouseLeave={() => mouseX.set(Infinity)}
+      >
+        <SkeletonAvatar mouseX={mouseX} />
+        <SkeletonAvatar mouseX={mouseX} />
+        <SkeletonAvatar mouseX={mouseX} />
       </motion.div>
     </div>
   );

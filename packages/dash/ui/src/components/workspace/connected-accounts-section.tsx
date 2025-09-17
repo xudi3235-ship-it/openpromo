@@ -1,12 +1,15 @@
 import { AvailablePlatformsRow } from "@/components/connected-accounts/available-platforms-row";
-import { ConnectedAccountsRow } from "@/components/connected-accounts/connected-accounts-row";
+import {
+  ConnectedAccountsRow,
+  ConnectedAccountsRowSkeleton,
+} from "@/components/connected-accounts/connected-accounts-row";
 import {
   useConnectedAccounts,
   useOAuthWithListener,
 } from "@/queries/connected-account";
 
 export function ConnectedAccountsSection() {
-  const { data: connectedAccountsData } = useConnectedAccounts();
+  const { data: connectedAccountsData, isLoading } = useConnectedAccounts();
   const connectedAccounts = connectedAccountsData?.accounts || [];
 
   const {
@@ -33,7 +36,11 @@ export function ConnectedAccountsSection() {
         </div>
       </div>
 
-      {connectedAccounts.length > 0 ? (
+      {isLoading || isConnecting ? (
+        <div className="mt-4">
+          <ConnectedAccountsRowSkeleton />
+        </div>
+      ) : connectedAccounts.length > 0 ? (
         <div className="mt-4">
           <ConnectedAccountsRow
             accounts={connectedAccounts}
