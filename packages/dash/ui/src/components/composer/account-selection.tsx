@@ -4,14 +4,8 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { toast } from "sonner";
 import { AvailablePlatformsRow } from "@/components/connected-accounts/available-platforms-row";
-import { useWorkspace } from "@/hooks/useWorkspace";
-import { useHonoMutation } from "@/lib/hono-client";
-import { handlePopupMessage, openPopup } from "@/lib/popup";
-import { QUERY_KEYS } from "@/lib/query";
+import { useOAuthWithListener } from "@/queries/connected-account";
 import { useComposerStore } from "@/stores/composer-store";
 
 function getPlatformColors(platform: Platform) {
@@ -150,79 +144,9 @@ export function AccountSelection() {
     activeAccount,
     setActiveAccount,
   } = useComposerStore();
-  const { workspace } = useWorkspace();
-  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    function handleMessage(event: MessageEvent<unknown>) {
-      const payload = handlePopupMessage(event, "accounts_connected");
-      if (!payload) return;
-
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
-      });
-      toast[payload.status](payload.message);
-    }
-
-    window.addEventListener("message", handleMessage);
-    return () => {
-      window.removeEventListener("message", handleMessage);
-    };
-  }, [queryClient, workspace.slug]);
-
-  // Facebook OAuth mutation
-  const { mutate: initiateFacebookOAuth, isPending: isConnectingFacebook } =
-    useHonoMutation({
-      mutationFn: (api, variables: { state?: string }) =>
-        api.workspaces[":workspaceSlug"].connected_accounts.facebook.auth.$get({
-          query: { state: variables.state },
-          param: { workspaceSlug: workspace.slug },
-        }),
-      onError: (error) => {
-        toast.error(`Failed to initiate Facebook OAuth: ${error.message}`);
-      },
-      onSuccess({ data: { url } }) {
-        openPopup({
-          url,
-          target: "facebook-oauth",
-          width: 600,
-          height: 800,
-        });
-      },
-    });
-
-  // Instagram OAuth mutation
-  const { mutate: initiateInstagramOAuth, isPending: isConnectingInstagram } =
-    useHonoMutation({
-      mutationFn: (api, variables: { state?: string }) =>
-        api.workspaces[":workspaceSlug"].connected_accounts.instagram.auth.$get(
-          {
-            query: { state: variables.state },
-            param: { workspaceSlug: workspace.slug },
-          },
-        ),
-      onError: (error) => {
-        toast.error(`Failed to initiate Instagram OAuth: ${error.message}`);
-      },
-      onSuccess({ data: { url } }) {
-        openPopup({
-          url,
-          target: "instagram-oauth",
-          width: 600,
-          height: 800,
-        });
-      },
-    });
-
-  const handleConnectFacebook = () => {
-    initiateFacebookOAuth({});
-  };
-
-  const handleConnectInstagram = () => {
-    initiateInstagramOAuth({});
-  };
-
-  const isConnecting = isConnectingFacebook || isConnectingInstagram;
+  const { handleConnectFacebook, handleConnectInstagram, isConnecting } =
+    useOAuthWithListener();
 
   const handleToggleAccount = (accountId: string) => {
     const newSelection = selectedAccounts.includes(accountId)

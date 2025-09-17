@@ -1,8 +1,5 @@
 import {
-  AudioWaveform,
   Calendar,
-  Command,
-  GalleryVerticalEnd,
   Home,
   Inbox,
   LayoutList,
@@ -18,23 +15,7 @@ export const sidebarData: SidebarData = {
     email: "satnaingdev@gmail.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  teams: [
-    {
-      name: "Your Mom",
-      logo: Command,
-      plan: "for real",
-    },
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-  ],
+  teams: [],
   navGroups: [
     {
       title: "General",
@@ -71,7 +52,7 @@ export const sidebarData: SidebarData = {
           icon: TrendingUp,
         },
         {
-          title: "Playground",
+          title: "[INTERN]Playground",
           url: "/workspaces/$workspaceSlug/playground",
           icon: Settings,
         },

@@ -1,7 +1,9 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
-import { openPopup } from "@/lib/popup";
+import { handlePopupMessage, openPopup } from "@/lib/popup";
 import { QUERY_KEYS } from "@/lib/query";
 
 export const useConnectedAccounts = () => {
@@ -60,4 +62,50 @@ export const useInstagramOauthMutation = () => {
       });
     },
   });
+};
+
+// Combined OAuth hook with message listener
+export const useOAuthWithListener = () => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  // Setup message listener for OAuth callbacks
+  useEffect(() => {
+    function handleMessage(event: MessageEvent<unknown>) {
+      const payload = handlePopupMessage(event, "accounts_connected");
+      if (!payload) return;
+
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
+      });
+      toast[payload.status](payload.message);
+    }
+
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [queryClient, workspace.slug]);
+
+  const facebookMutation = useFacebookOauthMutation();
+  const instagramMutation = useInstagramOauthMutation();
+
+  const handleConnectFacebook = () => {
+    facebookMutation.mutate({});
+  };
+
+  const handleConnectInstagram = () => {
+    instagramMutation.mutate({});
+  };
+
+  const isConnecting =
+    facebookMutation.isPending || instagramMutation.isPending;
+
+  return {
+    handleConnectFacebook,
+    handleConnectInstagram,
+    isConnecting,
+    isConnectingFacebook: facebookMutation.isPending,
+    isConnectingInstagram: instagramMutation.isPending,
+  };
 };
