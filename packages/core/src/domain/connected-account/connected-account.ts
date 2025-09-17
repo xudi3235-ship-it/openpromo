@@ -3,7 +3,6 @@ import {
   type ConnectedAccountSelect,
   ConnectedAccountSelectSchema,
   connectedAccount,
-  type Platform,
 } from "@core/schemas/connected-account.sql";
 import { fn } from "@core/utils/fn";
 import { and, eq } from "drizzle-orm";
@@ -35,14 +34,7 @@ export namespace ConnectedAccount {
         .insert(connectedAccount)
         .values({
           workspaceId,
-          platform: input.platform as Platform,
-          externalAccountId: input.externalAccountId,
-          accountName: input.accountName,
-          externalUrl: input.externalUrl,
-          encryptedAccessToken: input.encryptedAccessToken,
-          refreshToken: input.refreshToken,
-          tokenExpiresAt: input.tokenExpiresAt,
-          metadata: input.metadata,
+          ...input,
         })
         .onConflictDoUpdate({
           target: [

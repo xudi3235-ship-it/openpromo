@@ -5,9 +5,11 @@ interface FacebookProfile {
   id: string;
   name: string;
   picture: {
-    url: string;
-    width: number;
-    height: number;
+    data: {
+      url: string;
+      width: number;
+      height: number;
+    };
   };
   email?: string;
 }
@@ -36,9 +38,11 @@ interface FacebookPage {
   username?: string;
   access_token?: string;
   picture?: {
-    url: string;
-    width: number;
-    height: number;
+    data: {
+      url: string;
+      width: number;
+      height: number;
+    };
   };
   category?: string;
   fan_count?: number;
@@ -229,6 +233,7 @@ export class FacebookOAuthService {
     }
 
     const { data } = (await response.json()) as { data: FacebookPage[] };
+    console.log({ data: JSON.stringify(data) });
     return data || [];
   }
 
@@ -259,7 +264,7 @@ export class FacebookOAuthService {
       id: pageData.id,
       name: pageData.name,
       access_token: pageData.access_token || "",
-      picture: pageData.picture?.url || "",
+      picture: pageData.picture?.data?.url || "",
       username: pageData.username || "",
     };
   }
@@ -285,6 +290,7 @@ export class FacebookOAuthService {
     // Get user profile
     const profile = await this.getUserProfile(longToken.access_token);
     log.info("User profile obtained", { profile });
+    console.log({ profile: JSON.stringify(profile) });
 
     // Calculate expiration (60 days or from response)
     const expiresIn = longToken.expires_in || 5184000; // 60 days default
@@ -295,7 +301,7 @@ export class FacebookOAuthService {
       accessToken: longToken.access_token,
       refreshToken: longToken.access_token, // Facebook doesn't provide separate refresh tokens
       expiresIn,
-      picture: profile.picture?.url || "",
+      picture: profile.picture.data?.url || "",
       username: "",
       permissions: this.scopes,
     };

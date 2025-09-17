@@ -14,6 +14,7 @@ import {
 import { Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import type { ConnectedAccount } from "@/lib/hono-client";
 import { useOAuthWithListener } from "@/queries/connected-account";
 
 function getPlatformColors(platform: Platform) {
@@ -40,13 +41,6 @@ function getPlatformFallback(platform: Platform) {
     default:
       return "?";
   }
-}
-
-interface ConnectedAccount {
-  id: string;
-  platform: Platform;
-  accountName?: string | null;
-  profilePictureUrl?: string | null;
 }
 
 interface ConnectedAccountsRowProps {
@@ -139,7 +133,7 @@ function AccountAvatar({
           <div className="w-full h-full bg-background rounded-full p-0.5">
             <Avatar className="w-full h-full">
               <AvatarImage
-                src={account.profilePictureUrl || ""}
+                src={account.profilePicUrl || ""}
                 alt={account.accountName || "Account"}
               />
               <AvatarFallback className="text-xs font-semibold">

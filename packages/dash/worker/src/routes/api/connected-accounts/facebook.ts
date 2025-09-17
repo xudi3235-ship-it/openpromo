@@ -64,18 +64,19 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
         // 3. For each linked page, create a connected account
         const accounts = await Promise.allSettled(
           userPages.map(async (page) => {
-            console.log({ page });
+            console.log({ page: JSON.stringify(page) });
             if (!page.access_token) {
               throw new AppError(500, {
                 message: `No access token for page: ${page.id}`,
               });
             }
+            const profilePicUrl = page.picture?.data?.url || "";
             const acc = await ConnectedAccount.create({
               platform: Platform.enum.FACEBOOK,
               externalAccountId: page.id,
               accountName: page.name,
               externalUrl: `https://www.facebook.com/${page.id}`,
-              profilePicUrl: page.picture?.url ?? null,
+              profilePicUrl,
               // NOTE: this is page-level access token!!
               // TODO: implement encryption
               encryptedAccessToken: page.access_token,
@@ -88,7 +89,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
                 pageName: page.name,
                 permissions: authResult.permissions,
                 followers: page.fan_count,
-                profilePicUrl: page.picture?.url || "",
+                profilePicUrl,
                 user: {
                   accessToken: authResult.accessToken,
                   refreshToken: authResult.refreshToken,

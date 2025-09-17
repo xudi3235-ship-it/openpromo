@@ -36,7 +36,7 @@ export function ConnectedAccountsSection() {
         </div>
       </div>
 
-      {isLoading || isConnecting ? (
+      {isLoading ? (
         <div className="mt-4">
           <ConnectedAccountsRowSkeleton />
         </div>

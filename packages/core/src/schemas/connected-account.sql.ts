@@ -74,8 +74,12 @@ export const connectedAccountId = {
 };
 export type ConnectedAccountInsert = typeof connectedAccount.$inferInsert;
 export type ConnectedAccountSelect = typeof connectedAccount.$inferSelect;
-export const ConnectedAccountSelectSchema =
-  createSelectSchema(connectedAccount);
+export const ConnectedAccountSelectSchema = createSelectSchema(
+  connectedAccount,
+  {
+    platform: Platform,
+  },
+);
 export const ConnectedAccountInsertSchema =
   createInsertSchema(connectedAccount);
 export const ConnectedAccountUpdateSchema =
