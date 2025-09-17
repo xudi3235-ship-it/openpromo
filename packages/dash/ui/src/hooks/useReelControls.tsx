@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
-import { useComposerStore } from "@/stores/composer-store";
+import { useComposerPreview } from "@/stores/composer-preview-store";
 
 export function useReelControls() {
-  const contentCreateData = useComposerStore((s) => s.contentCreateData);
+  const previewData = useComposerPreview();
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer();
-  const attachments = contentCreateData.base.attachments ?? [];
+  const attachments = previewData.attachments;
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -78,7 +78,7 @@ export function useReelControls() {
     isMuted,
     hasStreamIframe,
     videoAttachment,
-    message: contentCreateData.base.message,
+    message: previewData.message,
 
     // Actions
     togglePlay,

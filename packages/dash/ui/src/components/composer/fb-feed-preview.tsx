@@ -11,26 +11,33 @@ import {
 } from "lucide-react";
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useComposerStore } from "@/stores/composer-store";
+import { useComposerPreview } from "@/stores/composer-preview-store";
 
 export function FBFeedPreview() {
   const { workspace } = useWorkspace();
-  const contentCreateData = useComposerStore((s) => s.contentCreateData);
+  const previewData = useComposerPreview();
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer();
-  const attachments = contentCreateData.base.attachments ?? [];
-  const message = contentCreateData.base.message;
+  const { attachments, message, profilePicUrl, getDisplayName } = previewData;
 
   return (
     <div className="border rounded-lg p-3 bg-background">
       {/* Post Header */}
       <div className="flex items-start space-x-3 mb-3">
-        <div className="w-10 h-10 flex-shrink-0 rounded-full bg-gradient-to-br from-blue-400 to-blue-600"></div>
+        {profilePicUrl ? (
+          <img
+            src={profilePicUrl}
+            alt={getDisplayName(workspace?.name)}
+            className="w-10 h-10 flex-shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div className="w-10 h-10 flex-shrink-0 rounded-full bg-gradient-to-br from-blue-400 to-blue-600"></div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <div className="flex items-center space-x-2">
                 <h4 className="font-semibold text-sm truncate">
-                  {workspace?.name || "Your Business Page"}
+                  {getDisplayName(workspace?.name)}
                 </h4>
               </div>
               <div className="flex items-center space-x-1 text-xs text-muted-foreground">

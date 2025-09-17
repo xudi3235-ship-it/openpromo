@@ -1,5 +1,6 @@
 import { Send, Share } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useComposerPreview } from "@/stores/composer-preview-store";
 
 export interface ReelPlatformConfig {
   colors: {
@@ -95,30 +96,40 @@ const PLATFORM_CONFIGS: Record<string, ReelPlatformConfig> = {
 
 export function useReelConfig(platform: string) {
   const { workspace } = useWorkspace();
+  const previewData = useComposerPreview();
 
   const config = PLATFORM_CONFIGS[platform] || PLATFORM_CONFIGS.instagram;
 
   const getUsername = () => {
     if (platform === "instagram") {
-      return (
-        workspace?.name?.toLowerCase().replace(/\s+/g, "_") || "your_business"
-      );
+      return previewData.getInstagramUsername(workspace?.name);
     }
     if (platform === "facebook") {
-      return workspace?.name || "Your Business Page";
+      return previewData.getDisplayName(workspace?.name);
     }
     if (platform === "tiktok") {
-      return `@${workspace?.name?.toLowerCase().replace(/\s+/g, "") || "yourbusiness"}`;
+      const username = previewData.getInstagramUsername(workspace?.name);
+      return `@${username.replace(/_/g, "")}`;
     }
     if (platform === "youtube") {
-      return workspace?.name || "Your Channel";
+      return previewData.getDisplayName(workspace?.name);
     }
-    return workspace?.name || "your_business";
+    return previewData.getInstagramUsername(workspace?.name);
   };
 
   const renderAvatar = (className: string = "w-7 h-7") => {
     if (platform === "instagram") {
-      return (
+      return previewData.profilePicUrl ? (
+        <div
+          className={`${className} rounded-full ${config.colors.avatar} p-0.5 flex-shrink-0`}
+        >
+          <img
+            src={previewData.profilePicUrl}
+            alt={getUsername()}
+            className="w-full h-full rounded-full object-cover bg-white"
+          />
+        </div>
+      ) : (
         <div
           className={`${className} rounded-full ${config.colors.avatar} p-0.5 flex-shrink-0`}
         >
@@ -132,7 +143,13 @@ export function useReelConfig(platform: string) {
     }
 
     // Default avatar for other platforms
-    return (
+    return previewData.profilePicUrl ? (
+      <img
+        src={previewData.profilePicUrl}
+        alt={getUsername()}
+        className={`${className} rounded-full object-cover flex-shrink-0`}
+      />
+    ) : (
       <div
         className={`${className} rounded-full ${config.colors.avatar} flex items-center justify-center flex-shrink-0`}
       >

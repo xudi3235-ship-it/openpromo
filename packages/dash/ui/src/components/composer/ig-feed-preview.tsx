@@ -12,14 +12,18 @@ import {
 import { useState } from "react";
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useComposerStore } from "@/stores/composer-store";
+import { useComposerPreview } from "@/stores/composer-preview-store";
 
 export function IGFeedPreview() {
   const { workspace } = useWorkspace();
-  const contentCreateData = useComposerStore((s) => s.contentCreateData);
+  const previewData = useComposerPreview();
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer();
-  const attachments = contentCreateData.base.attachments ?? [];
-  const caption = contentCreateData.base.message;
+  const {
+    attachments,
+    message: caption,
+    profilePicUrl,
+    getInstagramUsername,
+  } = previewData;
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // Navigation functions
@@ -50,15 +54,24 @@ export function IGFeedPreview() {
       {/* Post Header */}
       <div className="flex items-center justify-between p-3">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 p-0.5">
-            <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400"></div>
+          {profilePicUrl ? (
+            <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 p-0.5">
+              <img
+                src={profilePicUrl}
+                alt={getInstagramUsername(workspace?.name)}
+                className="w-full h-full rounded-full object-cover bg-white"
+              />
             </div>
-          </div>
+          ) : (
+            <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 p-0.5">
+              <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400"></div>
+              </div>
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <h4 className="font-semibold text-sm truncate">
-              {workspace?.name?.toLowerCase().replace(/\s+/g, "_") ||
-                "your_business"}
+              {getInstagramUsername(workspace?.name)}
             </h4>
             <p className="text-xs text-muted-foreground truncate">
               San Francisco, California
@@ -201,8 +214,7 @@ export function IGFeedPreview() {
         {/* Caption */}
         <div className="text-sm mb-2 whitespace-pre-wrap break-words">
           <span className="font-semibold">
-            {workspace?.name?.toLowerCase().replace(/\s+/g, "_") ||
-              "your_business"}
+            {getInstagramUsername(workspace?.name)}
           </span>{" "}
           <span>
             {caption || (
