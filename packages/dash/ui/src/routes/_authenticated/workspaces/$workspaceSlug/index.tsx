@@ -1,7 +1,10 @@
 import { Button } from "@openpromo/ui/components/button";
+import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus, TrendingUp } from "lucide-react";
 import { ConnectedAccountsSection } from "@/components/workspace/connected-accounts-section";
+import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
+import { useConnectedAccounts } from "@/queries/connected-account";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/",
@@ -11,12 +14,42 @@ export const Route = createFileRoute(
 
 function WorkspaceIndex() {
   const { workspaceSlug } = Route.useParams();
+  const { data: connectedAccountsData, isLoading } = useConnectedAccounts();
+  const connectedAccounts = connectedAccountsData?.accounts || [];
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-5xl mx-auto space-y-6">
+          <ConnectedAccountsSection accounts={[]} isLoading={true} />
+
+          <Skeleton className="h-32" />
+          <Skeleton className="h-64" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show null state when no accounts are connected
+  if (connectedAccounts.length === 0) {
+    return (
+      <WorkspaceNullState
+        title="Welcome to OpenPromo"
+        description="Connect your social media accounts to start creating and scheduling content"
+        footerText="Choose a platform above to get started"
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Connected Accounts - Top Priority */}
-        <ConnectedAccountsSection />
+        <ConnectedAccountsSection
+          accounts={connectedAccounts}
+          isLoading={false}
+        />
 
         {/* Welcome Header */}
         <div className="flex items-center justify-between">

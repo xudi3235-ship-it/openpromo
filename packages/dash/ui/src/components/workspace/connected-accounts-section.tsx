@@ -3,15 +3,18 @@ import {
   ConnectedAccountsRow,
   ConnectedAccountsRowSkeleton,
 } from "@/components/connected-accounts/connected-accounts-row";
-import {
-  useConnectedAccounts,
-  useOAuthWithListener,
-} from "@/queries/connected-account";
+import type { ConnectedAccount } from "@/lib/hono-client";
+import { useOAuthWithListener } from "@/queries/connected-account";
 
-export function ConnectedAccountsSection() {
-  const { data: connectedAccountsData, isLoading } = useConnectedAccounts();
-  const connectedAccounts = connectedAccountsData?.accounts || [];
+interface ConnectedAccountsSectionProps {
+  accounts: ConnectedAccount[];
+  isLoading: boolean;
+}
 
+export function ConnectedAccountsSection({
+  accounts,
+  isLoading,
+}: ConnectedAccountsSectionProps) {
   const {
     handleConnectFacebook,
     handleConnectInstagram,
@@ -28,9 +31,9 @@ export function ConnectedAccountsSection() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h2 className="font-medium text-foreground">Accounts</h2>
-          {connectedAccounts.length > 0 && (
+          {accounts.length > 0 && (
             <span className="text-sm text-muted-foreground">
-              {connectedAccounts.length} connected
+              {accounts.length} connected
             </span>
           )}
         </div>
@@ -40,10 +43,10 @@ export function ConnectedAccountsSection() {
         <div className="mt-4">
           <ConnectedAccountsRowSkeleton />
         </div>
-      ) : connectedAccounts.length > 0 ? (
+      ) : accounts.length > 0 ? (
         <div className="mt-4">
           <ConnectedAccountsRow
-            accounts={connectedAccounts}
+            accounts={accounts}
             size="md"
             onDeleteAccount={handleDeleteAccount}
             showAddButton={true}
