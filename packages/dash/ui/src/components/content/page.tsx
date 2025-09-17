@@ -47,7 +47,7 @@ export function ContentPage() {
   });
 
   const openDialog = useDialogComposerStore((state) => state.openDialog);
-  const { data, isLoading, isFetching } = useContentListQuery({
+  const { data, isLoading } = useContentListQuery({
     page: pagination.pageIndex + 1, // API uses 1-based indexing
     pageSize: pagination.pageSize,
   });
@@ -147,7 +147,6 @@ export function ContentPage() {
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className={isFetching ? "animate-pulse" : ""}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

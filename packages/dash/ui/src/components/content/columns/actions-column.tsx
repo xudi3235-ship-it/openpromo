@@ -9,13 +9,15 @@ import {
 } from "@openpromo/ui/components/dropdown-menu";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { Edit, Eye, MoreHorizontal, Trash2 } from "lucide-react";
+import { Edit, Eye, MoreHorizontal, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { matchEntity } from "@/lib/hono-client";
 import {
   useContentDeleteMutation,
   useContentGroupDeleteMutation,
+  useContentGroupPublishMutation,
 } from "@/queries/content";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 
@@ -32,6 +34,7 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
   const deleteContentGroup = useContentGroupDeleteMutation(() => {
     setShowDeleteConfirm(false);
   });
+  const publishContentGroup = useContentGroupPublishMutation();
 
   const handleDelete = () => {
     matchEntity(entity, {
@@ -63,24 +66,55 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
     }
   };
 
+  const handlePublishGroup = () => {
+    matchEntity(entity, {
+      content: (contentEntity) => {
+        // For individual content, we need to publish its parent group
+        const content = contentEntity.entity;
+        if (content.pendingContentGroupId) {
+          publishContentGroup.mutate(content.pendingContentGroupId, {
+            onSuccess: () => {
+              toast.success("Content published successfully!");
+            },
+            onError: () => {
+              toast.error("Failed to publish content. Please try again.");
+            },
+          });
+        }
+      },
+      group: (groupEntity) => {
+        // For groups, publish the group directly
+        const group = groupEntity.entity;
+        publishContentGroup.mutate(group.id, {
+          onSuccess: () => {
+            toast.success("Content group published successfully!");
+          },
+          onError: () => {
+            toast.error("Failed to publish content group. Please try again.");
+          },
+        });
+      },
+    });
+  };
+
   // Determine the primary action button based on content type and status
   const getPrimaryAction = () => {
     return matchEntity(entity, {
       content: (contentEntity) => {
         const content = contentEntity.entity;
-        const isEditable =
+        const isPublishable =
           content.publishingStatus === "DRAFT" ||
           content.publishingStatus === "SCHEDULED";
 
-        if (isEditable) {
+        if (isPublishable) {
           return (
             <Button
               size="sm"
-              variant="outline"
-              onClick={() => openDialog(content.pendingContentGroupId)}
+              onClick={handlePublishGroup}
+              disabled={publishContentGroup.isPending}
             >
-              <Edit className="w-4 h-4 mr-1" />
-              Edit
+              <Upload className="w-4 h-4 mr-1" />
+              {publishContentGroup.isPending ? "Publishing..." : "Publish"}
             </Button>
           );
         }
@@ -93,9 +127,9 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
           </Button>
         );
       },
-      group: () => {
-        // Groups are always editable (drafts or scheduled)
-        const group = entity.entity;
+      group: (groupEntity) => {
+        // Groups should have edit as primary action
+        const group = groupEntity.entity;
         return (
           <Button
             size="sm"
@@ -151,8 +185,17 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
                   {content.publishingStatus === "SCHEDULED" && (
                     <DropdownMenuItem>Cancel scheduling</DropdownMenuItem>
                   )}
-                  {content.publishingStatus === "DRAFT" && (
-                    <DropdownMenuItem>Publish now</DropdownMenuItem>
+                  {(content.publishingStatus === "DRAFT" ||
+                    content.publishingStatus === "SCHEDULED") && (
+                    <DropdownMenuItem
+                      onClick={handlePublishGroup}
+                      disabled={publishContentGroup.isPending}
+                    >
+                      <Upload className="w-4 h-4 mr-1" />
+                      {publishContentGroup.isPending
+                        ? "Publishing..."
+                        : "Publish now"}
+                    </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
                     onClick={handleDelete}
@@ -172,7 +215,15 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
                   <DropdownMenuItem onClick={() => openDialog(group.id)}>
                     Edit group
                   </DropdownMenuItem>
-                  <DropdownMenuItem>Publish now</DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handlePublishGroup}
+                    disabled={publishContentGroup.isPending}
+                  >
+                    <Upload className="w-4 h-4 mr-1" />
+                    {publishContentGroup.isPending
+                      ? "Publishing..."
+                      : "Publish now"}
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleDelete}
                     className="text-destructive"

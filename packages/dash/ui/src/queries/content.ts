@@ -39,6 +39,25 @@ export const useContentGroupQuery = (contentGroupID: string | undefined) => {
   });
 };
 
+export const useContentGroupPublishMutation = () => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation({
+    mutationFn: (api, contentGroupID: string) =>
+      api.workspaces[":workspaceSlug"].content.group[":id"].$post({
+        param: { workspaceSlug: workspace.slug, id: contentGroupID },
+      }),
+    onSuccess: () => {},
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.CONTENT_LIST(),
+        type: "all",
+      });
+    },
+  });
+};
+
 export const useContentGroupDeleteMutation = (onSettled?: () => void) => {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
@@ -50,7 +69,7 @@ export const useContentGroupDeleteMutation = (onSettled?: () => void) => {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["content-list"],
+        queryKey: QUERY_KEYS.CONTENT_LIST(),
         type: "all",
       });
     },
@@ -69,7 +88,7 @@ export const useContentDeleteMutation = (onSettled?: () => void) => {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["content-list"],
+        queryKey: QUERY_KEYS.CONTENT_LIST(),
         type: "all",
       });
     },
