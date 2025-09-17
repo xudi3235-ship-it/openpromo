@@ -14,6 +14,7 @@ import {
 import { Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useOAuthWithListener } from "@/queries/connected-account";
 
 function getPlatformColors(platform: Platform) {
   switch (platform) {
@@ -50,7 +51,6 @@ interface ConnectedAccount {
 
 interface ConnectedAccountsRowProps {
   accounts: ConnectedAccount[];
-  onAddAccount?: () => void;
   onDeleteAccount?: (accountId: string) => void;
   showAddButton?: boolean;
   size?: "sm" | "md" | "lg";
@@ -94,44 +94,38 @@ function AccountAvatar({
 
   return (
     <>
-      <motion.div
-        ref={ref}
-        style={{ width }}
-        className="relative group flex flex-col items-center"
-      >
-        <div className="relative">
-          <motion.div
-            style={{ width }}
-            className={`aspect-square rounded-full bg-gradient-to-r ${gradientColors} p-0.5`}
-          >
-            <div className="w-full h-full bg-background rounded-full p-0.5">
-              <Avatar className="w-full h-full">
-                <AvatarImage
-                  src={account.profilePictureUrl || ""}
-                  alt={account.accountName || "Account"}
-                />
-                <AvatarFallback className="text-xs font-semibold">
-                  {fallback}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </motion.div>
+      <motion.div ref={ref} style={{ width }} className="relative group">
+        <motion.div
+          style={{ width }}
+          className={`aspect-square rounded-full bg-gradient-to-r ${gradientColors} p-0.5`}
+        >
+          <div className="w-full h-full bg-background rounded-full p-0.5">
+            <Avatar className="w-full h-full">
+              <AvatarImage
+                src={account.profilePictureUrl || ""}
+                alt={account.accountName || "Account"}
+              />
+              <AvatarFallback className="text-xs font-semibold">
+                {fallback}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </motion.div>
 
-          {/* Delete Button */}
-          {onDelete && (
-            <button
-              type="button"
-              className="absolute -top-1 -right-1 w-4 h-4 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-200 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-ring z-20 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 dark:hover:text-red-300"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowConfirm(true);
-              }}
-              aria-label={`Remove ${account.accountName || account.platform} account`}
-            >
-              <X className="w-2.5 h-2.5" />
-            </button>
-          )}
-        </div>
+        {/* Delete Button */}
+        {onDelete && (
+          <button
+            type="button"
+            className="absolute -top-1 -right-1 w-4 h-4 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-200 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-ring z-20 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 dark:hover:text-red-300"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowConfirm(true);
+            }}
+            aria-label={`Remove ${account.accountName || account.platform} account`}
+          >
+            <X className="w-2.5 h-2.5" />
+          </button>
+        )}
 
         {/* Tooltip */}
         {showTooltip && (
@@ -159,14 +153,10 @@ function AccountAvatar({
   );
 }
 
-function AddAccountButton({
-  onAdd,
-  mouseX,
-}: {
-  onAdd?: () => void;
-  mouseX: MotionValue<number>;
-}) {
+function FacebookAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
   const ref = useRef<HTMLDivElement>(null);
+  const { handleConnectFacebook, isConnectingFacebook } =
+    useOAuthWithListener();
 
   const distance = useTransform(mouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
@@ -181,25 +171,57 @@ function AddAccountButton({
   });
 
   return (
-    <motion.div
-      ref={ref}
-      style={{ width }}
-      className="relative group flex flex-col items-center"
-    >
-      <div className="relative">
-        <motion.button
-          type="button"
-          style={{ width }}
-          className="aspect-square rounded-full bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center border-2 border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 transition-all focus:outline-none focus:ring-2 focus:ring-ring"
-          onClick={onAdd}
-        >
-          <Plus className="h-4 w-4 text-muted-foreground" />
-        </motion.button>
-      </div>
+    <motion.div ref={ref} style={{ width }} className="relative group">
+      <motion.button
+        type="button"
+        style={{ width }}
+        className="aspect-square rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center border-2 border-dashed border-blue-400/30 hover:border-blue-400/50 transition-all focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+        onClick={handleConnectFacebook}
+        disabled={isConnectingFacebook}
+      >
+        <Plus className="h-4 w-4 text-white" />
+      </motion.button>
 
       {/* Tooltip */}
       <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-        Add account
+        Add Facebook
+      </div>
+    </motion.div>
+  );
+}
+
+function InstagramAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { handleConnectInstagram, isConnectingInstagram } =
+    useOAuthWithListener();
+
+  const distance = useTransform(mouseX, (val: number) => {
+    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
+    return val - bounds.x - bounds.width / 2;
+  });
+
+  const widthSync = useTransform(distance, [-150, 0, 150], [32, 48, 32]);
+  const width = useSpring(widthSync, {
+    mass: 0.1,
+    stiffness: 150,
+    damping: 12,
+  });
+
+  return (
+    <motion.div ref={ref} style={{ width }} className="relative group">
+      <motion.button
+        type="button"
+        style={{ width }}
+        className="aspect-square rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center border-2 border-dashed border-purple-400/30 hover:border-purple-400/50 transition-all focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+        onClick={handleConnectInstagram}
+        disabled={isConnectingInstagram}
+      >
+        <Plus className="h-4 w-4 text-white" />
+      </motion.button>
+
+      {/* Tooltip */}
+      <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+        Add Instagram
       </div>
     </motion.div>
   );
@@ -207,7 +229,6 @@ function AddAccountButton({
 
 export function ConnectedAccountsRow({
   accounts,
-  onAddAccount,
   onDeleteAccount,
   showAddButton = false,
   className = "",
@@ -235,9 +256,9 @@ export function ConnectedAccountsRow({
           />
         ))}
 
-        {showAddButton && (
-          <AddAccountButton onAdd={onAddAccount} mouseX={mouseX} />
-        )}
+        {accounts.length > 0 && <div className="w-px h-6 bg-border mx-1" />}
+        <FacebookAddButton mouseX={mouseX} />
+        <InstagramAddButton mouseX={mouseX} />
       </motion.div>
     </div>
   );

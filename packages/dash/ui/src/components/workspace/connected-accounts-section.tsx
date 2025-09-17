@@ -40,9 +40,6 @@ export function ConnectedAccountsSection() {
             size="md"
             onDeleteAccount={handleDeleteAccount}
             showAddButton={true}
-            onAddAccount={() => {
-              // This will be handled by AvailablePlatformsRow logic
-            }}
           />
         </div>
       ) : (
