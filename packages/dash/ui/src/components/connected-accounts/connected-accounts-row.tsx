@@ -320,3 +320,178 @@ export function ConnectedAccountsRowSkeleton({
     </div>
   );
 }
+
+// Composer-specific interfaces
+interface ComposerAccountAvatarProps {
+  account: ConnectedAccount;
+  selected: boolean;
+  active: boolean;
+  onToggleSelected: () => void;
+  onSetActive: () => void;
+  mouseX: MotionValue<number>;
+}
+
+interface ComposerAccountsRowProps {
+  accounts: ConnectedAccount[];
+  selectedAccounts: string[];
+  activeAccount: string | null;
+  onToggleAccount: (accountId: string) => void;
+  onSetActiveAccount: (accountId: string) => void;
+  showAddButton?: boolean;
+  className?: string;
+}
+
+function ComposerAccountAvatar({
+  account,
+  selected,
+  active,
+  onToggleSelected,
+  onSetActive,
+  mouseX,
+}: ComposerAccountAvatarProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const gradientColors = getPlatformColors(account.platform);
+  const fallback = getPlatformFallback(account.platform);
+
+  const distance = useTransform(mouseX, (val: number) => {
+    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
+    return val - bounds.x - bounds.width / 2;
+  });
+
+  const scaleSync = useTransform(distance, [-80, 0, 80], [1, 1.25, 1]);
+  const scale = useSpring(scaleSync, {
+    mass: 0.1,
+    stiffness: 300,
+    damping: 20,
+  });
+
+  return (
+    <motion.div
+      ref={ref}
+      style={{ scale }}
+      className="relative group flex flex-col items-center gap-1"
+    >
+      {/* Avatar */}
+      <button
+        type="button"
+        className="relative w-8 h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+        onClick={onToggleSelected}
+        aria-label={`${selected ? "Disable" : "Enable"} posting to ${account.accountName || account.platform}`}
+      >
+        <div
+          className={`w-full h-full rounded-full bg-gradient-to-r ${gradientColors} p-0.5 transition-all ${
+            selected ? "opacity-100" : "opacity-40"
+          }`}
+        >
+          <div className="w-full h-full bg-background rounded-full p-0.5">
+            <Avatar className="w-full h-full">
+              <AvatarImage
+                src={account.profilePicUrl || ""}
+                alt={account.accountName || "Account"}
+              />
+              <AvatarFallback className="text-xs font-semibold">
+                {fallback}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
+
+        {/* Selection indicator */}
+        {selected && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border border-background rounded-full flex items-center justify-center">
+            <svg
+              className="w-1.5 h-1.5 text-white"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+        )}
+      </button>
+
+      {/* Active indicator below avatar */}
+      {selected && (
+        <button
+          type="button"
+          className={`w-6 h-1 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
+            active
+              ? "bg-primary shadow-sm"
+              : "bg-muted hover:bg-muted-foreground/30"
+          }`}
+          onClick={onSetActive}
+          aria-label={`${active ? "Stop customizing" : "Start customizing"} ${account.accountName || account.platform}`}
+        />
+      )}
+
+      {/* Tooltip on hover */}
+      <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-30">
+        <div className="text-center">
+          <div className="font-medium">
+            {account.accountName || account.platform}
+          </div>
+          <div className="text-muted-foreground">
+            {!selected
+              ? "Click to enable"
+              : active
+                ? "Customizing • Click bar to stop"
+                : "Click bar to customize"}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+export function ComposerAccountsRow({
+  accounts,
+  selectedAccounts,
+  activeAccount,
+  onToggleAccount,
+  onSetActiveAccount,
+  showAddButton = false,
+  className = "",
+}: ComposerAccountsRowProps) {
+  const mouseX = useMotionValue(Infinity);
+
+  const handleSetActive = (accountId: string) => {
+    if (selectedAccounts.includes(accountId)) {
+      onSetActiveAccount(accountId);
+    }
+  };
+
+  return (
+    <div className={className}>
+      <motion.div
+        className="flex items-center gap-2 bg-card border border-border/40 rounded-2xl px-4 py-3"
+        onMouseMove={({ pageX }) => mouseX.set(pageX)}
+        onMouseLeave={() => mouseX.set(Infinity)}
+      >
+        {accounts.map((account) => (
+          <ComposerAccountAvatar
+            key={account.id}
+            account={account}
+            selected={selectedAccounts.includes(account.id)}
+            active={activeAccount === account.id}
+            onToggleSelected={() => onToggleAccount(account.id)}
+            onSetActive={() => handleSetActive(account.id)}
+            mouseX={mouseX}
+          />
+        ))}
+
+        {showAddButton && (
+          <>
+            {accounts.length > 0 && <div className="w-px h-6 bg-border mx-1" />}
+            <FacebookAddButton mouseX={mouseX} />
+            <InstagramAddButton mouseX={mouseX} />
+          </>
+        )}
+      </motion.div>
+    </div>
+  );
+}
