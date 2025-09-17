@@ -17,7 +17,7 @@ import {
   UnifiedContentSelect,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { AppError } from "packages/dash/worker/src/helpers/error";
 import * as z from "zod";
@@ -26,7 +26,7 @@ import { zValidator } from "../../../../middleware/zod-validator";
 
 const listContentQuerySchema = z.object({
   page: z.coerce.number().default(1),
-  pageSize: z.coerce.number().default(3),
+  pageSize: z.coerce.number().max(100).default(20),
 });
 
 const GroupEntity = z.object({
@@ -73,6 +73,16 @@ export const contentRoute = new Hono<ApiEnv>()
     const { page, pageSize } = c.req.valid("query");
     // await createDummyPendingContent();
     const wsID = Actor.workspaceID();
+
+    // Get total count
+    const totalCountResult = await db()
+      .select({ count: count() })
+      .from(unifiedContentTable)
+      .where(and(eq(unifiedContentTable.workspaceId, wsID)));
+
+    const totalCount = totalCountResult[0]?.count ?? 0;
+    const totalPages = Math.ceil(totalCount / pageSize);
+
     const raw = await db()
       .select()
       .from(unifiedContentTable)
@@ -128,7 +138,14 @@ export const contentRoute = new Hono<ApiEnv>()
 
     return c.json({
       entities,
-      pagination: { page, pageSize, total: entities.length },
+      pagination: {
+        page,
+        pageSize,
+        total: totalCount,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
     });
   })
   .get("/schedule", async (c) => {

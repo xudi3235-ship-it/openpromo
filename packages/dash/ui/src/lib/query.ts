@@ -3,7 +3,10 @@ export const QUERY_KEYS = {
   CURRENT_ORG: ["current-org"],
   ORGS: ["orgs"],
   WORKSPACES: ["workspaces"],
-  CONTENT_LIST: ["content-list"],
+  CONTENT_LIST: (page?: number, pageSize?: number) => [
+    "content-list",
+    { page, pageSize },
+  ],
   CONTENT_GROUP: (id: string) => ["content-group", id],
   CONNECTED_ACCOUNTS: (workspaceSlug: string) => [
     workspaceSlug,

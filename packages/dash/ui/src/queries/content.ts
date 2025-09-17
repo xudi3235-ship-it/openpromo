@@ -3,13 +3,22 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
 
-export const useContentListQuery = () => {
+export interface ContentListPaginationParams {
+  page?: number;
+  pageSize?: number;
+}
+
+export const useContentListQuery = (
+  params: ContentListPaginationParams = {},
+) => {
   const { workspace } = useWorkspace();
+  const { page = 1, pageSize = 20 } = params;
+
   return useHonoQuery({
-    queryKey: QUERY_KEYS.CONTENT_LIST,
+    queryKey: QUERY_KEYS.CONTENT_LIST(page, pageSize),
     queryFn: (api) =>
       api.workspaces[":workspaceSlug"].content.$get({
-        query: { page: "1", pageSize: "20" },
+        query: { page: page.toString(), pageSize: pageSize.toString() },
         param: { workspaceSlug: workspace.slug },
       }),
   });
@@ -40,7 +49,10 @@ export const useContentGroupDeleteMutation = (onSettled?: () => void) => {
         param: { workspaceSlug: workspace.slug, id: contentGroupID },
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CONTENT_LIST });
+      queryClient.invalidateQueries({
+        queryKey: ["content-list"],
+        type: "all",
+      });
     },
     onSettled,
   });
@@ -56,7 +68,10 @@ export const useContentDeleteMutation = (onSettled?: () => void) => {
         param: { workspaceSlug: workspace.slug, id: contentID },
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CONTENT_LIST });
+      queryClient.invalidateQueries({
+        queryKey: ["content-list"],
+        type: "all",
+      });
     },
     onSettled,
   });
