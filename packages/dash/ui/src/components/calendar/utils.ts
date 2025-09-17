@@ -1,5 +1,5 @@
+import type { UnifiedContentSelect } from "@core/schemas/content.sql";
 import { isSameDay } from "date-fns";
-
 import type { CalendarEvent, EventColor } from "@/components/calendar";
 import { matchEntity } from "@/lib/hono-client";
 
@@ -29,16 +29,17 @@ export function getEventData(event: CalendarEvent): EventData {
       };
     },
     content: (contentEntity): EventData => {
-      const content = contentEntity.entity;
+      const { entity: content } = contentEntity as {
+        entity: UnifiedContentSelect;
+      };
 
       // Check if content is scheduled
       const isScheduled =
         content.publishingStatus === "SCHEDULED" &&
-        content.schedulingSpec?.scheduledPublishAt;
-
-      // Use scheduled date if available, otherwise use createdAt
+        // Use scheduled date if available, otherwise use createdAt
+        content.placementSpec?.schedulingSpec?.publishAt;
       const eventDate = isScheduled
-        ? new Date(content.schedulingSpec.scheduledPublishAt)
+        ? new Date(content.placementSpec?.schedulingSpec?.publishAt ?? "")
         : new Date(content.createdAt);
 
       return {
