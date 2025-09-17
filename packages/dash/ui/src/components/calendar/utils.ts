@@ -216,3 +216,117 @@ export function addHoursToDate(date: Date, hours: number): Date {
   result.setHours(result.getHours() + hours);
   return result;
 }
+
+/**
+ * Calculate smart event duration to avoid overlaps with nearby events
+ */
+export function calculateSmartDuration(
+  eventStart: Date,
+  allEvents: CalendarEvent[],
+  currentEventId: string,
+): Date {
+  // Get all other events on the same day
+  const sameDay = allEvents
+    .filter((event) => {
+      const data = getEventData(event);
+      return data.id !== currentEventId && isSameDay(eventStart, data.start);
+    })
+    .map((event) => getEventData(event))
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+  // Find next event after this one
+  const nextEvent = sameDay.find(
+    (event) => event.start.getTime() > eventStart.getTime(),
+  );
+
+  if (nextEvent) {
+    // If there's a next event, end this event before it starts
+    const timeDiff = nextEvent.start.getTime() - eventStart.getTime();
+    if (timeDiff <= 60 * 60 * 1000) {
+      // Within 1 hour
+      // Use 60% of the time between events, minimum 10 minutes
+      const duration = Math.max(10 * 60 * 1000, timeDiff * 0.6);
+      return new Date(eventStart.getTime() + duration);
+    }
+  }
+
+  // Default to 30 minutes for single events or well-spaced events
+  return new Date(eventStart.getTime() + 30 * 60 * 1000);
+}
+
+/**
+ * Enhanced event data with smart duration calculation
+ */
+export function getEventDataWithContext(
+  event: CalendarEvent,
+  allEvents: CalendarEvent[],
+): EventData {
+  const baseData = getEventData(event);
+  const smartEndTime = calculateSmartDuration(
+    baseData.start,
+    allEvents,
+    baseData.id,
+  );
+
+  return {
+    ...baseData,
+    end: smartEndTime,
+  };
+}
+
+/**
+ * Group closely-spaced events (within 15 minutes) for compact display
+ */
+export function groupCloseEvents(
+  events: CalendarEvent[],
+  timeThresholdMinutes = 15,
+): CalendarEvent[][] {
+  const sortedEvents = [...events].sort((a, b) => {
+    const aData = getEventData(a);
+    const bData = getEventData(b);
+    return aData.start.getTime() - bData.start.getTime();
+  });
+
+  const groups: CalendarEvent[][] = [];
+  let currentGroup: CalendarEvent[] = [];
+
+  for (let i = 0; i < sortedEvents.length; i++) {
+    const event = sortedEvents[i];
+    const eventData = getEventData(event);
+
+    if (currentGroup.length === 0) {
+      currentGroup.push(event);
+    } else {
+      const lastEvent = currentGroup[currentGroup.length - 1];
+      const lastEventData = getEventData(lastEvent);
+      const timeDiff =
+        eventData.start.getTime() - lastEventData.start.getTime();
+
+      if (timeDiff <= timeThresholdMinutes * 60 * 1000) {
+        // Add to current group if within threshold
+        currentGroup.push(event);
+      } else {
+        // Start new group
+        groups.push(currentGroup);
+        currentGroup = [event];
+      }
+    }
+  }
+
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup);
+  }
+
+  return groups;
+}
+
+/**
+ * Check if events are closely spaced (for visual indicators)
+ */
+export function hasCloseEvents(
+  events: CalendarEvent[],
+  timeThresholdMinutes = 15,
+): boolean {
+  const groups = groupCloseEvents(events, timeThresholdMinutes);
+  return groups.some((group) => group.length > 1);
+}

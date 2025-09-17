@@ -4,7 +4,6 @@ import { cn } from "@openpromo/ui/lib/utils";
 import {
   addHours,
   areIntervalsOverlapping,
-  differenceInMinutes,
   eachDayOfInterval,
   eachHourOfInterval,
   endOfWeek,
@@ -115,19 +114,10 @@ export function WeekView({
 
       // Sort events by start time and duration
       const sortedEvents = [...dayEvents].sort((a, b) => {
-        const aStart = new Date(a.start);
-        const bStart = new Date(b.start);
-        const aEnd = new Date(a.end);
-        const bEnd = new Date(b.end);
+        const aStart = new Date(a.entity.createdAt);
+        const bStart = new Date(b.entity.createdAt);
 
-        // First sort by start time
-        if (aStart < bStart) return -1;
-        if (aStart > bStart) return 1;
-
-        // If start times are equal, sort by duration (longer events first)
-        const aDuration = differenceInMinutes(aEnd, aStart);
-        const bDuration = differenceInMinutes(bEnd, bStart);
-        return bDuration - aDuration;
+        return aStart.getTime() - bStart.getTime();
       });
 
       // Calculate positions for each event
