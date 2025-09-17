@@ -9,8 +9,16 @@ export function ConnectedAccountsSection() {
   const { data: connectedAccountsData } = useConnectedAccounts();
   const connectedAccounts = connectedAccountsData?.accounts || [];
 
-  const { handleConnectFacebook, handleConnectInstagram, isConnecting } =
-    useOAuthWithListener();
+  const {
+    handleConnectFacebook,
+    handleConnectInstagram,
+    isConnecting,
+    deleteConnectedAccount,
+  } = useOAuthWithListener();
+
+  const handleDeleteAccount = (accountId: string) => {
+    deleteConnectedAccount({ accountId });
+  };
 
   return (
     <div className="bg-card rounded-xl p-4 border border-border/40">
@@ -26,14 +34,15 @@ export function ConnectedAccountsSection() {
       </div>
 
       {connectedAccounts.length > 0 ? (
-        <div className="mt-4 flex items-center gap-3">
-          <ConnectedAccountsRow accounts={connectedAccounts} size="md" />
-          <div className="w-px h-4 bg-border" />
-          <AvailablePlatformsRow
-            onConnectFacebook={handleConnectFacebook}
-            onConnectInstagram={handleConnectInstagram}
-            isConnecting={isConnecting}
+        <div className="mt-4">
+          <ConnectedAccountsRow
+            accounts={connectedAccounts}
             size="md"
+            onDeleteAccount={handleDeleteAccount}
+            showAddButton={true}
+            onAddAccount={() => {
+              // This will be handled by AvailablePlatformsRow logic
+            }}
           />
         </div>
       ) : (

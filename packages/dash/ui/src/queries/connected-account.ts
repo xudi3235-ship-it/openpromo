@@ -64,6 +64,33 @@ export const useInstagramOauthMutation = () => {
   });
 };
 
+const useDeleteConnectedAccountMutation = () => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+  return useHonoMutation({
+    mutationFn: (api, variables: { accountId: string }) =>
+      api.workspaces[":workspaceSlug"].connected_accounts[":accountId"].$delete(
+        {
+          param: {
+            workspaceSlug: workspace.slug,
+            accountId: variables.accountId,
+          },
+        },
+      ),
+    onError: (error) => {
+      toast.error(`Failed to disconnect account: ${error.message}`);
+    },
+    onSuccess: () => {
+      toast.success(`Account disconnected`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
+      });
+    },
+  });
+};
+
 // Combined OAuth hook with message listener
 export const useOAuthWithListener = () => {
   const { workspace } = useWorkspace();
@@ -89,6 +116,7 @@ export const useOAuthWithListener = () => {
 
   const facebookMutation = useFacebookOauthMutation();
   const instagramMutation = useInstagramOauthMutation();
+  const deleteConnectedAccountMutation = useDeleteConnectedAccountMutation();
 
   const handleConnectFacebook = () => {
     facebookMutation.mutate({});
@@ -99,7 +127,9 @@ export const useOAuthWithListener = () => {
   };
 
   const isConnecting =
-    facebookMutation.isPending || instagramMutation.isPending;
+    facebookMutation.isPending ||
+    instagramMutation.isPending ||
+    deleteConnectedAccountMutation.isPending;
 
   return {
     handleConnectFacebook,
@@ -107,5 +137,6 @@ export const useOAuthWithListener = () => {
     isConnecting,
     isConnectingFacebook: facebookMutation.isPending,
     isConnectingInstagram: instagramMutation.isPending,
+    deleteConnectedAccount: deleteConnectedAccountMutation.mutate,
   };
 };
