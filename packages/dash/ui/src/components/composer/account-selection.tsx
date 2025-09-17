@@ -5,6 +5,7 @@ import {
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
 import { AvailablePlatformsRow } from "@/components/connected-accounts/available-platforms-row";
+import type { ConnectedAccount } from "@/lib/hono-client";
 import { useOAuthWithListener } from "@/queries/connected-account";
 import { useComposerStore } from "@/stores/composer-store";
 
@@ -35,12 +36,7 @@ function getPlatformFallback(platform: Platform) {
 }
 
 interface CompactAvatarProps {
-  account: {
-    id: string;
-    platform: Platform;
-    accountName?: string | null;
-    profilePictureUrl?: string | null;
-  };
+  account: ConnectedAccount;
   selected: boolean;
   active: boolean;
   onToggleSelected: () => void;
@@ -74,7 +70,7 @@ function CompactAvatar({
           <div className="w-full h-full bg-background rounded-full p-0.5">
             <Avatar className="w-full h-full">
               <AvatarImage
-                src={account.profilePictureUrl || ""}
+                src={account.profilePicUrl || ""}
                 alt={account.accountName || "Account"}
               />
               <AvatarFallback className="text-xs font-semibold">
