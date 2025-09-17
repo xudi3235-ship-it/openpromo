@@ -475,10 +475,20 @@ export const contentRoute = new Hono<ApiEnv>()
     const contents = await g.getContents();
     contents.forEach(async (ct) => {
       const ins = await c.env.WORKFLOW.get(ct.data.id);
+      // TODO: revisit these and ensure we have robust workflow of different
+      // scenarios
+      const { status, error, output } = await ins.status();
       if (ct.isDraft()) {
+        if (status !== "waiting") {
+          // we've got a problem, draft content should be waiting for publish_draft event
+          console.log({ error, status, output });
+        }
+        console.log("// content is draft");
+        console.log({ status });
         await ins.sendEvent({ type: "publish_draft", payload: {} });
       }
       if (ct.isScheduled()) {
+        console.log("// content is scheduled, publish now");
         await ins.sendEvent({ type: "publish_now", payload: {} });
       }
     });

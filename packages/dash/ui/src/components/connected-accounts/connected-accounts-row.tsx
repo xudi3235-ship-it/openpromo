@@ -358,23 +358,24 @@ function ComposerAccountAvatar({
     return val - bounds.x - bounds.width / 2;
   });
 
-  const scaleSync = useTransform(distance, [-80, 0, 80], [1, 1.25, 1]);
-  const scale = useSpring(scaleSync, {
+  const widthSync = useTransform(distance, [-150, 0, 150], [32, 48, 32]);
+  const width = useSpring(widthSync, {
     mass: 0.1,
-    stiffness: 300,
-    damping: 20,
+    stiffness: 150,
+    damping: 12,
   });
 
   return (
     <motion.div
       ref={ref}
-      style={{ scale }}
+      style={{ width }}
       className="relative group flex flex-col items-center gap-1"
     >
       {/* Avatar */}
-      <button
+      <motion.button
         type="button"
-        className="relative w-8 h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+        style={{ width }}
+        className="relative aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-ring transition-all"
         onClick={onToggleSelected}
         aria-label={`${selected ? "Disable" : "Enable"} posting to ${account.accountName || account.platform}`}
       >
@@ -413,7 +414,7 @@ function ComposerAccountAvatar({
             </svg>
           </div>
         )}
-      </button>
+      </motion.button>
 
       {/* Active indicator below avatar */}
       {selected && (
