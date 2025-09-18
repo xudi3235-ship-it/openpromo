@@ -4,6 +4,7 @@ import { Binding } from "@core/helpers/api-env";
 import { and, db, eq } from "@core/helpers/db";
 import { VideoStorage } from "@core/helpers/storage/video";
 import {
+  type ContentPublishingStatus,
   FBFeedPlacementSpec,
   type PlacementSpec,
   pendingContentGroupTable,
@@ -26,8 +27,8 @@ export class EntPendingContent extends EntUnifiedContentBase {
       const wf = await WORKFLOW.get(id);
       await wf.terminate();
       return Promise.resolve();
-    } catch (e) {
-      console.warn("error when terminating workflow", e);
+    } catch (_e) {
+      // probably workflow not found, ignore
       return Promise.resolve();
     }
   }
@@ -341,5 +342,16 @@ export class EntPendingContent extends EntUnifiedContentBase {
       );
     }
     return new EntPendingContent(newData);
+  }
+  async setPublishingStatus(
+    publishingStatus: ContentPublishingStatus,
+  ): Promise<EntPendingContent> {
+    const [newOne] = await db()
+      .update(unifiedContentTable)
+      .set({ publishingStatus })
+      .where(eq(unifiedContentTable.id, this.data.id))
+      .returning();
+    if (!newOne) throw new Error("failed to update publishingStatus");
+    return new EntPendingContent(newOne);
   }
 }

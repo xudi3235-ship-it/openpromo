@@ -6,6 +6,7 @@ import {
   type CoreWorkflowEvent,
   type CoreWorkflowStep,
 } from "@core/helpers/workflow";
+import { AllPlacement } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
 import z from "zod";
 import { FacebookPublisher } from "./facebook-publisher";
@@ -85,19 +86,28 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
         type: "publish_draft",
       });
     }
-    switch (placement) {
-      case "FB_FEED": {
-        const fbPublisher = new FacebookPublisher();
-        await fbPublisher.publish(ctx, step, pendingContentID);
-        break;
+    try {
+      switch (placement) {
+        case AllPlacement.FB_FEED: {
+          const fbPublisher = new FacebookPublisher();
+          await fbPublisher.publish(ctx, step, pendingContentID);
+          break;
+        }
+        case AllPlacement.IG_FEED: {
+          const igPublisher = new InstagramPublisher();
+          await igPublisher.publish(ctx, step, pendingContentID);
+          break;
+        }
+        default:
+          throw new Error(`unsupported placement ${placement}`);
       }
-      case "IG_FEED": {
-        const igPublisher = new InstagramPublisher();
-        await igPublisher.publish(ctx, step, pendingContentID);
-        break;
-      }
-      default:
-        throw new Error(`unsupported placement ${placement}`);
+    } catch (err) {
+      console.error("publish failed", err);
+      await step.do("mark content as failed", async () => {
+        const c = await EntPendingContent.fromID(pendingContentID);
+        await c.setPublishingStatus("FAILED_TO_PUBLISH");
+        // TODO: push notification
+      });
     }
     step.do("publish to placements", async () => {
       const actor = Actor.assert("workspace_user");

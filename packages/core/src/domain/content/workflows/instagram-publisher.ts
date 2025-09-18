@@ -3,6 +3,7 @@ import type {
   CoreWorkflowContext,
   CoreWorkflowStep,
 } from "@core/helpers/workflow";
+import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 import { BasePublisher } from "./base-publisher";
 
@@ -17,19 +18,35 @@ export class InstagramPublisher extends BasePublisher {
     // Step 0: Prepare videos if needed (ensure downloads are ready and URLs are set)
     await this.prepareVideosIfNeeded(step, pendingContentID);
 
-    const { isPhotoCarousel, isMixedCarousel, isSingleVideoReel } =
-      await step.do("determine IG feed post type", async () => {
-        const c = await EntIGFeedPendingContent.fromID(pendingContentID);
-        return {
-          isPhotoCarousel: c.isPhotoCarousel(),
-          isMixedCarousel: c.isMixedCarousel(),
-          isSingleVideoReel: c.isSingleVideoReel(),
-        };
-      });
+    const {
+      isPhotoCarousel,
+      isMixedCarousel,
+      isSingleVideoReel,
+      isSinglePhoto,
+    } = await step.do("determine IG feed post type", async () => {
+      const c = await EntIGFeedPendingContent.fromID(pendingContentID);
+      return {
+        isPhotoCarousel: c.isPhotoCarousel(),
+        isMixedCarousel: c.isMixedCarousel(),
+        isSingleVideoReel: c.isSingleVideoReel(),
+        isSinglePhoto: c.isSinglePhoto(),
+      };
+    });
 
     // only one can be true
-    if (!isPhotoCarousel && !isMixedCarousel && !isSingleVideoReel) {
-      throw new Error("no post type matched");
+    if (
+      !isPhotoCarousel &&
+      !isMixedCarousel &&
+      !isSingleVideoReel &&
+      !isSinglePhoto
+    ) {
+      throw new WorkflowError("no post type matched");
+    }
+    if (isSinglePhoto) {
+      console.log("// publishing single photo");
+      // same as photo carousel
+      await this.publishPhotoCarousel(step, pendingContentID);
+      return;
     }
 
     if (isPhotoCarousel) {

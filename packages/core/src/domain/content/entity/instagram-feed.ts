@@ -55,6 +55,9 @@ export class EntIGFeedPendingContent extends EntPendingContent {
   isPhotoCarousel() {
     return !this.onlyOneAttachment() && this.hasPhotoAttachment();
   }
+  isSinglePhoto() {
+    return this.hasPhotoAttachment() && this.onlyOneAttachment();
+  }
   isMixedCarousel() {
     // mix of photo and video
     return (
@@ -324,6 +327,7 @@ export class EntIGFeedPendingContent extends EntPendingContent {
     }
     return data as z.output<TOut>;
   }
+
   static async _createDummy(
     igAccountID: string,
   ): Promise<EntIGFeedPendingContent> {
