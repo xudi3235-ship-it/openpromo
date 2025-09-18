@@ -9,6 +9,7 @@ import {
   FBFeedPlacementSpec,
   type PlacementSpec,
   pendingContentGroupTable,
+  type SharedAttachmentSpec,
   UnifiedContentInsert,
   type UnifiedContentSelect,
   UnifiedContentUpdate,
@@ -304,45 +305,21 @@ export class EntPendingContent extends EntUnifiedContentBase {
   ): Promise<EntPendingContent> {
     if (readyVideos.length === 0) return this;
 
-    // Create a map for quick lookup
     const urlMap = new Map(readyVideos.map((v) => [v.id, v.downloadUrl]));
 
-    // Update the attachment specs with presigned URLs
-    const updatedAttachments = this.data.placementSpec?.attachments?.map(
-      (attachment) => {
-        if (attachment.type === "video" && urlMap.has(attachment.id)) {
-          return {
-            ...attachment,
-            presignedUrl: urlMap.get(attachment.id),
-          };
-        }
-        return attachment;
-      },
-    );
+    const didUpdate = await this.updateAttachments((attachment) => {
+      if (attachment.type === "video" && urlMap.has(attachment.id)) {
+        return {
+          ...attachment,
+          presignedUrl: urlMap.get(attachment.id),
+        };
+      }
+      return attachment;
+    });
 
-    if (!updatedAttachments) return this;
-    console.log("Updated attachments with URLs:", updatedAttachments);
+    if (!didUpdate) return this;
 
-    // Update the placement spec in the database
-    const updatedPlacementSpec = {
-      ...(this.data.placementSpec as PlacementSpec),
-      attachments: updatedAttachments,
-    } satisfies PlacementSpec;
-
-    const [newData] = await db()
-      .update(unifiedContentTable)
-      .set({
-        placementSpec: updatedPlacementSpec,
-      })
-      .where(eq(unifiedContentTable.id, this.data.id))
-      .returning();
-    if (!newData || !newData.placementSpec) {
-      console.error("Failed to update placementSpec", { newData });
-      throw new Error(
-        `Failed to update placementSpec for content ${this.data.id}`,
-      );
-    }
-    return new EntPendingContent(newData);
+    return new EntPendingContent(this.data);
   }
   async setPublishingStatus(
     publishingStatus: ContentPublishingStatus,
@@ -402,5 +379,64 @@ export class EntPendingContent extends EntUnifiedContentBase {
     for (const photo of photos) {
       await ImageStorage.markImageAfterPublish(photo.id, this.data.id);
     }
+  }
+
+  protected async updateAttachments(
+    mapper: (
+      attachment: SharedAttachmentSpec,
+      index: number,
+    ) => SharedAttachmentSpec,
+  ): Promise<boolean> {
+    const attachments =
+      (
+        this.data.placementSpec?.attachments as
+          | SharedAttachmentSpec[]
+          | undefined
+      )?.map((attachment) => ({ ...attachment })) ?? [];
+
+    if (attachments.length === 0) return false;
+
+    let changed = false;
+    const updatedAttachments = attachments.map((attachment, index) => {
+      const updated = mapper({ ...attachment }, index);
+      if (!changed && JSON.stringify(updated) !== JSON.stringify(attachment)) {
+        changed = true;
+      }
+      return updated;
+    });
+
+    if (!changed) return false;
+
+    await this.replaceAttachments(updatedAttachments);
+    return true;
+  }
+
+  private async replaceAttachments(
+    updatedAttachments: SharedAttachmentSpec[],
+  ): Promise<void> {
+    const placementSpec = this.data.placementSpec as PlacementSpec | undefined;
+    if (!placementSpec) return;
+
+    const nextSpec = {
+      ...placementSpec,
+      attachments: updatedAttachments,
+    } satisfies PlacementSpec;
+
+    const [newData] = await db()
+      .update(unifiedContentTable)
+      .set({
+        placementSpec: nextSpec,
+      })
+      .where(eq(unifiedContentTable.id, this.data.id))
+      .returning();
+
+    if (!newData || !newData.placementSpec) {
+      console.error("Failed to update placementSpec", { newData });
+      throw new Error(
+        `Failed to update placementSpec for content ${this.data.id}`,
+      );
+    }
+
+    this.data = newData;
   }
 }
