@@ -45,7 +45,7 @@ export class InstagramPublisher extends BasePublisher {
     if (isSinglePhoto) {
       console.log("// publishing single photo");
       // same as photo carousel
-      await this.publishPhotoCarousel(step, pendingContentID);
+      await this.publishSinglePhoto(step, pendingContentID);
       return;
     }
 
@@ -70,7 +70,17 @@ export class InstagramPublisher extends BasePublisher {
       `unsupported post type for IG Feed content ${pendingContentID}`,
     );
   }
-
+  private async publishSinglePhoto(
+    step: CoreWorkflowStep,
+    pendingContentID: string,
+  ) {
+    await step.do("create single photo post", async () => {
+      const c = await EntIGFeedPendingContent.fromID(pendingContentID);
+      const { postId } = await c.createSinglePhotoPost();
+      console.log({ postId });
+    });
+    log.info("published single photo");
+  }
   private async publishPhotoCarousel(
     step: CoreWorkflowStep,
     pendingContentID: string,

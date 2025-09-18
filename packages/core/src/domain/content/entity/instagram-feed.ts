@@ -69,6 +69,34 @@ export class EntIGFeedPendingContent extends EntPendingContent {
   caption() {
     return this.spec.caption as string;
   }
+  async createSinglePhotoPost() {
+    const photos = this.photosAttachments();
+    if (photos.length !== 1) {
+      throw new Error("single photo post must have exactly one photo");
+    }
+    const photo = onlyOrThrow(photos);
+    if (!photo.publicUrl) {
+      throw new Error("photo attachment missing publicUrl");
+    }
+    // 1. create media container
+    const { igAccountID } = await this.identity();
+    const mediaContainerId = await this.createMediaContainer({
+      caption: this.caption(),
+      imageUrl: photo.publicUrl,
+    });
+    console.log("// created media container", { mediaContainerId });
+    // 2. create media using the container id
+    const { id: postId } = await this.api(
+      `/${igAccountID}/media_publish`,
+      "POST",
+      {
+        caption: this.caption(),
+        creation_id: mediaContainerId,
+      },
+      z.object({ id: z.string().describe("instagram post id") }),
+    );
+    return { postId };
+  }
   /**
    * IG's carousel supports up 10, mix of photos and videos.
    * photos are easy, video containers need to be uploaded and ready first.
