@@ -55,16 +55,14 @@ export class FacebookPublisher extends BasePublisher {
 
     if (postType !== "text") {
       await step.do("sync facebook attachments", async () => {
-        console.log("// Syncing Facebook attachments");
         const c = await EntFBFeedPendingContent.fromID(pendingContentID);
         await c.syncAttachmentsFromFacebook(postId);
-        console.log("// Facebook attachments synced");
       });
     }
+
     await step.do("mark facebook content as published", async () => {
       const c = await EntFBFeedPendingContent.fromID(pendingContentID);
       await c.markAsPublished(postId);
-      console.log("// Facebook content marked as published");
     });
 
     log.info("Facebook content published", { postId, postType });

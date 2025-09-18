@@ -100,6 +100,24 @@ export namespace VideoStorage {
     return res as DownloadResponse["result"];
   }
 
+  export async function deleteVideo(videoId: string): Promise<void> {
+    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_DEFAULT_ACCOUNT_ID}/stream/${videoId}`;
+
+    const response = await fetch(endpoint, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
+      },
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(
+        `Failed to delete video ${videoId}: ${response.status} ${response.statusText} - ${body}`,
+      );
+    }
+  }
+
   /**
    * Creates a downloadable M4A audio file for a video.
    */

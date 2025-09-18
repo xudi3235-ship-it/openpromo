@@ -346,8 +346,6 @@ export class EntPendingContent extends EntUnifiedContentBase {
     if (!newOne) throw new Error("failed to mark content as published");
     this.data = newOne;
 
-    await this.markPublishedPhotoAttachments();
-
     if (!groupID) return;
     // if group is now empty, delete it
     const [{ count: contentCount }] = await db()
@@ -372,20 +370,12 @@ export class EntPendingContent extends EntUnifiedContentBase {
     }
   }
 
-  protected async markPublishedPhotoAttachments(): Promise<void> {
-    const photos = this.photosAttachments();
-    if (photos.length === 0) return;
-
-    for (const photo of photos) {
-      await ImageStorage.markImageAfterPublish(photo.id, this.data.id);
-    }
-  }
-
   protected async updateAttachments(
     mapper: (
       attachment: SharedAttachmentSpec,
       index: number,
     ) => SharedAttachmentSpec,
+    placementUpdater?: (spec: PlacementSpec) => PlacementSpec,
   ): Promise<boolean> {
     const attachments =
       (
@@ -407,20 +397,23 @@ export class EntPendingContent extends EntUnifiedContentBase {
 
     if (!changed) return false;
 
-    await this.replaceAttachments(updatedAttachments);
+    await this.replaceAttachments(updatedAttachments, placementUpdater);
     return true;
   }
 
   private async replaceAttachments(
     updatedAttachments: SharedAttachmentSpec[],
+    placementUpdater?: (spec: PlacementSpec) => PlacementSpec,
   ): Promise<void> {
     const placementSpec = this.data.placementSpec as PlacementSpec | undefined;
     if (!placementSpec) return;
 
-    const nextSpec = {
+    const baseSpec = {
       ...placementSpec,
       attachments: updatedAttachments,
     } satisfies PlacementSpec;
+
+    const nextSpec = placementUpdater ? placementUpdater(baseSpec) : baseSpec;
 
     const [newData] = await db()
       .update(unifiedContentTable)
@@ -438,5 +431,31 @@ export class EntPendingContent extends EntUnifiedContentBase {
     }
 
     this.data = newData;
+  }
+
+  protected async deleteAttachmentAssets(
+    attachments: SharedAttachmentSpec[],
+  ): Promise<void> {
+    const seen = new Set<string>();
+
+    for (const attachment of attachments) {
+      if (!attachment?.id) continue;
+      const key = `${attachment.type}:${attachment.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      try {
+        if (attachment.type === "photo") {
+          await ImageStorage.deleteImage(attachment.id);
+        } else if (attachment.type === "video") {
+          await VideoStorage.deleteVideo(attachment.id);
+        }
+      } catch (error) {
+        console.warn(
+          `failed to delete ${attachment.type} asset ${attachment.id}`,
+          error,
+        );
+      }
+    }
   }
 }

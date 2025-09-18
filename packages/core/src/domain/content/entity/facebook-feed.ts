@@ -3,6 +3,8 @@ import { ImageStorage } from "@core/helpers/storage/image";
 import { VideoStorage } from "@core/helpers/storage/video";
 import {
   FBFeedPlacementSpec,
+  type PlacementSpec,
+  type SharedAttachmentSpec,
   type UnifiedContentSelect,
 } from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
@@ -320,7 +322,6 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     url.searchParams.set("access_token", acc.encryptedAccessToken);
 
     const res = await fetch(url.toString(), { method: "GET" });
-    console.log({ res });
     if (!res.ok) {
       const body = await res.text();
       log.warn("failed to fetch facebook attachments", {
@@ -335,7 +336,6 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     }
 
     const json = (await res.json()) as FBPostAttachmentsResponse;
-    console.log(JSON.stringify(json, null, 2));
     const remoteMedia: Array<{
       imageSrc?: string;
       videoSource?: string;
@@ -343,8 +343,6 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     }> = [];
 
     const attachmentData = json.attachments?.data ?? [];
-
-    console.log({ data: JSON.stringify(attachmentData, null, 2) });
 
     type FacebookAttachmentData = (typeof attachmentData)[number];
 
@@ -375,69 +373,100 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       return;
     }
 
-    const didUpdate = await this.updateAttachments((attachment, index) => {
-      const remote = remoteMedia[index];
-      if (!remote) return attachment;
+    const attachmentsToDelete: SharedAttachmentSpec[] = [];
+    const originalAttachments = localAttachments.map((attachment) => ({
+      ...attachment,
+    }));
 
-      const updated = { ...attachment } as typeof attachment;
-      const nextMetadata = {
-        ...(attachment.metadata ?? {}),
-        facebookPostId: graphPostId,
-      } as Record<string, unknown>;
-      let changed = false;
+    const didUpdate = await this.updateAttachments(
+      (attachment, index) => {
+        const remote = remoteMedia[index];
+        if (!remote) return attachment;
+        const original = originalAttachments[index] ?? attachment;
 
-      if (remote.imageSrc) {
-        if (updated.thumbnailUrl !== remote.imageSrc) {
-          updated.thumbnailUrl = remote.imageSrc;
-          changed = true;
-        }
-        if (updated.type === "photo") {
-          if (updated.publicUrl !== remote.imageSrc) {
-            updated.publicUrl = remote.imageSrc;
+        const updated = { ...attachment } as typeof attachment;
+        const nextMetadata = {
+          ...(attachment.metadata ?? {}),
+          facebookPostId: graphPostId,
+        } as Record<string, unknown>;
+        let changed = false;
+        let localAssetReplaced = false;
+
+        if (remote.imageSrc) {
+          if (updated.thumbnailUrl !== remote.imageSrc) {
+            updated.thumbnailUrl = remote.imageSrc;
             changed = true;
           }
-          if (updated.presignedUrl) {
-            updated.presignedUrl = undefined;
+          if (updated.type === "photo") {
+            if (updated.publicUrl !== remote.imageSrc) {
+              updated.publicUrl = remote.imageSrc;
+              changed = true;
+            }
+            if (updated.presignedUrl) {
+              updated.presignedUrl = undefined;
+              changed = true;
+            }
+            if (updated.s3Key) {
+              updated.s3Key = undefined;
+              changed = true;
+            }
+            nextMetadata.facebookImageUrl = remote.imageSrc;
+            localAssetReplaced = true;
+          } else if (updated.type === "video") {
+            nextMetadata.facebookVideoThumbnail = remote.imageSrc;
+          }
+        }
+
+        if (remote.videoSource && updated.type === "video") {
+          if (nextMetadata.facebookVideoSource !== remote.videoSource) {
+            nextMetadata.facebookVideoSource = remote.videoSource;
             changed = true;
           }
-          if (updated.s3Key) {
-            updated.s3Key = undefined;
-            changed = true;
+          localAssetReplaced = true;
+        }
+
+        if (changed) {
+          if (localAssetReplaced) {
+            nextMetadata.localAssetDeleted = true;
+            attachmentsToDelete.push(original);
           }
-          nextMetadata.facebookImageUrl = remote.imageSrc;
-        } else if (updated.type === "video") {
-          nextMetadata.facebookVideoThumbnail = remote.imageSrc;
+          updated.metadata = nextMetadata;
+          return updated;
         }
-      }
 
-      if (remote.videoSource && updated.type === "video") {
-        if (nextMetadata.facebookVideoSource !== remote.videoSource) {
-          nextMetadata.facebookVideoSource = remote.videoSource;
-          changed = true;
+        if (
+          JSON.stringify(nextMetadata) !==
+          JSON.stringify(attachment.metadata ?? {})
+        ) {
+          updated.metadata = nextMetadata;
+          return updated;
         }
-      }
 
-      if (changed) {
-        updated.metadata = nextMetadata;
-        return updated;
-      }
-
-      if (
-        JSON.stringify(nextMetadata) !==
-        JSON.stringify(attachment.metadata ?? {})
-      ) {
-        updated.metadata = nextMetadata;
-        return updated;
-      }
-
-      return attachment;
-    });
+        return attachment;
+      },
+      (spec) => {
+        const firstRemoteImage = remoteMedia.find(
+          (media) => media.imageSrc,
+        )?.imageSrc;
+        if (firstRemoteImage && spec.thumbnailUrl !== firstRemoteImage) {
+          return {
+            ...spec,
+            thumbnailUrl: firstRemoteImage,
+          } satisfies PlacementSpec;
+        }
+        return spec;
+      },
+    );
 
     if (!didUpdate) {
       log.info("facebook attachments already up to date", {
         postId: graphPostId,
       });
       return;
+    }
+
+    if (attachmentsToDelete.length > 0) {
+      await this.deleteAttachmentAssets(attachmentsToDelete);
     }
 
     const parsed = FBFeedPlacementSpec.safeParse(this.data.placementSpec);
