@@ -1,33 +1,35 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import type { FBFeedPlacementSpec } from "@core/schemas/content.sql";
+import type { IGFeedPlacementSpec } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
 
 type HttpMethod = "GET" | "POST" | "DELETE" | "PUT";
 
-const log = Log.create({ namespace: "facebook-api" });
+const log = Log.create({ namespace: "instagram-api" });
 
-export interface FacebookIdentityContext {
-  pageID: string;
+export interface InstagramIdentityContext {
+  igAccountID: string;
   accessToken: string;
 }
 
-export async function resolveFacebookIdentity(
-  placementSpec: FBFeedPlacementSpec,
-): Promise<FacebookIdentityContext> {
-  const pageID = placementSpec.identity.fbPageID;
-  if (!pageID) {
-    throw new Error("facebook placement spec missing fbPageID");
+export async function resolveInstagramIdentity(
+  placementSpec: IGFeedPlacementSpec,
+): Promise<InstagramIdentityContext> {
+  const igAccountID = placementSpec.identity.igAccountID;
+  if (!igAccountID) {
+    throw new Error("instagram placement spec missing igAccountID");
   }
 
-  const account = await ConnectedAccount.fromFBPageID(pageID);
+  const account = await ConnectedAccount.fromIGAccountID(igAccountID);
   if (!account) {
-    throw new Error(`connected account not found for fb page ${pageID}`);
+    throw new Error(
+      `connected account not found for ig account ${igAccountID}`,
+    );
   }
 
   return {
-    pageID,
+    igAccountID,
     accessToken: account.encryptedAccessToken,
-  } satisfies FacebookIdentityContext;
+  } satisfies InstagramIdentityContext;
 }
 
 export interface GraphRequestOptions {
@@ -36,14 +38,14 @@ export interface GraphRequestOptions {
   body?: Record<string, unknown> | null;
 }
 
-export async function facebookGraphRequest<T = unknown>(
-  ctx: FacebookIdentityContext,
+export async function instagramGraphRequest<T = unknown>(
+  ctx: InstagramIdentityContext,
   path: string,
   options: GraphRequestOptions = {},
 ): Promise<T> {
   const { method = "GET", searchParams = {}, body = null } = options;
 
-  const url = new URL(`https://graph.facebook.com/v23.0${path}`);
+  const url = new URL(`https://graph.instagram.com/v23.0${path}`);
   url.searchParams.set("access_token", ctx.accessToken);
   for (const [key, value] of Object.entries(searchParams)) {
     if (typeof value !== "undefined") {
@@ -59,15 +61,16 @@ export async function facebookGraphRequest<T = unknown>(
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  console.log("// Facebook Graph API response", {
-    url: url.toString(),
+  log.info("instagram graph request", {
+    path,
     method,
     status: response.status,
     statusText: response.statusText,
   });
+
   if (!response.ok) {
     const text = await response.text();
-    log.warn("facebook graph request failed", {
+    log.warn("instagram graph request failed", {
       path,
       method,
       status: response.status,
@@ -75,7 +78,7 @@ export async function facebookGraphRequest<T = unknown>(
       body: text,
     });
     throw new Error(
-      `facebook graph request failed (${path}): ${response.status} ${response.statusText}`,
+      `instagram graph request failed (${path}): ${response.status} ${response.statusText}`,
     );
   }
 

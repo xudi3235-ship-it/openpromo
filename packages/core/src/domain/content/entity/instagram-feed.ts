@@ -9,6 +9,10 @@ import { onlyOrThrow } from "@core/utils/common";
 import { Log } from "@core/utils/log";
 import type { ZodType } from "zod";
 import * as z from "zod";
+import {
+  instagramGraphRequest,
+  resolveInstagramIdentity,
+} from "./instagram/api";
 import { EntPendingContent } from "./pending-content";
 
 const log = Log.create({ namespace: "instagram-feed-entity" });
@@ -491,12 +495,7 @@ export class EntIGFeedPendingContent extends EntPendingContent {
     );
   }
   protected async identity() {
-    const acc = await ConnectedAccount.fromIGAccountID(this.igAccountID);
-    return {
-      acc,
-      igAccountID: this.igAccountID,
-      accessToken: acc.encryptedAccessToken,
-    };
+    return await resolveInstagramIdentity(this.spec);
   }
   protected async api<TOut extends ZodType>(
     path: string,
@@ -506,27 +505,17 @@ export class EntIGFeedPendingContent extends EntPendingContent {
     outSchema: TOut,
     params: URLSearchParams = new URLSearchParams({}),
   ) {
-    // IG has two login types, IG login and FB login.
-    // for now we built IG login only, hence can't use the FB sdk.
-    // wrapping the fetch for now.
-    const { accessToken } = await this.identity();
-    const base = `https://graph.instagram.com/v23.0`;
-    const url = `${base}${path}?access_token=${accessToken}&${params.toString()}`;
-    console.log("// IG API request", { url, method, body });
-    const res = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: body ? JSON.stringify(body) : undefined,
+    const ctx = await this.identity();
+    const searchParams: Record<string, string> = {};
+    params.forEach((value, key) => {
+      searchParams[key] = value;
     });
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(
-        `IG API request failed: ${res.status} ${res.statusText} - ${errorText}`,
-      );
-    }
-    const resJson = await res.json();
+
+    const resJson = await instagramGraphRequest(ctx, path, {
+      method,
+      searchParams,
+      body: body ?? undefined,
+    });
     console.log("// IG API response", JSON.stringify(resJson, null, 2));
 
     const { data, success, error } = outSchema.safeParse(resJson);

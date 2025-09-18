@@ -3,8 +3,10 @@ import type {
   UnifiedContentInstagramPost,
   UnifiedContentSelect,
 } from "@core/schemas/content.sql";
-import { FBFeedPlacementSpec } from "@core/schemas/content.sql";
-import { NotImplementedError } from "@core/utils/error";
+import {
+  FBFeedPlacementSpec,
+  IGFeedPlacementSpec,
+} from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
 import { EntUnifiedContentBase } from "./base";
 import { facebookGraphRequest, resolveFacebookIdentity } from "./facebook/api";
@@ -72,6 +74,8 @@ export class EntFacebookPost extends EntUnifiedContentBase {
 }
 
 export class EntInstagramPost extends EntUnifiedContentBase {
+  private readonly log = Log.create({ namespace: "ent-instagram-post" });
+  private readonly spec: IGFeedPlacementSpec;
   toJSON(): UnifiedContentInstagramPost {
     return this.data as UnifiedContentInstagramPost;
   }
@@ -79,15 +83,26 @@ export class EntInstagramPost extends EntUnifiedContentBase {
     return new EntInstagramPost(data);
   }
 
+  constructor(data: UnifiedContentSelect) {
+    super(data);
+    const parsed = IGFeedPlacementSpec.safeParse(data.placementSpec);
+    if (!parsed.success) {
+      throw new Error(
+        `unable to parse Instagram placementSpec for content ${data.id}: ${parsed.error.message}`,
+      );
+    }
+    this.spec = parsed.data;
+  }
+
   async fromUnifiedContentID(id: string): Promise<EntInstagramPost> {
     return new EntInstagramPost(await EntUnifiedContentBase._fromID(id));
   }
   protected async deleteSrc(): Promise<void> {
-    throw new NotImplementedError(
-      "Instagram post deletion not yet implemented",
-    );
+    this.spec;
+    this.log.info("skip instagram deletion, not supported");
+    // IG does not support deletion in api as of now
+    return Promise.resolve();
   }
-
   public async _delete(): Promise<UnifiedContentInstagramPost> {
     return (await super._delete()) as UnifiedContentInstagramPost;
   }
