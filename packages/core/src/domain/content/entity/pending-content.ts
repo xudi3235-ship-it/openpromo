@@ -60,7 +60,7 @@ export class EntPendingContent extends EntUnifiedContentBase {
     async (items) => {
       const actor = Actor.assert("workspace_user");
       if (items.length === 0) throw new Error("No items to create");
-      return await db()
+      const inserted = await db()
         .insert(unifiedContentTable)
         .values(
           items.map((item) => ({
@@ -69,6 +69,13 @@ export class EntPendingContent extends EntUnifiedContentBase {
           })),
         )
         .returning();
+      const updated = [] as UnifiedContentSelect[];
+      for (const row of inserted) {
+        const ent = new EntPendingContent(row);
+        await ent.initializeAttachmentMetadata();
+        updated.push(ent.data);
+      }
+      return updated;
     },
   );
   static createInternal = fn(
@@ -82,7 +89,7 @@ export class EntPendingContent extends EntUnifiedContentBase {
       const actor = Actor.assert("workspace_user");
       if (!placementSpec) throw new Error("Invalid placementSpec");
       // 1. insert record
-      const [c] = await db()
+      const [row] = await db()
         .insert(unifiedContentTable)
         .values({
           placement: placementSpec.placement,
@@ -93,18 +100,21 @@ export class EntPendingContent extends EntUnifiedContentBase {
           publishingStatus,
         })
         .returning();
+      const pending = new EntPendingContent(row);
+      await pending.initializeAttachmentMetadata();
+      const content = pending.data;
       // 2. kickoff workflow
       const { WORKFLOW } = Binding.use();
       try {
         // TODO: better tenant based ID?
         const wf = await WORKFLOW.create({
-          id: `${c.id}`,
+          id: `${content.id}`,
           params: {
             actor,
-            pendingContentID: c.id,
+            pendingContentID: content.id,
           },
         });
-        return { c, wf };
+        return { c: content, wf };
       } catch (e) {
         console.error("workflow already exists", e);
         throw e;
@@ -473,6 +483,49 @@ export class EntPendingContent extends EntUnifiedContentBase {
           error,
         );
       }
+    }
+  }
+
+  public async initializeAttachmentMetadata(): Promise<void> {
+    const attachments = this.attachments();
+    if (attachments.length === 0) return;
+
+    const storageMetadata = {
+      opWorkspaceId: this.data.workspaceId,
+      opContentId: this.data.id,
+      opPlacement: this.data.placement,
+      opStatus: this.data.publishingStatus,
+    } as Record<string, unknown>;
+
+    const remoteMetadataTasks: Array<Promise<unknown>> = [];
+
+    await this.updateAttachments((attachment) => {
+      if (!attachment?.id) return attachment;
+
+      if (attachment.type === "photo") {
+        remoteMetadataTasks.push(
+          ImageStorage.setMetadata(attachment.id, storageMetadata),
+        );
+      } else if (attachment.type === "video") {
+        remoteMetadataTasks.push(
+          VideoStorage.setMetadata(attachment.id, storageMetadata),
+        );
+      }
+
+      const existingMetadata =
+        (attachment.metadata as Record<string, unknown> | undefined) ?? {};
+
+      return {
+        ...attachment,
+        metadata: {
+          ...existingMetadata,
+          ...storageMetadata,
+        },
+      } satisfies SharedAttachmentSpec;
+    });
+
+    if (remoteMetadataTasks.length > 0) {
+      await Promise.all(remoteMetadataTasks);
     }
   }
 }

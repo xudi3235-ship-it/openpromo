@@ -45,6 +45,50 @@ export namespace VideoStorage {
       throw error;
     }
   }
+  export type VideoMetadata = Record<string, unknown>;
+
+  async function readExistingMetadata(videoId: string): Promise<VideoMetadata> {
+    const c = getCloudflareClient();
+    try {
+      const video = await c.stream.get(videoId, {
+        account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
+      });
+      const meta = video.meta;
+      if (!meta) return {};
+      if (typeof meta === "object") return meta as VideoMetadata;
+      if (typeof meta === "string") {
+        try {
+          return JSON.parse(meta) as VideoMetadata;
+        } catch (error) {
+          console.warn("failed to parse video metadata string", {
+            videoId,
+            error,
+          });
+        }
+      }
+      return {};
+    } catch (error) {
+      console.error("failed to fetch video metadata", { videoId, error });
+      return {};
+    }
+  }
+
+  export async function setMetadata(
+    videoId: string,
+    metadata: VideoMetadata,
+    options: { replace?: boolean } = {},
+  ): Promise<void> {
+    const c = getCloudflareClient();
+    const { replace = false } = options;
+    const base = replace ? {} : await readExistingMetadata(videoId);
+    const nextMetadata = { ...base, ...metadata } satisfies VideoMetadata;
+
+    await c.stream.edit(videoId, {
+      account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
+      meta: nextMetadata,
+    });
+  }
+
   /**
    * resumable upload for large files. This reads in request from web server
    * and reads the headers. Use this with TUS client, e.g. uppy.
