@@ -86,36 +86,47 @@ export namespace ImageStorage {
       account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
     });
   }
-  export async function markImageAfterPublish(
+  export type ImageMetadata = Record<string, unknown>;
+
+  async function readExistingMetadata(imageId: string): Promise<ImageMetadata> {
+    try {
+      const image = await get(imageId);
+      const { meta } = image;
+      if (!meta) return {};
+      if (typeof meta === "object") return meta as ImageMetadata;
+      if (typeof meta === "string") {
+        try {
+          return JSON.parse(meta) as ImageMetadata;
+        } catch (error) {
+          console.warn("failed to parse image metadata string", {
+            imageId,
+            error,
+          });
+        }
+      }
+      return {};
+    } catch (error) {
+      console.error("failed to fetch image metadata", { imageId, error });
+      return {};
+    }
+  }
+
+  export async function setMetadata(
     imageId: string,
-    contentId: string,
+    metadata: ImageMetadata,
+    options: { replace?: boolean } = {},
   ): Promise<Image> {
     const c = getCloudflareClient();
-    const img = await c.images.v1.edit(imageId, {
+    const { replace = false } = options;
+    const baseMetadata = replace ? {} : await readExistingMetadata(imageId);
+    const nextMetadata = {
+      ...baseMetadata,
+      ...metadata,
+    } satisfies ImageMetadata;
+
+    return await c.images.v1.edit(imageId, {
       account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
-      metadata: JSON.stringify({
-        ...(await (async () => {
-          try {
-            const existing = await get(imageId);
-            if (existing.meta) {
-              if (typeof existing.meta === "object") {
-                return existing.meta;
-              } else if (typeof existing.meta === "string") {
-                // try parse
-                return JSON.parse(existing.meta as string);
-              } else {
-                console.warn("unknown meta type", typeof existing.meta);
-              }
-            }
-          } catch (e) {
-            console.error("failed to get existing image meta", e);
-          }
-          return {};
-        })()),
-        publishedContentID: contentId,
-        publishedAt: new Date().toISOString(),
-      }),
+      metadata: JSON.stringify(nextMetadata),
     });
-    return img;
   }
 }

@@ -1,12 +1,17 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import {
   IGFeedPlacementSpec,
+  type PlacementSpec,
+  type SharedAttachmentSpec,
   type UnifiedContentSelect,
 } from "@core/schemas/content.sql";
 import { onlyOrThrow } from "@core/utils/common";
+import { Log } from "@core/utils/log";
 import type { ZodType } from "zod";
 import * as z from "zod";
 import { EntPendingContent } from "./pending-content";
+
+const log = Log.create({ namespace: "instagram-feed-entity" });
 
 /**
  * a pending instagram feed content. NOTE: feed = post + reel
@@ -242,6 +247,181 @@ export class EntIGFeedPendingContent extends EntPendingContent {
     );
     return { postId };
   }
+
+  async syncAttachmentsFromInstagram(postId: string): Promise<void> {
+    const localAttachments = this.attachments();
+    if (localAttachments.length === 0) return;
+
+    const mediaSchema = z.object({
+      id: z.string(),
+      media_type: z.enum(["IMAGE", "VIDEO", "CAROUSEL_ALBUM"]),
+      media_url: z.string().optional(),
+      thumbnail_url: z.string().optional(),
+      children: z
+        .object({
+          data: z.array(
+            z.object({
+              id: z.string(),
+              media_type: z.enum(["IMAGE", "VIDEO", "CAROUSEL_ALBUM"]),
+              media_url: z.string().optional(),
+              thumbnail_url: z.string().optional(),
+            }),
+          ),
+        })
+        .optional(),
+    });
+
+    const remoteMedia = await this.api(
+      `/${postId}`,
+      "GET",
+      null,
+      mediaSchema,
+      new URLSearchParams({
+        fields:
+          "id,media_type,media_url,thumbnail_url,children{id,media_type,media_url,thumbnail_url}",
+      }),
+    );
+
+    const remoteItems =
+      remoteMedia.children?.data && remoteMedia.children.data.length > 0
+        ? remoteMedia.children.data
+        : [remoteMedia];
+
+    if (remoteItems.length === 0) {
+      log.warn("no remote media returned from instagram", { postId });
+      return;
+    }
+
+    if (remoteItems.length !== localAttachments.length) {
+      log.warn("remote media count mismatch", {
+        postId,
+        remoteCount: remoteItems.length,
+        localCount: localAttachments.length,
+      });
+    }
+
+    const remoteRecords = remoteItems.map((item) => {
+      const isVideo = item.media_type === "VIDEO";
+      const imageUrl = !isVideo ? item.media_url : undefined;
+      const videoUrl = isVideo ? item.media_url : undefined;
+
+      return {
+        mediaId: item.id,
+        mediaType: item.media_type,
+        imageUrl,
+        videoUrl,
+        thumbnailUrl: item.thumbnail_url ?? imageUrl ?? undefined,
+      };
+    });
+
+    const attachmentsToDelete: SharedAttachmentSpec[] = [];
+    const originalAttachments = localAttachments.map((attachment) => ({
+      ...attachment,
+    }));
+
+    const didUpdate = await this.updateAttachments(
+      (attachment, index) => {
+        const remote =
+          remoteRecords[index] ?? remoteRecords[remoteRecords.length - 1];
+        if (!remote) return attachment;
+        const original = originalAttachments[index] ?? attachment;
+
+        const updated = { ...attachment } as typeof attachment;
+        const nextMetadata = {
+          ...(attachment.metadata ?? {}),
+          instagramMediaId: remote.mediaId,
+          instagramMediaType: remote.mediaType,
+        } as Record<string, unknown>;
+        let changed = false;
+        let localAssetReplaced = false;
+
+        const remotePrimaryUrl = remote.videoUrl ?? remote.imageUrl;
+
+        if (remotePrimaryUrl) {
+          if (updated.publicUrl !== remotePrimaryUrl) {
+            updated.publicUrl = remotePrimaryUrl;
+            changed = true;
+            localAssetReplaced = true;
+          }
+          if (updated.presignedUrl) {
+            updated.presignedUrl = undefined;
+            changed = true;
+            localAssetReplaced = true;
+          }
+          if (updated.s3Key) {
+            updated.s3Key = undefined;
+            changed = true;
+            localAssetReplaced = true;
+          }
+          nextMetadata.instagramMediaUrl = remotePrimaryUrl;
+        }
+
+        if (
+          remote.thumbnailUrl &&
+          updated.thumbnailUrl !== remote.thumbnailUrl
+        ) {
+          updated.thumbnailUrl = remote.thumbnailUrl;
+          changed = true;
+          nextMetadata.instagramThumbnailUrl = remote.thumbnailUrl;
+        }
+
+        if (localAssetReplaced) {
+          nextMetadata.localAssetDeleted = true;
+          attachmentsToDelete.push(original);
+        }
+
+        if (changed) {
+          updated.metadata = nextMetadata;
+          return updated;
+        }
+
+        if (
+          JSON.stringify(nextMetadata) !==
+          JSON.stringify(attachment.metadata ?? {})
+        ) {
+          updated.metadata = nextMetadata;
+          return updated;
+        }
+
+        return attachment;
+      },
+      (spec) => {
+        const primaryThumbnail =
+          remoteRecords.find((record) => record.thumbnailUrl)?.thumbnailUrl ??
+          remoteRecords[0]?.imageUrl ??
+          spec.thumbnailUrl;
+
+        if (primaryThumbnail && spec.thumbnailUrl !== primaryThumbnail) {
+          return {
+            ...spec,
+            thumbnailUrl: primaryThumbnail,
+          } satisfies PlacementSpec;
+        }
+
+        return spec;
+      },
+    );
+
+    if (!didUpdate) {
+      log.info("instagram attachments already up to date", { postId });
+      return;
+    }
+
+    if (attachmentsToDelete.length > 0) {
+      await this.deleteAttachmentAssets(attachmentsToDelete);
+    }
+
+    const parsed = IGFeedPlacementSpec.safeParse(this.data.placementSpec);
+    if (parsed.success) {
+      this.spec = parsed.data;
+    } else {
+      log.warn("failed to refresh IG placement spec after attachment sync", {
+        contentId: this.data.id,
+        error: parsed.error?.message,
+      });
+    }
+  }
+
   async createMediaContainer(params: {
     caption: string;
     imageUrl?: string;

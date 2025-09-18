@@ -55,6 +55,11 @@ export class InstagramPublisher extends BasePublisher {
       );
     }
 
+    await step.do("sync instagram attachments", async () => {
+      const c = await EntIGFeedPendingContent.fromID(pendingContentID);
+      await c.syncAttachmentsFromInstagram(postId);
+    });
+
     await step.do("mark content as published", async () => {
       const c = await EntIGFeedPendingContent.fromID(pendingContentID);
       await c.markAsPublished(postId);
