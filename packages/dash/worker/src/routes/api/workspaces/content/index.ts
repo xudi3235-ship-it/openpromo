@@ -1,9 +1,9 @@
+import { EntUnifiedContent } from "@core/domain/content/entity/base";
 import {
   EntFBFeedPendingContent,
   EntPendingContent,
   EntPendingContentGroup,
 } from "@core/domain/content/entity/index";
-
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { db } from "@core/helpers/db/db";
@@ -495,9 +495,9 @@ export const contentRoute = new Hono<ApiEnv>()
   })
   .delete("/content/:id", async (c) => {
     const { id } = c.req.param();
-    const content = await EntPendingContent.fromID(id);
+    const content = await EntUnifiedContent.fromID(id);
     if (!content)
       throw new AppError(404, { message: `Content ${id} not found` });
-    const deleted = await content._delete();
+    const deleted = await content.delete();
     return c.json({ success: !!deleted });
   });

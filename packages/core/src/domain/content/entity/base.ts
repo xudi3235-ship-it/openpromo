@@ -3,6 +3,7 @@ import { afterTx, and, db, eq, useTransaction } from "@core/helpers/db";
 import { Ent } from "@core/helpers/ent";
 import {
   type AllPlacement,
+  AllPlacement as AllPlacementEnum,
   pendingContentGroupTable,
   UnifiedContentInsert,
   type UnifiedContentSelect,
@@ -129,5 +130,59 @@ export abstract class EntUnifiedContentBase extends Ent<UnifiedContentSelect> {
   }
   public placement(): AllPlacement {
     return this.data.placement;
+  }
+  // TODO: i wanna use this to be dynamically cast to subclass
+  async to(ent: EntUnifiedContentBase): Promise<EntUnifiedContentBase> {
+    return ent.fromUnifiedContent(this.data);
+  }
+}
+
+export class EntUnifiedContent extends EntUnifiedContentBase {
+  static override type = "unified_content";
+  protected async deleteSrc(): Promise<void> {}
+  static async fromID(id: string): Promise<EntUnifiedContent> {
+    return EntUnifiedContentBase._fromID(id).then(
+      (data) => new EntUnifiedContent(data),
+    );
+  }
+  async delete(): Promise<UnifiedContentSelect> {
+    const placement = this.placement();
+    const { EntPendingContent } = await import("./pending-content");
+    const pendingAdapter = new EntPendingContent(this.data);
+    await pendingAdapter.deleteLocalAttachmentAssets();
+
+    if (this.isPublished()) {
+      switch (placement) {
+        case AllPlacementEnum.FB_FEED: {
+          const { EntFacebookPost } = await import("./platform-posts");
+          const post = new EntFacebookPost(this.data);
+          return await post._delete();
+        }
+        case AllPlacementEnum.IG_FEED: {
+          const { EntInstagramPost } = await import("./platform-posts");
+          const post = new EntInstagramPost(this.data);
+          return await post._delete();
+        }
+        default:
+          return await this._delete();
+      }
+    }
+
+    await EntPendingContent.killWorkflow(this.data.id);
+
+    switch (placement) {
+      case AllPlacementEnum.FB_FEED: {
+        const { EntFBFeedPendingContent } = await import("./facebook-feed");
+        const pending = new EntFBFeedPendingContent(this.data);
+        return await pending._delete();
+      }
+      case AllPlacementEnum.IG_FEED: {
+        const { EntIGFeedPendingContent } = await import("./instagram-feed");
+        const pending = new EntIGFeedPendingContent(this.data);
+        return await pending._delete();
+      }
+      default:
+        return await this._delete();
+    }
   }
 }

@@ -370,6 +370,23 @@ export class EntPendingContent extends EntUnifiedContentBase {
     }
   }
 
+  public async deleteLocalAttachmentAssets(): Promise<void> {
+    const attachments = this.attachments();
+    if (attachments.length === 0) return;
+
+    const localAttachments = attachments.filter((attachment) => {
+      if (!attachment?.id) return false;
+      const metadata = attachment.metadata as
+        | { localAssetDeleted?: boolean }
+        | undefined;
+      return metadata?.localAssetDeleted !== true;
+    });
+
+    if (localAttachments.length === 0) return;
+
+    await this.deleteAttachmentAssets(localAttachments);
+  }
+
   protected async updateAttachments(
     mapper: (
       attachment: SharedAttachmentSpec,

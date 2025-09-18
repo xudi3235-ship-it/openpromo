@@ -1,4 +1,3 @@
-import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { ImageStorage } from "@core/helpers/storage/image";
 import { VideoStorage } from "@core/helpers/storage/video";
 import {
@@ -11,6 +10,7 @@ import { env } from "@core/utils/env";
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
+import { facebookGraphRequest, resolveFacebookIdentity } from "./facebook/api";
 import { EntPendingContent } from "./pending-content";
 
 const log = Log.create({ namespace: "facebook-feed-entity" });
@@ -220,7 +220,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     // 0. get video CDN url from our CF stream service
     const res = await VideoStorage.createMP4Download(video.id);
     console.log("// got video download url", res);
-    const { acc } = await this.identity();
+    const { accessToken } = await this.identity();
     const cdnUrl = res?.default?.url ?? null;
     if (!cdnUrl) {
       throw new Error("failed to get video CDN url");
@@ -229,7 +229,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     const response = await fetch(uploadSessionUrl, {
       method: "POST",
       headers: {
-        Authorization: `OAuth ${acc.encryptedAccessToken}`,
+        Authorization: `OAuth ${accessToken}`,
         file_url: cdnUrl,
       },
     });
@@ -256,18 +256,14 @@ export class EntFBFeedPendingContent extends EntPendingContent {
   }
 
   async getVideoStatus(videoId: string) {
-    const { acc } = await this.identity();
-    const res = await fetch(
-      `https://graph.facebook.com/v23.0/${videoId}?fields=status&access_token=${acc.encryptedAccessToken}`,
-      { method: "GET" },
+    const ctx = await resolveFacebookIdentity(this.spec);
+    const resJson = await facebookGraphRequest<FBVideoStatusResponse>(
+      ctx,
+      `/${videoId}`,
+      {
+        searchParams: { fields: "status" },
+      },
     );
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(
-        `Failed to get video status: ${res.status} ${res.statusText} - ${errorText}`,
-      );
-    }
-    const resJson = (await res.json()) as FBVideoStatusResponse;
     console.log("// video status", resJson);
     return resJson.status;
   }
@@ -309,33 +305,21 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     const localAttachments = this.attachments();
     if (localAttachments.length === 0) return;
 
-    const { acc } = await this.identity();
+    const ctx = await resolveFacebookIdentity(this.spec);
     const graphPostId = postId.includes("_")
       ? postId
-      : `${this.pageID}_${postId}`;
+      : `${ctx.pageID}_${postId}`;
 
-    const url = new URL(`https://graph.facebook.com/v23.0/${graphPostId}`);
-    url.searchParams.set(
-      "fields",
-      "attachments{media{image{src}},subattachments{data{media{image{src}}}}}",
+    const json = await facebookGraphRequest<FBPostAttachmentsResponse>(
+      ctx,
+      `/${graphPostId}`,
+      {
+        searchParams: {
+          fields:
+            "attachments{media{image{src}},subattachments{data{media{image{src}}}}}",
+        },
+      },
     );
-    url.searchParams.set("access_token", acc.encryptedAccessToken);
-
-    const res = await fetch(url.toString(), { method: "GET" });
-    if (!res.ok) {
-      const body = await res.text();
-      log.warn("failed to fetch facebook attachments", {
-        postId: graphPostId,
-        status: res.status,
-        statusText: res.statusText,
-        body,
-      });
-      throw new Error(
-        `Failed to fetch Facebook attachments for post ${graphPostId}: ${res.status} ${res.statusText}`,
-      );
-    }
-
-    const json = (await res.json()) as FBPostAttachmentsResponse;
     const remoteMedia: Array<{
       imageSrc?: string;
       videoSource?: string;
@@ -483,10 +467,9 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     return FacebookAdsApi.init(accessToken).setDebug(env.DEBUG === "true");
   }
   protected async identity() {
-    const acc = await ConnectedAccount.fromFBPageID(this.pageID);
-    if (!acc) throw new Error("no connected account found");
-    const api = this.api(acc.encryptedAccessToken);
-    const page = new Page(this.pageID, api);
-    return { page, acc, api };
+    const ctx = await resolveFacebookIdentity(this.spec);
+    const api = this.api(ctx.accessToken);
+    const page = new Page(ctx.pageID, api);
+    return { page, api, accessToken: ctx.accessToken, pageID: ctx.pageID };
   }
 }
