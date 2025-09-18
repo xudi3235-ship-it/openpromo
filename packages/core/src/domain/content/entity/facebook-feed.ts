@@ -1,11 +1,9 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { db, eq } from "@core/helpers/db";
 import { ImageStorage } from "@core/helpers/storage/image";
 import { VideoStorage } from "@core/helpers/storage/video";
 import {
   FBFeedPlacementSpec,
   type UnifiedContentSelect,
-  unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
 import { WorkflowError } from "@core/utils/error";
@@ -111,35 +109,20 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     const videoCount = atts.filter((a) => a.type === "video").length;
     return photoCount > 0 && videoCount > 0;
   }
-  async markAsPublished(publishedContentID: string): Promise<this> {
-    // 1. mark as published
-    const [newContent] = await db()
-      .update(unifiedContentTable)
-      .set({
-        publishingStatus: "PUBLISHED",
-        sourceContentId: publishedContentID,
-        pendingContentGroupId: null, // unlink from pending group.
-      })
-      .where(eq(unifiedContentTable.id, this.data.id))
-      .returning();
-    if (!newContent)
-      throw new WorkflowError(
-        `failed to mark content ${this.data.id} as published`,
-      );
-    this.data = newContent;
-    // 2. tag attachments
+  override async markAsPublished(publishedContentID: string): Promise<void> {
+    await super.markAsPublished(publishedContentID);
     const photos = this.photosAttachments();
     for (const p of photos) {
       await ImageStorage.markImageAfterPublish(p.id, this.data.id);
     }
-    // 3. TODO: tag videos
-    return this;
+    const refreshed = await EntFBFeedPendingContent.fromID(this.data.id);
+    this.data = refreshed.data;
   }
   /**
    * we expose composable steps to create different types of posts.
    * Workflows should orchestrate these steps.
    */
-  async createTextPost(): Promise<this> {
+  async createTextPost() {
     if (!this.isTextOnlyPost()) throw new WorkflowError("no text provided");
     const text = this.spec.postSpec.message;
     // 0. get page with scoped access token
@@ -156,10 +139,9 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       throw new WorkflowError(
         `failed to create text post, no post ID returned`,
       );
-    console.log("L168");
-    return await this.markAsPublished(postID);
+    return { postId: postID };
   }
-  async createPhotoPost(): Promise<this> {
+  async createPhotoPost() {
     // ref: https://developers.facebook.com/docs/graph-api/reference/page/photos/
     const { page } = await this.identity();
     if (!this.isMultiPhotoPost())
@@ -187,7 +169,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       throw new WorkflowError(
         `failed to create photo post, no post ID returned`,
       );
-    return await this.markAsPublished(postID);
+    return { postId: postID };
   }
   /**
    * video related methods. Involves upload session, polling until
@@ -290,7 +272,16 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       },
     );
     console.log("// published reel", response);
-    return response;
+    const postId =
+      (response as { id?: string; video_id?: string }).id ??
+      (response as { id?: string; video_id?: string }).video_id ??
+      null;
+    if (!postId) {
+      throw new WorkflowError(
+        `failed to publish reel for content ${this.data.id}: response missing id`,
+      );
+    }
+    return { postId };
   }
   protected async api(accessToken: string) {
     return FacebookAdsApi.init(accessToken).setDebug(env.DEBUG === "true");

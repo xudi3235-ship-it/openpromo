@@ -1,7 +1,7 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { Actor } from "@core/helpers/actor";
 import { Binding } from "@core/helpers/api-env";
-import { and, db, eq } from "@core/helpers/db";
+import { and, count, db, eq } from "@core/helpers/db";
 import { VideoStorage } from "@core/helpers/storage/video";
 import {
   type ContentPublishingStatus,
@@ -353,5 +353,40 @@ export class EntPendingContent extends EntUnifiedContentBase {
       .returning();
     if (!newOne) throw new Error("failed to update publishingStatus");
     return new EntPendingContent(newOne);
+  }
+  async markAsPublished(publishedContentID: string) {
+    const groupID = this.data.pendingContentGroupId;
+    const [newOne] = await db()
+      .update(unifiedContentTable)
+      .set({
+        publishingStatus: "PUBLISHED",
+        sourceContentId: publishedContentID,
+        pendingContentGroupId: null,
+      })
+      .where(eq(unifiedContentTable.id, this.data.id))
+      .returning();
+    if (!newOne) throw new Error("failed to mark content as published");
+    if (!groupID) return;
+    // if group is now empty, delete it
+    const [{ count: contentCount }] = await db()
+      .select({ count: count() })
+      .from(unifiedContentTable)
+      .where(
+        and(
+          eq(unifiedContentTable.pendingContentGroupId, groupID),
+          eq(unifiedContentTable.workspaceId, Actor.workspaceID()),
+        ),
+      );
+
+    if (contentCount === 0) {
+      await db()
+        .delete(pendingContentGroupTable)
+        .where(
+          and(
+            eq(pendingContentGroupTable.id, groupID),
+            eq(pendingContentGroupTable.workspaceId, Actor.workspaceID()),
+          ),
+        );
+    }
   }
 }

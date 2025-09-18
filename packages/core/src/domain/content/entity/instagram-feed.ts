@@ -396,4 +396,7 @@ export class EntIGFeedPendingContent extends EntPendingContent {
     });
     return new EntIGFeedPendingContent(content);
   }
+  async publisherType() {
+    // determine
+  }
 }
