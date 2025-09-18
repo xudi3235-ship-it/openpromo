@@ -109,15 +109,6 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     const videoCount = atts.filter((a) => a.type === "video").length;
     return photoCount > 0 && videoCount > 0;
   }
-  override async markAsPublished(publishedContentID: string): Promise<void> {
-    await super.markAsPublished(publishedContentID);
-    const photos = this.photosAttachments();
-    for (const p of photos) {
-      await ImageStorage.markImageAfterPublish(p.id, this.data.id);
-    }
-    const refreshed = await EntFBFeedPendingContent.fromID(this.data.id);
-    this.data = refreshed.data;
-  }
   /**
    * we expose composable steps to create different types of posts.
    * Workflows should orchestrate these steps.

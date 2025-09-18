@@ -2,6 +2,7 @@ import { ConnectedAccount } from "@core/domain/connected-account/connected-accou
 import { Actor } from "@core/helpers/actor";
 import { Binding } from "@core/helpers/api-env";
 import { and, count, db, eq } from "@core/helpers/db";
+import { ImageStorage } from "@core/helpers/storage/image";
 import { VideoStorage } from "@core/helpers/storage/video";
 import {
   type ContentPublishingStatus,
@@ -366,6 +367,10 @@ export class EntPendingContent extends EntUnifiedContentBase {
       .where(eq(unifiedContentTable.id, this.data.id))
       .returning();
     if (!newOne) throw new Error("failed to mark content as published");
+    this.data = newOne;
+
+    await this.markPublishedPhotoAttachments();
+
     if (!groupID) return;
     // if group is now empty, delete it
     const [{ count: contentCount }] = await db()
@@ -387,6 +392,15 @@ export class EntPendingContent extends EntUnifiedContentBase {
             eq(pendingContentGroupTable.workspaceId, Actor.workspaceID()),
           ),
         );
+    }
+  }
+
+  protected async markPublishedPhotoAttachments(): Promise<void> {
+    const photos = this.photosAttachments();
+    if (photos.length === 0) return;
+
+    for (const photo of photos) {
+      await ImageStorage.markImageAfterPublish(photo.id, this.data.id);
     }
   }
 }
