@@ -1,7 +1,4 @@
-import {
-  EntIGFeedPendingContent,
-  EntPendingContent,
-} from "@core/domain/content/entity";
+import { EntPendingContent } from "@core/domain/content/entity";
 import type { CoreWorkflowStep } from "@core/helpers/workflow";
 import { Log } from "@core/utils/log";
 
@@ -79,7 +76,7 @@ export abstract class BasePublisher {
     const status = await step.do(
       `check video download ${videoId} status (attempt ${attempt})`,
       async () => {
-        const c = await EntIGFeedPendingContent.fromID(pendingContentID);
+        const c = await EntPendingContent.fromID(pendingContentID);
         return await c.checkVideoDownloadStatus(videoId);
       },
     );

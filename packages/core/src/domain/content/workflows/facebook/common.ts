@@ -10,13 +10,13 @@ export async function waitForVideoUpload(
   videoID: string,
   attempt: number = 1,
 ): Promise<void> {
-  if (attempt > 5) {
+  if (attempt > 10) {
     throw new Error(
       `video ${videoID} not ready after ${attempt - 1} attempts for content ${pendingContentID}`,
     );
   }
 
-  const isComplete = await step.do(
+  const isUploadComplete = await step.do(
     `check FB video ${videoID} upload status` +
       (attempt > 1 ? ` attempt ${attempt}` : ""),
     async () => {
@@ -25,7 +25,7 @@ export async function waitForVideoUpload(
     },
   );
 
-  if (isComplete) {
+  if (isUploadComplete) {
     log.info("facebook video upload complete", { pendingContentID, videoID });
     return;
   }
@@ -36,6 +36,47 @@ export async function waitForVideoUpload(
     attempt,
   });
 
-  await step.sleep("wait for facebook video processing", 30 * 1000);
+  await step.sleep("wait for facebook video processing", 60 * 1000);
   return await waitForVideoUpload(step, pendingContentID, videoID, attempt + 1);
+}
+
+export async function waitForVideoPublish(
+  step: CoreWorkflowStep,
+  pendingContentID: string,
+  videoID: string,
+  attempt: number = 1,
+): Promise<void> {
+  if (attempt > 10) {
+    throw new Error(
+      `video ${videoID} not published after ${attempt - 1} attempts for content ${pendingContentID}`,
+    );
+  }
+
+  const isPublished = await step.do(
+    `check FB video ${videoID} publish status` +
+      (attempt > 1 ? ` attempt ${attempt}` : ""),
+    async () => {
+      const c = await EntFBFeedPendingContent.fromID(pendingContentID);
+      return await c.isVideoPublishComplete(videoID);
+    },
+  );
+
+  if (isPublished) {
+    log.info("facebook video publish complete", { pendingContentID, videoID });
+    return;
+  }
+
+  log.info("facebook video still publishing", {
+    pendingContentID,
+    videoID,
+    attempt,
+  });
+
+  await step.sleep("wait for facebook video publish", 60 * 1000);
+  return await waitForVideoPublish(
+    step,
+    pendingContentID,
+    videoID,
+    attempt + 1,
+  );
 }

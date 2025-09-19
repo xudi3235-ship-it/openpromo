@@ -24,7 +24,7 @@ type FBVideoStatusResponse = {
       | "error"
       | "expired"
       | "processing"
-      | "ready"
+      | "ready" // ready to be published
       | "uploading"
       | "upload_failed"
       | "upload_complete";
@@ -36,17 +36,16 @@ type FBVideoStatusResponse = {
     };
     processing_phase: {
       status: "complete" | "error" | "not_started" | "in_progress";
-      error?: {
-        message: string;
-      };
+      errors?: unknown;
     };
     publishing_phase: {
       status: "complete" | "error" | "not_started" | "in_progress";
-      error?: {
-        message: string;
-      };
+      errors?: unknown;
       publish_status?: "draft" | "error" | "published" | "scheduled";
       publish_time?: number;
+    };
+    copyright_check_status: {
+      status?: "in_progress" | "complete" | "error";
     };
   };
 };
@@ -258,6 +257,40 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     return status.uploading_phase.status === "complete";
   }
 
+  async isVideoPublishComplete(videoId: string) {
+    const status = await this.getVideoStatus(videoId);
+
+    const videoStatus = status.video_status;
+    const publishingStatus = status.publishing_phase?.status;
+    const publishState = status.publishing_phase?.publish_status;
+
+    if (videoStatus === "ready") {
+      return true;
+    }
+
+    if (publishingStatus === "complete" || publishState === "published") {
+      return true;
+    }
+
+    if (status.processing_phase?.status === "error") {
+      throw new Error(
+        `video ${videoId} failed during processing: ${JSON.stringify(
+          status.processing_phase.errors,
+        )}`,
+      );
+    }
+
+    if (
+      videoStatus === "error" ||
+      publishingStatus === "error" ||
+      publishState === "error"
+    ) {
+      throw new Error(`video ${videoId} failed during publishing`);
+    }
+
+    return false;
+  }
+
   async getVideoStatus(videoId: string) {
     const ctx = await resolveFacebookIdentity(this.spec);
     const resJson = await facebookGraphRequest<FBVideoStatusResponse>(
@@ -282,7 +315,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     // this actually kicks off publishing
     // it will be processed and published
     // it's a async step.
-    const response = await page.createVideoReel(
+    const video = await page.createVideoReel(
       [], // fields
       {
         video_id: videoId,
@@ -291,17 +324,16 @@ export class EntFBFeedPendingContent extends EntPendingContent {
         video_state: "PUBLISHED",
       },
     );
-    console.log("// published reel", response);
-    const postId =
-      (response as { id?: string; video_id?: string }).id ??
-      (response as { id?: string; video_id?: string }).video_id ??
-      null;
-    if (!postId) {
+    // @ts-expect-error
+    const rawID = video.post_id ?? null;
+    // @ts-expect-error
+    if (!video.success || !rawID)
       throw new WorkflowError(
-        `failed to publish reel for content ${this.data.id}: response missing id`,
+        `failed to publish reel for content ${this.data.id}: response indicates failure or missing postID`,
       );
-    }
-    return { postId };
+    // it might be in the format of <page_id>_<post_id> or just <post_id>
+    const postIDOnly = rawID.includes("_") ? rawID.split("_")[1] : rawID;
+    return { postId: postIDOnly };
   }
 
   async syncAttachmentsFromFacebook(postId: string): Promise<void> {
@@ -327,6 +359,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       imageSrc?: string;
       videoSource?: string;
       type?: string;
+      videoId?: string;
     }> = [];
 
     const attachmentData = json.attachments?.data ?? [];
@@ -354,10 +387,43 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     }
 
     if (remoteMedia.length === 0) {
-      log.warn("no remote attachments returned from facebook", {
-        postId: graphPostId,
+      const videoMeta = await facebookGraphRequest<
+        { video_id?: string } | undefined
+      >(ctx, `/${graphPostId}`, {
+        searchParams: {
+          fields: "video_id",
+        },
       });
-      return;
+
+      const videoId = videoMeta?.video_id;
+
+      if (videoId) {
+        const videoDetails = await facebookGraphRequest<{
+          id?: string;
+          source?: string;
+          thumbnails?: { data?: Array<{ uri?: string }> };
+        }>(ctx, `/${videoId}`, {
+          searchParams: {
+            fields: "id,source,thumbnails{uri}",
+          },
+        });
+
+        const fallbackThumbnail = videoDetails.thumbnails?.data?.[0]?.uri;
+
+        remoteMedia.push({
+          type: "video",
+          videoSource: videoDetails.source,
+          imageSrc: fallbackThumbnail ?? undefined,
+          videoId,
+        });
+      }
+
+      if (remoteMedia.length === 0) {
+        log.warn("no remote attachments returned from facebook", {
+          postId: graphPostId,
+        });
+        return;
+      }
     }
 
     const remoteMetadataTasks: Array<Promise<unknown>> = [];
@@ -420,7 +486,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
         const opMetadata = buildAttachmentMetadata({
           opLocalAssetDeleted: localAssetReplaced ? true : undefined,
           opRemotePlatform: "facebook",
-          opRemoteAssetId: graphPostId,
+          opRemoteAssetId: remote.videoId ?? graphPostId,
           opUpdatedAt: new Date().toISOString(),
         });
 

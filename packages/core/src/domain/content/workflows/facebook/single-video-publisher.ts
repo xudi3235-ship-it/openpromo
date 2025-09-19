@@ -4,7 +4,7 @@ import type {
   CoreWorkflowStep,
 } from "@core/helpers/workflow";
 import { Log } from "@core/utils/log";
-import { waitForVideoUpload } from "./common";
+import { waitForVideoPublish, waitForVideoUpload } from "./common";
 
 const log = Log.create({ namespace: "facebook-single-video" });
 
@@ -21,7 +21,7 @@ export async function publishSingleVideoPost(
     log.info("uploaded video to FB session", { success, message });
     return { videoID };
   });
-
+  // wait for upload, and copyright check
   await waitForVideoUpload(step, pendingContentID, videoID);
 
   const postId = await step.do("publish facebook reel", async () => {
@@ -29,6 +29,8 @@ export async function publishSingleVideoPost(
     const { postId } = await c.createReel(videoID);
     return postId;
   });
+
+  await waitForVideoPublish(step, pendingContentID, videoID);
 
   log.info("published single video post", { postId });
   return postId;
