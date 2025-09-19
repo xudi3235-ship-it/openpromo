@@ -55,8 +55,8 @@ export function ComposerRight() {
         {/* Platform Previews */}
         {viewMode === "collage" ? (
           /* Collage View - Show both platforms */
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 justify-items-center lg:grid-cols-2 lg:gap-4 xl:gap-6">
+            <div className="space-y-2 flex flex-col items-center">
               <div className="flex items-center gap-2 px-1">
                 <div className="w-3 h-3 bg-blue-600 rounded"></div>
                 <span className="text-xs text-muted-foreground">
@@ -65,7 +65,7 @@ export function ComposerRight() {
               </div>
               <FacebookPreview />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 flex flex-col items-center">
               <div className="flex items-center gap-2 px-1">
                 <div className="w-3 h-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded"></div>
                 <span className="text-xs text-muted-foreground">

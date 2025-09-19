@@ -23,7 +23,7 @@ export function FBFeedPreview() {
   const { message, profilePicUrl, getDisplayName } = previewData;
 
   return (
-    <div className="border rounded-lg p-3 bg-background">
+    <div className="w-full max-w-lg mx-auto border rounded-lg p-3 bg-background">
       {/* Post Header */}
       <div className="flex items-start space-x-3 mb-3">
         {profilePicUrl ? (
