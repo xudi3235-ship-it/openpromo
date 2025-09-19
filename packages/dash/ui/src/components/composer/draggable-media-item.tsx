@@ -1,34 +1,29 @@
 import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, X } from "lucide-react";
-import { MediaItemFactory, MediaRenderer } from "@/lib/media";
-
-interface MediaPreview {
-  file: File;
-  url: string;
-  aspectRatio: string;
-  mimeType: string;
-  previewIframeUrl?: string;
-  isStreamVideo?: boolean;
-}
+import { GripVertical, ImageIcon, X } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface DraggableMediaItemProps {
   id: string;
-  preview: MediaPreview;
   attachment: SharedAttachmentSpec;
   index: number;
   onRemove: (index: number) => void;
-  onClick: (preview: MediaPreview, index: number) => void;
+  onClick: (attachment: SharedAttachmentSpec, index: number) => void;
+  renderAttachment: (
+    attachment: SharedAttachmentSpec,
+    className?: string,
+    controls?: boolean,
+  ) => ReactNode;
 }
 
 export function DraggableMediaItem({
   id,
-  preview,
   attachment,
   index,
   onRemove,
   onClick,
+  renderAttachment,
 }: DraggableMediaItemProps) {
   const {
     attributes,
@@ -46,7 +41,16 @@ export function DraggableMediaItem({
 
   const meta = (attachment?.metadata || {}) as Record<string, unknown>;
   const uploading = Boolean(meta.uploading);
-  const error = meta.error as string | undefined;
+  const error = typeof meta.error === "string" ? meta.error : undefined;
+
+  const previewNode = renderAttachment(
+    attachment,
+    "w-full h-full object-cover",
+  ) ?? (
+    <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+      <ImageIcon className="h-5 w-5" />
+    </div>
+  );
 
   return (
     <div
@@ -70,14 +74,10 @@ export function DraggableMediaItem({
       <button
         type="button"
         className="w-full h-full focus:outline-none"
-        onClick={() => onClick(preview, index)}
+        onClick={() => onClick(attachment, index)}
         title="Click to view details"
       >
-        {/* Media Preview - Using Unified MediaRenderer */}
-        {MediaRenderer.renderThumbnail(
-          MediaItemFactory.fromAttachment(attachment),
-          "w-full h-full object-cover",
-        )}
+        {previewNode}
 
         {/* Status Overlay */}
         {(uploading || error) && (
