@@ -1,3 +1,4 @@
+import type { ContainerBackend } from "@core/containers";
 import type { PublishWorkflowParams } from "@core/domain/content/workflows/content-publish-workflow";
 import type { OrganizationRole } from "@core/domain/workspace/auth";
 import type { WorkspacePusher } from "@core/durable-objects";
@@ -14,6 +15,7 @@ export type ApiEnv = {
     HYPERDRIVE: Hyperdrive;
     WORKFLOW: Workflow<PublishWorkflowParams>;
     WorkspacePusher: DurableObjectNamespace<WorkspacePusher>;
+    ContainerBackend: DurableObjectNamespace<ContainerBackend>;
   };
 };
 

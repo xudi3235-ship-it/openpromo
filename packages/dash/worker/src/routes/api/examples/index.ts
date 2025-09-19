@@ -2,7 +2,6 @@ import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
 import { withAuth } from "../../../middleware/with-auth";
-
 export const examplesRoute = new Hono<ApiEnv>()
   .use(withAuth())
   .get("/workflow", async (c) => {
@@ -26,4 +25,10 @@ export const examplesRoute = new Hono<ApiEnv>()
   })
   .get("/schedule", async (c) => {
     return c.text("not implemented yet");
+  })
+  .get("/container", async (c) => {
+    const stub = c.env.ContainerBackend.getByName("default");
+    const res = await stub.ping();
+
+    return c.json({ status: res.status, body: await res.text() });
   });

@@ -28,9 +28,20 @@
       {
         "name": "WorkspacePusher",
         "class_name": "WorkspacePusher"
+      },
+      {
+        "name": "ContainerBackend",
+        "class_name": "ContainerBackend"
       }
     ]
   },
+  "containers": [
+    {
+      "max_instances": 2,
+      "class_name": "ContainerBackend",
+      "image": "../core/src/containers/Dockerfile"
+    }
+  ],
   "triggers": {
     "crons": [
       // daily
@@ -41,7 +52,7 @@
   "migrations": [
     {
       "tag": "v3",
-      "new_sqlite_classes": ["WorkspacePusher"],
+      "new_sqlite_classes": ["WorkspacePusher", "ContainerBackend"],
       "renamed_classes": [
         // {
         //   "from": "Scheduler",
@@ -70,13 +81,24 @@
           {
             "name": "WorkspacePusher",
             "class_name": "WorkspacePusher"
+          },
+          {
+            "name": "ContainerBackend",
+            "class_name": "ContainerBackend"
           }
         ]
       },
+      "containers": [
+        {
+          "max_instances": 2,
+          "class_name": "ContainerBackend",
+          "image": "../core/src/containers/Dockerfile"
+        }
+      ],
       "migrations": [
         {
           "tag": "v3",
-          "new_sqlite_classes": ["WorkspacePusher"],
+          "new_sqlite_classes": ["WorkspacePusher", "ContainerBackend"],
           "renamed_classes": [
             // {
             //   "from": "Scheduler",
