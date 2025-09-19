@@ -10,8 +10,8 @@ import { useConnectedAccounts } from "@/queries/connected-account";
 import { useContentGroupQuery } from "@/queries/content";
 import type { ComposerProps } from "@/stores/composer-store";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
-import { ComposerSkeleton } from "../composer-skeleton";
-import { ResizableComposer } from "../resizable-composer";
+import { ComposerSkeleton } from "../layout/composer-skeleton";
+import { ResizableComposer } from "../layout/resizable-composer";
 
 export default function ComposerDialog() {
   const { isOpen, pendingContentGroupID, closeDialog } =
