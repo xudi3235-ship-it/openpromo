@@ -18,6 +18,8 @@ export const bootstrap =
           HYPERDRIVE: c.env.HYPERDRIVE,
           WorkspacePusher: c.env.WorkspacePusher,
           WORKFLOW: c.env.WORKFLOW,
+          ContainerBackend: c.env.ContainerBackend,
+          Bucket: c.env.Bucket,
         },
         next,
       ),
