@@ -3,15 +3,6 @@ import type { MergedContentEntity } from "@worker/routes/api/workspaces/content"
 import { Heart, MessageCircle, Share } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 
-// Generate dummy engagement data
-function generateEngagementData() {
-  return {
-    likes: Math.floor(Math.random() * 1000) + 10,
-    comments: Math.floor(Math.random() * 100) + 1,
-    shares: Math.floor(Math.random() * 50) + 1,
-  };
-}
-
 function formatNumber(num: number): string {
   if (num >= 1000) {
     return `${(num / 1000).toFixed(1)}k`;
@@ -27,7 +18,12 @@ export const engagementColumn: ColumnDef<MergedContentEntity> = {
 
     return matchEntity(entity, {
       content: () => {
-        const { likes, comments, shares } = generateEngagementData();
+        // TODO: replace with api
+        const { likes, comments, shares } = {
+          likes: 0,
+          comments: 0,
+          shares: 0,
+        };
 
         return (
           <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">

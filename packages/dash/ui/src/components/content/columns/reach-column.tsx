@@ -3,14 +3,6 @@ import type { MergedContentEntity } from "@worker/routes/api/workspaces/content"
 import { Eye } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 
-// Generate dummy reach data
-function generateReachData() {
-  return {
-    impressions: Math.floor(Math.random() * 10000) + 100,
-    reach: Math.floor(Math.random() * 8000) + 80,
-  };
-}
-
 function formatNumber(num: number): string {
   if (num >= 1000000) {
     return `${(num / 1000000).toFixed(1)}M`;
@@ -29,7 +21,10 @@ export const reachColumn: ColumnDef<MergedContentEntity> = {
 
     return matchEntity(entity, {
       content: () => {
-        const { impressions, reach } = generateReachData();
+        const { impressions, reach } = {
+          impressions: 0,
+          reach: 0,
+        };
 
         return (
           <div className="text-sm">
