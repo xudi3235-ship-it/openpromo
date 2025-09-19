@@ -15,6 +15,38 @@ import { Actor } from "../actor";
 
 // using cloudflare stream service.
 export namespace VideoStorage {
+  export type MediaTransformationOptions = {
+    mode?: "video" | "frame" | "spritesheet" | "audio";
+    width?: number;
+    height?: number;
+    fit?: "contain" | "cover" | "scale-down";
+    duration?: string;
+    time?: string;
+    audio?: boolean;
+  };
+
+  export function buildTransformationUrl(
+    sourceUrl: string,
+    options: MediaTransformationOptions = {},
+  ): string | null {
+    const base = env.CLOUDFLARE_MEDIA_TRANSFORM_BASE_URL;
+    if (!base) return null;
+
+    const params: Record<string, string | number | boolean> = {
+      mode: "video",
+      audio: true,
+      ...options,
+    };
+
+    const segments = Object.entries(params)
+      .filter(([, value]) => value !== undefined && value !== null)
+      .map(([key, value]) => `${key}=${value}`);
+
+    const opts = segments.join(",");
+    const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
+    const encodedSource = encodeURIComponent(sourceUrl);
+    return `${normalizedBase}/cdn-cgi/media/${opts}/${encodedSource}`;
+  }
   // Types for Cloudflare Stream Downloads API
   interface DownloadInfo {
     status: "inprogress" | "ready" | "error";
@@ -94,6 +126,21 @@ export namespace VideoStorage {
       account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
       meta: nextMetadata,
     });
+  }
+
+  export async function getVideoDetails(
+    videoId: string,
+  ): Promise<StreamVideo | null> {
+    const c = getCloudflareClient();
+    try {
+      const video = await c.stream.get(videoId, {
+        account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
+      });
+      return video as StreamVideo;
+    } catch (error) {
+      console.error("failed to fetch video details", { videoId, error });
+      return null;
+    }
   }
 
   /**

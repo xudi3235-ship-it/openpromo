@@ -219,6 +219,9 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       throw new Error("only single video upload is supported");
     }
     const video = videos[0];
+    const transformationOptions = await this.ensureVideoMeetsReelRequirements(
+      video.id,
+    );
     // 0. get video CDN url from our CF stream service
     const res = await VideoStorage.createMP4Download(video.id);
     console.log("// got video download url", res);
@@ -227,12 +230,15 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     if (!cdnUrl) {
       throw new Error("failed to get video CDN url");
     }
+    const transformedUrl =
+      VideoStorage.buildTransformationUrl(cdnUrl, transformationOptions) ??
+      cdnUrl;
     // 1. upload the video
     const response = await fetch(uploadSessionUrl, {
       method: "POST",
       headers: {
         Authorization: `OAuth ${accessToken}`,
-        file_url: cdnUrl,
+        file_url: transformedUrl,
       },
     });
 
@@ -251,6 +257,56 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       throw new Error(`Video upload failed: ${uploadRes.message}`);
     }
     return uploadRes;
+  }
+
+  async ensureVideoMeetsReelRequirements(
+    videoId: string,
+  ): Promise<VideoStorage.MediaTransformationOptions> {
+    const baseOptions: VideoStorage.MediaTransformationOptions = {
+      mode: "video",
+      width: 1080,
+      height: 1920,
+      fit: "cover",
+      audio: true,
+    };
+
+    const video = await VideoStorage.getVideoDetails(videoId);
+    if (!video) {
+      return baseOptions;
+    }
+
+    const durationSeconds =
+      typeof video.duration === "number"
+        ? video.duration
+        : Number(video.duration ?? 0);
+    if (Number.isFinite(durationSeconds)) {
+      if (durationSeconds < 3) {
+        throw new Error(
+          "Facebook Reels require videos at least 3 seconds long",
+        );
+      }
+      if (durationSeconds > 90) {
+        baseOptions.duration = "90s";
+      }
+    }
+
+    const width = video.input?.width ?? 0;
+    const height = video.input?.height ?? 0;
+    if (width > 0 && height > 0) {
+      if (height < 960 || width < 540) {
+        throw new Error(
+          "Facebook Reels require minimum resolution of 540x960 (portrait)",
+        );
+      }
+      const ratio = height / width;
+      if (ratio < 1.5) {
+        throw new Error(
+          "Facebook Reels require a vertical aspect ratio closer to 9:16",
+        );
+      }
+    }
+
+    return baseOptions;
   }
   async isVideoUploadComplete(videoId: string) {
     const status = await this.getVideoStatus(videoId);
