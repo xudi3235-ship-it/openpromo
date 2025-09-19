@@ -16,6 +16,11 @@ import {
   unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { fn } from "@core/utils/fn";
+import {
+  buildAttachmentMetadata,
+  extractAttachmentMetadata,
+  mergeAttachmentMetadata,
+} from "../attachments/metadata";
 import { EntUnifiedContentBase } from "./base";
 
 export class EntPendingContent extends EntUnifiedContentBase {
@@ -386,10 +391,8 @@ export class EntPendingContent extends EntUnifiedContentBase {
 
     const localAttachments = attachments.filter((attachment) => {
       if (!attachment?.id) return false;
-      const metadata = attachment.metadata as
-        | { localAssetDeleted?: boolean }
-        | undefined;
-      return metadata?.localAssetDeleted !== true;
+      const metadata = extractAttachmentMetadata(attachment.metadata);
+      return metadata.opLocalAssetDeleted !== true;
     });
 
     if (localAttachments.length === 0) return;
@@ -490,12 +493,12 @@ export class EntPendingContent extends EntUnifiedContentBase {
     const attachments = this.attachments();
     if (attachments.length === 0) return;
 
-    const storageMetadata = {
-      opWorkspaceId: this.data.workspaceId,
+    const storageMetadata = buildAttachmentMetadata({
+      opWorkspaceId: this.data.workspaceId ?? undefined,
       opContentId: this.data.id,
       opPlacement: this.data.placement,
       opStatus: this.data.publishingStatus,
-    } as Record<string, unknown>;
+    });
 
     const remoteMetadataTasks: Array<Promise<unknown>> = [];
 
@@ -512,15 +515,9 @@ export class EntPendingContent extends EntUnifiedContentBase {
         );
       }
 
-      const existingMetadata =
-        (attachment.metadata as Record<string, unknown> | undefined) ?? {};
-
       return {
         ...attachment,
-        metadata: {
-          ...existingMetadata,
-          ...storageMetadata,
-        },
+        metadata: mergeAttachmentMetadata(attachment.metadata, storageMetadata),
       } satisfies SharedAttachmentSpec;
     });
 

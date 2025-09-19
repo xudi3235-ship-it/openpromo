@@ -10,6 +10,10 @@ import { env } from "@core/utils/env";
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
+import {
+  buildAttachmentMetadata,
+  mergeAttachmentMetadata,
+} from "../attachments/metadata";
 import { facebookGraphRequest, resolveFacebookIdentity } from "./facebook/api";
 import { EntPendingContent } from "./pending-content";
 
@@ -369,64 +373,74 @@ export class EntFBFeedPendingContent extends EntPendingContent {
         const original = originalAttachments[index] ?? attachment;
 
         const updated = { ...attachment } as typeof attachment;
-        const nextMetadata = {
-          ...(attachment.metadata ?? {}),
-          facebookPostId: graphPostId,
-        } as Record<string, unknown>;
-        let changed = false;
+        const existingMetadata =
+          (attachment.metadata as Record<string, unknown> | undefined) ?? {};
+        const nextMetadata: Record<string, unknown> = { ...existingMetadata };
+        let fieldChanged = false;
         let localAssetReplaced = false;
+
+        if (nextMetadata.facebookPostId !== graphPostId) {
+          nextMetadata.facebookPostId = graphPostId;
+          fieldChanged = true;
+        }
 
         if (remote.imageSrc) {
           if (updated.thumbnailUrl !== remote.imageSrc) {
             updated.thumbnailUrl = remote.imageSrc;
-            changed = true;
+            fieldChanged = true;
           }
           if (updated.type === "photo") {
             if (updated.publicUrl !== remote.imageSrc) {
               updated.publicUrl = remote.imageSrc;
-              changed = true;
+              fieldChanged = true;
             }
             if (updated.presignedUrl) {
               updated.presignedUrl = undefined;
-              changed = true;
+              fieldChanged = true;
             }
             if (updated.s3Key) {
               updated.s3Key = undefined;
-              changed = true;
+              fieldChanged = true;
             }
-            nextMetadata.facebookImageUrl = remote.imageSrc;
+            if (nextMetadata.facebookImageUrl !== remote.imageSrc) {
+              nextMetadata.facebookImageUrl = remote.imageSrc;
+              fieldChanged = true;
+            }
             localAssetReplaced = true;
           } else if (updated.type === "video") {
-            nextMetadata.facebookVideoThumbnail = remote.imageSrc;
+            if (nextMetadata.facebookVideoThumbnail !== remote.imageSrc) {
+              nextMetadata.facebookVideoThumbnail = remote.imageSrc;
+              fieldChanged = true;
+            }
           }
         }
 
         if (remote.videoSource && updated.type === "video") {
           if (nextMetadata.facebookVideoSource !== remote.videoSource) {
             nextMetadata.facebookVideoSource = remote.videoSource;
-            changed = true;
+            fieldChanged = true;
           }
           localAssetReplaced = true;
         }
 
-        if (changed) {
-          if (localAssetReplaced) {
-            nextMetadata.localAssetDeleted = true;
-            attachmentsToDelete.push(original);
-          }
-          updated.metadata = nextMetadata;
-          return updated;
+        const opMetadata = localAssetReplaced
+          ? buildAttachmentMetadata({ opLocalAssetDeleted: true })
+          : buildAttachmentMetadata({});
+
+        if (localAssetReplaced) {
+          attachmentsToDelete.push(original);
         }
 
-        if (
-          JSON.stringify(nextMetadata) !==
-          JSON.stringify(attachment.metadata ?? {})
-        ) {
-          updated.metadata = nextMetadata;
-          return updated;
+        const finalMetadata = mergeAttachmentMetadata(nextMetadata, opMetadata);
+        const metadataChanged =
+          JSON.stringify(finalMetadata) !== JSON.stringify(existingMetadata);
+
+        if (!fieldChanged && !metadataChanged) {
+          return attachment;
         }
 
-        return attachment;
+        updated.metadata = finalMetadata;
+        return updated;
       },
       (spec) => {
         const firstRemoteImage = remoteMedia.find(

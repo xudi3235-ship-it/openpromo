@@ -10,6 +10,10 @@ import { Log } from "@core/utils/log";
 import type { ZodType } from "zod";
 import * as z from "zod";
 import {
+  buildAttachmentMetadata,
+  mergeAttachmentMetadata,
+} from "../attachments/metadata";
+import {
   instagramGraphRequest,
   resolveInstagramIdentity,
 } from "./instagram/api";
@@ -331,33 +335,46 @@ export class EntIGFeedPendingContent extends EntPendingContent {
         const original = originalAttachments[index] ?? attachment;
 
         const updated = { ...attachment } as typeof attachment;
-        const nextMetadata = {
-          ...(attachment.metadata ?? {}),
-          instagramMediaId: remote.mediaId,
-          instagramMediaType: remote.mediaType,
-        } as Record<string, unknown>;
-        let changed = false;
+        const existingMetadata =
+          (attachment.metadata as Record<string, unknown> | undefined) ?? {};
+        const nextMetadata: Record<string, unknown> = {
+          ...existingMetadata,
+        };
+        let fieldChanged = false;
         let localAssetReplaced = false;
+
+        if (nextMetadata.instagramMediaId !== remote.mediaId) {
+          nextMetadata.instagramMediaId = remote.mediaId;
+          fieldChanged = true;
+        }
+
+        if (nextMetadata.instagramMediaType !== remote.mediaType) {
+          nextMetadata.instagramMediaType = remote.mediaType;
+          fieldChanged = true;
+        }
 
         const remotePrimaryUrl = remote.videoUrl ?? remote.imageUrl;
 
         if (remotePrimaryUrl) {
           if (updated.publicUrl !== remotePrimaryUrl) {
             updated.publicUrl = remotePrimaryUrl;
-            changed = true;
+            fieldChanged = true;
             localAssetReplaced = true;
           }
           if (updated.presignedUrl) {
             updated.presignedUrl = undefined;
-            changed = true;
+            fieldChanged = true;
             localAssetReplaced = true;
           }
           if (updated.s3Key) {
             updated.s3Key = undefined;
-            changed = true;
+            fieldChanged = true;
             localAssetReplaced = true;
           }
-          nextMetadata.instagramMediaUrl = remotePrimaryUrl;
+          if (nextMetadata.instagramMediaUrl !== remotePrimaryUrl) {
+            nextMetadata.instagramMediaUrl = remotePrimaryUrl;
+            fieldChanged = true;
+          }
         }
 
         if (
@@ -365,29 +382,31 @@ export class EntIGFeedPendingContent extends EntPendingContent {
           updated.thumbnailUrl !== remote.thumbnailUrl
         ) {
           updated.thumbnailUrl = remote.thumbnailUrl;
-          changed = true;
-          nextMetadata.instagramThumbnailUrl = remote.thumbnailUrl;
+          fieldChanged = true;
+          if (nextMetadata.instagramThumbnailUrl !== remote.thumbnailUrl) {
+            nextMetadata.instagramThumbnailUrl = remote.thumbnailUrl;
+            fieldChanged = true;
+          }
         }
 
+        const opMetadata = localAssetReplaced
+          ? buildAttachmentMetadata({ opLocalAssetDeleted: true })
+          : buildAttachmentMetadata({});
+
         if (localAssetReplaced) {
-          nextMetadata.localAssetDeleted = true;
           attachmentsToDelete.push(original);
         }
 
-        if (changed) {
-          updated.metadata = nextMetadata;
-          return updated;
+        const finalMetadata = mergeAttachmentMetadata(nextMetadata, opMetadata);
+        const metadataChanged =
+          JSON.stringify(finalMetadata) !== JSON.stringify(existingMetadata);
+
+        if (!fieldChanged && !metadataChanged) {
+          return attachment;
         }
 
-        if (
-          JSON.stringify(nextMetadata) !==
-          JSON.stringify(attachment.metadata ?? {})
-        ) {
-          updated.metadata = nextMetadata;
-          return updated;
-        }
-
-        return attachment;
+        updated.metadata = finalMetadata;
+        return updated;
       },
       (spec) => {
         const primaryThumbnail =

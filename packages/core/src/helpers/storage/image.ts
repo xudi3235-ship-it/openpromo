@@ -1,3 +1,4 @@
+import { extractAttachmentMetadata } from "@core/domain/content/attachments/metadata";
 import { db, eq } from "@core/helpers/db";
 import { getCloudflareClient } from "@core/providers";
 import { unifiedContentTable } from "@core/schemas/content.sql";
@@ -192,10 +193,9 @@ export namespace ImageStorage {
     }
 
     const meta = await readExistingMetadata(imageId);
-    const contentId =
-      typeof meta.opContentId === "string" ? meta.opContentId : null;
-    const statusFromMeta =
-      typeof meta.opStatus === "string" ? meta.opStatus : null;
+    const opMeta = extractAttachmentMetadata(meta);
+    const contentId = opMeta.opContentId ?? null;
+    const statusFromMeta = opMeta.opStatus ?? null;
 
     if (statusFromMeta === "PUBLISHED") {
       return true;

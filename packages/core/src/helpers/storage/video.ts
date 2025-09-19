@@ -1,9 +1,16 @@
+import { extractAttachmentMetadata } from "@core/domain/content/attachments/metadata";
+import { db, eq } from "@core/helpers/db";
 import { getCloudflareClient } from "@core/providers";
+import { unifiedContentTable } from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
 import type {
   DirectUploadCreateParams,
   DirectUploadCreateResponse,
 } from "cloudflare/resources/stream/direct-upload.mjs";
+import type {
+  StreamListParams,
+  Video as StreamVideo,
+} from "cloudflare/resources/stream/stream.mjs";
 import { Actor } from "../actor";
 
 // using cloudflare stream service.
@@ -151,6 +158,15 @@ export namespace VideoStorage {
     });
   }
 
+  export async function batchDeleteVideos(): Promise<void> {
+    await iterateVideos(async (video) => {
+      if (!video.uid) return;
+      const safe = await isVideoSafeToDelete(video);
+      if (!safe) return;
+      await deleteVideo(video.uid);
+    });
+  }
+
   /**
    * Creates a downloadable M4A audio file for a video.
    */
@@ -243,5 +259,73 @@ export namespace VideoStorage {
     throw new Error(
       `Video ${videoId} Download not ready after ${maxAttempts} attempts`,
     );
+  }
+
+  async function iterateVideos(
+    handler: (video: StreamVideo) => Promise<void>,
+    params: Partial<Omit<StreamListParams, "account_id">> = {},
+    options: { perPage?: number } = {},
+  ): Promise<void> {
+    const c = getCloudflareClient();
+    const perPage = options.perPage ?? 100;
+    const requestParams = {
+      account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
+      ...params,
+    } as StreamListParams & { per_page?: number };
+
+    requestParams.per_page = perPage;
+
+    const iterator = c.stream.list(requestParams);
+
+    for await (const video of iterator) {
+      await handler(video as StreamVideo);
+    }
+  }
+
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+  async function isVideoSafeToDelete(video: StreamVideo): Promise<boolean> {
+    const videoId = video.uid;
+    if (!videoId) return false;
+
+    const uploadedAt = video.uploaded ? new Date(video.uploaded) : null;
+
+    let opMeta = extractAttachmentMetadata(video.meta);
+
+    if (Object.keys(opMeta).length === 0) {
+      const storedMeta = await readExistingMetadata(videoId);
+      opMeta = extractAttachmentMetadata(storedMeta);
+    }
+
+    const contentId = opMeta.opContentId ?? null;
+    const statusFromMeta = opMeta.opStatus ?? null;
+
+    if (!contentId) {
+      if (!uploadedAt) return false;
+      return Date.now() - uploadedAt.getTime() > ONE_DAY_MS;
+    }
+
+    const [content] = await db()
+      .select({ publishingStatus: unifiedContentTable.publishingStatus })
+      .from(unifiedContentTable)
+      .where(eq(unifiedContentTable.id, contentId))
+      .limit(1);
+
+    if (!content) {
+      return (
+        statusFromMeta === "PUBLISHED" ||
+        (uploadedAt ? Date.now() - uploadedAt.getTime() > ONE_DAY_MS : true)
+      );
+    }
+
+    if (content.publishingStatus === "PUBLISHED") {
+      return true;
+    }
+
+    if (statusFromMeta === "PUBLISHED") {
+      return true;
+    }
+
+    return false;
   }
 }

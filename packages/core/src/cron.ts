@@ -1,5 +1,6 @@
 import type { ApiEnv } from "./helpers/api-env";
 import { ImageStorage } from "./helpers/storage/image";
+import { VideoStorage } from "./helpers/storage/video";
 
 // entrypoint for worker's cron jobs
 export async function scheduledHandler(
@@ -20,6 +21,7 @@ export async function scheduledHandler(
 
 async function dailyJob() {
   await ImageStorage.batchDeleteImages();
+  await VideoStorage.batchDeleteVideos();
 
   console.log("daily task executed");
 }
