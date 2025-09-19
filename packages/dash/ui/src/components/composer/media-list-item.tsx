@@ -4,7 +4,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@openpromo/ui/components/button";
 import { cn } from "@openpromo/ui/lib/utils";
 import {
-  Eye,
   FileText,
   GripVertical,
   Loader2,
@@ -131,14 +130,6 @@ export function MediaListItem({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => onPreview(attachment, index)}
-            >
-              <Eye className="mr-1 h-4 w-4" /> Preview
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
               onClick={() => onEdit(attachment, index)}
               disabled={uploading}
             >
@@ -146,8 +137,9 @@ export function MediaListItem({
             </Button>
             <Button
               type="button"
-              variant="destructive"
+              variant="ghost"
               size="sm"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={() => onRemove(index)}
               disabled={uploading}
             >

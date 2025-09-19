@@ -29,7 +29,7 @@ export function MediaDetailDialog({
 }: MediaDetailDialogProps) {
   return (
     <Dialog open={!!selected} onOpenChange={onClose}>
-      <DialogContent className="max-w-10xl max-h-[95vh] p-0">
+      <DialogContent className="max-w-10xl max-h-[95vh] p-0 min-w-[90vw] w-full">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle>Media Details</DialogTitle>
         </DialogHeader>

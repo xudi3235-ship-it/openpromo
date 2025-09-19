@@ -30,7 +30,7 @@ export function MediaEditDialog({
 }: MediaEditDialogProps) {
   return (
     <Dialog open={!!editing} onOpenChange={onClose}>
-      <DialogContent className="md:min-h-[70vh] w-full">
+      <DialogContent className="md:min-h-[70vh] min-w-[90vw] w-full">
         <DialogHeader className="space-y-1">
           <DialogTitle>Edit media</DialogTitle>
           <p className="text-sm text-muted-foreground">
