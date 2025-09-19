@@ -1,30 +1,27 @@
 import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
-import { closestCenter, DndContext, DragOverlay } from "@dnd-kit/core";
-import {
-  horizontalListSortingStrategy,
-  SortableContext,
-} from "@dnd-kit/sortable";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@openpromo/ui/components/dialog";
+import { Label } from "@openpromo/ui/components/label";
+import { Switch } from "@openpromo/ui/components/switch";
 import { Upload } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Dropzone } from "@/components/dropzone";
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
 import { useComposerMediaUploader } from "@/hooks/useComposerMediaUploader";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerStore } from "@/stores/composer-store";
-import { DraggableMediaItem } from "./draggable-media-item";
+import { MediaCompactView } from "./media-compact-view";
+import { MediaDetailDialog } from "./media-detail-dialog";
+import { MediaEditDialog } from "./media-edit-dialog";
+import { MediaListView } from "./media-list-view";
 
 export function MediaUpload() {
   const { workspace } = useWorkspace();
   const { contentCreateData, removeAttachment, reorderAttachments } =
     useComposerStore();
 
-  const attachments = contentCreateData.base.attachments ?? [];
+  const attachments = useMemo(
+    () => contentCreateData.base.attachments ?? [],
+    [contentCreateData.base.attachments],
+  );
 
   const { renderAttachment } = useAttachmentRenderer({ attachments });
 
@@ -41,12 +38,19 @@ export function MediaUpload() {
     maxVideoSize: config.maxVideoSize,
   });
 
+  const [viewMode, setViewMode] = useState<"compact" | "list">("compact");
+
   const [selectedMedia, setSelectedMedia] = useState<{
     attachment: SharedAttachmentSpec;
     index: number;
   } | null>(null);
 
   const [dragOverlay, setDragOverlay] = useState<{
+    attachment: SharedAttachmentSpec;
+    index: number;
+  } | null>(null);
+
+  const [editingMedia, setEditingMedia] = useState<{
     attachment: SharedAttachmentSpec;
     index: number;
   } | null>(null);
@@ -71,6 +75,10 @@ export function MediaUpload() {
     index: number,
   ) => {
     setSelectedMedia({ attachment, index });
+  };
+
+  const handleMediaEdit = (attachment: SharedAttachmentSpec, index: number) => {
+    setEditingMedia({ attachment, index });
   };
 
   const handleDragStart = (event: import("@dnd-kit/core").DragStartEvent) => {
@@ -103,94 +111,110 @@ export function MediaUpload() {
   const isAtLimit = attachments.length >= config.maxFiles;
   const remainingSlots = Math.max(config.maxFiles - attachments.length, 0);
 
+  const dropzoneClassName =
+    viewMode === "compact"
+      ? attachments.length === 0
+        ? "flex-1 h-16"
+        : "flex-shrink-0 w-16 h-16"
+      : "w-full h-28";
+
+  const dropzoneWrapperClass =
+    viewMode === "compact" ? "flex gap-2" : "flex flex-col gap-3";
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h3 className="text-sm font-medium text-foreground">Media</h3>
-        {attachments.length > 0 && (
-          <span className="text-xs text-muted-foreground">
-            {attachments.length}/{config.maxFiles} files
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {attachments.length > 0 && (
+            <>
+              <span className="text-xs text-muted-foreground">
+                {attachments.length}/{config.maxFiles} files
+              </span>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="media-view-switch"
+                  checked={viewMode === "list"}
+                  onCheckedChange={(checked) =>
+                    setViewMode(checked ? "list" : "compact")
+                  }
+                  aria-label="Toggle list view"
+                />
+                <Label
+                  htmlFor="media-view-switch"
+                  className="text-xs text-muted-foreground"
+                >
+                  List view
+                </Label>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className={dropzoneWrapperClass}>
         <Dropzone
           accept={{ "image/*": [], "video/*": [] }}
           maxFiles={Math.max(remainingSlots, 1)}
           maxSize={Math.max(config.maxVideoSize, config.maxImageSize)}
           onDrop={handleFileDrop}
           disabled={isAtLimit}
-          className={`${
-            attachments.length === 0 ? "flex-1 h-16" : "flex-shrink-0 w-16 h-16"
-          } border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors rounded-lg ${
+          className={`${dropzoneClassName} border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors rounded-lg ${
             isAtLimit ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
-          <div className="flex items-center justify-center h-full text-muted-foreground gap-2">
-            {attachments.length === 0 ? (
+          <div className="flex h-full items-center justify-center gap-2 text-muted-foreground">
+            {viewMode === "compact" ? (
+              attachments.length === 0 ? (
+                <>
+                  <Upload className="h-4 w-4" />
+                  <span className="text-sm">Drop files or click to upload</span>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-1">
+                  <Upload className="h-3 w-3" />
+                  <span className="text-xs">{isAtLimit ? "Max" : "Add"}</span>
+                </div>
+              )
+            ) : (
               <>
                 <Upload className="h-4 w-4" />
-                <span className="text-sm">Drop files or click to upload</span>
+                <div className="text-left">
+                  <p className="text-sm font-medium">Upload media</p>
+                  <p className="text-xs text-muted-foreground">
+                    Drag files here or click to browse integrations.
+                  </p>
+                </div>
               </>
-            ) : (
-              <div className="flex flex-col items-center gap-1">
-                <Upload className="h-3 w-3" />
-                <span className="text-xs">{isAtLimit ? "Max" : "Add"}</span>
-              </div>
             )}
           </div>
         </Dropzone>
 
-        {attachments.length > 0 && (
-          <div className="flex-1 overflow-x-auto">
-            <DndContext
-              collisionDetection={closestCenter}
+        {attachments.length > 0 &&
+          (viewMode === "compact" ? (
+            <MediaCompactView
+              attachments={attachments}
+              getStableKey={getStableKey}
+              dragOverlay={dragOverlay}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={attachments.map((attachment, index) =>
-                  getStableKey(attachment, index),
-                )}
-                strategy={horizontalListSortingStrategy}
-              >
-                <div className="flex gap-2">
-                  {attachments.map((attachment, index) => {
-                    const stableKey = getStableKey(attachment, index);
-
-                    return (
-                      <DraggableMediaItem
-                        key={stableKey}
-                        id={stableKey}
-                        attachment={attachment}
-                        index={index}
-                        onRemove={handleRemove}
-                        onClick={handleMediaClick}
-                        renderAttachment={renderAttachment}
-                      />
-                    );
-                  })}
-                </div>
-              </SortableContext>
-
-              <DragOverlay>
-                {dragOverlay && (
-                  <div className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted opacity-80">
-                    {renderAttachment(
-                      dragOverlay.attachment,
-                      "w-full h-full object-cover",
-                    ) || (
-                      <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                        No preview
-                      </div>
-                    )}
-                  </div>
-                )}
-              </DragOverlay>
-            </DndContext>
-          </div>
-        )}
+              onRemove={handleRemove}
+              onPreview={handleMediaClick}
+              renderAttachment={renderAttachment}
+            />
+          ) : (
+            <MediaListView
+              attachments={attachments}
+              getStableKey={getStableKey}
+              dragOverlay={dragOverlay}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onRemove={handleRemove}
+              onPreview={handleMediaClick}
+              onEdit={handleMediaEdit}
+              renderAttachment={renderAttachment}
+            />
+          ))}
       </div>
 
       {attachments.length === 0 && (
@@ -201,80 +225,17 @@ export function MediaUpload() {
         </p>
       )}
 
-      <Dialog
-        open={!!selectedMedia}
-        onOpenChange={() => setSelectedMedia(null)}
-      >
-        <DialogContent className="max-w-6xl max-h-[95vh] p-0">
-          <DialogHeader className="p-4 pb-2">
-            <DialogTitle>Media Details</DialogTitle>
-          </DialogHeader>
-          {selectedMedia && (
-            <div className="flex flex-col overflow-hidden">
-              <div className="flex-1 flex items-center justify-center p-4 bg-muted/20">
-                {renderAttachment(
-                  selectedMedia.attachment,
-                  "max-h-[70vh] w-auto",
-                  true,
-                )}
-              </div>
+      <MediaDetailDialog
+        selected={selectedMedia}
+        onClose={() => setSelectedMedia(null)}
+        renderAttachment={renderAttachment}
+      />
 
-              {selectedMedia.attachment.file && (
-                <div className="border-t p-6 space-y-3">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Filename:</span>
-                      <p className="font-medium">
-                        {selectedMedia.attachment.file.name}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">File size:</span>
-                      <p className="font-medium">
-                        {(
-                          selectedMedia.attachment.file.size /
-                          1024 /
-                          1024
-                        ).toFixed(2)}{" "}
-                        MB
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Type:</span>
-                      <p className="font-medium">
-                        {selectedMedia.attachment.file.type}
-                      </p>
-                    </div>
-                    {selectedMedia.attachment.metadata?.aspectRatio && (
-                      <div>
-                        <span className="text-muted-foreground">
-                          Aspect ratio:
-                        </span>
-                        <p className="font-medium">
-                          {
-                            selectedMedia.attachment.metadata
-                              .aspectRatio as string
-                          }
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {!selectedMedia.attachment.file &&
-                selectedMedia.attachment.metadata?.previewIframeUrl && (
-                  <div className="border-t p-4">
-                    <p className="text-sm text-muted-foreground text-center">
-                      {selectedMedia.attachment.metadata?.originalFilename ||
-                        "Uploaded Video"}
-                    </p>
-                  </div>
-                )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <MediaEditDialog
+        editing={editingMedia}
+        onClose={() => setEditingMedia(null)}
+        renderAttachment={renderAttachment}
+      />
     </div>
   );
 }
