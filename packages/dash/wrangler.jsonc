@@ -42,6 +42,13 @@
       "image": "../core/src/containers/Dockerfile"
     }
   ],
+  "r2_buckets": [
+    {
+      "bucket_name": "openpromo-bucket",
+      "binding": "Bucket",
+      "remote": true
+    }
+  ],
   "triggers": {
     "crons": [
       // daily
@@ -97,6 +104,13 @@
           "max_instances": 2,
           "class_name": "ContainerBackend",
           "image": "../core/src/containers/Dockerfile"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "bucket_name": "openpromo-bucket",
+          "binding": "Bucket",
+          "remote": true
         }
       ],
       // no need to duplicate DO migrations

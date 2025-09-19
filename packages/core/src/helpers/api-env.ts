@@ -16,6 +16,7 @@ export type ApiEnv = {
     WORKFLOW: Workflow<PublishWorkflowParams>;
     WorkspacePusher: DurableObjectNamespace<WorkspacePusher>;
     ContainerBackend: DurableObjectNamespace<ContainerBackend>;
+    Bucket: R2Bucket;
   };
 };
 
