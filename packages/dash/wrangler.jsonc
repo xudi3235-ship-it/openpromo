@@ -52,13 +52,17 @@
   "migrations": [
     {
       "tag": "v3",
-      "new_sqlite_classes": ["WorkspacePusher", "ContainerBackend"],
+      "new_sqlite_classes": ["WorkspacePusher"],
       "renamed_classes": [
         // {
         //   "from": "Scheduler",
         //   "to": "WorkspacePusher"
         // }
       ]
+    },
+    {
+      "tag": "v4",
+      "new_sqlite_classes": ["ContainerBackend"]
     }
   ],
   "env": {
@@ -95,18 +99,7 @@
           "image": "../core/src/containers/Dockerfile"
         }
       ],
-      "migrations": [
-        {
-          "tag": "v3",
-          "new_sqlite_classes": ["WorkspacePusher", "ContainerBackend"],
-          "renamed_classes": [
-            // {
-            //   "from": "Scheduler",
-            //   "to": "WorkspacePusher"
-            // }
-          ]
-        }
-      ],
+      // no need to duplicate DO migrations
       "workflows": [
         {
           "class_name": "PendingContentPublishWorkflow",
