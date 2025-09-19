@@ -26,7 +26,7 @@ export function MediaUpload() {
 
   const attachments = contentCreateData.base.attachments ?? [];
 
-  const { renderAttachment } = useAttachmentRenderer();
+  const { renderAttachment } = useAttachmentRenderer({ attachments });
 
   const config = {
     maxFiles: 10,

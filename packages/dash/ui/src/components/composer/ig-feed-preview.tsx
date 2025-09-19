@@ -17,13 +17,11 @@ import { useComposerPreview } from "@/stores/composer-preview-store";
 export function IGFeedPreview() {
   const { workspace } = useWorkspace();
   const previewData = useComposerPreview();
-  const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer();
-  const {
+  const attachments = previewData.attachments;
+  const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
     attachments,
-    message: caption,
-    profilePicUrl,
-    getInstagramUsername,
-  } = previewData;
+  });
+  const { message: caption, profilePicUrl, getInstagramUsername } = previewData;
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // Navigation functions

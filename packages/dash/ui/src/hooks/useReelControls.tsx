@@ -4,8 +4,10 @@ import { useComposerPreview } from "@/stores/composer-preview-store";
 
 export function useReelControls() {
   const previewData = useComposerPreview();
-  const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer();
   const attachments = previewData.attachments;
+  const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
+    attachments,
+  });
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);

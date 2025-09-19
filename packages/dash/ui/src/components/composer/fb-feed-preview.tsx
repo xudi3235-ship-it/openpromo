@@ -16,8 +16,11 @@ import { useComposerPreview } from "@/stores/composer-preview-store";
 export function FBFeedPreview() {
   const { workspace } = useWorkspace();
   const previewData = useComposerPreview();
-  const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer();
-  const { attachments, message, profilePicUrl, getDisplayName } = previewData;
+  const attachments = previewData.attachments;
+  const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
+    attachments,
+  });
+  const { message, profilePicUrl, getDisplayName } = previewData;
 
   return (
     <div className="border rounded-lg p-3 bg-background">
