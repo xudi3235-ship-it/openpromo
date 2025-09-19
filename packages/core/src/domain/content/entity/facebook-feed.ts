@@ -3,7 +3,6 @@ import { VideoStorage } from "@core/helpers/storage/video";
 import {
   FBFeedPlacementSpec,
   type PlacementSpec,
-  type SharedAttachmentSpec,
   type UnifiedContentSelect,
 } from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
@@ -361,17 +360,12 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       return;
     }
 
-    const attachmentsToDelete: SharedAttachmentSpec[] = [];
-    const originalAttachments = localAttachments.map((attachment) => ({
-      ...attachment,
-    }));
+    const remoteMetadataTasks: Array<Promise<unknown>> = [];
 
     const didUpdate = await this.updateAttachments(
       (attachment, index) => {
         const remote = remoteMedia[index];
         if (!remote) return attachment;
-        const original = originalAttachments[index] ?? attachment;
-
         const updated = { ...attachment } as typeof attachment;
         const existingMetadata =
           (attachment.metadata as Record<string, unknown> | undefined) ?? {};
@@ -423,12 +417,23 @@ export class EntFBFeedPendingContent extends EntPendingContent {
           localAssetReplaced = true;
         }
 
-        const opMetadata = localAssetReplaced
-          ? buildAttachmentMetadata({ opLocalAssetDeleted: true })
-          : buildAttachmentMetadata({});
+        const opMetadata = buildAttachmentMetadata({
+          opLocalAssetDeleted: localAssetReplaced ? true : undefined,
+          opRemotePlatform: "facebook",
+          opRemoteAssetId: graphPostId,
+          opUpdatedAt: new Date().toISOString(),
+        });
 
-        if (localAssetReplaced) {
-          attachmentsToDelete.push(original);
+        if (localAssetReplaced && attachment.id) {
+          if (attachment.type === "photo") {
+            remoteMetadataTasks.push(
+              ImageStorage.setMetadata(attachment.id, opMetadata),
+            );
+          } else if (attachment.type === "video") {
+            remoteMetadataTasks.push(
+              VideoStorage.setMetadata(attachment.id, opMetadata),
+            );
+          }
         }
 
         const finalMetadata = mergeAttachmentMetadata(nextMetadata, opMetadata);
@@ -463,8 +468,8 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       return;
     }
 
-    if (attachmentsToDelete.length > 0) {
-      await this.deleteAttachmentAssets(attachmentsToDelete);
+    if (remoteMetadataTasks.length > 0) {
+      await Promise.all(remoteMetadataTasks);
     }
 
     const parsed = FBFeedPlacementSpec.safeParse(this.data.placementSpec);

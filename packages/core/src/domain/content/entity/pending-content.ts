@@ -361,6 +361,32 @@ export class EntPendingContent extends EntUnifiedContentBase {
     if (!newOne) throw new Error("failed to mark content as published");
     this.data = newOne;
 
+    const statusMetadata = buildAttachmentMetadata({ opStatus: "PUBLISHED" });
+    const remoteMetadataTasks: Array<Promise<unknown>> = [];
+
+    await this.updateAttachments((attachment) => {
+      if (!attachment?.id) return attachment;
+
+      if (attachment.type === "photo") {
+        remoteMetadataTasks.push(
+          ImageStorage.setMetadata(attachment.id, statusMetadata),
+        );
+      } else if (attachment.type === "video") {
+        remoteMetadataTasks.push(
+          VideoStorage.setMetadata(attachment.id, statusMetadata),
+        );
+      }
+
+      return {
+        ...attachment,
+        metadata: mergeAttachmentMetadata(attachment.metadata, statusMetadata),
+      } satisfies SharedAttachmentSpec;
+    });
+
+    if (remoteMetadataTasks.length > 0) {
+      await Promise.all(remoteMetadataTasks);
+    }
+
     if (!groupID) return;
     // if group is now empty, delete it
     const [{ count: contentCount }] = await db()
@@ -396,7 +422,6 @@ export class EntPendingContent extends EntUnifiedContentBase {
     });
 
     if (localAttachments.length === 0) return;
-
     await this.deleteAttachmentAssets(localAttachments);
   }
 

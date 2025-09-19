@@ -1,8 +1,9 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
+import { ImageStorage } from "@core/helpers/storage/image";
+import { VideoStorage } from "@core/helpers/storage/video";
 import {
   IGFeedPlacementSpec,
   type PlacementSpec,
-  type SharedAttachmentSpec,
   type UnifiedContentSelect,
 } from "@core/schemas/content.sql";
 import { onlyOrThrow } from "@core/utils/common";
@@ -322,18 +323,13 @@ export class EntIGFeedPendingContent extends EntPendingContent {
       };
     });
 
-    const attachmentsToDelete: SharedAttachmentSpec[] = [];
-    const originalAttachments = localAttachments.map((attachment) => ({
-      ...attachment,
-    }));
+    const remoteMetadataTasks: Array<Promise<unknown>> = [];
 
     const didUpdate = await this.updateAttachments(
       (attachment, index) => {
         const remote =
           remoteRecords[index] ?? remoteRecords[remoteRecords.length - 1];
         if (!remote) return attachment;
-        const original = originalAttachments[index] ?? attachment;
-
         const updated = { ...attachment } as typeof attachment;
         const existingMetadata =
           (attachment.metadata as Record<string, unknown> | undefined) ?? {};
@@ -389,12 +385,23 @@ export class EntIGFeedPendingContent extends EntPendingContent {
           }
         }
 
-        const opMetadata = localAssetReplaced
-          ? buildAttachmentMetadata({ opLocalAssetDeleted: true })
-          : buildAttachmentMetadata({});
+        const opMetadata = buildAttachmentMetadata({
+          opLocalAssetDeleted: localAssetReplaced ? true : undefined,
+          opRemotePlatform: "instagram",
+          opRemoteAssetId: remote.mediaId,
+          opUpdatedAt: new Date().toISOString(),
+        });
 
-        if (localAssetReplaced) {
-          attachmentsToDelete.push(original);
+        if (localAssetReplaced && attachment.id) {
+          if (attachment.type === "photo") {
+            remoteMetadataTasks.push(
+              ImageStorage.setMetadata(attachment.id, opMetadata),
+            );
+          } else if (attachment.type === "video") {
+            remoteMetadataTasks.push(
+              VideoStorage.setMetadata(attachment.id, opMetadata),
+            );
+          }
         }
 
         const finalMetadata = mergeAttachmentMetadata(nextMetadata, opMetadata);
@@ -430,8 +437,8 @@ export class EntIGFeedPendingContent extends EntPendingContent {
       return;
     }
 
-    if (attachmentsToDelete.length > 0) {
-      await this.deleteAttachmentAssets(attachmentsToDelete);
+    if (remoteMetadataTasks.length > 0) {
+      await Promise.all(remoteMetadataTasks);
     }
 
     const parsed = IGFeedPlacementSpec.safeParse(this.data.placementSpec);
