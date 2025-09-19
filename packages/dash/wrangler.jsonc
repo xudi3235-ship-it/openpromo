@@ -34,7 +34,7 @@
   "triggers": {
     "crons": [
       // daily
-      "* * * * *"
+      "0 0 * * *"
     ]
   },
   // required for DO
@@ -95,7 +95,7 @@
       "triggers": {
         "crons": [
           // daily
-          "* * * * *"
+          "0 0 * * *"
         ]
       }
     },
