@@ -1,8 +1,8 @@
-import { AccountSelection } from "@/components/composer/account-selection";
-import { ComposerFooter } from "@/components/composer/composer-footer";
-import { MediaUpload } from "@/components/composer/media-upload";
-import { PostDetails } from "@/components/composer/post-details";
-import { SchedulingOptions } from "@/components/composer/scheduling-options";
+import { AccountSelection } from "@/components/composer/controls/account-selection";
+import { PostDetails } from "@/components/composer/controls/post-details";
+import { SchedulingOptions } from "@/components/composer/controls/scheduling-options";
+import { ComposerFooter } from "@/components/composer/layout/composer-footer";
+import { MediaUpload } from "@/components/composer/media/media-upload";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 
 export function ComposerLeft() {

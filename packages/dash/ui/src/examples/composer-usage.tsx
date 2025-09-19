@@ -1,5 +1,5 @@
-import { ComposerLeft } from "@/components/composer/composer-left";
-import { ComposerRight } from "@/components/composer/composer-right";
+import { ComposerLeft } from "@/components/composer/layout/composer-left";
+import { ComposerRight } from "@/components/composer/layout/composer-right";
 import type { ConnectedAccount } from "@/lib/hono-client";
 import { ComposerProvider } from "@/providers/composer-provider";
 import { useComposerStore } from "@/stores/composer-store";

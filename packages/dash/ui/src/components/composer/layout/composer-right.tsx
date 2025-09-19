@@ -1,10 +1,10 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Grid3X3, List } from "lucide-react";
 import { useState } from "react";
-import { FBFeedPreview } from "@/components/composer/fb-feed-preview";
-import { FBReelPreview } from "@/components/composer/fb-reel-preview";
-import { IGFeedPreview } from "@/components/composer/ig-feed-preview";
-import { IGReelPreview } from "@/components/composer/ig-reel-preview";
+import { FBFeedPreview } from "@/components/composer/preview/fb-feed-preview";
+import { FBReelPreview } from "@/components/composer/preview/fb-reel-preview";
+import { IGFeedPreview } from "@/components/composer/preview/ig-feed-preview";
+import { IGReelPreview } from "@/components/composer/preview/ig-reel-preview";
 import { useComposerStore } from "@/stores/composer-store";
 
 type ViewMode = "collage" | "list";

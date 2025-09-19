@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ComposerSkeleton } from "@/components/composer/composer-skeleton";
-import { ResizableComposer } from "@/components/composer/resizable-composer";
+import { ComposerSkeleton } from "@/components/composer/layout/composer-skeleton";
+import { ResizableComposer } from "@/components/composer/layout/resizable-composer";
 import { useConnectedAccounts } from "@/queries/connected-account";
 
 export const Route = createFileRoute(

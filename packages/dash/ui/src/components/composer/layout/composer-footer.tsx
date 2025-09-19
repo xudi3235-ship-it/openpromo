@@ -2,12 +2,12 @@ import { Button } from "@openpromo/ui/components/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ValidationErrors } from "@/components/composer/controls/validation-errors";
+import { PublishingOverlay } from "@/components/composer/layout/publishing-overlay";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
 import { useComposerStore } from "@/stores/composer-store";
-import { PublishingOverlay } from "./publishing-overlay";
-import { ValidationErrors } from "./validation-errors";
 
 function useContentCreateMutation({
   onSuccess,

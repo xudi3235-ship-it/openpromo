@@ -1,6 +1,6 @@
 import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { StreamVideoPreview } from "@/components/composer/stream-video-preview";
+import { StreamVideoPreview } from "@/components/composer/media/stream-video-preview";
 
 interface AttachmentRendererOptions {
   attachments?: SharedAttachmentSpec[];

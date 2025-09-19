@@ -1,6 +1,6 @@
 import { File, Play, Video } from "lucide-react";
 import { memo } from "react";
-import { StreamVideoPreview } from "@/components/composer/stream-video-preview";
+import { StreamVideoPreview } from "@/components/composer/media/stream-video-preview";
 import type { MediaItem } from "./types";
 
 // Memoized video player component to prevent flicker
