@@ -40,10 +40,44 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
     matchEntity(entity, {
       content: (contentEntity) => {
         const content = contentEntity.entity;
-        setDeleteTitle("Delete Content");
-        setDeleteDescription(
-          "Are you sure you want to delete this content? This action cannot be undone.",
-        );
+        const isDraft = content.publishingStatus === "DRAFT";
+        const isScheduled = content.publishingStatus === "SCHEDULED";
+        const isPublished = content.publishingStatus === "PUBLISHED";
+
+        const titleBase =
+          content.placement === "IG_FEED"
+            ? "Delete Instagram Post"
+            : content.placement === "FB_FEED"
+              ? "Delete Facebook Post"
+              : "Delete Content";
+
+        if (isPublished) {
+          setDeleteTitle(titleBase);
+          if (content.placement === "IG_FEED") {
+            setDeleteDescription(
+              "This content has already been published to Instagram. Deleting it will remove it from OpenPromo, but it will remain visible on Instagram.",
+            );
+          } else {
+            setDeleteDescription(
+              "This content has already been published. Deleting it will remove it from OpenPromo and attempt to remove the post from the connected platform.",
+            );
+          }
+        } else if (isScheduled) {
+          setDeleteTitle(`${titleBase} (Scheduled)`);
+          setDeleteDescription(
+            "This content is scheduled to publish. Deleting it will cancel the upcoming publish and remove it from OpenPromo.",
+          );
+        } else if (isDraft) {
+          setDeleteTitle(`${titleBase} (Draft)`);
+          setDeleteDescription(
+            "This draft will be removed from OpenPromo. You’ll need to recreate it if you change your mind.",
+          );
+        } else {
+          setDeleteTitle(titleBase);
+          setDeleteDescription(
+            "Are you sure you want to delete this content? This action cannot be undone.",
+          );
+        }
         setDeleteAction(() => () => deleteContent.mutate(content.id));
         setShowDeleteConfirm(true);
       },
