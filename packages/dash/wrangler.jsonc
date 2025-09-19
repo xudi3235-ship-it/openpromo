@@ -31,6 +31,12 @@
       }
     ]
   },
+  "triggers": {
+    "crons": [
+      // daily
+      "* * * * *"
+    ]
+  },
   // required for DO
   "migrations": [
     {
@@ -85,7 +91,13 @@
           "binding": "WORKFLOW",
           "name": "PendingContentPublishWorkflow"
         }
-      ]
+      ],
+      "triggers": {
+        "crons": [
+          // daily
+          "* * * * *"
+        ]
+      }
     },
     "production": {
       "name": "openpromo-dash-production",

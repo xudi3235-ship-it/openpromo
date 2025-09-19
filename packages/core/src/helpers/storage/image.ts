@@ -1,4 +1,6 @@
+import { db, eq } from "@core/helpers/db";
 import { getCloudflareClient } from "@core/providers";
+import { unifiedContentTable } from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
 import type {
   Image,
@@ -128,5 +130,91 @@ export namespace ImageStorage {
       account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
       metadata: JSON.stringify(nextMetadata),
     });
+  }
+  export async function deleteImagesPerWorkspace(
+    workspaceID: string,
+  ): Promise<void> {
+    await iterateImages({ creator: workspaceID }, async (img) => {
+      if (!img.id) return;
+      const safe = await isImageSafeToDelete(img.id);
+      if (!safe) return;
+      await deleteImage(img.id);
+    });
+  }
+  export async function batchDeleteImages(): Promise<void> {
+    await iterateImages({}, async (img) => {
+      if (!img.id) return;
+      const safe = await isImageSafeToDelete(img.id);
+      if (!safe) return;
+      await deleteImage(img.id);
+    });
+  }
+  // ------------ internal ------------ //
+  async function iterateImages(
+    params: Partial<ListParams>,
+    handler: (img: Image) => Promise<void>,
+    options: { perPage?: number } = {},
+  ): Promise<void> {
+    const perPage = options.perPage ?? 50;
+    let nextToken: string | null | undefined;
+
+    while (true) {
+      const { images, continuation_token } = await list({
+        ...params,
+        per_page: perPage,
+        continuation_token: nextToken,
+      });
+
+      if (!images || images.length === 0) {
+        break;
+      }
+
+      for (const img of images) {
+        await handler(img);
+      }
+
+      if (!continuation_token) {
+        break;
+      }
+      nextToken = continuation_token;
+    }
+  }
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+  async function isImageSafeToDelete(imageId: string): Promise<boolean> {
+    const image = await get(imageId);
+
+    const uploadedAt = image.uploaded ? new Date(image.uploaded) : null;
+
+    if (!image.creator) {
+      if (!uploadedAt) return true;
+      return Date.now() - uploadedAt.getTime() > ONE_DAY_MS;
+    }
+
+    const meta = await readExistingMetadata(imageId);
+    const contentId =
+      typeof meta.opContentId === "string" ? meta.opContentId : null;
+    const statusFromMeta =
+      typeof meta.opStatus === "string" ? meta.opStatus : null;
+
+    if (statusFromMeta === "PUBLISHED") {
+      return true;
+    }
+
+    if (!contentId) {
+      return false;
+    }
+
+    const [content] = await db()
+      .select({ publishingStatus: unifiedContentTable.publishingStatus })
+      .from(unifiedContentTable)
+      .where(eq(unifiedContentTable.id, contentId))
+      .limit(1);
+
+    if (!content) {
+      return true;
+    }
+
+    return content.publishingStatus === "PUBLISHED";
   }
 }
