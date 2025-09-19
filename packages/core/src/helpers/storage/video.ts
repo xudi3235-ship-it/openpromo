@@ -25,13 +25,11 @@ export namespace VideoStorage {
     audio?: boolean;
   };
 
-  export function buildTransformationUrl(
+  export function buildTransformationUrl_NOT_READY(
     sourceUrl: string,
     options: MediaTransformationOptions = {},
   ): string | null {
-    const base = env.CLOUDFLARE_MEDIA_TRANSFORM_BASE_URL;
-    if (!base) return null;
-
+    const base = "TODO: replace this to refer to cloudflare transform doc";
     const params: Record<string, string | number | boolean> = {
       mode: "video",
       audio: true,
