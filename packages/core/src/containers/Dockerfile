@@ -11,8 +11,9 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags='-s -w' -o /out/server ./main.go
 
-FROM gcr.io/distroless/static-debian12:latest
+FROM alpine:3.20
 WORKDIR /app
+RUN apk add --no-cache ffmpeg
 COPY --from=build /out/server ./server
 
 EXPOSE 8080

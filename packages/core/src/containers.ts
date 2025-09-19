@@ -5,6 +5,7 @@ export class ContainerBackend extends Container {
   sleepAfter = "10s";
   envVars = {
     MESSAGE: "I was passed in via the container class!",
+    ...process.env,
   };
 
   override onStart() {
