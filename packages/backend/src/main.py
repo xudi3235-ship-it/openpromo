@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Literal
 import modal
 import requests
@@ -39,7 +40,24 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from scalar_fastapi import get_scalar_api_reference
 from pydantic import BaseModel
-
+from fastapi.openapi.utils import get_openapi
+def custom_openapi():
+    if fapi.openapi_schema:
+        return fapi.openapi_schema
+    schema = get_openapi(
+        title=fapi.title,
+        version=fapi.version,
+        description=fapi.description,
+        routes=fapi.routes,
+    )
+    schema.setdefault("components", {}).setdefault("securitySchemes", {}).update({
+        "ModalKey": {"type": "apiKey", "in": "header", "name": "Modal-Key"},
+        "ModalSecret": {"type": "apiKey", "in": "header", "name": "Modal-Secret"},
+    })
+    # Apply both headers required globally
+    schema["security"] = [{"ModalKey": [], "ModalSecret": []}]
+    fapi.openapi_schema = schema
+    return schema
 
 def s3_client():
     import boto3
@@ -65,6 +83,7 @@ fapi = FastAPI(
         {"url": "http://localhost:8000", "description": "Local development server"},
     ],
 )
+fapi.openapi = custom_openapi
 
 
 class EchoResponse(BaseModel):
@@ -100,8 +119,29 @@ class VideoEditRequest(BaseModel):
 class VideoEditResponse(BaseModel):
     output_url: str
 
+# ---------- Typed job system additions ----------
+# Per-function typed submit request
+class EditVideoJobSubmitRequest(BaseModel):
+    fn: Literal["edit_video"]
+    data: VideoEditRequest
 
-@fapi.get("/video/edit")
+# Union of all job submit request types (extend with | AnotherJobSubmitRequest)
+JobSubmitRequest = EditVideoJobSubmitRequest  # type alias for FastAPI
+
+class JobSubmitResponse(BaseModel):
+    call_id: str
+
+# Result data union (extend later if more functions added)
+JobResultData = VideoEditResponse
+
+class JobResultResponse(BaseModel):
+    fn: str
+    status: Literal["pending", "succeeded", "failed"]
+    result: JobResultData | None = None
+    error: str | None = None
+
+
+@app.function()
 async def edit_video(req: VideoEditRequest) -> VideoEditResponse:
     # 1. download video
     import json
@@ -202,26 +242,47 @@ async def edit_video(req: VideoEditRequest) -> VideoEditResponse:
     return VideoEditResponse(output_url=presigned_url)
 
 
-# wip stuff for async job process
 @fapi.post("/job/submit")
-async def submit_job_endpoint(data):
-    process_job = modal.Function.from_name("openpromo-backend", "process_job")
-    call = process_job.spawn(data)
-    return {"call_id": call.object_id}
+async def submit_job(req: JobSubmitRequest) -> JobSubmitResponse:
+    # req.fn is now a typed Literal; req.data is a typed model
+    f = modal.Function.from_name('openpromo-backend', req.fn)
+    # Pass the inner data model as dict so the target function receives expected fields
+    call = f.spawn(req.data)
+    return JobSubmitResponse(call_id=f"{req.fn}:{call.object_id}")
+
+
+FUNCTION_RESPONSE_MODELS: dict[str, type[BaseModel]] = {
+    "edit_video": VideoEditResponse,
+}
+
 
 
 @fapi.get("/job/result/{call_id}")
-async def get_job_result_endpoint(call_id: str):
-    function_call = modal.FunctionCall.from_id(call_id)
+async def get_job_result_endpoint(call_id: str) -> JobResultResponse:
+    fn, _, call_id = call_id.partition(":")
+    fc = modal.FunctionCall.from_id(call_id)
+    model = FUNCTION_RESPONSE_MODELS.get(fn)
+    if not model:
+        return JSONResponse(content=f"Unknown function name: {fn}", status_code=400)
     try:
-        result = function_call.get(timeout=0)
+        result = fc.get(timeout=0)
     except modal.exception.OutputExpiredError:
         return JSONResponse(content="", status_code=404)
     except TimeoutError:
-        return JSONResponse(content="", status_code=202)
+        return JobResultResponse(fn=fn, status="pending")
+    except Exception as e:
+        return JobResultResponse(fn=fn, status="failed", error=str(e))
 
-    return result
-
+    if isinstance(result, dict):
+        try:
+            parsed = model(**result)
+        except Exception as e:
+            return JobResultResponse(fn=fn, status="failed", error=f"Parse error: {e}")
+    elif isinstance(result, model):
+        parsed = result
+    else:
+        return JobResultResponse(fn=fn, status="failed", error="Unexpected result payload type")
+    return JobResultResponse(fn=fn, status="succeeded", result=parsed)
 
 @fapi.get("/scalar", include_in_schema=False)
 def scalar_docs():
@@ -238,12 +299,3 @@ def scalar_docs():
 def api():
     return fapi
 
-
-@app.function(image=image)
-def process_job(command: list[str]) -> str:
-    import subprocess
-
-    result = subprocess.run(command, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise RuntimeError(f"ffmpeg command failed: {result.stderr}")
-    return result.stdout
