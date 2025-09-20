@@ -143,9 +143,6 @@ importers:
         specifier: 'catalog:'
         version: 4.1.0
     devDependencies:
-      '@bufbuild/protobuf':
-        specifier: ^2.9.0
-        version: 2.9.0
       '@types/facebook-nodejs-business-sdk':
         specifier: ^22.0.0
         version: 22.0.0
@@ -1328,9 +1325,6 @@ packages:
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [win32]
-
-  '@bufbuild/protobuf@2.9.0':
-    resolution: {integrity: sha512-rnJenoStJ8nvmt9Gzye8nkYd6V22xUAnu4086ER7h1zJ508vStko4pMvDeQ446ilDTFpV5wnoc5YS7XvMwwMqA==}
 
   '@capsizecss/unpack@2.4.0':
     resolution: {integrity: sha512-GrSU71meACqcmIUxPYOJvGKF0yryjN/L1aCuE9DViCTJI7bfkjgYDPD1zbNDcINJwSSP6UaBZY9GAbYDO7re0Q==}
@@ -9176,8 +9170,6 @@ snapshots:
 
   '@biomejs/cli-win32-x64@2.2.2':
     optional: true
-
-  '@bufbuild/protobuf@2.9.0': {}
 
   '@capsizecss/unpack@2.4.0':
     dependencies:
