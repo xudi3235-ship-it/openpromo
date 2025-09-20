@@ -290,6 +290,11 @@ def scalar_docs():
         openapi_url=fapi.openapi_url,
         title=fapi.title + " - Scalar",
     )
+@app.local_entrypoint()
+def sdk():
+    import json
+    with open('openapi.json', 'w') as f:
+        json.dump(fapi.openapi(), f)
 
 
 # ---------- Modal app ----------

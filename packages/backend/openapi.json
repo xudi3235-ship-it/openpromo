@@ -1,0 +1,215 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenPromo Backend API",
+    "description": "Backend API for OpenPromo",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Echo",
+        "operationId": "echo__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EchoResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job/submit": {
+      "post": {
+        "summary": "Submit Job",
+        "operationId": "submit_job_job_submit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditVideoJobSubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JobSubmitResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job/result/{call_id}": {
+      "get": {
+        "summary": "Get Job Result Endpoint",
+        "operationId": "get_job_result_endpoint_job_result__call_id__get",
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Call Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JobResultResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EchoResponse": {
+        "properties": {
+          "message": { "type": "string", "title": "Message" },
+          "ffmpeg_version": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Ffmpeg Version"
+          },
+          "error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": ["message"],
+        "title": "EchoResponse"
+      },
+      "EditVideoJobSubmitRequest": {
+        "properties": {
+          "fn": { "type": "string", "const": "edit_video", "title": "Fn" },
+          "data": { "$ref": "#/components/schemas/VideoEditRequest" }
+        },
+        "type": "object",
+        "required": ["fn", "data"],
+        "title": "EditVideoJobSubmitRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": { "$ref": "#/components/schemas/ValidationError" },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "JobResultResponse": {
+        "properties": {
+          "fn": { "type": "string", "title": "Fn" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "succeeded", "failed"],
+            "title": "Status"
+          },
+          "result": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/VideoEditResponse" },
+              { "type": "null" }
+            ]
+          },
+          "error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": ["fn", "status"],
+        "title": "JobResultResponse"
+      },
+      "JobSubmitResponse": {
+        "properties": { "call_id": { "type": "string", "title": "Call Id" } },
+        "type": "object",
+        "required": ["call_id"],
+        "title": "JobSubmitResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": { "anyOf": [{ "type": "string" }, { "type": "integer" }] },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": { "type": "string", "title": "Message" },
+          "type": { "type": "string", "title": "Error Type" }
+        },
+        "type": "object",
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError"
+      },
+      "VideoEditRequest": {
+        "properties": {
+          "input_url": {
+            "type": "string",
+            "title": "Input Url",
+            "default": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+          },
+          "aspect_ratio": {
+            "type": "string",
+            "enum": ["16:9", "4:3", "1:1"],
+            "title": "Aspect Ratio",
+            "default": "16:9"
+          },
+          "cadence": {
+            "type": "string",
+            "enum": ["daily", "weekly", "monthly"],
+            "title": "Cadence",
+            "default": "daily"
+          }
+        },
+        "type": "object",
+        "title": "VideoEditRequest"
+      },
+      "VideoEditResponse": {
+        "properties": {
+          "output_url": { "type": "string", "title": "Output Url" }
+        },
+        "type": "object",
+        "required": ["output_url"],
+        "title": "VideoEditResponse"
+      }
+    },
+    "securitySchemes": {
+      "ModalKey": { "type": "apiKey", "in": "header", "name": "Modal-Key" },
+      "ModalSecret": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Modal-Secret"
+      }
+    }
+  },
+  "security": [{ "ModalKey": [], "ModalSecret": [] }]
+}

@@ -25,6 +25,9 @@ export const env = createEnv({
     CLOUDFLARE_DEFAULT_ACCOUNT_ID: z.string().min(1),
     CLOUDFLARE_IMAGE_ACCOUNT_HASH: z.string().min(1),
     CLOUDFLARE_STREAM_CUSTOMER_DOMAIN: z.string().min(1),
+    // modal backend
+    MODAL_PROXY_AUTH_TOKEN_ID: z.string().min(1),
+    MODAL_PROXY_AUTH_TOKEN_SECRET: z.string().min(1),
     // debug flag
     DEBUG: z.string().optional().default("false"),
   },
