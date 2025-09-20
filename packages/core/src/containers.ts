@@ -1,7 +1,8 @@
 import { Container } from "@cloudflare/containers";
-// TODO: use this codegen
-// import { GreetService } from "./containers/gen/greet/v1/greet_pb";
 
+// WIP: not ready yet for production
+// turns out we really need more ergonomic stuff like modal
+// to manage ffmpeg, etc.
 export class ContainerBackend extends Container {
   defaultPort = 8080;
   sleepAfter = "60s";

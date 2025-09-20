@@ -27,6 +27,10 @@
     {
       "name": "👹 agent",
       "path": "packages/agent"
+    },
+    {
+      "name": "🎭 backend",
+      "path": "packages/backend"
     }
   ],
   "settings": {
