@@ -28,8 +28,21 @@ export const examplesRoute = new Hono<ApiEnv>()
   })
   .get("/container", async (c) => {
     const stub = c.env.ContainerBackend.getByName("default");
-    const res = await stub.ping();
-    const body = await res.json();
+    const { stream, contentType, contentLength, filename } =
+      await stub.resizeVideo({
+        videoUrl:
+          "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        width: 640,
+        height: 480,
+      });
 
-    return c.json({ status: res.status, body });
+    const headers = new Headers({ "Content-Type": contentType });
+    if (contentLength !== undefined) {
+      headers.set("Content-Length", contentLength.toString());
+    }
+    if (filename) {
+      headers.set("Content-Disposition", `inline; filename="${filename}"`);
+    }
+
+    return new Response(stream, { status: 200, headers });
   });

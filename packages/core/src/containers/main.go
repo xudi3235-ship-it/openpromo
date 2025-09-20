@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -9,17 +8,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-var s3Client *S3Client
-
 func main() {
-	// Initialize S3 client
-	var err error
-	s3Client, err = NewS3Client()
-	if err != nil {
-		fmt.Printf("Failed to initialize S3 client: %v\n", err)
-		os.Exit(1)
-	}
-
 	e := echo.New()
 	e.HideBanner = true
 	e.Use(middleware.Recover())

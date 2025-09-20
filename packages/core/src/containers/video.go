@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -16,7 +17,6 @@ type VideoResizeRequest struct {
 	VideoURL  string `json:"videoUrl"`
 	Width     int    `json:"width"`
 	Height    int    `json:"height"`
-	OutputKey string `json:"outputKey"`
 }
 
 func handleVideoResize(c echo.Context) error {
@@ -27,9 +27,9 @@ func handleVideoResize(c echo.Context) error {
 		})
 	}
 
-	if req.VideoURL == "" || req.Width <= 0 || req.Height <= 0 || req.OutputKey == "" {
+	if req.VideoURL == "" || req.Width <= 0 || req.Height <= 0 {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "videoUrl, width, height, and outputKey are required",
+			"error": "videoUrl, width, and height are required",
 		})
 	}
 
@@ -64,17 +64,25 @@ func handleVideoResize(c echo.Context) error {
 		})
 	}
 
-	// Upload result to S3
-	resultURL, err := s3Client.UploadFile(outputFile, req.OutputKey)
+	output, err := os.Open(outputFile)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": fmt.Sprintf("Failed to upload result: %v", err),
+			"error": fmt.Sprintf("Failed to open processed video: %v", err),
+		})
+	}
+	defer output.Close()
+
+	info, err := output.Stat()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": fmt.Sprintf("Failed to read processed video metadata: %v", err),
 		})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"status":    "success",
-		"outputUrl": resultURL,
-	})
-}
+	filename := fmt.Sprintf("resized-%d.mp4", time.Now().Unix())
+	c.Response().Header().Set(echo.HeaderContentType, "video/mp4")
+	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("inline; filename=\"%s\"", filename))
+	c.Response().Header().Set(echo.HeaderContentLength, strconv.FormatInt(info.Size(), 10))
 
+	return c.Stream(http.StatusOK, "video/mp4", output)
+}
