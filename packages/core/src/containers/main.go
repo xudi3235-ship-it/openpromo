@@ -29,12 +29,10 @@ func main() {
 		if message == "" {
 			message = "Hello from Echo"
 		}
-		// envVars := os.Environ()
 		instanceID := os.Getenv("CLOUDFLARE_DEPLOYMENT_ID")
 		return c.JSON(http.StatusOK, map[string]string{
 			"message":     message,
 			"instance_id": instanceID,
-			// "env":		 fmt.Sprintf("%v", envVars),
 		})
 	})
 
