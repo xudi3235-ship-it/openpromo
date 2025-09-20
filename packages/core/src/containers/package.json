@@ -1,0 +1,18 @@
+{
+  "name": "containers",
+  "version": "1.0.0",
+  "description": "containers running on cloudflare Durable Objects. We use this to bridge the gap between worker runtime and some multimedia libraries",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.9.0"
+  },
+  "devDependencies": {
+    "@bufbuild/protoc-gen-es": "^2.9.0"
+  }
+}

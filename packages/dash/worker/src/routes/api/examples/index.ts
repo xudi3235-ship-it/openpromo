@@ -30,7 +30,6 @@ export const examplesRoute = new Hono<ApiEnv>()
     const stub = c.env.ContainerBackend.getByName("default");
     const res = await stub.ping();
     const body = await res.json();
-    console.log("response body", body);
 
     return c.json({ status: res.status, body });
   });

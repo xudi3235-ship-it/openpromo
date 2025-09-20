@@ -39,7 +39,8 @@
     {
       "max_instances": 2,
       "class_name": "ContainerBackend",
-      "image": "../core/src/containers/Dockerfile"
+      "image": "../core/src/containers/Dockerfile",
+      "image_build_context": "../core/src/containers"
     }
   ],
   "r2_buckets": [

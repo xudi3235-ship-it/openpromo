@@ -13,6 +13,7 @@ import (
 
 type S3Client struct {
 	client *s3.Client
+	presignClient *s3.PresignClient
 	bucket string
 }
 
@@ -38,10 +39,12 @@ func NewS3Client() (*S3Client, error) {
 		o.BaseEndpoint = aws.String(fmt.Sprintf("https://%s.r2.cloudflarestorage.com", accountId))
 		o.UsePathStyle = true // Required for R2
 	})
+	presignClient := s3.NewPresignClient(client)
 
 	return &S3Client{
 		client: client,
 		bucket: bucket,
+		presignClient: presignClient,
 	}, nil
 }
 
@@ -60,6 +63,5 @@ func (s *S3Client) UploadFile(filePath, key string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to upload to S3: %w", err)
 	}
-
 	return fmt.Sprintf("https://%s.r2.cloudflarestorage.com/%s", s.bucket, key), nil
 }
