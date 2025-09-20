@@ -28,7 +28,6 @@ export class ContainerBackend extends Container {
   }
 
   async ping(): Promise<Response> {
-    await this.startAndWaitForPorts();
     return await this.containerFetch("http://localhost:8080/");
     // await this.startAndWaitForPorts();
     // // await this.ctx.container?.start();
