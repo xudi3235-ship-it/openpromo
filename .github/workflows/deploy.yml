@@ -21,6 +21,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
 
       - name: Setup Node.js and pnpm
         uses: ./.github/actions/setup-node-pnpm
@@ -76,6 +83,17 @@ jobs:
         run: pnpm db:migrate
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+      
+      - name: Sync UV dependencies
+        working-directory: packages/backend
+        run: uv sync --frozen
+      - name: Deploy Modal Infra 
+        working-directory: packages/backend
+        run: |
+          uv run modal deploy main.py
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
 
       - name: Send success notification to Discord
         uses: appleboy/discord-action@v1.2.0
