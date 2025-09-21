@@ -219,20 +219,15 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       throw new Error("only single video upload is supported");
     }
     const video = videos[0];
-    // 0. get video CDN url from our CF stream service
-    const res = await VideoStorage.createMP4Download(video.id);
-    console.log("// got video download url", res);
+    const presignedUrl = video.presignedUrl;
+    if (!presignedUrl) throw new Error("no presigned URL for video");
     const { accessToken } = await this.identity();
-    const cdnUrl = res?.default?.url ?? null;
-    if (!cdnUrl) {
-      throw new Error("failed to get video CDN url");
-    }
     // 1. upload the video
     const response = await fetch(uploadSessionUrl, {
       method: "POST",
       headers: {
         Authorization: `OAuth ${accessToken}`,
-        file_url: cdnUrl,
+        file_url: presignedUrl,
       },
     });
 

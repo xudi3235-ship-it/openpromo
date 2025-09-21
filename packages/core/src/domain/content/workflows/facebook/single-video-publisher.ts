@@ -20,29 +20,30 @@ export async function publishSingleVideoPost(
 ): Promise<string> {
   // 0. transcode video if needed
   await step.do("transcode FB reel if needed", async () => {
-    // A. sanitize, get the input url
+    // A. sanitize, get the download Url
     const c = await EntFBFeedPendingContent.fromID(pendingContentID);
     if (!c.isSingleVideoPost()) throw new Error("not a single video post");
-    const { publicUrl } = onlyOrThrow(c.videoAttachments());
-    if (!publicUrl) throw new Error("no public URL for video");
+    const { id, presignedUrl } = onlyOrThrow(c.videoAttachments());
+    if (!presignedUrl) throw new Error(`no presigned URL for video ${id}`);
     // B. transcode to FB reel format if needed
+    console.log("transcoding video for FB reel", { presignedUrl });
     const { transcoded, output_url } = await opClient.video.transcode({
       platform: "fb_reel",
-      input_url: publicUrl,
+      input_url: presignedUrl,
     });
+    console.log("transcoding result", { transcoded, output_url });
 
     if (!transcoded) {
-      log.info("video does not need transcoding", { publicUrl });
+      log.info("video does not need transcoding", { presignedUrl });
       return;
     }
     if (!output_url) throw new Error("no output URL from transcoding");
-    log.info("video transcoded", { publicUrl, output_url });
+    log.info("video transcoded", { presignedUrl, output_url });
     // C. update the attachment to point to the new URL
-    const attachments = c
-      .videoAttachments()
-      .map((att) =>
-        att.publicUrl === publicUrl ? { ...att, publicUrl: output_url } : att,
-      );
+    const attachments = c.videoAttachments().map((att) =>
+      // use presigned url
+      att.id === id ? { ...att, presignedUrl: output_url } : att,
+    );
     if (attachments.length !== 1)
       throw new Error("expected exactly one video attachment");
 
