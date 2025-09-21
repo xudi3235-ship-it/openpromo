@@ -22,6 +22,39 @@
         }
       }
     },
+    "/ffprobe": {
+      "post": {
+        "summary": "Run Ffprobe",
+        "description": "Run arbitrary ffprobe command on a given input URL",
+        "operationId": "run_ffprobe_ffprobe_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FFprobeRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FFprobeResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/job/submit": {
       "post": {
         "summary": "Submit Job",
@@ -87,6 +120,40 @@
           }
         }
       }
+    },
+    "/video/transcode": {
+      "post": {
+        "summary": "Transcode Video",
+        "operationId": "transcode_video_video_transcode_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TranscodeVideoRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscodeVideoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -115,6 +182,35 @@
         "type": "object",
         "required": ["fn", "data"],
         "title": "EditVideoJobSubmitRequest"
+      },
+      "FFprobeRequest": {
+        "properties": {
+          "input_url": {
+            "type": "string",
+            "title": "Input Url",
+            "default": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+          },
+          "cmd": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Cmd",
+            "default": ["-version"]
+          }
+        },
+        "type": "object",
+        "title": "FFprobeRequest"
+      },
+      "FFprobeResponse": {
+        "properties": {
+          "output": { "type": "string", "title": "Output" },
+          "error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": ["output"],
+        "title": "FFprobeResponse"
       },
       "HTTPValidationError": {
         "properties": {
@@ -155,6 +251,40 @@
         "type": "object",
         "required": ["call_id"],
         "title": "JobSubmitResponse"
+      },
+      "TranscodeVideoRequest": {
+        "properties": {
+          "input_url": {
+            "type": "string",
+            "title": "Input Url",
+            "default": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+          },
+          "platform": {
+            "type": "string",
+            "enum": ["ig_reel", "fb_reel"],
+            "title": "Platform"
+          }
+        },
+        "type": "object",
+        "required": ["platform"],
+        "title": "TranscodeVideoRequest"
+      },
+      "TranscodeVideoResponse": {
+        "properties": {
+          "output_url": { "type": "string", "title": "Output Url" },
+          "transcoded": {
+            "type": "boolean",
+            "title": "Transcoded",
+            "default": true
+          },
+          "error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": ["output_url"],
+        "title": "TranscodeVideoResponse"
       },
       "ValidationError": {
         "properties": {

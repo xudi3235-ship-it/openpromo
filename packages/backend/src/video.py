@@ -101,8 +101,8 @@ async def get_video_meta(path: Path) -> VideoMetadata:
 @dataclass
 class IgReelTranscoder:
     path: Path
-    max_width: int = 1080
     meta: VideoMetadata
+    max_width: int = 1080
 
     @classmethod
     async def from_path(
