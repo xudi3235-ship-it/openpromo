@@ -15,6 +15,14 @@ interface EventData {
   color: EventColor;
 }
 
+/**
+ * Get content duration - simplified to constant 10 minutes
+ */
+function getContentDuration(): number {
+  // All content gets 10 minutes duration
+  return 10;
+}
+
 export function getEventData(event: CalendarEvent): EventData {
   return matchEntity(event, {
     group: (groupEntity): EventData => {
@@ -23,7 +31,7 @@ export function getEventData(event: CalendarEvent): EventData {
         id: String(group.id),
         title: "Content Group",
         start: new Date(group.createdAt),
-        end: new Date(new Date(group.createdAt).getTime() + 60 * 60 * 1000), // 1 hour later
+        end: new Date(new Date(group.createdAt).getTime() + 30 * 60 * 1000), // 30 minutes for groups
         allDay: false,
         color: "violet",
       };
@@ -42,11 +50,14 @@ export function getEventData(event: CalendarEvent): EventData {
         ? new Date(content.placementSpec?.schedulingSpec?.publishAt ?? "")
         : new Date(content.createdAt);
 
+      // Get content duration (constant 10 minutes)
+      const durationMinutes = getContentDuration();
+
       return {
         id: String(content.id),
         title: content.placement.replace("_", " "),
         start: eventDate,
-        end: new Date(eventDate.getTime() + 60 * 60 * 1000), // 1 hour later
+        end: new Date(eventDate.getTime() + durationMinutes * 60 * 1000),
         allDay: false,
         color: content.placement.startsWith("FB_") ? "sky" : "rose",
       };

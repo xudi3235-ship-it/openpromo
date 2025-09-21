@@ -176,16 +176,13 @@ export function CalendarDndProvider({
       if (time !== undefined && activeView !== "month") {
         const newTime = new Date(date);
 
-        // Calculate hours and minutes with 15-minute precision
+        // Calculate hours and minutes with 10-minute precision
         const hours = Math.floor(time);
         const fractionalHour = time - hours;
 
-        // Map to nearest 15 minute interval (0, 0.25, 0.5, 0.75)
-        let minutes = 0;
-        if (fractionalHour < 0.125) minutes = 0;
-        else if (fractionalHour < 0.375) minutes = 15;
-        else if (fractionalHour < 0.625) minutes = 30;
-        else minutes = 45;
+        // Map to nearest 10 minute interval (0, 10, 20, 30, 40, 50)
+        const minuteSlot = Math.round(fractionalHour * 6); // 6 slots per hour
+        const minutes = Math.min(minuteSlot * 10, 50); // Cap at 50 minutes
 
         newTime.setHours(hours, minutes, 0, 0);
 
@@ -271,12 +268,9 @@ export function CalendarDndProvider({
         const hours = Math.floor(time);
         const fractionalHour = time - hours;
 
-        // Map to nearest 15 minute interval (0, 0.25, 0.5, 0.75)
-        let minutes = 0;
-        if (fractionalHour < 0.125) minutes = 0;
-        else if (fractionalHour < 0.375) minutes = 15;
-        else if (fractionalHour < 0.625) minutes = 30;
-        else minutes = 45;
+        // Map to nearest 10 minute interval (0, 10, 20, 30, 40, 50)
+        const minuteSlot = Math.round(fractionalHour * 6); // 6 slots per hour
+        const minutes = Math.min(minuteSlot * 10, 50); // Cap at 50 minutes
 
         newStart.setHours(hours, minutes, 0, 0);
       } else {

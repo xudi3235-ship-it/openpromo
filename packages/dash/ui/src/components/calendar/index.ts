@@ -3,12 +3,14 @@
 // Component exports
 export { AgendaView } from "./agenda-view";
 export { CalendarDndProvider, useCalendarDnd } from "./calendar-dnd-context";
+export { CalendarEventCard } from "./calendar-event-card";
 export { CalendarSkeleton } from "./calendar-skeleton";
 // Constants and utility exports
 export * from "./constants";
 export { DayView } from "./day-view";
 export { DraggableEvent } from "./draggable-event";
 export { DroppableCell } from "./droppable-cell";
+export { DynamicWeekView } from "./dynamic-week-view";
 export { ContentCalendar as EventCalendar } from "./event-calendar";
 export { EventDialog } from "./event-dialog";
 export { EventItem } from "./event-item";

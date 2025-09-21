@@ -36,12 +36,12 @@ import {
   CalendarDndProvider,
   type CalendarView,
   DayView,
+  DynamicWeekView,
   EventDialog,
   EventGap,
   EventHeight,
   MonthView,
   WeekCellsHeight,
-  WeekView,
 } from "@/components/calendar";
 import { Route as CalendarRoute } from "@/routes/_authenticated/workspaces/$workspaceSlug/calendar";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
@@ -376,7 +376,7 @@ export function ContentCalendar({
             />
           )}
           {view === "week" && (
-            <WeekView
+            <DynamicWeekView
               currentDate={currentDate}
               events={events}
               onEventSelect={handleEventSelect}
