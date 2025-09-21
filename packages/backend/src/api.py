@@ -186,3 +186,34 @@ def scalar_docs():
         openapi_url=fapi.openapi_url,
         title=fapi.title + " - Scalar",
     )
+
+
+class TranscodeIGReelRequest(BaseModel):
+    input_url: str = Constants.DEFAULT_VIDEO_URL
+
+
+class TranscodeIGReelResponse(BaseModel):
+    output_url: str
+    error: str | None = None
+
+
+@fapi.post("/video/transcode/ig_reel")
+async def transcode_ig_reel(req: TranscodeIGReelRequest) -> TranscodeIGReelResponse:
+    from src.video import transcode_video_for_ig_reel, is_video_compatible_on_ig
+    from src.common import url_to_temp_path, R2Utils
+
+    input_path = await url_to_temp_path(req.input_url)
+    if await is_video_compatible_on_ig(input_path):
+        # no-op.
+        return TranscodeIGReelResponse(output_url=req.input_url)
+    if not input_path:
+        return TranscodeIGReelResponse(
+            output_url="", error="Failed to download input video"
+        )
+
+    output_path = await transcode_video_for_ig_reel(input_path)
+    out, key = R2Utils.cp(output_path, dest_key=output_path.name)
+    print(f"Copied transcoded video to {out}")
+    output_url = R2Utils.gen_presigned_url(str(key))
+    print(f"Transcoded video available at {output_url}")
+    return TranscodeIGReelResponse(output_url=output_url)

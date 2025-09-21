@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 import tempfile
 
@@ -23,3 +25,36 @@ async def url_to_temp_path(url: str) -> Path:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
         tmp_file.write(res.content)
         return Path(tmp_file.name)
+
+
+class EphemeralCadence(str, Enum):
+    HOURLY = "hourly"
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+
+
+@dataclass
+class R2Utils:
+    bucket_mount_path: Path = Path("/openpromo-bucket")
+
+    @staticmethod
+    def cp(
+        src: Path, dest_key: str, cadence: EphemeralCadence = EphemeralCadence.HOURLY
+    ) -> tuple[Path, str]:
+        import shutil
+
+        cadence_dir = Path("ephemeral") / cadence.value
+        dest_path = R2Utils.bucket_mount_path / cadence_dir / dest_key
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src, dest_path)
+        return dest_path, str(cadence_dir / dest_key)
+
+    @staticmethod
+    def gen_presigned_url(key: str, expires_in: int = 3600) -> str:
+        client = s3_client()
+        return client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": "openpromo-bucket", "Key": key},
+            ExpiresIn=expires_in,
+        )

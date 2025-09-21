@@ -10,6 +10,20 @@ import modal
 app = modal.App("video-backend", image=image, secrets=[secret], volumes=vols)
 
 
+def to_int(v):
+    try:
+        return int(v) if v is not None else None
+    except Exception:
+        return None
+
+
+def to_float(v):
+    try:
+        return float(v) if v is not None else None
+    except Exception:
+        return None
+
+
 @dataclass
 class VideoMetadata:
     width: int | None
@@ -44,18 +58,6 @@ async def get_video_meta(path: Path) -> VideoMetadata:
     metadata = json.loads(result.stdout)
     stream_info = metadata.get("streams", [{}])[0]
 
-    def to_int(v):
-        try:
-            return int(v) if v is not None else None
-        except Exception:
-            return None
-
-    def to_float(v):
-        try:
-            return float(v) if v is not None else None
-        except Exception:
-            return None
-
     width = to_int(stream_info.get("width"))
     height = to_int(stream_info.get("height"))
     duration = to_float(
@@ -74,6 +76,70 @@ async def get_video_meta(path: Path) -> VideoMetadata:
         codec_name=codec_name,
         raw=metadata,
     )
+
+
+async def transcode_video_for_ig_reel(path: Path, *, max_width: int = 1080) -> Path:
+    """Return a path for an IG-safe mp4 produced from the input clip."""
+    import subprocess
+    import tempfile
+
+    meta = await get_video_meta(path)
+
+    scale_filter = "setsar=1"
+    width = meta.width
+    height = meta.height
+    if width and height:
+        target_width = width
+        target_height = height
+        if target_width > max_width:
+            target_width = max_width
+            target_height = int(height * target_width / width)
+        # enforce even dimension to keep encoder happy
+        if target_width % 2:
+            target_width -= 1
+        if target_height % 2:
+            target_height -= 1
+        if target_width < 2:
+            target_width = 2
+        if target_height < 2:
+            target_height = 2
+        scale_filter = f"scale={target_width}:{target_height},setsar=1"
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+        output_path = Path(tmp.name)
+
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(path),
+        "-vf",
+        scale_filter,
+        "-c:v",
+        "libx264",
+        "-profile:v",
+        "high",
+        "-level",
+        "4.1",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "128k",
+        "-ac",
+        "2",
+        str(output_path),
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        output_path.unlink(missing_ok=True)
+        raise RuntimeError(f"ffmpeg failed: {result.stderr.strip()}")
+
+    return output_path
 
 
 @app.function()
@@ -153,3 +219,55 @@ async def edit_video(req: VideoEditRequest) -> VideoEditResponse:
         ExpiresIn=3600,  # URL valid for 1 hour
     )
     return VideoEditResponse(output_url=presigned_url)
+
+
+"""
+IG Ads Api Ref
+ref: https://developers.facebook.com/docs/instagram/ads-api/reference/media-requirements/
+
+IG recommended aspect ratio is 1:1 for both video and images, but also supports
+aspect ratio of 1.91:1, 4:5, or any in between.
+
+IG Media Ref:
+https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/
+"""
+
+
+async def is_video_compatible_on_ig(path: Path) -> bool:
+    meta = await get_video_meta(path)
+    raw = meta.raw or {}
+    fmt = raw.get("format", {})
+
+    format_name = (fmt.get("format_name") or "").lower()
+    if not any(x in format_name for x in ("mp4", "mov", "m4v", "mp42")):
+        return False
+
+    streams = raw.get("streams", []) or []
+    video_stream = next((s for s in streams if s.get("codec_type") == "video"), None)
+    if not video_stream:
+        return False
+
+    vcodec = (video_stream.get("codec_name") or "").lower()
+    if not (("h264" in vcodec) or ("hevc" in vcodec) or ("h265" in vcodec)):
+        return False
+
+    width = to_int(video_stream.get("width") or meta.width)
+    height = to_int(video_stream.get("height") or meta.height)
+    if not width or not height:
+        return False
+    if width > 1920:
+        return False
+
+    aspect = width / height if height else None
+    if aspect is None or aspect < 0.4 or aspect > 2.39:
+        return False
+
+    duration = meta.duration
+    if duration is None:
+        duration = to_float(fmt.get("duration"))
+    if duration is None:
+        return False
+    if duration < 3 or duration > 15 * 60:
+        return False
+
+    return True
