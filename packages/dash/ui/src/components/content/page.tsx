@@ -30,6 +30,7 @@ import * as React from "react";
 import ComposerDialog from "@/components/composer/modal/dialog-composer";
 import { useContentListQuery } from "@/queries/content";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
+import { BatchActionsToolbar } from "./batch-actions-toolbar";
 import { columns } from "./columns";
 import { ContentTableSkeleton } from "./content-table-skeleton";
 
@@ -73,6 +74,10 @@ export function ContentPage() {
       pagination,
     },
   });
+
+  const selectedRows = table
+    .getFilteredSelectedRowModel()
+    .rows.map((row) => row.original);
 
   return (
     <div className="w-full">
@@ -118,6 +123,11 @@ export function ContentPage() {
           </DropdownMenu>
         </div>
       </div>
+
+      <BatchActionsToolbar
+        selectedRows={selectedRows}
+        onClearSelection={() => table.toggleAllPageRowsSelected(false)}
+      />
       {isLoading ? (
         <ContentTableSkeleton />
       ) : (

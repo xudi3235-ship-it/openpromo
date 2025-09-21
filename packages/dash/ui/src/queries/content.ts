@@ -105,3 +105,34 @@ export const useContentDeleteMutation = (onSettled?: () => void) => {
     },
   });
 };
+
+export const useBatchDeleteMutation = (onSettled?: () => void) => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation({
+    mutationFn: (api, ids: string[]) =>
+      api.workspaces[":workspaceSlug"].content.batch.$delete({
+        param: { workspaceSlug: workspace.slug },
+        json: { ids },
+      }),
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({
+        predicate: (q) =>
+          Array.isArray(q.queryKey) && q.queryKey[0] === "content-list",
+        type: "all",
+      });
+
+      if (data.success) {
+        toast.success(`Successfully deleted ${data.deleted} item(s)`);
+      } else {
+        toast.warning(
+          `Deleted ${data.deleted} item(s), failed to delete ${data.failed} item(s)`,
+        );
+      }
+    },
+    onSettled: () => {
+      onSettled?.();
+    },
+  });
+};
