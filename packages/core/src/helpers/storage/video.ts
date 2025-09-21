@@ -309,21 +309,17 @@ export namespace VideoStorage {
   async function iterateVideos(
     handler: (video: StreamVideo) => Promise<void>,
     params: Partial<Omit<StreamListParams, "account_id">> = {},
-    options: { perPage?: number } = {},
   ): Promise<void> {
     const c = getCloudflareClient();
-    const perPage = options.perPage ?? 100;
     const requestParams = {
       account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
       ...params,
-    } as StreamListParams & { per_page?: number };
-
-    requestParams.per_page = perPage;
+    } as StreamListParams;
 
     const iterator = c.stream.list(requestParams);
 
     for await (const video of iterator) {
-      await handler(video as StreamVideo);
+      await handler(video);
     }
   }
 
