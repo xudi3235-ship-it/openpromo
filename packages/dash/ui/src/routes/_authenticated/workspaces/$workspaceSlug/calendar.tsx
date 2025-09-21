@@ -7,7 +7,7 @@ import { CalendarViews } from "@/components/calendar/types";
 import { useContentListQuery } from "@/queries/content";
 
 const calendarSearchSchema = z.object({
-  view: z.enum(CalendarViews).catch("month"),
+  view: z.enum(CalendarViews).catch("week"),
 });
 
 export const Route = createFileRoute(
