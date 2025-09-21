@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Literal
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 import modal
 from scalar_fastapi import get_scalar_api_reference
 from pydantic import BaseModel
@@ -156,11 +155,13 @@ async def get_job_result_endpoint(call_id: str) -> JobResultResponse:
     fc = modal.FunctionCall.from_id(call_id)
     model = FUNCTION_RESPONSE_MODELS.get(fn)
     if not model:
-        return JSONResponse(content=f"Unknown function name: {fn}", status_code=400)
+        return JobResultResponse(
+            fn=fn, status="failed", error="Unknown function name"
+        )
     try:
         result = fc.get(timeout=0)
     except modal.exception.OutputExpiredError:
-        return JSONResponse(content="", status_code=404)
+        return JobResultResponse(fn=fn, status="failed", error="Output expired")
     except TimeoutError:
         return JobResultResponse(fn=fn, status="pending")
     except Exception as e:
