@@ -35,7 +35,7 @@
     "facebook-nodejs-business-sdk": "^23.0.1",
     "hono": "catalog:",
     "nanoid": "^5.1.5",
-    "openpromo-backend": "^0.0.2",
+    "openpromo-backend": "latest",
     "postgres": "^3.4.7",
     "stripe": "^18.3.0",
     "ulid": "^3.0.1",
