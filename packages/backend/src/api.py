@@ -1,6 +1,7 @@
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 import modal
 from scalar_fastapi import get_scalar_api_reference
 from pydantic import BaseModel
@@ -155,9 +156,7 @@ async def get_job_result_endpoint(call_id: str) -> JobResultResponse:
     fc = modal.FunctionCall.from_id(call_id)
     model = FUNCTION_RESPONSE_MODELS.get(fn)
     if not model:
-        return JobResultResponse(
-            fn=fn, status="failed", error="Unknown function name"
-        )
+        return JobResultResponse(fn=fn, status="failed", error="Unknown function name")
     try:
         result = fc.get(timeout=0)
     except modal.exception.OutputExpiredError:
@@ -189,32 +188,45 @@ def scalar_docs():
     )
 
 
-class TranscodeIGReelRequest(BaseModel):
+class TranscodeVideoRequest(BaseModel):
     input_url: str = Constants.DEFAULT_VIDEO_URL
+    platform: Literal["ig_reel", "fb_reel"]
 
 
-class TranscodeIGReelResponse(BaseModel):
+class TranscodeVideoResponse(BaseModel):
     output_url: str
+    transcoded: bool = True
     error: str | None = None
 
 
-@fapi.post("/video/transcode/ig_reel")
-async def transcode_ig_reel(req: TranscodeIGReelRequest) -> TranscodeIGReelResponse:
-    from src.video import transcode_video_for_ig_reel, is_video_compatible_on_ig
-    from src.common import url_to_temp_path, R2Utils
+@fapi.post("/video/transcode")
+async def transcode_video(req: TranscodeVideoRequest) -> TranscodeVideoResponse:
+    from src.video import (
+        IgReelTranscoder,
+        FbReelTranscoder,
+        is_video_compatible_on_ig,
+    )
+    from src.common import R2Utils
 
     input_path = await url_to_temp_path(req.input_url)
-    if await is_video_compatible_on_ig(input_path):
-        # no-op.
-        return TranscodeIGReelResponse(output_url=req.input_url)
     if not input_path:
-        return TranscodeIGReelResponse(
+        return TranscodeVideoResponse(
             output_url="", error="Failed to download input video"
         )
 
-    output_path = await transcode_video_for_ig_reel(input_path)
+    if req.platform == "ig_reel":
+        tc = await IgReelTranscoder.from_path(input_path)
+        if await is_video_compatible_on_ig(input_path) and not tc.needs_transcode():
+            return TranscodeVideoResponse(output_url=req.input_url, transcoded=False)
+    elif req.platform == "fb_reel":
+        tc = await FbReelTranscoder.from_path(input_path)
+        if not tc.needs_transcode():
+            return TranscodeVideoResponse(output_url=req.input_url, transcoded=False)
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported platform")
+
+    output_path = await tc.transcode()
     out, key = R2Utils.cp(output_path, dest_key=output_path.name)
-    print(f"Copied transcoded video to {out}")
     output_url = R2Utils.gen_presigned_url(str(key))
-    print(f"Transcoded video available at {output_url}")
-    return TranscodeIGReelResponse(output_url=output_url)
+
+    return TranscodeVideoResponse(output_url=output_url)

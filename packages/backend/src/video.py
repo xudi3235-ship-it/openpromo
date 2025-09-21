@@ -32,6 +32,7 @@ class VideoMetadata:
     bit_rate: int | None
     codec_name: str | None
     raw: dict
+    fps: float | None = None
 
 
 async def get_video_meta(path: Path) -> VideoMetadata:
@@ -46,7 +47,7 @@ async def get_video_meta(path: Path) -> VideoMetadata:
             "-select_streams",
             "v:0",
             "-show_entries",
-            "stream=width,height,duration,bit_rate,codec_name",
+            "stream=width,height,duration,bit_rate,codec_name,avg_frame_rate",
             "-of",
             "json",
             str(path),
@@ -58,6 +59,23 @@ async def get_video_meta(path: Path) -> VideoMetadata:
     metadata = json.loads(result.stdout)
     stream_info = metadata.get("streams", [{}])[0]
 
+    def parse_fps(fr):
+        if not fr or fr in ("0/0", "N/A"):
+            return None
+        if "/" in fr:
+            n, d = fr.split("/")
+            try:
+                n = float(n)
+                d = float(d)
+                if d:
+                    return n / d
+            except Exception:
+                return None
+        try:
+            return float(fr)
+        except Exception:
+            return None
+
     width = to_int(stream_info.get("width"))
     height = to_int(stream_info.get("height"))
     duration = to_float(
@@ -67,6 +85,7 @@ async def get_video_meta(path: Path) -> VideoMetadata:
         stream_info.get("bit_rate") or metadata.get("format", {}).get("bit_rate")
     )
     codec_name = stream_info.get("codec_name")
+    fps = parse_fps(stream_info.get("avg_frame_rate"))
 
     return VideoMetadata(
         width=width,
@@ -75,71 +94,107 @@ async def get_video_meta(path: Path) -> VideoMetadata:
         bit_rate=bit_rate,
         codec_name=codec_name,
         raw=metadata,
+        fps=fps,
     )
+
+
+@dataclass
+class IgReelTranscoder:
+    path: Path
+    max_width: int = 1080
+    meta: VideoMetadata
+
+    @classmethod
+    async def from_path(
+        cls, path: Path, *, max_width: int = 1080
+    ) -> "IgReelTranscoder":
+        meta = await get_video_meta(path)
+        return cls(path=path, max_width=max_width, meta=meta)
+
+    async def transcode(self) -> Path:
+        meta = self.meta
+        if not self.needs_transcode():
+            return self.path
+
+        import subprocess
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+            output_path = Path(tmp.name)
+
+        scale_filter = "setsar=1"
+        width = meta.width
+        height = meta.height
+        if width and height:
+            target_width = width
+            target_height = height
+            if target_width > self.max_width:
+                target_width = self.max_width
+                target_height = int(height * target_width / width)
+            if target_width % 2:
+                target_width -= 1
+            if target_height % 2:
+                target_height -= 1
+            if target_width < 2:
+                target_width = 2
+            if target_height < 2:
+                target_height = 2
+            scale_filter = f"scale={target_width}:{target_height},setsar=1"
+
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(self.path),
+            "-vf",
+            scale_filter,
+            "-c:v",
+            "libx264",
+            "-profile:v",
+            "high",
+            "-level",
+            "4.1",
+            "-pix_fmt",
+            "yuv420p",
+            "-movflags",
+            "+faststart",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+            "-ac",
+            "2",
+            str(output_path),
+        ]
+
+        try:
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
+        except subprocess.CalledProcessError as exc:
+            output_path.unlink(missing_ok=True)
+            stderr = exc.stderr.strip() if exc.stderr else exc.stdout.strip()
+            raise RuntimeError(f"ffmpeg failed: {stderr}") from exc
+
+        self.path = output_path
+        self.meta = await get_video_meta(output_path)
+        return output_path
+
+
+    def needs_transcode(self) -> bool:
+        meta = self.meta
+        width, height = meta.width, meta.height
+        if not width or not height:
+            return True
+        if width > self.max_width:
+            return True
+        if width % 2 or height % 2:
+            return True
+        return False
 
 
 async def transcode_video_for_ig_reel(path: Path, *, max_width: int = 1080) -> Path:
     """Return a path for an IG-safe mp4 produced from the input clip."""
-    import subprocess
-    import tempfile
-
-    meta = await get_video_meta(path)
-
-    scale_filter = "setsar=1"
-    width = meta.width
-    height = meta.height
-    if width and height:
-        target_width = width
-        target_height = height
-        if target_width > max_width:
-            target_width = max_width
-            target_height = int(height * target_width / width)
-        # enforce even dimension to keep encoder happy
-        if target_width % 2:
-            target_width -= 1
-        if target_height % 2:
-            target_height -= 1
-        if target_width < 2:
-            target_width = 2
-        if target_height < 2:
-            target_height = 2
-        scale_filter = f"scale={target_width}:{target_height},setsar=1"
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
-        output_path = Path(tmp.name)
-
-    cmd = [
-        "ffmpeg",
-        "-y",
-        "-i",
-        str(path),
-        "-vf",
-        scale_filter,
-        "-c:v",
-        "libx264",
-        "-profile:v",
-        "high",
-        "-level",
-        "4.1",
-        "-pix_fmt",
-        "yuv420p",
-        "-movflags",
-        "+faststart",
-        "-c:a",
-        "aac",
-        "-b:a",
-        "128k",
-        "-ac",
-        "2",
-        str(output_path),
-    ]
-
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        output_path.unlink(missing_ok=True)
-        raise RuntimeError(f"ffmpeg failed: {result.stderr.strip()}")
-
-    return output_path
+    transcoder = await IgReelTranscoder.from_path(path, max_width=max_width)
+    return await transcoder.transcode()
 
 
 @app.function()
@@ -221,19 +276,17 @@ async def edit_video(req: VideoEditRequest) -> VideoEditResponse:
     return VideoEditResponse(output_url=presigned_url)
 
 
-"""
-IG Ads Api Ref
-ref: https://developers.facebook.com/docs/instagram/ads-api/reference/media-requirements/
-
-IG recommended aspect ratio is 1:1 for both video and images, but also supports
-aspect ratio of 1.91:1, 4:5, or any in between.
-
-IG Media Ref:
-https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/
-"""
-
-
 async def is_video_compatible_on_ig(path: Path) -> bool:
+    """
+    IG Ads Api Ref
+    ref: https://developers.facebook.com/docs/instagram/ads-api/reference/media-requirements/
+
+    IG recommended aspect ratio is 1:1 for both video and images, but also supports
+    aspect ratio of 1.91:1, 4:5, or any in between.
+
+    IG Media Ref:
+    https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/
+    """
     meta = await get_video_meta(path)
     raw = meta.raw or {}
     fmt = raw.get("format", {})
@@ -271,3 +324,116 @@ async def is_video_compatible_on_ig(path: Path) -> bool:
         return False
 
     return True
+
+
+@dataclass
+class FbReelTranscoder:
+    path: Path
+    meta: VideoMetadata
+
+    @classmethod
+    async def from_path(cls, path: Path) -> "FbReelTranscoder":
+        meta = await get_video_meta(path)
+        return cls(path=path, meta=meta)
+
+    async def transcode(self) -> Path:
+        if not self.needs_transcode():
+            return self.path
+
+        duration = self.meta.duration
+        if duration is None or duration < 3 or duration > 90:
+            raise RuntimeError(
+                "Video duration must be between 3 and 90 seconds for FB Reels"
+            )
+
+        import subprocess
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+            output_path = Path(tmp.name)
+
+        vf_filters = [
+            "scale=1080:1920:force_original_aspect_ratio=decrease",
+            "pad=1080:1920:(1080-iw)/2:(1920-ih)/2",
+            "fps=30",
+            "setsar=1",
+        ]
+
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(self.path),
+            "-vf",
+            ",".join(vf_filters),
+            "-c:v",
+            "libx264",
+            "-preset",
+            "medium",
+            "-profile:v",
+            "high",
+            "-level",
+            "4.1",
+            "-pix_fmt",
+            "yuv420p",
+            "-movflags",
+            "+faststart",
+            "-vsync",
+            "cfr",
+            "-r",
+            "30",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+            "-ac",
+            "2",
+            str(output_path),
+        ]
+
+        try:
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
+        except subprocess.CalledProcessError as exc:
+            output_path.unlink(missing_ok=True)
+            stderr = exc.stderr.strip() if exc.stderr else exc.stdout.strip()
+            raise RuntimeError(f"ffmpeg failed: {stderr}") from exc
+
+        self.path = output_path
+        self.meta = await get_video_meta(output_path)
+        return output_path
+
+    def needs_transcode(self) -> bool:
+        """
+        aspect ratio: 9:16 fixed.
+        duration: 3-90 seconds.
+        fps: 24-60
+        resolution: 1080x1920 recommended, minimum 540x960.
+        https://developers.facebook.com/docs/video-api/guides/reels-publishing/
+        """
+        meta = self.meta
+        width, height = meta.width, meta.height
+        if not width or not height:
+            return True
+
+        aspect = width / height if height else None
+        if aspect is None or abs(aspect - 9 / 16) > 0.01:
+            return True
+
+        if width < 540 or height < 960:
+            return True
+
+        duration = meta.duration
+        if duration is None or duration < 3 or duration > 90:
+            return True
+
+        fps = meta.fps
+        if fps is None or fps < 24 or fps > 60:
+            return True
+
+        codec = (meta.codec_name or "").lower()
+        if not codec:
+            return True
+        if "h264" not in codec and "avc" not in codec:
+            return True
+
+        return False
