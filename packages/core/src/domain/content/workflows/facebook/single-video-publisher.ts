@@ -26,7 +26,7 @@ export async function publishSingleVideoPost(
     const { publicUrl } = onlyOrThrow(c.videoAttachments());
     if (!publicUrl) throw new Error("no public URL for video");
     // B. transcode to FB reel format if needed
-    const { transcoded, output_url } = await opClient.client.video.transcode({
+    const { transcoded, output_url } = await opClient.video.transcode({
       platform: "fb_reel",
       input_url: publicUrl,
     });
