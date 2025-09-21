@@ -1,13 +1,15 @@
 import { ContentPublishingStatusZod } from "@core/schemas/content.sql";
 import { z } from "zod";
 
+// NOTE: DO NOT use boolean flags here. it can't be serialized properly
+// to Cloudflare Stream api
 export const AttachmentMetadataSchema = z
   .object({
     opWorkspaceId: z.string(),
     opContentId: z.string(),
     opPlacement: z.string(),
     opStatus: ContentPublishingStatusZod,
-    opLocalAssetDeleted: z.boolean(),
+    opLocalAssetDeletedAt: z.string().optional(),
     opRemoteAssetId: z.string(),
     opRemotePlatform: z.string(),
     opUpdatedAt: z.string(),

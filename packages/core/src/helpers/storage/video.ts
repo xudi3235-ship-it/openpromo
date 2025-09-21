@@ -119,7 +119,6 @@ export namespace VideoStorage {
     const { replace = false } = options;
     const base = replace ? {} : await readExistingMetadata(videoId);
     const nextMetadata = { ...base, ...metadata } satisfies VideoMetadata;
-
     await c.stream.edit(videoId, {
       account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
       meta: nextMetadata,

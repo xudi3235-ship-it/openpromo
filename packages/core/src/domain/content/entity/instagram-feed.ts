@@ -290,6 +290,7 @@ export class EntIGFeedPendingContent extends EntPendingContent {
           "id,media_type,media_url,thumbnail_url,children{id,media_type,media_url,thumbnail_url}",
       }),
     );
+    console.log({ remoteMedia });
 
     const remoteItems =
       remoteMedia.children?.data && remoteMedia.children.data.length > 0
@@ -322,6 +323,7 @@ export class EntIGFeedPendingContent extends EntPendingContent {
         thumbnailUrl: item.thumbnail_url ?? imageUrl ?? undefined,
       };
     });
+    console.log({ remoteRecords });
 
     const remoteMetadataTasks: Array<Promise<unknown>> = [];
 
@@ -386,7 +388,9 @@ export class EntIGFeedPendingContent extends EntPendingContent {
         }
 
         const opMetadata = buildAttachmentMetadata({
-          opLocalAssetDeleted: localAssetReplaced ? true : undefined,
+          opLocalAssetDeletedAt: localAssetReplaced
+            ? new Date().toISOString()
+            : undefined,
           opRemotePlatform: "instagram",
           opRemoteAssetId: remote.mediaId,
           opUpdatedAt: new Date().toISOString(),

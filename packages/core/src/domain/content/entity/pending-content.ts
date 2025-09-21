@@ -418,7 +418,7 @@ export class EntPendingContent extends EntUnifiedContentBase {
     const localAttachments = attachments.filter((attachment) => {
       if (!attachment?.id) return false;
       const metadata = extractAttachmentMetadata(attachment.metadata);
-      return metadata.opLocalAssetDeleted !== true;
+      return metadata.opLocalAssetDeletedAt != null;
     });
 
     if (localAttachments.length === 0) return;

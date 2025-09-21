@@ -1,8 +1,13 @@
 import { EntIGFeedPendingContent } from "@core/domain/content/entity";
+import { Actor } from "@core/helpers/actor";
+import { and, db, eq } from "@core/helpers/db";
 import type {
   CoreWorkflowContext,
   CoreWorkflowStep,
 } from "@core/helpers/workflow";
+import opClient from "@core/providers/backend";
+import { unifiedContentTable } from "@core/schemas/content.sql";
+import { onlyOrThrow } from "@core/utils/common";
 import { Log } from "@core/utils/log";
 import { waitForVideoContainer } from "./common";
 
@@ -13,6 +18,53 @@ export async function publishSingleVideoReel(
   step: CoreWorkflowStep,
   pendingContentID: string,
 ): Promise<string> {
+  await step.do("transcode IG reel if needed", async () => {
+    // A. sanitize, get the download Url
+    const c = await EntIGFeedPendingContent.fromID(pendingContentID);
+    if (!c.isSingleVideoReel()) throw new Error("not a IG reel");
+    const { id, presignedUrl } = onlyOrThrow(c.videoAttachments());
+    if (!presignedUrl) throw new Error(`no presigned URL for video ${id}`);
+    // B. transcode to IG reel format if needed
+    console.log("transcoding video for IG reel", { presignedUrl });
+    const { transcoded, output_url } = await opClient.video.transcode({
+      platform: "ig_reel",
+      input_url: presignedUrl,
+    });
+    console.log("transcoding result", { transcoded, output_url });
+
+    if (!transcoded) {
+      log.info("video does not need transcoding", { presignedUrl });
+      return;
+    }
+    if (!output_url) throw new Error("no output URL from transcoding");
+    log.info("video transcoded", { presignedUrl, output_url });
+    // C. update the attachment to point to the new URL
+    const attachments = c.videoAttachments().map((att) =>
+      // use presigned url
+      att.id === id ? { ...att, presignedUrl: output_url } : att,
+    );
+    if (attachments.length !== 1)
+      throw new Error("expected exactly one video attachment");
+
+    const [newOne] = await db()
+      .update(unifiedContentTable)
+      .set({
+        placementSpec: {
+          ...c.spec,
+          attachments,
+        },
+      })
+      .where(
+        and(
+          eq(unifiedContentTable.id, pendingContentID),
+          eq(unifiedContentTable.workspaceId, Actor.workspaceID()),
+        ),
+      )
+      .returning();
+    if (!newOne)
+      throw new Error("failed to update content with new attachment");
+  });
+
   const { containerId } = await step.do("create reel container", async () => {
     console.log("// creating reel container");
     const c = await EntIGFeedPendingContent.fromID(pendingContentID);

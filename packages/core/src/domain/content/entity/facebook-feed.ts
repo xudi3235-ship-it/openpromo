@@ -480,7 +480,9 @@ export class EntFBFeedPendingContent extends EntPendingContent {
         }
 
         const opMetadata = buildAttachmentMetadata({
-          opLocalAssetDeleted: localAssetReplaced ? true : undefined,
+          opLocalAssetDeletedAt: localAssetReplaced
+            ? new Date().toISOString()
+            : undefined,
           opRemotePlatform: "facebook",
           opRemoteAssetId: remote.videoId ?? graphPostId,
           opUpdatedAt: new Date().toISOString(),
