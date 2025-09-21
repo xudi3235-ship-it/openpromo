@@ -15,7 +15,7 @@ import {
   UnifiedContentSelect,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
-import { and, asc, count, eq } from "drizzle-orm";
+import { and, asc, count, eq, gte, lte } from "drizzle-orm";
 import { Hono } from "hono";
 import { AppError } from "packages/dash/worker/src/helpers/error";
 import * as z from "zod";
@@ -25,6 +25,17 @@ import { zValidator } from "../../../../middleware/zod-validator";
 const listContentQuerySchema = z.object({
   page: z.coerce.number().default(1),
   pageSize: z.coerce.number().max(100).default(20),
+  publishingStatus: z
+    .enum([
+      "DRAFT",
+      "SCHEDULED",
+      "PUBLISHED",
+      "FAILED_TO_PUBLISH",
+      "PUBLISH_NOW",
+    ])
+    .optional(),
+  fromDate: z.coerce.date().optional(),
+  toDate: z.coerce.date().optional(),
 });
 
 const GroupEntity = z.object({
@@ -138,15 +149,33 @@ export const contentRoute = new Hono<ApiEnv>()
   })
   // list content api
   .get("/", zValidator("query", listContentQuerySchema), async (c) => {
-    const { page, pageSize } = c.req.valid("query");
+    const { page, pageSize, publishingStatus, fromDate, toDate } =
+      c.req.valid("query");
     // await createDummyPendingContent();
     const wsID = Actor.workspaceID();
 
-    // Get total count
+    // Build where conditions
+    const whereConditions = [eq(unifiedContentTable.workspaceId, wsID)];
+
+    if (publishingStatus) {
+      whereConditions.push(
+        eq(unifiedContentTable.publishingStatus, publishingStatus),
+      );
+    }
+
+    if (fromDate) {
+      whereConditions.push(gte(unifiedContentTable.createdAt, fromDate));
+    }
+
+    if (toDate) {
+      whereConditions.push(lte(unifiedContentTable.createdAt, toDate));
+    }
+
+    // Get total count with filters
     const totalCountResult = await db()
       .select({ count: count() })
       .from(unifiedContentTable)
-      .where(and(eq(unifiedContentTable.workspaceId, wsID)));
+      .where(and(...whereConditions));
 
     const totalCount = totalCountResult[0]?.count ?? 0;
     const totalPages = Math.ceil(totalCount / pageSize);
@@ -161,7 +190,7 @@ export const contentRoute = new Hono<ApiEnv>()
           pendingContentGroupTable.id,
         ),
       )
-      .where(and(eq(unifiedContentTable.workspaceId, wsID)))
+      .where(and(...whereConditions))
       .orderBy(asc(unifiedContentTable.createdAt))
       .limit(pageSize)
       .offset((page - 1) * pageSize);

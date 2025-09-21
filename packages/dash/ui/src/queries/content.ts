@@ -7,19 +7,52 @@ import { QUERY_KEYS } from "@/lib/query";
 export interface ContentListPaginationParams {
   page?: number;
   pageSize?: number;
+  publishingStatus?: string;
+  fromDate?: Date;
+  toDate?: Date;
 }
 
 export const useContentListQuery = (
   params: ContentListPaginationParams = {},
 ) => {
   const { workspace } = useWorkspace();
-  const { page = 1, pageSize = 20 } = params;
+  const {
+    page = 1,
+    pageSize = 20,
+    publishingStatus,
+    fromDate,
+    toDate,
+  } = params;
+
+  const queryParams: Record<string, string> = {
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+  };
+
+  if (publishingStatus) {
+    queryParams.publishingStatus = publishingStatus;
+  }
+
+  if (fromDate) {
+    queryParams.fromDate = fromDate.toISOString();
+  }
+
+  if (toDate) {
+    queryParams.toDate = toDate.toISOString();
+  }
 
   return useHonoQuery({
-    queryKey: QUERY_KEYS.CONTENT_LIST(page, pageSize),
+    queryKey: [
+      "content-list",
+      page,
+      pageSize,
+      publishingStatus,
+      fromDate?.toISOString(),
+      toDate?.toISOString(),
+    ],
     queryFn: (api) =>
       api.workspaces[":workspaceSlug"].content.$get({
-        query: { page: page.toString(), pageSize: pageSize.toString() },
+        query: queryParams,
         param: { workspaceSlug: workspace.slug },
       }),
   });

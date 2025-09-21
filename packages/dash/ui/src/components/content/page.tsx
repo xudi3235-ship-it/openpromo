@@ -32,6 +32,10 @@ import { useContentListQuery } from "@/queries/content";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import { BatchActionsToolbar } from "./batch-actions-toolbar";
 import { columns } from "./columns";
+import {
+  ContentFilters,
+  type ContentFilters as ContentFiltersType,
+} from "./content-filters";
 import { ContentTableSkeleton } from "./content-table-skeleton";
 
 export function ContentPage() {
@@ -46,11 +50,15 @@ export function ContentPage() {
     pageIndex: 0,
     pageSize: 10,
   });
+  const [filters, setFilters] = React.useState<ContentFiltersType>({});
 
   const openDialog = useDialogComposerStore((state) => state.openDialog);
   const { data, isLoading } = useContentListQuery({
     page: pagination.pageIndex + 1, // API uses 1-based indexing
     pageSize: pagination.pageSize,
+    publishingStatus: filters.publishingStatus,
+    fromDate: filters.dateRange?.from,
+    toDate: filters.dateRange?.to,
   });
   const table = useReactTable({
     data: (data?.entities as unknown as MergedContentEntity[]) ?? [],
@@ -123,6 +131,8 @@ export function ContentPage() {
           </DropdownMenu>
         </div>
       </div>
+
+      <ContentFilters filters={filters} onFiltersChange={setFilters} />
 
       <BatchActionsToolbar
         selectedRows={selectedRows}
