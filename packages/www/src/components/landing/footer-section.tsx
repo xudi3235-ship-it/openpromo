@@ -4,19 +4,10 @@ import { ChevronRight } from "lucide-react";
 import { Container, Section, Stack } from "../_layout";
 
 interface FooterProps {
-  onGetStartedClick?: () => void;
+  dashboardUrl: string;
 }
 
-export function FooterSection({ onGetStartedClick }: FooterProps) {
-  const handleGetStartedClick = () => {
-    if (onGetStartedClick) {
-      onGetStartedClick();
-    } else {
-      // For Astro, we'll just navigate to a placeholder or external URL
-      window.location.href = "/workspaces";
-    }
-  };
-
+export function FooterSection({ dashboardUrl }: FooterProps) {
   return (
     <footer className="bg-gray-900 text-white">
       {/* CTA Section */}
@@ -45,11 +36,13 @@ export function FooterSection({ onGetStartedClick }: FooterProps) {
 
               <div className="mt-12">
                 <Button
-                  onClick={handleGetStartedClick}
+                  asChild
                   className="bg-white text-gray-900 font-semibold hover:bg-gray-100 shadow-lg px-5 pr-4 h-[44px] rounded-xl"
                 >
-                  Get started
-                  <ChevronRight className="w-4 h-4" />
+                  <a href={dashboardUrl}>
+                    Get started
+                    <ChevronRight className="w-4 h-4" />
+                  </a>
                 </Button>
               </div>
             </Stack>

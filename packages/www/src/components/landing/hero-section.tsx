@@ -6,10 +6,10 @@ import { ChevronRight } from "lucide-react";
 import { Center, Container, Section } from "../_layout";
 
 interface HeroSectionProps {
-  onGetStartedClick: () => void;
+  dashboardUrl: string;
 }
 
-export function HeroSection({ onGetStartedClick }: HeroSectionProps) {
+export function HeroSection({ dashboardUrl }: HeroSectionProps) {
   const titleText = "The most powerful business platform.";
   const words = titleText.split(" ");
 
@@ -88,9 +88,11 @@ export function HeroSection({ onGetStartedClick }: HeroSectionProps) {
               transition={{ duration: 0.6, delay: 0.8 }}
               className="flex flex-col sm:flex-row items-center gap-4"
             >
-              <Button onClick={onGetStartedClick} variant="default" size="xl">
-                Get started
-                <ChevronRight className="w-4 h-4" />
+              <Button asChild variant="default" size="xl">
+                <a href={dashboardUrl}>
+                  Get started
+                  <ChevronRight className="w-4 h-4" />
+                </a>
               </Button>
               <Button variant="outline" size="xl">
                 Learn more

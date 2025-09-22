@@ -8,17 +8,18 @@ import LandingNavbar from "src/components/landing/landing-navbar";
 import { TestimonialsSection } from "src/components/landing/testimonials-section";
 import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
+
+const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
 ---
 
 <Layout>
   <LandingNavbar />
   <!-- have to do client side rendering -->
-  <HeroSection client:load onGetStartedClick={() => {}} />
+  <HeroSection client:load dashboardUrl={dashboardUrl} />
   <DashboardPreviewSection client:load />
   <FeaturesSection />
   <TestimonialsSection />
   <FaqSection />
 
-  <FooterSection onGetStartedClick={() => {}} />
-  <!-- <a data-dashboard-link href={import.meta.env.SITE}> </a> -->
+  <FooterSection dashboardUrl={dashboardUrl} />
 </Layout>
