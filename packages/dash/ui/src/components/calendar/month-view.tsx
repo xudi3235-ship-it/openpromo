@@ -310,7 +310,7 @@ export function MonthView({
 
   return (
     <div data-slot="month-view" className="contents">
-      <div className="border-border/70 grid grid-cols-7 border-b">
+      <div className="border-border/70 grid grid-cols-7 border-b sticky top-0 z-40 bg-background backdrop-blur-sm">
         {weekdays.map((day) => (
           <div
             key={day}
