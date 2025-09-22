@@ -1,50 +1,43 @@
 "use client";
 
+import type { PlacementSpec } from "@core/schemas/content.sql";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@openpromo/ui/components/popover";
+import type { ContentEntity } from "@worker/routes/api/workspaces/content";
 import {
   addDays,
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
   format,
-  isSameDay,
   isSameMonth,
   isToday,
   startOfMonth,
   startOfWeek,
 } from "date-fns";
+import { Image } from "lucide-react";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   type CalendarEvent,
-  CompactEventGap,
-  CompactEventHeight,
-  DraggableEvent,
   DroppableCell,
-  EventGap,
-  EventHeight,
-  EventItem,
-  getAllEventsForDay,
   getEventData,
-  getEventDataWithContext,
   getEventsForDay,
   getSpanningEventsForDay,
-  groupCloseEvents,
-  sortEvents,
-  useEventVisibility,
 } from "@/components/calendar";
 import { DefaultStartHour } from "@/components/calendar/constants";
+import { getPlatformIcon } from "@/components/content/utils/platform-icons";
+import { matchEntity, matchPlacementSpec } from "@/lib/hono-client";
+import { EmptyStateButton } from "./empty-state-button";
 
 interface MonthViewProps {
   currentDate: Date;
   events: CalendarEvent[];
   onEventSelect: (event: CalendarEvent) => void;
   onEventCreate: (startTime: Date) => void;
-  compactMode?: boolean; // Enable compact layout for dense content
 }
 
 export function MonthView({
@@ -52,11 +45,7 @@ export function MonthView({
   events,
   onEventSelect,
   onEventCreate,
-  compactMode = true, // Default to compact for better content density
 }: MonthViewProps) {
-  // Use compact dimensions when enabled
-  const eventHeight = compactMode ? CompactEventHeight : EventHeight;
-  const eventGap = compactMode ? CompactEventGap : EventGap;
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
@@ -93,88 +82,221 @@ export function MonthView({
     onEventSelect(event);
   };
 
-  // Render a group of closely-spaced events
-  const renderEventGroup = (
-    group: CalendarEvent[],
-    groupIndex: number,
-    day: Date,
-  ) => {
-    if (group.length === 1) {
-      // Single event - render normally
-      const event = group[0];
-      const eventData = getEventDataWithContext(event, events);
-      const eventStart = new Date(eventData.start);
-      const eventEnd = new Date(eventData.end);
-      const isFirstDay = isSameDay(day, eventStart);
-      const isLastDay = isSameDay(day, eventEnd);
-
-      return (
-        <DraggableEvent
-          key={eventData.id}
-          event={event}
-          view="month"
-          onClick={(e) => handleEventClick(event, e)}
-          isFirstDay={isFirstDay}
-          isLastDay={isLastDay}
-        />
-      );
+  // Helper to get thumbnail URL from placement spec
+  const getThumbnailFromPlacement = (
+    placementSpec: PlacementSpec,
+  ): string | undefined => {
+    if (placementSpec?.thumbnailUrl) {
+      return placementSpec.thumbnailUrl;
     }
 
-    // Multiple events - render as compact group
-    const firstEvent = group[0];
-    const firstEventData = getEventData(firstEvent);
+    const attachments = placementSpec?.attachments;
+    if (attachments && attachments.length > 0) {
+      // biome-ignore lint/suspicious/noExplicitAny: legacy code
+      const firstAttachment = attachments.find((att: any) => att.publicUrl);
+      if (firstAttachment?.publicUrl) {
+        return firstAttachment.publicUrl;
+      }
+    }
+
+    return undefined;
+  };
+
+  // Render event with thumbnail and platform icon
+  const renderEventWithThumbnail = (
+    event: CalendarEvent,
+    onClick: (e: React.MouseEvent) => void,
+  ) => {
+    return matchEntity(event, {
+      content: (entity) => {
+        const {
+          entity: { placementSpec, placement },
+        } = entity as ContentEntity;
+
+        const thumbnailSrc = getThumbnailFromPlacement(
+          placementSpec as PlacementSpec,
+        );
+        const platformIcon = getPlatformIcon(placement);
+        const eventData = getEventData(event);
+
+        const message = matchPlacementSpec(placementSpec as PlacementSpec, {
+          FBFeed: (s) => s.postSpec.message,
+          IGFeed: (s) => s.caption,
+        });
+
+        return (
+          <button
+            type="button"
+            className="h-full w-full bg-background border border-border rounded-md p-1 text-xs cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden text-left flex items-center gap-2"
+            onClick={onClick}
+          >
+            {/* Thumbnail */}
+            <div className="w-8 h-8 flex-shrink-0 rounded overflow-hidden bg-muted">
+              {thumbnailSrc ? (
+                <img
+                  src={thumbnailSrc}
+                  alt="Content thumbnail"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <Image className="w-4 h-4 text-muted-foreground" />
+                </div>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-foreground truncate text-[11px] leading-tight">
+                {message || eventData.title}
+              </div>
+            </div>
+
+            {/* Platform icon */}
+            {platformIcon && (
+              <div className="w-4 h-4 flex-shrink-0 opacity-70">
+                {platformIcon}
+              </div>
+            )}
+          </button>
+        );
+      },
+      group: (entity) => {
+        const { contents } = entity;
+        const eventData = getEventData(event);
+
+        // Get unique platforms from the contents
+        const platforms = [
+          ...new Set(contents.map((content) => content.placement)),
+        ];
+
+        // Get first thumbnail or default
+        const contentWithThumbnail = contents.find(
+          (c) =>
+            c.placementSpec != null &&
+            getThumbnailFromPlacement(c.placementSpec),
+        );
+        const thumbnailUrl = contentWithThumbnail
+          ? getThumbnailFromPlacement(
+              contentWithThumbnail.placementSpec as PlacementSpec,
+            )
+          : undefined;
+
+        // Get the primary message
+        const primaryMessage =
+          contents.length > 0
+            ? matchPlacementSpec(contents[0].placementSpec as PlacementSpec, {
+                FBFeed: (s) => s.postSpec.message,
+                IGFeed: (s) => s.caption,
+              })
+            : "Untitled Group";
+
+        return (
+          <button
+            type="button"
+            className="h-full w-full bg-background border border-border rounded-md p-1 text-xs cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden text-left flex items-center gap-2"
+            onClick={onClick}
+          >
+            {/* Thumbnail */}
+            <div className="w-8 h-8 flex-shrink-0 rounded overflow-hidden bg-muted">
+              {thumbnailUrl ? (
+                <img
+                  src={thumbnailUrl}
+                  alt="Content thumbnail"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <Image className="w-4 h-4 text-muted-foreground" />
+                </div>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-foreground truncate text-[11px] leading-tight">
+                {primaryMessage || eventData.title}
+              </div>
+              <div className="text-muted-foreground text-[10px] truncate">
+                {contents.length} post{contents.length !== 1 ? "s" : ""}
+              </div>
+            </div>
+
+            {/* Platform icons stack */}
+            <div className="flex gap-0.5 flex-shrink-0">
+              {platforms.slice(0, 2).map((platform) => {
+                const platformIcon = getPlatformIcon(platform);
+                return platformIcon ? (
+                  <div key={platform} className="w-3 h-3 opacity-70">
+                    {platformIcon}
+                  </div>
+                ) : null;
+              })}
+              {platforms.length > 2 && (
+                <div className="w-3 h-3 bg-muted rounded-full flex items-center justify-center">
+                  <span className="text-[8px] font-semibold text-muted-foreground">
+                    +{platforms.length - 2}
+                  </span>
+                </div>
+              )}
+            </div>
+          </button>
+        );
+      },
+    });
+  };
+
+  // Render individual events up to limit, then more button
+  const renderDayEvents = (dayEvents: CalendarEvent[], day: Date) => {
+    const maxVisible = 5;
+    const visibleEvents = dayEvents.slice(0, maxVisible);
+    const remainingCount = dayEvents.length - maxVisible;
 
     return (
-      <div key={`group-${groupIndex}`} className="relative">
-        {/* Main event display - show first event prominently */}
-        <DraggableEvent
-          event={firstEvent}
-          view="month"
-          onClick={(e) => handleEventClick(firstEvent, e)}
-          isFirstDay={true}
-          isLastDay={true}
-        />
+      <>
+        {/* Render individual events */}
+        {visibleEvents.map((event) => {
+          const eventData = getEventData(event);
+          return (
+            <div key={eventData.id} className="w-full h-10 mb-1">
+              {renderEventWithThumbnail(event, (e) =>
+                handleEventClick(event, e),
+              )}
+            </div>
+          );
+        })}
 
-        {/* Stacked indicator for additional events */}
-        {group.length > 1 && (
-          <div className="absolute -right-0.5 -top-0.5 flex items-center justify-center w-5 h-5 bg-orange-500 text-white text-[9px] font-bold rounded-full border border-background">
-            {group.length}
-          </div>
-        )}
-
-        {/* Tooltip or click handler for viewing all events in group */}
-        {group.length > 1 && (
+        {/* More button for remaining events */}
+        {remainingCount > 0 && (
           <Popover modal>
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="absolute inset-0 opacity-0 hover:opacity-10 bg-black transition-opacity"
+                className="w-full h-8 mb-1 bg-muted/50 hover:bg-muted border border-dashed border-muted-foreground/30 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
                 onClick={(e) => e.stopPropagation()}
-              />
+              >
+                <span className="font-medium">+{remainingCount} more</span>
+              </button>
             </PopoverTrigger>
-            <PopoverContent className="max-w-64 p-3">
-              <div className="space-y-2">
-                <div className="text-sm font-medium">
-                  {group.length} posts at{" "}
-                  {format(firstEventData.start, "h:mm a")}
+            <PopoverContent className="max-w-80 p-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium">
+                    {format(day, "EEE d")}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {dayEvents.length} events
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  {group.map((event) => {
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {dayEvents.slice(maxVisible).map((event) => {
                     const eventData = getEventData(event);
                     return (
-                      <button
-                        key={eventData.id}
-                        type="button"
-                        className="flex items-center justify-between p-2 rounded border cursor-pointer hover:bg-muted/50 w-full"
-                        onClick={(e) => handleEventClick(event, e)}
-                      >
-                        <span className="text-xs font-medium">
-                          {eventData.title}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {format(eventData.start, "h:mm a")}
-                        </span>
-                      </button>
+                      <div key={eventData.id} className="h-12">
+                        {renderEventWithThumbnail(event, (e) =>
+                          handleEventClick(event, e),
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -182,23 +304,9 @@ export function MonthView({
             </PopoverContent>
           </Popover>
         )}
-      </div>
+      </>
     );
   };
-
-  const [referencedCell, setReferencedCell] = useState<HTMLDivElement | null>(
-    null,
-  );
-  const [isMounted, setIsMounted] = useState(false);
-  const { getVisibleEventCount } = useEventVisibility({
-    referencedCell: referencedCell,
-    eventHeight: eventHeight,
-    eventGap: eventGap,
-  });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   return (
     <div data-slot="month-view" className="contents">
@@ -215,7 +323,7 @@ export function MonthView({
       <div
         className="grid flex-1 auto-rows-fr min-h-0"
         style={{
-          gridTemplateRows: "repeat(auto-fit, minmax(120px, 1fr))",
+          gridTemplateRows: "repeat(auto-fit, minmax(180px, 1fr))",
         }}
       >
         {weeks.map((week, weekIndex) => (
@@ -226,7 +334,7 @@ export function MonthView({
             }`}
             className="grid grid-cols-7 [&:last-child>*]:border-b-0"
           >
-            {week.map((day, dayIndex) => {
+            {week.map((day) => {
               if (!day) return null; // Skip if day is undefined
 
               const dayEvents = getEventsForDay(events, day);
@@ -234,25 +342,11 @@ export function MonthView({
               const isCurrentMonth = isSameMonth(day, currentDate);
               const cellId = `month-cell-${day.toISOString()}`;
               const allDayEvents = [...spanningEvents, ...dayEvents];
-              const allEvents = getAllEventsForDay(events, day);
-
-              // Group close events for better layout
-              const eventGroups = groupCloseEvents(allDayEvents, 15);
-
-              const isReferenceCell = weekIndex === 0 && dayIndex === 0;
-              const visibleCount = isMounted
-                ? getVisibleEventCount(eventGroups.length)
-                : undefined;
-              const hasMore =
-                visibleCount !== undefined && eventGroups.length > visibleCount;
-              const remainingCount = hasMore
-                ? eventGroups.length - visibleCount
-                : 0;
 
               return (
                 <div
                   key={day.toString()}
-                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 border-r border-b last:border-r-0 overflow-hidden flex flex-col min-h-[120px]"
+                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 border-r border-b last:border-r-0 overflow-hidden flex flex-col min-h-[180px]"
                   data-today={isToday(day) || undefined}
                   data-outside-cell={!isCurrentMonth || undefined}
                 >
@@ -265,105 +359,28 @@ export function MonthView({
                       onEventCreate(startTime);
                     }}
                   >
-                    <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 mb-1 inline-flex size-6 items-center justify-center rounded-full text-sm font-medium shrink-0">
-                      {format(day, "d")}
-                    </div>
-                    <div
-                      ref={(el) => {
-                        if (isReferenceCell) {
-                          setReferencedCell(el);
-                        }
-                      }}
-                      className="flex-1 min-h-0 space-y-0.5"
-                      style={
-                        {
-                          "--event-height": `${eventHeight}px`,
-                          "--event-gap": `${eventGap}px`,
-                        } as React.CSSProperties
-                      }
-                    >
-                      {eventGroups.map((group, groupIndex) => {
-                        // Check if this group should be hidden based on visibility limit
-                        const isGroupHidden =
-                          isMounted &&
-                          visibleCount &&
-                          groupIndex >= visibleCount;
-
-                        if (!visibleCount || isGroupHidden) return null;
-
-                        // Create a stable key from event IDs in the group
-                        const groupKey = group
-                          .map((event) => getEventData(event).id)
-                          .join("-");
-
-                        return (
-                          <div
-                            key={`group-${groupKey}`}
-                            className="aria-hidden:hidden"
-                            aria-hidden={isGroupHidden ? "true" : undefined}
-                          >
-                            {renderEventGroup(group, groupIndex, day)}
-                          </div>
-                        );
-                      })}
-
-                      {hasMore && (
-                        <Popover modal>
-                          <PopoverTrigger asChild>
-                            <button
-                              type="button"
-                              className="focus-visible:border-ring focus-visible:ring-ring/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 flex h-[var(--event-height)] w-full items-center overflow-hidden px-1.5 text-left text-[10px] backdrop-blur-md transition outline-none select-none focus-visible:ring-[3px] rounded-sm border border-dashed border-muted-foreground/30 sm:px-2 sm:text-xs"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <span className="font-medium">
-                                +{remainingCount} more
-                              </span>
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            align="center"
-                            className="max-w-64 p-3"
-                            style={
-                              {
-                                "--event-height": `${eventHeight}px`,
-                              } as React.CSSProperties
-                            }
-                          >
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <div className="text-sm font-medium">
-                                  {format(day, "EEE d")}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {allEvents.length} events
-                                </div>
-                              </div>
-                              <div className="space-y-1 max-h-64 overflow-y-auto">
-                                {sortEvents(allEvents).map((event) => {
-                                  const eventData = getEventData(event);
-                                  const eventStart = new Date(eventData.start);
-                                  const eventEnd = new Date(eventData.end);
-                                  const isFirstDay = isSameDay(day, eventStart);
-                                  const isLastDay = isSameDay(day, eventEnd);
-
-                                  return (
-                                    <EventItem
-                                      key={eventData.id}
-                                      onClick={(e) =>
-                                        handleEventClick(event, e)
-                                      }
-                                      event={event}
-                                      view="month"
-                                      isFirstDay={isFirstDay}
-                                      isLastDay={isLastDay}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 items-center justify-center rounded-full text-sm font-medium shrink-0">
+                        {format(day, "d")}
+                      </div>
+                      {/* Empty state button for creating posts */}
+                      {allDayEvents.length === 0 && (
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <EmptyStateButton
+                            day={day}
+                            onClick={() => {
+                              const startTime = new Date(day);
+                              startTime.setHours(DefaultStartHour, 0, 0);
+                              onEventCreate(startTime);
+                            }}
+                            variant="small"
+                          />
+                        </div>
                       )}
+                    </div>
+                    <div className="flex-1 min-h-0 space-y-1 overflow-y-auto">
+                      {/* Render day events with limit and more button */}
+                      {renderDayEvents(allDayEvents, day)}
                     </div>
                   </DroppableCell>
                 </div>
