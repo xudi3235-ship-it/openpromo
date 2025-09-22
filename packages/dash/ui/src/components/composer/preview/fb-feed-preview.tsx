@@ -2,7 +2,6 @@ import { Button } from "@openpromo/ui/components/button";
 import {
   Globe,
   Heart,
-  Image,
   MapPin,
   MessageCircle,
   MoreHorizontal,
@@ -12,6 +11,7 @@ import {
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerPreview } from "@/stores/composer-preview-store";
+import { PreviewMediaNullState } from "./null-state";
 
 export function FBFeedPreview() {
   const { workspace } = useWorkspace();
@@ -63,11 +63,7 @@ export function FBFeedPreview() {
 
       {/* Post Message */}
       <div className="mb-3 whitespace-pre-wrap text-sm break-words">
-        {message || (
-          <span className="text-muted-foreground">
-            Start typing your post...
-          </span>
-        )}
+        {message}
       </div>
 
       {/* Post Content (media) */}
@@ -148,12 +144,7 @@ export function FBFeedPreview() {
             ) : null}
           </div>
         ) : (
-          <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <Image className="w-12 h-12 mx-auto mb-2" />
-              <p className="text-sm">Media preview will appear here</p>
-            </div>
-          </div>
+          <PreviewMediaNullState className="w-full h-64 bg-muted rounded-lg flex items-center justify-center" />
         )}
       </div>
 

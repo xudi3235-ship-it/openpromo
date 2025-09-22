@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useReelConfig } from "@/hooks/useReelConfig";
 import { useReelControls } from "@/hooks/useReelControls";
+import { PreviewMediaNullState } from "./null-state";
 
 export function FBReelPreview() {
   const {
@@ -175,13 +176,10 @@ export function FBReelPreview() {
             </div>
           </div>
         ) : (
-          <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-            <div className="text-center text-white/60">
-              <Play className="w-12 h-12 mx-auto mb-3" />
-              <p className="text-sm">Video preview will appear here</p>
-              <p className="text-xs mt-1">Upload a video to create your reel</p>
-            </div>
-          </div>
+          <PreviewMediaNullState
+            message="Upload a video to create your reel"
+            className="w-full h-full bg-gray-900 flex items-center justify-center"
+          />
         )}
       </div>
     </div>
