@@ -113,17 +113,17 @@ export function CalendarEventCard({
             <div
               className={cn(
                 "group w-full h-full rounded-lg transition-all relative overflow-hidden bg-white dark:bg-gray-800",
-                "hover:bg-gray-50 dark:hover:bg-gray-750 min-h-[120px] border border-gray-200 dark:border-gray-700",
+                "hover:bg-gray-50 dark:hover:bg-gray-750 min-h-[120px] border-[0.5px] border-gray-200 dark:border-gray-700",
                 isDragging && "opacity-50 cursor-grabbing",
                 className,
               )}
             >
               {/* Compact thumbnail - top portion */}
               {thumbnailSrc && (
-                <div className="h-16 overflow-hidden">
+                <div className="h-16 p-2 pb-0">
                   <ThumbnailImage
                     src={thumbnailSrc}
-                    className="rounded-t-lg object-cover"
+                    className="rounded-lg object-cover w-full h-full"
                   />
                 </div>
               )}
@@ -232,17 +232,17 @@ export function CalendarEventCard({
             <div
               className={cn(
                 "group w-full h-full rounded-lg transition-all relative overflow-hidden bg-white dark:bg-gray-800",
-                "hover:bg-gray-50 dark:hover:bg-gray-750 min-h-[120px] border border-gray-200 dark:border-gray-700",
+                "hover:bg-gray-50 dark:hover:bg-gray-750 min-h-[120px] border-[0.5px] border-gray-200 dark:border-gray-700",
                 isDragging && "opacity-50 cursor-grabbing",
                 className,
               )}
             >
               {/* Compact thumbnail - top portion */}
               {thumbnailUrl && (
-                <div className="h-16 overflow-hidden">
+                <div className="h-16 p-2 pb-0">
                   <ThumbnailImage
                     src={thumbnailUrl}
-                    className="rounded-t-lg object-cover"
+                    className="rounded-lg object-cover w-full h-full"
                   />
                 </div>
               )}

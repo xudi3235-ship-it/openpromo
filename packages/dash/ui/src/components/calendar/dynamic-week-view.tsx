@@ -14,7 +14,6 @@ import type React from "react";
 import { useMemo } from "react";
 import {
   type CalendarEvent,
-  DraggableEvent,
   DroppableCell,
   getEventData,
   isMultiDayEvent,
@@ -111,14 +110,6 @@ export function DynamicWeekView({
     });
   }, [days, events]);
 
-  // Get all-day and multi-day events for the week
-  const allDayEvents = useMemo(() => {
-    return events.filter((event) => {
-      const eventData = getEventData(event);
-      return eventData.allDay || isMultiDayEvent(event);
-    });
-  }, [events]);
-
   const handleEventClick = (event: CalendarEvent, e: React.MouseEvent) => {
     e.stopPropagation();
     onEventSelect(event);
@@ -140,8 +131,6 @@ export function DynamicWeekView({
     }
     onEventCreate(startTime);
   };
-
-  const showAllDaySection = allDayEvents.length > 0;
 
   return (
     <div data-slot="dynamic-week-view" className="flex h-full flex-col">
@@ -173,26 +162,6 @@ export function DynamicWeekView({
           </div>
         ))}
       </div>
-
-      {/* All-day events section */}
-      {showAllDaySection && (
-        <div className="border-border/70 bg-muted/30 border-b p-2">
-          <div className="text-xs text-muted-foreground mb-2 font-medium">
-            All Day
-          </div>
-          <div className="space-y-1">
-            {allDayEvents.map((event) => (
-              <div key={getEventData(event).id} className="h-6">
-                <DraggableEvent
-                  event={event}
-                  view="week"
-                  onClick={(e) => handleEventClick(event, e)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Dynamic day columns */}
       <div className="flex-1 grid grid-cols-7 overflow-hidden">
