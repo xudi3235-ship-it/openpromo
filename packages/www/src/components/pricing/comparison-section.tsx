@@ -1,110 +1,125 @@
+import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
 import { Typography } from "@openpromo/ui/components/typography";
-import { Check, ChevronRight } from "lucide-react";
-import { Container, Section, Stack } from "../_layout";
+import { Check, X } from "lucide-react";
+import { Container, Section } from "../_layout";
 
 const comparisonData = {
   plans: [
     {
-      name: "Free",
-      price: "$0",
-      period: "/mo",
-      buttonText: "Get started",
-      buttonVariant: "outline" as const,
+      name: "Starter",
+      popular: false,
     },
     {
-      name: "Basic",
-      price: "$19",
-      period: "/mo",
-      buttonText: "Get started",
-      buttonVariant: "default" as const,
+      name: "Pro",
+      popular: true,
     },
     {
       name: "Enterprise",
-      price: "Custom",
-      period: "",
-      buttonText: "Talk to sales",
-      buttonVariant: "outline" as const,
+      popular: false,
     },
   ],
   sections: [
     {
-      title: "Core features",
+      title: "Content Management",
       features: [
         {
-          name: "Advanced analytics",
-          free: true,
-          basic: true,
-          enterprise: true,
-        },
-        {
-          name: "Custom branding",
-          free: true,
-          basic: true,
-          enterprise: true,
-        },
-        {
-          name: "Storage integrations",
-          free: true,
-          basic: true,
-          enterprise: true,
-        },
-        {
-          name: "AI assistant",
-          free: false,
-          basic: true,
-          enterprise: true,
-        },
-        {
-          name: "Automated reports",
-          free: false,
-          basic: false,
-          enterprise: true,
-        },
-      ],
-    },
-    {
-      title: "Collaboration",
-      features: [
-        {
-          name: "Team members",
-          free: "1 user",
-          basic: "5 users",
+          name: "Social accounts",
+          starter: "Up to 3",
+          pro: "Unlimited",
           enterprise: "Unlimited",
         },
         {
-          name: "User roles and permissions",
-          free: false,
-          basic: true,
+          name: "Scheduled posts",
+          starter: "5/month",
+          pro: "Unlimited",
+          enterprise: "Unlimited",
+        },
+        {
+          name: "Content templates",
+          starter: true,
+          pro: true,
           enterprise: true,
         },
         {
-          name: "Guest accounts",
-          free: false,
-          basic: false,
+          name: "AI content suggestions",
+          starter: false,
+          pro: true,
           enterprise: true,
         },
       ],
     },
     {
-      title: "Support",
+      title: "Analytics & Insights",
       features: [
         {
-          name: "Advanced analytics",
-          free: true,
-          basic: true,
+          name: "Basic analytics",
+          starter: true,
+          pro: true,
           enterprise: true,
         },
         {
-          name: "Onboarding support",
-          free: false,
-          basic: true,
+          name: "Advanced reporting",
+          starter: false,
+          pro: true,
+          enterprise: true,
+        },
+        {
+          name: "Custom dashboards",
+          starter: false,
+          pro: false,
+          enterprise: true,
+        },
+      ],
+    },
+    {
+      title: "Team & Collaboration",
+      features: [
+        {
+          name: "Team members",
+          starter: "1",
+          pro: "Up to 10",
+          enterprise: "Unlimited",
+        },
+        {
+          name: "Role permissions",
+          starter: false,
+          pro: true,
+          enterprise: true,
+        },
+        {
+          name: "Approval workflows",
+          starter: false,
+          pro: false,
+          enterprise: true,
+        },
+      ],
+    },
+    {
+      title: "Support & Security",
+      features: [
+        {
+          name: "Email support",
+          starter: true,
+          pro: true,
+          enterprise: true,
+        },
+        {
+          name: "Priority support",
+          starter: false,
+          pro: true,
           enterprise: true,
         },
         {
           name: "Dedicated account manager",
-          free: false,
-          basic: false,
+          starter: false,
+          pro: false,
+          enterprise: true,
+        },
+        {
+          name: "SLA guarantee",
+          starter: false,
+          pro: false,
           enterprise: true,
         },
       ],
@@ -112,145 +127,116 @@ const comparisonData = {
   ],
 };
 
-export function ComparisonSection() {
-  const handleGetStarted = () => {
-    // TODO: implement auth redirect
+type FeatureValue = boolean | string;
+
+interface ComparisonSectionProps {
+  dashboardUrl: string;
+}
+
+export function ComparisonSection({ dashboardUrl }: ComparisonSectionProps) {
+  const renderFeatureValue = (value: FeatureValue) => {
+    if (typeof value === "boolean") {
+      return value ? (
+        <Check className="h-5 w-5 text-success" />
+      ) : (
+        <X className="h-5 w-5 text-muted-foreground/40" />
+      );
+    }
+    return (
+      <Typography.BodySm className="font-medium">{value}</Typography.BodySm>
+    );
   };
 
   return (
-    <Section className="py-16 bg-white">
+    <Section className="py-24 bg-muted/30">
       <Container size="xl">
-        <Stack spacing="xl" align="center">
-          {/* Header */}
-          <div className="text-center max-w-[600px] mx-auto">
-            <Stack spacing="lg" align="center">
-              <Typography.Display className="text-[var(--neutral-900)]">
-                Compare plans
-              </Typography.Display>
-              <Typography.BodyLg className="text-[var(--neutral-600)]">
-                Find the perfect plan for your team and get started today.
-              </Typography.BodyLg>
-            </Stack>
-          </div>
+        <div className="text-center mb-16">
+          <Typography.Display className="mb-4">
+            Compare all features
+          </Typography.Display>
+          <Typography.BodyLg className="text-muted-foreground max-w-2xl mx-auto">
+            See exactly what's included in each plan. Upgrade or downgrade at
+            any time.
+          </Typography.BodyLg>
+        </div>
 
-          {/* Plans Header with Buttons */}
-          <div className="w-full max-w-[742px] mx-auto">
-            <div className="grid grid-cols-3 gap-8 items-end mb-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-card rounded-2xl border overflow-hidden shadow-sm">
+            {/* Headers */}
+            <div className="grid grid-cols-4 bg-muted/50 border-b">
+              <div className="p-6">
+                <Typography.H4 className="font-semibold">
+                  Features
+                </Typography.H4>
+              </div>
               {comparisonData.plans.map((plan) => (
-                <div key={plan.name} className="text-center">
-                  <Stack spacing="sm" align="center">
-                    <Typography.H3 className="text-[21px] font-medium text-[var(--neutral-900)] leading-8">
-                      {plan.name}
-                    </Typography.H3>
-                    <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-[18px] font-medium text-[var(--neutral-900)] leading-7">
-                        {plan.price}
-                      </span>
-                      {plan.period && (
-                        <span className="text-[var(--neutral-600)] text-base font-medium">
-                          {plan.period}
-                        </span>
-                      )}
-                    </div>
-                    <Button
-                      onClick={handleGetStarted}
-                      variant={plan.buttonVariant}
+                <div key={plan.name} className="p-6 text-center relative">
+                  {plan.popular && (
+                    <Badge
+                      variant="default"
+                      className="absolute top-2 left-1/2 -translate-x-1/2 text-xs"
                     >
-                      {plan.buttonText}
-                      <ChevronRight />
-                    </Button>
-                  </Stack>
+                      Popular
+                    </Badge>
+                  )}
+                  <Typography.H4
+                    className={`font-semibold mt-${plan.popular ? "4" : "0"}`}
+                  >
+                    {plan.name}
+                  </Typography.H4>
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* Comparison Table */}
-          <div className="w-full max-w-[1200px]">
-            <Stack spacing="xl">
-              {comparisonData.sections.map((section) => (
-                <div key={section.title} className="w-full">
-                  {/* Section Title */}
-                  <div className="mb-6">
-                    <Typography.H3 className="text-sm font-semibold text-[var(--neutral-900)] leading-[21px]">
-                      {section.title}
-                    </Typography.H3>
-                  </div>
-
-                  {/* Features Table */}
-                  <div className="overflow-hidden">
-                    {section.features.map((feature, index) => (
-                      <div
-                        key={feature.name}
-                        className={`grid grid-cols-[300px_1fr_1fr_1fr] items-center ${
-                          index !== section.features.length - 1
-                            ? "border-b border-[var(--neutral-200)]"
-                            : ""
-                        }`}
-                      >
-                        {/* Feature Name */}
-                        <div className="text-[var(--neutral-900)] text-sm leading-[21px] py-4 px-6 border-r border-[var(--neutral-200)]">
-                          {feature.name}
-                        </div>
-
-                        {/* Free Plan */}
-                        <div className="flex justify-center py-4 px-6 border-r border-[var(--neutral-200)]">
-                          {typeof feature.free === "boolean" ? (
-                            feature.free ? (
-                              <Check className="w-4 h-4 text-[var(--neutral-900)]" />
-                            ) : (
-                              <span className="text-[var(--neutral-900)] text-sm">
-                                -
-                              </span>
-                            )
-                          ) : (
-                            <span className="text-[var(--neutral-900)] text-sm text-center">
-                              {feature.free}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Basic Plan */}
-                        <div className="flex justify-center py-4 px-6 border-r border-[var(--neutral-200)]">
-                          {typeof feature.basic === "boolean" ? (
-                            feature.basic ? (
-                              <Check className="w-4 h-4 text-[var(--neutral-900)]" />
-                            ) : (
-                              <span className="text-[var(--neutral-900)] text-sm">
-                                -
-                              </span>
-                            )
-                          ) : (
-                            <span className="text-[var(--neutral-900)] text-sm text-center">
-                              {feature.basic}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Enterprise Plan */}
-                        <div className="flex justify-center py-4 px-6">
-                          {typeof feature.enterprise === "boolean" ? (
-                            feature.enterprise ? (
-                              <Check className="w-4 h-4 text-[var(--neutral-900)]" />
-                            ) : (
-                              <span className="text-[var(--neutral-900)] text-sm">
-                                -
-                              </span>
-                            )
-                          ) : (
-                            <span className="text-[var(--neutral-900)] text-sm text-center">
-                              {feature.enterprise}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            {/* Feature Sections */}
+            {comparisonData.sections.map((section) => (
+              <div key={section.title}>
+                {/* Section Title */}
+                <div className="px-6 py-4 bg-muted/30 border-b">
+                  <Typography.BodySm className="font-semibold text-muted-foreground uppercase tracking-wide">
+                    {section.title}
+                  </Typography.BodySm>
                 </div>
-              ))}
-            </Stack>
+
+                {/* Features */}
+                {section.features.map((feature, index) => (
+                  <div
+                    key={feature.name}
+                    className={`grid grid-cols-4 border-b last:border-b-0 ${
+                      index % 2 === 0 ? "bg-card" : "bg-muted/20"
+                    }`}
+                  >
+                    <div className="p-4 flex items-center">
+                      <Typography.BodySm className="font-medium">
+                        {feature.name}
+                      </Typography.BodySm>
+                    </div>
+                    <div className="p-4 flex items-center justify-center">
+                      {renderFeatureValue(feature.starter)}
+                    </div>
+                    <div className="p-4 flex items-center justify-center">
+                      {renderFeatureValue(feature.pro)}
+                    </div>
+                    <div className="p-4 flex items-center justify-center">
+                      {renderFeatureValue(feature.enterprise)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
-        </Stack>
+
+          {/* CTA Section */}
+          <div className="text-center mt-12">
+            <Typography.BodyLg className="text-muted-foreground mb-6">
+              Ready to get started? Choose your plan above or start with a free
+              trial.
+            </Typography.BodyLg>
+            <Button asChild size="lg">
+              <a href={dashboardUrl}>Start free trial</a>
+            </Button>
+          </div>
+        </div>
       </Container>
     </Section>
   );

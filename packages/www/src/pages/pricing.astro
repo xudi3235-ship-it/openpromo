@@ -6,13 +6,13 @@ import { ComparisonSection } from "src/components/pricing/comparison-section";
 import { PricingSection } from "src/components/pricing/pricing-section";
 import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
+const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
 ---
 
 <Layout>
   <LandingNavbar />
-  <PricingSection client:load />
-  <ComparisonSection client:load />
+  <PricingSection client:load dashboardUrl={dashboardUrl} />
+  <ComparisonSection client:load dashboardUrl={dashboardUrl} />
   <FaqSection />
-  <FooterSection />
+  <FooterSection dashboardUrl={dashboardUrl} />
 </Layout>
-
