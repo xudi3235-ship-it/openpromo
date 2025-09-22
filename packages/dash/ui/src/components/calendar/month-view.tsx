@@ -13,8 +13,10 @@ import {
   endOfMonth,
   endOfWeek,
   format,
+  isAfter,
   isSameMonth,
   isToday,
+  startOfDay,
   startOfMonth,
   startOfWeek,
 } from "date-fns";
@@ -31,7 +33,6 @@ import {
 import { DefaultStartHour } from "@/components/calendar/constants";
 import { getPlatformIcon } from "@/components/content/utils/platform-icons";
 import { matchEntity, matchPlacementSpec } from "@/lib/hono-client";
-import { EmptyStateButton } from "./empty-state-button";
 
 interface MonthViewProps {
   currentDate: Date;
@@ -359,23 +360,28 @@ export function MonthView({
                       onEventCreate(startTime);
                     }}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 items-center justify-center rounded-full text-sm font-medium shrink-0">
+                    <div className="relative h-8 mb-2">
+                      {/* Default state - show date */}
+                      <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 items-center justify-center rounded-full text-sm font-medium shrink-0 group-hover:opacity-0 transition-opacity">
                         {format(day, "d")}
                       </div>
-                      {/* Empty state button for creating posts */}
-                      {allDayEvents.length === 0 && (
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <EmptyStateButton
-                            day={day}
-                            onClick={() => {
-                              const startTime = new Date(day);
-                              startTime.setHours(DefaultStartHour, 0, 0);
-                              onEventCreate(startTime);
-                            }}
-                            variant="small"
-                          />
-                        </div>
+
+                      {/* Hover state - show CTA button (only for current/future days) */}
+                      {(isToday(day) ||
+                        isAfter(startOfDay(day), startOfDay(new Date()))) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const startTime = new Date(day);
+                            startTime.setHours(DefaultStartHour, 0, 0);
+                            onEventCreate(startTime);
+                          }}
+                          className="absolute inset-0 opacity-0 group-hover:opacity-100 w-full h-7 border border-dashed border-primary/30 bg-primary/5 rounded flex items-center justify-center text-primary/80 text-xs hover:border-primary/50 hover:bg-primary/10 transition-all font-medium"
+                        >
+                          <span className="truncate">
+                            {isToday(day) ? "Create Post" : "Schedule Post"}
+                          </span>
+                        </button>
                       )}
                     </div>
                     <div className="flex-1 min-h-0 space-y-1 overflow-y-auto">
