@@ -1,8 +1,8 @@
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 
-export type CalendarView = "month" | "week" | "day" | "agenda";
+export type CalendarView = "month" | "week";
 
-export const CalendarViews = ["month", "week", "day", "agenda"] as const;
+export const CalendarViews = ["month", "week"] as const;
 
 export type CalendarEvent = MergedContentEntity;
 

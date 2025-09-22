@@ -2,28 +2,23 @@
 
 import { Button } from "@openpromo/ui/components/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from "@openpromo/ui/components/dropdown-menu";
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@openpromo/ui/components/toggle-group";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import {
-  addDays,
   addMonths,
   addWeeks,
   endOfWeek,
   format,
-  isSameMonth,
   startOfWeek,
   subMonths,
   subWeeks,
 } from "date-fns";
 import {
+  Calendar,
   CalendarCheck,
-  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   PlusIcon,
@@ -31,11 +26,8 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  AgendaDaysToShow,
-  AgendaView,
   CalendarDndProvider,
   type CalendarView,
-  DayView,
   DynamicWeekView,
   EventDialog,
   EventGap,
@@ -101,12 +93,6 @@ export function ContentCalendar({
         case "w":
           setView("week");
           break;
-        case "d":
-          setView("day");
-          break;
-        case "a":
-          setView("agenda");
-          break;
       }
     };
 
@@ -122,11 +108,6 @@ export function ContentCalendar({
       setCurrentDate(subMonths(currentDate, 1));
     } else if (view === "week") {
       setCurrentDate(subWeeks(currentDate, 1));
-    } else if (view === "day") {
-      setCurrentDate(addDays(currentDate, -1));
-    } else if (view === "agenda") {
-      // For agenda view, go back 30 days (a full month)
-      setCurrentDate(addDays(currentDate, -AgendaDaysToShow));
     }
   };
 
@@ -135,11 +116,6 @@ export function ContentCalendar({
       setCurrentDate(addMonths(currentDate, 1));
     } else if (view === "week") {
       setCurrentDate(addWeeks(currentDate, 1));
-    } else if (view === "day") {
-      setCurrentDate(addDays(currentDate, 1));
-    } else if (view === "agenda") {
-      // For agenda view, go forward 30 days (a full month)
-      setCurrentDate(addDays(currentDate, AgendaDaysToShow));
     }
   };
 
@@ -244,30 +220,6 @@ export function ContentCalendar({
       const start = startOfWeek(currentDate, { weekStartsOn: 0 });
       const end = endOfWeek(currentDate, { weekStartsOn: 0 });
       return `${format(start, "MMM d")} - ${format(end, "MMM d, yyyy")}`;
-    } else if (view === "day") {
-      return (
-        <>
-          <span className="min-[480px]:hidden" aria-hidden="true">
-            {format(currentDate, "MMM d, yyyy")}
-          </span>
-          <span className="max-[479px]:hidden min-md:hidden" aria-hidden="true">
-            {format(currentDate, "MMMM d, yyyy")}
-          </span>
-          <span className="max-md:hidden">
-            {format(currentDate, "EEE MMMM d, yyyy")}
-          </span>
-        </>
-      );
-    } else if (view === "agenda") {
-      // Show the month range for agenda view
-      const start = currentDate;
-      const end = addDays(currentDate, AgendaDaysToShow - 1);
-
-      if (isSameMonth(start, end)) {
-        return format(start, "MMMM yyyy");
-      } else {
-        return `${format(start, "MMM")} - ${format(end, "MMM yyyy")}`;
-      }
     } else {
       return format(currentDate, "MMMM yyyy");
     }
@@ -287,6 +239,35 @@ export function ContentCalendar({
       <CalendarDndProvider onEventUpdate={handleEventUpdate}>
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-1 sm:gap-4">
+            {/* View Toggle - Week/Month */}
+            <ToggleGroup
+              type="single"
+              value={view}
+              onValueChange={(value) => {
+                if (value && (value === "week" || value === "month")) {
+                  setView(value);
+                }
+              }}
+              className="border rounded-md"
+            >
+              <ToggleGroupItem
+                value="week"
+                aria-label="Week view"
+                className="px-3 py-1 text-xs"
+              >
+                <Calendar className="w-4 h-4 mr-1" />
+                Week
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="month"
+                aria-label="Month view"
+                className="px-3 py-1 text-xs"
+              >
+                <CalendarCheck className="w-4 h-4 mr-1" />
+                Month
+              </ToggleGroupItem>
+            </ToggleGroup>
+
             <Button
               variant="outline"
               className="max-[479px]:aspect-square max-[479px]:p-0!"
@@ -318,36 +299,6 @@ export function ContentCalendar({
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-1.5 max-[479px]:h-8">
-                  <span>
-                    <span className="min-[480px]:hidden" aria-hidden="true">
-                      {view.charAt(0).toUpperCase()}
-                    </span>
-                    <span className="max-[479px]:sr-only">
-                      {view.charAt(0).toUpperCase() + view.slice(1)}
-                    </span>
-                  </span>
-                  <ChevronDownIcon
-                    className="-me-1 opacity-60"
-                    size={16}
-                    aria-hidden="true"
-                  />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-32">
-                <DropdownMenuItem onClick={() => setView("month")}>
-                  Month <DropdownMenuShortcut>M</DropdownMenuShortcut>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setView("week")}>
-                  Week <DropdownMenuShortcut>W</DropdownMenuShortcut>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setView("day")}>
-                  Day <DropdownMenuShortcut>D</DropdownMenuShortcut>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             <Button
               className="max-[479px]:aspect-square max-[479px]:p-0!"
               size="sm"
@@ -381,21 +332,6 @@ export function ContentCalendar({
               events={events}
               onEventSelect={handleEventSelect}
               onEventCreate={handleEventCreate}
-            />
-          )}
-          {view === "day" && (
-            <DayView
-              currentDate={currentDate}
-              events={events}
-              onEventSelect={handleEventSelect}
-              onEventCreate={handleEventCreate}
-            />
-          )}
-          {view === "agenda" && (
-            <AgendaView
-              currentDate={currentDate}
-              events={events}
-              onEventSelect={handleEventSelect}
             />
           )}
         </div>
