@@ -332,6 +332,7 @@ export function ContentCalendar({
               events={events}
               onEventSelect={handleEventSelect}
               onEventCreate={handleEventCreate}
+              onEventDelete={handleEventDelete}
             />
           )}
         </div>

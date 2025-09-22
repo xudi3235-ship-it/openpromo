@@ -28,6 +28,7 @@ interface DynamicWeekViewProps {
   events: CalendarEvent[];
   onEventSelect: (event: CalendarEvent) => void;
   onEventCreate: (startTime: Date) => void;
+  onEventDelete?: (eventId: string) => void;
 }
 
 // Draggable wrapper for calendar event cards
@@ -77,6 +78,7 @@ export function DynamicWeekView({
   events,
   onEventSelect,
   onEventCreate,
+  onEventDelete,
 }: DynamicWeekViewProps) {
   const days = useMemo(() => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
@@ -222,6 +224,7 @@ export function DynamicWeekView({
                         <CalendarEventCard
                           event={event}
                           onClick={(e) => handleEventClick(event, e)}
+                          onDelete={onEventDelete}
                           showTime
                         />
                       </DraggableCalendarCard>

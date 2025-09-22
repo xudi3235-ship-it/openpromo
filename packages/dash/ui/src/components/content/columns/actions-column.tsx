@@ -10,126 +10,23 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { Edit, Eye, MoreHorizontal, Trash2, Upload } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useTableActions } from "@/hooks/content";
 import { matchEntity } from "@/lib/hono-client";
-import {
-  useContentDeleteMutation,
-  useContentGroupDeleteMutation,
-  useContentGroupPublishMutation,
-} from "@/queries/content";
-import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 
 const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
-  const openDialog = useDialogComposerStore((state) => state.openDialog);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteAction, setDeleteAction] = useState<(() => void) | null>(null);
-  const [deleteTitle, setDeleteTitle] = useState("");
-  const [deleteDescription, setDeleteDescription] = useState("");
-
-  const deleteContent = useContentDeleteMutation(() => {
-    setShowDeleteConfirm(false);
-  });
-  const deleteContentGroup = useContentGroupDeleteMutation(() => {
-    setShowDeleteConfirm(false);
-  });
-  const publishContentGroup = useContentGroupPublishMutation();
-
-  const handleDelete = () => {
-    matchEntity(entity, {
-      content: (contentEntity) => {
-        const content = contentEntity.entity;
-        const isDraft = content.publishingStatus === "DRAFT";
-        const isScheduled = content.publishingStatus === "SCHEDULED";
-        const isPublished = content.publishingStatus === "PUBLISHED";
-
-        const titleBase =
-          content.placement === "IG_FEED"
-            ? "Delete Instagram Post"
-            : content.placement === "FB_FEED"
-              ? "Delete Facebook Post"
-              : "Delete Content";
-
-        if (isPublished) {
-          setDeleteTitle(titleBase);
-          if (content.placement === "IG_FEED") {
-            setDeleteDescription(
-              "This content has already been published to Instagram. Deleting it will remove it from OpenPromo, but it will remain visible on Instagram.",
-            );
-          } else {
-            setDeleteDescription(
-              "This content has already been published. Deleting it will remove it from OpenPromo and attempt to remove the post from the connected platform.",
-            );
-          }
-        } else if (isScheduled) {
-          setDeleteTitle(`${titleBase} (Scheduled)`);
-          setDeleteDescription(
-            "This content is scheduled to publish. Deleting it will cancel the upcoming publish and remove it from OpenPromo.",
-          );
-        } else if (isDraft) {
-          setDeleteTitle(`${titleBase} (Draft)`);
-          setDeleteDescription(
-            "This draft will be removed from OpenPromo. You’ll need to recreate it if you change your mind.",
-          );
-        } else {
-          setDeleteTitle(titleBase);
-          setDeleteDescription(
-            "Are you sure you want to delete this content? This action cannot be undone.",
-          );
-        }
-        setDeleteAction(() => () => deleteContent.mutate(content.id));
-        setShowDeleteConfirm(true);
-      },
-      group: (groupEntity) => {
-        const group = groupEntity.entity;
-        setDeleteTitle("Delete Content Group");
-        setDeleteDescription(
-          "Are you sure you want to delete this content group? This will permanently delete all content in the group and cannot be undone.",
-        );
-        setDeleteAction(() => () => deleteContentGroup.mutate(group.id));
-        setShowDeleteConfirm(true);
-      },
-    });
-  };
-
-  const confirmDelete = () => {
-    if (deleteAction) {
-      deleteAction();
-      setDeleteAction(null);
-    }
-  };
-
-  const handlePublishGroup = () => {
-    matchEntity(entity, {
-      content: (contentEntity) => {
-        // For individual content, we need to publish its parent group
-        const content = contentEntity.entity;
-        if (content.pendingContentGroupId) {
-          publishContentGroup.mutate(content.pendingContentGroupId, {
-            onSuccess: () => {
-              toast.success("Content published successfully!");
-            },
-            onError: () => {
-              toast.error("Failed to publish content. Please try again.");
-            },
-          });
-        }
-      },
-      group: (groupEntity) => {
-        // For groups, publish the group directly
-        const group = groupEntity.entity;
-        publishContentGroup.mutate(group.id, {
-          onSuccess: () => {
-            toast.success("Content group published successfully!");
-          },
-          onError: () => {
-            toast.error("Failed to publish content group. Please try again.");
-          },
-        });
-      },
-    });
-  };
+  const {
+    handleEdit,
+    handleDelete,
+    handlePublish,
+    copyEntityId,
+    isPublishing,
+    showConfirm,
+    setShowConfirm,
+    deleteConfig,
+    handleConfirm,
+    isDeleting,
+  } = useTableActions();
 
   // Determine the primary action button based on content type and status
   const getPrimaryAction = () => {
@@ -144,11 +41,11 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
           return (
             <Button
               size="sm"
-              onClick={handlePublishGroup}
-              disabled={publishContentGroup.isPending}
+              onClick={() => handlePublish(entity)}
+              disabled={isPublishing}
             >
               <Upload className="w-4 h-4 mr-1" />
-              {publishContentGroup.isPending ? "Publishing..." : "Publish"}
+              {isPublishing ? "Publishing..." : "Publish"}
             </Button>
           );
         }
@@ -161,14 +58,13 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
           </Button>
         );
       },
-      group: (groupEntity) => {
+      group: (_groupEntity) => {
         // Groups should have edit as primary action
-        const group = groupEntity.entity;
         return (
           <Button
             size="sm"
             variant="outline"
-            onClick={() => openDialog(group.id)}
+            onClick={() => handleEdit(entity)}
           >
             <Edit className="w-4 h-4 mr-1" />
             Edit
@@ -190,9 +86,7 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem
-            onClick={() => navigator.clipboard.writeText(entity.entity.id)}
-          >
+          <DropdownMenuItem onClick={() => copyEntityId(entity)}>
             {matchEntity(entity, {
               content: () => "Copy content ID",
               group: () => "Copy group ID",
@@ -210,9 +104,7 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
                 <>
                   <DropdownMenuItem>View content</DropdownMenuItem>
                   {isEditable && (
-                    <DropdownMenuItem
-                      onClick={() => openDialog(content.pendingContentGroupId)}
-                    >
+                    <DropdownMenuItem onClick={() => handleEdit(entity)}>
                       Edit content
                     </DropdownMenuItem>
                   )}
@@ -222,17 +114,15 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
                   {(content.publishingStatus === "DRAFT" ||
                     content.publishingStatus === "SCHEDULED") && (
                     <DropdownMenuItem
-                      onClick={handlePublishGroup}
-                      disabled={publishContentGroup.isPending}
+                      onClick={() => handlePublish(entity)}
+                      disabled={isPublishing}
                     >
                       <Upload className="w-4 h-4 mr-1" />
-                      {publishContentGroup.isPending
-                        ? "Publishing..."
-                        : "Publish now"}
+                      {isPublishing ? "Publishing..." : "Publish now"}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
-                    onClick={handleDelete}
+                    onClick={() => handleDelete(entity)}
                     className="text-destructive"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
@@ -242,24 +132,21 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
               );
             },
             group: () => {
-              const group = entity.entity;
               return (
                 <>
                   <DropdownMenuItem>View group</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => openDialog(group.id)}>
+                  <DropdownMenuItem onClick={() => handleEdit(entity)}>
                     Edit group
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={handlePublishGroup}
-                    disabled={publishContentGroup.isPending}
+                    onClick={() => handlePublish(entity)}
+                    disabled={isPublishing}
                   >
                     <Upload className="w-4 h-4 mr-1" />
-                    {publishContentGroup.isPending
-                      ? "Publishing..."
-                      : "Publish now"}
+                    {isPublishing ? "Publishing..." : "Publish now"}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={handleDelete}
+                    onClick={() => handleDelete(entity)}
                     className="text-destructive"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
@@ -274,18 +161,14 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        title={deleteTitle}
-        desc={deleteDescription}
-        confirmText={
-          deleteContent.isPending || deleteContentGroup.isPending
-            ? "Deleting..."
-            : "Delete"
-        }
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
+        title={deleteConfig?.title}
+        desc={deleteConfig?.description ?? "TODO"}
+        confirmText={isDeleting ? "Deleting..." : "Delete"}
         destructive
-        isLoading={deleteContent.isPending || deleteContentGroup.isPending}
-        handleConfirm={confirmDelete}
+        isLoading={isDeleting}
+        handleConfirm={handleConfirm}
       />
     </div>
   );
