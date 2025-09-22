@@ -2,7 +2,7 @@ import type { PlacementSpec } from "@core/schemas/content.sql";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { ContentEntity } from "@worker/routes/api/workspaces/content";
 import { format, getMinutes } from "date-fns";
-import { Image } from "lucide-react";
+import { Eye, Heart, Image, MessageCircle } from "lucide-react";
 import { type CalendarEvent, getEventData } from "@/components/calendar";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { getPlatformIcon } from "@/components/content/utils/platform-icons";
@@ -112,17 +112,26 @@ export function CalendarEventCard({
           return (
             <div
               className={cn(
-                "group w-full h-full rounded-lg transition-all relative overflow-hidden",
-                "hover:shadow-lg min-h-[80px] shadow-sm hover:scale-[1.02]",
+                "group w-full h-full rounded-lg transition-all relative overflow-hidden bg-white dark:bg-gray-800",
+                "hover:bg-gray-50 dark:hover:bg-gray-750 min-h-[120px] border border-gray-200 dark:border-gray-700",
                 isDragging && "opacity-50 cursor-grabbing",
                 className,
               )}
             >
-              {/* Full-size thumbnail background */}
-              <ThumbnailImage src={thumbnailSrc} />
+              {/* Compact thumbnail - top portion */}
+              {thumbnailSrc && (
+                <div className="h-16 overflow-hidden">
+                  <ThumbnailImage
+                    src={thumbnailSrc}
+                    className="rounded-t-lg object-cover"
+                  />
+                </div>
+              )}
 
-              {/* Subtle overlay for better text readability */}
-              <div className="absolute inset-0 bg-black/20" />
+              {/* Content area */}
+              <div className="p-3 flex-1">
+                {/* This will contain the message content */}
+              </div>
 
               {/* Main clickable area - excludes the top-right corner for actions */}
               {/* biome-ignore lint/a11y/useButtonType: later */}
@@ -133,21 +142,21 @@ export function CalendarEventCard({
                 <span className="sr-only">Open content</span>
               </button>
 
-              {/* Time overlay - top left */}
+              {/* Time badge - top left */}
               {showTime && (
-                <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-md text-xs font-semibold shadow-sm pointer-events-none">
+                <div className="absolute top-1.5 left-1.5 bg-white/20 dark:bg-black/20 backdrop-blur-sm text-gray-900 dark:text-white px-1.5 py-0.5 rounded text-[10px] font-medium pointer-events-none">
                   {formatTimeWithOptionalMinutes(eventData.start)}
                 </div>
               )}
 
               {/* Platform icon - bottom right */}
               {platformIcon && (
-                <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-sm rounded-full p-2 shadow-lg border border-white/20 pointer-events-none">
+                <div className="absolute bottom-2 right-2 bg-gray-100 dark:bg-gray-700 rounded-full p-1 pointer-events-none">
                   {platformIcon}
                 </div>
               )}
 
-              {/* Actions menu - top right - separate click area */}
+              {/* Actions menu - top right */}
               <div className="absolute top-0 right-0 w-10 h-10 flex items-center justify-center">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                   <ContentActionsMenu
@@ -158,11 +167,34 @@ export function CalendarEventCard({
                 </div>
               </div>
 
-              {/* Message overlay - bottom with improved gradient */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-8 pointer-events-none">
-                <p className="text-white text-sm font-medium line-clamp-2 leading-snug drop-shadow-sm">
+              {/* Message content - in content area */}
+              <div className="absolute bottom-3 left-3 right-12 pointer-events-none">
+                <p className="text-gray-900 dark:text-gray-100 text-sm font-medium line-clamp-2 leading-snug">
                   {message || eventData.title}
                 </p>
+                {/* Engagement metrics for published content */}
+                {entity.entity.publishingStatus === "PUBLISHED" && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-1">
+                      <Heart className="w-2.5 h-2.5 text-gray-400" />
+                      <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                        24
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <MessageCircle className="w-2.5 h-2.5 text-gray-400" />
+                      <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                        3
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Eye className="w-2.5 h-2.5 text-gray-400" />
+                      <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                        156
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -199,17 +231,26 @@ export function CalendarEventCard({
           return (
             <div
               className={cn(
-                "group w-full h-full rounded-lg transition-all relative overflow-hidden",
-                "hover:shadow-lg min-h-[80px] shadow-sm hover:scale-[1.02]",
+                "group w-full h-full rounded-lg transition-all relative overflow-hidden bg-white dark:bg-gray-800",
+                "hover:bg-gray-50 dark:hover:bg-gray-750 min-h-[120px] border border-gray-200 dark:border-gray-700",
                 isDragging && "opacity-50 cursor-grabbing",
                 className,
               )}
             >
-              {/* Full-size thumbnail background */}
-              <ThumbnailImage src={thumbnailUrl} />
+              {/* Compact thumbnail - top portion */}
+              {thumbnailUrl && (
+                <div className="h-16 overflow-hidden">
+                  <ThumbnailImage
+                    src={thumbnailUrl}
+                    className="rounded-t-lg object-cover"
+                  />
+                </div>
+              )}
 
-              {/* Subtle overlay for better text readability */}
-              <div className="absolute inset-0 bg-black/20" />
+              {/* Content area */}
+              <div className="p-3 flex-1">
+                {/* This will contain the message content */}
+              </div>
 
               {/* Main clickable area - excludes the top-right corner for actions */}
               {/* biome-ignore lint/a11y/useButtonType: later */}
@@ -220,17 +261,12 @@ export function CalendarEventCard({
                 <span className="sr-only">Open content group</span>
               </button>
 
-              {/* Time overlay - top left */}
+              {/* Time badge - top left */}
               {showTime && (
-                <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-md text-xs font-semibold shadow-sm pointer-events-none">
+                <div className="absolute top-1.5 left-1.5 bg-white/20 dark:bg-black/20 backdrop-blur-sm text-gray-900 dark:text-white px-1.5 py-0.5 rounded text-[10px] font-medium pointer-events-none">
                   {formatTimeWithOptionalMinutes(eventData.start)}
                 </div>
               )}
-
-              {/* Group badge - top center */}
-              <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-md text-xs font-semibold shadow-sm pointer-events-none">
-                Group
-              </div>
 
               {/* Platform stack - bottom right */}
               <div className="absolute bottom-2 right-2 flex gap-1 pointer-events-none">
@@ -239,22 +275,22 @@ export function CalendarEventCard({
                   return platformIcon ? (
                     <div
                       key={platform}
-                      className="bg-white/95 backdrop-blur-sm rounded-full p-1.5 shadow-lg border border-white/20"
+                      className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 shadow-sm"
                     >
                       {platformIcon}
                     </div>
                   ) : null;
                 })}
                 {platforms.length > 2 && (
-                  <div className="bg-white/95 backdrop-blur-sm rounded-full p-1.5 shadow-lg border border-white/20 flex items-center justify-center min-w-6 h-6">
-                    <span className="text-xs font-semibold text-gray-900">
+                  <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 shadow-sm flex items-center justify-center min-w-4 h-4">
+                    <span className="text-[10px] font-semibold text-gray-900 dark:text-gray-100">
                       +{platforms.length - 2}
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* Actions menu - top right - separate click area */}
+              {/* Actions menu - top right */}
               <div className="absolute top-0 right-0 w-10 h-10 flex items-center justify-center">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                   <ContentActionsMenu
@@ -265,18 +301,28 @@ export function CalendarEventCard({
                 </div>
               </div>
 
-              {/* Message overlay - bottom with improved gradient */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-8 pointer-events-none">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-white text-sm font-medium line-clamp-1 leading-snug drop-shadow-sm flex-1">
-                    {primaryMessage || eventData.title}
-                  </p>
-                </div>
-                {showTime && (
-                  <p className="text-white/90 text-xs drop-shadow-sm">
+              {/* Message content and count - in content area */}
+              <div className="absolute bottom-3 left-3 right-12 pointer-events-none">
+                <p className="text-gray-900 dark:text-gray-100 text-sm font-medium line-clamp-1 leading-snug mb-1">
+                  {primaryMessage || eventData.title}
+                </p>
+                <div className="flex items-center gap-2">
+                  {/* Status badge */}
+                  <div
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                      entity.entity.publishingStatus === "SCHEDULED"
+                        ? "bg-green-500/10 text-green-700 dark:text-green-300"
+                        : "bg-orange-500/10 text-orange-700 dark:text-orange-300"
+                    }`}
+                  >
+                    {entity.entity.publishingStatus === "SCHEDULED"
+                      ? "Scheduled"
+                      : "Draft"}
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs">
                     {contents.length} post{contents.length !== 1 ? "s" : ""}
                   </p>
-                )}
+                </div>
               </div>
             </div>
           );

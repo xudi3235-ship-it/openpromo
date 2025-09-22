@@ -53,7 +53,7 @@ function DraggableCalendarCard({
 
   // Don't render if being dragged
   if (isDragging || activeId === `${eventData.id}-week`) {
-    return <div ref={setNodeRef} className="opacity-0 h-20" />;
+    return <div ref={setNodeRef} className="opacity-0 h-32" />;
   }
 
   return (
@@ -218,7 +218,7 @@ export function DynamicWeekView({
                   return (
                     <div
                       key={eventData.id}
-                      className="h-20 w-full" // Increased height for thumbnail display
+                      className="h-32 w-full" // Updated to match card min-height of 120px + spacing
                     >
                       <DraggableCalendarCard event={event}>
                         <CalendarEventCard
