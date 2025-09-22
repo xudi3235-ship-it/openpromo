@@ -1,4 +1,4 @@
-import type { AllPlacement } from "@core/domain/content/schema/placement";
+import type { AllPlacement } from "@core/schemas/content.sql";
 import { Facebook, Instagram } from "lucide-react";
 
 export function getPlatformIcon(placement: AllPlacement) {
