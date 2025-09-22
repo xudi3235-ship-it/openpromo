@@ -3,8 +3,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
 import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
@@ -40,11 +38,16 @@ export function ContentActionsMenu({
     onDelete(entity, e);
   };
 
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   const defaultTrigger = (
     <Button
       variant="ghost"
       size="sm"
       className="h-6 w-6 p-0 bg-black/20 hover:bg-black/40 backdrop-blur-sm text-white border-0"
+      onClick={handleTriggerClick}
     >
       <MoreHorizontal className="h-3 w-3" />
       <span className="sr-only">Open menu</span>
@@ -53,12 +56,10 @@ export function ContentActionsMenu({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+      <DropdownMenuTrigger asChild>
         {trigger || defaultTrigger}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className={className}>
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+      <DropdownMenuContent align="start" side="right" className={className}>
         <DropdownMenuItem onClick={handleEdit}>
           <Edit className="w-4 h-4 mr-2" />
           Edit

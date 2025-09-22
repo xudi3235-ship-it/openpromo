@@ -110,17 +110,13 @@ export function CalendarEventCard({
           });
 
           return (
-            // biome-ignore lint/a11y/useButtonType: later
-            <button
+            <div
               className={cn(
-                "group w-full h-full rounded-lg border-0 transition-all relative overflow-hidden",
-                "hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/50",
-                "min-h-[80px]",
-                "shadow-sm hover:scale-[1.02]",
+                "group w-full h-full rounded-lg transition-all relative overflow-hidden",
+                "hover:shadow-lg min-h-[80px] shadow-sm hover:scale-[1.02]",
                 isDragging && "opacity-50 cursor-grabbing",
                 className,
               )}
-              onClick={onClick}
             >
               {/* Full-size thumbnail background */}
               <ThumbnailImage src={thumbnailSrc} />
@@ -128,36 +124,47 @@ export function CalendarEventCard({
               {/* Subtle overlay for better text readability */}
               <div className="absolute inset-0 bg-black/20" />
 
+              {/* Main clickable area - excludes the top-right corner for actions */}
+              {/* biome-ignore lint/a11y/useButtonType: later */}
+              <button
+                className="absolute inset-0 right-10 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg"
+                onClick={onClick}
+              >
+                <span className="sr-only">Open content</span>
+              </button>
+
               {/* Time overlay - top left */}
               {showTime && (
-                <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-md text-xs font-semibold shadow-sm">
+                <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-md text-xs font-semibold shadow-sm pointer-events-none">
                   {formatTimeWithOptionalMinutes(eventData.start)}
                 </div>
               )}
 
               {/* Platform icon - bottom right */}
               {platformIcon && (
-                <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-sm rounded-full p-2 shadow-lg border border-white/20">
+                <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-sm rounded-full p-2 shadow-lg border border-white/20 pointer-events-none">
                   {platformIcon}
                 </div>
               )}
 
-              {/* Actions menu - top right */}
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <ContentActionsMenu
-                  entity={event}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
+              {/* Actions menu - top right - separate click area */}
+              <div className="absolute top-0 right-0 w-10 h-10 flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ContentActionsMenu
+                    entity={event}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                </div>
               </div>
 
               {/* Message overlay - bottom with improved gradient */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-8">
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-8 pointer-events-none">
                 <p className="text-white text-sm font-medium line-clamp-2 leading-snug drop-shadow-sm">
                   {message || eventData.title}
                 </p>
               </div>
-            </button>
+            </div>
           );
         },
         group: (entity) => {
@@ -190,17 +197,13 @@ export function CalendarEventCard({
             : undefined;
 
           return (
-            // biome-ignore lint/a11y/useButtonType: later
-            <button
+            <div
               className={cn(
-                "group w-full h-full rounded-lg border-0 transition-all relative overflow-hidden",
-                "hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/50",
-                "min-h-[80px]",
-                "shadow-sm hover:scale-[1.02]",
+                "group w-full h-full rounded-lg transition-all relative overflow-hidden",
+                "hover:shadow-lg min-h-[80px] shadow-sm hover:scale-[1.02]",
                 isDragging && "opacity-50 cursor-grabbing",
                 className,
               )}
-              onClick={onClick}
             >
               {/* Full-size thumbnail background */}
               <ThumbnailImage src={thumbnailUrl} />
@@ -208,20 +211,29 @@ export function CalendarEventCard({
               {/* Subtle overlay for better text readability */}
               <div className="absolute inset-0 bg-black/20" />
 
+              {/* Main clickable area - excludes the top-right corner for actions */}
+              {/* biome-ignore lint/a11y/useButtonType: later */}
+              <button
+                className="absolute inset-0 right-10 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg"
+                onClick={onClick}
+              >
+                <span className="sr-only">Open content group</span>
+              </button>
+
               {/* Time overlay - top left */}
               {showTime && (
-                <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-md text-xs font-semibold shadow-sm">
+                <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-md text-xs font-semibold shadow-sm pointer-events-none">
                   {formatTimeWithOptionalMinutes(eventData.start)}
                 </div>
               )}
 
               {/* Group badge - top center */}
-              <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-md text-xs font-semibold shadow-sm">
+              <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-md text-xs font-semibold shadow-sm pointer-events-none">
                 Group
               </div>
 
               {/* Platform stack - bottom right */}
-              <div className="absolute bottom-2 right-2 flex gap-1">
+              <div className="absolute bottom-2 right-2 flex gap-1 pointer-events-none">
                 {platforms.slice(0, 2).map((platform) => {
                   const platformIcon = getPlatformIcon(platform);
                   return platformIcon ? (
@@ -242,17 +254,19 @@ export function CalendarEventCard({
                 )}
               </div>
 
-              {/* Actions menu - top right */}
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <ContentActionsMenu
-                  entity={event}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
+              {/* Actions menu - top right - separate click area */}
+              <div className="absolute top-0 right-0 w-10 h-10 flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ContentActionsMenu
+                    entity={event}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                </div>
               </div>
 
               {/* Message overlay - bottom with improved gradient */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-8">
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-8 pointer-events-none">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="text-white text-sm font-medium line-clamp-1 leading-snug drop-shadow-sm flex-1">
                     {primaryMessage || eventData.title}
@@ -264,7 +278,7 @@ export function CalendarEventCard({
                   </p>
                 )}
               </div>
-            </button>
+            </div>
           );
         },
       })}
