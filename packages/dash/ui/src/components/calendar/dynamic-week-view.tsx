@@ -10,7 +10,6 @@ import {
   isToday,
   startOfWeek,
 } from "date-fns";
-import { Plus } from "lucide-react";
 import type React from "react";
 import { useMemo } from "react";
 import {
@@ -22,6 +21,7 @@ import {
   useCalendarDnd,
 } from "@/components/calendar";
 import { CalendarEventCard } from "./calendar-event-card";
+import { EmptyStateButton } from "./empty-state-button";
 
 interface DynamicWeekViewProps {
   currentDate: Date;
@@ -231,39 +231,20 @@ export function DynamicWeekView({
 
                 {/* Empty state / create button */}
                 {eventsForDay.length === 0 && (
-                  <button
-                    type="button"
-                    onClick={() => handleCreateEvent(day)}
-                    className={cn(
-                      "w-full h-20 border-2 border-dashed border-border/40 rounded-lg",
-                      "flex items-center justify-center text-muted-foreground",
-                      "hover:border-border/60 hover:bg-accent/30 transition-all",
-                      "group",
-                    )}
-                  >
-                    <div className="flex items-center gap-2 text-sm">
-                      <Plus className="h-4 w-4 opacity-50 group-hover:opacity-70" />
-                      <span className="opacity-70 group-hover:opacity-90">
-                        Create Post
-                      </span>
-                    </div>
-                  </button>
+                  <EmptyStateButton
+                    day={day}
+                    onClick={handleCreateEvent}
+                    variant="large"
+                  />
                 )}
 
                 {/* Add button at the bottom if there are events */}
                 {eventsForDay.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => handleCreateEvent(day)}
-                    className={cn(
-                      "w-full h-8 border border-dashed border-border/30 rounded",
-                      "flex items-center justify-center text-muted-foreground text-xs",
-                      "hover:border-border/50 hover:bg-accent/20 transition-all",
-                      "mt-2 group",
-                    )}
-                  >
-                    <Plus className="h-3 w-3 opacity-40 group-hover:opacity-60" />
-                  </button>
+                  <EmptyStateButton
+                    day={day}
+                    onClick={handleCreateEvent}
+                    variant="small"
+                  />
                 )}
               </div>
             </DroppableCell>
