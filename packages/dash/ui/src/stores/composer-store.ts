@@ -57,6 +57,8 @@ export interface ComposerState {
 export interface ComposerActions {
   setSelectedPreview: (platform: Platform) => void;
   setMessage: (message: string) => void;
+  getCurrentMessage: () => string;
+  setCurrentMessage: (message: string) => void;
   setSelectedAccounts: (accountIds: string[]) => void;
   setActiveAccount: (accountId: string | null) => void;
   addAttachments: (files: File[]) => void;
@@ -289,7 +291,7 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
     selectedPreview: props.initialSelectedPreview || "FACEBOOK",
     accounts: props.initialAccounts || [],
     selectedAccounts: props.initialAccounts?.map((acc) => acc.id) || [],
-    activeAccount: props.initialAccounts?.[0]?.id || null,
+    activeAccount: null, // Default to no customization, but users can enable it later
     contentCreateData: props.initContentCreateData || {
       base: {
         message: props.initialMessage || "",
@@ -324,7 +326,7 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
             state.activeAccount &&
             !accountIds.includes(state.activeAccount)
           ) {
-            state.activeAccount = accountIds[0] || null;
+            state.activeAccount = null;
           }
 
           // Sync placement specs with selected accounts
@@ -415,6 +417,81 @@ export const createComposerStore = (initProps: Partial<ComposerProps>) => {
       setActiveAccount: (accountId) =>
         set((state) => {
           state.activeAccount = accountId;
+        }),
+      getCurrentMessage: () => {
+        const state = get();
+        if (!state.activeAccount) {
+          return state.contentCreateData.base.message || "";
+        }
+
+        // Find the active account
+        const activeAccount = state.accounts.find(
+          (acc) => acc.id === state.activeAccount,
+        );
+        if (!activeAccount) {
+          return state.contentCreateData.base.message || "";
+        }
+
+        // Get the placement spec for the active account
+        if (activeAccount.platform === "FACEBOOK") {
+          const fbSpec = state.contentCreateData.placements.facebookFeed?.find(
+            (spec) => spec.identity.connectedAccountID === state.activeAccount,
+          );
+          return fbSpec?.postSpec.message || "";
+        } else if (activeAccount.platform === "INSTAGRAM") {
+          const igSpec = state.contentCreateData.placements.instagramFeed?.find(
+            (spec) => spec.identity.connectedAccountID === state.activeAccount,
+          );
+          return igSpec?.caption || "";
+        }
+
+        return state.contentCreateData.base.message || "";
+      },
+      setCurrentMessage: (message) =>
+        set((state) => {
+          if (!state.activeAccount) {
+            // No active account, update base message
+            state.contentCreateData.base.message = message;
+            syncToNonCustomizedPlacements(state, {
+              facebook: (spec) => {
+                spec.postSpec.message = message;
+              },
+              instagram: (spec) => {
+                spec.caption = message;
+              },
+            });
+          } else {
+            // Active account, update specific placement and mark as customized
+            const activeAccount = state.accounts.find(
+              (acc) => acc.id === state.activeAccount,
+            );
+            if (!activeAccount) return;
+
+            if (activeAccount.platform === "FACEBOOK") {
+              const fbSpec =
+                state.contentCreateData.placements.facebookFeed?.find(
+                  (spec) =>
+                    spec.identity.connectedAccountID === state.activeAccount,
+                );
+              if (fbSpec) {
+                fbSpec.postSpec.message = message;
+                fbSpec.customized = true;
+              }
+            } else if (activeAccount.platform === "INSTAGRAM") {
+              const igSpec =
+                state.contentCreateData.placements.instagramFeed?.find(
+                  (spec) =>
+                    spec.identity.connectedAccountID === state.activeAccount,
+                );
+              if (igSpec) {
+                igSpec.caption = message;
+                igSpec.customized = true;
+              }
+            }
+          }
+
+          // Update validation after message change
+          updateValidation(state);
         }),
       setMessage: (message) =>
         set((state) => {

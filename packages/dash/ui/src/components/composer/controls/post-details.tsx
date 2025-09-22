@@ -10,7 +10,7 @@ import {
 import { useComposerStore } from "@/stores/composer-store";
 
 export function PostDetails() {
-  const { contentCreateData, setMessage } = useComposerStore();
+  const { getCurrentMessage, setCurrentMessage } = useComposerStore();
 
   return (
     <div className="space-y-3">
@@ -24,8 +24,8 @@ export function PostDetails() {
         <Textarea
           placeholder="Write something..."
           className="border-0 resize-none min-h-[80px]"
-          value={contentCreateData.base.message}
-          onChange={(e) => setMessage(e.target.value)}
+          value={getCurrentMessage()}
+          onChange={(e) => setCurrentMessage(e.target.value)}
         />
         <div className="border-t p-2 flex items-center justify-between">
           <div className="flex items-center gap-1">

@@ -108,10 +108,54 @@ export const useComposerPreview = (): PreviewData => {
       );
     };
 
+    // Get the message for the target account (preview account)
+    const getMessageForAccount = (): string => {
+      if (!targetAccount) {
+        return contentCreateData.base.message || "";
+      }
+
+      // If this is the active account being customized, get its specific message
+      if (activeAccount === targetAccount.id) {
+        if (targetAccount.platform === "FACEBOOK") {
+          const fbSpec = contentCreateData.placements.facebookFeed?.find(
+            (spec) => spec.identity.connectedAccountID === targetAccount.id,
+          );
+          return (
+            fbSpec?.postSpec.message || contentCreateData.base.message || ""
+          );
+        } else if (targetAccount.platform === "INSTAGRAM") {
+          const igSpec = contentCreateData.placements.instagramFeed?.find(
+            (spec) => spec.identity.connectedAccountID === targetAccount.id,
+          );
+          return igSpec?.caption || contentCreateData.base.message || "";
+        }
+      }
+
+      // For non-active accounts, check if they have customized messages
+      if (targetAccount.platform === "FACEBOOK") {
+        const fbSpec = contentCreateData.placements.facebookFeed?.find(
+          (spec) => spec.identity.connectedAccountID === targetAccount.id,
+        );
+        if (fbSpec?.customized) {
+          return fbSpec.postSpec.message || "";
+        }
+      } else if (targetAccount.platform === "INSTAGRAM") {
+        const igSpec = contentCreateData.placements.instagramFeed?.find(
+          (spec) => spec.identity.connectedAccountID === targetAccount.id,
+        );
+        if (igSpec?.customized) {
+          return igSpec.caption || "";
+        }
+      }
+
+      // Fallback to base message for non-customized accounts
+      return contentCreateData.base.message || "";
+    };
+
     return {
       ...displayData,
       attachments: contentCreateData.base.attachments || [],
-      message: contentCreateData.base.message || "",
+      message: getMessageForAccount(),
       getDisplayName,
       getInstagramUsername,
     };
@@ -121,5 +165,7 @@ export const useComposerPreview = (): PreviewData => {
     selectedPreview,
     contentCreateData.base.attachments,
     contentCreateData.base.message,
+    contentCreateData.placements.facebookFeed,
+    contentCreateData.placements.instagramFeed,
   ]);
 };

@@ -358,18 +358,18 @@ function ComposerAccountAvatar({
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-150, 0, 150], [32, 48, 32]);
+  const widthSync = useTransform(distance, [-120, 0, 120], [32, 56, 32]);
   const width = useSpring(widthSync, {
-    mass: 0.1,
-    stiffness: 150,
-    damping: 12,
+    mass: 0.15,
+    stiffness: 160,
+    damping: 25,
   });
 
   return (
     <motion.div
       ref={ref}
       style={{ width }}
-      className="relative group flex flex-col items-center gap-1"
+      className="relative group flex flex-col items-center gap-1.5"
     >
       {/* Avatar */}
       <motion.button
@@ -420,7 +420,7 @@ function ComposerAccountAvatar({
       {selected && (
         <button
           type="button"
-          className={`w-6 h-1 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
+          className={`w-6 h-1 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-ring hover:h-1.5 focus:h-1.5 hover:w-8 focus:w-8 ${
             active
               ? "bg-primary shadow-sm"
               : "bg-muted hover:bg-muted-foreground/30"
