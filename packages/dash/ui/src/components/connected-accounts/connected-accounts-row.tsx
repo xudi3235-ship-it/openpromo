@@ -328,7 +328,6 @@ interface ComposerAccountAvatarProps {
   active: boolean;
   onToggleSelected: () => void;
   onSetActive: () => void;
-  mouseX: MotionValue<number>;
 }
 
 interface ComposerAccountsRowProps {
@@ -347,35 +346,19 @@ function ComposerAccountAvatar({
   active,
   onToggleSelected,
   onSetActive,
-  mouseX,
 }: ComposerAccountAvatarProps) {
   const ref = useRef<HTMLDivElement>(null);
   const gradientColors = getPlatformColors(account.platform);
   const fallback = getPlatformFallback(account.platform);
 
-  const distance = useTransform(mouseX, (val: number) => {
-    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
-    return val - bounds.x - bounds.width / 2;
-  });
-
-  const widthSync = useTransform(distance, [-120, 0, 120], [32, 56, 32]);
-  const width = useSpring(widthSync, {
-    mass: 0.15,
-    stiffness: 160,
-    damping: 25,
-  });
-
   return (
-    <motion.div
+    <div
       ref={ref}
-      style={{ width }}
       className="relative group flex flex-col items-center gap-1.5"
     >
-      {/* Avatar */}
-      <motion.button
+      <button
         type="button"
-        style={{ width }}
-        className="relative aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+        className="relative w-8 aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-ring transition-all"
         onClick={onToggleSelected}
         aria-label={`${selected ? "Disable" : "Enable"} posting to ${account.accountName || account.platform}`}
       >
@@ -397,7 +380,6 @@ function ComposerAccountAvatar({
           </div>
         </div>
 
-        {/* Selection indicator */}
         {selected && (
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border border-background rounded-full flex items-center justify-center">
             <svg
@@ -414,9 +396,8 @@ function ComposerAccountAvatar({
             </svg>
           </div>
         )}
-      </motion.button>
+      </button>
 
-      {/* Active indicator below avatar */}
       {selected && (
         <button
           type="button"
@@ -430,7 +411,6 @@ function ComposerAccountAvatar({
         />
       )}
 
-      {/* Tooltip on hover */}
       <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-30">
         <div className="text-center">
           <div className="font-medium">
@@ -445,7 +425,7 @@ function ComposerAccountAvatar({
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -458,7 +438,7 @@ export function ComposerAccountsRow({
   showAddButton = false,
   className = "",
 }: ComposerAccountsRowProps) {
-  const mouseX = useMotionValue(Infinity);
+  const staticMouseX = useMotionValue(Infinity);
 
   const handleSetActive = (accountId: string) => {
     if (selectedAccounts.includes(accountId)) {
@@ -468,11 +448,7 @@ export function ComposerAccountsRow({
 
   return (
     <div className={className}>
-      <motion.div
-        className="flex items-center gap-2 bg-card border border-border/40 rounded-2xl px-4 py-3"
-        onMouseMove={({ pageX }) => mouseX.set(pageX)}
-        onMouseLeave={() => mouseX.set(Infinity)}
-      >
+      <div className="flex items-center gap-2 bg-card border border-border/40 rounded-2xl px-4 py-3">
         {accounts.map((account) => (
           <ComposerAccountAvatar
             key={account.id}
@@ -481,18 +457,17 @@ export function ComposerAccountsRow({
             active={activeAccount === account.id}
             onToggleSelected={() => onToggleAccount(account.id)}
             onSetActive={() => handleSetActive(account.id)}
-            mouseX={mouseX}
           />
         ))}
 
         {showAddButton && (
           <>
             {accounts.length > 0 && <div className="w-px h-6 bg-border mx-1" />}
-            <FacebookAddButton mouseX={mouseX} />
-            <InstagramAddButton mouseX={mouseX} />
+            <FacebookAddButton mouseX={staticMouseX} />
+            <InstagramAddButton mouseX={staticMouseX} />
           </>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }
