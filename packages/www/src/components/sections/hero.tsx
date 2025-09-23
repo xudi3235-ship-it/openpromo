@@ -3,7 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DiagonalPattern from "../elements/diagonal-pattern";
 
-export default function Hero() {
+export default function Hero({ dashboardUrl }: { dashboardUrl: string }) {
   return (
     <section className="pb-16 text-center lg:pb-0">
       <div className="flex">
@@ -19,7 +19,7 @@ export default function Hero() {
             scale up.
           </p>
           <Button asChild className="mt-6 gap-1 md:mt-8 lg:mt-10">
-            <a href="/dashboard">
+            <a href={dashboardUrl}>
               Get started
               <ChevronRight className="size-4" />
             </a>

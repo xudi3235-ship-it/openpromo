@@ -10,10 +10,12 @@ import Pricing from "@components/sections/pricing";
 import Testimonials from "@components/sections/testimonials";
 import DefaultLayout from "@layouts/DefaultLayout.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+
+const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
 ---
 
 <DefaultLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
-    <Hero />
+    <Hero dashboardUrl={dashboardUrl} />
     <Partners />
     <Features client:only="react" />
     <Adaptive />
