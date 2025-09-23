@@ -1,4 +1,5 @@
-import { Badge, type LucideIcon } from "lucide-react";
+import { Badge } from "@openpromo/ui/components/badge";
+import type { LucideIcon } from "lucide-react";
 
 const TitleTag = ({
   title,
@@ -9,7 +10,6 @@ const TitleTag = ({
 }) => {
   return (
     <Badge
-      // @ts-expect-error
       variant="outline"
       className="bg-card w-fit gap-1 px-3 text-sm font-normal tracking-tight shadow-sm"
     >
