@@ -1,4 +1,5 @@
 import { Instagram, Linkedin, Twitter } from "lucide-react";
+import logoSrc from "../../assets/logo.png";
 
 const sections = [
   {
@@ -28,13 +29,13 @@ const Footer = () => {
         <div className="mb-8 flex-1">
           <a href="/" className="flex items-center gap-1">
             <img
-              src="/images/logo.svg"
+              src={logoSrc.src}
               alt="logo"
               width={32}
               height={32}
               className="dark:invert"
             />
-            <span className="leading-0 text-2xl font-semibold">Relative</span>
+            <span className="leading-0 text-2xl font-semibold">OpenPromo</span>
           </a>
         </div>
         <div className="flex flex-1 justify-between gap-8 max-sm:flex-col">
@@ -75,7 +76,7 @@ const Footer = () => {
         </div>
       </div>
       <div className="text-muted-foreground-subtle container border-x border-b border-t py-4 text-sm tracking-[-0.28px] lg:py-8">
-        <p>© {new Date().getFullYear()} Relative. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} OpenPromo. All rights reserved.</p>
       </div>
       <div className="container h-6 border-x"></div>
     </footer>

@@ -1,18 +1,18 @@
 ---
-import { FaqSection } from "src/_components/landing/faq-section";
-import { FooterSection } from "src/_components/landing/footer-section";
-import LandingNavbar from "src/_components/landing/landing-navbar";
-import { ComparisonSection } from "src/_components/pricing/comparison-section";
-import { PricingSection } from "src/_components/pricing/pricing-section";
-import Layout from "../layouts/Layout.astro";
-import "../styles/global.css";
-const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
+import Faq from "@components/sections/faq";
+import PricingSection from "@components/sections/pricing";
+
+import Testimonials from "@components/sections/testimonials";
+import DefaultLayout from "@layouts/DefaultLayout.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 ---
 
-<Layout>
-  <LandingNavbar />
-  <PricingSection client:load dashboardUrl={dashboardUrl} />
-  <ComparisonSection client:load dashboardUrl={dashboardUrl} />
-  <FaqSection />
-  <FooterSection dashboardUrl={dashboardUrl} />
-</Layout>
+<DefaultLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
+  <div class="py-14 md:py-20 lg:py-24">
+    <PricingSection withBorders={false} />
+    <Testimonials withBorders={false} />
+    <div class="pt-14 md:pt-20 lg:pt-24">
+      <Faq withBorders={false} client:only="react" />
+    </div>
+  </div>
+</DefaultLayout>
