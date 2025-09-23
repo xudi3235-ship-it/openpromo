@@ -35,9 +35,10 @@ const FeaturesList = () => {
   return (
     <Tabs
       defaultValue={FEATURES_DATA[0].title}
-      className="flex items-center max-lg:flex-col lg:divide-x"
+      // On mobile we keep vertical stacking (list then content); on lg switch to horizontal left(right)
+      className="flex flex-col lg:flex-row lg:items-stretch lg:gap-0"
     >
-      <TabsList className="flex h-auto flex-1 flex-col bg-transparent p-0 max-lg:border-x lg:border-t">
+      <TabsList className="flex h-auto w-full flex-col bg-transparent p-0 max-lg:border-x lg:w-[40%] lg:max-w-md lg:border-r lg:border-t-0 lg:rounded-none lg:bg-transparent">
         {FEATURES_DATA.map((item) => (
           <TabsTrigger
             key={item.title}
@@ -60,13 +61,13 @@ const FeaturesList = () => {
         ))}
       </TabsList>
 
-      <div className="flex-1">
+      <div className="flex-1 lg:w-[60%]">
         {FEATURES_DATA.map((item, index) => (
           <TabsContent
             // biome-ignore lint/suspicious/noArrayIndexKey: ok
             key={index}
             value={item.title}
-            className="m-0 px-6 py-[38px] max-lg:border-x"
+            className="m-0 px-6 py-[38px] max-lg:border-x lg:border-none"
           >
             <div className="flex justify-center">
               <div>
