@@ -2,3 +2,7 @@
 
 /* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @source "../../../ui/src";
+/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
+@plugin 'tailwindcss-animate';
+/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
+@plugin '@tailwindcss/typography';
