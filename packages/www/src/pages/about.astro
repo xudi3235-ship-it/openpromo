@@ -1,0 +1,25 @@
+---
+import AboutHero from "@components/sections/about-hero";
+import { Metrics } from "@components/sections/metrics";
+import Partners from "@components/sections/partners";
+import Team from "@components/sections/team";
+import Testimonials from "@components/sections/testimonials";
+import Values from "@components/sections/values";
+import DefaultLayout from "@layouts/DefaultLayout.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+---
+
+<DefaultLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
+    <AboutHero />
+    <Metrics />
+    <Partners />
+    <div class="py-14 md:py-20 lg:py-24">
+        <Values />
+    </div>
+    <div class="py-14 md:py-20 lg:py-24">
+        <Team />
+    </div>
+    <div class="py-14 md:py-20 lg:py-24">
+        <Testimonials withBorders={false} />
+    </div>
+</DefaultLayout>

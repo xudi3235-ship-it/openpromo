@@ -1,0 +1,57 @@
+---
+import DiagonalPattern from "@components/elements/diagonal-pattern";
+import DefaultLayout from "@layouts/DefaultLayout.astro";
+import { Button } from "@openpromo/ui/components/button";
+import { ChevronRight } from "lucide-react";
+---
+
+<DefaultLayout
+    title="404: Not Found"
+    description="Sorry, the page you're looking for doesn't exist."
+>
+    <section class="relative min-h-[80vh] py-14 md:py-20 lg:py-24">
+        <div class="absolute inset-0 -z-10">
+            <DiagonalPattern
+                className="h-full w-full border-none opacity-[0.08]"
+            />
+        </div>
+
+        <div class="relative container">
+            <div class="mx-auto max-w-2xl text-center">
+                <h1
+                    class="text-primary text-[8rem] leading-none font-bold tracking-tight md:text-[12rem]"
+                >
+                    404
+                </h1>
+
+                <h2
+                    class="mt-4 text-2xl font-semibold tracking-tight md:text-3xl"
+                >
+                    Page not found
+                </h2>
+
+                <p
+                    class="text-muted-foreground mt-6 text-lg tracking-[-0.32px]"
+                >
+                    Oops! It seems you&apos;ve ventured into uncharted
+                    territory. The page you&apos;re looking for doesn&apos;t
+                    exist.
+                </p>
+
+                <div class="mt-12 flex items-center justify-center gap-4">
+                    <a href="/">
+                        <Button size="lg" className="gap-2">
+                            Return home
+                            <ChevronRight className="size-4" />
+                        </Button>
+                    </a>
+                    <a href="/contact">
+                        <Button variant="outline" size="lg">
+                            Contact support
+                        </Button>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+</DefaultLayout>
