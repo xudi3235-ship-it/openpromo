@@ -9,7 +9,9 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "paths": {
-      "@/lib/*": ["../ui/src/lib/*"]
+      "@/lib/*": ["../ui/src/lib/*"],
+      "@components/*": ["./src/components/*"],
+      "@layouts/*": ["./src/layouts/*"]
     }
   },
   "include": ["src/**/*", "src/types/**/*.d.ts", "astro.config.ts"]

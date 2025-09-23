@@ -1,25 +1,25 @@
 ---
-import { DashboardPreviewSection } from "src/components/landing/dashboard-preview-section";
-import { FaqSection } from "src/components/landing/faq-section";
-import { FeaturesSection } from "src/components/landing/features-section";
-import { FooterSection } from "src/components/landing/footer-section";
-import { HeroSection } from "src/components/landing/hero-section";
-import LandingNavbar from "src/components/landing/landing-navbar";
-import { TestimonialsSection } from "src/components/landing/testimonials-section";
-import Layout from "../layouts/Layout.astro";
-import "../styles/global.css";
-
-const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
+import Accelerate from "@components/sections/accelerate";
+import Adaptive from "@components/sections/adaptive";
+import Faq from "@components/sections/faq";
+import Features from "@components/sections/features";
+import Hero from "@components/sections/hero";
+import Optimize from "@components/sections/optimize";
+import Partners from "@components/sections/partners";
+import Pricing from "@components/sections/pricing";
+import Testimonials from "@components/sections/testimonials";
+import DefaultLayout from "@layouts/DefaultLayout.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 ---
 
-<Layout>
-  <LandingNavbar />
-  <!-- have to do client side rendering -->
-  <HeroSection client:load dashboardUrl={dashboardUrl} />
-  <DashboardPreviewSection client:load />
-  <FeaturesSection />
-  <TestimonialsSection />
-  <FaqSection />
-
-  <FooterSection dashboardUrl={dashboardUrl} />
-</Layout>
+<DefaultLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
+    <Hero />
+    <Partners />
+    <Features client:only="react" />
+    <Adaptive />
+    <Optimize client:only="react" />
+    <Accelerate />
+    <Testimonials />
+    <Pricing />
+    <Faq client:only="react" />
+</DefaultLayout>

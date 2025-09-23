@@ -12,13 +12,16 @@
     "deploy:production": "astro build && wrangler deploy -e production"
   },
   "dependencies": {
+    "@astrojs/mdx": "^4.3.6",
     "@astrojs/react": "^4.3.0",
+    "@astrojs/sitemap": "^3.6.0",
     "@openpromo/ui": "workspace:*",
     "@tailwindcss/vite": "^4.1.11",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "astro": "^5.13.5",
     "class-variance-authority": "^0.7.1",
+    "date-fns": "^4.1.0",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.539.0",
     "react": "catalog:",

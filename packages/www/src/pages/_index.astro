@@ -1,0 +1,25 @@
+---
+import { DashboardPreviewSection } from "src/_components/landing/dashboard-preview-section";
+import { FaqSection } from "src/_components/landing/faq-section";
+import { FeaturesSection } from "src/_components/landing/features-section";
+import { FooterSection } from "src/_components/landing/footer-section";
+import { HeroSection } from "src/_components/landing/hero-section";
+import LandingNavbar from "src/_components/landing/landing-navbar";
+import { TestimonialsSection } from "src/_components/landing/testimonials-section";
+import Layout from "../_layouts/Layout.astro";
+import "../styles/global.css";
+
+const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL;
+---
+
+<Layout>
+  <LandingNavbar />
+  <!-- have to do client side rendering -->
+  <HeroSection client:load dashboardUrl={dashboardUrl} />
+  <DashboardPreviewSection client:load />
+  <FeaturesSection />
+  <TestimonialsSection />
+  <FaqSection />
+
+  <FooterSection dashboardUrl={dashboardUrl} />
+</Layout>

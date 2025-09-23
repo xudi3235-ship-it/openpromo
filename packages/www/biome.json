@@ -7,6 +7,9 @@
       "includes": ["**/*.svelte", "**/*.astro", "**/*.vue"],
       "linter": {
         "rules": {
+          "suspicious": {
+            "noArrayIndexKey": "off"
+          },
           "style": {
             "useConst": "off",
             "useImportType": "off"
