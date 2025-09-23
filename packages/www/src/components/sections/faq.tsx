@@ -70,7 +70,7 @@ const Faq = ({ withBorders = true }: { withBorders?: boolean }) => {
                 // biome-ignore lint/suspicious/noArrayIndexKey: ok
                 key={index}
                 value={`item-${index}`}
-                className="text-primary rounded-[7px] border px-6 data-[state=open]:pb-2"
+                className="text-primary rounded-[7px] border px-6 data-[state=open]:pb-2 last:border-b"
               >
                 <AccordionTrigger className="py-5 text-base tracking-[-0.32px]">
                   {item.question}
