@@ -11,13 +11,15 @@ const { title, description } = Astro.props;
         <BaseHead title={title} description={description} />
     </head>
     <body class={`h-screen antialiased flex flex-col`}>
-    {/**
-     * Changed from client:only to client:load so the navbar is server-rendered
-     * immediately (eliminating the initial layout shift) and hydrated once
-     * the page loads. If you want to delay hydration further you could use
-     * client:idle, but client:load ensures interactivity is ready ASAP.
-     */}
-    <Navbar currentPage={Astro.url.pathname} client:load />
+        {
+            /**
+             * Changed from client:only to client:load so the navbar is server-rendered
+             * immediately (eliminating the initial layout shift) and hydrated once
+             * the page loads. If you want to delay hydration further you could use
+             * client:idle, but client:load ensures interactivity is ready ASAP.
+             */
+        }
+        <Navbar currentPage={Astro.url.pathname} client:load />
         <main class="flex-1"><slot /></main>
         <Footer />
     </body>
