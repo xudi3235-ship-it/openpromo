@@ -1,9 +1,10 @@
+import type { Platform } from "@core/schemas/connected-account.sql";
 import { useEffect, useRef, useState } from "react";
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
 import { useComposerPreview } from "@/stores/composer-preview-store";
 
-export function useReelControls() {
-  const previewData = useComposerPreview();
+export function useReelControls(platform?: Platform) {
+  const previewData = useComposerPreview({ platform });
   const attachments = previewData.attachments;
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
     attachments,

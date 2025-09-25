@@ -23,7 +23,7 @@ export function FBReelPreview() {
     toggleMute,
     renderVideo,
     renderLocalVideoControls,
-  } = useReelControls();
+  } = useReelControls("FACEBOOK");
 
   const { config, username, renderAvatar } = useReelConfig("facebook");
   const ShareIcon = config.icons.share;

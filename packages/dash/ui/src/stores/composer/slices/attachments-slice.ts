@@ -44,6 +44,9 @@ export const createAttachmentsSlice: ComposerSlice<{
         instagram: (spec) => {
           spec.attachments = baseAttachments;
         },
+        tiktok: (spec) => {
+          spec.attachments = baseAttachments;
+        },
       });
 
       recalculateValidation(state);
@@ -61,6 +64,9 @@ export const createAttachmentsSlice: ComposerSlice<{
           spec.attachments = baseAttachments;
         },
         instagram: (spec) => {
+          spec.attachments = baseAttachments;
+        },
+        tiktok: (spec) => {
           spec.attachments = baseAttachments;
         },
       });
@@ -85,6 +91,9 @@ export const createAttachmentsSlice: ComposerSlice<{
         instagram: (spec) => {
           spec.attachments = baseAttachments;
         },
+        tiktok: (spec) => {
+          spec.attachments = baseAttachments;
+        },
       });
 
       recalculateValidation(state);
@@ -98,6 +107,9 @@ export const createAttachmentsSlice: ComposerSlice<{
           spec.attachments = [];
         },
         instagram: (spec) => {
+          spec.attachments = [];
+        },
+        tiktok: (spec) => {
           spec.attachments = [];
         },
       });
@@ -134,6 +146,9 @@ export const createAttachmentsSlice: ComposerSlice<{
           spec.attachments = baseAttachments;
         },
         instagram: (spec) => {
+          spec.attachments = baseAttachments;
+        },
+        tiktok: (spec) => {
           spec.attachments = baseAttachments;
         },
       });
@@ -179,6 +194,12 @@ export const createAttachmentsSlice: ComposerSlice<{
             spec.thumbnailUrl = thumbnailUrl;
           }
         },
+        tiktok: (spec) => {
+          spec.attachments = baseAttachments;
+          if (thumbnailUrl && !spec.customized) {
+            spec.thumbnailUrl = thumbnailUrl;
+          }
+        },
       });
 
       recalculateValidation(state);
@@ -199,6 +220,9 @@ export const createAttachmentsSlice: ComposerSlice<{
           spec.attachments = reorderedAttachments;
         },
         instagram: (spec) => {
+          spec.attachments = reorderedAttachments;
+        },
+        tiktok: (spec) => {
           spec.attachments = reorderedAttachments;
         },
       });

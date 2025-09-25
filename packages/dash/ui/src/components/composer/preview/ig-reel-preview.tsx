@@ -23,7 +23,7 @@ export function IGReelPreview() {
     toggleMute,
     renderVideo,
     renderLocalVideoControls,
-  } = useReelControls();
+  } = useReelControls("INSTAGRAM");
 
   const { config, username, renderAvatar } = useReelConfig("instagram");
   const ShareIcon = config.icons.share;

@@ -1,6 +1,7 @@
 import type {
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
+  TikTokFeedPlacementSpec,
 } from "@core/schemas/content.sql";
 import { recalculateValidation } from "../utils/validation";
 import type { ComposerSlice } from "./types";
@@ -23,6 +24,9 @@ export const createAccountsSlice: ComposerSlice<{
       if (!state.contentCreateData.placements.instagramFeed) {
         state.contentCreateData.placements.instagramFeed = [];
       }
+      if (!state.contentCreateData.placements.tiktokFeed) {
+        state.contentCreateData.placements.tiktokFeed = [];
+      }
 
       state.contentCreateData.placements.facebookFeed =
         state.contentCreateData.placements.facebookFeed.filter((spec) =>
@@ -34,6 +38,11 @@ export const createAccountsSlice: ComposerSlice<{
           accountIds.includes(spec.identity.connectedAccountID),
         );
 
+      state.contentCreateData.placements.tiktokFeed =
+        state.contentCreateData.placements.tiktokFeed.filter((spec) =>
+          accountIds.includes(spec.identity.connectedAccountID),
+        );
+
       const currentFacebookIds = new Set(
         state.contentCreateData.placements.facebookFeed.map(
           (spec) => spec.identity.connectedAccountID,
@@ -41,6 +50,11 @@ export const createAccountsSlice: ComposerSlice<{
       );
       const currentInstagramIds = new Set(
         state.contentCreateData.placements.instagramFeed.map(
+          (spec) => spec.identity.connectedAccountID,
+        ),
+      );
+      const currentTikTokIds = new Set(
+        state.contentCreateData.placements.tiktokFeed.map(
           (spec) => spec.identity.connectedAccountID,
         ),
       );
@@ -88,6 +102,21 @@ export const createAccountsSlice: ComposerSlice<{
           state.contentCreateData.placements.instagramFeed?.push(
             newInstagramSpec,
           );
+        }
+
+        if (account.platform === "TIKTOK" && !currentTikTokIds.has(accountId)) {
+          const newTikTokSpec: TikTokFeedPlacementSpec = {
+            identity: {
+              connectedAccountID: account.id,
+              tiktokUserID: (account.metadata as { tiktokUserId: string })
+                .tiktokUserId,
+            },
+            placement: "TIKTOK_FEED" as const,
+            caption: state.contentCreateData.base.message || "",
+            attachments: [...(state.contentCreateData.base.attachments || [])],
+            customized: false,
+          };
+          state.contentCreateData.placements.tiktokFeed?.push(newTikTokSpec);
         }
       });
 

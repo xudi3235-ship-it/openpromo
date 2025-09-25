@@ -20,4 +20,12 @@ export const syncToNonCustomizedPlacements = (
       }
     });
   }
+
+  if (updateFn.tiktok) {
+    state.contentCreateData.placements.tiktokFeed?.forEach((spec) => {
+      if (!spec.customized) {
+        updateFn.tiktok?.(spec);
+      }
+    });
+  }
 };

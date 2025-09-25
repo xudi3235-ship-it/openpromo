@@ -1,3 +1,4 @@
+import type { Platform } from "@core/schemas/connected-account.sql";
 import { Send, Share } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerPreview } from "@/stores/composer-preview-store";
@@ -96,7 +97,9 @@ const PLATFORM_CONFIGS: Record<string, ReelPlatformConfig> = {
 
 export function useReelConfig(platform: string) {
   const { workspace } = useWorkspace();
-  const previewData = useComposerPreview();
+  const previewData = useComposerPreview({
+    platform: platform.toUpperCase() as Platform,
+  });
 
   const config = PLATFORM_CONFIGS[platform] || PLATFORM_CONFIGS.instagram;
 
@@ -108,8 +111,9 @@ export function useReelConfig(platform: string) {
       return previewData.getDisplayName(workspace?.name);
     }
     if (platform === "tiktok") {
-      const username = previewData.getInstagramUsername(workspace?.name);
-      return `@${username.replace(/_/g, "")}`;
+      if (previewData.username) return `@${previewData.username}`;
+      const fallback = previewData.getInstagramUsername(workspace?.name);
+      return `@${fallback.replace(/_/g, "")}`;
     }
     if (platform === "youtube") {
       return previewData.getDisplayName(workspace?.name);

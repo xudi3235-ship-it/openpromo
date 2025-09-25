@@ -36,6 +36,14 @@ export const createMessageSlice: ComposerSlice<{
       return spec?.caption || "";
     }
 
+    if (activeAccount.platform === "TIKTOK") {
+      const spec = state.contentCreateData.placements.tiktokFeed?.find(
+        (placement) =>
+          placement.identity.connectedAccountID === state.activeAccount,
+      );
+      return spec?.caption || "";
+    }
+
     return state.contentCreateData.base.message || "";
   },
   setCurrentMessage: (message) =>
@@ -47,6 +55,9 @@ export const createMessageSlice: ComposerSlice<{
             spec.postSpec.message = message;
           },
           instagram: (spec) => {
+            spec.caption = message;
+          },
+          tiktok: (spec) => {
             spec.caption = message;
           },
         });
@@ -81,6 +92,17 @@ export const createMessageSlice: ComposerSlice<{
         }
       }
 
+      if (activeAccount.platform === "TIKTOK") {
+        const spec = state.contentCreateData.placements.tiktokFeed?.find(
+          (placement) =>
+            placement.identity.connectedAccountID === state.activeAccount,
+        );
+        if (spec) {
+          spec.caption = message;
+          spec.customized = true;
+        }
+      }
+
       recalculateValidation(state);
     }),
   setMessage: (message) =>
@@ -91,6 +113,9 @@ export const createMessageSlice: ComposerSlice<{
           spec.postSpec.message = message;
         },
         instagram: (spec) => {
+          spec.caption = message;
+        },
+        tiktok: (spec) => {
           spec.caption = message;
         },
       });

@@ -4,6 +4,7 @@ import type {
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
   SharedAttachmentSpec,
+  TikTokFeedPlacementSpec,
 } from "@core/schemas/content.sql";
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import type { ConnectedAccount } from "@/lib/hono-client";
@@ -76,4 +77,5 @@ export type ComposerStore = ComposerState & ComposerActions;
 export type PlacementSpecUpdater = {
   facebook?: (spec: FBFeedPlacementSpec) => void;
   instagram?: (spec: IGFeedPlacementSpec) => void;
+  tiktok?: (spec: TikTokFeedPlacementSpec) => void;
 };
