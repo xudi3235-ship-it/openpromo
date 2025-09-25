@@ -12,6 +12,7 @@ import {
   IGFeedPlacementSpec,
   PendingContentGroupSelect,
   pendingContentGroupTable,
+  TikTokFeedPlacementSpec,
   UnifiedContentSelect,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
@@ -68,8 +69,9 @@ export const ContentCreateData = z.object({
     .object({
       facebookFeed: FBFeedPlacementSpec.array().optional(),
       instagramFeed: IGFeedPlacementSpec.array().optional(),
+      tiktokFeed: TikTokFeedPlacementSpec.array().optional(),
     })
-    .refine((val) => val.facebookFeed || val.instagramFeed, {
+    .refine((val) => val.facebookFeed || val.instagramFeed || val.tiktokFeed, {
       message: "At least one placement must be provided.",
     }),
 });

@@ -1,5 +1,5 @@
 interface PreviewItemProps {
-  platform: "facebook" | "instagram";
+  platform: "facebook" | "instagram" | "tiktok";
   contentType: "reel" | "feed";
   children: React.ReactNode;
 }
@@ -18,10 +18,17 @@ export function PreviewItem({
       color: "bg-gradient-to-br from-purple-500 to-pink-500",
       name: "Instagram",
     },
+    tiktok: {
+      color: "bg-black",
+      name: "TikTok",
+    },
   };
 
   const config = platformConfig[platform];
-  const displayName = `${config.name} ${contentType === "reel" ? "Reel" : "Feed"}`;
+  const displayName =
+    platform === "tiktok"
+      ? "TikTok"
+      : `${config.name} ${contentType === "reel" ? "Reel" : "Feed"}`;
 
   return (
     <div className="space-y-3 flex flex-col items-center w-full max-w-sm">

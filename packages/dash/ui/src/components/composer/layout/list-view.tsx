@@ -3,6 +3,7 @@ import { FBFeedPreview } from "@/components/composer/preview/fb-feed-preview";
 import { FBReelPreview } from "@/components/composer/preview/fb-reel-preview";
 import { IGFeedPreview } from "@/components/composer/preview/ig-feed-preview";
 import { IGReelPreview } from "@/components/composer/preview/ig-reel-preview";
+import { TikTokPreview } from "@/components/composer/preview/tiktok-preview";
 import { PlatformSelector } from "./platform-selector";
 
 interface ListViewProps {
@@ -10,6 +11,7 @@ interface ListViewProps {
   onSelectPreview: (platform: Platform) => void;
   showFacebook: boolean;
   showInstagram: boolean;
+  showTikTok: boolean;
   isReel: boolean;
 }
 
@@ -18,10 +20,12 @@ export function ListView({
   onSelectPreview,
   showFacebook,
   showInstagram,
+  showTikTok,
   isReel,
 }: ListViewProps) {
   const FacebookPreview = isReel ? FBReelPreview : FBFeedPreview;
   const InstagramPreview = isReel ? IGReelPreview : IGFeedPreview;
+  const TikTokFeedPreview = TikTokPreview;
 
   return (
     <div className="max-w-md mx-auto space-y-4">
@@ -31,6 +35,7 @@ export function ListView({
         onSelectPreview={onSelectPreview}
         showFacebook={showFacebook}
         showInstagram={showInstagram}
+        showTikTok={showTikTok}
       />
 
       {/* Preview */}
@@ -39,6 +44,7 @@ export function ListView({
         {selectedPreview === "INSTAGRAM" && showInstagram && (
           <InstagramPreview />
         )}
+        {selectedPreview === "TIKTOK" && showTikTok && <TikTokFeedPreview />}
       </div>
     </div>
   );

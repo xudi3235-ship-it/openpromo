@@ -6,6 +6,7 @@ interface PlatformSelectorProps {
   onSelectPreview: (platform: Platform) => void;
   showFacebook: boolean;
   showInstagram: boolean;
+  showTikTok: boolean;
 }
 
 export function PlatformSelector({
@@ -13,6 +14,7 @@ export function PlatformSelector({
   onSelectPreview,
   showFacebook,
   showInstagram,
+  showTikTok,
 }: PlatformSelectorProps) {
   return (
     <div className="flex justify-center">
@@ -37,6 +39,17 @@ export function PlatformSelector({
           >
             <div className="w-3 h-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded mr-2"></div>
             <span className="text-xs">Instagram</span>
+          </Button>
+        )}
+        {showTikTok && (
+          <Button
+            variant={selectedPreview === "TIKTOK" ? "default" : "outline"}
+            size="sm"
+            className="h-8 px-3"
+            onClick={() => onSelectPreview("TIKTOK")}
+          >
+            <div className="w-3 h-3 bg-black rounded mr-2"></div>
+            <span className="text-xs">TikTok</span>
           </Button>
         )}
       </div>

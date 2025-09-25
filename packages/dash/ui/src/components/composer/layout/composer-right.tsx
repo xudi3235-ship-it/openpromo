@@ -1,6 +1,7 @@
+import type { Platform } from "@core/schemas/connected-account.sql";
 import { Button } from "@openpromo/ui/components/button";
 import { Grid3X3, List } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useComposerStore } from "@/stores/composer-store";
 import { CollageView } from "./collage-view";
 import { ListView } from "./list-view";
@@ -36,34 +37,34 @@ export function ComposerRight() {
 
   const hasFacebookAccounts = selectedAccountsByPlatform.FACEBOOK?.length > 0;
   const hasInstagramAccounts = selectedAccountsByPlatform.INSTAGRAM?.length > 0;
+  const hasTikTokAccounts = selectedAccountsByPlatform.TIKTOK?.length > 0;
 
   // Auto-adjust selectedPreview based on available accounts
+  const availablePreviews = useMemo(() => {
+    const platforms: Platform[] = [];
+    if (hasFacebookAccounts) platforms.push("FACEBOOK");
+    if (hasInstagramAccounts) platforms.push("INSTAGRAM");
+    if (hasTikTokAccounts) platforms.push("TIKTOK");
+    return platforms;
+  }, [hasFacebookAccounts, hasInstagramAccounts, hasTikTokAccounts]);
+
   useEffect(() => {
-    if (
-      selectedPreview === "FACEBOOK" &&
-      !hasFacebookAccounts &&
-      hasInstagramAccounts
-    ) {
-      setSelectedPreview("INSTAGRAM");
-    } else if (
-      selectedPreview === "INSTAGRAM" &&
-      !hasInstagramAccounts &&
-      hasFacebookAccounts
-    ) {
-      setSelectedPreview("FACEBOOK");
+    if (availablePreviews.length === 0) return;
+    if (!availablePreviews.includes(selectedPreview)) {
+      setSelectedPreview(availablePreviews[0]);
     }
-  }, [
-    selectedPreview,
-    hasFacebookAccounts,
-    hasInstagramAccounts,
-    setSelectedPreview,
-  ]);
+  }, [availablePreviews, selectedPreview, setSelectedPreview]);
 
   // Use default state when no accounts selected (show both FB + IG)
   const showFacebookPreview =
-    hasFacebookAccounts || (!hasFacebookAccounts && !hasInstagramAccounts);
+    hasFacebookAccounts ||
+    (!hasFacebookAccounts && !hasInstagramAccounts && !hasTikTokAccounts);
   const showInstagramPreview =
-    hasInstagramAccounts || (!hasFacebookAccounts && !hasInstagramAccounts);
+    hasInstagramAccounts ||
+    (!hasFacebookAccounts && !hasInstagramAccounts && !hasTikTokAccounts);
+  const showTikTokPreview =
+    hasTikTokAccounts ||
+    (!hasFacebookAccounts && !hasInstagramAccounts && !hasTikTokAccounts);
 
   return (
     <div className="h-full p-4 bg-background overflow-y-auto">
@@ -99,6 +100,7 @@ export function ComposerRight() {
           <CollageView
             showFacebook={showFacebookPreview}
             showInstagram={showInstagramPreview}
+            showTikTok={showTikTokPreview}
             isReel={isReelContent()}
           />
         ) : (
@@ -107,6 +109,7 @@ export function ComposerRight() {
             onSelectPreview={setSelectedPreview}
             showFacebook={showFacebookPreview}
             showInstagram={showInstagramPreview}
+            showTikTok={showTikTokPreview}
             isReel={isReelContent()}
           />
         )}

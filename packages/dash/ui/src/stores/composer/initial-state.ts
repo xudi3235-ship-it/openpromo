@@ -1,6 +1,7 @@
 import type {
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
+  TikTokFeedPlacementSpec,
 } from "@core/schemas/content.sql";
 import type { ComposerProps, ComposerState } from "./types";
 import { validateComposerState } from "./utils/validation";
@@ -72,6 +73,32 @@ const buildInitialInstagramPlacements = (
   );
 };
 
+const buildInitialTikTokPlacements = (props: ComposerProps) => {
+  if (props.initContentCreateData?.placements?.tiktokFeed) {
+    return props.initContentCreateData.placements.tiktokFeed;
+  }
+
+  return (
+    (props.initialAccounts
+      ?.map((acc) => {
+        if (acc.platform !== "TIKTOK") return null;
+
+        return {
+          identity: {
+            connectedAccountID: acc.id,
+            tiktokUserID: (acc.metadata as { tiktokUserId: string })
+              .tiktokUserId,
+          },
+          placement: "TIKTOK_FEED" as const,
+          caption: props.initialMessage || "",
+          attachments: [],
+          customized: false,
+        } satisfies TikTokFeedPlacementSpec;
+      })
+      .filter(Boolean) as TikTokFeedPlacementSpec[]) || []
+  );
+};
+
 export const createComposerInitialState = (
   props: ComposerProps,
 ): ComposerState => {
@@ -84,6 +111,7 @@ export const createComposerInitialState = (
     placements: {
       facebookFeed: buildInitialFacebookPlacements(props),
       instagramFeed: buildInitialInstagramPlacements(props),
+      tiktokFeed: buildInitialTikTokPlacements(props),
     },
   };
 

@@ -1,11 +1,16 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import type { UnifiedContentSelect } from "@core/schemas/content.sql";
+import { Binding } from "@core/helpers/api-env";
+import type {
+  SharedAttachmentSpec,
+  UnifiedContentSelect,
+} from "@core/schemas/content.sql";
 import {
   TikTokFeedPlacementSpec,
   TikTokPlacement,
 } from "@core/schemas/content.sql";
 import { onlyOrThrow } from "@core/utils/common";
 import { WorkflowError } from "@core/utils/error";
+import { Log } from "@core/utils/log";
 import { EntPendingContent } from "./pending-content";
 
 export interface TikTokIdentityContext {
@@ -107,4 +112,249 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     }
     this.ensureSingleVideoAttachment();
   }
+
+  async queryCreatorInfo(
+    identity?: TikTokIdentityContext,
+  ): Promise<Record<string, unknown>> {
+    const ctx = identity ?? (await this.identity());
+    const data = await this.tiktokPost<Record<string, unknown>>(
+      ctx,
+      "/v2/post/publish/creator_info/query/",
+      {},
+    );
+    return data;
+  }
+
+  async initDirectPostFromUrl(
+    identity: TikTokIdentityContext,
+    params: {
+      videoUrl: string;
+      caption?: string;
+      mimeType?: string;
+      coverTimestampMs?: number;
+    },
+  ): Promise<{ publishId: string; uploadUrl?: string }> {
+    const postInfo = this.buildPostInfo(
+      params.caption,
+      params.coverTimestampMs,
+    );
+    const sourceInfo: Record<string, unknown> = {
+      source: "PULL_FROM_URL",
+      video_url: params.videoUrl,
+    };
+    if (params.mimeType) {
+      sourceInfo["video_format"] = params.mimeType;
+    }
+
+    const payload = {
+      post_info: postInfo,
+      source_info: sourceInfo,
+      post_mode: "DIRECT_POST",
+    };
+
+    const data = await this.tiktokPost<TikTokVideoInitResponse>(
+      identity,
+      "/v2/post/publish/video/init/",
+      payload,
+    );
+
+    const publishId = data.publish_id;
+    if (!publishId) {
+      throw new WorkflowError("TikTok video init response missing publish_id");
+    }
+
+    return {
+      publishId,
+      uploadUrl: data.upload_url,
+    };
+  }
+
+  async fetchPublishStatus(
+    identity: TikTokIdentityContext,
+    publishId: string,
+  ): Promise<TikTokPublishStatusResponse & TikTokPublishStatus> {
+    const data = await this.tiktokPost<TikTokPublishStatusResponse>(
+      identity,
+      "/v2/post/publish/status/fetch/",
+      {
+        publish_id: publishId,
+      },
+    );
+
+    const dataRecord = data as unknown as Record<string, unknown>;
+    const message = data.message || dataRecord?.["status_msg"];
+    const failReason = data.fail_reason || dataRecord?.["fail_msg"];
+
+    return {
+      ...data,
+      postId: data.post_id,
+      shareUrl: data.share_url,
+      failReason: typeof failReason === "string" ? failReason : undefined,
+      message: typeof message === "string" ? message : undefined,
+    } satisfies TikTokPublishStatusResponse & TikTokPublishStatus;
+  }
+
+  private async tiktokPost<T>(
+    identity: TikTokIdentityContext,
+    path: string,
+    body: Record<string, unknown>,
+  ): Promise<T> {
+    const url = new URL(path, "https://open.tiktokapis.com");
+    let response: Response;
+    try {
+      response = await fetch(url.toString(), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${identity.accessToken}`,
+          "Content-Type": "application/json; charset=UTF-8",
+        },
+        body: JSON.stringify(body ?? {}),
+      });
+    } catch (error) {
+      throw new WorkflowError(
+        `Failed to call TikTok API ${path}: ${(error as Error).message}`,
+      );
+    }
+
+    let json: TikTokAPIResponse<T>;
+    try {
+      json = (await response.json()) as TikTokAPIResponse<T>;
+    } catch (error) {
+      throw new WorkflowError(
+        `TikTok API ${path} returned invalid JSON: ${(error as Error).message}`,
+      );
+    }
+
+    const apiError = json.error;
+    const successCode =
+      apiError?.code === undefined ||
+      apiError?.code === null ||
+      apiError?.code === "ok" ||
+      apiError?.code === "success" ||
+      apiError?.code === 0;
+
+    if (!response.ok || !successCode) {
+      const message =
+        apiError?.message || response.statusText || `TikTok API ${path} failed`;
+      log.warn("tiktok api error", {
+        path,
+        status: response.status,
+        errorCode: apiError?.code,
+        errorMessage: apiError?.message,
+        log_id: apiError?.log_id,
+      });
+      throw new WorkflowError(message);
+    }
+
+    if (!json.data) {
+      throw new WorkflowError(`TikTok API ${path} returned empty data`);
+    }
+
+    return json.data;
+  }
+
+  private buildPostInfo(caption?: string, coverTimestampMs?: number) {
+    const sanitized = this.normalizeCaption(caption);
+    const postInfo: Record<string, unknown> = {
+      title: sanitized?.slice(0, 80) || "OpenPromo Post",
+      description: sanitized,
+      privacy_level: "PUBLIC_TO_EVERYONE",
+      disable_comment: false,
+      disable_duet: false,
+      disable_stitch: false,
+      auto_add_music: true,
+    };
+
+    if (typeof coverTimestampMs === "number") {
+      postInfo["video_cover_timestamp_ms"] = coverTimestampMs;
+    }
+
+    return postInfo;
+  }
+
+  private normalizeCaption(caption?: string) {
+    if (!caption) return undefined;
+    const trimmed = caption.trim();
+    // TikTok caption limit is 2200 characters
+    return trimmed.slice(0, 2200);
+  }
+
+  async ensureVideoAvailableOnVerifiedDomain(
+    video: Pick<SharedAttachmentSpec, "id" | "presignedUrl" | "mimeType">,
+  ): Promise<{ key: string; url: string }> {
+    if (!video.presignedUrl) {
+      throw new WorkflowError("Video attachment missing presignedUrl");
+    }
+
+    const { Bucket } = Binding.use();
+    if (!Bucket) {
+      throw new WorkflowError("R2 bucket binding not available");
+    }
+
+    const key = `tiktok/${this.data.workspaceId}/${this.data.id}/${video.id}`;
+
+    const existing = await Bucket.head(key).catch(() => undefined);
+    if (!existing) {
+      const response = await fetch(video.presignedUrl);
+      if (!response.ok || !response.body) {
+        throw new WorkflowError(
+          `Failed to fetch video ${video.id} for TikTok upload: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const contentType =
+        video.mimeType || response.headers.get("content-type") || "video/mp4";
+
+      await Bucket.put(key, response.body, {
+        httpMetadata: {
+          contentType,
+        },
+        customMetadata: {
+          source: "cloudflare-stream",
+          attachmentId: video.id,
+          contentId: this.data.id,
+        },
+      });
+    }
+
+    return {
+      key,
+      url: `https://cdn.openpromo.app/${key}`,
+    };
+  }
+}
+const log = Log.create({ namespace: "tiktok-feed-entity" });
+
+type TikTokAPIError = {
+  code?: string | number;
+  message?: string;
+  log_id?: string;
+};
+
+interface TikTokAPIResponse<T> {
+  data?: T;
+  error?: TikTokAPIError;
+}
+
+interface TikTokVideoInitResponse {
+  publish_id: string;
+  upload_url?: string;
+}
+
+interface TikTokPublishStatusResponse {
+  publish_id: string;
+  status: string;
+  post_id?: string;
+  share_id?: string;
+  share_url?: string;
+  fail_reason?: string;
+  message?: string;
+}
+
+export interface TikTokPublishStatus {
+  status: string;
+  postId?: string;
+  shareUrl?: string;
+  failReason?: string;
+  message?: string;
 }

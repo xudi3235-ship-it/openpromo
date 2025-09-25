@@ -2,6 +2,7 @@ import type {
   FBPageMetadata,
   IGAccountMetadata,
   Platform,
+  TikTokAccountMetadata,
 } from "@core/schemas/connected-account.sql";
 import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import { useMemo } from "react";
@@ -39,6 +40,15 @@ const getAccountDisplayData = (account: ConnectedAccount) => {
         pageName: igMeta.username || "Instagram Account",
         profilePicUrl: igMeta.profilePicUrl || "",
         username: igMeta.username,
+        platform: account.platform as Platform,
+      };
+    }
+    case "TIKTOK": {
+      const ttMeta = metadata as TikTokAccountMetadata;
+      return {
+        pageName: ttMeta.username || "TikTok Account",
+        profilePicUrl: ttMeta.profilePicUrl || "",
+        username: ttMeta.username,
         platform: account.platform as Platform,
       };
     }
@@ -128,6 +138,11 @@ export const useComposerPreview = (): PreviewData => {
             (spec) => spec.identity.connectedAccountID === targetAccount.id,
           );
           return igSpec?.caption || contentCreateData.base.message || "";
+        } else if (targetAccount.platform === "TIKTOK") {
+          const ttSpec = contentCreateData.placements.tiktokFeed?.find(
+            (spec) => spec.identity.connectedAccountID === targetAccount.id,
+          );
+          return ttSpec?.caption || contentCreateData.base.message || "";
         }
       }
 
@@ -145,6 +160,13 @@ export const useComposerPreview = (): PreviewData => {
         );
         if (igSpec?.customized) {
           return igSpec.caption || "";
+        }
+      } else if (targetAccount.platform === "TIKTOK") {
+        const ttSpec = contentCreateData.placements.tiktokFeed?.find(
+          (spec) => spec.identity.connectedAccountID === targetAccount.id,
+        );
+        if (ttSpec?.customized) {
+          return ttSpec.caption || "";
         }
       }
 
@@ -167,5 +189,6 @@ export const useComposerPreview = (): PreviewData => {
     contentCreateData.base.message,
     contentCreateData.placements.facebookFeed,
     contentCreateData.placements.instagramFeed,
+    contentCreateData.placements.tiktokFeed,
   ]);
 };
