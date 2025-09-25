@@ -116,63 +116,6 @@ export namespace Storage {
       return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
     }
   }
-
-  // File validation utilities
-  // TODO: platform specific might have more limitations
-  export namespace Validation {
-    const ALLOWED_IMAGE_TYPES = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-      "image/svg+xml",
-    ];
-
-    const ALLOWED_VIDEO_TYPES = [
-      "video/mp4",
-      "video/mpeg",
-      "video/quicktime",
-      "video/x-msvideo", // .avi
-      "video/webm",
-    ];
-
-    const ALLOWED_DOCUMENT_TYPES = [
-      "application/pdf",
-      "text/plain",
-      "application/json",
-      "text/csv",
-    ];
-
-    export function isValidImageType(mimeType: string): boolean {
-      return ALLOWED_IMAGE_TYPES.includes(mimeType.toLowerCase());
-    }
-
-    export function isValidVideoType(mimeType: string): boolean {
-      return ALLOWED_VIDEO_TYPES.includes(mimeType.toLowerCase());
-    }
-
-    export function isValidDocumentType(mimeType: string): boolean {
-      return ALLOWED_DOCUMENT_TYPES.includes(mimeType.toLowerCase());
-    }
-
-    export function isValidFileType(mimeType: string): boolean {
-      return (
-        isValidImageType(mimeType) ||
-        isValidVideoType(mimeType) ||
-        isValidDocumentType(mimeType)
-      );
-    }
-
-    export function validateFileSize(
-      fileSize: number,
-      maxSizeMB: number = 1024, // Default 1GB
-    ): boolean {
-      const maxSizeBytes = maxSizeMB * 1024 * 1024;
-      return fileSize <= maxSizeBytes;
-    }
-  }
-
   /**
    * Upload a file to S3
    */
