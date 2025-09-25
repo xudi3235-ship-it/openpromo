@@ -18,13 +18,21 @@ export async function publishTikTokFeedVideo(
   step: CoreWorkflowStep,
   pendingContentID: string,
 ): Promise<string> {
-  const content = await step.do("load tiktok pending content", async () => {
+  console.log("// publishTikTokFeedVideo");
+  await step.do("load tiktok pending content", async () => {
     const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
     c.assertReadyForPublishing();
-    return c;
   });
 
-  const videoAttachment = content.ensureSingleVideoAttachment();
+  const videoAttachment = await step.do(
+    "prepare videos if needed",
+    async () => {
+      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+      const videoAttachment = c.ensureSingleVideoAttachment();
+      return videoAttachment;
+    },
+  );
+
   if (!videoAttachment.presignedUrl) {
     throw new WorkflowError(
       `TikTok video attachment ${videoAttachment.id} missing presignedUrl`,
@@ -32,13 +40,17 @@ export async function publishTikTokFeedVideo(
   }
 
   const identity = await step.do("resolve tiktok identity", async () => {
-    return await content.identity();
+    const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+    return await c.identity();
   });
+  console.log("resolved tiktok identity", identity);
 
   const verifiedVideoUrl = await step.do(
     "ensure video available on verified domain",
     async () => {
-      const { url } = await content.ensureVideoAvailableOnVerifiedDomain({
+      console.log({ env: process.env });
+      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+      const { url } = await c.ensureVideoAvailableOnVerifiedDomain({
         id: videoAttachment.id,
         presignedUrl: videoAttachment.presignedUrl as string,
         mimeType: videoAttachment.mimeType,
@@ -48,31 +60,28 @@ export async function publishTikTokFeedVideo(
   );
 
   await step.do("query tiktok creator info", async () => {
-    const info = await content.queryCreatorInfo(identity);
+    const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+    const info = await c.queryCreatorInfo(identity);
     console.log("tiktok creator info", info);
   });
 
-  log.info("prepared TikTok publish context", {
-    ...content.logContext(),
-    caption: content.caption(),
-    attachmentId: videoAttachment.id,
-    verifiedVideoUrl,
-  });
-
   const { publishId } = await step.do("init tiktok video publish", async () => {
-    return await content.initDirectPostFromUrl(identity, {
+    console.log("init tiktok video publish");
+    const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+    return await c.initDirectPostFromUrl(identity, {
       videoUrl: verifiedVideoUrl,
-      caption: content.caption(),
+      caption: c.caption(),
       mimeType: videoAttachment.mimeType,
     });
   });
 
   const postId = await step.do("wait for tiktok publish status", async () => {
+    const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
     const maxAttempts = 20;
     let attempt = 0;
     while (attempt < maxAttempts) {
       attempt += 1;
-      const status = await content.fetchPublishStatus(identity, publishId);
+      const status = await c.fetchPublishStatus(identity, publishId);
 
       log.info("tiktok publish status", {
         publishId,

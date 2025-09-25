@@ -1,5 +1,5 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { Binding } from "@core/helpers/api-env";
+import { Storage } from "@core/helpers/storage";
 import type {
   SharedAttachmentSpec,
   UnifiedContentSelect,
@@ -256,7 +256,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
   private buildPostInfo(caption?: string, coverTimestampMs?: number) {
     const sanitized = this.normalizeCaption(caption);
     const postInfo: Record<string, unknown> = {
-      title: sanitized?.slice(0, 80) || "OpenPromo Post",
+      title: sanitized?.slice(0, 80),
       description: sanitized,
       privacy_level: "PUBLIC_TO_EVERYONE",
       disable_comment: false,
@@ -286,40 +286,41 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
       throw new WorkflowError("Video attachment missing presignedUrl");
     }
 
-    const { Bucket } = Binding.use();
-    if (!Bucket) {
-      throw new WorkflowError("R2 bucket binding not available");
-    }
+    const key = Storage.Key.daily(`tiktok-upload-${video.id}`);
+    const bucket = {
+      name: "TODO: add bucket name",
+      publicUrl: "TODO: add bucket public url",
+    };
 
-    const key = `tiktok/${this.data.workspaceId}/${this.data.id}/${video.id}`;
-
-    const existing = await Bucket.head(key).catch(() => undefined);
-    if (!existing) {
+    const exists = await Storage.exists(key, bucket);
+    if (!exists) {
+      // stream -> R2
       const response = await fetch(video.presignedUrl);
       if (!response.ok || !response.body) {
         throw new WorkflowError(
           `Failed to fetch video ${video.id} for TikTok upload: ${response.status} ${response.statusText}`,
         );
       }
-
       const contentType =
         video.mimeType || response.headers.get("content-type") || "video/mp4";
-
-      await Bucket.put(key, response.body, {
-        httpMetadata: {
+      await Storage.upload(
+        key,
+        response.body as ReadableStream<Uint8Array>,
+        bucket,
+        {
           contentType,
+          metadata: {
+            source: "cloudflare-stream",
+            attachmentId: video.id,
+            contentId: this.data.id,
+          },
         },
-        customMetadata: {
-          source: "cloudflare-stream",
-          attachmentId: video.id,
-          contentId: this.data.id,
-        },
-      });
+      );
     }
 
     return {
       key,
-      url: `https://cdn.openpromo.app/${key}`,
+      url: Storage.publicUrl(key, bucket),
     };
   }
 }

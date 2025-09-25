@@ -18,19 +18,20 @@ export class TikTokPublisher extends BasePublisher {
   ) {
     await this.prepareVideosIfNeeded(step, pendingContentID);
 
-    const content = await step.do("load tiktok pending content", async () => {
-      return await EntTikTokFeedPendingContent.fromID(pendingContentID);
+    await step.do("ensure has video attachment", async () => {
+      console.log("// ensure has video attachment");
+      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+      if (!c.hasVideoAttachment()) {
+        throw new WorkflowError(
+          `TikTok placement currently requires a video attachment (${pendingContentID})`,
+        );
+      }
     });
-
-    if (!content.hasVideoAttachment()) {
-      throw new WorkflowError(
-        `TikTok placement currently requires a video attachment (${pendingContentID})`,
-      );
-    }
 
     const postId = await publishTikTokFeedVideo(ctx, step, pendingContentID);
 
     await step.do("mark tiktok content as published", async () => {
+      console.log("// mark tiktok content as published");
       const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
       await c.markAsPublished(postId);
     });

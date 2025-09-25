@@ -3,20 +3,27 @@ import type {
   PutObjectCommandInput,
   CompletedPart as S3CompletedPart,
 } from "@aws-sdk/client-s3";
-import { getAwsClient } from "@core/providers";
+import { getR2Client } from "@core/providers/aws";
 import { Log } from "@core/utils/log";
 
 export namespace Storage {
   const log = Log.create({ namespace: "storage" });
 
+  export type BucketConfig = {
+    name: string;
+    publicUrl?: string | null;
+  };
+
+  export type BucketInput = string | BucketConfig;
+
   export type UploadOptions = Pick<
     PutObjectCommandInput,
     "ContentType" | "Metadata" | "Tagging" | "ACL"
   > & {
-    contentType?: string; // Alias for ContentType
-    metadata?: Record<string, string>; // Alias for Metadata
-    tagging?: string; // Alias for Tagging
-    acl?: "private" | "public-read"; // Alias for ACL
+    contentType?: string;
+    metadata?: Record<string, string>;
+    tagging?: string;
+    acl?: "private" | "public-read";
   };
 
   export type MultipartUploadOptions = Pick<
@@ -27,11 +34,11 @@ export namespace Storage {
     metadata?: Record<string, string>;
     tagging?: string;
     acl?: "private" | "public-read";
-    partSize?: number; // Default 5MB
+    partSize?: number;
   };
 
   export type PresignedUrlOptions = {
-    expiresIn?: number; // Default 1 hour
+    expiresIn?: number;
     operation?: "get" | "put";
   };
 
@@ -45,14 +52,6 @@ export namespace Storage {
     PartNumber: number;
   };
 
-  function s3Url(_key?: string): string {
-    // const region = process.env.AWS_REGION || DEFAULT_AWS_REGION;
-    // FIXME: move to R2 instead, no need for these.
-    throw new Error("TODO: move to R2, off aws");
-    // const baseUrl = `https://${Resource.Storage.name}.s3.${region}.amazonaws.com`;
-    // return key ? `${baseUrl}/${key}` : baseUrl;
-  }
-
   export class StorageError extends Error {
     constructor(
       message: string,
@@ -62,19 +61,92 @@ export namespace Storage {
     }
   }
 
-  // S3 Key utilities based on temporary bucket policy
+  type UploadBody =
+    | Buffer
+    | Uint8Array
+    | ArrayBuffer
+    | string
+    | ReadableStream<Uint8Array>
+    | ReadableStream;
+
+  function resolveBucket(bucket: BucketInput): BucketConfig {
+    if (typeof bucket === "string") {
+      return { name: bucket };
+    }
+    return bucket;
+  }
+
+  function objectUrl(key: string, bucket: BucketInput): string {
+    const { r2Url } = getR2Client();
+    const { name } = resolveBucket(bucket);
+    return `${r2Url}/${name}/${key}`;
+  }
+
+  export function publicUrl(key: string, bucket: BucketInput): string {
+    const config = resolveBucket(bucket);
+    if (config.publicUrl) {
+      const base = config.publicUrl.replace(/\/$/, "");
+      return `${base}/${key}`;
+    }
+    return objectUrl(key, config);
+  }
+
+  export async function exists(
+    key: string,
+    bucket: BucketInput,
+  ): Promise<boolean> {
+    const { client } = getR2Client();
+    const response = await client.fetch(objectUrl(key, bucket), {
+      method: "HEAD",
+    });
+
+    if (response.status === 404) return false;
+    if (!response.ok) {
+      const text = await response.text();
+      throw new StorageError(
+        `Failed to check object: ${response.status} ${response.statusText}`,
+        { key, bucket: resolveBucket(bucket).name, body: text },
+      );
+    }
+    return true;
+  }
+
+  function prepareBody(body: UploadBody): BodyInit {
+    if (typeof body === "string") {
+      return Buffer.from(body);
+    }
+    if (typeof ArrayBuffer !== "undefined" && body instanceof ArrayBuffer) {
+      return Buffer.from(body);
+    }
+    if (typeof Uint8Array !== "undefined" && body instanceof Uint8Array) {
+      return body;
+    }
+    if (typeof Buffer !== "undefined" && Buffer.isBuffer(body)) {
+      return body;
+    }
+    return body as BodyInit;
+  }
+
+  function bodySize(body: UploadBody): number | "stream" {
+    if (typeof body === "string") return Buffer.byteLength(body);
+    if (typeof ArrayBuffer !== "undefined" && body instanceof ArrayBuffer) {
+      return body.byteLength;
+    }
+    if (typeof Uint8Array !== "undefined" && body instanceof Uint8Array) {
+      return body.byteLength;
+    }
+    if (typeof Buffer !== "undefined" && Buffer.isBuffer(body)) {
+      return body.byteLength;
+    }
+    return "stream";
+  }
+
   export namespace Key {
-    /**
-     * Generate key for daily temporary files (expires in 1 day)
-     */
     export function daily(filename: string): string {
       const timestamp = new Date().toISOString().split("T")[0];
       return `temporary/daily/${timestamp}/${filename}`;
     }
 
-    /**
-     * Generate key for weekly temporary files (expires in 7 days)
-     */
     export function weekly(filename: string): string {
       const date = new Date();
       const weekNumber = getWeekNumber(date);
@@ -82,25 +154,15 @@ export namespace Storage {
       return `temporary/weekly/${year}-W${weekNumber}/${filename}`;
     }
 
-    /**
-     * Generate key for monthly temporary files (expires in 30 days)
-     */
     export function monthly(filename: string): string {
-      const date = new Date();
-      const month = date.toISOString().slice(0, 7); // YYYY-MM
+      const month = new Date().toISOString().slice(0, 7);
       return `temporary/monthly/${month}/${filename}`;
     }
 
-    /**
-     * Generate key for permanent files
-     */
     export function permanent(path: string, filename: string): string {
       return `permanent/${path}/${filename}`;
     }
 
-    /**
-     * Generate key for workspace-specific files
-     */
     export function workspace(
       workspaceId: string,
       path: string,
@@ -116,41 +178,34 @@ export namespace Storage {
       return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
     }
   }
-  /**
-   * Upload a file to S3
-   */
+
   export async function upload(
     key: string,
-    body: Buffer | Uint8Array | string,
+    body: UploadBody,
+    bucket: BucketInput,
     options: UploadOptions = {},
   ): Promise<{ key: string; url: string }> {
-    log.info("uploading file", { key, size: body.length });
+    log.info("uploading file", {
+      key,
+      size: bodySize(body),
+      bucket: resolveBucket(bucket).name,
+    });
 
-    const c = await getAwsClient();
     const headers: Record<string, string> = {};
-
-    if (options.contentType) {
-      headers["Content-Type"] = options.contentType;
-    }
-
-    if (options.acl) {
-      headers["x-amz-acl"] = options.acl;
-    }
-
-    if (options.tagging) {
-      headers["x-amz-tagging"] = options.tagging;
-    }
-
+    if (options.contentType) headers["Content-Type"] = options.contentType;
+    if (options.acl) headers["x-amz-acl"] = options.acl;
+    if (options.tagging) headers["x-amz-tagging"] = options.tagging;
     if (options.metadata) {
       for (const [k, v] of Object.entries(options.metadata)) {
         headers[`x-amz-meta-${k}`] = v;
       }
     }
 
-    const response = await c.fetch(s3Url(key), {
+    const { client } = getR2Client();
+    const response = await client.fetch(objectUrl(key, bucket), {
       method: "PUT",
       headers,
-      body,
+      body: prepareBody(body),
     });
 
     if (!response.ok) {
@@ -161,105 +216,89 @@ export namespace Storage {
       );
     }
 
-    const url = s3Url(key);
-    return { key, url };
+    return { key, url: publicUrl(key, bucket) };
   }
 
-  /**
-   * Upload large files using multipart upload
-   */
   export async function uploadMultipart(
     key: string,
     body: Buffer,
+    bucket: BucketInput,
     options: MultipartUploadOptions = {},
   ): Promise<{ key: string; url: string }> {
-    const partSize = options.partSize || 5 * 1024 * 1024; // 5MB default
+    const partSize = options.partSize || 5 * 1024 * 1024;
 
     log.info("starting multipart upload", { key, size: body.length, partSize });
 
-    // Initiate multipart upload
-    const multipartUpload = await initiateMultipartUpload(key, options);
+    const multipartUpload = await initiateMultipartUpload(key, bucket, options);
     const { uploadId } = multipartUpload;
 
     try {
       const parts: CompletedPart[] = [];
       const totalParts = Math.ceil(body.length / partSize);
-
-      // Upload parts in parallel (limit concurrency to avoid rate limiting)
-      const uploadPromises: Promise<void>[] = [];
       const concurrencyLimit = 3;
+      const uploadPromises: Promise<void>[] = [];
 
-      for (let i = 0; i < totalParts; i++) {
-        const start = i * partSize;
+      for (let partIndex = 0; partIndex < totalParts; partIndex++) {
+        const start = partIndex * partSize;
         const end = Math.min(start + partSize, body.length);
         const partBody = body.subarray(start, end);
-        const partNumber = i + 1;
+        const partNumber = partIndex + 1;
 
-        const uploadPartAsync = async () => {
-          const part = await uploadPart(key, uploadId, partNumber, partBody);
-          parts[i] = part;
+        const task = async () => {
+          const part = await uploadPart(
+            key,
+            bucket,
+            uploadId,
+            partNumber,
+            partBody,
+          );
+          parts[partIndex] = part;
         };
 
-        uploadPromises.push(uploadPartAsync());
-
-        // Limit concurrency
+        uploadPromises.push(task());
         if (uploadPromises.length >= concurrencyLimit) {
           await Promise.all(uploadPromises.splice(0, concurrencyLimit));
         }
       }
 
-      // Wait for remaining uploads
       await Promise.all(uploadPromises);
 
-      // Complete multipart upload
-      const result = await completeMultipartUpload(key, uploadId, parts);
-
+      const result = await completeMultipartUpload(
+        key,
+        bucket,
+        uploadId,
+        parts,
+      );
       log.info("multipart upload completed", { key, totalParts });
-
       return result;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      log.error(new Error(`multipart upload failed: ${errorMessage}`));
-
-      // Abort multipart upload on error
-      await abortMultipartUpload(key, uploadId);
-
+      await abortMultipartUpload(key, bucket, uploadId).catch(() => {});
       throw error;
     }
   }
 
-  /**
-   * Initiate a multipart upload
-   */
   export async function initiateMultipartUpload(
     key: string,
+    bucket: BucketInput,
     options: UploadOptions = {},
   ): Promise<MultipartUpload> {
-    log.info("initiating multipart upload", { key });
+    log.info("initiating multipart upload", {
+      key,
+      bucket: resolveBucket(bucket).name,
+    });
 
-    const c = await getAwsClient();
     const headers: Record<string, string> = {};
-
-    if (options.contentType) {
-      headers["Content-Type"] = options.contentType;
-    }
-
-    if (options.acl) {
-      headers["x-amz-acl"] = options.acl;
-    }
-
-    if (options.tagging) {
-      headers["x-amz-tagging"] = options.tagging;
-    }
-
+    if (options.contentType) headers["Content-Type"] = options.contentType;
+    if (options.acl) headers["x-amz-acl"] = options.acl;
+    if (options.tagging) headers["x-amz-tagging"] = options.tagging;
     if (options.metadata) {
       for (const [k, v] of Object.entries(options.metadata)) {
         headers[`x-amz-meta-${k}`] = v;
       }
     }
 
-    const response = await c.fetch(`${s3Url(key)}?uploads`, {
+    const { client } = getR2Client();
+    const response = await client.fetch(`${objectUrl(key, bucket)}?uploads`, {
       method: "POST",
       headers,
     });
@@ -273,7 +312,6 @@ export namespace Storage {
     }
 
     const responseText = await response.text();
-    // Parse XML response to get UploadId
     const uploadIdMatch = responseText.match(/<UploadId>([^<]+)<\/UploadId>/);
     if (!uploadIdMatch) {
       throw new StorageError("Failed to parse UploadId from response", {
@@ -282,29 +320,19 @@ export namespace Storage {
       });
     }
 
-    const uploadId = uploadIdMatch[1];
-    return { uploadId, key };
+    return { uploadId: uploadIdMatch[1], key };
   }
 
-  /**
-   * Upload a single part
-   */
   export async function uploadPart(
     key: string,
+    bucket: BucketInput,
     uploadId: string,
     partNumber: number,
     body: Buffer | Uint8Array,
   ): Promise<CompletedPart> {
-    log.info("uploading part", {
-      key,
-      uploadId,
-      partNumber,
-      size: body.length,
-    });
-
-    const c = await getAwsClient();
-    const response = await c.fetch(
-      `${s3Url(key)}?partNumber=${partNumber}&uploadId=${uploadId}`,
+    const { client } = getR2Client();
+    const response = await client.fetch(
+      `${objectUrl(key, bucket)}?partNumber=${partNumber}&uploadId=${uploadId}`,
       {
         method: "PUT",
         body,
@@ -339,14 +367,9 @@ export namespace Storage {
     };
   }
 
-  /**
-   * Get a file from S3
-   */
-  export async function get(key: string): Promise<Buffer> {
-    log.info("getting file", { key });
-
-    const c = await getAwsClient();
-    const response = await c.fetch(s3Url(key), {
+  export async function get(key: string, bucket: BucketInput): Promise<Buffer> {
+    const { client } = getR2Client();
+    const response = await client.fetch(objectUrl(key, bucket), {
       method: "GET",
     });
 
@@ -365,14 +388,12 @@ export namespace Storage {
     return Buffer.from(arrayBuffer);
   }
 
-  /**
-   * Delete a file from S3
-   */
-  export async function deleteFile(key: string): Promise<void> {
-    log.info("deleting file", { key });
-
-    const c = await getAwsClient();
-    const response = await c.fetch(s3Url(key), {
+  export async function deleteFile(
+    key: string,
+    bucket: BucketInput,
+  ): Promise<void> {
+    const { client } = getR2Client();
+    const response = await client.fetch(objectUrl(key, bucket), {
       method: "DELETE",
     });
 
@@ -385,98 +406,63 @@ export namespace Storage {
     }
   }
 
-  /**
-   * Generate a presigned URL for direct client uploads or downloads
-   */
   export async function getPresignedUrl(
     key: string,
+    bucket: BucketInput,
     options: PresignedUrlOptions = {},
   ): Promise<string> {
     const operation = options.operation || "get";
-    const expiresIn = options.expiresIn || 3600; // 1 hour default
+    const expiresIn = options.expiresIn || 3600;
 
-    log.info("generating presigned URL", { key, operation, expiresIn });
-
-    const c = await getAwsClient();
     const method = operation === "put" ? "PUT" : "GET";
-    const url = s3Url(key);
+    const base = new URL(objectUrl(key, bucket));
+    base.searchParams.set("X-Amz-Expires", expiresIn.toString());
 
-    // Create a presigned URL using aws4fetch
-    // Add the expires parameter to the URL before signing
-    const urlWithExpires = new URL(url);
-    urlWithExpires.searchParams.set("X-Amz-Expires", expiresIn.toString());
+    const { client } = getR2Client();
+    const signed = await client.sign(new Request(base.toString(), { method }), {
+      aws: { signQuery: true },
+    });
 
-    const signedRequest = await c.sign(
-      new Request(urlWithExpires.toString(), { method }),
-      {
-        aws: { signQuery: true },
-      },
-    );
-
-    return signedRequest.url;
+    return signed.url;
   }
 
-  /**
-   * Get presigned URL for multipart upload
-   */
   export async function getPresignedMultipartUrls(
     key: string,
+    bucket: BucketInput,
     partCount: number,
     options: PresignedUrlOptions = {},
   ): Promise<{ uploadId: string; urls: string[] }> {
     const expiresIn = options.expiresIn || 3600;
-
-    log.info("generating presigned multipart URLs", {
-      key,
-      partCount,
-      expiresIn,
-    });
-
-    // Initiate multipart upload
-    const multipartUpload = await initiateMultipartUpload(key);
+    const multipartUpload = await initiateMultipartUpload(key, bucket);
     const { uploadId } = multipartUpload;
     const urls: string[] = [];
 
-    const c = await getAwsClient();
+    const { client } = getR2Client();
 
-    // Generate presigned URLs for each part
     for (let i = 1; i <= partCount; i++) {
-      const baseUrl = `${s3Url(key)}?partNumber=${i}&uploadId=${uploadId}`;
-      const urlWithExpires = new URL(baseUrl);
-      urlWithExpires.searchParams.set("X-Amz-Expires", expiresIn.toString());
-
-      const signedRequest = await c.sign(
-        new Request(urlWithExpires.toString(), { method: "PUT" }),
-        {
-          aws: { signQuery: true },
-        },
+      const base = new URL(
+        `${objectUrl(key, bucket)}?partNumber=${i}&uploadId=${uploadId}`,
       );
-      urls.push(signedRequest.url);
+      base.searchParams.set("X-Amz-Expires", expiresIn.toString());
+
+      const signed = await client.sign(
+        new Request(base.toString(), { method: "PUT" }),
+        { aws: { signQuery: true } },
+      );
+      urls.push(signed.url);
     }
 
     return { uploadId, urls };
   }
 
-  /**
-   * Complete multipart upload (used with presigned URLs)
-   */
   export async function completeMultipartUpload(
     key: string,
+    bucket: BucketInput,
     uploadId: string,
     parts: CompletedPart[],
   ): Promise<{ key: string; url: string }> {
-    log.info("completing multipart upload", {
-      key,
-      uploadId,
-      partCount: parts.length,
-    });
-
-    const c = await getAwsClient();
-
-    // Sort parts by PartNumber
     const sortedParts = parts.sort((a, b) => a.PartNumber - b.PartNumber);
 
-    // Create XML body for complete multipart upload
     const xmlBody = `<CompleteMultipartUpload>
 ${sortedParts
   .map(
@@ -488,13 +474,17 @@ ${sortedParts
   .join("\n")}
 </CompleteMultipartUpload>`;
 
-    const response = await c.fetch(`${s3Url(key)}?uploadId=${uploadId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/xml",
+    const { client } = getR2Client();
+    const response = await client.fetch(
+      `${objectUrl(key, bucket)}?uploadId=${uploadId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/xml",
+        },
+        body: xmlBody,
       },
-      body: xmlBody,
-    });
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -508,23 +498,21 @@ ${sortedParts
       );
     }
 
-    const url = s3Url(key);
-    return { key, url };
+    return { key, url: publicUrl(key, bucket) };
   }
 
-  /**
-   * Abort multipart upload
-   */
   export async function abortMultipartUpload(
     key: string,
+    bucket: BucketInput,
     uploadId: string,
   ): Promise<void> {
-    log.info("aborting multipart upload", { key, uploadId });
-
-    const c = await getAwsClient();
-    const response = await c.fetch(`${s3Url(key)}?uploadId=${uploadId}`, {
-      method: "DELETE",
-    });
+    const { client } = getR2Client();
+    const response = await client.fetch(
+      `${objectUrl(key, bucket)}?uploadId=${uploadId}`,
+      {
+        method: "DELETE",
+      },
+    );
 
     if (!response.ok && response.status !== 404) {
       const errorText = await response.text();

@@ -6,14 +6,19 @@ import {
   type WorkflowStepEvent,
   type WorkflowTimeoutDuration,
 } from "cloudflare:workers";
-import type { Bindings } from "@core/helpers/api-env";
+import { Binding, type Bindings } from "@core/helpers/api-env";
 import { Actor } from "./actor";
 
 export class CoreWorkflowContext {
-  constructor(public readonly actor: Actor.WorkspaceUser) {}
+  constructor(
+    public readonly actor: Actor.WorkspaceUser,
+    public bindings: Bindings,
+  ) {}
   provide<T>(fn: (ctx: CoreWorkflowContext) => Promise<T>): Promise<T> {
     return Actor.provide("workspace_user", { ...this.actor.properties }, () => {
-      return fn(this);
+      return Binding.provide(this.bindings, () => {
+        return fn(this);
+      });
     });
   }
 }
@@ -80,7 +85,12 @@ export abstract class CoreWorkflowEntrypoint<
       actor: Actor.WorkspaceUser;
     };
 
-    const ctx = new CoreWorkflowContext(actor);
+    const bindings = this.env;
+    if (!bindings) {
+      console.error("// No bindings found in workflow env");
+      throw new Error("No bindings found in workflow env");
+    }
+    const ctx = new CoreWorkflowContext(actor, bindings);
 
     return this.runWithContext(ctx, event, new CoreWorkflowStep(ctx, step));
   }
