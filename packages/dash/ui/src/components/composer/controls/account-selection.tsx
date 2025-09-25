@@ -12,8 +12,12 @@ export function AccountSelection() {
     setActiveAccount,
   } = useComposerStore();
 
-  const { handleConnectFacebook, handleConnectInstagram, isConnecting } =
-    useOAuthWithListener();
+  const {
+    handleConnectFacebook,
+    handleConnectInstagram,
+    handleConnectTikTok,
+    isConnecting,
+  } = useOAuthWithListener();
 
   const handleToggleAccount = (accountId: string) => {
     const newSelection = selectedAccounts.includes(accountId)
@@ -52,6 +56,7 @@ export function AccountSelection() {
           <AvailablePlatformsRow
             onConnectFacebook={handleConnectFacebook}
             onConnectInstagram={handleConnectInstagram}
+            onConnectTikTok={handleConnectTikTok}
             isConnecting={isConnecting}
             size="md"
           />

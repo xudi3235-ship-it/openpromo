@@ -18,6 +18,7 @@ export function ConnectedAccountsSection({
   const {
     handleConnectFacebook,
     handleConnectInstagram,
+    handleConnectTikTok,
     isConnecting,
     deleteConnectedAccount,
   } = useOAuthWithListener();
@@ -61,6 +62,7 @@ export function ConnectedAccountsSection({
             <AvailablePlatformsRow
               onConnectFacebook={handleConnectFacebook}
               onConnectInstagram={handleConnectInstagram}
+              onConnectTikTok={handleConnectTikTok}
               isConnecting={isConnecting}
               size="lg"
             />

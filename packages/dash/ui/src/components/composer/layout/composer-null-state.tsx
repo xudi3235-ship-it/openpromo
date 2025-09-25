@@ -27,7 +27,7 @@ const platforms = [
     name: "TikTok",
     colors: "from-black to-gray-800",
     bgColor: "bg-black",
-    available: false,
+    available: true,
   },
 ];
 

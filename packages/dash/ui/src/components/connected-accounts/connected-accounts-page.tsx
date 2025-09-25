@@ -31,7 +31,7 @@ const availablePlatforms = [
     name: "TikTok",
     description: "Create and schedule TikTok videos",
     icon: "https://logo.clearbit.com/tiktok.com",
-    status: "coming_soon",
+    status: "available",
   },
 ];
 
@@ -126,8 +126,12 @@ function ConnectedAccountsContent({ onConnect }: { onConnect: () => void }) {
 
 export function ConnectedAccountsPage() {
   const [isConnectDialogOpen, setIsConnectDialogOpen] = useState(false);
-  const { handleConnectFacebook, handleConnectInstagram, isConnecting } =
-    useOAuthWithListener();
+  const {
+    handleConnectFacebook,
+    handleConnectInstagram,
+    handleConnectTikTok,
+    isConnecting,
+  } = useOAuthWithListener();
 
   return (
     <div className="page-container">
@@ -221,6 +225,7 @@ export function ConnectedAccountsPage() {
         onOpenChange={setIsConnectDialogOpen}
         onConnectFacebook={handleConnectFacebook}
         onConnectInstagram={handleConnectInstagram}
+        onConnectTikTok={handleConnectTikTok}
         isConnecting={isConnecting}
       />
     </div>

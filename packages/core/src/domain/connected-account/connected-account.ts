@@ -10,6 +10,7 @@ import z from "zod";
 import { Actor } from "../../helpers/actor";
 import { facebookOAuthService } from "./facebook";
 import { instagramOAuthService } from "./instagram";
+import { tikTokOAuthService } from "./tiktok";
 
 export namespace ConnectedAccount {
   const inAWeek = Date.now() + 7 * 24 * 3600 * 1000;
@@ -153,6 +154,49 @@ export namespace ConnectedAccount {
       refreshToken: newToken.access_token,
       tokenExpiresAt,
     });
+    return newAcc;
+  }
+  export async function fromTikTokAccountID(id: string) {
+    const workspaceId = Actor.workspaceID();
+    const [acc] = await db()
+      .select()
+      .from(connectedAccount)
+      .where(
+        and(
+          eq(connectedAccount.externalAccountId, id),
+          eq(connectedAccount.platform, "TIKTOK"),
+          eq(connectedAccount.workspaceId, workspaceId),
+        ),
+      )
+      .limit(1);
+
+    if (!acc) throw new Error("connected account not found");
+
+    if (acc.tokenExpiresAt && acc.tokenExpiresAt.getTime() >= inAWeek) {
+      return acc;
+    }
+
+    if (!acc.refreshToken) {
+      return acc;
+    }
+
+    const newToken = await tikTokOAuthService.refreshAccessToken(
+      acc.refreshToken,
+    );
+
+    const tokenExpiresAt = new Date(
+      Date.now() + (newToken.expires_in ?? sixtyDaysInSec) * 1000,
+    );
+
+    const refreshToken = newToken.refresh_token || acc.refreshToken;
+
+    const newAcc = await updateAccessToken({
+      id: acc.id,
+      encryptedAccessToken: newToken.access_token,
+      refreshToken,
+      tokenExpiresAt,
+    });
+
     return newAcc;
   }
   const updateAccessToken = fn(

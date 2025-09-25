@@ -71,6 +71,28 @@ export const useInstagramOauthMutation = () => {
   });
 };
 
+export const useTikTokOauthMutation = () => {
+  const { workspace } = useWorkspace();
+  return useHonoMutation({
+    mutationFn: (api, variables: { state?: string }) =>
+      api.workspaces[":workspaceSlug"].connected_accounts.tiktok.auth.$get({
+        query: { state: variables.state },
+        param: { workspaceSlug: workspace.slug },
+      }),
+    onError: (error) => {
+      toast.error(`Failed to initiate TikTok OAuth: ${error.message}`);
+    },
+    onSuccess({ data: { url } }) {
+      openPopup({
+        url,
+        target: "tiktok-oauth",
+        width: 600,
+        height: 800,
+      });
+    },
+  });
+};
+
 const useDeleteConnectedAccountMutation = () => {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
@@ -123,6 +145,7 @@ export const useOAuthWithListener = () => {
 
   const facebookMutation = useFacebookOauthMutation();
   const instagramMutation = useInstagramOauthMutation();
+  const tikTokMutation = useTikTokOauthMutation();
   const deleteConnectedAccountMutation = useDeleteConnectedAccountMutation();
 
   const handleConnectFacebook = () => {
@@ -133,17 +156,24 @@ export const useOAuthWithListener = () => {
     instagramMutation.mutate({});
   };
 
+  const handleConnectTikTok = () => {
+    tikTokMutation.mutate({});
+  };
+
   const isConnecting =
     facebookMutation.isPending ||
     instagramMutation.isPending ||
+    tikTokMutation.isPending ||
     deleteConnectedAccountMutation.isPending;
 
   return {
     handleConnectFacebook,
     handleConnectInstagram,
+    handleConnectTikTok,
     isConnecting,
     isConnectingFacebook: facebookMutation.isPending,
     isConnectingInstagram: instagramMutation.isPending,
+    isConnectingTikTok: tikTokMutation.isPending,
     deleteConnectedAccount: deleteConnectedAccountMutation.mutate,
   };
 };

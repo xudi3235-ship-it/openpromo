@@ -15,6 +15,7 @@ interface ConnectPlatformDialogProps {
   onOpenChange: (open: boolean) => void;
   onConnectFacebook: () => void;
   onConnectInstagram: () => void;
+  onConnectTikTok: () => void;
   isConnecting: boolean;
 }
 
@@ -46,7 +47,13 @@ const platforms = [
     name: "TikTok",
     description: "Create and schedule TikTok videos for your business",
     icon: "https://logo.clearbit.com/tiktok.com",
-    available: false,
+    available: true,
+    permissions: [
+      "Profile Access",
+      "Video Upload",
+      "Video Publish",
+      "Video List",
+    ],
   },
 ];
 
@@ -55,6 +62,7 @@ export function ConnectPlatformDialog({
   onOpenChange,
   onConnectFacebook,
   onConnectInstagram,
+  onConnectTikTok,
   isConnecting,
 }: ConnectPlatformDialogProps) {
   const handleConnect = (platformId: string) => {
@@ -63,6 +71,9 @@ export function ConnectPlatformDialog({
       onOpenChange(false);
     } else if (platformId === "instagram") {
       onConnectInstagram();
+      onOpenChange(false);
+    } else if (platformId === "tiktok") {
+      onConnectTikTok();
       onOpenChange(false);
     }
   };
@@ -130,7 +141,8 @@ export function ConnectPlatformDialog({
                   disabled={
                     !platform.available ||
                     ((platform.id === "facebook" ||
-                      platform.id === "instagram") &&
+                      platform.id === "instagram" ||
+                      platform.id === "tiktok") &&
                       isConnecting)
                   }
                   onClick={() => handleConnect(platform.id)}
@@ -138,7 +150,8 @@ export function ConnectPlatformDialog({
                 >
                   {platform.available ? (
                     (platform.id === "facebook" ||
-                      platform.id === "instagram") &&
+                      platform.id === "instagram" ||
+                      platform.id === "tiktok") &&
                     isConnecting ? (
                       "Connecting..."
                     ) : (

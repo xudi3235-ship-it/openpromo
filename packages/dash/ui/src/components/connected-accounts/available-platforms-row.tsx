@@ -24,7 +24,7 @@ const platforms: Platform[] = [
     id: "tiktok",
     name: "TikTok",
     colors: "from-black to-gray-800",
-    available: false,
+    available: true,
   },
 ];
 

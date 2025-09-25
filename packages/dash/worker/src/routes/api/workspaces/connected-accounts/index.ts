@@ -9,12 +9,14 @@ import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
 import { facebookConnectedAccountRoute } from "./facebook";
 import { instagramConnectedAccountRoute } from "./instagram";
+import { tikTokConnectedAccountRoute } from "./tiktok";
 
 export const connectedAccountsRoute = new Hono<ApiEnv>()
   .use(withAuth())
   .use(withWorkspaceRole(WORKSPACE_ROLE.ADMIN))
   .route("/facebook", facebookConnectedAccountRoute)
   .route("/instagram", instagramConnectedAccountRoute)
+  .route("/tiktok", tikTokConnectedAccountRoute)
   .get("/", async (c) => {
     const accounts = await ConnectedAccount.list();
     return c.json({ accounts });
@@ -38,6 +40,9 @@ export const connectedAccountsRoute = new Hono<ApiEnv>()
           );
           break;
         case "INSTAGRAM":
+          // TODO: implement
+          break;
+        case "TIKTOK":
           // TODO: implement
           break;
       }

@@ -34,7 +34,7 @@ const platforms = [
     name: "TikTok",
     colors: "from-black to-gray-800",
     bgColor: "bg-black",
-    available: false,
+    available: true,
   },
 ];
 
@@ -45,8 +45,12 @@ export function WorkspaceNullState({
   fullPage = true,
   className = "",
 }: WorkspaceNullStateProps) {
-  const { handleConnectFacebook, handleConnectInstagram, isConnecting } =
-    useOAuthWithListener();
+  const {
+    handleConnectFacebook,
+    handleConnectInstagram,
+    handleConnectTikTok,
+    isConnecting,
+  } = useOAuthWithListener();
   const handlePlatformClick = (platformId: string) => {
     if (isConnecting) return;
 
@@ -58,7 +62,7 @@ export function WorkspaceNullState({
         handleConnectInstagram();
         break;
       case "tiktok":
-        // TikTok coming soon
+        handleConnectTikTok();
         break;
     }
   };

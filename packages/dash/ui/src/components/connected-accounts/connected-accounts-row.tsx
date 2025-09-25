@@ -258,6 +258,41 @@ function InstagramAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
   );
 }
 
+function TikTokAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { handleConnectTikTok, isConnectingTikTok } = useOAuthWithListener();
+
+  const distance = useTransform(mouseX, (val: number) => {
+    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
+    return val - bounds.x - bounds.width / 2;
+  });
+
+  const widthSync = useTransform(distance, [-150, 0, 150], [32, 48, 32]);
+  const width = useSpring(widthSync, {
+    mass: 0.1,
+    stiffness: 150,
+    damping: 12,
+  });
+
+  return (
+    <motion.div ref={ref} style={{ width }} className="relative group">
+      <motion.button
+        type="button"
+        style={{ width }}
+        className="aspect-square rounded-full bg-gradient-to-r from-black to-gray-800 flex items-center justify-center border-2 border-dashed border-gray-500/40 hover:border-gray-500/60 transition-all focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+        onClick={handleConnectTikTok}
+        disabled={isConnectingTikTok}
+      >
+        <Plus className="h-4 w-4 text-white" />
+      </motion.button>
+
+      <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+        Add TikTok
+      </div>
+    </motion.div>
+  );
+}
+
 export function ConnectedAccountsRow({
   accounts,
   onDeleteAccount,
@@ -292,6 +327,7 @@ export function ConnectedAccountsRow({
             {accounts.length > 0 && <div className="w-px h-6 bg-border mx-1" />}
             <FacebookAddButton mouseX={mouseX} />
             <InstagramAddButton mouseX={mouseX} />
+            <TikTokAddButton mouseX={mouseX} />
           </>
         )}
       </motion.div>
@@ -465,6 +501,7 @@ export function ComposerAccountsRow({
             {accounts.length > 0 && <div className="w-px h-6 bg-border mx-1" />}
             <FacebookAddButton mouseX={staticMouseX} />
             <InstagramAddButton mouseX={staticMouseX} />
+            <TikTokAddButton mouseX={staticMouseX} />
           </>
         )}
       </div>

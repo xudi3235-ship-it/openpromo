@@ -38,9 +38,21 @@ const IGAccountMetadata = z.object({
   profilePicUrl: z.string(),
   permissions: z.string().array(),
 });
+const TikTokAccountMetadata = z.object({
+  tiktokUserId: z.string(),
+  username: z.string().optional(),
+  displayName: z.string().optional(),
+  profilePicUrl: z.string(),
+  permissions: z.string().array(),
+  unionId: z.string().optional(),
+});
 export type FBPageMetadata = z.infer<typeof FBPageMetadata>;
 export type IGAccountMetadata = z.infer<typeof IGAccountMetadata>;
-export type ConnectedAccountMetadata = FBPageMetadata | IGAccountMetadata;
+export type TikTokAccountMetadata = z.infer<typeof TikTokAccountMetadata>;
+export type ConnectedAccountMetadata =
+  | FBPageMetadata
+  | IGAccountMetadata
+  | TikTokAccountMetadata;
 
 export const connectedAccount = pgTable(
   "connected_account",
