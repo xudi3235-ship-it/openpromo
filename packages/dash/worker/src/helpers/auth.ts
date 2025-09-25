@@ -34,6 +34,7 @@ type AuthState = {
   nonce: string;
   returnTo?: string;
   actor?: Actor.WorkspaceUser;
+  codeVerifier?: string;
 };
 
 function serializeAuthState(state: AuthState): string {
@@ -41,6 +42,7 @@ function serializeAuthState(state: AuthState): string {
   params.set("nonce", state.nonce);
   if (state.returnTo) params.set("returnTo", state.returnTo);
   if (state.actor) params.set("actor", JSON.stringify(state.actor));
+  if (state.codeVerifier) params.set("codeVerifier", state.codeVerifier);
   return params.toString();
 }
 
@@ -57,8 +59,9 @@ function deserializeAuthState(
     const actor = actorStr
       ? (JSON.parse(actorStr) as Actor.WorkspaceUser)
       : undefined;
+    const codeVerifier = params.get("codeVerifier") ?? undefined;
 
-    return { nonce, returnTo, actor };
+    return { nonce, returnTo, actor, codeVerifier };
   } catch {
     return undefined;
   }

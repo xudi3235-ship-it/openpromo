@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { tikTokOAuthService } from "@core/domain/connected-account/tiktok";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
@@ -17,12 +18,13 @@ export const tikTokConnectedAccountRoute = new Hono<ApiEnv>()
     const { state } = ctx.req.valid("query");
     const authState =
       state || crypto.randomUUID().replace(/-/g, "").substring(0, 6);
-    const codeVerifier = crypto.randomUUID().replace(/-/g, "").substring(0, 10);
+    const codeVerifier = randomBytes(32).toString("base64url");
 
     setAuthStateCookie(ctx, {
       nonce: authState,
       returnTo: undefined,
       actor: Actor.assert("workspace_user"),
+      codeVerifier,
     });
 
     const authData = await tikTokOAuthService.getLoginUrl(

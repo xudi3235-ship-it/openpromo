@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { env } from "@core/utils/env";
 import { Log } from "@core/utils/log";
 
@@ -16,17 +17,24 @@ interface TikTokTokenData {
 
 interface TikTokTokenResponse {
   data?: TikTokTokenData;
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  refresh_expires_in?: number;
+  refresh_token_expires_in?: number;
+  refresh_expire_in?: number;
+  open_id?: string;
+  scope?: string | string[];
+  state?: string;
+  token_type?: string;
   error?: string;
   error_description?: string;
+  error_code?: number;
+  description?: string;
   message?: string;
 }
 
-interface TikTokRefreshTokenResponse {
-  data?: TikTokTokenData;
-  error?: string;
-  error_description?: string;
-  message?: string;
-}
+type TikTokRefreshTokenResponse = TikTokTokenResponse;
 
 interface TikTokUser {
   open_id?: string;
@@ -37,15 +45,19 @@ interface TikTokUser {
   username?: string;
 }
 
+interface TikTokError {
+  code: number;
+  message: string;
+}
+
 interface TikTokUserInfoResponse {
   data?: {
     user?: TikTokUser;
   };
-  error?: {
-    code: number;
-    message: string;
-  };
+  error?: TikTokError;
   message?: string;
+  error_code?: number;
+  description?: string;
 }
 
 export interface TikTokAuthTokenDetails {
@@ -67,13 +79,38 @@ function ensureTokenData(
   json: TikTokTokenResponse | TikTokRefreshTokenResponse,
   context: string,
 ): TikTokTokenData {
-  if (json.error) {
-    throw new Error(
-      `TikTok OAuth ${context} error: ${json.error_description || json.error}`,
-    );
+  const errorCode = typeof json.error_code === "number" ? json.error_code : 0;
+  if (json.error || errorCode !== 0) {
+    const description =
+      json.error_description ||
+      json.description ||
+      json.message ||
+      (json.error ? `code ${json.error}` : `error_code ${errorCode}`);
+    throw new Error(`TikTok OAuth ${context} error: ${description}`);
   }
 
   if (!json.data) {
+    // TikTok sometimes returns top-level token fields instead of wrapping them in data
+    if (json.access_token && json.open_id) {
+      const topLevel: TikTokTokenData = {
+        access_token: json.access_token,
+        refresh_token: json.refresh_token || "",
+        expires_in: json.expires_in ?? 0,
+        refresh_expires_in:
+          json.refresh_expires_in ?? json.refresh_token_expires_in,
+        refresh_token_expires_in: json.refresh_token_expires_in,
+        refresh_expire_in: json.refresh_expire_in,
+        open_id: json.open_id,
+        scope: json.scope,
+        token_type: json.token_type,
+      };
+      return topLevel;
+    }
+
+    log.warn("TikTok OAuth unexpected response", {
+      context,
+      response: JSON.stringify(json),
+    });
     throw new Error(`TikTok OAuth ${context} error: missing data`);
   }
 
@@ -142,12 +179,21 @@ export class TikTokOAuthService {
     state: string,
     codeVerifier: string,
   ): Promise<{ url: string; state: string; codeVerifier: string }> {
+    const codeChallenge = createHash("sha256")
+      .update(codeVerifier)
+      .digest("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/u, "");
+
     const params = new URLSearchParams({
       client_key: this.clientKey,
       redirect_uri: this.redirectUri(),
       state,
       scope: this.scopes.join(","),
       response_type: "code",
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256",
     });
 
     return {
@@ -160,21 +206,30 @@ export class TikTokOAuthService {
   /**
    * Exchange authorization code for access token
    */
-  async getAccessToken(code: string): Promise<TikTokTokenData> {
+  async getAccessToken(
+    code: string,
+    codeVerifier?: string,
+  ): Promise<TikTokTokenData> {
+    const body = new URLSearchParams({
+      client_key: this.clientKey,
+      client_secret: this.clientSecret,
+      code,
+      grant_type: "authorization_code",
+      redirect_uri: this.redirectUri(),
+    });
+
+    if (codeVerifier) {
+      body.set("code_verifier", codeVerifier);
+    }
+
     const response = await fetch(
       "https://open.tiktokapis.com/v2/oauth/token/",
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: JSON.stringify({
-          client_key: this.clientKey,
-          client_secret: this.clientSecret,
-          code,
-          grant_type: "authorization_code",
-          redirect_uri: this.redirectUri(),
-        }),
+        body: body.toString(),
       },
     );
 
@@ -194,19 +249,21 @@ export class TikTokOAuthService {
    * Refresh access token using refresh token flow
    */
   async refreshAccessToken(refreshToken: string): Promise<TikTokTokenData> {
+    const body = new URLSearchParams({
+      client_key: this.clientKey,
+      client_secret: this.clientSecret,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    });
+
     const response = await fetch(
       "https://open.tiktokapis.com/v2/oauth/token/",
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: JSON.stringify({
-          client_key: this.clientKey,
-          client_secret: this.clientSecret,
-          refresh_token: refreshToken,
-          grant_type: "refresh_token",
-        }),
+        body: body.toString(),
       },
     );
 
@@ -224,39 +281,46 @@ export class TikTokOAuthService {
    * Retrieve TikTok user profile using access token
    */
   async getUserProfile(accessToken: string): Promise<TikTokUser> {
-    const response = await fetch("https://open.tiktokapis.com/v2/user/info/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
+    const fields = [
+      "open_id",
+      "union_id",
+      "display_name",
+      "avatar_url",
+      "profile_deep_link",
+      "username",
+    ].join(",");
+
+    const response = await fetch(
+      `https://open.tiktokapis.com/v2/user/info/?fields=${encodeURIComponent(fields)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       },
-      body: JSON.stringify({
-        fields: [
-          "open_id",
-          "union_id",
-          "display_name",
-          "avatar_url",
-          "profile_deep_link",
-          "username",
-        ],
-      }),
-    });
+    );
 
     if (!response.ok) {
+      const errorText = await response.text();
+      log.warn("TikTok user profile request failed", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
       throw new Error(
         `Failed to get TikTok user profile: ${response.statusText}`,
       );
     }
 
     const json = (await response.json()) as TikTokUserInfoResponse;
-
-    if (json.error) {
-      throw new Error(`TikTok user info error: ${json.error.message}`);
-    }
+    console.log("TikTok user info response", JSON.stringify(json));
 
     const user = json.data?.user;
 
     if (!user || !user.open_id) {
+      log.warn("TikTok user info missing identifier", {
+        response: JSON.stringify(json),
+      });
       throw new Error("TikTok user info error: missing user identifier");
     }
 
@@ -270,10 +334,14 @@ export class TikTokOAuthService {
     code: string;
     workspaceSlug: string;
     refresh?: string;
+    codeVerifier?: string;
   }): Promise<TikTokAuthTokenDetails> {
     log.info("TikTok authenticate", { workspaceSlug: params.workspaceSlug });
 
-    const tokenData = await this.getAccessToken(params.code);
+    const tokenData = await this.getAccessToken(
+      params.code,
+      params.codeVerifier,
+    );
     const user = await this.getUserProfile(tokenData.access_token);
 
     const permissions = parseScopes(tokenData.scope);

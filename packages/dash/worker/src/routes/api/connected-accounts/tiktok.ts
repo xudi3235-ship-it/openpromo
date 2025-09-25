@@ -44,10 +44,12 @@ export const tikTokConnectedAccountRoute = new Hono<ApiEnv>().get(
       clearAuthStateCookie(ctx);
       const workspaceSlug = actor.properties.workspaceSlug;
 
+      const codeVerifier = storedAuthState.codeVerifier;
       return Actor.provide("workspace_user", actor.properties, async () => {
         const authResult = await tikTokOAuthService.authenticate({
           code,
           workspaceSlug,
+          codeVerifier,
         });
 
         const profilePicUrl = authResult.picture ? authResult.picture : "";
