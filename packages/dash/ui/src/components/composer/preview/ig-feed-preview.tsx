@@ -16,7 +16,7 @@ import { PreviewMediaNullState } from "./null-state";
 
 export function IGFeedPreview() {
   const { workspace } = useWorkspace();
-  const previewData = useComposerPreview();
+  const previewData = useComposerPreview({ platform: "INSTAGRAM" });
   const attachments = previewData.attachments;
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
     attachments,

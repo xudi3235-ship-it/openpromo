@@ -62,7 +62,14 @@ const getAccountDisplayData = (account: ConnectedAccount) => {
   }
 };
 
-export const useComposerPreview = (): PreviewData => {
+interface PreviewOptions {
+  platform?: Platform;
+  accountId?: string;
+}
+
+export const useComposerPreview = (
+  options: PreviewOptions = {},
+): PreviewData => {
   const accounts = useComposerStore((state) => state.accounts);
   const activeAccount = useComposerStore((state) => state.activeAccount);
   const selectedPreview = useComposerStore((state) => state.selectedPreview);
@@ -74,18 +81,24 @@ export const useComposerPreview = (): PreviewData => {
     // Find the account to display based on active account or selected preview platform
     let targetAccount: ConnectedAccount | undefined;
 
-    if (activeAccount) {
+    if (options.accountId) {
+      targetAccount = accounts.find((acc) => acc.id === options.accountId);
+    }
+
+    if (!targetAccount && options.platform) {
+      targetAccount = accounts.find((acc) => acc.platform === options.platform);
+    }
+
+    if (!targetAccount && activeAccount) {
       targetAccount = accounts.find((acc) => acc.id === activeAccount);
-    } else {
-      // Fallback to first account matching the selected preview platform
-      targetAccount = accounts.find((acc) => acc.platform === selectedPreview);
+    }
+
+    if (!targetAccount) {
+      targetAccount =
+        accounts.find((acc) => acc.platform === selectedPreview) || accounts[0];
     }
 
     // If still no account found, use the first available account
-    if (!targetAccount && accounts.length > 0) {
-      targetAccount = accounts[0];
-    }
-
     const displayData = targetAccount
       ? getAccountDisplayData(targetAccount)
       : {
@@ -185,6 +198,8 @@ export const useComposerPreview = (): PreviewData => {
     accounts,
     activeAccount,
     selectedPreview,
+    options.accountId,
+    options.platform,
     contentCreateData.base.attachments,
     contentCreateData.base.message,
     contentCreateData.placements.facebookFeed,

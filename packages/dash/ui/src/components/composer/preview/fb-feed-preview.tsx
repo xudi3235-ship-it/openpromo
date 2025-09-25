@@ -15,7 +15,7 @@ import { PreviewMediaNullState } from "./null-state";
 
 export function FBFeedPreview() {
   const { workspace } = useWorkspace();
-  const previewData = useComposerPreview();
+  const previewData = useComposerPreview({ platform: "FACEBOOK" });
   const attachments = previewData.attachments;
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
     attachments,

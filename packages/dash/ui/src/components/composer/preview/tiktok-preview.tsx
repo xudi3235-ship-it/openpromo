@@ -9,7 +9,7 @@ const handleFromName = (name?: string) =>
 
 export function TikTokPreview() {
   const { workspace } = useWorkspace();
-  const previewData = useComposerPreview();
+  const previewData = useComposerPreview({ platform: "TIKTOK" });
   const attachments = previewData.attachments;
   const { renderAttachment } = useAttachmentRenderer({ attachments });
 
@@ -65,8 +65,16 @@ export function TikTokPreview() {
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-pink-500/60 via-red-400/50 to-cyan-400/60 blur" />
-              <div className="relative w-9 h-9 rounded-full bg-black/60 backdrop-blur flex items-center justify-center uppercase font-semibold text-sm">
-                {displayName?.charAt(0) || "O"}
+              <div className="relative w-9 h-9 rounded-full overflow-hidden bg-black/60 backdrop-blur flex items-center justify-center uppercase font-semibold text-sm">
+                {previewData.profilePicUrl ? (
+                  <img
+                    src={previewData.profilePicUrl}
+                    alt={displayName || handle}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{displayName?.charAt(0) || "O"}</span>
+                )}
               </div>
             </div>
             <div className="flex-1 min-w-0">
