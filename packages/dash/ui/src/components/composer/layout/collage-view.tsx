@@ -26,53 +26,69 @@ export function CollageView({
   const previewCount =
     (showFacebook ? 1 : 0) + (showInstagram ? 1 : 0) + (showTikTok ? 1 : 0);
 
-  // Dynamic layout classes based on preview count
-  const getLayoutClasses = () => {
-    if (previewCount === 0) {
-      // No previews (defensive case)
-      return "flex justify-center items-center min-h-48";
-    } else if (previewCount === 1) {
-      // Single preview: center it with optimal width
-      return "flex justify-center items-start";
-    } else {
-      // Multiple previews: responsive grid with better spacing
-      return "mx-auto grid max-w-6xl grid-cols-1 gap-6 justify-items-center md:grid-cols-2 md:gap-8 xl:grid-cols-3 xl:gap-10";
-    }
-  };
+  if (previewCount === 0) {
+    return (
+      <div className="flex justify-center items-center min-h-48 text-muted-foreground">
+        <div className="text-sm">No previews available</div>
+      </div>
+    );
+  }
+
+  if (previewCount === 1) {
+    return (
+      <div className="flex justify-center">
+        {showFacebook && (
+          <PreviewItem
+            platform="facebook"
+            contentType={isReel ? "reel" : "feed"}
+          >
+            <FacebookPreview />
+          </PreviewItem>
+        )}
+        {showInstagram && (
+          <PreviewItem
+            platform="instagram"
+            contentType={isReel ? "reel" : "feed"}
+          >
+            <InstagramPreview />
+          </PreviewItem>
+        )}
+        {showTikTok && (
+          <PreviewItem platform="tiktok" contentType={isReel ? "reel" : "feed"}>
+            <TikTokFeedPreview />
+          </PreviewItem>
+        )}
+      </div>
+    );
+  }
+
+  const gridTemplate =
+    previewCount === 2
+      ? "repeat(auto-fit, minmax(280px, 1fr))"
+      : "repeat(auto-fit, minmax(240px, 1fr))";
 
   return (
-    <div className={getLayoutClasses()}>
-      {previewCount === 0 ? (
-        <div className="text-center text-muted-foreground">
-          <div className="text-sm">No previews available</div>
-        </div>
-      ) : (
-        <>
-          {showFacebook && (
-            <PreviewItem
-              platform="facebook"
-              contentType={isReel ? "reel" : "feed"}
-            >
-              <FacebookPreview />
-            </PreviewItem>
-          )}
-          {showInstagram && (
-            <PreviewItem
-              platform="instagram"
-              contentType={isReel ? "reel" : "feed"}
-            >
-              <InstagramPreview />
-            </PreviewItem>
-          )}
-          {showTikTok && (
-            <PreviewItem
-              platform="tiktok"
-              contentType={isReel ? "reel" : "feed"}
-            >
-              <TikTokFeedPreview />
-            </PreviewItem>
-          )}
-        </>
+    <div
+      className="mx-auto grid w-full max-w-5xl gap-5 justify-items-center items-start"
+      style={{ gridTemplateColumns: gridTemplate }}
+    >
+      {showFacebook && (
+        <PreviewItem platform="facebook" contentType={isReel ? "reel" : "feed"}>
+          <FacebookPreview />
+        </PreviewItem>
+      )}
+      {showInstagram && (
+        <PreviewItem
+          platform="instagram"
+          contentType={isReel ? "reel" : "feed"}
+        >
+          <InstagramPreview />
+        </PreviewItem>
+      )}
+      {showTikTok && (
+        <PreviewItem platform="tiktok" contentType={isReel ? "reel" : "feed"}>
+          <TikTokFeedPreview />
+        </PreviewItem>
       )}
     </div>
   );

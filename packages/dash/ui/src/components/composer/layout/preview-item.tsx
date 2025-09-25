@@ -31,7 +31,7 @@ export function PreviewItem({
       : `${config.name} ${contentType === "reel" ? "Reel" : "Feed"}`;
 
   return (
-    <div className="space-y-3 flex flex-col items-center w-full max-w-sm">
+    <div className="space-y-2 flex flex-col items-center w-full max-w-[280px]">
       <div className="flex items-center gap-2 px-1">
         <div className={`w-3 h-3 rounded ${config.color}`}></div>
         <span className="text-xs text-muted-foreground font-medium">
