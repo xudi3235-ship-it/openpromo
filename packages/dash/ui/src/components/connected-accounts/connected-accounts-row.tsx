@@ -13,6 +13,7 @@ import {
 } from "framer-motion";
 import { Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import type { ConnectedAccount } from "@/lib/hono-client";
 import { useOAuthWithListener } from "@/queries/connected-account";
@@ -41,6 +42,39 @@ function getPlatformFallback(platform: Platform) {
     default:
       return "?";
   }
+}
+
+function getPlatformIcon(platform: Platform) {
+  switch (platform) {
+    case "FACEBOOK":
+      return FaFacebook;
+    case "INSTAGRAM":
+      return FaInstagram;
+    case "TIKTOK":
+      return FaTiktok;
+    default:
+      return null;
+  }
+}
+
+const badgeClassByPlatform: Record<Platform, string> = {
+  FACEBOOK: "bg-[#1877F2] text-white border-white/80 dark:border-background/80",
+  INSTAGRAM:
+    "bg-gradient-to-br from-[#feda77] via-[#d62976] to-[#4f5bd5] text-white border-white/70 dark:border-background/80",
+  TIKTOK: "bg-[#010101] text-white border-white/50 dark:border-background/70",
+};
+
+function PlatformBadge({ platform }: { platform: Platform }) {
+  const Icon = getPlatformIcon(platform);
+  if (!Icon) return null;
+
+  return (
+    <div
+      className={`absolute -bottom-1.5 -right-1.5 h-5 w-5 rounded-full flex items-center justify-center shadow-sm border ${badgeClassByPlatform[platform]}`}
+    >
+      <Icon className="h-3 w-3" />
+    </div>
+  );
 }
 
 interface ConnectedAccountsRowProps {
@@ -142,6 +176,8 @@ function AccountAvatar({
             </Avatar>
           </div>
         </motion.div>
+
+        <PlatformBadge platform={account.platform} />
 
         {/* Delete Button */}
         {onDelete && (
@@ -415,6 +451,8 @@ function ComposerAccountAvatar({
             </Avatar>
           </div>
         </div>
+
+        <PlatformBadge platform={account.platform} />
 
         {selected && (
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border border-background rounded-full flex items-center justify-center">
