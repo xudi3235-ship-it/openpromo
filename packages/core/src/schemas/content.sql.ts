@@ -31,13 +31,20 @@ export const IGPlacement = {
   IG_REEL: "IG_REEL",
 } as const;
 
+export const TikTokPlacement = {
+  TIKTOK_FEED: "TIKTOK_FEED",
+} as const;
+
 export const AllPlacement = {
   ...IGPlacement,
   ...FBPlacement,
+  ...TikTokPlacement,
 } as const;
 
 export type FBPlacement = (typeof FBPlacement)[keyof typeof FBPlacement];
 export type IGPlacement = (typeof IGPlacement)[keyof typeof IGPlacement];
+export type TikTokPlacement =
+  (typeof TikTokPlacement)[keyof typeof TikTokPlacement];
 export type AllPlacement = (typeof AllPlacement)[keyof typeof AllPlacement];
 
 export const ContentPublishingStatus = {
@@ -170,11 +177,29 @@ export const IGFeedPlacementSpec = BaseIGPlacementSpec.extend({
   attachments: SharedAttachmentSpec.array().optional(),
 });
 export type IGFeedPlacementSpec = z.infer<typeof IGFeedPlacementSpec>;
+
+// ========================= TikTok =========================
+export const BaseTikTokPlacementSpec = BasePlacementSpec.extend({
+  placement: z.enum(Object.values(TikTokPlacement)),
+  identity: z.object({
+    connectedAccountID: z.string(),
+    tiktokUserID: z.string(),
+    metadata: z.record(z.any(), z.any()).optional(),
+  }),
+});
+
+export const TikTokFeedPlacementSpec = BaseTikTokPlacementSpec.extend({
+  placement: z.literal(TikTokPlacement.TIKTOK_FEED),
+  caption: z.string().optional(),
+  attachments: SharedAttachmentSpec.array().optional(),
+});
+export type TikTokFeedPlacementSpec = z.infer<typeof TikTokFeedPlacementSpec>;
 // ========================= Export =========================
 
 export const PlacementSpec = z.discriminatedUnion("placement", [
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
+  TikTokFeedPlacementSpec,
 ]);
 export type PlacementSpec = z.infer<typeof PlacementSpec>;
 

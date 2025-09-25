@@ -11,6 +11,7 @@ import { Log } from "@core/utils/log";
 import z from "zod";
 import { FacebookPublisher } from "./facebook-publisher";
 import { InstagramPublisher } from "./instagram-publisher";
+import { TikTokPublisher } from "./tiktok-publisher";
 
 const PublishWorkflowParams = z.object({
   actor: Actor.WorkspaceUserSchema,
@@ -96,6 +97,11 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
         case AllPlacement.IG_FEED: {
           const igPublisher = new InstagramPublisher();
           await igPublisher.publish(ctx, step, pendingContentID);
+          break;
+        }
+        case AllPlacement.TIKTOK_FEED: {
+          const tikTokPublisher = new TikTokPublisher();
+          await tikTokPublisher.publish(ctx, step, pendingContentID);
           break;
         }
         default:

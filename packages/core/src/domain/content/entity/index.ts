@@ -10,3 +10,4 @@ export { EntPendingContent } from "./pending-content";
 // Platform-specific post entities
 export { EntFacebookPost, EntInstagramPost } from "./platform-posts";
 export { EntScheduledContent } from "./scheduled-content";
+export { EntTikTokFeedPendingContent } from "./tiktok-feed";
