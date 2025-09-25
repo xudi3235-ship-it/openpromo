@@ -89,7 +89,7 @@ const buildInitialTikTokPlacements = (props: ComposerProps) => {
             tiktokUserID: (acc.metadata as { tiktokUserId: string })
               .tiktokUserId,
           },
-          placement: "TIKTOK_FEED" as const,
+          placement: "TT_FEED",
           caption: props.initialMessage || "",
           attachments: [],
           customized: false,

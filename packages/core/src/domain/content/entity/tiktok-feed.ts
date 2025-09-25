@@ -28,9 +28,9 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
   constructor(data: UnifiedContentSelect) {
     super(data);
     const placement = this.placement();
-    if (placement !== TikTokPlacement.TIKTOK_FEED) {
+    if (placement !== TikTokPlacement.TT_FEED) {
       throw new WorkflowError(
-        `Content ${data.id} is not TIKTOK_FEED placement, got ${placement}`,
+        `Content ${data.id} is not TT_FEED placement, got ${placement}`,
       );
     }
 

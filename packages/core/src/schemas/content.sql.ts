@@ -32,7 +32,7 @@ export const IGPlacement = {
 } as const;
 
 export const TikTokPlacement = {
-  TIKTOK_FEED: "TIKTOK_FEED",
+  TT_FEED: "TT_FEED",
 } as const;
 
 export const AllPlacement = {
@@ -189,7 +189,7 @@ export const BaseTikTokPlacementSpec = BasePlacementSpec.extend({
 });
 
 export const TikTokFeedPlacementSpec = BaseTikTokPlacementSpec.extend({
-  placement: z.literal(TikTokPlacement.TIKTOK_FEED),
+  placement: z.literal(TikTokPlacement.TT_FEED),
   caption: z.string().optional(),
   attachments: SharedAttachmentSpec.array().optional(),
 });

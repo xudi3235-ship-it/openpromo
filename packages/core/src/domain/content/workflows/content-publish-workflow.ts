@@ -99,7 +99,7 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
           await igPublisher.publish(ctx, step, pendingContentID);
           break;
         }
-        case AllPlacement.TIKTOK_FEED: {
+        case AllPlacement.TT_FEED: {
           const tikTokPublisher = new TikTokPublisher();
           await tikTokPublisher.publish(ctx, step, pendingContentID);
           break;

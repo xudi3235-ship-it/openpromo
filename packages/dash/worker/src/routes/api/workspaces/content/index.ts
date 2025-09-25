@@ -364,6 +364,17 @@ export const contentRoute = new Hono<ApiEnv>()
           });
         }
       }
+      if (placements.tiktokFeed) {
+        for (const spec of placements.tiktokFeed) {
+          await EntPendingContent.createInternal({
+            placement: "TT_FEED",
+            placementSpec: spec,
+            publishingStatus,
+            pendingContentGroupId: group.id,
+            connectedAccountId: spec.identity.connectedAccountID,
+          });
+        }
+      }
       return c.json({ success: true, groupId: group.id });
     }
     // For scheduled content, also create a group to maintain base data consistency
@@ -404,6 +415,17 @@ export const contentRoute = new Hono<ApiEnv>()
           });
         }
       }
+      if (placements.tiktokFeed) {
+        for (const spec of placements.tiktokFeed) {
+          await EntPendingContent.createInternal({
+            placement: "TT_FEED",
+            placementSpec: spec,
+            publishingStatus,
+            pendingContentGroupId: group.id,
+            connectedAccountId: spec.identity.connectedAccountID,
+          });
+        }
+      }
       return c.json({ success: true, groupId: group.id });
     }
     // For immediate publishing, create content directly without groups
@@ -423,6 +445,17 @@ export const contentRoute = new Hono<ApiEnv>()
         for (const spec of placements.instagramFeed) {
           await EntPendingContent.createInternal({
             placement: "IG_FEED",
+            placementSpec: spec,
+            publishingStatus,
+            pendingContentGroupId: null, // no group for immediate publish
+            connectedAccountId: spec.identity.connectedAccountID,
+          });
+        }
+      }
+      if (placements.tiktokFeed) {
+        for (const spec of placements.tiktokFeed) {
+          await EntPendingContent.createInternal({
+            placement: "TT_FEED",
             placementSpec: spec,
             publishingStatus,
             pendingContentGroupId: null, // no group for immediate publish
@@ -494,6 +527,13 @@ export const contentRoute = new Hono<ApiEnv>()
           placementSpec as IGFeedPlacementSpec,
         );
       }
+      if (content.placement === "TT_FEED") {
+        if (!data.placements.tiktokFeed) data.placements.tiktokFeed = [];
+        data.placements.tiktokFeed.push(
+          placementSpec as TikTokFeedPlacementSpec,
+        );
+      }
+      throw new AppError(400, { message: "Unsupported placement type" });
     }
 
     return c.json({ contentCreateData: data });
