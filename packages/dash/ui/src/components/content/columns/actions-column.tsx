@@ -3,7 +3,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -18,7 +17,6 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
     handleEdit,
     handleDelete,
     handlePublish,
-    copyEntityId,
     isPublishing,
     showConfirm,
     setShowConfirm,
@@ -84,13 +82,6 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => copyEntityId(entity)}>
-            {matchEntity(entity, {
-              content: () => "Copy content ID",
-              group: () => "Copy group ID",
-            })}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
           {matchEntity(entity, {
             content: (contentEntity) => {
               const content = contentEntity.entity;
@@ -103,6 +94,7 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
                   <DropdownMenuItem>View content</DropdownMenuItem>
                   {isEditable && (
                     <DropdownMenuItem onClick={() => handleEdit(entity)}>
+                      <Edit className="w-4 h-4 mr-1" />
                       Edit content
                     </DropdownMenuItem>
                   )}
@@ -132,8 +124,8 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
             group: () => {
               return (
                 <>
-                  <DropdownMenuItem>View group</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleEdit(entity)}>
+                    <Edit className="w-4 h-4 mr-1" />
                     Edit group
                   </DropdownMenuItem>
                   <DropdownMenuItem
