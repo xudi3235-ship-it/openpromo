@@ -19,9 +19,15 @@ export const resolveComposerProps = (
 
 const buildInitialFacebookPlacements = (
   props: ComposerProps,
+  isEditFlow: boolean,
 ): FBFeedPlacementSpec[] => {
-  if (props.initContentCreateData?.placements?.facebookFeed) {
-    return props.initContentCreateData.placements.facebookFeed;
+  const initPlacements = props.initContentCreateData?.placements?.facebookFeed;
+  if (initPlacements !== undefined) {
+    return initPlacements;
+  }
+
+  if (isEditFlow) {
+    return [];
   }
 
   return (
@@ -48,9 +54,15 @@ const buildInitialFacebookPlacements = (
 
 const buildInitialInstagramPlacements = (
   props: ComposerProps,
+  isEditFlow: boolean,
 ): IGFeedPlacementSpec[] => {
-  if (props.initContentCreateData?.placements?.instagramFeed) {
-    return props.initContentCreateData.placements.instagramFeed;
+  const initPlacements = props.initContentCreateData?.placements?.instagramFeed;
+  if (initPlacements !== undefined) {
+    return initPlacements;
+  }
+
+  if (isEditFlow) {
+    return [];
   }
 
   return (
@@ -73,9 +85,17 @@ const buildInitialInstagramPlacements = (
   );
 };
 
-const buildInitialTikTokPlacements = (props: ComposerProps) => {
-  if (props.initContentCreateData?.placements?.tiktokFeed) {
-    return props.initContentCreateData.placements.tiktokFeed;
+const buildInitialTikTokPlacements = (
+  props: ComposerProps,
+  isEditFlow: boolean,
+): TikTokFeedPlacementSpec[] => {
+  const initPlacements = props.initContentCreateData?.placements?.tiktokFeed;
+  if (initPlacements !== undefined) {
+    return initPlacements;
+  }
+
+  if (isEditFlow) {
+    return [];
   }
 
   return (
@@ -102,24 +122,44 @@ const buildInitialTikTokPlacements = (props: ComposerProps) => {
 export const createComposerInitialState = (
   props: ComposerProps,
 ): ComposerState => {
-  const contentCreateData = props.initContentCreateData ?? {
-    base: {
+  const isEditFlow = Boolean(props.initContentCreateData);
+
+  const placements = {
+    facebookFeed: buildInitialFacebookPlacements(props, isEditFlow),
+    instagramFeed: buildInitialInstagramPlacements(props, isEditFlow),
+    tiktokFeed: buildInitialTikTokPlacements(props, isEditFlow),
+  };
+
+  const contentCreateData: ComposerState["contentCreateData"] = {
+    base: props.initContentCreateData?.base ?? {
       message: props.initialMessage || "",
       publishingStatus: "PUBLISH_NOW" as const,
       attachments: [],
     },
-    placements: {
-      facebookFeed: buildInitialFacebookPlacements(props),
-      instagramFeed: buildInitialInstagramPlacements(props),
-      tiktokFeed: buildInitialTikTokPlacements(props),
-    },
+    placements,
   };
+
+  const selectedAccounts = isEditFlow
+    ? Array.from(
+        new Set([
+          ...placements.facebookFeed.map(
+            (spec) => spec.identity.connectedAccountID,
+          ),
+          ...placements.instagramFeed.map(
+            (spec) => spec.identity.connectedAccountID,
+          ),
+          ...placements.tiktokFeed.map(
+            (spec) => spec.identity.connectedAccountID,
+          ),
+        ]),
+      )
+    : props.initialAccounts?.map((acc) => acc.id) || [];
 
   const state: ComposerState = {
     placementSelected: props.initialPlacementSelected || "ALL",
     selectedPreview: props.initialSelectedPreview || "FACEBOOK",
     accounts: props.initialAccounts || [],
-    selectedAccounts: props.initialAccounts?.map((acc) => acc.id) || [],
+    selectedAccounts,
     activeAccount: null,
     contentCreateData,
     validation: { isValid: false, errors: [], canPublish: false },
