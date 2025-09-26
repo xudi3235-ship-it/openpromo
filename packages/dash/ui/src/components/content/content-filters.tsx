@@ -7,7 +7,8 @@ import {
   SelectValue,
 } from "@openpromo/ui/components/select";
 import { DateRangePicker } from "@openpromo/ui/components/time/date-range-picker";
-import { X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { AlertCircle, CheckCircle2, CircleDashed, X } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
 export interface ContentFilters {
@@ -20,12 +21,14 @@ interface ContentFiltersProps {
   onFiltersChange: (filters: ContentFilters) => void;
 }
 
-const PUBLISHING_STATUS_OPTIONS = [
-  { value: "DRAFT", label: "Draft" },
-  { value: "SCHEDULED", label: "Scheduled" },
-  { value: "PUBLISHED", label: "Published" },
-  { value: "FAILED_TO_PUBLISH", label: "Failed to Publish" },
-  { value: "PUBLISH_NOW", label: "Publishing Now" },
+const PUBLISHING_STATUS_OPTIONS: Array<{
+  value: string;
+  label: string;
+  icon: LucideIcon;
+}> = [
+  { value: "DRAFT", label: "Unpublished", icon: CircleDashed },
+  { value: "PUBLISHED", label: "Published", icon: CheckCircle2 },
+  { value: "FAILED_TO_PUBLISH", label: "Failed", icon: AlertCircle },
 ];
 
 export function ContentFilters({
@@ -70,9 +73,12 @@ export function ContentFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            {PUBLISHING_STATUS_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
+            {PUBLISHING_STATUS_OPTIONS.map(({ value, label, icon: Icon }) => (
+              <SelectItem key={value} value={value}>
+                <span className="flex items-center gap-2">
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </span>
               </SelectItem>
             ))}
           </SelectContent>
