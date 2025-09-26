@@ -107,6 +107,7 @@ export function CalendarEventCard({
           const message = matchPlacementSpec(placementSpec as PlacementSpec, {
             FBFeed: (s) => s.postSpec.message,
             IGFeed: (s) => s.caption,
+            TTFeed: (s) => s.caption,
           });
 
           return (
@@ -213,6 +214,7 @@ export function CalendarEventCard({
               ? matchPlacementSpec(contents[0].placementSpec as PlacementSpec, {
                   FBFeed: (s) => s.postSpec.message,
                   IGFeed: (s) => s.caption,
+                  TTFeed: (s) => s.caption,
                 })
               : "Untitled Group";
 

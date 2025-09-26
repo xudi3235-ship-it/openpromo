@@ -8,22 +8,18 @@ import { Image } from "lucide-react";
 import { matchEntity, matchPlacementSpec } from "@/lib/hono-client";
 import { getPlatformIcon } from "../utils/platform-icons";
 
-// Helper to get thumbnail URL from placement spec
 function getThumbnailFromPlacement(
   placementSpec: PlacementSpec,
 ): string | undefined {
-  // First try thumbnailUrl field
   if (placementSpec?.thumbnailUrl) {
     return placementSpec.thumbnailUrl;
   }
 
-  // Then try to get from attachments array
   const attachments = placementSpec?.attachments;
   if (attachments && attachments.length > 0) {
-    // biome-ignore lint/suspicious/noExplicitAny: later
-    const firstAttachment = attachments.find((att: any) => att.publicUrl);
-    if (firstAttachment?.publicUrl) {
-      return firstAttachment.publicUrl;
+    const fst = attachments.find((att) => att.publicUrl);
+    if (fst?.publicUrl) {
+      return fst.publicUrl;
     }
   }
 
@@ -70,12 +66,13 @@ function renderTitle(row: Row<MergedContentEntity>) {
         entity: { placementSpec, placement },
       } = entity as ContentEntity;
 
-      const src = getThumbnailFromPlacement(placementSpec);
+      const src = getThumbnailFromPlacement(placementSpec as PlacementSpec);
       const platformIcon = getPlatformIcon(placement);
 
       const message = matchPlacementSpec(placementSpec as PlacementSpec, {
         FBFeed: (s) => s.postSpec.message,
         IGFeed: (s) => s.caption,
+        TTFeed: (s) => s.caption,
       });
 
       return (
@@ -110,14 +107,17 @@ function renderTitle(row: Row<MergedContentEntity>) {
           ? matchPlacementSpec(contents[0].placementSpec as PlacementSpec, {
               FBFeed: (s) => s.postSpec.message,
               IGFeed: (s) => s.caption,
+              TTFeed: (s) => s.caption,
             })
           : "Untitled Group";
       // Get first thumbnail or default
       const contentWithThumbnail = contents.find((c) =>
-        getThumbnailFromPlacement(c.placementSpec),
+        getThumbnailFromPlacement(c.placementSpec as PlacementSpec),
       );
       const thumbnailUrl = contentWithThumbnail
-        ? getThumbnailFromPlacement(contentWithThumbnail.placementSpec)
+        ? getThumbnailFromPlacement(
+            contentWithThumbnail.placementSpec as PlacementSpec,
+          )
         : undefined;
 
       return (

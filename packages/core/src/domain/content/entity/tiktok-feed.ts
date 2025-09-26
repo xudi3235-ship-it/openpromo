@@ -127,30 +127,58 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
 
   async initDirectPostFromUrl(
     identity: TikTokIdentityContext,
-    params: {
-      videoUrl: string;
-      caption?: string;
-      mimeType?: string;
-      coverTimestampMs?: number;
-    },
+    params: TikTokDirectPostParams,
   ): Promise<{ publishId: string; uploadUrl?: string }> {
-    const postInfo = this.buildPostInfo(
-      params.caption,
-      params.coverTimestampMs,
-    );
-    const sourceInfo: Record<string, unknown> = {
+    if (!params.videoUrl || !/^https?:\/\//i.test(params.videoUrl)) {
+      throw new WorkflowError("TikTok videoUrl must be an absolute URL");
+    }
+
+    const normalizedCaption = this.normalizeCaption(params.caption);
+    const postInfoBase = this.buildPostInfo(normalizedCaption);
+
+    const sourceInfo: TikTokDirectPostSourceInfo = {
       source: "PULL_FROM_URL",
       video_url: params.videoUrl,
     };
+
     if (params.mimeType) {
-      sourceInfo["video_format"] = params.mimeType;
+      sourceInfo.video_format = params.mimeType;
     }
 
-    const payload = {
-      post_info: postInfo,
+    const coverTimestamps =
+      params.videoCoverTimestampsMs?.filter(
+        (ms) => Number.isFinite(ms) && ms >= 0,
+      ) ?? [];
+    if (
+      typeof params.coverTimestampMs === "number" &&
+      params.coverTimestampMs >= 0
+    ) {
+      coverTimestamps.push(params.coverTimestampMs);
+    }
+    if (coverTimestamps.length > 0) {
+      sourceInfo.video_cover_timestamp_ms = coverTimestamps;
+    }
+
+    const mentionUserIds = params.mentionUserIds
+      ?.map((id) => id.trim())
+      .filter((id) => id.length > 0);
+
+    const payload: TikTokDirectPostInitPayload = {
+      post_info: {
+        ...postInfoBase,
+        privacy_level: params.privacyLevel ?? "PUBLIC_TO_EVERYONE",
+        disable_comment: params.disableComment ?? false,
+        disable_duet: params.disableDuet ?? false,
+        disable_stitch: params.disableStitch ?? false,
+        auto_add_music: params.autoAddMusic ?? true,
+        allow_advanced_boost: params.allowAdvancedBoost ?? false,
+        mention_user_ids: mentionUserIds,
+        branded_content_tag: params.brandedContentTag,
+      },
       source_info: sourceInfo,
       post_mode: "DIRECT_POST",
-    };
+      media_type: "VIDEO",
+    } satisfies TikTokDirectPostInitPayload;
 
     const data = await this.tiktokPost<TikTokVideoInitResponse>(
       identity,
@@ -187,7 +215,6 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
 
     return {
       ...data,
-      postId: data.post_id,
       shareUrl: data.share_url,
       failReason: typeof failReason === "string" ? failReason : undefined,
       message: typeof message === "string" ? message : undefined,
@@ -197,7 +224,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
   private async tiktokPost<T>(
     identity: TikTokIdentityContext,
     path: string,
-    body: Record<string, unknown>,
+    body: unknown,
   ): Promise<T> {
     const url = new URL(path, "https://open.tiktokapis.com");
     let response: Response;
@@ -253,23 +280,16 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     return json.data;
   }
 
-  private buildPostInfo(caption?: string, coverTimestampMs?: number) {
+  private buildPostInfo(caption?: string) {
     const sanitized = this.normalizeCaption(caption);
-    const postInfo: Record<string, unknown> = {
+    if (!sanitized) throw new WorkflowError("TikTok caption cannot be empty");
+    return {
       title: sanitized?.slice(0, 80),
       description: sanitized,
-      privacy_level: "PUBLIC_TO_EVERYONE",
-      disable_comment: false,
-      disable_duet: false,
-      disable_stitch: false,
-      auto_add_music: true,
-    };
-
-    if (typeof coverTimestampMs === "number") {
-      postInfo["video_cover_timestamp_ms"] = coverTimestampMs;
-    }
-
-    return postInfo;
+    } satisfies Pick<
+      TikTokDirectPostInitPayload["post_info"],
+      "title" | "description"
+    >;
   }
 
   private normalizeCaption(caption?: string) {
@@ -287,12 +307,12 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     }
 
     const key = Storage.Key.daily(`tiktok-upload-${video.id}`);
-    const bucket = {
-      name: "TODO: add bucket name",
-      publicUrl: "TODO: add bucket public url",
+    const publicBucket = {
+      name: "public",
+      publicUrl: "https://bucket.openpromo.app",
     };
 
-    const exists = await Storage.exists(key, bucket);
+    const exists = await Storage.exists(key, publicBucket);
     if (!exists) {
       // stream -> R2
       const response = await fetch(video.presignedUrl);
@@ -306,7 +326,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
       await Storage.upload(
         key,
         response.body as ReadableStream<Uint8Array>,
-        bucket,
+        publicBucket,
         {
           contentType,
           metadata: {
@@ -320,7 +340,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
 
     return {
       key,
-      url: Storage.publicUrl(key, bucket),
+      url: Storage.publicUrl(key, publicBucket),
     };
   }
 }
@@ -336,6 +356,12 @@ interface TikTokAPIResponse<T> {
   data?: T;
   error?: TikTokAPIError;
 }
+
+type TikTokPrivacyLevel =
+  | "PUBLIC_TO_EVERYONE"
+  | "MUTUAL_FOLLOW_FRIENDS"
+  | "FOLLOWER_OF_CREATOR"
+  | "SELF_ONLY";
 
 interface TikTokVideoInitResponse {
   publish_id: string;
@@ -354,8 +380,51 @@ interface TikTokPublishStatusResponse {
 
 export interface TikTokPublishStatus {
   status: string;
-  postId?: string;
   shareUrl?: string;
   failReason?: string;
   message?: string;
+}
+
+export interface TikTokDirectPostParams {
+  videoUrl: string;
+  caption?: string;
+  mimeType?: string;
+  coverTimestampMs?: number;
+  videoCoverTimestampsMs?: number[];
+  privacyLevel?: TikTokPrivacyLevel;
+  disableComment?: boolean;
+  disableDuet?: boolean;
+  disableStitch?: boolean;
+  autoAddMusic?: boolean;
+  allowAdvancedBoost?: boolean;
+  mentionUserIds?: string[];
+  brandedContentTag?: {
+    business_partner_id: string;
+    display_on_video: boolean;
+  };
+}
+
+interface TikTokDirectPostSourceInfo {
+  source: "PULL_FROM_URL" | "FILE_UPLOAD";
+  video_url: string;
+  video_format?: string;
+  video_cover_timestamp_ms?: number[];
+}
+
+interface TikTokDirectPostInitPayload {
+  post_info: {
+    title: string;
+    description?: string;
+    privacy_level: TikTokPrivacyLevel;
+    disable_comment: boolean;
+    disable_duet: boolean;
+    disable_stitch: boolean;
+    auto_add_music: boolean;
+    allow_advanced_boost: boolean;
+    mention_user_ids?: string[];
+    branded_content_tag?: TikTokDirectPostParams["brandedContentTag"];
+  };
+  source_info: TikTokDirectPostSourceInfo;
+  post_mode: "DIRECT_POST";
+  media_type: "VIDEO";
 }

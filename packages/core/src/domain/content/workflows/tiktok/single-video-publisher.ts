@@ -48,7 +48,6 @@ export async function publishTikTokFeedVideo(
   const verifiedVideoUrl = await step.do(
     "ensure video available on verified domain",
     async () => {
-      console.log({ env: process.env });
       const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
       const { url } = await c.ensureVideoAvailableOnVerifiedDomain({
         id: videoAttachment.id,
@@ -72,50 +71,49 @@ export async function publishTikTokFeedVideo(
       videoUrl: verifiedVideoUrl,
       caption: c.caption(),
       mimeType: videoAttachment.mimeType,
+      privacyLevel: "SELF_ONLY",
     });
   });
 
-  const postId = await step.do("wait for tiktok publish status", async () => {
-    const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-    const maxAttempts = 20;
-    let attempt = 0;
-    while (attempt < maxAttempts) {
-      attempt += 1;
-      const status = await c.fetchPublishStatus(identity, publishId);
+  const confirmPublishID = await step.do(
+    "wait for tiktok publish status",
+    async () => {
+      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+      const maxAttempts = 20;
+      let attempt = 0;
+      while (attempt < maxAttempts) {
+        attempt += 1;
+        const status = await c.fetchPublishStatus(identity, publishId);
 
-      log.info("tiktok publish status", {
-        publishId,
-        status: status.status,
-        postId: status.postId,
-        attempt,
-      });
+        log.info("tiktok publish status", {
+          publishId,
+          status: status.status,
+          attempt,
+        });
 
-      if (status.status === "PUBLISH_SUCCESS" && status.postId) {
-        return status.postId;
-      }
+        if (status.status === "PUBLISH_COMPLETE") {
+          return publishId;
+        }
 
-      if (
-        status.status === "PUBLISH_FAIL" ||
-        status.status === "PUBLISH_FAILED" ||
-        status.status === "FAIL"
-      ) {
-        const reason = status.failReason || status.message || "unknown";
-        throw new WorkflowError(
-          `TikTok publish failed for ${publishId}: ${reason}`,
+        if (status.status === "FAILED") {
+          const reason = status.failReason || status.message || "unknown";
+          throw new WorkflowError(
+            `TikTok publish failed for ${publishId}: ${reason}`,
+          );
+        }
+
+        await step.sleep(
+          `wait for tiktok publish status (attempt ${attempt})`,
+          Math.min(10_000, attempt * 2_000),
         );
       }
 
-      await step.sleep(
-        `wait for tiktok publish status (attempt ${attempt})`,
-        Math.min(10_000, attempt * 2_000),
+      throw new WorkflowError(
+        `Timed out waiting for TikTok publish status for ${publishId}`,
       );
-    }
+    },
+  );
 
-    throw new WorkflowError(
-      `Timed out waiting for TikTok publish status for ${publishId}`,
-    );
-  });
-
-  log.info("TikTok publish completed", { postId });
-  return postId;
+  log.info("TikTok publish completed", { confirmPublishID });
+  return confirmPublishID;
 }

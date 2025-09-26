@@ -239,6 +239,7 @@ export function matchPlacementSpec<T>(
   handlers: {
     FBFeed: (spec: Extract<PlacementSpec, { placement: "FB_FEED" }>) => T;
     IGFeed: (spec: Extract<PlacementSpec, { placement: "IG_FEED" }>) => T;
+    TTFeed: (spec: Extract<PlacementSpec, { placement: "TT_FEED" }>) => T;
   },
 ) {
   switch (spec.placement) {
@@ -249,6 +250,10 @@ export function matchPlacementSpec<T>(
     case "IG_FEED":
       return handlers.IGFeed(
         spec as Extract<PlacementSpec, { placement: "IG_FEED" }>,
+      );
+    case "TT_FEED":
+      return handlers.TTFeed(
+        spec as Extract<PlacementSpec, { placement: "TT_FEED" }>,
       );
     default:
       throw new Error("Unknown placement spec");
