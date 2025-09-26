@@ -11,6 +11,7 @@ const DEFAULT_PROPS: ComposerProps = {
   initialPlacementSelected: "ALL",
   initialSelectedPreview: "FACEBOOK",
   initialMessage: "",
+  contentGroupID: undefined,
 };
 
 export const resolveComposerProps = (
@@ -139,20 +140,14 @@ export const createComposerInitialState = (
     placements,
   };
 
+  const placementAccountIds = [
+    ...placements.facebookFeed.map((spec) => spec.identity.connectedAccountID),
+    ...placements.instagramFeed.map((spec) => spec.identity.connectedAccountID),
+    ...placements.tiktokFeed.map((spec) => spec.identity.connectedAccountID),
+  ];
+
   const selectedAccounts = isEditFlow
-    ? Array.from(
-        new Set([
-          ...placements.facebookFeed.map(
-            (spec) => spec.identity.connectedAccountID,
-          ),
-          ...placements.instagramFeed.map(
-            (spec) => spec.identity.connectedAccountID,
-          ),
-          ...placements.tiktokFeed.map(
-            (spec) => spec.identity.connectedAccountID,
-          ),
-        ]),
-      )
+    ? Array.from(new Set(placementAccountIds))
     : props.initialAccounts?.map((acc) => acc.id) || [];
 
   const state: ComposerState = {
@@ -162,6 +157,7 @@ export const createComposerInitialState = (
     selectedAccounts,
     activeAccount: null,
     contentCreateData,
+    contentGroupID: props.contentGroupID ?? null,
     validation: { isValid: false, errors: [], canPublish: false },
   };
 

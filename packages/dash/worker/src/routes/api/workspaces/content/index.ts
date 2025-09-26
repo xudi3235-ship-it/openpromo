@@ -320,6 +320,18 @@ export const contentRoute = new Hono<ApiEnv>()
       }
     }
 
+    if (placements.tiktokFeed) {
+      for (const spec of placements.tiktokFeed) {
+        await EntPendingContent.createInternal({
+          placement: "TT_FEED",
+          placementSpec: spec,
+          publishingStatus,
+          pendingContentGroupId: id,
+          connectedAccountId: spec.identity.connectedAccountID,
+        });
+      }
+    }
+
     return c.json({ success: true, groupId: id });
   })
   // create content api

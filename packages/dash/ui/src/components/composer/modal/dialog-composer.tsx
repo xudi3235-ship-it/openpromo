@@ -25,6 +25,7 @@ export default function ComposerDialog() {
   const initComposerProps = {
     initContentCreateData:
       contentGroupData?.contentCreateData as ContentCreateData,
+    contentGroupID: pendingContentGroupID,
   } as ComposerProps;
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeDialog()}>

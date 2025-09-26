@@ -189,3 +189,42 @@ export function useContentCreateMutation({
     },
   });
 }
+
+export function usePendingContentGroupPatchMutation({
+  onSuccess,
+  onError,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+} = {}) {
+  const { workspace } = useWorkspace();
+  const { contentCreateData } = useComposerStore();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation({
+    mutationFn: (api, contentID: string) =>
+      api.workspaces[":workspaceSlug"].content.group[":id"].$patch({
+        param: { workspaceSlug: workspace.slug, id: contentID },
+        json: contentCreateData,
+      }),
+    onSuccess: async (_data, contentID) => {
+      await invalidateContentListQueries(queryClient);
+      if (contentID) {
+        await queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.CONTENT_GROUP(contentID),
+        });
+      }
+      onSuccess?.();
+    },
+    onError: () => {
+      onError?.();
+    },
+  });
+}
+
+export function useComposerMutations() {
+  return {
+    create: useContentCreateMutation,
+    updateGroup: usePendingContentGroupPatchMutation,
+  };
+}

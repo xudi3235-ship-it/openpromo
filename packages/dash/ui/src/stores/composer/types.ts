@@ -35,6 +35,7 @@ export interface ComposerProps {
   initialSelectedPreview?: Platform;
   initialMessage?: string;
   initContentCreateData?: ContentCreateData;
+  contentGroupID?: string;
 }
 
 export interface ComposerState {
@@ -44,6 +45,7 @@ export interface ComposerState {
   selectedAccounts: string[];
   activeAccount: string | null;
   contentCreateData: ContentCreateData;
+  contentGroupID: string | null;
   validation: ValidationState;
 }
 

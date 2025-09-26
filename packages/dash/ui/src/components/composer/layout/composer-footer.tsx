@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ValidationErrors } from "@/components/composer/controls/validation-errors";
 import { PublishingOverlay } from "@/components/composer/layout/publishing-overlay";
-import { useContentCreateMutation } from "@/queries/content";
+import { useComposerMutations } from "@/queries/content";
 import { useComposerStore } from "@/stores/composer-store";
 
 export function ComposerFooter() {
@@ -12,19 +12,11 @@ export function ComposerFooter() {
     status: "loading" | "success" | "error";
   }>({ isVisible: false, status: "loading" });
 
-  const { setPublishingStatus, contentCreateData, validation } =
+  const { setPublishingStatus, contentCreateData, validation, contentGroupID } =
     useComposerStore();
 
-  const { mutate, isPending } = useContentCreateMutation({
-    onSuccess: () => {
-      setPublishingState({ isVisible: true, status: "success" });
-      toast.success(getSuccessMessage());
-    },
-    onError: () => {
-      setPublishingState({ isVisible: true, status: "error" });
-      toast.error(getErrorMessage());
-    },
-  });
+  const { create: useCreateMutation, updateGroup: useUpdateGroupMutation } =
+    useComposerMutations();
 
   // Derive action type from store's publishing status
   const actionType =
@@ -33,6 +25,39 @@ export function ComposerFooter() {
       : contentCreateData.base.publishingStatus === "SCHEDULED"
         ? "schedule"
         : "publish";
+
+  const mutationHandlers = {
+    onSuccess: () => {
+      setPublishingState({ isVisible: true, status: "success" });
+      toast.success(getSuccessMessage());
+    },
+    onError: () => {
+      setPublishingState({ isVisible: true, status: "error" });
+      toast.error(getErrorMessage());
+    },
+  } as const;
+
+  const createMutation = useCreateMutation(mutationHandlers);
+  const updateMutation = useUpdateGroupMutation(mutationHandlers);
+
+  const isEditFlow = Boolean(contentGroupID);
+  const shouldUpdateGroup =
+    isEditFlow &&
+    (contentCreateData.base.publishingStatus === "DRAFT" ||
+      contentCreateData.base.publishingStatus === "SCHEDULED");
+
+  const triggerMutation = () => {
+    if (shouldUpdateGroup && contentGroupID) {
+      updateMutation.mutate(contentGroupID);
+      return;
+    }
+
+    createMutation.mutate({});
+  };
+
+  const isPending = shouldUpdateGroup
+    ? updateMutation.isPending
+    : createMutation.isPending;
 
   const getSuccessMessage = () => {
     switch (actionType) {
@@ -63,7 +88,7 @@ export function ComposerFooter() {
   const handleSaveDraft = () => {
     setPublishingStatus("DRAFT");
     setPublishingState({ isVisible: true, status: "loading" });
-    mutate({});
+    triggerMutation();
   };
 
   const handlePublish = () => {
@@ -72,7 +97,7 @@ export function ComposerFooter() {
       setPublishingStatus("PUBLISH_NOW");
     }
     setPublishingState({ isVisible: true, status: "loading" });
-    mutate({});
+    triggerMutation();
   };
 
   const handleOverlayComplete = () => {
