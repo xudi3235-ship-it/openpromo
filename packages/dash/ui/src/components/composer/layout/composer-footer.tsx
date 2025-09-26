@@ -41,7 +41,7 @@ export function ComposerFooter() {
       case "schedule":
         return "Content scheduled successfully!";
       case "publish":
-        return "Content published successfully!";
+        return "Content is being published. We'll notify you once it's live.";
       default:
         return "Action completed successfully!";
     }

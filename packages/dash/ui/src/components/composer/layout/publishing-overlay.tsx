@@ -96,7 +96,7 @@ export function PublishingOverlay({
           ? "Draft saved"
           : actionType === "schedule"
             ? "Content scheduled"
-            : "Content published";
+            : "Publishing in progress";
       case "error":
         return actionType === "draft"
           ? "Failed to save"
@@ -105,6 +105,15 @@ export function PublishingOverlay({
             : "Failed to publish";
     }
   };
+
+  const getSubMessage = () => {
+    if (status === "success" && actionType === "publish") {
+      return "We'll notify you once it's live.";
+    }
+    return undefined;
+  };
+
+  const subMessage = getSubMessage();
 
   return (
     <div className="fixed inset-0 bg-white/70 backdrop-blur-[2px] z-50 flex items-center justify-center">
@@ -116,6 +125,9 @@ export function PublishingOverlay({
             <h3 className="text-lg font-medium text-gray-900">
               {getMessage()}
             </h3>
+            {subMessage && (
+              <p className="text-sm text-gray-600">{subMessage}</p>
+            )}
           </div>
 
           {status === "loading" && (
