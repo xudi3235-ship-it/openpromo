@@ -6,12 +6,16 @@ import {
   eachDayOfInterval,
   endOfWeek,
   format,
+  isBefore,
   isSameDay,
   isToday,
+  startOfDay,
   startOfWeek,
 } from "date-fns";
+import { Plus } from "lucide-react";
 import type React from "react";
 import { useMemo } from "react";
+import { toast } from "sonner";
 import {
   type CalendarEvent,
   DroppableCell,
@@ -19,6 +23,7 @@ import {
   isMultiDayEvent,
   useCalendarDnd,
 } from "@/components/calendar";
+import { matchEntity } from "@/lib/hono-client";
 import { CalendarEventCard } from "./calendar-event-card";
 import { EmptyStateButton } from "./empty-state-button";
 
@@ -110,12 +115,38 @@ export function DynamicWeekView({
     });
   }, [days, events]);
 
+  const isUnpublished = (event: CalendarEvent) =>
+    matchEntity(event, {
+      content: (entity) => entity.entity.publishingStatus !== "PUBLISHED",
+      group: (entity) => entity.entity.publishingStatus !== "PUBLISHED",
+    });
+
+  const isPastEvent = (event: CalendarEvent) => {
+    const { start } = getEventData(event);
+    return isBefore(new Date(start), new Date());
+  };
+
   const handleEventClick = (event: CalendarEvent, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isPastEvent(event)) {
+      toast.warning("Past events cannot be opened.");
+      return;
+    }
+    if (!isUnpublished(event)) {
+      toast.warning("Only unpublished events can be edited.");
+      return;
+    }
     onEventSelect(event);
   };
 
+  const isCreatableDay = (day: Date) =>
+    !isBefore(startOfDay(day), startOfDay(new Date()));
+
   const handleCreateEvent = (day: Date) => {
+    if (!isCreatableDay(day)) {
+      toast.warning("Cannot create events in the past.");
+      return;
+    }
     // Create event at 9 AM by default, or current time if today
     const startTime = new Date(day);
     if (isToday(day)) {
@@ -177,10 +208,20 @@ export function DynamicWeekView({
             <DroppableCell
               id={`day-${day.toISOString()}`}
               date={day}
-              className="flex-1 p-2 min-h-0"
+              className={cn(
+                "relative flex-1 p-2 min-h-0 transition-colors",
+                isCreatableDay(day)
+                  ? "cursor-pointer hover:bg-accent/10"
+                  : "cursor-not-allowed opacity-80",
+              )}
               onClick={() => handleCreateEvent(day)}
             >
               <div className="space-y-2 h-full">
+                {isCreatableDay(day) && (
+                  <div className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-accent/80 text-accent-foreground shadow-sm">
+                    <Plus className="h-3 w-3" />
+                  </div>
+                )}
                 {/* Events list */}
                 {eventsForDay.map((event) => {
                   const eventData = getEventData(event);
@@ -202,7 +243,7 @@ export function DynamicWeekView({
                 })}
 
                 {/* Empty state / create button */}
-                {eventsForDay.length === 0 && (
+                {eventsForDay.length === 0 && isCreatableDay(day) && (
                   <EmptyStateButton
                     day={day}
                     onClick={handleCreateEvent}
@@ -211,7 +252,7 @@ export function DynamicWeekView({
                 )}
 
                 {/* Add button at the bottom if there are events */}
-                {eventsForDay.length > 0 && (
+                {eventsForDay.length > 0 && isCreatableDay(day) && (
                   <EmptyStateButton
                     day={day}
                     onClick={handleCreateEvent}
