@@ -72,7 +72,7 @@ export const createAccountsSlice: ComposerSlice<{
               connectedAccountID: account.id,
               fbPageID: (account.metadata as { pageID: string }).pageID,
             },
-            placement: "FB_FEED" as const,
+            placement: "FB_FEED",
             attachments: [...(state.contentCreateData.base.attachments || [])],
             postSpec: {
               message: state.contentCreateData.base.message || "",
@@ -94,7 +94,7 @@ export const createAccountsSlice: ComposerSlice<{
               igAccountID: (account.metadata as { igAccountID: string })
                 .igAccountID,
             },
-            placement: "IG_FEED" as const,
+            placement: "IG_FEED",
             caption: state.contentCreateData.base.message || "",
             attachments: [...(state.contentCreateData.base.attachments || [])],
             customized: false,
@@ -111,7 +111,7 @@ export const createAccountsSlice: ComposerSlice<{
               tiktokUserID: (account.metadata as { tiktokUserId: string })
                 .tiktokUserId,
             },
-            placement: "TIKTOK_FEED" as const,
+            placement: "TT_FEED",
             caption: state.contentCreateData.base.message || "",
             attachments: [...(state.contentCreateData.base.attachments || [])],
             customized: false,

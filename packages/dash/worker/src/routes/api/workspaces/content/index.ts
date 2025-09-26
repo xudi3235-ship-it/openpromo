@@ -533,7 +533,6 @@ export const contentRoute = new Hono<ApiEnv>()
           placementSpec as TikTokFeedPlacementSpec,
         );
       }
-      throw new AppError(400, { message: "Unsupported placement type" });
     }
 
     return c.json({ contentCreateData: data });

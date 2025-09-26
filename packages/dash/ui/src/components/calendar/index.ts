@@ -5,6 +5,7 @@ export { AgendaView } from "./agenda-view";
 export { CalendarDndProvider, useCalendarDnd } from "./calendar-dnd-context";
 export { CalendarEventCard } from "./calendar-event-card";
 export { CalendarSkeleton } from "./calendar-skeleton";
+export { CalendarStatusBadge } from "./calendar-status-badge";
 // Constants and utility exports
 export * from "./constants";
 export { DayView } from "./day-view";

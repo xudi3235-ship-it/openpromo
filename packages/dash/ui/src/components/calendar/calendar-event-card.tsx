@@ -4,6 +4,7 @@ import type { ContentEntity } from "@worker/routes/api/workspaces/content";
 import { format, getMinutes } from "date-fns";
 import { Eye, Heart, Image, MessageCircle } from "lucide-react";
 import { type CalendarEvent, getEventData } from "@/components/calendar";
+import { CalendarStatusBadge } from "@/components/calendar/calendar-status-badge";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { getPlatformIcon } from "@/components/content/utils/platform-icons";
 import { ContentActionsMenu } from "@/components/content-actions-menu";
@@ -169,13 +170,13 @@ export function CalendarEventCard({
               </div>
 
               {/* Message content - in content area */}
-              <div className="absolute bottom-3 left-3 right-12 pointer-events-none">
+              <div className="absolute bottom-3 left-3 right-12 pointer-events-none flex flex-col gap-1">
                 <p className="text-gray-900 dark:text-gray-100 text-sm font-medium line-clamp-2 leading-snug">
                   {message || eventData.title}
                 </p>
                 {/* Engagement metrics for published content */}
                 {entity.entity.publishingStatus === "PUBLISHED" && (
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
                       <Heart className="w-2.5 h-2.5 text-gray-400" />
                       <span className="text-[10px] text-gray-500 dark:text-gray-400">
@@ -310,17 +311,9 @@ export function CalendarEventCard({
                 </p>
                 <div className="flex items-center gap-2">
                   {/* Status badge */}
-                  <div
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                      entity.entity.publishingStatus === "SCHEDULED"
-                        ? "bg-green-500/10 text-green-700 dark:text-green-300"
-                        : "bg-orange-500/10 text-orange-700 dark:text-orange-300"
-                    }`}
-                  >
-                    {entity.entity.publishingStatus === "SCHEDULED"
-                      ? "Scheduled"
-                      : "Draft"}
-                  </div>
+                  <CalendarStatusBadge
+                    status={entity.entity.publishingStatus}
+                  />
                   <p className="text-gray-600 dark:text-gray-400 text-xs">
                     {contents.length} post{contents.length !== 1 ? "s" : ""}
                   </p>
