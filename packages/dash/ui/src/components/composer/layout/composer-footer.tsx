@@ -1,40 +1,10 @@
 import { Button } from "@openpromo/ui/components/button";
-import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ValidationErrors } from "@/components/composer/controls/validation-errors";
 import { PublishingOverlay } from "@/components/composer/layout/publishing-overlay";
-import { useWorkspace } from "@/hooks/useWorkspace";
-import { useHonoMutation } from "@/lib/hono-client";
-import { QUERY_KEYS } from "@/lib/query";
+import { useContentCreateMutation } from "@/queries/content";
 import { useComposerStore } from "@/stores/composer-store";
-
-function useContentCreateMutation({
-  onSuccess,
-  onError,
-}: {
-  onSuccess?: () => void;
-  onError?: () => void;
-} = {}) {
-  const { workspace } = useWorkspace();
-  const { contentCreateData } = useComposerStore();
-  const queryClient = useQueryClient();
-
-  return useHonoMutation({
-    mutationFn: (api) =>
-      api.workspaces[":workspaceSlug"].content.create.$post({
-        param: { workspaceSlug: workspace.slug },
-        json: contentCreateData,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CONTENT_LIST });
-      onSuccess?.();
-    },
-    onError: () => {
-      onError?.();
-    },
-  });
-}
 
 export function ComposerFooter() {
   const [publishingState, setPublishingState] = useState<{

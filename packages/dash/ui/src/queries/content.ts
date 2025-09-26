@@ -1,8 +1,17 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
+import { useComposerStore } from "@/stores/composer-store";
+
+export const invalidateContentListQueries = async (queryClient: QueryClient) =>
+  queryClient.invalidateQueries({
+    predicate: (query) =>
+      Array.isArray(query.queryKey) && query.queryKey[0] === "content-list",
+    type: "all",
+  });
 
 export interface ContentListPaginationParams {
   page?: number;
@@ -83,12 +92,8 @@ export const useContentGroupPublishMutation = () => {
         param: { workspaceSlug: workspace.slug, id: contentGroupID },
       }),
     onSuccess: () => {},
-    onSettled: () => {
-      queryClient.invalidateQueries({
-        predicate: (q) =>
-          Array.isArray(q.queryKey) && q.queryKey[0] === "content-list",
-        type: "all",
-      });
+    onSettled: async () => {
+      await invalidateContentListQueries(queryClient);
     },
   });
 };
@@ -103,11 +108,7 @@ export const useContentGroupDeleteMutation = (onSettled?: () => void) => {
         param: { workspaceSlug: workspace.slug, id: contentGroupID },
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        predicate: (q) =>
-          Array.isArray(q.queryKey) && q.queryKey[0] === "content-list",
-        type: "all",
-      });
+      await invalidateContentListQueries(queryClient);
       toast.success("Content group deleted");
     },
     onSettled: () => {
@@ -126,11 +127,7 @@ export const useContentDeleteMutation = (onSettled?: () => void) => {
         param: { workspaceSlug: workspace.slug, id: contentID },
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        predicate: (q) =>
-          Array.isArray(q.queryKey) && q.queryKey[0] === "content-list",
-        type: "all",
-      });
+      await invalidateContentListQueries(queryClient);
       toast.success("Content deleted");
     },
     onSettled: () => {
@@ -150,11 +147,7 @@ export const useBatchDeleteMutation = (onSettled?: () => void) => {
         json: { ids },
       }),
     onSuccess: async (data) => {
-      await queryClient.invalidateQueries({
-        predicate: (q) =>
-          Array.isArray(q.queryKey) && q.queryKey[0] === "content-list",
-        type: "all",
-      });
+      await invalidateContentListQueries(queryClient);
 
       if (data.success) {
         toast.success(`Successfully deleted ${data.deleted} item(s)`);
@@ -169,3 +162,30 @@ export const useBatchDeleteMutation = (onSettled?: () => void) => {
     },
   });
 };
+
+export function useContentCreateMutation({
+  onSuccess,
+  onError,
+}: {
+  onSuccess?: () => void;
+  onError?: () => void;
+} = {}) {
+  const { workspace } = useWorkspace();
+  const { contentCreateData } = useComposerStore();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation({
+    mutationFn: (api) =>
+      api.workspaces[":workspaceSlug"].content.create.$post({
+        param: { workspaceSlug: workspace.slug },
+        json: contentCreateData,
+      }),
+    onSuccess: async () => {
+      await invalidateContentListQueries(queryClient);
+      onSuccess?.();
+    },
+    onError: () => {
+      onError?.();
+    },
+  });
+}
