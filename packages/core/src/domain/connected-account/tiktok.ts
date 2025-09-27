@@ -155,13 +155,9 @@ export class TikTokOAuthService {
   ];
 
   private redirectUri(): string {
-    // tiktok does not allow localhost
-    const localOverride = "https://raydev.openpromo.app";
-    const base =
-      process.env.NODE_ENV === "development"
-        ? localOverride
-        : env.VITE_DASHBOARD_URL;
-    return `${base}/api/connected_accounts/tiktok/callback`;
+    // tiktok oauth does not allow localhost
+    // so we use cloudflare tunnel
+    return `${env.VITE_DASHBOARD_URL}/api/connected_accounts/tiktok/callback`;
   }
 
   private get clientKey(): string {
