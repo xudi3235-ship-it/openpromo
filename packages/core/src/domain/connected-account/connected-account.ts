@@ -2,10 +2,11 @@ import { db } from "@core/helpers/db";
 import {
   type ConnectedAccountSelect,
   ConnectedAccountSelectSchema,
+  type ConnectedAccountWithoutSensitive,
   connectedAccount,
 } from "@core/schemas/connected-account.sql";
 import { fn } from "@core/utils/fn";
-import { and, eq } from "drizzle-orm";
+import { and, eq, getTableColumns } from "drizzle-orm";
 import z from "zod";
 import { Actor } from "../../helpers/actor";
 import { facebookOAuthService } from "./facebook";
@@ -56,10 +57,20 @@ export namespace ConnectedAccount {
       return acc;
     },
   );
-  export async function list(): Promise<ConnectedAccountSelect[]> {
+
+  function withoutSensitive() {
+    const {
+      encryptedAccessToken: _,
+      refreshToken: __,
+      ...rest
+    } = getTableColumns(connectedAccount);
+    return rest;
+  }
+
+  export async function list(): Promise<ConnectedAccountWithoutSensitive[]> {
     const workspaceId = Actor.workspaceID();
     const accounts = await db()
-      .select()
+      .select(withoutSensitive())
       .from(connectedAccount)
       .where(eq(connectedAccount.workspaceId, workspaceId));
     return accounts;

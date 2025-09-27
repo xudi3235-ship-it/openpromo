@@ -33,6 +33,7 @@ export const env = createEnv({
     // modal backend
     MODAL_PROXY_AUTH_TOKEN_ID: z.string().min(1),
     MODAL_PROXY_AUTH_TOKEN_SECRET: z.string().min(1),
+    OPENPROMO_SECRET_KEY: z.string().min(32),
     // debug flag
     DEBUG: z.string().optional().default("false"),
   },

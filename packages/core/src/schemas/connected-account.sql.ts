@@ -84,15 +84,41 @@ export const connectedAccount = pgTable(
 export const connectedAccountId = {
   connectedAccountId: ulid("connected_account_id").notNull(),
 };
-export type ConnectedAccountInsert = typeof connectedAccount.$inferInsert;
-export type ConnectedAccountSelect = typeof connectedAccount.$inferSelect;
+
+// select
 export const ConnectedAccountSelectSchema = createSelectSchema(
   connectedAccount,
   {
     platform: Platform,
   },
 );
-export const ConnectedAccountInsertSchema =
-  createInsertSchema(connectedAccount);
-export const ConnectedAccountUpdateSchema =
-  createUpdateSchema(connectedAccount);
+export type ConnectedAccountSelect = z.infer<
+  typeof ConnectedAccountSelectSchema
+>;
+
+const SelectWithoutSensitive = ConnectedAccountSelectSchema.omit({
+  encryptedAccessToken: true,
+  refreshToken: true,
+});
+
+export type ConnectedAccountWithoutSensitive = z.infer<
+  typeof SelectWithoutSensitive
+>;
+
+export const ConnectedAccountInsertSchema = createInsertSchema(
+  connectedAccount,
+  {
+    platform: Platform,
+  },
+);
+
+export type ConnectedAccountInsert = z.infer<
+  typeof ConnectedAccountInsertSchema
+>;
+// update
+export const ConnectedAccountUpdateSchema = createUpdateSchema(
+  connectedAccount,
+  {
+    platform: Platform,
+  },
+);
