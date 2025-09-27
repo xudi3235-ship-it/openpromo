@@ -91,7 +91,9 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
 
               return (
                 <>
-                  <DropdownMenuItem>View content</DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Eye className="w-4 h-4 mr-1" /> View content
+                  </DropdownMenuItem>
                   {isEditable && (
                     <DropdownMenuItem onClick={() => handleEdit(entity)}>
                       <Edit className="w-4 h-4 mr-1" />
