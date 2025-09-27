@@ -115,10 +115,10 @@ export function DynamicWeekView({
     });
   }, [days, events]);
 
-  const isUnpublished = (event: CalendarEvent) =>
+  const getPublishingStatus = (event: CalendarEvent) =>
     matchEntity(event, {
-      content: (entity) => entity.entity.publishingStatus !== "PUBLISHED",
-      group: (entity) => entity.entity.publishingStatus !== "PUBLISHED",
+      content: (entity) => entity.entity.publishingStatus,
+      group: (entity) => entity.entity.publishingStatus,
     });
 
   const isPastEvent = (event: CalendarEvent) => {
@@ -128,12 +128,15 @@ export function DynamicWeekView({
 
   const handleEventClick = (event: CalendarEvent, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isPastEvent(event)) {
-      toast.warning("Past events cannot be opened.");
+    const status = getPublishingStatus(event);
+
+    if (status !== "DRAFT" && isPastEvent(event)) {
+      toast.warning("Past events can't be edited.");
       return;
     }
-    if (!isUnpublished(event)) {
-      toast.warning("Only unpublished events can be edited.");
+
+    if (status === "PUBLISHED") {
+      toast.warning("Published events can't be edited.");
       return;
     }
     onEventSelect(event);
