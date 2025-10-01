@@ -29,7 +29,7 @@ export const reachColumn: ColumnDef<MergedContentEntity> = {
         return (
           <div className="text-sm">
             <div className="flex items-center space-x-1 text-gray-900 dark:text-gray-100">
-              <Eye className="w-4 h-4 text-purple-500" />
+              <Eye className="w-4 h-4" />
               <span className="font-medium">{formatNumber(reach)}</span>
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">

@@ -28,15 +28,15 @@ export const engagementColumn: ColumnDef<MergedContentEntity> = {
         return (
           <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center space-x-1">
-              <Heart className="w-4 h-4 text-red-500" />
+              <Heart className="w-4 h-4" />
               <span>{formatNumber(likes)}</span>
             </div>
             <div className="flex items-center space-x-1">
-              <MessageCircle className="w-4 h-4 text-blue-500" />
+              <MessageCircle className="w-4 h-4" />
               <span>{formatNumber(comments)}</span>
             </div>
             <div className="flex items-center space-x-1">
-              <Share className="w-4 h-4 text-green-500" />
+              <Share className="w-4 h-4" />
               <span>{formatNumber(shares)}</span>
             </div>
           </div>
