@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
+import { useWorkspaceNotifications } from "@/hooks/useWorkspaceNotifications";
 import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
 import { useConnectedAccounts } from "@/queries/connected-account";
@@ -36,6 +37,7 @@ export const Route = createFileRoute(
 
 function WorkspaceComponent() {
   const { workspace } = Route.useLoaderData();
+  useWorkspaceNotifications(workspace.slug);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { accounts, isLoading } = useConnectedAccounts();

@@ -87,7 +87,7 @@ export class WorkspacePusher extends Pusher {
       }),
     );
 
-    await this.startPeriodicEvents(ws);
+    // await this.startPeriodicEvents(ws);
   }
 
   sendMessageToUser(userId: string, message: string) {
@@ -170,6 +170,7 @@ export class WorkspacePusher extends Pusher {
     }
   }
 
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: later
   private async startPeriodicEvents(ws: WebSocket) {
     const workspaceSlug = this.workspaceSlug;
     let eventCount = 0;
