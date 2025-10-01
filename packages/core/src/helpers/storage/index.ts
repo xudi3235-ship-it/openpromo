@@ -16,6 +16,11 @@ export namespace Storage {
 
   export type BucketInput = string | BucketConfig;
 
+  export const PUBLIC_BUCKET: BucketConfig = {
+    name: "public",
+    publicUrl: "https://bucket.openpromo.app",
+  } as const;
+
   export type UploadOptions = Pick<
     PutObjectCommandInput,
     "ContentType" | "Metadata" | "Tagging" | "ACL"

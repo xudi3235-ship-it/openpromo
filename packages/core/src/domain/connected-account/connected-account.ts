@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { db } from "@core/helpers/db";
+import { Storage } from "@core/helpers/storage";
 import {
   type ConnectedAccountSelect,
   ConnectedAccountSelectSchema,
@@ -6,12 +8,15 @@ import {
   connectedAccount,
 } from "@core/schemas/connected-account.sql";
 import { fn } from "@core/utils/fn";
+import { Log } from "@core/utils/log";
 import { and, eq, getTableColumns } from "drizzle-orm";
 import z from "zod";
 import { Actor } from "../../helpers/actor";
 import { facebookOAuthService } from "./facebook";
 import { instagramOAuthService } from "./instagram";
 import { tikTokOAuthService } from "./tiktok";
+
+const log = Log.create({ namespace: "connected-account" });
 
 export namespace ConnectedAccount {
   const inAWeek = Date.now() + 7 * 24 * 3600 * 1000;
@@ -32,11 +37,30 @@ export namespace ConnectedAccount {
     }),
     async (input) => {
       const workspaceId = Actor.workspaceID();
+      const {
+        profilePicUrl: rawProfilePicUrl,
+        metadata: rawMetadata,
+        ...restInput
+      } = input;
+
+      const profilePicUrl = await mirrorProfilePictureToR2(rawProfilePicUrl, {
+        workspaceId,
+        platform: restInput.platform,
+        externalAccountId: restInput.externalAccountId,
+      });
+
+      const metadata = {
+        ...(rawMetadata ?? {}),
+        profilePicUrl,
+      } satisfies Record<string, unknown>;
+
       const [acc] = await db()
         .insert(connectedAccount)
         .values({
           workspaceId,
-          ...input,
+          ...restInput,
+          profilePicUrl,
+          metadata,
         })
         .onConflictDoUpdate({
           target: [
@@ -49,7 +73,8 @@ export namespace ConnectedAccount {
             encryptedAccessToken: input.encryptedAccessToken,
             refreshToken: input.refreshToken,
             tokenExpiresAt: input.tokenExpiresAt,
-            metadata: input.metadata,
+            metadata,
+            profilePicUrl,
           },
         })
         .returning();
@@ -271,4 +296,95 @@ export namespace ConnectedAccount {
       profilePicUrl: null,
     });
   }
+}
+
+async function mirrorProfilePictureToR2(
+  url: string | null | undefined,
+  context: {
+    workspaceId: string;
+    platform: ConnectedAccountSelect["platform"];
+    externalAccountId: string;
+  },
+): Promise<string> {
+  if (!url) return "";
+
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.hostname.endsWith("bucket.openpromo.app")) {
+      return trimmed;
+    }
+  } catch (_error) {
+    log.warn("invalid profile picture url", {
+      url: trimmed,
+      context,
+    });
+    return "";
+  }
+
+  try {
+    const response = await fetch(trimmed);
+    if (!response.ok || !response.body) {
+      throw new Error(
+        `fetch failed: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const contentType =
+      response.headers.get("content-type")?.split(";")[0]?.trim() ||
+      "image/jpeg";
+    const extension = extensionFromContentType(contentType);
+
+    const key = Storage.Key.workspace(
+      context.workspaceId,
+      "connected-accounts",
+      `${context.platform.toLowerCase()}-${context.externalAccountId}-${randomUUID()}.${extension}`,
+    );
+
+    await Storage.upload(
+      key,
+      response.body as ReadableStream<Uint8Array>,
+      Storage.PUBLIC_BUCKET,
+      {
+        contentType,
+        metadata: {
+          workspaceId: context.workspaceId,
+          platform: context.platform,
+          externalAccountId: context.externalAccountId,
+          source: trimmed,
+        },
+      },
+    );
+
+    return Storage.publicUrl(key, Storage.PUBLIC_BUCKET);
+  } catch (error) {
+    log.warn("failed to mirror profile picture", {
+      error: (error as Error).message,
+      sourceUrl: trimmed,
+      context,
+    });
+    return trimmed;
+  }
+}
+
+function extensionFromContentType(contentType: string): string {
+  const map: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/svg+xml": "svg",
+  };
+
+  const normalized = contentType.toLowerCase();
+  if (map[normalized]) return map[normalized];
+
+  const [, subtype] = normalized.split("/");
+  if (subtype && subtype.length <= 5) {
+    return subtype.replace(/[^a-z0-9]/g, "") || "jpg";
+  }
+  return "jpg";
 }

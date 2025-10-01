@@ -249,10 +249,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     }
 
     const prepared: { id: string; key: string; url: string }[] = [];
-    const publicBucket = {
-      name: "public",
-      publicUrl: "https://bucket.openpromo.app",
-    };
+    const publicBucket = Storage.PUBLIC_BUCKET;
 
     for (const photo of photos) {
       const sourceUrl = photo.publicUrl ?? photo.presignedUrl;
@@ -567,10 +564,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     }
 
     const key = Storage.Key.daily(`tiktok-upload-${video.id}`);
-    const publicBucket = {
-      name: "public",
-      publicUrl: "https://bucket.openpromo.app",
-    };
+    const publicBucket = Storage.PUBLIC_BUCKET;
 
     const exists = await Storage.exists(key, publicBucket);
     if (!exists) {
