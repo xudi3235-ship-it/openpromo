@@ -5,6 +5,7 @@ export { EntPendingContentGroup } from "./content-group";
 // Platform-specific feed entities
 export { EntFBFeedPendingContent } from "./facebook-feed";
 export { EntIGFeedPendingContent } from "./instagram-feed";
+export { EntAttachment } from "./media";
 // Content entities
 export { EntPendingContent } from "./pending-content";
 // Platform-specific post entities
