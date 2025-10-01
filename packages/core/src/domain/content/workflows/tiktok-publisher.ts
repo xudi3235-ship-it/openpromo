@@ -1,4 +1,5 @@
 import { EntTikTokFeedPendingContent } from "@core/domain/content/entity";
+import type { TikTokPublishStatusResult } from "@core/domain/content/entity/tiktok-feed";
 import type {
   CoreWorkflowContext,
   CoreWorkflowStep,
@@ -22,30 +23,39 @@ export class TikTokPublisher extends BasePublisher {
       return c.determinePostType();
     });
 
-    let postId: string;
+    let publishStatus: TikTokPublishStatusResult;
     if (postType === "video") {
       await this.prepareVideosIfNeeded(step, pendingContentID);
-      postId = await publishTikTokFeedVideo(ctx, step, pendingContentID);
+      publishStatus = await publishTikTokFeedVideo(ctx, step, pendingContentID);
     } else if (postType === "photo") {
-      postId = await publishTikTokFeedPhoto(ctx, step, pendingContentID);
+      publishStatus = await publishTikTokFeedPhoto(ctx, step, pendingContentID);
     } else {
       throw new WorkflowError(
         `Unsupported TikTok post type for content ${pendingContentID}: ${postType}`,
       );
     }
 
+    const publishedPostId =
+      publishStatus.post_id ??
+      publishStatus.publish_id ??
+      publishStatus.share_id;
+
+    await step.do("finalize tiktok assets", async () => {
+      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+      await c.finalizeTikTokAttachments(publishStatus);
+    });
+
     await step.do("mark tiktok content as published", async () => {
       console.log("// mark tiktok content as published");
       const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-      await c.markAsPublished(postId);
-      // TODO: since tiktok we duplicate video asset from stream -> R2, we
-      // need to delete the R2 assets as well.
+      await c.markAsPublished(publishedPostId ?? publishStatus.publish_id);
     });
 
     log.info("TikTok content published", {
-      postId,
+      postId: publishedPostId,
       contentId: pendingContentID,
       postType,
+      shareUrl: publishStatus.shareUrl,
     });
   }
 }

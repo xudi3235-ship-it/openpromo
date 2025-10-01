@@ -1,4 +1,5 @@
 import { EntTikTokFeedPendingContent } from "@core/domain/content/entity";
+import type { TikTokPublishStatusResult } from "@core/domain/content/entity/tiktok-feed";
 import type {
   CoreWorkflowContext,
   CoreWorkflowStep,
@@ -18,7 +19,7 @@ export async function publishTikTokFeedVideo(
   _ctx: CoreWorkflowContext,
   step: CoreWorkflowStep,
   pendingContentID: string,
-): Promise<string> {
+): Promise<TikTokPublishStatusResult> {
   console.log("// publishTikTokFeedVideo");
   await step.do("load tiktok pending content", async () => {
     const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
@@ -76,13 +77,13 @@ export async function publishTikTokFeedVideo(
     });
   });
 
-  const confirmPublishID = await waitForTikTokPublishCompletion(
+  const finalStatus = await waitForTikTokPublishCompletion(
     step,
     pendingContentID,
     identity,
     publishId,
   );
 
-  log.info("TikTok publish completed", { confirmPublishID });
-  return confirmPublishID;
+  log.info("TikTok publish completed", { publishId: finalStatus.publish_id });
+  return finalStatus;
 }

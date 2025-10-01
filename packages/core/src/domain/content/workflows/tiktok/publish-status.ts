@@ -1,5 +1,8 @@
 import { EntTikTokFeedPendingContent } from "@core/domain/content/entity";
-import type { TikTokIdentityContext } from "@core/domain/content/entity/tiktok-feed";
+import type {
+  TikTokIdentityContext,
+  TikTokPublishStatusResult,
+} from "@core/domain/content/entity/tiktok-feed";
 import type { CoreWorkflowStep } from "@core/helpers/workflow";
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
@@ -16,7 +19,7 @@ export async function waitForTikTokPublishCompletion(
   identity: TikTokIdentityContext,
   publishId: string,
   options: WaitForPublishOptions = {},
-): Promise<string> {
+): Promise<TikTokPublishStatusResult> {
   const maxAttempts = options.maxAttempts ?? 20;
   let attempt = 0;
 
@@ -37,7 +40,7 @@ export async function waitForTikTokPublishCompletion(
     });
 
     if (status.status === "PUBLISH_COMPLETE") {
-      return publishId;
+      return status;
     }
 
     if (status.status === "FAILED") {

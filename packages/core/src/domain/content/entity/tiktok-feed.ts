@@ -305,6 +305,31 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
         key,
         url: Storage.publicUrl(key, publicBucket),
       });
+
+      await this.updateAttachments((attachment) => {
+        if (attachment.type !== "photo" || attachment.id !== photo.id) {
+          return attachment;
+        }
+
+        const metadata = {
+          ...(attachment.metadata as Record<string, unknown> | undefined),
+        };
+        const tiktokMeta = {
+          ...((metadata?.tiktok as Record<string, unknown> | undefined) ?? {}),
+          r2: {
+            key,
+            bucket: publicBucket.name,
+          },
+        } satisfies Record<string, unknown>;
+
+        return {
+          ...attachment,
+          metadata: {
+            ...metadata,
+            tiktok: tiktokMeta,
+          },
+        } satisfies SharedAttachmentSpec;
+      });
     }
 
     return prepared;
@@ -359,6 +384,80 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     }
 
     return { publishId };
+  }
+
+  async finalizeTikTokAttachments(
+    status: TikTokPublishStatusResult,
+  ): Promise<void> {
+    const attachments = this.attachments();
+    if (attachments.length === 0) return;
+
+    const deleteTasks: Array<Promise<unknown>> = [];
+    const shareUrl = status.shareUrl;
+
+    await this.updateAttachments((attachment) => {
+      if (!attachment?.id) return attachment;
+
+      const metadata = {
+        ...(attachment.metadata as Record<string, unknown> | undefined),
+      };
+      const existingTikTokMeta = (metadata?.tiktok ?? {}) as Record<
+        string,
+        unknown
+      >;
+      const tiktokMeta: Record<string, unknown> = { ...existingTikTokMeta };
+
+      const r2Meta = tiktokMeta.r2 as
+        | { key?: string; bucket?: string }
+        | undefined;
+      if (r2Meta?.key) {
+        const bucket = r2Meta.bucket || "public";
+        deleteTasks.push(
+          Storage.deleteFile(r2Meta.key, bucket).catch((error) => {
+            log.warn("failed to delete tiktok r2 asset", {
+              key: r2Meta.key,
+              bucket,
+              error,
+            });
+          }),
+        );
+        delete tiktokMeta.r2;
+        tiktokMeta.r2DeletedAt = new Date().toISOString();
+      }
+
+      const updatedAttachment: SharedAttachmentSpec = { ...attachment };
+
+      if (shareUrl && updatedAttachment.thumbnailUrl !== shareUrl) {
+        updatedAttachment.thumbnailUrl = shareUrl;
+      }
+
+      if (
+        shareUrl &&
+        updatedAttachment.type === "photo" &&
+        updatedAttachment.publicUrl !== shareUrl
+      ) {
+        updatedAttachment.publicUrl = shareUrl;
+      }
+
+      tiktokMeta.publishId = status.publish_id;
+      if (status.post_id) {
+        tiktokMeta.postId = status.post_id;
+      }
+      if (shareUrl) {
+        tiktokMeta.shareUrl = shareUrl;
+      }
+
+      updatedAttachment.metadata = {
+        ...metadata,
+        tiktok: tiktokMeta,
+      } satisfies Record<string, unknown>;
+
+      return updatedAttachment;
+    });
+
+    if (deleteTasks.length > 0) {
+      await Promise.all(deleteTasks);
+    }
   }
 
   async fetchPublishStatus(
@@ -499,6 +598,31 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
       );
     }
 
+    await this.updateAttachments((attachment) => {
+      if (attachment.type !== "video" || attachment.id !== video.id) {
+        return attachment;
+      }
+
+      const metadata = {
+        ...(attachment.metadata as Record<string, unknown> | undefined),
+      };
+      const tiktokMeta = {
+        ...((metadata?.tiktok as Record<string, unknown> | undefined) ?? {}),
+        r2: {
+          key,
+          bucket: publicBucket.name,
+        },
+      } satisfies Record<string, unknown>;
+
+      return {
+        ...attachment,
+        metadata: {
+          ...metadata,
+          tiktok: tiktokMeta,
+        },
+      } satisfies SharedAttachmentSpec;
+    });
+
     return {
       key,
       url: Storage.publicUrl(key, publicBucket),
@@ -549,6 +673,9 @@ export interface TikTokPublishStatus {
   failReason?: string;
   message?: string;
 }
+
+export type TikTokPublishStatusResult = TikTokPublishStatusResponse &
+  TikTokPublishStatus;
 
 type TikTokBasePostInfo = {
   title: string;
