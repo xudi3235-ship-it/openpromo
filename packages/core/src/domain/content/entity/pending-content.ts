@@ -1,4 +1,5 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
+import { notifyContentPublished } from "@core/domain/workspace/notifications";
 import { Actor } from "@core/helpers/actor";
 import { Binding } from "@core/helpers/api-env";
 import { and, count, db, eq } from "@core/helpers/db";
@@ -385,6 +386,21 @@ export class EntPendingContent extends EntUnifiedContentBase {
 
     if (remoteMetadataTasks.length > 0) {
       await Promise.all(remoteMetadataTasks);
+    }
+
+    try {
+      await notifyContentPublished({
+        workspaceId: newOne.workspaceId,
+        contentId: newOne.id,
+        placement: newOne.placement,
+        sourceContentId: newOne.sourceContentId,
+        publishedAt: newOne.updatedAt ?? new Date(),
+      });
+    } catch (error) {
+      console.warn("failed to send content published notification", {
+        contentId: newOne.id,
+        error,
+      });
     }
 
     if (!groupID) return;

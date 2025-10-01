@@ -5,6 +5,7 @@ import {
 } from "@core/helpers/auth";
 import { Pusher } from "@core/helpers/pusher";
 import * as cookie from "cookie";
+import type { WorkspaceNotification } from "./notifications";
 
 const USER_SESSION_LIMIT = 10;
 
@@ -132,6 +133,17 @@ export class WorkspacePusher extends Pusher {
       `Sent message to ${sentCount} sessions from all users:`,
       message,
     );
+  }
+
+  async sendNotification(notification: WorkspaceNotification) {
+    const payload = {
+      type: "notification" as const,
+      workspaceSlug: this.workspaceSlug,
+      timestamp: Date.now(),
+      notification,
+    };
+
+    this.sendMessageToAllUsers(JSON.stringify(payload));
   }
 
   protected override async onWebSocketMessage(ws: WebSocket, message: unknown) {
