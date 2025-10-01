@@ -103,7 +103,25 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     };
   }
 
-  assertReadyForPublishing() {
+  determinePostType(): "video" | "photo" {
+    const hasVideo = this.hasVideoAttachment();
+    const hasPhoto = this.hasPhotoAttachment();
+
+    if (hasVideo && hasPhoto) {
+      throw new WorkflowError(
+        `TikTok feed content ${this.data.id} cannot mix video and photo attachments`,
+      );
+    }
+
+    if (hasVideo) return "video";
+    if (hasPhoto) return "photo";
+
+    throw new WorkflowError(
+      `TikTok feed content ${this.data.id} requires either a video or photo attachment`,
+    );
+  }
+
+  assertReadyForVideoPublishing() {
     const hasVideo = this.hasVideoAttachment();
     if (!hasVideo) {
       throw new WorkflowError(
@@ -111,6 +129,29 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
       );
     }
     this.ensureSingleVideoAttachment();
+  }
+
+  assertReadyForPhotoPublishing() {
+    if (this.hasVideoAttachment()) {
+      throw new WorkflowError(
+        `TikTok feed content ${this.data.id} has a video attachment, expected only photos`,
+      );
+    }
+
+    const photos = this.photosAttachments();
+    if (photos.length === 0) {
+      throw new WorkflowError(
+        `TikTok feed content ${this.data.id} must include at least one photo attachment`,
+      );
+    }
+
+    for (const photo of photos) {
+      if (!photo.publicUrl && !photo.presignedUrl) {
+        throw new WorkflowError(
+          `TikTok photo attachment ${photo.id ?? "unknown"} missing public or presigned URL`,
+        );
+      }
+    }
   }
 
   async queryCreatorInfo(
@@ -125,9 +166,9 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     return data;
   }
 
-  async initDirectPostFromUrl(
+  async initDirectVideoPostFromUrl(
     identity: TikTokIdentityContext,
-    params: TikTokDirectPostParams,
+    params: TikTokVideoDirectPostParams,
   ): Promise<{ publishId: string; uploadUrl?: string }> {
     if (!params.videoUrl || !/^https?:\/\//i.test(params.videoUrl)) {
       throw new WorkflowError("TikTok videoUrl must be an absolute URL");
@@ -136,7 +177,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     const normalizedCaption = this.normalizeCaption(params.caption);
     const postInfoBase = this.buildPostInfo(normalizedCaption);
 
-    const sourceInfo: TikTokDirectPostSourceInfo = {
+    const sourceInfo: TikTokVideoDirectPostSourceInfo = {
       source: "PULL_FROM_URL",
       video_url: params.videoUrl,
     };
@@ -163,7 +204,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
       ?.map((id) => id.trim())
       .filter((id) => id.length > 0);
 
-    const payload: TikTokDirectPostInitPayload = {
+    const payload: TikTokVideoDirectPostInitPayload = {
       post_info: {
         ...postInfoBase,
         privacy_level: params.privacyLevel ?? "PUBLIC_TO_EVERYONE",
@@ -178,7 +219,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
       source_info: sourceInfo,
       post_mode: "DIRECT_POST",
       media_type: "VIDEO",
-    } satisfies TikTokDirectPostInitPayload;
+    } satisfies TikTokVideoDirectPostInitPayload;
 
     const data = await this.tiktokPost<TikTokVideoInitResponse>(
       identity,
@@ -195,6 +236,129 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
       publishId,
       uploadUrl: data.upload_url,
     };
+  }
+
+  async ensurePhotosAvailableOnVerifiedDomain(): Promise<
+    { id: string; key: string; url: string }[]
+  > {
+    const photos = this.photosAttachments();
+    if (photos.length === 0) {
+      throw new WorkflowError(
+        `TikTok feed content ${this.data.id} has no photo attachments to prepare`,
+      );
+    }
+
+    const prepared: { id: string; key: string; url: string }[] = [];
+    const publicBucket = {
+      name: "public",
+      publicUrl: "https://bucket.openpromo.app",
+    };
+
+    for (const photo of photos) {
+      const sourceUrl = photo.publicUrl ?? photo.presignedUrl;
+      if (!sourceUrl) {
+        throw new WorkflowError(
+          `TikTok photo attachment ${photo.id ?? "unknown"} missing source URL`,
+        );
+      }
+
+      const key = Storage.Key.daily(`tiktok-photo-${this.data.id}-${photo.id}`);
+
+      const exists = await Storage.exists(key, publicBucket).catch((error) => {
+        log.warn("failed to check existing TikTok photo object", {
+          key,
+          error,
+        });
+        return false;
+      });
+
+      if (!exists) {
+        const response = await fetch(sourceUrl);
+        if (!response.ok || !response.body) {
+          throw new WorkflowError(
+            `Failed to fetch photo ${photo.id ?? "unknown"} for TikTok upload: ${response.status} ${response.statusText}`,
+          );
+        }
+
+        const contentType =
+          photo.mimeType ||
+          response.headers.get("content-type") ||
+          "image/jpeg";
+
+        await Storage.upload(
+          key,
+          response.body as ReadableStream<Uint8Array>,
+          publicBucket,
+          {
+            contentType,
+            metadata: {
+              source: "cloudflare-images",
+              attachmentId: photo.id,
+              contentId: this.data.id,
+            },
+          },
+        );
+      }
+
+      prepared.push({
+        id: photo.id,
+        key,
+        url: Storage.publicUrl(key, publicBucket),
+      });
+    }
+
+    return prepared;
+  }
+
+  async initDirectPhotoPostFromUrls(
+    identity: TikTokIdentityContext,
+    params: TikTokPhotoDirectPostParams,
+  ): Promise<{ publishId: string }> {
+    const photoUrls = params.photoUrls
+      ?.map((url) => url.trim())
+      .filter(Boolean);
+    if (!photoUrls || photoUrls.length === 0) {
+      throw new WorkflowError(
+        "TikTok photo post requires at least one photo URL",
+      );
+    }
+
+    const normalizedCaption = this.normalizeCaption(params.caption);
+    const postInfoBase = this.buildPostInfo(normalizedCaption);
+
+    console.log({ info: JSON.stringify(postInfoBase) });
+
+    const payload: TikTokPhotoDirectPostInitPayload = {
+      post_info: {
+        ...postInfoBase,
+        privacy_level: params.privacyLevel ?? "PUBLIC_TO_EVERYONE",
+        disable_comment: params.disableComment ?? false,
+        auto_add_music: params.autoAddMusic ?? true,
+        allow_advanced_boost: params.allowAdvancedBoost ?? false,
+        mention_user_ids: params.mentionUserIds,
+        branded_content_tag: params.brandedContentTag,
+      },
+      source_info: {
+        source: "PULL_FROM_URL",
+        photo_cover_index: params.photoCoverIndex ?? 1,
+        photo_images: photoUrls,
+      },
+      post_mode: "DIRECT_POST",
+      media_type: "PHOTO",
+    } satisfies TikTokPhotoDirectPostInitPayload;
+
+    const data = await this.tiktokPost<TikTokPhotoInitResponse>(
+      identity,
+      "/v2/post/publish/content/init/",
+      payload,
+    );
+
+    const publishId = data.publish_id;
+    if (!publishId) {
+      throw new WorkflowError("TikTok photo init response missing publish_id");
+    }
+
+    return { publishId };
   }
 
   async fetchPublishStatus(
@@ -286,10 +450,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     return {
       title: sanitized?.slice(0, 80),
       description: sanitized,
-    } satisfies Pick<
-      TikTokDirectPostInitPayload["post_info"],
-      "title" | "description"
-    >;
+    } satisfies TikTokBasePostInfo;
   }
 
   private normalizeCaption(caption?: string) {
@@ -368,6 +529,10 @@ interface TikTokVideoInitResponse {
   upload_url?: string;
 }
 
+interface TikTokPhotoInitResponse {
+  publish_id: string;
+}
+
 interface TikTokPublishStatusResponse {
   publish_id: string;
   status: string;
@@ -385,7 +550,12 @@ export interface TikTokPublishStatus {
   message?: string;
 }
 
-export interface TikTokDirectPostParams {
+type TikTokBasePostInfo = {
+  title: string;
+  description?: string;
+};
+
+export interface TikTokVideoDirectPostParams {
   videoUrl: string;
   caption?: string;
   mimeType?: string;
@@ -404,17 +574,36 @@ export interface TikTokDirectPostParams {
   };
 }
 
-interface TikTokDirectPostSourceInfo {
+export interface TikTokPhotoDirectPostParams {
+  photoUrls: string[];
+  caption?: string;
+  privacyLevel?: TikTokPrivacyLevel;
+  disableComment?: boolean;
+  autoAddMusic?: boolean;
+  allowAdvancedBoost?: boolean;
+  mentionUserIds?: string[];
+  brandedContentTag?: {
+    business_partner_id: string;
+    display_on_video: boolean;
+  };
+  photoCoverIndex?: number;
+}
+
+interface TikTokVideoDirectPostSourceInfo {
   source: "PULL_FROM_URL" | "FILE_UPLOAD";
   video_url: string;
   video_format?: string;
   video_cover_timestamp_ms?: number[];
 }
 
-interface TikTokDirectPostInitPayload {
-  post_info: {
-    title: string;
-    description?: string;
+interface TikTokPhotoDirectPostSourceInfo {
+  source: "PULL_FROM_URL";
+  photo_images: string[];
+  photo_cover_index?: number;
+}
+
+interface TikTokVideoDirectPostInitPayload {
+  post_info: TikTokBasePostInfo & {
     privacy_level: TikTokPrivacyLevel;
     disable_comment: boolean;
     disable_duet: boolean;
@@ -422,9 +611,23 @@ interface TikTokDirectPostInitPayload {
     auto_add_music: boolean;
     allow_advanced_boost: boolean;
     mention_user_ids?: string[];
-    branded_content_tag?: TikTokDirectPostParams["brandedContentTag"];
+    branded_content_tag?: TikTokVideoDirectPostParams["brandedContentTag"];
   };
-  source_info: TikTokDirectPostSourceInfo;
+  source_info: TikTokVideoDirectPostSourceInfo;
   post_mode: "DIRECT_POST";
   media_type: "VIDEO";
+}
+
+interface TikTokPhotoDirectPostInitPayload {
+  post_info: TikTokBasePostInfo & {
+    privacy_level: TikTokPrivacyLevel;
+    disable_comment: boolean;
+    auto_add_music: boolean;
+    allow_advanced_boost: boolean;
+    mention_user_ids?: string[];
+    branded_content_tag?: TikTokPhotoDirectPostParams["brandedContentTag"];
+  };
+  source_info: TikTokPhotoDirectPostSourceInfo;
+  post_mode: "DIRECT_POST";
+  media_type: "PHOTO";
 }

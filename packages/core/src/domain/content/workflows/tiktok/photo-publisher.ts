@@ -7,38 +7,17 @@ import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 import { waitForTikTokPublishCompletion } from "./publish-status";
 
-const log = Log.create({ namespace: "tiktok-single-video" });
+const log = Log.create({ namespace: "tiktok-photo" });
 
-/**
- * https://developers.tiktok.com/doc/content-posting-api-get-started
- *
- * use direct post api
- */
-export async function publishTikTokFeedVideo(
+export async function publishTikTokFeedPhoto(
   _ctx: CoreWorkflowContext,
   step: CoreWorkflowStep,
   pendingContentID: string,
 ): Promise<string> {
-  console.log("// publishTikTokFeedVideo");
   await step.do("load tiktok pending content", async () => {
     const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-    c.assertReadyForVideoPublishing();
+    c.assertReadyForPhotoPublishing();
   });
-
-  const videoAttachment = await step.do(
-    "prepare videos if needed",
-    async () => {
-      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-      const videoAttachment = c.ensureSingleVideoAttachment();
-      return videoAttachment;
-    },
-  );
-
-  if (!videoAttachment.presignedUrl) {
-    throw new WorkflowError(
-      `TikTok video attachment ${videoAttachment.id} missing presignedUrl`,
-    );
-  }
 
   const identity = await step.do("resolve tiktok identity", async () => {
     const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
@@ -46,18 +25,22 @@ export async function publishTikTokFeedVideo(
   });
   console.log("resolved tiktok identity", identity);
 
-  const verifiedVideoUrl = await step.do(
-    "ensure video available on verified domain",
+  const preparedPhotos = await step.do(
+    "ensure photos available on verified domain",
     async () => {
       const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-      const { url } = await c.ensureVideoAvailableOnVerifiedDomain({
-        id: videoAttachment.id,
-        presignedUrl: videoAttachment.presignedUrl as string,
-        mimeType: videoAttachment.mimeType,
-      });
-      return url;
+      return await c.ensurePhotosAvailableOnVerifiedDomain();
     },
   );
+
+  console.log("prepared photos", preparedPhotos);
+
+  const photoUrls = preparedPhotos.map((photo) => photo.url);
+  if (photoUrls.length === 0) {
+    throw new WorkflowError(
+      `No prepared photo URLs found for TikTok content ${pendingContentID}`,
+    );
+  }
 
   await step.do("query tiktok creator info", async () => {
     const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
@@ -65,14 +48,20 @@ export async function publishTikTokFeedVideo(
     console.log("tiktok creator info", info);
   });
 
-  const { publishId } = await step.do("init tiktok video publish", async () => {
-    console.log("init tiktok video publish");
+  const photoCoverIndex = 0;
+
+  const { publishId } = await step.do("init tiktok photo publish", async () => {
+    console.log("init tiktok photo publish");
     const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-    return await c.initDirectVideoPostFromUrl(identity, {
-      videoUrl: verifiedVideoUrl,
+    return await c.initDirectPhotoPostFromUrls(identity, {
+      photoUrls,
       caption: c.caption(),
-      mimeType: videoAttachment.mimeType,
       privacyLevel: "SELF_ONLY",
+      disableComment: false,
+      autoAddMusic: true,
+      allowAdvancedBoost: false,
+      mentionUserIds: undefined,
+      photoCoverIndex,
     });
   });
 
@@ -83,6 +72,6 @@ export async function publishTikTokFeedVideo(
     publishId,
   );
 
-  log.info("TikTok publish completed", { confirmPublishID });
+  log.info("TikTok photo publish completed", { confirmPublishID });
   return confirmPublishID;
 }
