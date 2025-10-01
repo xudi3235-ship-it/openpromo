@@ -49,7 +49,7 @@ export async function publishTikTokFeedPhoto(
     console.log("tiktok creator info", info);
   });
 
-  const photoCoverIndex = 0;
+  const photoCoverIndex = 0; // TODO: allow user to select cover photo
 
   const { publishId } = await step.do("init tiktok photo publish", async () => {
     console.log("init tiktok photo publish");
