@@ -8,7 +8,9 @@
     "paths": {
       "@/*": ["./src/*"],
       "@worker/*": ["../worker/src/*"],
-      "@core/*": ["../../core/src/*"]
+      "@core/*": ["../../core/src/*"],
+      "@shared": ["../../shared/src/index.ts"],
+      "@shared/*": ["../../shared/src/*"]
     },
     "types": ["vite/client"],
     "erasableSyntaxOnly": false

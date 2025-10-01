@@ -2,36 +2,20 @@ import { Binding } from "@core/helpers/api-env";
 import { db } from "@core/helpers/db";
 import { workspacesTable } from "@core/schemas/workspaces.sql";
 import { Log } from "@core/utils/log";
+import type { WorkspaceNotification } from "@shared/workspace/notifications";
 import { eq } from "drizzle-orm";
-import { z } from "zod";
+
+export type {
+  WorkspaceNotification,
+  WorkspaceNotificationEnvelope,
+} from "@shared/workspace/notifications";
+export {
+  ContentPublishedNotificationSchema,
+  WorkspaceNotificationEnvelopeSchema,
+  WorkspaceNotificationSchema,
+} from "@shared/workspace/notifications";
 
 const log = Log.create({ namespace: "workspace-notifications" });
-
-export const ContentPublishedNotificationSchema = z.object({
-  type: z.literal("content.published"),
-  contentId: z.string(),
-  placement: z.string(),
-  sourceContentId: z.string().nullish(),
-  shareUrl: z.string().url().optional(),
-  publishedAt: z.string(),
-});
-
-export const WorkspaceNotificationSchema = z.discriminatedUnion("type", [
-  ContentPublishedNotificationSchema,
-]);
-
-export type WorkspaceNotification = z.infer<typeof WorkspaceNotificationSchema>;
-
-export const WorkspaceNotificationEnvelopeSchema = z.object({
-  type: z.literal("notification"),
-  workspaceSlug: z.string(),
-  timestamp: z.number(),
-  notification: WorkspaceNotificationSchema,
-});
-
-export type WorkspaceNotificationEnvelope = z.infer<
-  typeof WorkspaceNotificationEnvelopeSchema
->;
 
 const workspaceSlugCache = new Map<string, string>();
 

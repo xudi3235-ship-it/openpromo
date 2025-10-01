@@ -1,0 +1,11 @@
+{
+  "name": "@openpromo/shared",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  }
+}

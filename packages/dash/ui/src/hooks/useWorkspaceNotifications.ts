@@ -1,7 +1,8 @@
 import type {
   WorkspaceNotification,
   WorkspaceNotificationEnvelope,
-} from "@core/domain/workspace/notifications";
+} from "@shared";
+import { WorkspaceNotificationEnvelopeSchema } from "@shared/workspace/notifications";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -73,11 +74,13 @@ export function useWorkspaceNotifications(
       const receivedAt = Date.now();
       try {
         const parsed = JSON.parse(event.data) as unknown;
+        const notificationResult =
+          WorkspaceNotificationEnvelopeSchema.safeParse(parsed);
 
-        if (isWorkspaceNotificationEnvelope(parsed)) {
+        if (notificationResult.success) {
           const normalized: WorkspaceNotificationEnvelope = {
-            ...parsed,
-            timestamp: parsed.timestamp ?? receivedAt,
+            ...notificationResult.data,
+            timestamp: notificationResult.data.timestamp ?? receivedAt,
           };
 
           setNotifications((prev) => [...prev, normalized]);
@@ -178,17 +181,4 @@ function displayNotificationToast(notification: WorkspaceNotification) {
       description: `Published to ${placement}`,
     });
   }
-}
-
-function isWorkspaceNotificationEnvelope(
-  value: unknown,
-): value is WorkspaceNotificationEnvelope & { timestamp?: number } {
-  if (!value || typeof value !== "object") return false;
-  const record = value as Record<string, unknown>;
-  if (record.type !== "notification") return false;
-  if (typeof record.workspaceSlug !== "string") return false;
-  if (!record.notification || typeof record.notification !== "object") {
-    return false;
-  }
-  return true;
 }

@@ -97,6 +97,9 @@ importers:
       '@neondatabase/serverless':
         specifier: ^1.0.1
         version: 1.0.1
+      '@openpromo/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@t3-oss/env-core':
         specifier: ^0.13.8
         version: 0.13.8(typescript@5.9.2)(valibot@1.1.0(typescript@5.9.2))(zod@4.1.0)
@@ -352,6 +355,12 @@ importers:
       tsx:
         specifier: ^4
         version: 4.20.3
+
+  packages/shared:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.0
 
   packages/ui:
     dependencies:
@@ -684,6 +693,9 @@ importers:
       '@astrojs/sitemap':
         specifier: ^3.6.0
         version: 3.6.0
+      '@openpromo/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@openpromo/ui':
         specifier: workspace:*
         version: link:../ui
