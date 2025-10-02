@@ -1,10 +1,8 @@
-import type {
-  WorkspaceNotification,
-  WorkspaceNotificationEnvelope,
-} from "@shared";
+import type { WorkspaceNotificationEnvelope } from "@shared";
 import { WorkspaceNotificationEnvelopeSchema } from "@shared/workspace/notifications";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useNotificationToast } from "./useNotificationToast";
 
 type GenericEvent = {
   type: string;
@@ -41,6 +39,7 @@ export function useWorkspaceNotifications(
   const [notifications, setNotifications] = useState<
     WorkspaceNotificationEnvelope[]
   >([]);
+  const showNotificationToast = useNotificationToast();
 
   const addEvent = useCallback(
     (event: GenericEvent) => {
@@ -86,7 +85,7 @@ export function useWorkspaceNotifications(
           setNotifications((prev) => [...prev, normalized]);
 
           if (autoToast) {
-            displayNotificationToast(normalized.notification);
+            showNotificationToast(normalized.notification);
           }
 
           onNotification?.(normalized);
@@ -139,7 +138,13 @@ export function useWorkspaceNotifications(
       socket.close();
       socketRef.current = null;
     };
-  }, [workspaceSlug, addEvent, autoToast, onNotification]);
+  }, [
+    workspaceSlug,
+    addEvent,
+    autoToast,
+    onNotification,
+    showNotificationToast,
+  ]);
 
   const sendJson = useCallback((payload: unknown) => {
     const socket = socketRef.current;
@@ -172,13 +177,4 @@ export function useWorkspaceNotifications(
     }),
     [status, events, notifications, sendJson, clearEvents],
   );
-}
-
-function displayNotificationToast(notification: WorkspaceNotification) {
-  if (notification.type === "content.published") {
-    const placement = notification.placement.replace(/_/g, " ");
-    toast.success("Content Published", {
-      description: `Published to ${placement}`,
-    });
-  }
 }
