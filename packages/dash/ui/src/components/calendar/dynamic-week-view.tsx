@@ -12,7 +12,6 @@ import {
   startOfDay,
   startOfWeek,
 } from "date-fns";
-import { Plus } from "lucide-react";
 import type React from "react";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -247,11 +246,6 @@ export function DynamicWeekView({
               onClick={() => handleCreateEvent(day)}
             >
               <div className="space-y-2 h-full">
-                {isCreatableDay(day) && (
-                  <div className="pointer-events-none absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-accent/80 text-accent-foreground shadow-sm">
-                    <Plus className="h-3 w-3" />
-                  </div>
-                )}
                 {/* Events list */}
                 {eventsForDay.map((event) => {
                   const eventData = getEventData(event);
