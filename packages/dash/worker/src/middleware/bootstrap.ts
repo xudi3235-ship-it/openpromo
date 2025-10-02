@@ -20,6 +20,7 @@ export const bootstrap =
           WORKFLOW: c.env.WORKFLOW,
           ContainerBackend: c.env.ContainerBackend,
           Bucket: c.env.Bucket,
+          ContentBackfillWorkflow: c.env.ContentBackfillWorkflow,
         },
         next,
       ),

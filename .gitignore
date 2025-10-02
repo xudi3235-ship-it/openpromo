@@ -18,7 +18,7 @@ node_modules
 .DS_Store
 
 # typescript
-tsconfig.tsbuildinfo
+*.tsbuildinfo
 
 # wip stuff
 infra/wrangler

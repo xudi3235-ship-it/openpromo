@@ -18,8 +18,8 @@ import {
 } from "@core/schemas/content.sql";
 import { and, asc, count, eq, gte, lte } from "drizzle-orm";
 import { Hono } from "hono";
-import { AppError } from "packages/dash/worker/src/helpers/error";
 import * as z from "zod";
+import { AppError } from "../../../../helpers/error";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
 

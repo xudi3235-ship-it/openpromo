@@ -4,7 +4,7 @@
   "scripts": {
     "predev": "pnpm -w --filter @openpromo/core run db:migrate && pnpm secrets:sync",
     "dev": "vite --port 3000",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b --noEmit",
     "build": "vite build",
     "build:staging": "CLOUDFLARE_ENV=staging vite build",
     "build:production": "CLOUDFLARE_ENV=production vite build",

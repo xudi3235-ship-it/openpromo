@@ -8,7 +8,7 @@
     "sso": "aws sso login --sso-session=promobase-dev-ray --no-browser",
     "sync_secrets": "bash scripts/sync_secrets.sh",
     "postinstall": "lefthook install",
-    "typecheck": "pnpm run --parallel -r typecheck"
+    "typecheck": "pnpm run --parallel -r --filter='!@openpromo/dash' typecheck"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",

@@ -1,4 +1,4 @@
-import { Button } from "../ui/button";
+import { Button } from "@openpromo/ui/components/button";
 
 export default function MaintenanceError() {
   return (

@@ -33,13 +33,13 @@ export function OptimizedComposerComponent() {
     (state) => state.contentCreateData.base.message,
   );
   const selectedAccounts = useComposerStore((state) => state.selectedAccounts);
-  const setMessage = useComposerStore((state) => state.setPlacementSpecs);
+  const setMessage = useComposerStore((state) => state.setMessage);
 
   return (
     <div>
       <p>Current message: {message}</p>
       <p>Selected accounts: {selectedAccounts.length}</p>
-      <button onClick={() => setMessage({ base: { message: "Updated!" } })}>
+      <button type="button" onClick={() => setMessage("Updated!")}>
         Update Message
       </button>
     </div>

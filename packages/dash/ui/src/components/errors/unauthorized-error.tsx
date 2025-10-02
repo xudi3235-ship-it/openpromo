@@ -1,5 +1,5 @@
+import { Button } from "@openpromo/ui/components/button";
 import { useRouter } from "@tanstack/react-router";
-import { Button } from "../ui/button";
 
 interface UnauthorizedErrorProps {
   login: () => void;

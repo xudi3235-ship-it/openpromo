@@ -1,6 +1,6 @@
 import type * as React from "react";
-import { Typography } from "@/components/typography";
-import { cn } from "@/lib/utils";
+import { Typography } from "../components/typography";
+import { cn } from "../lib/utils";
 
 interface PageLayoutProps {
   title?: string;

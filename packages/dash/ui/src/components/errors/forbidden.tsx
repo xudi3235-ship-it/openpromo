@@ -1,5 +1,5 @@
+import { Button } from "@openpromo/ui/components/button";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Button } from "../ui/button";
 
 export default function ForbiddenError() {
   const navigate = useNavigate();

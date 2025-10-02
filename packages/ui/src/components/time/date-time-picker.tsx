@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { CalendarIcon, Clock2Icon } from "lucide-react";
 import * as React from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils";
 import { Button } from "../button";
 import { Calendar } from "../calendar";
 import { Card, CardContent, CardFooter } from "../card";
