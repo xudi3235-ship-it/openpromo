@@ -1,0 +1,1 @@
+ALTER TABLE "connected_account" ADD COLUMN "last_backfill_at" timestamp with time zone;

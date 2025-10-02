@@ -127,6 +127,13 @@
       "when": 1758776117519,
       "tag": "0017_omniscient_monster_badoon",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1759365841893,
+      "tag": "0018_panoramic_prism",
+      "breakpoints": true
     }
   ]
 }
