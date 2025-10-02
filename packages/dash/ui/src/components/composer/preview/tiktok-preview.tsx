@@ -15,9 +15,16 @@ import { useComposerPreview } from "@/stores/composer-preview-store";
 const handleFromName = (name?: string) =>
   name ? name.toLowerCase().replace(/[^a-z0-9]+/g, "_") : "openpromo";
 
-export function TikTokPreview() {
+interface TikTokPreviewProps {
+  accountId?: string;
+}
+
+export function TikTokPreview({ accountId }: TikTokPreviewProps) {
   const { workspace } = useWorkspace();
-  const previewData = useComposerPreview({ platform: "TIKTOK" });
+  const previewData = useComposerPreview({
+    platform: "TIKTOK",
+    accountId,
+  });
   const attachments = previewData.attachments ?? [];
   const { renderAttachment } = useAttachmentRenderer({ attachments });
 

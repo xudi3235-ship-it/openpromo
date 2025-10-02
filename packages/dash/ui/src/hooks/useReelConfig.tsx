@@ -95,10 +95,11 @@ const PLATFORM_CONFIGS: Record<string, ReelPlatformConfig> = {
   },
 };
 
-export function useReelConfig(platform: string) {
+export function useReelConfig(platform: string, accountId?: string) {
   const { workspace } = useWorkspace();
   const previewData = useComposerPreview({
     platform: platform.toUpperCase() as Platform,
+    accountId,
   });
 
   const config = PLATFORM_CONFIGS[platform] || PLATFORM_CONFIGS.instagram;

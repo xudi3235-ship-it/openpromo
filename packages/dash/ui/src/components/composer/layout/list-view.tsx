@@ -1,50 +1,115 @@
-import type { Platform } from "@core/schemas/connected-account.sql";
+import { Button } from "@openpromo/ui/components/button";
+import { cn } from "@openpromo/ui/lib/utils";
 import { FBFeedPreview } from "@/components/composer/preview/fb-feed-preview";
 import { FBReelPreview } from "@/components/composer/preview/fb-reel-preview";
 import { IGFeedPreview } from "@/components/composer/preview/ig-feed-preview";
 import { IGReelPreview } from "@/components/composer/preview/ig-reel-preview";
 import { TikTokPreview } from "@/components/composer/preview/tiktok-preview";
-import { PlatformSelector } from "./platform-selector";
+import { getPlatformMeta } from "@/components/composer/utils/platform-style";
+import type { ConnectedAccount } from "@/lib/hono-client";
+
+interface AccountSelectorProps {
+  accounts: ConnectedAccount[];
+  selectedAccountId: string | null;
+  onSelectAccount: (accountId: string) => void;
+  activeAccountId: string | null;
+}
+
+function AccountSelector({
+  accounts,
+  selectedAccountId,
+  onSelectAccount,
+  activeAccountId,
+}: AccountSelectorProps) {
+  return (
+    <div className="flex flex-wrap justify-center gap-2">
+      {accounts.map((account) => {
+        const meta = getPlatformMeta(account.platform);
+        const Icon = meta.icon;
+        const isSelected = selectedAccountId === account.id;
+        const isActive = activeAccountId === account.id;
+        const accountLabel = account.accountName || meta.label;
+
+        return (
+          <Button
+            key={account.id}
+            variant={isSelected ? "default" : "outline"}
+            size="sm"
+            className={cn(
+              "h-8 px-3 flex items-center gap-2 text-xs",
+              !isSelected && "bg-background",
+            )}
+            onClick={() => onSelectAccount(account.id)}
+          >
+            <Icon className={cn("h-3.5 w-3.5", meta.accentTextClass)} />
+            <span className="max-w-[120px] truncate" title={accountLabel}>
+              {accountLabel}
+            </span>
+            {isActive && (
+              <span className="text-[10px] text-muted-foreground">
+                (custom)
+              </span>
+            )}
+          </Button>
+        );
+      })}
+    </div>
+  );
+}
 
 interface ListViewProps {
-  selectedPreview: Platform;
-  onSelectPreview: (platform: Platform) => void;
-  showFacebook: boolean;
-  showInstagram: boolean;
-  showTikTok: boolean;
+  accounts: ConnectedAccount[];
+  selectedAccountId: string | null;
+  onSelectAccount: (accountId: string) => void;
+  activeAccountId: string | null;
   isReel: boolean;
 }
 
 export function ListView({
-  selectedPreview,
-  onSelectPreview,
-  showFacebook,
-  showInstagram,
-  showTikTok,
+  accounts,
+  selectedAccountId,
+  onSelectAccount,
+  activeAccountId,
   isReel,
 }: ListViewProps) {
-  const FacebookPreview = isReel ? FBReelPreview : FBFeedPreview;
-  const InstagramPreview = isReel ? IGReelPreview : IGFeedPreview;
-  const TikTokFeedPreview = TikTokPreview;
+  if (accounts.length === 0) {
+    return (
+      <div className="max-w-md mx-auto text-sm text-muted-foreground text-center p-6">
+        Connect and enable an account to preview your post.
+      </div>
+    );
+  }
+
+  const selectedAccount =
+    accounts.find((account) => account.id === selectedAccountId) || accounts[0];
+
+  const renderPreview = (account: ConnectedAccount) => {
+    switch (account.platform) {
+      case "FACEBOOK": {
+        const Component = isReel ? FBReelPreview : FBFeedPreview;
+        return <Component accountId={account.id} />;
+      }
+      case "INSTAGRAM": {
+        const Component = isReel ? IGReelPreview : IGFeedPreview;
+        return <Component accountId={account.id} />;
+      }
+      case "TIKTOK":
+      default:
+        return <TikTokPreview accountId={account.id} />;
+    }
+  };
 
   return (
     <div className="max-w-md mx-auto space-y-4">
-      {/* Platform Selector */}
-      <PlatformSelector
-        selectedPreview={selectedPreview}
-        onSelectPreview={onSelectPreview}
-        showFacebook={showFacebook}
-        showInstagram={showInstagram}
-        showTikTok={showTikTok}
+      <AccountSelector
+        accounts={accounts}
+        selectedAccountId={selectedAccount.id}
+        onSelectAccount={onSelectAccount}
+        activeAccountId={activeAccountId}
       />
 
-      {/* Preview */}
-      <div>
-        {selectedPreview === "FACEBOOK" && showFacebook && <FacebookPreview />}
-        {selectedPreview === "INSTAGRAM" && showInstagram && (
-          <InstagramPreview />
-        )}
-        {selectedPreview === "TIKTOK" && showTikTok && <TikTokFeedPreview />}
+      <div className="flex justify-center">
+        {renderPreview(selectedAccount)}
       </div>
     </div>
   );

@@ -12,7 +12,11 @@ import { useReelConfig } from "@/hooks/useReelConfig";
 import { useReelControls } from "@/hooks/useReelControls";
 import { PreviewMediaNullState } from "./null-state";
 
-export function IGReelPreview() {
+interface IGReelPreviewProps {
+  accountId?: string;
+}
+
+export function IGReelPreview({ accountId }: IGReelPreviewProps) {
   const {
     isPlaying,
     isMuted,
@@ -23,9 +27,12 @@ export function IGReelPreview() {
     toggleMute,
     renderVideo,
     renderLocalVideoControls,
-  } = useReelControls("INSTAGRAM");
+  } = useReelControls({ platform: "INSTAGRAM", accountId });
 
-  const { config, username, renderAvatar } = useReelConfig("instagram");
+  const { config, username, renderAvatar } = useReelConfig(
+    "instagram",
+    accountId,
+  );
   const ShareIcon = config.icons.share;
 
   return (

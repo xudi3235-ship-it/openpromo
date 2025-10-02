@@ -3,93 +3,70 @@ import { FBReelPreview } from "@/components/composer/preview/fb-reel-preview";
 import { IGFeedPreview } from "@/components/composer/preview/ig-feed-preview";
 import { IGReelPreview } from "@/components/composer/preview/ig-reel-preview";
 import { TikTokPreview } from "@/components/composer/preview/tiktok-preview";
+import type { ConnectedAccount } from "@/lib/hono-client";
 import { PreviewItem } from "./preview-item";
 
 interface CollageViewProps {
-  showFacebook: boolean;
-  showInstagram: boolean;
-  showTikTok: boolean;
+  accounts: ConnectedAccount[];
+  activeAccountId: string | null;
   isReel: boolean;
 }
 
 export function CollageView({
-  showFacebook,
-  showInstagram,
-  showTikTok,
+  accounts,
+  activeAccountId,
   isReel,
 }: CollageViewProps) {
-  const FacebookPreview = isReel ? FBReelPreview : FBFeedPreview;
-  const InstagramPreview = isReel ? IGReelPreview : IGFeedPreview;
-  const TikTokFeedPreview = TikTokPreview;
-
-  // Calculate the number of active previews
-  const previewCount =
-    (showFacebook ? 1 : 0) + (showInstagram ? 1 : 0) + (showTikTok ? 1 : 0);
+  const previewCount = accounts.length;
 
   if (previewCount === 0) {
     return (
       <div className="flex justify-center items-center min-h-48 text-muted-foreground">
-        <div className="text-sm">No previews available</div>
+        <div className="text-sm">Connect an account to see a live preview.</div>
       </div>
     );
   }
 
-  if (previewCount === 1) {
-    return (
-      <div className="flex justify-center">
-        {showFacebook && (
-          <PreviewItem
-            platform="facebook"
-            contentType={isReel ? "reel" : "feed"}
-          >
-            <FacebookPreview />
-          </PreviewItem>
-        )}
-        {showInstagram && (
-          <PreviewItem
-            platform="instagram"
-            contentType={isReel ? "reel" : "feed"}
-          >
-            <InstagramPreview />
-          </PreviewItem>
-        )}
-        {showTikTok && (
-          <PreviewItem platform="tiktok" contentType={isReel ? "reel" : "feed"}>
-            <TikTokFeedPreview />
-          </PreviewItem>
-        )}
-      </div>
-    );
-  }
+  const renderPreview = (account: ConnectedAccount) => {
+    switch (account.platform) {
+      case "FACEBOOK": {
+        const Component = isReel ? FBReelPreview : FBFeedPreview;
+        return <Component accountId={account.id} />;
+      }
+      case "INSTAGRAM": {
+        const Component = isReel ? IGReelPreview : IGFeedPreview;
+        return <Component accountId={account.id} />;
+      }
+      case "TIKTOK":
+      default:
+        return <TikTokPreview accountId={account.id} />;
+    }
+  };
 
   const gridTemplate =
-    previewCount === 2
-      ? "repeat(auto-fit, minmax(280px, 1fr))"
-      : "repeat(auto-fit, minmax(240px, 1fr))";
+    previewCount === 1
+      ? "repeat(1, minmax(280px, 1fr))"
+      : previewCount === 2
+        ? "repeat(auto-fit, minmax(280px, 1fr))"
+        : "repeat(auto-fit, minmax(240px, 1fr))";
 
   return (
     <div
       className="mx-auto grid w-full max-w-5xl gap-5 justify-items-center items-start"
       style={{ gridTemplateColumns: gridTemplate }}
     >
-      {showFacebook && (
-        <PreviewItem platform="facebook" contentType={isReel ? "reel" : "feed"}>
-          <FacebookPreview />
-        </PreviewItem>
-      )}
-      {showInstagram && (
+      {accounts.map((account) => (
         <PreviewItem
-          platform="instagram"
-          contentType={isReel ? "reel" : "feed"}
+          key={account.id}
+          account={account}
+          contentType={
+            account.platform === "TIKTOK" ? "feed" : isReel ? "reel" : "feed"
+          }
+          isActive={account.id === activeAccountId}
         >
-          <InstagramPreview />
+          {renderPreview(account)}
         </PreviewItem>
-      )}
-      {showTikTok && (
-        <PreviewItem platform="tiktok" contentType={isReel ? "reel" : "feed"}>
-          <TikTokFeedPreview />
-        </PreviewItem>
-      )}
+      ))}
     </div>
   );
 }

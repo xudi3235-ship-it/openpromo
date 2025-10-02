@@ -13,9 +13,16 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerPreview } from "@/stores/composer-preview-store";
 import { PreviewMediaNullState } from "./null-state";
 
-export function FBFeedPreview() {
+interface FBFeedPreviewProps {
+  accountId?: string;
+}
+
+export function FBFeedPreview({ accountId }: FBFeedPreviewProps) {
   const { workspace } = useWorkspace();
-  const previewData = useComposerPreview({ platform: "FACEBOOK" });
+  const previewData = useComposerPreview({
+    platform: "FACEBOOK",
+    accountId,
+  });
   const attachments = previewData.attachments;
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
     attachments,

@@ -66,6 +66,7 @@ export const tikTokConnectedAccountRoute = new Hono<ApiEnv>().get(
           profilePicUrl,
           encryptedAccessToken: authResult.accessToken,
           refreshToken: authResult.refreshToken,
+          lastBackfillAt: null,
           tokenExpiresAt: new Date(Date.now() + authResult.expiresIn * 1000),
           metadata: {
             tiktokUserId: authResult.id,

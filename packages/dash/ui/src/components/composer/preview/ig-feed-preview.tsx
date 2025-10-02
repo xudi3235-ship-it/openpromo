@@ -14,9 +14,16 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerPreview } from "@/stores/composer-preview-store";
 import { PreviewMediaNullState } from "./null-state";
 
-export function IGFeedPreview() {
+interface IGFeedPreviewProps {
+  accountId?: string;
+}
+
+export function IGFeedPreview({ accountId }: IGFeedPreviewProps) {
   const { workspace } = useWorkspace();
-  const previewData = useComposerPreview({ platform: "INSTAGRAM" });
+  const previewData = useComposerPreview({
+    platform: "INSTAGRAM",
+    accountId,
+  });
   const attachments = previewData.attachments;
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
     attachments,

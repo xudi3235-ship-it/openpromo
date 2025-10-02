@@ -12,7 +12,11 @@ import { useReelConfig } from "@/hooks/useReelConfig";
 import { useReelControls } from "@/hooks/useReelControls";
 import { PreviewMediaNullState } from "./null-state";
 
-export function FBReelPreview() {
+interface FBReelPreviewProps {
+  accountId?: string;
+}
+
+export function FBReelPreview({ accountId }: FBReelPreviewProps) {
   const {
     isPlaying,
     isMuted,
@@ -23,9 +27,12 @@ export function FBReelPreview() {
     toggleMute,
     renderVideo,
     renderLocalVideoControls,
-  } = useReelControls("FACEBOOK");
+  } = useReelControls({ platform: "FACEBOOK", accountId });
 
-  const { config, username, renderAvatar } = useReelConfig("facebook");
+  const { config, username, renderAvatar } = useReelConfig(
+    "facebook",
+    accountId,
+  );
   const ShareIcon = config.icons.share;
 
   return (

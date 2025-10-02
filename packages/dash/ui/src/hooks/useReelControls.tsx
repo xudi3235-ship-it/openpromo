@@ -3,8 +3,16 @@ import { useEffect, useRef, useState } from "react";
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
 import { useComposerPreview } from "@/stores/composer-preview-store";
 
-export function useReelControls(platform?: Platform) {
-  const previewData = useComposerPreview({ platform });
+interface ReelControlOptions {
+  platform?: Platform;
+  accountId?: string;
+}
+
+export function useReelControls({
+  platform,
+  accountId,
+}: ReelControlOptions = {}) {
+  const previewData = useComposerPreview({ platform, accountId });
   const attachments = previewData.attachments;
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
     attachments,

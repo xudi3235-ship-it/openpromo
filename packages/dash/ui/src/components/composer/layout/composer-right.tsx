@@ -1,4 +1,3 @@
-import type { Platform } from "@core/schemas/connected-account.sql";
 import { Button } from "@openpromo/ui/components/button";
 import { Grid3X3, List } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -15,8 +14,13 @@ export function ComposerRight() {
     contentCreateData,
     accounts,
     selectedAccounts,
+    activeAccount,
   } = useComposerStore();
   const [viewMode, setViewMode] = useState<ViewMode>("collage");
+
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
+    null,
+  );
 
   // Helper to determine if content should be shown as a reel
   const isReelContent = () => {
@@ -24,47 +28,58 @@ export function ComposerRight() {
     return attachments.length === 1 && attachments[0]?.type === "video";
   };
 
-  // Get selected accounts by platform
-  const selectedAccountsByPlatform = accounts
-    .filter((account) => selectedAccounts.includes(account.id))
-    .reduce(
-      (acc, account) => {
-        acc[account.platform] = [...(acc[account.platform] || []), account];
-        return acc;
-      },
-      {} as Record<string, typeof accounts>,
-    );
+  const previewAccounts = useMemo(() => {
+    const orderedSelected = selectedAccounts
+      .map((id) => accounts.find((account) => account.id === id))
+      .filter((account): account is (typeof accounts)[number] =>
+        Boolean(account),
+      );
 
-  const hasFacebookAccounts = selectedAccountsByPlatform.FACEBOOK?.length > 0;
-  const hasInstagramAccounts = selectedAccountsByPlatform.INSTAGRAM?.length > 0;
-  const hasTikTokAccounts = selectedAccountsByPlatform.TIKTOK?.length > 0;
+    if (orderedSelected.length > 0) {
+      return orderedSelected;
+    }
 
-  // Auto-adjust selectedPreview based on available accounts
-  const availablePreviews = useMemo(() => {
-    const platforms: Platform[] = [];
-    if (hasFacebookAccounts) platforms.push("FACEBOOK");
-    if (hasInstagramAccounts) platforms.push("INSTAGRAM");
-    if (hasTikTokAccounts) platforms.push("TIKTOK");
-    return platforms;
-  }, [hasFacebookAccounts, hasInstagramAccounts, hasTikTokAccounts]);
+    return accounts;
+  }, [accounts, selectedAccounts]);
 
   useEffect(() => {
-    if (availablePreviews.length === 0) return;
-    if (!availablePreviews.includes(selectedPreview)) {
-      setSelectedPreview(availablePreviews[0]);
+    if (previewAccounts.length === 0) {
+      if (selectedAccountId !== null) {
+        setSelectedAccountId(null);
+      }
+      return;
     }
-  }, [availablePreviews, selectedPreview, setSelectedPreview]);
 
-  // Use default state when no accounts selected (show both FB + IG)
-  const showFacebookPreview =
-    hasFacebookAccounts ||
-    (!hasFacebookAccounts && !hasInstagramAccounts && !hasTikTokAccounts);
-  const showInstagramPreview =
-    hasInstagramAccounts ||
-    (!hasFacebookAccounts && !hasInstagramAccounts && !hasTikTokAccounts);
-  const showTikTokPreview =
-    hasTikTokAccounts ||
-    (!hasFacebookAccounts && !hasInstagramAccounts && !hasTikTokAccounts);
+    const findAccount = (id?: string | null) =>
+      previewAccounts.find((account) => account.id === id);
+
+    const preferredAccount =
+      findAccount(activeAccount) ||
+      findAccount(selectedAccountId) ||
+      previewAccounts[0];
+
+    if (selectedAccountId !== preferredAccount.id) {
+      setSelectedAccountId(preferredAccount.id);
+    }
+
+    if (selectedPreview !== preferredAccount.platform) {
+      setSelectedPreview(preferredAccount.platform);
+    }
+  }, [
+    previewAccounts,
+    activeAccount,
+    selectedAccountId,
+    selectedPreview,
+    setSelectedPreview,
+  ]);
+
+  const handleSelectAccount = (accountId: string) => {
+    setSelectedAccountId(accountId);
+    const account = accounts.find((acc) => acc.id === accountId);
+    if (account) {
+      setSelectedPreview(account.platform);
+    }
+  };
 
   return (
     <div className="h-full p-4 bg-background overflow-y-auto">
@@ -98,18 +113,16 @@ export function ComposerRight() {
         {/* Platform Previews */}
         {viewMode === "collage" ? (
           <CollageView
-            showFacebook={showFacebookPreview}
-            showInstagram={showInstagramPreview}
-            showTikTok={showTikTokPreview}
+            accounts={previewAccounts}
+            activeAccountId={activeAccount}
             isReel={isReelContent()}
           />
         ) : (
           <ListView
-            selectedPreview={selectedPreview}
-            onSelectPreview={setSelectedPreview}
-            showFacebook={showFacebookPreview}
-            showInstagram={showInstagramPreview}
-            showTikTok={showTikTokPreview}
+            accounts={previewAccounts}
+            selectedAccountId={selectedAccountId}
+            onSelectAccount={handleSelectAccount}
+            activeAccountId={activeAccount}
             isReel={isReelContent()}
           />
         )}

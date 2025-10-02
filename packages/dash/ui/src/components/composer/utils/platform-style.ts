@@ -9,6 +9,7 @@ export interface PlatformMeta {
   accentTextClass: string;
   accentRingClass: string;
   accentIndicatorClass: string;
+  accentColor: string;
   icon: IconType;
 }
 
@@ -20,6 +21,7 @@ const PLATFORM_META: Record<Platform, PlatformMeta> = {
     accentTextClass: "text-[#1877F2]",
     accentRingClass: "ring-[#1877F266]",
     accentIndicatorClass: "bg-[#1877F249]",
+    accentColor: "#1877F2",
     icon: FaFacebook,
   },
   INSTAGRAM: {
@@ -29,6 +31,7 @@ const PLATFORM_META: Record<Platform, PlatformMeta> = {
     accentTextClass: "text-[#d62976]",
     accentRingClass: "ring-[#d6297650]",
     accentIndicatorClass: "bg-[#d6297633]",
+    accentColor: "#d62976",
     icon: FaInstagram,
   },
   TIKTOK: {
@@ -38,6 +41,7 @@ const PLATFORM_META: Record<Platform, PlatformMeta> = {
     accentTextClass: "text-black",
     accentRingClass: "ring-black/40",
     accentIndicatorClass: "bg-black/20",
+    accentColor: "#000000",
     icon: FaTiktok,
   },
 };

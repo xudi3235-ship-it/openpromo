@@ -1,44 +1,64 @@
+import { Badge } from "@openpromo/ui/components/badge";
+import { cn } from "@openpromo/ui/lib/utils";
+import { getPlatformMeta } from "@/components/composer/utils/platform-style";
+import type { ConnectedAccount } from "@/lib/hono-client";
+
 interface PreviewItemProps {
-  platform: "facebook" | "instagram" | "tiktok";
+  account: ConnectedAccount;
   contentType: "reel" | "feed";
+  isActive: boolean;
   children: React.ReactNode;
 }
 
 export function PreviewItem({
-  platform,
+  account,
   contentType,
+  isActive,
   children,
 }: PreviewItemProps) {
-  const platformConfig = {
-    facebook: {
-      color: "bg-blue-600",
-      name: "Facebook",
-    },
-    instagram: {
-      color: "bg-gradient-to-br from-purple-500 to-pink-500",
-      name: "Instagram",
-    },
-    tiktok: {
-      color: "bg-black",
-      name: "TikTok",
-    },
-  };
-
-  const config = platformConfig[platform];
-  const displayName =
-    platform === "tiktok"
-      ? "TikTok"
-      : `${config.name} ${contentType === "reel" ? "Reel" : "Feed"}`;
+  const meta = getPlatformMeta(account.platform);
+  const accountLabel = account.accountName || meta.label;
+  const contentLabel =
+    account.platform === "TIKTOK"
+      ? "TikTok Preview"
+      : `${meta.label} ${contentType === "reel" ? "Reel" : "Feed"}`;
 
   return (
-    <div className="space-y-2 flex flex-col items-center w-full max-w-[280px]">
-      <div className="flex items-center gap-2 px-1">
-        <div className={`w-3 h-3 rounded ${config.color}`}></div>
-        <span className="text-xs text-muted-foreground font-medium">
-          {displayName}
-        </span>
+    <div className="flex w-full max-w-[280px] flex-col gap-2">
+      <div className="flex flex-col items-center gap-1 text-center">
+        <div className="flex items-center justify-center gap-2 px-1 text-xs font-medium text-foreground">
+          <span
+            className="inline-flex h-2.5 w-2.5 rounded-full border border-border"
+            style={{ backgroundColor: meta.accentColor }}
+          />
+          <span className="truncate max-w-[180px]" title={accountLabel}>
+            {accountLabel}
+          </span>
+        </div>
+        <div className="text-[11px] text-muted-foreground">{contentLabel}</div>
       </div>
-      <div className="w-full flex justify-center">{children}</div>
+      <div
+        className={cn(
+          "w-full rounded-2xl",
+          isActive && cn("ring-2 ring-offset-2", meta.accentRingClass),
+        )}
+      >
+        {children}
+      </div>
+      {isActive && (
+        <div className="flex justify-center">
+          <Badge
+            variant="secondary"
+            className={cn(
+              "text-[10px] font-medium px-2 py-0.5",
+              "bg-muted/80",
+              meta.accentTextClass,
+            )}
+          >
+            Customizing
+          </Badge>
+        </div>
+      )}
     </div>
   );
 }
