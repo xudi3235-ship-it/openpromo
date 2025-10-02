@@ -8,7 +8,6 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { Edit, Eye, MoreHorizontal, Trash2, Upload } from "lucide-react";
-import { useMemo } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useTableActions } from "@/hooks/content";
 import { matchEntity } from "@/lib/hono-client";
@@ -18,6 +17,12 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
     handleEdit,
     handleDelete,
     handlePublish,
+    handleView,
+    getPermalink,
+    isEditable,
+    canPublish,
+    editLabel,
+    deleteLabel,
     isPublishing,
     showConfirm,
     setShowConfirm,
@@ -26,48 +31,14 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
     isDeleting,
   } = useTableActions();
 
-  // Determine the primary action button based on content type and status
-  const contentPermalink = useMemo(() => {
-    return matchEntity(entity, {
-      content: (contentEntity) => {
-        const content = contentEntity.entity;
+  const contentPermalink = getPermalink(entity);
+  const isEntityEditable = isEditable(entity);
+  const canEntityPublish = canPublish(entity);
 
-        if (content.permalinkUrl) return content.permalinkUrl;
-
-        const placementSpec = content.placementSpec as
-          | {
-              identity?: {
-                metadata?: Record<string, unknown>;
-                fbPageID?: string;
-              };
-            }
-          | undefined;
-
-        const metadata =
-          (placementSpec?.identity?.metadata as
-            | Record<string, unknown>
-            | undefined) ?? {};
-
-        const metadataUrl = (metadata?.["permalinkUrl"] ??
-          metadata?.["shareUrl"] ??
-          metadata?.["permalink"]) as string | undefined;
-        if (typeof metadataUrl === "string") return metadataUrl;
-
-        return null;
-      },
-      group: () => null,
-    });
-  }, [entity]);
-
-  const getPrimaryAction = () => {
-    return matchEntity(entity, {
-      content: (contentEntity) => {
-        const content = contentEntity.entity;
-        const isDraftOrScheduled =
-          content.publishingStatus === "DRAFT" ||
-          content.publishingStatus === "SCHEDULED";
-
-        if (isDraftOrScheduled) {
+  const renderPrimaryAction = () =>
+    matchEntity(entity, {
+      content: () => {
+        if (canEntityPublish) {
           return (
             <Button
               size="sm"
@@ -80,20 +51,12 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
           );
         }
 
-        const handleView = () => {
-          if (!contentPermalink) return;
-          if (typeof window === "undefined") return;
-          window.open(contentPermalink, "_blank", "noopener,noreferrer");
-        };
-
-        const isViewDisabled = !contentPermalink;
-
         return (
           <Button
             size="sm"
             variant="outline"
-            onClick={handleView}
-            disabled={isViewDisabled}
+            onClick={() => handleView(entity)}
+            disabled={!contentPermalink}
           >
             <Eye className="w-4 h-4 mr-1" />
             View
@@ -103,15 +66,80 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
       group: () => (
         <Button size="sm" variant="outline" onClick={() => handleEdit(entity)}>
           <Edit className="w-4 h-4 mr-1" />
-          Edit
+          {editLabel(entity)}
         </Button>
       ),
     });
-  };
+
+  const renderMenuItems = () =>
+    matchEntity(entity, {
+      content: (contentEntity) => {
+        const status = contentEntity.entity.publishingStatus;
+        return (
+          <>
+            <DropdownMenuItem
+              onClick={() => handleView(entity)}
+              disabled={!contentPermalink}
+            >
+              <Eye className="w-4 h-4 mr-2" /> View content
+            </DropdownMenuItem>
+            {isEntityEditable && (
+              <DropdownMenuItem onClick={() => handleEdit(entity)}>
+                <Edit className="w-4 h-4 mr-2" />
+                {editLabel(entity)}
+              </DropdownMenuItem>
+            )}
+            {status === "SCHEDULED" && (
+              <DropdownMenuItem disabled>Cancel scheduling</DropdownMenuItem>
+            )}
+            {canEntityPublish && (
+              <DropdownMenuItem
+                onClick={() => handlePublish(entity)}
+                disabled={isPublishing}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {isPublishing ? "Publishing..." : "Publish now"}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              onClick={() => handleDelete(entity)}
+              className="text-destructive"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {deleteLabel(entity)}
+            </DropdownMenuItem>
+          </>
+        );
+      },
+      group: () => (
+        <>
+          <DropdownMenuItem onClick={() => handleEdit(entity)}>
+            <Edit className="w-4 h-4 mr-2" />
+            {editLabel(entity)}
+          </DropdownMenuItem>
+          {canEntityPublish && (
+            <DropdownMenuItem
+              onClick={() => handlePublish(entity)}
+              disabled={isPublishing}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {isPublishing ? "Publishing..." : "Publish now"}
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            onClick={() => handleDelete(entity)}
+            className="text-destructive"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            {deleteLabel(entity)}
+          </DropdownMenuItem>
+        </>
+      ),
+    });
 
   return (
     <div className="flex items-center gap-2">
-      {getPrimaryAction()}
+      {renderPrimaryAction()}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -120,92 +148,15 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {matchEntity(entity, {
-            content: (contentEntity) => {
-              const content = contentEntity.entity;
-              const isEditable =
-                content.publishingStatus === "DRAFT" ||
-                content.publishingStatus === "SCHEDULED";
-
-              return (
-                <>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (!contentPermalink) return;
-                      if (typeof window === "undefined") return;
-                      window.open(
-                        contentPermalink,
-                        "_blank",
-                        "noopener,noreferrer",
-                      );
-                    }}
-                    disabled={!contentPermalink}
-                  >
-                    <Eye className="w-4 h-4 mr-1" /> View content
-                  </DropdownMenuItem>
-                  {isEditable && (
-                    <DropdownMenuItem onClick={() => handleEdit(entity)}>
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit content
-                    </DropdownMenuItem>
-                  )}
-                  {content.publishingStatus === "SCHEDULED" && (
-                    <DropdownMenuItem>Cancel scheduling</DropdownMenuItem>
-                  )}
-                  {(content.publishingStatus === "DRAFT" ||
-                    content.publishingStatus === "SCHEDULED") && (
-                    <DropdownMenuItem
-                      onClick={() => handlePublish(entity)}
-                      disabled={isPublishing}
-                    >
-                      <Upload className="w-4 h-4 mr-1" />
-                      {isPublishing ? "Publishing..." : "Publish now"}
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    onClick={() => handleDelete(entity)}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Delete content
-                  </DropdownMenuItem>
-                </>
-              );
-            },
-            group: () => {
-              return (
-                <>
-                  <DropdownMenuItem onClick={() => handleEdit(entity)}>
-                    <Edit className="w-4 h-4 mr-1" />
-                    Edit group
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handlePublish(entity)}
-                    disabled={isPublishing}
-                  >
-                    <Upload className="w-4 h-4 mr-1" />
-                    {isPublishing ? "Publishing..." : "Publish now"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleDelete(entity)}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Delete group
-                  </DropdownMenuItem>
-                </>
-              );
-            },
-          })}
+          {renderMenuItems()}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={showConfirm}
         onOpenChange={setShowConfirm}
         title={deleteConfig?.title}
-        desc={deleteConfig?.description ?? "TODO"}
+        desc={deleteConfig?.description ?? "This action cannot be undone."}
         confirmText={isDeleting ? "Deleting..." : "Delete"}
         destructive
         isLoading={isDeleting}

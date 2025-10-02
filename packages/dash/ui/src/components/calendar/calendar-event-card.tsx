@@ -1,13 +1,28 @@
 import type { PlacementSpec } from "@core/schemas/content.sql";
+import { Button } from "@openpromo/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@openpromo/ui/components/dropdown-menu";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { ContentEntity } from "@worker/routes/api/workspaces/content";
 import { format, getMinutes } from "date-fns";
-import { Eye, Heart, Image, MessageCircle } from "lucide-react";
+import {
+  Edit,
+  Eye,
+  Heart,
+  Image,
+  MessageCircle,
+  MoreHorizontal,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { type CalendarEvent, getEventData } from "@/components/calendar";
 import { CalendarStatusBadge } from "@/components/calendar/calendar-status-badge";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { getPlatformIcon } from "@/components/content/utils/platform-icons";
-import { ContentActionsMenu } from "@/components/content-actions-menu";
 import { useCalendarActions } from "@/hooks/content";
 import { matchEntity, matchPlacementSpec } from "@/lib/hono-client";
 
@@ -95,12 +110,87 @@ export function CalendarEventCard({
   const {
     handleDelete,
     handleEdit,
+    handlePublish,
+    handleView,
+    getPermalink,
+    publishingStatus: getPublishingStatus,
+    isEditable: isEntityEditable,
+    canPublish: canEntityPublish,
+    editLabel: getEditLabel,
+    deleteLabel: getDeleteLabel,
+    isPublishing,
     showConfirm,
     setShowConfirm,
     deleteConfig,
     handleConfirm,
     isDeleting,
   } = useCalendarActions(onDelete);
+
+  const contentPermalink = getPermalink(event);
+  const publishingStatus = getPublishingStatus(event);
+  const isEditable = isEntityEditable(event);
+  const canPublish = canEntityPublish(event);
+  const editLabel = getEditLabel(event);
+  const deleteLabel = getDeleteLabel(event);
+
+  const renderActionsMenu = () => (
+    <div className="absolute top-0 right-0 w-10 h-10 flex items-center justify-center">
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 rounded-full bg-black/20 p-0 text-white hover:bg-black/40"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" sideOffset={4} className="w-44">
+            <DropdownMenuItem
+              onClick={(e) => handleView(event, e)}
+              disabled={!contentPermalink}
+            >
+              <Eye className="w-4 h-4 mr-2" /> View content
+            </DropdownMenuItem>
+            {isEditable && (
+              <DropdownMenuItem onClick={(e) => handleEdit(event, e)}>
+                <Edit className="w-4 h-4 mr-2" />
+                {editLabel}
+              </DropdownMenuItem>
+            )}
+            {publishingStatus === "SCHEDULED" &&
+              matchEntity(event, {
+                content: () => (
+                  <DropdownMenuItem disabled>
+                    Cancel scheduling
+                  </DropdownMenuItem>
+                ),
+                group: () => null,
+              })}
+            {canPublish && (
+              <DropdownMenuItem
+                onClick={(e) => handlePublish(event, e)}
+                disabled={isPublishing}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {isPublishing ? "Publishing..." : "Publish now"}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              onClick={(e) => handleDelete(event, e)}
+              className="text-destructive"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {deleteLabel}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -169,15 +259,7 @@ export function CalendarEventCard({
               )}
 
               {/* Actions menu - top right */}
-              <div className="absolute top-0 right-0 w-10 h-10 flex items-center justify-center">
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ContentActionsMenu
-                    entity={event}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                </div>
-              </div>
+              {renderActionsMenu()}
 
               {/* Message content - in content area */}
               <div className="absolute bottom-3 left-3 right-12 pointer-events-none flex flex-col gap-1">
@@ -304,15 +386,7 @@ export function CalendarEventCard({
               </div>
 
               {/* Actions menu - top right */}
-              <div className="absolute top-0 right-0 w-10 h-10 flex items-center justify-center">
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ContentActionsMenu
-                    entity={event}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                </div>
-              </div>
+              {renderActionsMenu()}
 
               {/* Message content and count - in content area */}
               <div className="absolute bottom-3 left-3 right-12 pointer-events-none">
