@@ -73,6 +73,8 @@ export const connectedAccount = pgTable(
     refreshToken: text("refresh_token"),
     tokenExpiresAt: timestamp(),
     metadata: jsonb("metadata").$type<ConnectedAccountMetadata>().notNull(),
+    // content backfill tracking
+    lastBackfillAt: timestamp(),
   },
   (table) => [
     index("platform_idx").on(table.platform),

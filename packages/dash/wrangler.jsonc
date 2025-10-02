@@ -21,6 +21,11 @@
       "class_name": "PendingContentPublishWorkflow",
       "binding": "WORKFLOW",
       "name": "PendingContentPublishWorkflow"
+    },
+    {
+      "class_name": "ContentBackfillWorkflow",
+      "binding": "ContentBackfillWorkflow",
+      "name": "ContentBackfillWorkflow"
     }
   ],
   "durable_objects": {
@@ -123,6 +128,11 @@
           "class_name": "PendingContentPublishWorkflow",
           "binding": "WORKFLOW",
           "name": "PendingContentPublishWorkflow"
+        },
+        {
+          "class_name": "ContentBackfillWorkflow",
+          "binding": "CONTENT_BACKFILL_WORKFLOW",
+          "name": "ContentBackfillWorkflow"
         }
       ],
       "triggers": {

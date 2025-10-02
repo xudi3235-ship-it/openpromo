@@ -41,6 +41,8 @@ export const AllPlacement = {
   ...TikTokPlacement,
 } as const;
 
+export const AllPlacementZod = z.enum([...Object.values(AllPlacement)]);
+
 export type FBPlacement = (typeof FBPlacement)[keyof typeof FBPlacement];
 export type IGPlacement = (typeof IGPlacement)[keyof typeof IGPlacement];
 export type TikTokPlacement =

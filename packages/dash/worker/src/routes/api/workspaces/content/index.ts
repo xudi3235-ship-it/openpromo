@@ -591,4 +591,29 @@ export const contentRoute = new Hono<ApiEnv>()
       throw new AppError(404, { message: `Content ${id} not found` });
     const deleted = await content.delete();
     return c.json({ success: !!deleted });
-  });
+  })
+  .post(
+    "/backfill",
+    zValidator(
+      "json",
+      z.object({
+        connectedAccountID: z.string(),
+        start: z.iso.datetime(),
+        end: z.iso.datetime(),
+      }),
+    ),
+    async (c) => {
+      // starts workflow for backfilling content
+      // it will create unified content entries
+      // from source platform
+      const payload = c.req.valid("json");
+      const actor = Actor.assert("workspace_user");
+      const instance = await c.env.ContentBackfillWorkflow.create({
+        params: {
+          actor,
+          ...payload,
+        },
+      });
+      return c.json({ id: instance.id, status: await instance.status() });
+    },
+  );

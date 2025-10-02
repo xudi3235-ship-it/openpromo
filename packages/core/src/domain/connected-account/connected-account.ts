@@ -294,6 +294,7 @@ export namespace ConnectedAccount {
         },
       },
       profilePicUrl: null,
+      lastBackfillAt: null,
     });
   }
 }

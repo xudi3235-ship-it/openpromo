@@ -1,4 +1,5 @@
 import type { ContainerBackend } from "@core/containers";
+import type { ContentBackfillWorkflowParams } from "@core/domain/content/workflows/content-backfill-workflow";
 import type { PublishWorkflowParams } from "@core/domain/content/workflows/content-publish-workflow";
 import type { OrganizationRole } from "@core/domain/workspace/auth";
 import type { WorkspacePusher } from "@core/durable-objects";
@@ -14,6 +15,7 @@ export type ApiEnv = {
   Bindings: {
     HYPERDRIVE: Hyperdrive;
     WORKFLOW: Workflow<PublishWorkflowParams>;
+    ContentBackfillWorkflow: Workflow<ContentBackfillWorkflowParams>;
     WorkspacePusher: DurableObjectNamespace<WorkspacePusher>;
     ContainerBackend: DurableObjectNamespace<ContainerBackend>;
     Bucket: R2Bucket;
