@@ -4,6 +4,8 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
+import { Badge } from "@openpromo/ui/components/badge";
+import { cn } from "@openpromo/ui/lib/utils";
 import {
   type MotionValue,
   motion,
@@ -13,64 +15,21 @@ import {
 } from "framer-motion";
 import { Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
+import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import type { ConnectedAccount } from "@/lib/hono-client";
 import { useOAuthWithListener } from "@/queries/connected-account";
 
-function getPlatformColors(platform: Platform) {
-  switch (platform) {
-    case "FACEBOOK":
-      return "from-blue-500 to-blue-600";
-    case "INSTAGRAM":
-      return "from-purple-500 via-pink-500 to-orange-500";
-    case "TIKTOK":
-      return "from-black to-gray-800";
-    default:
-      return "from-gray-400 to-gray-500";
-  }
-}
-
-function getPlatformFallback(platform: Platform) {
-  switch (platform) {
-    case "FACEBOOK":
-      return "FB";
-    case "INSTAGRAM":
-      return "IG";
-    case "TIKTOK":
-      return "TT";
-    default:
-      return "?";
-  }
-}
-
-function getPlatformIcon(platform: Platform) {
-  switch (platform) {
-    case "FACEBOOK":
-      return FaFacebook;
-    case "INSTAGRAM":
-      return FaInstagram;
-    case "TIKTOK":
-      return FaTiktok;
-    default:
-      return null;
-  }
-}
-
-const badgeClassByPlatform: Record<Platform, string> = {
-  FACEBOOK: "bg-[#1877F2] text-white border-white/80 dark:border-background/80",
-  INSTAGRAM:
-    "bg-gradient-to-br from-[#feda77] via-[#d62976] to-[#4f5bd5] text-white border-white/70 dark:border-background/80",
-  TIKTOK: "bg-[#010101] text-white border-white/50 dark:border-background/70",
-};
-
 function PlatformBadge({ platform }: { platform: Platform }) {
-  const Icon = getPlatformIcon(platform);
+  const { icon: Icon, accentTextClass } = getPlatformMeta(platform);
   if (!Icon) return null;
 
   return (
     <div
-      className={`absolute -bottom-1.5 -right-1.5 h-5 w-5 rounded-full flex items-center justify-center shadow-sm border ${badgeClassByPlatform[platform]}`}
+      className={cn(
+        "absolute -bottom-1.5 -right-1.5 h-5 w-5 rounded-full border bg-background text-muted-foreground shadow-sm flex items-center justify-center",
+        accentTextClass,
+      )}
     >
       <Icon className="h-3 w-3" />
     </div>
@@ -137,8 +96,7 @@ function AccountAvatar({
 }: AccountAvatarProps) {
   const [showConfirm, setShowConfirm] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const gradientColors = getPlatformColors(account.platform);
-  const fallback = getPlatformFallback(account.platform);
+  const meta = getPlatformMeta(account.platform);
 
   const distance = useTransform(mouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
@@ -162,7 +120,10 @@ function AccountAvatar({
       <motion.div ref={ref} style={{ width }} className="relative group">
         <motion.div
           style={{ width }}
-          className={`aspect-square rounded-full bg-gradient-to-r ${gradientColors} p-0.5`}
+          className={cn(
+            "aspect-square rounded-full bg-gradient-to-r p-0.5",
+            meta.avatarGradient,
+          )}
         >
           <div className="w-full h-full bg-background rounded-full p-0.5">
             <Avatar className="w-full h-full">
@@ -171,7 +132,7 @@ function AccountAvatar({
                 alt={account.accountName || "Account"}
               />
               <AvatarFallback className="text-xs font-semibold">
-                {fallback}
+                {meta.abbreviation}
               </AvatarFallback>
             </Avatar>
           </div>
@@ -398,6 +359,8 @@ interface ComposerAccountAvatarProps {
   account: ConnectedAccount;
   selected: boolean;
   active: boolean;
+  dimmed: boolean;
+  showLabels: boolean;
   onToggleSelected: () => void;
   onSetActive: () => void;
 }
@@ -416,28 +379,46 @@ function ComposerAccountAvatar({
   account,
   selected,
   active,
+  dimmed,
+  showLabels,
   onToggleSelected,
   onSetActive,
 }: ComposerAccountAvatarProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const gradientColors = getPlatformColors(account.platform);
-  const fallback = getPlatformFallback(account.platform);
+  const meta = getPlatformMeta(account.platform);
+  const accountLabel = account.accountName || meta.label;
+  const Icon = meta.icon;
 
   return (
     <div
       ref={ref}
-      className="relative group flex flex-col items-center gap-1.5"
+      className={cn(
+        "relative group flex flex-col items-center gap-1.5",
+        showLabels && "w-24 text-center transition-opacity",
+        dimmed && "opacity-60",
+      )}
     >
       <button
         type="button"
-        className="relative w-8 aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+        className={cn(
+          "relative aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-ring transition-all",
+          showLabels ? "w-10" : "w-8",
+          selected ? "opacity-100" : "opacity-40",
+          active &&
+            cn(
+              "ring-2 ring-offset-2 ring-offset-background",
+              meta.accentRingClass,
+            ),
+        )}
         onClick={onToggleSelected}
         aria-label={`${selected ? "Disable" : "Enable"} posting to ${account.accountName || account.platform}`}
       >
         <div
-          className={`w-full h-full rounded-full bg-gradient-to-r ${gradientColors} p-0.5 transition-all ${
-            selected ? "opacity-100" : "opacity-40"
-          }`}
+          className={cn(
+            "w-full h-full rounded-full bg-gradient-to-r p-0.5 transition-all",
+            meta.avatarGradient,
+            selected ? "opacity-100" : "opacity-40",
+          )}
         >
           <div className="w-full h-full bg-background rounded-full p-0.5">
             <Avatar className="w-full h-full">
@@ -446,7 +427,7 @@ function ComposerAccountAvatar({
                 alt={account.accountName || "Account"}
               />
               <AvatarFallback className="text-xs font-semibold">
-                {fallback}
+                {meta.abbreviation}
               </AvatarFallback>
             </Avatar>
           </div>
@@ -475,21 +456,48 @@ function ComposerAccountAvatar({
       {selected && (
         <button
           type="button"
-          className={`w-6 h-1 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-ring hover:h-1.5 focus:h-1.5 hover:w-8 focus:w-8 ${
+          className={cn(
+            "rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-ring hover:h-1.5 focus:h-1.5",
+            showLabels ? "w-10 h-1" : "w-6 h-1",
             active
-              ? "bg-primary shadow-sm"
-              : "bg-muted hover:bg-muted-foreground/30"
-          }`}
+              ? cn(meta.accentIndicatorClass, "shadow-sm")
+              : "bg-muted hover:bg-muted-foreground/30",
+          )}
           onClick={onSetActive}
           aria-label={`${active ? "Stop customizing" : "Start customizing"} ${account.accountName || account.platform}`}
         />
       )}
 
+      {showLabels && (
+        <div className="space-y-1">
+          <div
+            className="text-xs font-medium text-foreground truncate"
+            title={accountLabel}
+          >
+            {accountLabel}
+          </div>
+          {active ? (
+            <Badge
+              variant="secondary"
+              className={cn(
+                "mx-auto flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-muted",
+                meta.accentTextClass,
+              )}
+            >
+              <Icon className={cn("h-3 w-3", meta.accentTextClass)} />
+              <span>Customizing</span>
+            </Badge>
+          ) : (
+            <div className="text-[11px] text-muted-foreground">
+              {selected ? "Enabled" : "Off"}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-30">
         <div className="text-center">
-          <div className="font-medium">
-            {account.accountName || account.platform}
-          </div>
+          <div className="font-medium">{accountLabel}</div>
           <div className="text-muted-foreground">
             {!selected
               ? "Click to enable"
@@ -513,6 +521,7 @@ export function ComposerAccountsRow({
   className = "",
 }: ComposerAccountsRowProps) {
   const staticMouseX = useMotionValue(Infinity);
+  const hasActiveCustomization = Boolean(activeAccount);
 
   const handleSetActive = (accountId: string) => {
     if (selectedAccounts.includes(accountId)) {
@@ -529,6 +538,12 @@ export function ComposerAccountsRow({
             account={account}
             selected={selectedAccounts.includes(account.id)}
             active={activeAccount === account.id}
+            dimmed={
+              hasActiveCustomization &&
+              selectedAccounts.includes(account.id) &&
+              account.id !== activeAccount
+            }
+            showLabels={hasActiveCustomization}
             onToggleSelected={() => onToggleAccount(account.id)}
             onSetActive={() => handleSetActive(account.id)}
           />

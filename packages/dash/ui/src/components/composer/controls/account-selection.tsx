@@ -1,7 +1,51 @@
+import { cn } from "@openpromo/ui/lib/utils";
+import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { AvailablePlatformsRow } from "@/components/connected-accounts/available-platforms-row";
 import { ComposerAccountsRow } from "@/components/connected-accounts/connected-accounts-row";
+import type { ConnectedAccount } from "@/lib/hono-client";
 import { useOAuthWithListener } from "@/queries/connected-account";
 import { useComposerStore } from "@/stores/composer-store";
+
+function CustomizationScopeBanner({
+  account,
+  onClear,
+}: {
+  account: ConnectedAccount;
+  onClear: () => void;
+}) {
+  const meta = getPlatformMeta(account.platform);
+  const Icon = meta.icon;
+  const accountLabel = account.accountName || meta.label;
+
+  return (
+    <div
+      role="note"
+      className="space-y-2 rounded-lg border border-border bg-muted/40 px-3 py-2"
+    >
+      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+        {Icon && <Icon className={cn("h-4 w-4", meta.accentTextClass)} />}
+        <span className="line-clamp-2" title={accountLabel}>
+          {accountLabel}
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        You are customizing settings just for
+        <span className="font-medium text-foreground"> {accountLabel}</span>.
+        Switch or stop customizing to apply changes to all selected accounts.
+      </p>
+      <button
+        type="button"
+        onClick={onClear}
+        className={cn(
+          "text-xs font-medium underline-offset-2 transition-colors hover:underline",
+          meta.accentTextClass,
+        )}
+      >
+        Stop customizing
+      </button>
+    </div>
+  );
+}
 
 export function AccountSelection() {
   const {
@@ -11,6 +55,16 @@ export function AccountSelection() {
     activeAccount,
     setActiveAccount,
   } = useComposerStore();
+
+  const activeAccountData = accounts.find((acc) => acc.id === activeAccount);
+  const activeMeta = activeAccountData
+    ? getPlatformMeta(activeAccountData.platform)
+    : null;
+  const ActiveIcon = activeMeta?.icon;
+
+  const activeAccountLabel = activeAccountData
+    ? activeAccountData.accountName || activeMeta?.label || ""
+    : null;
 
   const {
     handleConnectFacebook,
@@ -41,14 +95,31 @@ export function AccountSelection() {
           <span>
             {selectedAccounts.length}/{accounts.length}
           </span>
-          {activeAccount && (
-            <>
-              <span>•</span>
-              <span className="text-primary">customizing</span>
-            </>
+          {activeAccountData && activeMeta && (
+            <div className="flex items-center gap-1.5 text-xs">
+              {ActiveIcon && (
+                <ActiveIcon
+                  className={cn("h-3 w-3", activeMeta.accentTextClass)}
+                />
+              )}
+              <span
+                className="max-w-[120px] truncate text-foreground"
+                title={activeAccountLabel || undefined}
+              >
+                {activeAccountLabel}
+              </span>
+              <span className="text-muted-foreground">• Customizing</span>
+            </div>
           )}
         </div>
       </div>
+
+      {activeAccountData && (
+        <CustomizationScopeBanner
+          account={activeAccountData}
+          onClear={() => setActiveAccount(null)}
+        />
+      )}
 
       {/* Account Row */}
       {accounts.length === 0 ? (
