@@ -317,6 +317,7 @@ export const unifiedContentTable = pgTable(
     ...connectedAccountId,
     // external content id, for published content / backfilled.
     sourceContentId: text("source_content_id"),
+    permalinkUrl: text("permalink_url"),
     // declaration of the source platform's spec, json object
     // that defines what a post looks like on src plat.
     // for scheduled contents: the spec will be translated into multiple api calls, kinda like IaC, due to the dependency graph it needs to sort out, e.g. for a carousel IG posts, we need to create videos 1-3 first, then create a media container for these videos, finally we can create a IGMedia.
@@ -349,12 +350,15 @@ export type UnifiedContentTikTokPost = UnifiedContentForPlacement<"TT_FEED">;
 export const UnifiedContentInsert = createInsertSchema(unifiedContentTable, {
   placement: z.enum([...Object.values(AllPlacement)]),
   publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
+  permalinkUrl: z.string().url().optional(),
 });
 export const UnifiedContentUpdate = createUpdateSchema(unifiedContentTable, {
   placement: z.enum([...Object.values(AllPlacement)]),
   publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
+  permalinkUrl: z.string().url().optional().nullable(),
 });
 export const UnifiedContentSelect = createSelectSchema(unifiedContentTable, {
   placement: z.enum([...Object.values(AllPlacement)]),
   publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
+  permalinkUrl: z.string().url().optional().nullable(),
 });

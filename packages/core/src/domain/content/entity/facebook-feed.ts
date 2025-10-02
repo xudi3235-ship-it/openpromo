@@ -555,4 +555,35 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     const page = new Page(ctx.pageID, api);
     return { page, api, accessToken: ctx.accessToken, pageID: ctx.pageID };
   }
+
+  async fetchPermalinkUrl(postId: string): Promise<string | null> {
+    try {
+      const ctx = await resolveFacebookIdentity(this.spec);
+      const graphPostId = postId.includes("_")
+        ? postId
+        : `${ctx.pageID}_${postId}`;
+
+      const result = await facebookGraphRequest<
+        { permalink_url?: string } | undefined
+      >(ctx, `/${graphPostId}`, {
+        searchParams: {
+          fields: "permalink_url",
+        },
+      });
+
+      const url = result?.permalink_url;
+      if (!url) {
+        log.warn("facebook post missing permalink_url", {
+          postId: graphPostId,
+        });
+      }
+      return url ?? null;
+    } catch (error) {
+      log.warn("failed to fetch facebook permalink", {
+        postId,
+        error: (error as Error).message,
+      });
+      return null;
+    }
+  }
 }

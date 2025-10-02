@@ -555,6 +555,32 @@ export class EntIGFeedPendingContent extends EntPendingContent {
     return data as z.output<TOut>;
   }
 
+  async fetchPermalinkUrl(postId: string): Promise<string | null> {
+    try {
+      const result = await this.api(
+        `/${postId}`,
+        "GET",
+        null,
+        z.object({ permalink: z.string().url().optional() }),
+        new URLSearchParams({ fields: "permalink" }),
+      );
+
+      if (!result.permalink) {
+        log.warn("instagram media missing permalink", {
+          postId,
+        });
+      }
+
+      return result.permalink ?? null;
+    } catch (error) {
+      log.warn("failed to fetch instagram permalink", {
+        postId,
+        error: (error as Error).message,
+      });
+      return null;
+    }
+  }
+
   static async _createDummy(
     igAccountID: string,
   ): Promise<EntIGFeedPendingContent> {

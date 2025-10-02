@@ -1,0 +1,1 @@
+ALTER TABLE "unified_content" ADD COLUMN "permalink_url" text;

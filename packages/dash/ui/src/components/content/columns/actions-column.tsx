@@ -8,6 +8,7 @@ import {
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { Edit, Eye, MoreHorizontal, Trash2, Upload } from "lucide-react";
+import { useMemo } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useTableActions } from "@/hooks/content";
 import { matchEntity } from "@/lib/hono-client";
@@ -26,15 +27,47 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
   } = useTableActions();
 
   // Determine the primary action button based on content type and status
+  const contentPermalink = useMemo(() => {
+    return matchEntity(entity, {
+      content: (contentEntity) => {
+        const content = contentEntity.entity;
+
+        if (content.permalinkUrl) return content.permalinkUrl;
+
+        const placementSpec = content.placementSpec as
+          | {
+              identity?: {
+                metadata?: Record<string, unknown>;
+                fbPageID?: string;
+              };
+            }
+          | undefined;
+
+        const metadata =
+          (placementSpec?.identity?.metadata as
+            | Record<string, unknown>
+            | undefined) ?? {};
+
+        const metadataUrl = (metadata?.["permalinkUrl"] ??
+          metadata?.["shareUrl"] ??
+          metadata?.["permalink"]) as string | undefined;
+        if (typeof metadataUrl === "string") return metadataUrl;
+
+        return null;
+      },
+      group: () => null,
+    });
+  }, [entity]);
+
   const getPrimaryAction = () => {
     return matchEntity(entity, {
       content: (contentEntity) => {
         const content = contentEntity.entity;
-        const isPublishable =
+        const isDraftOrScheduled =
           content.publishingStatus === "DRAFT" ||
           content.publishingStatus === "SCHEDULED";
 
-        if (isPublishable) {
+        if (isDraftOrScheduled) {
           return (
             <Button
               size="sm"
@@ -47,27 +80,32 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
           );
         }
 
-        // Published content - show View/Open
+        const handleView = () => {
+          if (!contentPermalink) return;
+          if (typeof window === "undefined") return;
+          window.open(contentPermalink, "_blank", "noopener,noreferrer");
+        };
+
+        const isViewDisabled = !contentPermalink;
+
         return (
-          <Button size="sm" variant="outline" onClick={() => {}}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleView}
+            disabled={isViewDisabled}
+          >
             <Eye className="w-4 h-4 mr-1" />
             View
           </Button>
         );
       },
-      group: (_groupEntity) => {
-        // Groups should have edit as primary action
-        return (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleEdit(entity)}
-          >
-            <Edit className="w-4 h-4 mr-1" />
-            Edit
-          </Button>
-        );
-      },
+      group: () => (
+        <Button size="sm" variant="outline" onClick={() => handleEdit(entity)}>
+          <Edit className="w-4 h-4 mr-1" />
+          Edit
+        </Button>
+      ),
     });
   };
 
@@ -91,7 +129,18 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
 
               return (
                 <>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (!contentPermalink) return;
+                      if (typeof window === "undefined") return;
+                      window.open(
+                        contentPermalink,
+                        "_blank",
+                        "noopener,noreferrer",
+                      );
+                    }}
+                    disabled={!contentPermalink}
+                  >
                     <Eye className="w-4 h-4 mr-1" /> View content
                   </DropdownMenuItem>
                   {isEditable && (

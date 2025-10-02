@@ -575,6 +575,7 @@ export class FacebookBackfiller {
       publishingStatus: "PUBLISHED",
       connectedAccountId: account.id,
       sourceContentId: post.id,
+      permalinkUrl: post.permalinkUrl,
       workspaceId: account.workspaceId,
       createdAt: post.createdAt,
       updatedAt: post.createdAt,

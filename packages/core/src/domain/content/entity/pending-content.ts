@@ -348,15 +348,26 @@ export class EntPendingContent extends EntUnifiedContentBase {
     if (!newOne) throw new Error("failed to update publishingStatus");
     return new EntPendingContent(newOne);
   }
-  async markAsPublished(publishedContentID: string) {
+  async markAsPublished(
+    publishedContentID: string,
+    options: { permalinkUrl?: string | null; shareUrl?: string | null } = {},
+  ) {
     const groupID = this.data.pendingContentGroupId;
+    const updatePayload: Partial<typeof unifiedContentTable.$inferInsert> = {
+      publishingStatus: "PUBLISHED",
+      sourceContentId: publishedContentID,
+      pendingContentGroupId: null,
+    };
+
+    const permalinkToPersist =
+      options.permalinkUrl ?? this.data.permalinkUrl ?? null;
+    if (permalinkToPersist) {
+      updatePayload.permalinkUrl = permalinkToPersist;
+    }
+
     const [newOne] = await db()
       .update(unifiedContentTable)
-      .set({
-        publishingStatus: "PUBLISHED",
-        sourceContentId: publishedContentID,
-        pendingContentGroupId: null,
-      })
+      .set(updatePayload)
       .where(eq(unifiedContentTable.id, this.data.id))
       .returning();
     if (!newOne) throw new Error("failed to mark content as published");
@@ -395,6 +406,7 @@ export class EntPendingContent extends EntUnifiedContentBase {
         placement: newOne.placement,
         sourceContentId: newOne.sourceContentId,
         publishedAt: newOne.updatedAt ?? new Date(),
+        shareUrl: options.shareUrl ?? options.permalinkUrl ?? undefined,
       });
     } catch (error) {
       console.warn("failed to send content published notification", {

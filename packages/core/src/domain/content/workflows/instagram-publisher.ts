@@ -64,7 +64,11 @@ export class InstagramPublisher extends BasePublisher {
     await step.do("mark content as published", async () => {
       log.info("marking instagram content as published", { postId, postType });
       const c = await EntIGFeedPendingContent.fromID(pendingContentID);
-      await c.markAsPublished(postId);
+      const permalinkUrl = await c.fetchPermalinkUrl(postId);
+      await c.markAsPublished(postId, {
+        permalinkUrl: permalinkUrl ?? undefined,
+        shareUrl: permalinkUrl ?? undefined,
+      });
     });
 
     log.info("Instagram content published", { postId, postType });

@@ -48,7 +48,10 @@ export class TikTokPublisher extends BasePublisher {
     await step.do("mark tiktok content as published", async () => {
       console.log("// mark tiktok content as published");
       const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-      await c.markAsPublished(publishedPostId ?? publishStatus.publish_id);
+      await c.markAsPublished(publishedPostId ?? publishStatus.publish_id, {
+        permalinkUrl: publishStatus.shareUrl ?? undefined,
+        shareUrl: publishStatus.shareUrl ?? undefined,
+      });
     });
 
     log.info("TikTok content published", {

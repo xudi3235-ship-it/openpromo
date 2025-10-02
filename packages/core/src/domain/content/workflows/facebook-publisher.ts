@@ -62,7 +62,11 @@ export class FacebookPublisher extends BasePublisher {
 
     await step.do("mark facebook content as published", async () => {
       const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-      await c.markAsPublished(postId);
+      const permalinkUrl = await c.fetchPermalinkUrl(postId);
+      await c.markAsPublished(postId, {
+        permalinkUrl: permalinkUrl ?? undefined,
+        shareUrl: permalinkUrl ?? undefined,
+      });
     });
 
     log.info("Facebook content published", { postId, postType });
