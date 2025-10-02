@@ -45,34 +45,61 @@ function DraggableCalendarCard({
 }) {
   const { activeId } = useCalendarDnd();
   const eventData = getEventData(event);
+  const dragId = `${eventData.id}-week`;
+
+  const publishingStatus = matchEntity(event, {
+    content: (entity) => entity.entity.publishingStatus,
+    group: (entity) => entity.entity.publishingStatus,
+  });
+
+  const isDraggable =
+    publishingStatus === "DRAFT" || publishingStatus === "SCHEDULED";
+  const isActiveDrag = isDraggable && activeId === dragId;
+  const isDimmed = Boolean(activeId && activeId !== dragId);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
-      id: `${eventData.id}-week`,
+      id: dragId,
       data: {
         event,
         view: "week",
       },
+      disabled: !isDraggable,
     });
 
+  const draggableListeners = isDraggable ? listeners : undefined;
+  const draggableAttributes = isDraggable ? attributes : undefined;
+
   // Don't render if being dragged
-  if (isDragging || activeId === `${eventData.id}-week`) {
+  if (isDragging || isActiveDrag) {
     return <div ref={setNodeRef} className="opacity-0 h-32" />;
   }
 
   return (
     <div
       ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      className="touch-none h-full"
+      {...(draggableListeners || {})}
+      {...(draggableAttributes || {})}
+      className={cn(
+        "h-full transition-opacity duration-150",
+        isDraggable && "touch-none cursor-grab",
+        isDimmed && "opacity-40",
+      )}
       style={{
         transform: transform
           ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
           : undefined,
       }}
     >
-      {children}
+      <div
+        className={cn(
+          "h-full",
+          isActiveDrag && "ring-2 ring-primary/60 ring-offset-2",
+        )}
+        data-draggable={isDraggable || undefined}
+      >
+        {children}
+      </div>
     </div>
   );
 }

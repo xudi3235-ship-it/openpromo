@@ -24,6 +24,7 @@ import {
 
 import {
   type CalendarEvent,
+  CalendarEventCard,
   EventItem,
   getEventData,
 } from "@/components/calendar";
@@ -301,7 +302,9 @@ export function CalendarDndProvider({
           ...calendarEvent,
           entity: {
             ...calendarEvent.entity,
+            // @ts-expect-error
             schedulingSpec: {
+              // @ts-expect-error
               ...calendarEvent.entity.schedulingSpec,
               scheduledPublishAt: newStart.toISOString(),
             },
@@ -353,18 +356,27 @@ export function CalendarDndProvider({
                 height: eventHeight ? `${eventHeight}px` : "auto",
                 width:
                   isMultiDay && multiDayWidth ? `${multiDayWidth}%` : "100%",
-                // Remove the transform that was causing the shift
               }}
+              className="pointer-events-none"
             >
-              <EventItem
-                event={activeEvent}
-                view={activeView}
-                isDragging={true}
-                showTime={activeView !== "month"}
-                currentTime={currentTime || undefined}
-                isFirstDay={dragHandlePosition?.data?.isFirstDay !== false}
-                isLastDay={dragHandlePosition?.data?.isLastDay !== false}
-              />
+              {activeView === "week" || activeView === "day" ? (
+                <CalendarEventCard
+                  event={activeEvent}
+                  // @ts-expect-error
+                  showTime={activeView !== "month"}
+                  className="shadow-lg ring-1 ring-border/40"
+                />
+              ) : (
+                <EventItem
+                  event={activeEvent}
+                  view={activeView}
+                  isDragging={true}
+                  showTime={activeView !== "month"}
+                  currentTime={currentTime || undefined}
+                  isFirstDay={dragHandlePosition?.data?.isFirstDay !== false}
+                  isLastDay={dragHandlePosition?.data?.isLastDay !== false}
+                />
+              )}
             </div>
           )}
         </DragOverlay>
