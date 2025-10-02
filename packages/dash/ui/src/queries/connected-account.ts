@@ -112,8 +112,8 @@ const useDeleteConnectedAccountMutation = () => {
     onSuccess: () => {
       toast.success(`Account disconnected`);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({
+    onSettled: async () => {
+      await queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
       });
     },
@@ -127,11 +127,11 @@ export const useOAuthWithListener = () => {
 
   // Setup message listener for OAuth callbacks
   useEffect(() => {
-    function handleMessage(event: MessageEvent<unknown>) {
+    async function handleMessage(event: MessageEvent<unknown>) {
       const payload = handlePopupMessage(event, "accounts_connected");
       if (!payload) return;
 
-      queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
       });
       toast[payload.status](payload.message);
