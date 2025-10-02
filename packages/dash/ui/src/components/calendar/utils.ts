@@ -1,4 +1,9 @@
-import type { UnifiedContentSelect } from "@core/schemas/content.sql";
+import type {
+  AllPlacement,
+  ContentPublishingStatus,
+  PlacementSpec,
+  UnifiedContentSelect,
+} from "@core/schemas/content.sql";
 import { isSameDay } from "date-fns";
 import type { CalendarEvent, EventColor } from "@/components/calendar";
 import { matchEntity } from "@/lib/hono-client";
@@ -87,6 +92,96 @@ export function getEventColorClasses(color?: EventColor | string): string {
     default:
       return "bg-sky-200/50 hover:bg-sky-200/40 text-sky-950/80 dark:bg-sky-400/25 dark:hover:bg-sky-400/20 dark:text-sky-200 shadow-sky-700/8";
   }
+}
+
+export function ensurePlacementSpecWithSchedule(
+  placement: AllPlacement,
+  existing: PlacementSpec | null | undefined,
+  publishAt: Date,
+  publishingStatus: ContentPublishingStatus,
+): PlacementSpec {
+  const resolvedPlacement = existing?.placement ?? placement;
+
+  if (existing) {
+    return {
+      ...existing,
+      publishingStatus,
+      schedulingSpec: {
+        ...(existing.schedulingSpec ?? {}),
+        publishAt,
+      },
+    };
+  }
+
+  switch (resolvedPlacement) {
+    case "FB_FEED":
+      return {
+        placement: "FB_FEED",
+        publishingStatus,
+        schedulingSpec: { publishAt },
+        identity: {
+          connectedAccountID: "",
+          fbPageID: "",
+        },
+        postSpec: {
+          message: "",
+        },
+      };
+    case "IG_FEED":
+      return {
+        placement: "IG_FEED",
+        publishingStatus,
+        schedulingSpec: { publishAt },
+        identity: {
+          connectedAccountID: "",
+          igAccountID: "",
+        },
+        attachments: [],
+      };
+    case "TT_FEED":
+      return {
+        placement: "TT_FEED",
+        publishingStatus,
+        schedulingSpec: { publishAt },
+        identity: {
+          connectedAccountID: "",
+          tiktokUserID: "",
+        },
+        attachments: [],
+      };
+    default:
+      throw new Error(`Unsupported placement for scheduling: ${placement}`);
+  }
+}
+
+export function createPlaceholderContentEvent(
+  publishAt: Date,
+  publishingStatus: ContentPublishingStatus,
+): CalendarEvent {
+  const placement: AllPlacement = "FB_FEED";
+  const now = new Date();
+
+  return {
+    type: "content",
+    entity: {
+      id: "",
+      workspaceId: "",
+      createdAt: now,
+      updatedAt: now,
+      connectedAccountId: "",
+      sourceContentId: null,
+      permalinkUrl: null,
+      placement,
+      placementSpec: ensurePlacementSpecWithSchedule(
+        placement,
+        null,
+        publishAt,
+        publishingStatus,
+      ),
+      publishingStatus,
+      pendingContentGroupId: null,
+    },
+  } as CalendarEvent;
 }
 
 /**

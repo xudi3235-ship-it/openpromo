@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import {
   CalendarDndProvider,
   type CalendarView,
+  createPlaceholderContentEvent,
   DynamicWeekView,
   EventDialog,
   EventGap,
@@ -145,18 +146,10 @@ export function ContentCalendar({
       startTime.setMilliseconds(0);
     }
 
-    const newEvent = {
-      type: "content" as const,
-      entity: {
-        id: "",
-        sourceContentId: null,
-        placement: "FB_FEED" as const,
-        placementSpec: null,
-        publishingStatus: "DRAFT" as const,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    } as MergedContentEntity;
+    const newEvent = createPlaceholderContentEvent(
+      new Date(startTime),
+      "SCHEDULED",
+    );
     setSelectedEvent(newEvent);
     openDialog();
   };

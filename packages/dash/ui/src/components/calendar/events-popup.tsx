@@ -4,7 +4,11 @@ import { format, isSameDay } from "date-fns";
 import { XIcon } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 
-import { type CalendarEvent, EventItem } from "@/components/calendar";
+import {
+  type CalendarEvent,
+  EventItem,
+  getEventData,
+} from "@/components/calendar";
 
 interface EventsPopupProps {
   date: Date;
@@ -109,14 +113,18 @@ export function EventsPopup({
           <div className="text-muted-foreground py-2 text-sm">No events</div>
         ) : (
           events.map((event) => {
-            const eventStart = new Date(event.start);
-            const eventEnd = new Date(event.end);
+            const eventData = getEventData(event);
+            const eventStart = new Date(eventData.start);
+            const eventEnd = new Date(eventData.end);
             const isFirstDay = isSameDay(date, eventStart);
             const isLastDay = isSameDay(date, eventEnd);
 
             return (
+              // biome-ignore lint/a11y/noNoninteractiveElementInteractions: later
+              // biome-ignore lint/a11y/noStaticElementInteractions: later
+              // biome-ignore lint/a11y/useKeyWithClickEvents: later
               <div
-                key={event.id}
+                key={eventData.id}
                 className="cursor-pointer"
                 onClick={() => handleEventClick(event)}
               >

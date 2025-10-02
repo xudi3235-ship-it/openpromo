@@ -8,6 +8,7 @@ import { useRef, useState } from "react";
 import {
   type CalendarEvent,
   EventItem,
+  getEventData,
   useCalendarDnd,
 } from "@/components/calendar";
 
@@ -37,6 +38,7 @@ export function DraggableEvent({
   "aria-hidden": ariaHidden,
 }: DraggableEventProps) {
   const { activeId } = useCalendarDnd();
+  const eventData = getEventData(event);
   const elementRef = useRef<HTMLDivElement>(null);
   const [dragHandlePosition, setDragHandlePosition] = useState<{
     x: number;
@@ -44,14 +46,16 @@ export function DraggableEvent({
   } | null>(null);
 
   // Check if this is a multi-day event
-  const eventStart = new Date(event.start);
-  const eventEnd = new Date(event.end);
+  const eventStart = new Date(eventData.start);
+  const eventEnd = new Date(eventData.end);
   const isMultiDayEvent =
-    isMultiDay || event.allDay || differenceInDays(eventEnd, eventStart) >= 1;
+    isMultiDay ||
+    eventData.allDay ||
+    differenceInDays(eventEnd, eventStart) >= 1;
 
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
-      id: `${event.id}-${view}`,
+      id: `${eventData.id}-${view}`,
       data: {
         event,
         view,
@@ -76,7 +80,7 @@ export function DraggableEvent({
   };
 
   // Don't render if this event is being dragged
-  if (isDragging || activeId === `${event.id}-${view}`) {
+  if (isDragging || activeId === `${eventData.id}-${view}`) {
     return (
       <div
         ref={setNodeRef}

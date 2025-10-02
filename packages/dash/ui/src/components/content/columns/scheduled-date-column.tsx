@@ -60,9 +60,11 @@ export const scheduledDateColumn: ColumnDef<MergedContentEntity> = {
         // Check if content is scheduled and has a scheduling spec
         if (
           content.publishingStatus === "SCHEDULED" &&
-          content.schedulingSpec?.publishAt
+          content.placementSpec?.schedulingSpec?.publishAt
         ) {
-          const scheduledDate = new Date(content.schedulingSpec.publishAt);
+          const scheduledDate = new Date(
+            content.placementSpec.schedulingSpec.publishAt,
+          );
           const { primary, secondary } = formatScheduledDate(scheduledDate);
 
           return (
@@ -89,9 +91,11 @@ export const scheduledDateColumn: ColumnDef<MergedContentEntity> = {
         // Check if group is scheduled
         if (
           group.publishingStatus === "SCHEDULED" &&
-          group.schedulingSpec?.publishAt
+          group.pendingContentGroupSpec?.baseSchedulingSpec?.publishAt
         ) {
-          const scheduledDate = new Date(group.schedulingSpec.publishAt);
+          const scheduledDate = new Date(
+            group.pendingContentGroupSpec?.baseSchedulingSpec?.publishAt,
+          );
           const { primary, secondary } = formatScheduledDate(scheduledDate);
 
           return (

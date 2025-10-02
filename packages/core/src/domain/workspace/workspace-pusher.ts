@@ -86,8 +86,6 @@ export class WorkspacePusher extends Pusher {
         workspaceSlug,
       }),
     );
-
-    // await this.startPeriodicEvents(ws);
   }
 
   sendMessageToUser(userId: string, message: string) {
@@ -168,35 +166,6 @@ export class WorkspacePusher extends Pusher {
     } catch (error) {
       console.error("Failed to send echo message:", error);
     }
-  }
-
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: later
-  private async startPeriodicEvents(ws: WebSocket) {
-    const workspaceSlug = this.workspaceSlug;
-    let eventCount = 0;
-
-    const periodicInterval = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-        eventCount++;
-        const event = {
-          type: "periodic",
-          message: `Periodic event #${eventCount} from workspace ${workspaceSlug}`,
-          timestamp: Date.now(),
-          eventId: `event-${eventCount}`,
-          workspaceSlug,
-        };
-
-        ws.send(JSON.stringify(event));
-        console.log(
-          `Sent periodic event ${eventCount} to workspace ${workspaceSlug}`,
-        );
-      } else {
-        console.log("WebSocket closed, clearing periodic events");
-        clearInterval(periodicInterval);
-      }
-    }, 10000); // 10 seconds
-
-    console.log(`Started periodic events for workspace ${workspaceSlug}`);
   }
 }
 

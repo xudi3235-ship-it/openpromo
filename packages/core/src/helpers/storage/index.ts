@@ -116,19 +116,35 @@ export namespace Storage {
     return true;
   }
 
+  function toArrayBuffer(view: Uint8Array): ArrayBuffer {
+    const { buffer, byteOffset, byteLength } = view;
+
+    if (buffer instanceof ArrayBuffer) {
+      return buffer.slice(byteOffset, byteOffset + byteLength);
+    }
+
+    const copy = new Uint8Array(byteLength);
+    copy.set(view);
+    return copy.buffer;
+  }
+
   function prepareBody(body: UploadBody): BodyInit {
     if (typeof body === "string") {
-      return Buffer.from(body);
+      return body;
     }
+
     if (typeof ArrayBuffer !== "undefined" && body instanceof ArrayBuffer) {
-      return Buffer.from(body);
+      return body;
     }
+
     if (typeof Uint8Array !== "undefined" && body instanceof Uint8Array) {
-      return body;
+      return toArrayBuffer(body);
     }
+
     if (typeof Buffer !== "undefined" && Buffer.isBuffer(body)) {
-      return body;
+      return toArrayBuffer(body as unknown as Uint8Array);
     }
+
     return body as BodyInit;
   }
 
@@ -340,7 +356,7 @@ export namespace Storage {
       `${objectUrl(key, bucket)}?partNumber=${partNumber}&uploadId=${uploadId}`,
       {
         method: "PUT",
-        body,
+        body: prepareBody(body),
       },
     );
 

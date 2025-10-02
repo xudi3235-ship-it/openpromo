@@ -156,8 +156,6 @@ export function CalendarSkeleton() {
           />
         )}
         {view === "week" && <WeekViewSkeleton />}
-        {view === "day" && <DayViewSkeleton />}
-        {view === "agenda" && <AgendaViewSkeleton />}
       </div>
     </div>
   );
@@ -280,60 +278,6 @@ function WeekViewSkeleton() {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function DayViewSkeleton() {
-  return (
-    <div className="flex flex-col h-full">
-      {/* Day Header */}
-      <div className="border-b border-border/70 p-4">
-        <Skeleton className="h-6 w-32" />
-      </div>
-
-      {/* Day Grid */}
-      <div className="flex-1 space-y-4 p-4">
-        {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="flex space-x-4">
-            <Skeleton className="h-4 w-12" />
-            <div className="flex-1 space-y-2">
-              {Math.random() > 0.7 && (
-                <Skeleton className="h-12 w-full rounded" />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function AgendaViewSkeleton() {
-  return (
-    <div className="space-y-6">
-      {Array.from({ length: 5 }, (_, dayIndex) => (
-        <div key={dayIndex}>
-          <div className="flex items-center space-x-4 mb-4">
-            <Skeleton className="h-6 w-20" />
-            <div className="flex-1 h-px bg-border" />
-          </div>
-          <div className="space-y-3 ml-6">
-            {Array.from(
-              { length: Math.floor(Math.random() * 4) + 1 },
-              (_, eventIndex) => (
-                <div key={eventIndex} className="flex items-start space-x-3">
-                  <Skeleton className="h-3 w-12 mt-1" />
-                  <div className="flex-1">
-                    <Skeleton className="h-4 w-3/4 mb-1" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                </div>
-              ),
-            )}
-          </div>
-        </div>
-      ))}
     </div>
   );
 }

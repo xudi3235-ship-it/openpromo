@@ -1,5 +1,6 @@
 "use client";
 
+import type { ContentPublishingStatus } from "@core/schemas/content.sql";
 import { Button } from "@openpromo/ui/components/button";
 import { Calendar } from "@openpromo/ui/components/calendar";
 import { Checkbox } from "@openpromo/ui/components/checkbox";
@@ -36,9 +37,11 @@ import { format, isBefore } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
 import type { CalendarEvent, EventColor } from "@/components/calendar";
 import {
+  createPlaceholderContentEvent,
   DefaultEndHour,
   DefaultStartHour,
   EndHour,
+  ensurePlacementSpecWithSchedule,
   getEventData,
   StartHour,
 } from "@/components/calendar";
@@ -171,44 +174,36 @@ export function EventDialog({
       return;
     }
 
-    // Create updated content entity structure
+    const publishAt = start;
+    const publishingStatus: ContentPublishingStatus = allDay
+      ? "DRAFT"
+      : "SCHEDULED";
+
     if (event) {
-      const updatedEvent = {
+      if (event.type !== "content") {
+        onSave(event);
+        return;
+      }
+
+      const updatedEvent: CalendarEvent = {
         ...event,
         entity: {
           ...event.entity,
-          publishingStatus: allDay
-            ? ("DRAFT" as const)
-            : ("SCHEDULED" as const),
-          schedulingSpec: {
-            ...event.entity,
-            scheduledPublishAt: start.toISOString(),
-          },
+          publishingStatus,
+          placementSpec: ensurePlacementSpecWithSchedule(
+            event.entity.placement,
+            event.entity.placementSpec,
+            publishAt,
+            publishingStatus,
+          ),
           updatedAt: new Date(),
         },
-      } as CalendarEvent;
+      };
       onSave(updatedEvent);
-    } else {
-      // Create new content entity - use the same structure as handleEventCreate
-      const newEvent = {
-        type: "content" as const,
-        entity: {
-          id: "",
-          sourceContentId: null,
-          placement: "FB_FEED" as const,
-          placementSpec: null,
-          publishingStatus: allDay
-            ? ("DRAFT" as const)
-            : ("SCHEDULED" as const),
-          schedulingSpec: {
-            scheduledPublishAt: start.toISOString(),
-          },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      } as CalendarEvent;
-      onSave(newEvent);
+      return;
     }
+
+    onSave(createPlaceholderContentEvent(publishAt, publishingStatus));
   };
 
   const handleDelete = () => {

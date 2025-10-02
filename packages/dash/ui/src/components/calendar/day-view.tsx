@@ -68,9 +68,11 @@ export function DayView({
           (currentDate > eventStart && currentDate < eventEnd)
         );
       })
-      .sort(
-        (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
-      );
+      .sort((a, b) => {
+        const aStart = new Date(getEventData(a).start).getTime();
+        const bStart = new Date(getEventData(b).start).getTime();
+        return aStart - bStart;
+      });
   }, [currentDate, events]);
 
   // Filter all-day events
@@ -98,10 +100,12 @@ export function DayView({
 
     // Sort events by start time and duration
     const sortedEvents = [...timeEvents].sort((a, b) => {
-      const aStart = new Date(a.start);
-      const bStart = new Date(b.start);
-      const aEnd = new Date(a.end);
-      const bEnd = new Date(b.end);
+      const aData = getEventData(a);
+      const bData = getEventData(b);
+      const aStart = new Date(aData.start);
+      const bStart = new Date(bData.start);
+      const aEnd = new Date(aData.end);
+      const bEnd = new Date(bData.end);
 
       // First sort by start time
       if (aStart < bStart) return -1;
@@ -117,8 +121,9 @@ export function DayView({
     const columns: { event: CalendarEvent; end: Date }[][] = [];
 
     sortedEvents.forEach((event) => {
-      const eventStart = new Date(event.start);
-      const eventEnd = new Date(event.end);
+      const eventData = getEventData(event);
+      const eventStart = new Date(eventData.start);
+      const eventEnd = new Date(eventData.end);
 
       // Adjust start and end times if they're outside this day
       const adjustedStart = isSameDay(currentDate, eventStart)
@@ -207,8 +212,9 @@ export function DayView({
             </div>
             <div className="border-border/70 relative border-r p-1 last:border-r-0">
               {allDayEvents.map((event) => {
-                const eventStart = new Date(event.start);
-                const eventEnd = new Date(event.end);
+                const eventData = getEventData(event);
+                const eventStart = new Date(eventData.start);
+                const eventEnd = new Date(eventData.end);
                 const isFirstDay = isSameDay(currentDate, eventStart);
                 const isLastDay = isSameDay(currentDate, eventEnd);
 
