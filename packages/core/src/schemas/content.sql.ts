@@ -344,6 +344,7 @@ export type UnifiedContentForPlacement<T extends AllPlacement[number]> = {
 };
 export type UnifiedContentFacebookPost = UnifiedContentForPlacement<"FB_FEED">;
 export type UnifiedContentInstagramPost = UnifiedContentForPlacement<"IG_FEED">;
+export type UnifiedContentTikTokPost = UnifiedContentForPlacement<"TT_FEED">;
 
 export const UnifiedContentInsert = createInsertSchema(unifiedContentTable, {
   placement: z.enum([...Object.values(AllPlacement)]),

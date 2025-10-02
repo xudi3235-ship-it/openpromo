@@ -163,6 +163,11 @@ export class EntUnifiedContent extends EntUnifiedContentBase {
           const post = new EntInstagramPost(this.data);
           return await post._delete();
         }
+        case AllPlacementEnum.TT_FEED: {
+          const { EntTikTokPost } = await import("./platform-posts");
+          const post = new EntTikTokPost(this.data);
+          return await post._delete();
+        }
         default:
           return await this._delete();
       }

@@ -2,10 +2,12 @@ import type {
   UnifiedContentFacebookPost,
   UnifiedContentInstagramPost,
   UnifiedContentSelect,
+  UnifiedContentTikTokPost,
 } from "@core/schemas/content.sql";
 import {
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
+  TikTokFeedPlacementSpec,
 } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
 import { EntUnifiedContentBase } from "./base";
@@ -105,5 +107,42 @@ export class EntInstagramPost extends EntUnifiedContentBase {
   }
   public async _delete(): Promise<UnifiedContentInstagramPost> {
     return (await super._delete()) as UnifiedContentInstagramPost;
+  }
+}
+
+export class EntTikTokPost extends EntUnifiedContentBase {
+  private readonly log = Log.create({ namespace: "ent-tiktok-post" });
+  private readonly spec: TikTokFeedPlacementSpec;
+
+  toJSON(): UnifiedContentTikTokPost {
+    return this.data as UnifiedContentTikTokPost;
+  }
+
+  override fromUnifiedContent(data: UnifiedContentSelect): EntTikTokPost {
+    return new EntTikTokPost(data);
+  }
+
+  constructor(data: UnifiedContentSelect) {
+    super(data);
+    const parsed = TikTokFeedPlacementSpec.safeParse(data.placementSpec);
+    if (!parsed.success) {
+      throw new Error(
+        `unable to parse TikTok placementSpec for content ${data.id}: ${parsed.error.message}`,
+      );
+    }
+    this.spec = parsed.data;
+  }
+
+  async fromUnifiedContentID(id: string): Promise<EntTikTokPost> {
+    return new EntTikTokPost(await EntUnifiedContentBase._fromID(id));
+  }
+
+  protected async deleteSrc(): Promise<void> {
+    this.spec;
+    this.log.info("skip tiktok deletion, not supported");
+  }
+
+  public async _delete(): Promise<UnifiedContentTikTokPost> {
+    return (await super._delete()) as UnifiedContentTikTokPost;
   }
 }
