@@ -102,4 +102,4 @@ export abstract class CoreWorkflowEntrypoint<
   ): Promise<unknown>;
 }
 
-export { WorkflowEvent as CoreWorkflowEvent } from "cloudflare:workers";
+export type { WorkflowEvent as CoreWorkflowEvent } from "cloudflare:workers";
