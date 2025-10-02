@@ -23,7 +23,7 @@ export function ResizableComposer({
   const props = {
     ...initComposerProps,
     initialAccounts: accounts,
-    initialMessage: "caption your post here...",
+    initialMessage: "",
   } as ComposerProps;
   return (
     <ComposerProvider {...props}>
