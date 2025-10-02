@@ -87,12 +87,15 @@ export const connectedAccountId = {
   connectedAccountId: ulid("connected_account_id").notNull(),
 };
 
+const opts = {
+  platform: Platform,
+  lastBackfillAt: z.date().nullable(),
+};
+
 // select
 export const ConnectedAccountSelectSchema = createSelectSchema(
   connectedAccount,
-  {
-    platform: Platform,
-  },
+  opts,
 );
 export type ConnectedAccountSelect = z.infer<
   typeof ConnectedAccountSelectSchema
@@ -109,9 +112,7 @@ export type ConnectedAccountWithoutSensitive = z.infer<
 
 export const ConnectedAccountInsertSchema = createInsertSchema(
   connectedAccount,
-  {
-    platform: Platform,
-  },
+  opts,
 );
 
 export type ConnectedAccountInsert = z.infer<
@@ -120,7 +121,5 @@ export type ConnectedAccountInsert = z.infer<
 // update
 export const ConnectedAccountUpdateSchema = createUpdateSchema(
   connectedAccount,
-  {
-    platform: Platform,
-  },
+  opts,
 );

@@ -75,6 +75,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
               platform: Platform.enum.FACEBOOK,
               externalAccountId: page.id,
               accountName: page.name,
+              lastBackfillAt: null,
               externalUrl: `https://www.facebook.com/${page.id}`,
               profilePicUrl,
               // NOTE: this is page-level access token!!

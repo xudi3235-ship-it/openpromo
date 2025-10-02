@@ -64,6 +64,7 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>().get(
           // TODO: implement encryption
           encryptedAccessToken: authResult.accessToken,
           refreshToken: authResult.refreshToken,
+          lastBackfillAt: null,
           tokenExpiresAt: new Date(Date.now() + authResult.expiresIn * 1000),
           metadata: {
             igAccountID: authResult.id,
