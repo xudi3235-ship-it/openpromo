@@ -3,22 +3,22 @@ import {
   SidebarProvider,
 } from "@openpromo/ui/components/sidebar";
 import { cn } from "@openpromo/ui/lib/utils";
-import { Outlet, useRouterState } from "@tanstack/react-router";
+import { Outlet } from "@tanstack/react-router";
 import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { LayoutProvider } from "@/context/layout-provider";
 import { AppSidebar } from "../app-sidebar";
+import { useShouldShowAccountsBar } from "./use-should-show-accounts-bar";
 
 type WorkspaceLayoutProps = {
   children?: React.ReactNode;
+  showAccountsBar?: boolean;
 };
 
-export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
-  const routerState = useRouterState();
-  const pathname = routerState.location.pathname;
-
-  const isComposerRoute = pathname.includes("/composer");
-  const isWorkspaceHome = /^\/workspaces\/[^/]+\/?$/.test(pathname);
-  const shouldShowAccountsBar = !(isComposerRoute || isWorkspaceHome);
+export function WorkspaceLayout({
+  children,
+  showAccountsBar,
+}: WorkspaceLayoutProps) {
+  const shouldShowAccountsBar = useShouldShowAccountsBar(showAccountsBar);
 
   return (
     <SidebarProvider>

@@ -6,6 +6,7 @@ import {
   Settings,
   SquarePen,
   TrendingUp,
+  Users,
 } from "lucide-react";
 import type { SidebarData } from "../types";
 
@@ -18,12 +19,17 @@ export const sidebarData: SidebarData = {
   teams: [],
   navGroups: [
     {
-      title: "General",
+      title: "Tools",
       items: [
         {
           title: "Home",
           url: "/workspaces/$workspaceSlug",
           icon: Home,
+        },
+        {
+          title: "Inbox",
+          url: "/workspaces/$workspaceSlug/inbox",
+          icon: Inbox,
         },
         {
           title: "Create Post",
@@ -41,16 +47,21 @@ export const sidebarData: SidebarData = {
           icon: Calendar,
         },
         {
-          title: "Inbox",
-          url: "/workspaces/$workspaceSlug/inbox",
-          icon: Inbox,
-        },
-        {
           title: "Insights",
           url: "/workspaces/$workspaceSlug/insights",
           badge: "3",
           icon: TrendingUp,
         },
+        {
+          title: "Team",
+          url: "/workspaces/$workspaceSlug/team",
+          icon: Users,
+        },
+      ],
+    },
+    {
+      title: "Labs",
+      items: [
         {
           title: "[INTERN]Playground",
           url: "/workspaces/$workspaceSlug/playground",

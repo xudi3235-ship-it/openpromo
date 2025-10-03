@@ -16,6 +16,7 @@ import { Route as AuthenticatedWorkspacesRouteRouteImport } from './routes/_auth
 import { Route as AuthenticatedWorkspacesIndexRouteImport } from './routes/_authenticated/workspaces/index'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugRouteRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/route'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/index'
+import { Route as AuthenticatedWorkspacesWorkspaceSlugTeamRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/team'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugPlaygroundRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/playground'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugInboxRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/inbox'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugContentRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/content'
@@ -60,6 +61,12 @@ const AuthenticatedWorkspacesWorkspaceSlugIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRouteRoute,
   } as any)
+const AuthenticatedWorkspacesWorkspaceSlugTeamRoute =
+  AuthenticatedWorkspacesWorkspaceSlugTeamRouteImport.update({
+    id: '/team',
+    path: '/team',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRouteRoute,
+  } as any)
 const AuthenticatedWorkspacesWorkspaceSlugPlaygroundRoute =
   AuthenticatedWorkspacesWorkspaceSlugPlaygroundRouteImport.update({
     id: '/playground',
@@ -102,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceSlug/content': typeof AuthenticatedWorkspacesWorkspaceSlugContentRoute
   '/workspaces/$workspaceSlug/inbox': typeof AuthenticatedWorkspacesWorkspaceSlugInboxRoute
   '/workspaces/$workspaceSlug/playground': typeof AuthenticatedWorkspacesWorkspaceSlugPlaygroundRoute
+  '/workspaces/$workspaceSlug/team': typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   '/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
 }
 export interface FileRoutesByTo {
@@ -113,6 +121,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceSlug/content': typeof AuthenticatedWorkspacesWorkspaceSlugContentRoute
   '/workspaces/$workspaceSlug/inbox': typeof AuthenticatedWorkspacesWorkspaceSlugInboxRoute
   '/workspaces/$workspaceSlug/playground': typeof AuthenticatedWorkspacesWorkspaceSlugPlaygroundRoute
+  '/workspaces/$workspaceSlug/team': typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   '/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
 }
 export interface FileRoutesById {
@@ -128,6 +137,7 @@ export interface FileRoutesById {
   '/_authenticated/workspaces/$workspaceSlug/content': typeof AuthenticatedWorkspacesWorkspaceSlugContentRoute
   '/_authenticated/workspaces/$workspaceSlug/inbox': typeof AuthenticatedWorkspacesWorkspaceSlugInboxRoute
   '/_authenticated/workspaces/$workspaceSlug/playground': typeof AuthenticatedWorkspacesWorkspaceSlugPlaygroundRoute
+  '/_authenticated/workspaces/$workspaceSlug/team': typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   '/_authenticated/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
 }
 export interface FileRouteTypes {
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug/content'
     | '/workspaces/$workspaceSlug/inbox'
     | '/workspaces/$workspaceSlug/playground'
+    | '/workspaces/$workspaceSlug/team'
     | '/workspaces/$workspaceSlug/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug/content'
     | '/workspaces/$workspaceSlug/inbox'
     | '/workspaces/$workspaceSlug/playground'
+    | '/workspaces/$workspaceSlug/team'
     | '/workspaces/$workspaceSlug'
   id:
     | '__root__'
@@ -168,6 +180,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/$workspaceSlug/content'
     | '/_authenticated/workspaces/$workspaceSlug/inbox'
     | '/_authenticated/workspaces/$workspaceSlug/playground'
+    | '/_authenticated/workspaces/$workspaceSlug/team'
     | '/_authenticated/workspaces/$workspaceSlug/'
   fileRoutesById: FileRoutesById
 }
@@ -228,6 +241,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugIndexRouteImport
       parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteRoute
     }
+    '/_authenticated/workspaces/$workspaceSlug/team': {
+      id: '/_authenticated/workspaces/$workspaceSlug/team'
+      path: '/team'
+      fullPath: '/workspaces/$workspaceSlug/team'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugTeamRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteRoute
+    }
     '/_authenticated/workspaces/$workspaceSlug/playground': {
       id: '/_authenticated/workspaces/$workspaceSlug/playground'
       path: '/playground'
@@ -272,6 +292,7 @@ interface AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren {
   AuthenticatedWorkspacesWorkspaceSlugContentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugContentRoute
   AuthenticatedWorkspacesWorkspaceSlugInboxRoute: typeof AuthenticatedWorkspacesWorkspaceSlugInboxRoute
   AuthenticatedWorkspacesWorkspaceSlugPlaygroundRoute: typeof AuthenticatedWorkspacesWorkspaceSlugPlaygroundRoute
+  AuthenticatedWorkspacesWorkspaceSlugTeamRoute: typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   AuthenticatedWorkspacesWorkspaceSlugIndexRoute: typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
 }
 
@@ -287,6 +308,8 @@ const AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren: AuthenticatedWorks
       AuthenticatedWorkspacesWorkspaceSlugInboxRoute,
     AuthenticatedWorkspacesWorkspaceSlugPlaygroundRoute:
       AuthenticatedWorkspacesWorkspaceSlugPlaygroundRoute,
+    AuthenticatedWorkspacesWorkspaceSlugTeamRoute:
+      AuthenticatedWorkspacesWorkspaceSlugTeamRoute,
     AuthenticatedWorkspacesWorkspaceSlugIndexRoute:
       AuthenticatedWorkspacesWorkspaceSlugIndexRoute,
   }
