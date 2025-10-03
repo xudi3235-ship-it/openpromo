@@ -1,3 +1,4 @@
+import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
 import { Avatar, AvatarFallback } from "@openpromo/ui/components/avatar";
 import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
@@ -26,46 +27,85 @@ import {
   TableHeader,
   TableRow,
 } from "@openpromo/ui/components/table";
+import type { WorkspaceMember as WorkspaceMemberResponse } from "@worker/routes/api/workspaces/team";
 import { UserPlus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useWorkspaceMembers } from "@/queries/workspace";
 
-interface WorkspaceMember {
-  id: string;
-  name: string;
-  email: string;
-  role: "Owner" | "Admin" | "Member";
-  status: "Active" | "Invited";
-}
+type WorkspaceMember = WorkspaceMemberResponse;
+type WorkspaceRoleValue = (typeof WORKSPACE_ROLE)[keyof typeof WORKSPACE_ROLE];
 
-const seedMembers: WorkspaceMember[] = [
+const capitalize = (value: string) =>
+  value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+
+const formatRoleSlug = (slug?: string) => {
+  if (!slug) return "Member";
+  return slug
+    .replace(/^workspace_/, "")
+    .split("_")
+    .filter(Boolean)
+    .map(capitalize)
+    .join(" ");
+};
+
+const ROLE_OPTIONS: Array<{ value: WorkspaceRoleValue; label: string }> = [
+  { value: WORKSPACE_ROLE.ADMIN, label: formatRoleSlug(WORKSPACE_ROLE.ADMIN) },
   {
-    id: "1",
-    name: "Brenda Chen",
-    email: "brenda@acme.co",
-    role: "Owner",
-    status: "Active",
+    value: WORKSPACE_ROLE.EDITOR,
+    label: formatRoleSlug(WORKSPACE_ROLE.EDITOR),
   },
   {
-    id: "2",
-    name: "Miles Rodriguez",
-    email: "miles@acme.co",
-    role: "Admin",
-    status: "Active",
-  },
-  {
-    id: "3",
-    name: "Sofia Patel",
-    email: "sofia@acme.co",
-    role: "Member",
-    status: "Invited",
+    value: WORKSPACE_ROLE.VIEWER,
+    label: formatRoleSlug(WORKSPACE_ROLE.VIEWER),
   },
 ];
 
+const getRoleLabel = (role?: WorkspaceMember["role"]) => {
+  if (!role) return "Member";
+  return role.name || formatRoleSlug(role.slug);
+};
+
+const getMemberName = (member: WorkspaceMember) => {
+  const first = member.user?.firstName?.trim();
+  const last = member.user?.lastName?.trim();
+  const fullName = [first, last].filter(Boolean).join(" ");
+
+  if (fullName) return fullName;
+  if (member.user?.email) return member.user.email;
+  if (member.user?.id) return `User ${member.user.id.slice(0, 6)}`;
+  return "Workspace member";
+};
+
+const getMemberInitials = (member: WorkspaceMember) => {
+  const initials = [member.user?.firstName?.[0], member.user?.lastName?.[0]]
+    .filter((char): char is string => Boolean(char))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  if (initials) return initials;
+
+  const email = member.user?.email;
+  if (email) {
+    const scrubbed = email.replace(/[^A-Za-z0-9]/g, "").slice(0, 2);
+    if (scrubbed) return scrubbed.toUpperCase();
+  }
+
+  return "??";
+};
+
 export function TeamManagement() {
-  const [members, setMembers] = useState<WorkspaceMember[]>(seedMembers);
+  const { data, isPending, isError } = useWorkspaceMembers();
+  const members = data?.members ?? [];
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formState, setFormState] = useState({ email: "", role: "Member" });
+  const [formState, setFormState] = useState<{
+    email: string;
+    role: WorkspaceRoleValue;
+  }>({
+    email: "",
+    role: WORKSPACE_ROLE.VIEWER,
+  });
 
   const handleInvite = () => {
     if (!formState.email.trim()) {
@@ -74,7 +114,8 @@ export function TeamManagement() {
     }
 
     const emailExists = members.some(
-      (member) => member.email.toLowerCase() === formState.email.toLowerCase(),
+      (member) =>
+        member.user?.email?.toLowerCase() === formState.email.toLowerCase(),
     );
 
     if (emailExists) {
@@ -82,34 +123,18 @@ export function TeamManagement() {
       return;
     }
 
-    const newMember: WorkspaceMember = {
-      id: crypto.randomUUID(),
-      name: formState.email.split("@")[0],
-      email: formState.email,
-      role: formState.role as WorkspaceMember["role"],
-      status: "Invited",
-    };
+    toast.success("Invite queued", {
+      description: `We'll invite ${formState.email} as a ${formatRoleSlug(formState.role)} once invitations are available.`,
+    });
 
-    setMembers((prev) => [...prev, newMember]);
     setIsDialogOpen(false);
-    setFormState({ email: "", role: "Member" });
-    toast.success("Invitation sent", {
-      description: `We emailed ${newMember.email} with instructions to join the workspace.`,
-    });
+    setFormState({ email: "", role: WORKSPACE_ROLE.VIEWER });
   };
 
-  const handleRemove = (memberId: string) => {
-    setMembers((prev) => prev.filter((member) => member.id !== memberId));
-    toast("Member removed", {
-      description: "They will immediately lose access to this workspace.",
+  const handleRemove = (member: WorkspaceMember) => {
+    toast.info("Member management coming soon", {
+      description: `${getMemberName(member)} will stay in the workspace until removals are supported.`,
     });
-  };
-
-  const renderStatusBadge = (status: WorkspaceMember["status"]) => {
-    if (status === "Active") {
-      return <Badge variant="secondary">Active</Badge>;
-    }
-    return <Badge variant="outline">Invited</Badge>;
   };
 
   return (
@@ -161,7 +186,7 @@ export function TeamManagement() {
                     onValueChange={(value) =>
                       setFormState((prev) => ({
                         ...prev,
-                        role: value,
+                        role: value as WorkspaceRoleValue,
                       }))
                     }
                   >
@@ -169,9 +194,11 @@ export function TeamManagement() {
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Owner">Owner</SelectItem>
-                      <SelectItem value="Admin">Admin</SelectItem>
-                      <SelectItem value="Member">Member</SelectItem>
+                      {ROLE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -189,8 +216,8 @@ export function TeamManagement() {
           </Dialog>
         </div>
         <p className="text-xs text-muted-foreground">
-          Owners can manage billing, admins can publish and manage members,
-          members can view and collaborate on content.
+          Admins can publish and manage members, editors can collaborate on
+          content, and viewers have read-only access.
         </p>
       </div>
 
@@ -206,49 +233,104 @@ export function TeamManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {members.map((member) => (
-              <TableRow key={member.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>
-                        {member.name
-                          .split(" ")
-                          .map((part) => part[0])
-                          .join("")
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
-                        {member.name}
-                      </p>
+            {isPending &&
+              Array.from({ length: 3 }).map((_, index) => (
+                <TableRow
+                  key={`member-skeleton-${
+                    // biome-ignore lint/suspicious/noArrayIndexKey: later
+                    index
+                  }`}
+                >
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+                      <div className="h-3 w-24 animate-pulse rounded bg-muted" />
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {member.email}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">{member.role}</Badge>
-                </TableCell>
-                <TableCell>{renderStatusBadge(member.status)}</TableCell>
-                <TableCell className="text-right">
-                  {member.role !== "Owner" && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground"
-                      onClick={() => handleRemove(member.id)}
-                    >
-                      <X className="h-4 w-4" />
-                      <span className="sr-only">Remove member</span>
-                    </Button>
-                  )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="h-5 w-16 animate-pulse rounded bg-muted" />
+                  </TableCell>
+                  <TableCell />
+                </TableRow>
+              ))}
+
+            {isError && !isPending && (
+              <TableRow>
+                <TableCell
+                  colSpan={5}
+                  className="py-6 text-center text-sm text-muted-foreground"
+                >
+                  Unable to load workspace members.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
+
+            {!isPending && !isError && members.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={5}
+                  className="py-6 text-center text-sm text-muted-foreground"
+                >
+                  No teammates yet. Invite someone to get started.
+                </TableCell>
+              </TableRow>
+            )}
+
+            {!isPending &&
+              !isError &&
+              members.map((member) => {
+                const canRemove = member.role?.slug !== WORKSPACE_ROLE.ADMIN;
+                const email = member.user?.email ?? "—";
+
+                return (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>
+                            {getMemberInitials(member)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {getMemberName(member)}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {email}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {getRoleLabel(member.role)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">Active</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {canRemove && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground"
+                          onClick={() => handleRemove(member)}
+                        >
+                          <X className="h-4 w-4" />
+                          <span className="sr-only">Remove member</span>
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
           </TableBody>
         </Table>
       </div>

@@ -12,4 +12,8 @@ export const QUERY_KEYS = {
     workspaceSlug,
     "connected_accounts",
   ],
+  WORKSPACE_MEMBERS: (workspaceSlug: string) => [
+    workspaceSlug,
+    "workspace_members",
+  ],
 } as const;
