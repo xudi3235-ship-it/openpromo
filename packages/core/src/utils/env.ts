@@ -6,6 +6,7 @@ export const env = createEnv({
    * Serverside Environment variables, not available on the client.
    * Will throw if you access these variables on the client.
    */
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   server: {
     DATABASE_URL: z.string().min(1),
     ADMIN_API_TOKEN: z.string().min(1),

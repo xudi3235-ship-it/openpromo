@@ -24,6 +24,7 @@
     "@aws-sdk/s3-request-presigner": "^3.859.0",
     "@cloudflare/containers": "^0.0.28",
     "@neondatabase/serverless": "^1.0.1",
+    "@openpromo/shared": "workspace:*",
     "@t3-oss/env-core": "^0.13.8",
     "@workos-inc/node": "catalog:",
     "agents": "^0.0.113",
@@ -36,10 +37,10 @@
     "hono": "catalog:",
     "nanoid": "^5.1.5",
     "openpromo-backend": "^0.4.0",
-    "@openpromo/shared": "workspace:*",
     "postgres": "^3.4.7",
     "stripe": "^18.3.0",
     "ulid": "^3.0.1",
+    "vite": "^7.1.9",
     "zod": "catalog:"
   },
   "devDependencies": {
