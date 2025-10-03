@@ -86,19 +86,17 @@ export function ContentPage() {
   const selectedRows = table
     .getFilteredSelectedRowModel()
     .rows.map((row) => row.original);
+  const title = "Content";
+  const subtitle = "Plan, publish, and measure everything in one place.";
 
   return (
-    <div className="w-full">
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Search content..."
-          value={(table.getColumn("Title")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("Title")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-        <div className="ml-auto flex gap-2">
+    <div className="w-full space-y-2">
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+        </div>
+        <div className="flex gap-2 ml-auto">
           <Button onClick={() => openDialog()}>
             <Plus className="h-4 w-4" />
             Create Post
@@ -130,6 +128,16 @@ export function ContentPage() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3 md:gap-4 py-2">
+        <Input
+          placeholder="Search content..."
+          value={(table.getColumn("Title")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("Title")?.setFilterValue(event.target.value)
+          }
+          className="max-w-sm"
+        />
       </div>
 
       <ContentFilters filters={filters} onFiltersChange={setFilters} />
