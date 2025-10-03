@@ -60,11 +60,6 @@ const MergedContentContainer = z.discriminatedUnion("type", [
 export type MergedContentEntity = z.infer<typeof MergedContentContainer>;
 
 export type MergedContentContainer = z.infer<typeof MergedContentContainer>;
-export async function createDummyPendingContent() {
-  for (let i = 0; i < 5; i++) {
-    await EntPendingContent._createDummy();
-  }
-}
 
 export const ContentCreateData = z.object({
   base: BasePlacementSpec,
