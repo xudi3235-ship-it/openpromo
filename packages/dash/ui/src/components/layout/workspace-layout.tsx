@@ -3,7 +3,8 @@ import {
   SidebarProvider,
 } from "@openpromo/ui/components/sidebar";
 import { cn } from "@openpromo/ui/lib/utils";
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useRouterState } from "@tanstack/react-router";
+import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { LayoutProvider } from "@/context/layout-provider";
 import { AppSidebar } from "../app-sidebar";
 
@@ -12,6 +13,13 @@ type WorkspaceLayoutProps = {
 };
 
 export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
+  const routerState = useRouterState();
+  const pathname = routerState.location.pathname;
+
+  const isComposerRoute = pathname.includes("/composer");
+  const isWorkspaceHome = /^\/workspaces\/[^/]+\/?$/.test(pathname);
+  const shouldShowAccountsBar = !(isComposerRoute || isWorkspaceHome);
+
   return (
     <SidebarProvider>
       <LayoutProvider>
@@ -31,7 +39,12 @@ export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
             "@container/content",
           )}
         >
-          {children ?? <Outlet />}
+          <div className="flex h-full flex-col gap-4">
+            {shouldShowAccountsBar && (
+              <WorkspaceConnectedAccountsBar className="mx-4 mt-4" />
+            )}
+            <div className="flex-1">{children ?? <Outlet />}</div>
+          </div>
         </SidebarInset>
       </LayoutProvider>
     </SidebarProvider>

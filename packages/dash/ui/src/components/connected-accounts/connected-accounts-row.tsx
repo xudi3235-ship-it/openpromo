@@ -42,6 +42,8 @@ interface ConnectedAccountsRowProps {
   showAddButton?: boolean;
   size?: "sm" | "md" | "lg";
   className?: string;
+  fullWidth?: boolean;
+  appearance?: "default" | "minimal";
 }
 
 interface AccountAvatarProps {
@@ -329,6 +331,8 @@ export function ConnectedAccountsRow({
   onDeleteAccount,
   showAddButton = false,
   className = "",
+  fullWidth = false,
+  appearance = "default",
 }: ConnectedAccountsRowProps) {
   const mouseX = useMotionValue(Infinity);
 
@@ -339,7 +343,13 @@ export function ConnectedAccountsRow({
   return (
     <div className={className}>
       <motion.div
-        className="flex items-center gap-2 bg-card border border-border/40 rounded-2xl px-4 py-3"
+        className={cn(
+          "flex items-center gap-2 rounded-2xl",
+          appearance === "default"
+            ? "bg-card border border-border/40 px-4 py-3"
+            : "px-0 py-0",
+          fullWidth && "w-full",
+        )}
         onMouseMove={({ pageX }) => mouseX.set(pageX)}
         onMouseLeave={() => mouseX.set(Infinity)}
       >
@@ -368,15 +378,25 @@ export function ConnectedAccountsRow({
 
 export function ConnectedAccountsRowSkeleton({
   className = "",
+  fullWidth = false,
+  appearance = "default",
 }: {
   className?: string;
+  fullWidth?: boolean;
+  appearance?: "default" | "minimal";
 }) {
   const mouseX = useMotionValue(Infinity);
 
   return (
     <div className={className}>
       <motion.div
-        className="flex items-center gap-2 bg-card border border-border/40 rounded-2xl px-4 py-3"
+        className={cn(
+          "flex items-center gap-2 rounded-2xl",
+          appearance === "default"
+            ? "bg-card border border-border/40 px-4 py-3"
+            : "px-0 py-0",
+          fullWidth && "w-full",
+        )}
         onMouseMove={({ pageX }) => mouseX.set(pageX)}
         onMouseLeave={() => mouseX.set(Infinity)}
       >

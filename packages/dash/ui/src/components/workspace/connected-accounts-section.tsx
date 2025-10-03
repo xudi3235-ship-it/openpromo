@@ -1,3 +1,4 @@
+import { cn } from "@openpromo/ui/lib/utils";
 import { AvailablePlatformsRow } from "@/components/connected-accounts/available-platforms-row";
 import {
   ConnectedAccountsRow,
@@ -9,11 +10,15 @@ import { useOAuthWithListener } from "@/queries/connected-account";
 interface ConnectedAccountsSectionProps {
   accounts: ConnectedAccount[];
   isLoading: boolean;
+  variant?: "card" | "bar";
+  className?: string;
 }
 
 export function ConnectedAccountsSection({
   accounts,
   isLoading,
+  variant = "card",
+  className,
 }: ConnectedAccountsSectionProps) {
   const {
     handleConnectFacebook,
@@ -27,8 +32,47 @@ export function ConnectedAccountsSection({
     deleteConnectedAccount({ accountId });
   };
 
+  if (variant === "bar") {
+    if (isLoading) {
+      return (
+        <ConnectedAccountsRowSkeleton
+          className={cn("w-full", className)}
+          fullWidth
+          appearance="minimal"
+        />
+      );
+    }
+
+    if (accounts.length > 0) {
+      return (
+        <ConnectedAccountsRow
+          accounts={accounts}
+          onDeleteAccount={handleDeleteAccount}
+          showAddButton={true}
+          className={cn("w-full", className)}
+          fullWidth
+          appearance="minimal"
+        />
+      );
+    }
+
+    return (
+      <div className={cn("w-full", className)}>
+        <AvailablePlatformsRow
+          onConnectFacebook={handleConnectFacebook}
+          onConnectInstagram={handleConnectInstagram}
+          onConnectTikTok={handleConnectTikTok}
+          isConnecting={isConnecting}
+          size="md"
+        />
+      </div>
+    );
+  }
+
+  const containerClasses = "bg-card rounded-xl p-4 border border-border/40";
+
   return (
-    <div className="bg-card rounded-xl p-4 border border-border/40">
+    <div className={cn(containerClasses, className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h2 className="font-medium text-foreground">Accounts</h2>
@@ -48,7 +92,6 @@ export function ConnectedAccountsSection({
         <div className="mt-4">
           <ConnectedAccountsRow
             accounts={accounts}
-            size="md"
             onDeleteAccount={handleDeleteAccount}
             showAddButton={true}
           />
