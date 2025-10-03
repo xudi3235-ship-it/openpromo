@@ -32,6 +32,7 @@ import { useContentListQuery } from "@/queries/content";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import { BatchActionsToolbar } from "./batch-actions-toolbar";
 import { columns } from "./columns";
+import { ContentEmptyState } from "./content-empty-state";
 import {
   ContentFilters,
   type ContentFilters as ContentFiltersType,
@@ -188,11 +189,8 @@ export function ContentPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
+                  <TableCell colSpan={columns.length} className="p-0">
+                    <ContentEmptyState />
                   </TableCell>
                 </TableRow>
               )}
