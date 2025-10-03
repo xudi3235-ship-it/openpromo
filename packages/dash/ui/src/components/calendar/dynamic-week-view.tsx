@@ -268,11 +268,14 @@ export function DynamicWeekView({
 
                 {/* Empty state / create button */}
                 {eventsForDay.length === 0 && isCreatableDay(day) && (
-                  <EmptyStateButton
-                    day={day}
-                    onClick={handleCreateEvent}
-                    variant="large"
-                  />
+                  <div className="h-32 w-full">
+                    <EmptyStateButton
+                      day={day}
+                      onClick={handleCreateEvent}
+                      variant="large"
+                      className="h-full"
+                    />
+                  </div>
                 )}
 
                 {/* Add button at the bottom if there are events */}
