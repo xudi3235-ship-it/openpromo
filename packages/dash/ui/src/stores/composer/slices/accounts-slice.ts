@@ -3,6 +3,7 @@ import type {
   IGFeedPlacementSpec,
   TikTokFeedPlacementSpec,
 } from "@core/schemas/content.sql";
+import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import { recalculateValidation } from "../utils/validation";
 import type { ComposerSlice } from "./types";
 
@@ -59,6 +60,20 @@ export const createAccountsSlice: ComposerSlice<{
         ),
       );
 
+      const getSchedulingSpecForPlacement = () => {
+        if (state.contentCreateData.base.publishingStatus !== "SCHEDULED") {
+          return undefined;
+        }
+        const publishAt =
+          state.contentCreateData.base.schedulingSpec?.publishAt;
+        if (!publishAt) {
+          return undefined;
+        }
+        return {
+          publishAt: new Date(publishAt),
+        } as ContentCreateData["base"]["schedulingSpec"];
+      };
+
       accountIds.forEach((accountId) => {
         const account = state.accounts.find((acc) => acc.id === accountId);
         if (!account) return;
@@ -79,6 +94,10 @@ export const createAccountsSlice: ComposerSlice<{
             },
             customized: false,
           };
+          const schedulingSpec = getSchedulingSpecForPlacement();
+          if (schedulingSpec) {
+            newFacebookSpec.schedulingSpec = schedulingSpec;
+          }
           state.contentCreateData.placements.facebookFeed?.push(
             newFacebookSpec,
           );
@@ -99,6 +118,10 @@ export const createAccountsSlice: ComposerSlice<{
             attachments: [...(state.contentCreateData.base.attachments || [])],
             customized: false,
           };
+          const schedulingSpec = getSchedulingSpecForPlacement();
+          if (schedulingSpec) {
+            newInstagramSpec.schedulingSpec = schedulingSpec;
+          }
           state.contentCreateData.placements.instagramFeed?.push(
             newInstagramSpec,
           );
@@ -116,6 +139,10 @@ export const createAccountsSlice: ComposerSlice<{
             attachments: [...(state.contentCreateData.base.attachments || [])],
             customized: false,
           };
+          const schedulingSpec = getSchedulingSpecForPlacement();
+          if (schedulingSpec) {
+            newTikTokSpec.schedulingSpec = schedulingSpec;
+          }
           state.contentCreateData.placements.tiktokFeed?.push(newTikTokSpec);
         }
       });
