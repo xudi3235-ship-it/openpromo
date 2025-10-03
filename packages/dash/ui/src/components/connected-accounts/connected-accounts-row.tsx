@@ -361,6 +361,7 @@ interface ComposerAccountAvatarProps {
   active: boolean;
   dimmed: boolean;
   showLabels: boolean;
+  canCustomize: boolean;
   onToggleSelected: () => void;
   onSetActive: () => void;
 }
@@ -381,6 +382,7 @@ function ComposerAccountAvatar({
   active,
   dimmed,
   showLabels,
+  canCustomize,
   onToggleSelected,
   onSetActive,
 }: ComposerAccountAvatarProps) {
@@ -388,6 +390,7 @@ function ComposerAccountAvatar({
   const meta = getPlatformMeta(account.platform);
   const accountLabel = account.accountName || meta.label;
   const Icon = meta.icon;
+  const isActive = canCustomize && active;
 
   return (
     <div
@@ -404,7 +407,7 @@ function ComposerAccountAvatar({
           "relative aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-ring transition-all",
           showLabels ? "w-10" : "w-8",
           selected ? "opacity-100" : "opacity-40",
-          active &&
+          isActive &&
             cn(
               "ring-2 ring-offset-2 ring-offset-background",
               meta.accentRingClass,
@@ -453,18 +456,18 @@ function ComposerAccountAvatar({
         )}
       </button>
 
-      {selected && (
+      {selected && canCustomize && (
         <button
           type="button"
           className={cn(
             "rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-ring hover:h-1.5 focus:h-1.5",
             showLabels ? "w-10 h-1" : "w-6 h-1",
-            active
+            isActive
               ? cn(meta.accentIndicatorClass, "shadow-sm")
               : "bg-muted hover:bg-muted-foreground/30",
           )}
           onClick={onSetActive}
-          aria-label={`${active ? "Stop customizing" : "Start customizing"} ${account.accountName || account.platform}`}
+          aria-label={`${isActive ? "Stop customizing" : "Start customizing"} ${account.accountName || account.platform}`}
         />
       )}
 
@@ -476,7 +479,7 @@ function ComposerAccountAvatar({
           >
             {accountLabel}
           </div>
-          {active ? (
+          {isActive ? (
             <Badge
               variant="secondary"
               className={cn(
@@ -501,9 +504,11 @@ function ComposerAccountAvatar({
           <div className="text-muted-foreground">
             {!selected
               ? "Click to enable"
-              : active
+              : isActive
                 ? "Customizing • Click bar to stop"
-                : "Click bar to customize"}
+                : canCustomize
+                  ? "Click bar to customize"
+                  : "Enabled"}
           </div>
         </div>
       </div>
@@ -521,9 +526,11 @@ export function ComposerAccountsRow({
   className = "",
 }: ComposerAccountsRowProps) {
   const staticMouseX = useMotionValue(Infinity);
-  const hasActiveCustomization = Boolean(activeAccount);
+  const canCustomize = accounts.length > 1;
+  const hasActiveCustomization = canCustomize && Boolean(activeAccount);
 
   const handleSetActive = (accountId: string) => {
+    if (!canCustomize) return;
     if (selectedAccounts.includes(accountId)) {
       onSetActiveAccount(accountId);
     }
@@ -544,6 +551,7 @@ export function ComposerAccountsRow({
               account.id !== activeAccount
             }
             showLabels={hasActiveCustomization}
+            canCustomize={canCustomize}
             onToggleSelected={() => onToggleAccount(account.id)}
             onSetActive={() => handleSetActive(account.id)}
           />

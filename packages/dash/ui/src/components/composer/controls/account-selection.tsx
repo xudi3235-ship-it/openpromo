@@ -1,4 +1,5 @@
 import { cn } from "@openpromo/ui/lib/utils";
+import { useEffect } from "react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { AvailablePlatformsRow } from "@/components/connected-accounts/available-platforms-row";
 import { ComposerAccountsRow } from "@/components/connected-accounts/connected-accounts-row";
@@ -56,6 +57,8 @@ export function AccountSelection() {
     setActiveAccount,
   } = useComposerStore();
 
+  const canCustomize = accounts.length > 1;
+
   const activeAccountData = accounts.find((acc) => acc.id === activeAccount);
   const activeMeta = activeAccountData
     ? getPlatformMeta(activeAccountData.platform)
@@ -81,10 +84,17 @@ export function AccountSelection() {
   };
 
   const handleSetActive = (accountId: string) => {
+    if (!canCustomize) return;
     if (selectedAccounts.includes(accountId)) {
       setActiveAccount(accountId);
     }
   };
+
+  useEffect(() => {
+    if (!canCustomize && activeAccount) {
+      setActiveAccount(null);
+    }
+  }, [canCustomize, activeAccount, setActiveAccount]);
 
   return (
     <div className="space-y-3">
@@ -95,7 +105,7 @@ export function AccountSelection() {
           <span>
             {selectedAccounts.length}/{accounts.length}
           </span>
-          {activeAccountData && activeMeta && (
+          {canCustomize && activeAccountData && activeMeta && (
             <div className="flex items-center gap-1.5 text-xs">
               {ActiveIcon && (
                 <ActiveIcon
@@ -114,7 +124,7 @@ export function AccountSelection() {
         </div>
       </div>
 
-      {activeAccountData && (
+      {canCustomize && activeAccountData && (
         <CustomizationScopeBanner
           account={activeAccountData}
           onClear={() => setActiveAccount(null)}
@@ -136,7 +146,7 @@ export function AccountSelection() {
         <ComposerAccountsRow
           accounts={accounts}
           selectedAccounts={selectedAccounts}
-          activeAccount={activeAccount}
+          activeAccount={canCustomize ? activeAccount : null}
           onToggleAccount={handleToggleAccount}
           onSetActiveAccount={handleSetActive}
           showAddButton={true}
