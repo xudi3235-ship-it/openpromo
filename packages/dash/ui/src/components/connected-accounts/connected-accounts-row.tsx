@@ -185,6 +185,7 @@ function FacebookAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
   const ref = useRef<HTMLDivElement>(null);
   const { handleConnectFacebook, isConnectingFacebook } =
     useOAuthWithListener();
+  const meta = getPlatformMeta("FACEBOOK");
 
   const distance = useTransform(mouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
@@ -203,14 +204,24 @@ function FacebookAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
       <motion.button
         type="button"
         style={{ width }}
-        className="aspect-square rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center border-2 border-dashed border-blue-400/30 hover:border-blue-400/50 transition-all focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+        className="relative aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-ring"
         onClick={handleConnectFacebook}
         disabled={isConnectingFacebook}
       >
-        <Plus className="h-4 w-4 text-white" />
+        <div
+          className={cn(
+            "w-full h-full rounded-full bg-gradient-to-r p-0.5",
+            meta.avatarGradient,
+          )}
+        >
+          <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+            <Plus className={cn("h-4 w-4", meta.accentTextClass)} />
+          </div>
+        </div>
+
+        <PlatformBadge platform="FACEBOOK" />
       </motion.button>
 
-      {/* Tooltip */}
       <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
         Add Facebook
       </div>
@@ -222,6 +233,7 @@ function InstagramAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
   const ref = useRef<HTMLDivElement>(null);
   const { handleConnectInstagram, isConnectingInstagram } =
     useOAuthWithListener();
+  const meta = getPlatformMeta("INSTAGRAM");
 
   const distance = useTransform(mouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
@@ -240,14 +252,24 @@ function InstagramAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
       <motion.button
         type="button"
         style={{ width }}
-        className="aspect-square rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center border-2 border-dashed border-purple-400/30 hover:border-purple-400/50 transition-all focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+        className="relative aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-ring"
         onClick={handleConnectInstagram}
         disabled={isConnectingInstagram}
       >
-        <Plus className="h-4 w-4 text-white" />
+        <div
+          className={cn(
+            "w-full h-full rounded-full bg-gradient-to-r p-0.5",
+            meta.avatarGradient,
+          )}
+        >
+          <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+            <Plus className={cn("h-4 w-4", meta.accentTextClass)} />
+          </div>
+        </div>
+
+        <PlatformBadge platform="INSTAGRAM" />
       </motion.button>
 
-      {/* Tooltip */}
       <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
         Add Instagram
       </div>
@@ -258,6 +280,7 @@ function InstagramAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
 function TikTokAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
   const ref = useRef<HTMLDivElement>(null);
   const { handleConnectTikTok, isConnectingTikTok } = useOAuthWithListener();
+  const meta = getPlatformMeta("TIKTOK");
 
   const distance = useTransform(mouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
@@ -276,11 +299,22 @@ function TikTokAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
       <motion.button
         type="button"
         style={{ width }}
-        className="aspect-square rounded-full bg-gradient-to-r from-black to-gray-800 flex items-center justify-center border-2 border-dashed border-gray-500/40 hover:border-gray-500/60 transition-all focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+        className="relative aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-ring"
         onClick={handleConnectTikTok}
         disabled={isConnectingTikTok}
       >
-        <Plus className="h-4 w-4 text-white" />
+        <div
+          className={cn(
+            "w-full h-full rounded-full bg-gradient-to-r p-0.5",
+            meta.avatarGradient,
+          )}
+        >
+          <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+            <Plus className={cn("h-4 w-4", meta.accentTextClass)} />
+          </div>
+        </div>
+
+        <PlatformBadge platform="TIKTOK" />
       </motion.button>
 
       <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
