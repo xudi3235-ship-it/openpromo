@@ -15,10 +15,10 @@ import { cn } from "@openpromo/ui/lib/utils";
 import { format, isToday } from "date-fns";
 import { Clock2Icon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { RescheduleState } from "@/hooks/calendar/useCalendarDragUpdate";
+import type { CalendarReschedulePayload } from "@/stores/calendar-reschedule-store";
 
 interface CalendarRescheduleDialogProps {
-  state: RescheduleState | null;
+  state: CalendarReschedulePayload | null;
   onClose: () => void;
   onConfirm: (publishAt: Date) => void;
   onEditMore: () => void;

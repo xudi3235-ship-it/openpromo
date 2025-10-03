@@ -10,6 +10,7 @@ import type { PlacementSpec } from "@shared/content";
 import type { ContentEntity } from "@worker/routes/api/workspaces/content";
 import { format, getMinutes } from "date-fns";
 import {
+  CalendarClock,
   Edit,
   Eye,
   Heart,
@@ -112,10 +113,11 @@ export function CalendarEventCard({
     handleEdit,
     handlePublish,
     handleView,
+    handleReschedule,
     getPermalink,
-    publishingStatus: getPublishingStatus,
     isEditable: isEntityEditable,
     canPublish: canEntityPublish,
+    canReschedule,
     editLabel: getEditLabel,
     deleteLabel: getDeleteLabel,
     isPublishing,
@@ -127,7 +129,6 @@ export function CalendarEventCard({
   } = useCalendarActions(onDelete);
 
   const contentPermalink = getPermalink(event);
-  const publishingStatus = getPublishingStatus(event);
   const isEditable = isEntityEditable(event);
   const canPublish = canEntityPublish(event);
   const editLabel = getEditLabel(event);
@@ -161,15 +162,11 @@ export function CalendarEventCard({
                 {editLabel}
               </DropdownMenuItem>
             )}
-            {publishingStatus === "SCHEDULED" &&
-              matchEntity(event, {
-                content: () => (
-                  <DropdownMenuItem disabled>
-                    Cancel scheduling
-                  </DropdownMenuItem>
-                ),
-                group: () => null,
-              })}
+            {canReschedule(event) && (
+              <DropdownMenuItem onClick={(e) => handleReschedule(event, e)}>
+                <CalendarClock className="w-4 h-4 mr-2" /> Reschedule
+              </DropdownMenuItem>
+            )}
             {canPublish && (
               <DropdownMenuItem
                 onClick={(e) => handlePublish(event, e)}

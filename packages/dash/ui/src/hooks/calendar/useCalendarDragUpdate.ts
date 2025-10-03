@@ -1,16 +1,14 @@
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { format } from "date-fns";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { getEventData } from "@/components/calendar";
 import { matchEntity } from "@/lib/hono-client";
+import type { CalendarReschedulePayload } from "@/stores/calendar-reschedule-store";
+import { useCalendarRescheduleStore } from "@/stores/calendar-reschedule-store";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 
-export interface RescheduleState {
-  event: MergedContentEntity;
-  proposedPublishAt: Date;
-  groupId?: string;
-}
+export type RescheduleState = CalendarReschedulePayload;
 
 interface UseCalendarDragUpdateArgs {
   onEventUpdate?: (
@@ -29,7 +27,7 @@ interface UseCalendarDragUpdateResult {
   openComposerForReschedule: () => void;
 }
 
-function resolveProposedPublishAtForEvent(
+export function resolveProposedPublishAtForEvent(
   updatedEvent: MergedContentEntity,
 ): Date {
   let resolved: Date | null = null;
@@ -60,6 +58,16 @@ function resolveProposedPublishAtForEvent(
   return getEventData(updatedEvent).start;
 }
 
+export function resolveRescheduleGroupId(
+  updatedEvent: MergedContentEntity,
+): string | undefined {
+  return matchEntity(updatedEvent, {
+    group: (groupEntity) => groupEntity.entity.id,
+    content: (contentEntity) =>
+      contentEntity.entity.pendingContentGroupId ?? undefined,
+  });
+}
+
 export function useCalendarDragUpdate(
   args: UseCalendarDragUpdateArgs,
 ): UseCalendarDragUpdateResult {
@@ -68,19 +76,20 @@ export function useCalendarDragUpdate(
     (state) => state.openDialog,
   );
 
-  const [rescheduleState, setRescheduleState] =
-    useState<RescheduleState | null>(null);
+  const rescheduleState = useCalendarRescheduleStore((state) => state.state);
+  const openReschedule = useCalendarRescheduleStore((state) => state.open);
+  const closeReschedule = useCalendarRescheduleStore((state) => state.close);
 
   const closeRescheduleDialog = useCallback(() => {
-    setRescheduleState(null);
-  }, []);
+    closeReschedule();
+  }, [closeReschedule]);
 
   const openComposerForReschedule = useCallback(() => {
     if (rescheduleState?.groupId) {
       openComposerDialog(rescheduleState.groupId);
     }
-    setRescheduleState(null);
-  }, [openComposerDialog, rescheduleState]);
+    closeReschedule();
+  }, [closeReschedule, openComposerDialog, rescheduleState]);
 
   const handleEventUpdate = useCallback(
     (
@@ -99,7 +108,7 @@ export function useCalendarDragUpdate(
         group: (groupEntity) => {
           const { id, publishingStatus } = groupEntity.entity;
           if (publishingStatus === "SCHEDULED") {
-            setRescheduleState({
+            openReschedule({
               event: updatedEvent,
               proposedPublishAt: publishAt,
               groupId: id,
@@ -118,7 +127,7 @@ export function useCalendarDragUpdate(
             contentEntity.entity;
 
           if (publishingStatus === "SCHEDULED" && pendingContentGroupId) {
-            setRescheduleState({
+            openReschedule({
               event: updatedEvent,
               proposedPublishAt: publishAt,
               groupId: pendingContentGroupId,
@@ -141,7 +150,7 @@ export function useCalendarDragUpdate(
         });
       }
     },
-    [onEventUpdate, openComposerDialog],
+    [onEventUpdate, openComposerDialog, openReschedule],
   );
 
   useEffect(() => {

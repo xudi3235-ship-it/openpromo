@@ -25,7 +25,10 @@ export default function CalendarPage() {
     setEvents([...events, event]);
   };
 
-  const handleEventUpdate = (updatedEvent: MergedContentEntity) => {
+  const handleEventUpdate = (
+    updatedEvent: MergedContentEntity,
+    _context?: { proposedPublishAt?: Date },
+  ) => {
     setEvents(
       events.map((event) =>
         event.entity.id === updatedEvent.entity.id ? updatedEvent : event,

@@ -1,8 +1,13 @@
 import type React from "react";
 import { toast } from "sonner";
 import type { CalendarEvent } from "@/components/calendar";
+import {
+  resolveProposedPublishAtForEvent,
+  resolveRescheduleGroupId,
+} from "@/hooks/calendar/useCalendarDragUpdate";
 import { matchEntity } from "@/lib/hono-client";
 import { useContentGroupPublishMutation } from "@/queries/content";
+import { useCalendarRescheduleStore } from "@/stores/calendar-reschedule-store";
 import { useContentActions } from "./useContentActions";
 import { useDeleteConfirmation } from "./useDeleteConfirmation";
 
@@ -19,6 +24,7 @@ export const useContentActionController = ({
 }: UseContentActionControllerOptions = {}) => {
   const { editEntity } = useContentActions();
   const publishContentGroup = useContentGroupPublishMutation();
+  const openReschedule = useCalendarRescheduleStore((state) => state.open);
   const confirmation = useDeleteConfirmation(onDelete);
 
   const maybeStopPropagation = (event?: React.MouseEvent) => {
@@ -112,6 +118,22 @@ export const useContentActionController = ({
     });
   };
 
+  const handleReschedule: ActionHandler = (entity, event) => {
+    maybeStopPropagation(event);
+    const groupId = resolveRescheduleGroupId(entity);
+    if (!groupId) {
+      toast.info("Rescheduling requires a linked content group.");
+      return;
+    }
+
+    const proposedPublishAt = resolveProposedPublishAtForEvent(entity);
+    openReschedule({
+      event: entity,
+      proposedPublishAt,
+      groupId,
+    });
+  };
+
   const publishingStatus = (entity: CalendarEvent) =>
     matchEntity(entity, {
       content: (contentEntity) => contentEntity.entity.publishingStatus,
@@ -126,6 +148,12 @@ export const useContentActionController = ({
   const canPublish = (entity: CalendarEvent) => {
     const status = publishingStatus(entity);
     return status === "DRAFT" || status === "SCHEDULED";
+  };
+
+  const canReschedule = (entity: CalendarEvent) => {
+    const status = publishingStatus(entity);
+    if (status !== "SCHEDULED") return false;
+    return Boolean(resolveRescheduleGroupId(entity));
   };
 
   const editLabel = (entity: CalendarEvent) =>
@@ -145,10 +173,12 @@ export const useContentActionController = ({
     handleDelete,
     handleView,
     handlePublish,
+    handleReschedule,
     getPermalink,
     publishingStatus,
     isEditable,
     canPublish,
+    canReschedule,
     editLabel,
     deleteLabel,
     isPublishing: publishContentGroup.isPending,

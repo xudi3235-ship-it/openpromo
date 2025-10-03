@@ -45,7 +45,10 @@ import { CalendarRescheduleDialog } from "./reschedule-dialog";
 export interface EventCalendarProps {
   events: MergedContentEntity[];
   onEventAdd?: (event: MergedContentEntity) => void;
-  onEventUpdate?: (event: MergedContentEntity) => void;
+  onEventUpdate?: (
+    event: MergedContentEntity,
+    context?: { proposedPublishAt?: Date },
+  ) => void;
   onEventDelete?: (eventId: string) => void;
   className?: string;
   initialView?: CalendarView;

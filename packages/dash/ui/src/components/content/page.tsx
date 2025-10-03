@@ -25,11 +25,15 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import { format } from "date-fns";
 import { ChevronDown, Plus } from "lucide-react";
 import * as React from "react";
+import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
+import { CalendarRescheduleDialog } from "@/components/calendar/reschedule-dialog";
 import ComposerDialog from "@/components/composer/modal/dialog-composer";
 import { useContentListQuery } from "@/queries/content";
+import { useCalendarRescheduleStore } from "@/stores/calendar-reschedule-store";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import { BatchActionsToolbar } from "./batch-actions-toolbar";
 import { columns } from "./columns";
@@ -61,6 +65,10 @@ export function ContentPage() {
   const normalizedSearch = debouncedSearch;
 
   const openDialog = useDialogComposerStore((state) => state.openDialog);
+  const rescheduleState = useCalendarRescheduleStore((state) => state.state);
+  const closeRescheduleDialog = useCalendarRescheduleStore(
+    (state) => state.close,
+  );
   const { data, isLoading } = useContentListQuery({
     page: pagination.pageIndex + 1, // API uses 1-based indexing
     pageSize: pagination.pageSize,
@@ -110,6 +118,21 @@ export function ContentPage() {
     .rows.map((row) => row.original);
   const title = "Content";
   const subtitle = "Plan, publish, and measure everything in one place.";
+
+  const handleRescheduleConfirm = (publishAt: Date) => {
+    closeRescheduleDialog();
+    toast("Reschedule pending", {
+      description: format(publishAt, "MMM d, yyyy • h:mma"),
+      position: "bottom-left",
+    });
+  };
+
+  const handleRescheduleEditMore = () => {
+    if (rescheduleState?.groupId) {
+      openDialog(rescheduleState.groupId);
+    }
+    closeRescheduleDialog();
+  };
 
   return (
     <div className="w-full space-y-2">
@@ -298,6 +321,12 @@ export function ContentPage() {
         </div>
       </div>
 
+      <CalendarRescheduleDialog
+        state={rescheduleState}
+        onClose={closeRescheduleDialog}
+        onConfirm={handleRescheduleConfirm}
+        onEditMore={handleRescheduleEditMore}
+      />
       <ComposerDialog />
     </div>
   );

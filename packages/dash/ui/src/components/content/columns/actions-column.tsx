@@ -7,7 +7,14 @@ import {
 } from "@openpromo/ui/components/dropdown-menu";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { Edit, Eye, MoreHorizontal, Trash2, Upload } from "lucide-react";
+import {
+  CalendarClock,
+  Edit,
+  Eye,
+  MoreHorizontal,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useTableActions } from "@/hooks/content";
 import { matchEntity } from "@/lib/hono-client";
@@ -18,9 +25,11 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
     handleDelete,
     handlePublish,
     handleView,
+    handleReschedule,
     getPermalink,
     isEditable,
     canPublish,
+    canReschedule,
     editLabel,
     deleteLabel,
     isPublishing,
@@ -73,8 +82,7 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
 
   const renderMenuItems = () =>
     matchEntity(entity, {
-      content: (contentEntity) => {
-        const status = contentEntity.entity.publishingStatus;
+      content: () => {
         return (
           <>
             <DropdownMenuItem
@@ -89,8 +97,10 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
                 {editLabel(entity)}
               </DropdownMenuItem>
             )}
-            {status === "SCHEDULED" && (
-              <DropdownMenuItem disabled>Cancel scheduling</DropdownMenuItem>
+            {canReschedule(entity) && (
+              <DropdownMenuItem onClick={() => handleReschedule(entity)}>
+                <CalendarClock className="w-4 h-4 mr-2" /> Reschedule
+              </DropdownMenuItem>
             )}
             {canEntityPublish && (
               <DropdownMenuItem
@@ -117,6 +127,11 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
             <Edit className="w-4 h-4 mr-2" />
             {editLabel(entity)}
           </DropdownMenuItem>
+          {canReschedule(entity) && (
+            <DropdownMenuItem onClick={() => handleReschedule(entity)}>
+              <CalendarClock className="w-4 h-4 mr-2" /> Reschedule
+            </DropdownMenuItem>
+          )}
           {canEntityPublish && (
             <DropdownMenuItem
               onClick={() => handlePublish(entity)}
