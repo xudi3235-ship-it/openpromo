@@ -240,7 +240,15 @@ export function ContentCalendar({
       }
     >
       <CalendarDndProvider onEventUpdate={handleEventUpdate}>
-        <div className="flex items-center justify-between p-4">
+        <header className="px-4 pt-4 pb-2">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-semibold text-foreground">Calendar</h1>
+            <p className="text-sm text-muted-foreground">
+              Plan upcoming content across your social accounts.
+            </p>
+          </div>
+        </header>
+        <div className="flex items-center justify-between px-4 pb-4">
           <div className="flex items-center gap-1 sm:gap-4">
             {/* View Toggle - Week/Month */}
             <ToggleGroup
