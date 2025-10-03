@@ -65,7 +65,10 @@ export const useCalendarDnd = () => useContext(CalendarDndContext);
 // Props for the provider
 interface CalendarDndProviderProps {
   children: ReactNode;
-  onEventUpdate: (event: CalendarEvent) => void;
+  onEventUpdate: (
+    event: CalendarEvent,
+    context?: { proposedPublishAt?: Date },
+  ) => void;
 }
 
 export function CalendarDndProvider({
@@ -310,7 +313,7 @@ export function CalendarDndProvider({
             },
           },
         } as CalendarEvent;
-        onEventUpdate(updatedEvent);
+        onEventUpdate(updatedEvent, { proposedPublishAt: newStart });
       }
     } catch (error) {
       console.error("Error in drag end handler:", error);

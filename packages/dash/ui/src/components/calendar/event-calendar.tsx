@@ -36,9 +36,11 @@ import {
   MonthView,
   WeekCellsHeight,
 } from "@/components/calendar";
+import { useCalendarDragUpdate } from "@/hooks/calendar/useCalendarDragUpdate";
 import { Route as CalendarRoute } from "@/routes/_authenticated/workspaces/$workspaceSlug/calendar";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import ComposerDialog from "../composer/modal/dialog-composer";
+import { CalendarRescheduleDialog } from "./reschedule-dialog";
 
 export interface EventCalendarProps {
   events: MergedContentEntity[];
@@ -196,12 +198,17 @@ export function ContentCalendar({
     }
   };
 
-  const handleEventUpdate = (updatedEvent: MergedContentEntity) => {
-    onEventUpdate?.(updatedEvent);
+  const {
+    handleEventUpdate,
+    rescheduleState,
+    closeRescheduleDialog,
+    openComposerForReschedule,
+  } = useCalendarDragUpdate({ onEventUpdate });
 
-    // Show toast notification when an event is updated via drag and drop
-    toast(`Content moved`, {
-      description: format(new Date(), "MMM d, yyyy"),
+  const handleRescheduleConfirm = (publishAt: Date) => {
+    closeRescheduleDialog();
+    toast("Reschedule pending", {
+      description: format(publishAt, "MMM d, yyyy • h:mma"),
       position: "bottom-left",
     });
   };
@@ -341,6 +348,12 @@ export function ContentCalendar({
           onDelete={handleEventDelete}
         />
         <ComposerDialog />
+        <CalendarRescheduleDialog
+          state={rescheduleState}
+          onClose={closeRescheduleDialog}
+          onConfirm={handleRescheduleConfirm}
+          onEditMore={openComposerForReschedule}
+        />
       </CalendarDndProvider>
     </div>
   );
