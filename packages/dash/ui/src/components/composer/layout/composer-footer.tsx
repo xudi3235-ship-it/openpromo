@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ValidationErrors } from "@/components/composer/controls/validation-errors";
 import { PublishingOverlay } from "@/components/composer/layout/publishing-overlay";
+import { useComposerPublishHandlers } from "@/hooks/composer/useComposerHooks";
 import { useComposerMutations } from "@/queries/content";
 import { useComposerStore } from "@/stores/composer-store";
 
@@ -14,6 +15,7 @@ export function ComposerFooter() {
 
   const { setPublishingStatus, contentCreateData, validation, contentGroupID } =
     useComposerStore();
+  const onCompleteHandler = useComposerPublishHandlers();
 
   const { create: useCreateMutation, updateGroup: useUpdateGroupMutation } =
     useComposerMutations();
@@ -102,6 +104,7 @@ export function ComposerFooter() {
 
   const handleOverlayComplete = () => {
     setPublishingState({ isVisible: false, status: "loading" });
+    onCompleteHandler();
   };
 
   const data = useComposerStore((s) => s.contentCreateData);
