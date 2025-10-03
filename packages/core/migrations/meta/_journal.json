@@ -141,6 +141,13 @@
       "when": 1759379075502,
       "tag": "0019_marvelous_rogue",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1759533958603,
+      "tag": "0020_perpetual_captain_cross",
+      "breakpoints": true
     }
   ]
 }

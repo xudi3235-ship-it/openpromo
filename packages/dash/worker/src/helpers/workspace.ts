@@ -1,9 +1,12 @@
+import type { DbClient } from "@core/helpers/db";
+import { getDbClient } from "@core/helpers/db";
+import { getWorkOS } from "@core/providers/workos";
 import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
-import type { DbClient } from "@openpromo/core/helpers/db/index";
+import { workspaceInvitesTable } from "@openpromo/core/schemas/workspace-invites.sql";
 import { workspaceRoleAssignmentsTable } from "@openpromo/core/schemas/workspace-role-assignments.sql";
 import { workspaceRolesTable } from "@openpromo/core/schemas/workspace-roles.sql";
 import { workspacesTable } from "@openpromo/core/schemas/workspaces.sql";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { generateSlug } from "./db";
 import { AppError } from "./error";
 
@@ -55,3 +58,90 @@ export const createWorkspace = async (
     return workspace;
   });
 };
+
+export async function applyWorkspaceInvitesForUser(params: {
+  organizationId?: string | null;
+  userId: string;
+  email?: string | null;
+}) {
+  const { organizationId, userId, email } = params;
+  if (!organizationId || !email) return;
+
+  const normalizedEmail = email.toLowerCase();
+  const db = getDbClient();
+
+  const pendingInvites = await db
+    .select({
+      id: workspaceInvitesTable.id,
+      workspaceId: workspaceInvitesTable.workspaceId,
+      roleId: workspaceInvitesTable.roleId,
+    })
+    .from(workspaceInvitesTable)
+    .where(
+      and(
+        eq(workspaceInvitesTable.organizationId, organizationId),
+        eq(workspaceInvitesTable.email, normalizedEmail),
+        eq(workspaceInvitesTable.status, "pending"),
+      ),
+    );
+
+  if (pendingInvites.length === 0) {
+    return;
+  }
+
+  const workOS = getWorkOS();
+  const memberships = await workOS.userManagement.listOrganizationMemberships({
+    organizationId,
+    userId,
+  });
+
+  const hasActiveMembership = memberships.data.some(
+    (membership) => membership.status === "active",
+  );
+
+  if (!hasActiveMembership) {
+    return;
+  }
+
+  await Promise.all(
+    pendingInvites.map(
+      async (invite: { id: string; workspaceId: string; roleId: string }) => {
+        const [existingAssignment] = await db
+          .select({
+            id: workspaceRoleAssignmentsTable.id,
+            roleId: workspaceRoleAssignmentsTable.roleId,
+          })
+          .from(workspaceRoleAssignmentsTable)
+          .where(
+            and(
+              eq(workspaceRoleAssignmentsTable.workspaceId, invite.workspaceId),
+              eq(workspaceRoleAssignmentsTable.assigneeId, userId),
+            ),
+          )
+          .limit(1);
+
+        if (!existingAssignment) {
+          await db.insert(workspaceRoleAssignmentsTable).values({
+            workspaceId: invite.workspaceId,
+            roleId: invite.roleId,
+            assigneeType: "user",
+            assigneeId: userId,
+          });
+        } else if (existingAssignment.roleId !== invite.roleId) {
+          await db
+            .update(workspaceRoleAssignmentsTable)
+            .set({
+              roleId: invite.roleId,
+              updatedAt: new Date(),
+            })
+            .where(eq(workspaceRoleAssignmentsTable.id, existingAssignment.id));
+        }
+
+        await db
+          .update(workspaceInvitesTable)
+          .set({ status: "accepted", updatedAt: new Date() })
+          .where(eq(workspaceInvitesTable.id, invite.id));
+      },
+    ),
+  );
+}

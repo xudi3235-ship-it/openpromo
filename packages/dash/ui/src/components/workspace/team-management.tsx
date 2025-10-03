@@ -27,11 +27,17 @@ import {
   TableHeader,
   TableRow,
 } from "@openpromo/ui/components/table";
-import type { WorkspaceMember as WorkspaceMemberResponse } from "@worker/routes/api/workspaces/team";
+import type {
+  WorkspaceMember as WorkspaceMemberResponse,
+  WorkspaceTeamInviteResponse,
+} from "@worker/routes/api/workspaces/team";
 import { UserPlus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useWorkspaceMembers } from "@/queries/workspace";
+import {
+  useInviteWorkspaceMember,
+  useWorkspaceMembers,
+} from "@/queries/workspace";
 
 type WorkspaceMember = WorkspaceMemberResponse;
 type WorkspaceRoleValue = (typeof WORKSPACE_ROLE)[keyof typeof WORKSPACE_ROLE];
@@ -47,6 +53,22 @@ const formatRoleSlug = (slug?: string) => {
     .filter(Boolean)
     .map(capitalize)
     .join(" ");
+};
+
+const getDisplayNameFromEmail = (email?: string | null) => {
+  if (!email) return undefined;
+  const [localPart] = email.split("@");
+  if (!localPart) return undefined;
+  const cleaned = localPart
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((segment) =>
+      segment.length === 0
+        ? segment
+        : segment[0].toUpperCase() + segment.slice(1).toLowerCase(),
+    )
+    .join(" ");
+  return cleaned || undefined;
 };
 
 const ROLE_OPTIONS: Array<{ value: WorkspaceRoleValue; label: string }> = [
@@ -72,6 +94,8 @@ const getMemberName = (member: WorkspaceMember) => {
   const fullName = [first, last].filter(Boolean).join(" ");
 
   if (fullName) return fullName;
+  const fromEmail = getDisplayNameFromEmail(member.user?.email);
+  if (fromEmail) return fromEmail;
   if (member.user?.email) return member.user.email;
   if (member.user?.id) return `User ${member.user.id.slice(0, 6)}`;
   return "Workspace member";
@@ -95,9 +119,26 @@ const getMemberInitials = (member: WorkspaceMember) => {
   return "??";
 };
 
+const getInviteInitials = (email: string) => {
+  const scrubbed = email.replace(/[^A-Za-z0-9]/g, "").slice(0, 2);
+  return scrubbed ? scrubbed.toUpperCase() : "??";
+};
+
+const formatInviteStatus = (status: string) => {
+  if (status === "pending") return "Invited";
+  return capitalize(status);
+};
+
+const formatInviteDate = (value: string) => {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleDateString();
+};
+
 export function TeamManagement() {
   const { data, isPending, isError } = useWorkspaceMembers();
   const members = data?.members ?? [];
+  const invites = data?.invites ?? [];
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formState, setFormState] = useState<{
     email: string;
@@ -106,29 +147,57 @@ export function TeamManagement() {
     email: "",
     role: WORKSPACE_ROLE.VIEWER,
   });
+  const inviteMemberMutation = useInviteWorkspaceMember();
 
   const handleInvite = () => {
     if (!formState.email.trim()) {
       toast.error("Please enter an email address.");
       return;
     }
+    inviteMemberMutation.mutate(
+      {
+        email: formState.email,
+        role: formState.role,
+      },
+      {
+        onSuccess: (result: WorkspaceTeamInviteResponse) => {
+          if ("member" in result) {
+            const messageMap = {
+              created: "Member added",
+              updated: "Member role updated",
+              unchanged: "Member already has this role",
+            } as const;
 
-    const emailExists = members.some(
-      (member) =>
-        member.user?.email?.toLowerCase() === formState.email.toLowerCase(),
+            const description = (() => {
+              if (result.status === "created") {
+                return `${getMemberName(result.member)} can start collaborating right away.`;
+              }
+              if (result.status === "updated") {
+                return `${getMemberName(result.member)} now has ${getRoleLabel(result.member.role)} access.`;
+              }
+              return `${getMemberName(result.member)} already had ${getRoleLabel(result.member.role)} access.`;
+            })();
+
+            toast.success(messageMap[result.status], {
+              description,
+            });
+          } else {
+            const alreadyPending = result.status === "already_invited";
+            toast.success(
+              alreadyPending ? "Invitation already sent" : "Invitation sent",
+              {
+                description: alreadyPending
+                  ? `${result.invitation.email} still has a pending invite.`
+                  : `We emailed ${result.invitation.email} with instructions to join the workspace.`,
+              },
+            );
+          }
+
+          setIsDialogOpen(false);
+          setFormState({ email: "", role: WORKSPACE_ROLE.VIEWER });
+        },
+      },
     );
-
-    if (emailExists) {
-      toast.error("That email is already part of this workspace.");
-      return;
-    }
-
-    toast.success("Invite queued", {
-      description: `We'll invite ${formState.email} as a ${formatRoleSlug(formState.role)} once invitations are available.`,
-    });
-
-    setIsDialogOpen(false);
-    setFormState({ email: "", role: WORKSPACE_ROLE.VIEWER });
   };
 
   const handleRemove = (member: WorkspaceMember) => {
@@ -210,7 +279,14 @@ export function TeamManagement() {
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleInvite}>Send invite</Button>
+                <Button
+                  onClick={handleInvite}
+                  disabled={inviteMemberMutation.isPending}
+                >
+                  {inviteMemberMutation.isPending
+                    ? "Sending..."
+                    : "Send invite"}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -271,16 +347,19 @@ export function TeamManagement() {
               </TableRow>
             )}
 
-            {!isPending && !isError && members.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="py-6 text-center text-sm text-muted-foreground"
-                >
-                  No teammates yet. Invite someone to get started.
-                </TableCell>
-              </TableRow>
-            )}
+            {!isPending &&
+              !isError &&
+              members.length === 0 &&
+              invites.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="py-6 text-center text-sm text-muted-foreground"
+                  >
+                    No teammates yet. Invite someone to get started.
+                  </TableCell>
+                </TableRow>
+              )}
 
             {!isPending &&
               !isError &&
@@ -327,6 +406,53 @@ export function TeamManagement() {
                           <span className="sr-only">Remove member</span>
                         </Button>
                       )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+
+            {!isPending &&
+              !isError &&
+              invites.map((invite) => {
+                const inviteeName =
+                  getDisplayNameFromEmail(invite.email) ?? invite.email;
+                return (
+                  <TableRow key={`invite-${invite.id}`}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>
+                            {getInviteInitials(invite.email)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {inviteeName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {invite.email}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Invited {formatInviteDate(invite.invitedAt)}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {invite.email}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {invite.role.name || formatRoleSlug(invite.role.slug)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {formatInviteStatus(invite.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-sm text-muted-foreground">
+                      —
                     </TableCell>
                   </TableRow>
                 );

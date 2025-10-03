@@ -12,7 +12,10 @@ import {
   setSessionCookie,
 } from "../../helpers/auth";
 import { AppError } from "../../helpers/error";
-import { createWorkspace } from "../../helpers/workspace";
+import {
+  applyWorkspaceInvitesForUser,
+  createWorkspace,
+} from "../../helpers/workspace";
 
 const bootstrapNewUser = async (
   user: User,
@@ -105,6 +108,11 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
     // bootstrap new user if they don't have an organization
     if (authenticatedUser.organizationId) {
       setSessionCookie(c, sealedSession);
+      await applyWorkspaceInvitesForUser({
+        organizationId: authenticatedUser.organizationId,
+        userId: user.id,
+        email: user.email,
+      });
     } else {
       await bootstrapNewUser(user, c, sealedSession);
     }
