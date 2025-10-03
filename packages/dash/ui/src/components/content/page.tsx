@@ -27,6 +27,7 @@ import {
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { ChevronDown, Plus } from "lucide-react";
 import * as React from "react";
+import { useDebounceCallback } from "usehooks-ts";
 import ComposerDialog from "@/components/composer/modal/dialog-composer";
 import { useContentListQuery } from "@/queries/content";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
@@ -52,6 +53,12 @@ export function ContentPage() {
     pageSize: 10,
   });
   const [filters, setFilters] = React.useState<ContentFiltersType>({});
+  const [searchValue, setSearchValue] = React.useState("");
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const updateDebouncedSearch = useDebounceCallback((value: string) => {
+    setDebouncedSearch(value.trim());
+  }, 400);
+  const normalizedSearch = debouncedSearch;
 
   const openDialog = useDialogComposerStore((state) => state.openDialog);
   const { data, isLoading } = useContentListQuery({
@@ -60,6 +67,7 @@ export function ContentPage() {
     publishingStatus: filters.publishingStatus,
     fromDate: filters.dateRange?.from,
     toDate: filters.dateRange?.to,
+    search: normalizedSearch || undefined,
   });
   const table = useReactTable({
     data: (data?.entities as unknown as MergedContentEntity[]) ?? [],
@@ -83,6 +91,19 @@ export function ContentPage() {
       pagination,
     },
   });
+
+  React.useEffect(() => {
+    updateDebouncedSearch(searchValue);
+    return () => {
+      updateDebouncedSearch.cancel();
+    };
+  }, [searchValue, updateDebouncedSearch]);
+
+  React.useEffect(() => {
+    setPagination((prev) =>
+      prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 },
+    );
+  }, []);
 
   const selectedRows = table
     .getFilteredSelectedRowModel()
@@ -133,10 +154,8 @@ export function ContentPage() {
       <div className="flex flex-wrap items-center gap-3 md:gap-4 py-2">
         <Input
           placeholder="Search content..."
-          value={(table.getColumn("Title")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("Title")?.setFilterValue(event.target.value)
-          }
+          value={searchValue}
+          onChange={(event) => setSearchValue(event.target.value)}
           className="max-w-sm"
         />
       </div>

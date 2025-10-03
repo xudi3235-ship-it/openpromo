@@ -18,7 +18,7 @@ import {
   IGFeedPlacementSpec,
   TikTokFeedPlacementSpec,
 } from "@shared/content";
-import { and, asc, count, eq, gte, lte } from "drizzle-orm";
+import { and, asc, count, eq, gte, lte, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
 import { AppError } from "../../../../helpers/error";
@@ -39,6 +39,7 @@ const listContentQuerySchema = z.object({
     .optional(),
   fromDate: z.coerce.date().optional(),
   toDate: z.coerce.date().optional(),
+  search: z.string().min(1).max(200).optional(),
 });
 
 const GroupEntity = z.object({
@@ -153,7 +154,7 @@ export const contentRoute = new Hono<ApiEnv>()
   })
   // list content api
   .get("/", zValidator("query", listContentQuerySchema), async (c) => {
-    const { page, pageSize, publishingStatus, fromDate, toDate } =
+    const { page, pageSize, publishingStatus, fromDate, toDate, search } =
       c.req.valid("query");
     // await createDummyPendingContent();
     const wsID = Actor.workspaceID();
@@ -164,6 +165,18 @@ export const contentRoute = new Hono<ApiEnv>()
     if (publishingStatus) {
       whereConditions.push(
         eq(unifiedContentTable.publishingStatus, publishingStatus),
+      );
+    }
+
+    if (search) {
+      const sanitized = search.replace(/[%_]/g, (char) => `\\${char}`);
+      const likeTerm = `%${sanitized}%`;
+      whereConditions.push(
+        sql`(
+          (${unifiedContentTable.placementSpec} -> 'postSpec' ->> 'message') ILIKE ${likeTerm} ESCAPE '\\'
+          OR (${unifiedContentTable.placementSpec} ->> 'caption') ILIKE ${likeTerm} ESCAPE '\\'
+          OR (${pendingContentGroupTable.pendingContentGroupSpec} ->> 'baseMessage') ILIKE ${likeTerm} ESCAPE '\\'
+        )`,
       );
     }
 
@@ -179,6 +192,13 @@ export const contentRoute = new Hono<ApiEnv>()
     const totalCountResult = await db()
       .select({ count: count() })
       .from(unifiedContentTable)
+      .leftJoin(
+        pendingContentGroupTable,
+        eq(
+          unifiedContentTable.pendingContentGroupId,
+          pendingContentGroupTable.id,
+        ),
+      )
       .where(and(...whereConditions));
 
     const totalCount = totalCountResult[0]?.count ?? 0;

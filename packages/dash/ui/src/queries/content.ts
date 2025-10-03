@@ -19,6 +19,7 @@ export interface ContentListPaginationParams {
   publishingStatus?: string;
   fromDate?: Date;
   toDate?: Date;
+  search?: string;
 }
 
 export const useContentListQuery = (
@@ -31,6 +32,7 @@ export const useContentListQuery = (
     publishingStatus,
     fromDate,
     toDate,
+    search,
   } = params;
 
   const queryParams: Record<string, string> = {
@@ -50,6 +52,10 @@ export const useContentListQuery = (
     queryParams.toDate = toDate.toISOString();
   }
 
+  if (search?.trim()) {
+    queryParams.search = search.trim();
+  }
+
   return useHonoQuery({
     queryKey: [
       "content-list",
@@ -58,6 +64,7 @@ export const useContentListQuery = (
       publishingStatus,
       fromDate?.toISOString(),
       toDate?.toISOString(),
+      search?.trim() ?? "",
     ],
     queryFn: (api) =>
       api.workspaces[":workspaceSlug"].content.$get({
