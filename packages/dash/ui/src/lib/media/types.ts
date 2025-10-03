@@ -1,6 +1,6 @@
 // Unified media types for consistent handling across the app
 
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
+import type { SharedAttachmentSpec } from "@shared/content";
 import type React from "react";
 import type { UploadResult } from "@/services/attachment-upload";
 

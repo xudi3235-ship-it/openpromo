@@ -1,4 +1,3 @@
-import type { PlacementSpec } from "@core/schemas/content.sql";
 import { Button } from "@openpromo/ui/components/button";
 import {
   DropdownMenu,
@@ -7,6 +6,7 @@ import {
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
 import { cn } from "@openpromo/ui/lib/utils";
+import type { PlacementSpec } from "@shared/content";
 import type { ContentEntity } from "@worker/routes/api/workspaces/content";
 import { format, getMinutes } from "date-fns";
 import {

@@ -5,7 +5,7 @@ import type {
   IGFeedPlacementSpec,
   SharedAttachmentSpec,
   TikTokFeedPlacementSpec,
-} from "@core/schemas/content.sql";
+} from "@shared/content";
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import type { ConnectedAccount } from "@/lib/hono-client";
 

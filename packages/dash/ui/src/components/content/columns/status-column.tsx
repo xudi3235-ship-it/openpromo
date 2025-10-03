@@ -1,5 +1,5 @@
-import type { ContentPublishingStatus } from "@core/schemas/content.sql";
 import { Badge } from "@openpromo/ui/components/badge";
+import type { ContentPublishingStatus } from "@shared/content";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { AlertCircle, CheckCircle, Clock, FileText, Zap } from "lucide-react";

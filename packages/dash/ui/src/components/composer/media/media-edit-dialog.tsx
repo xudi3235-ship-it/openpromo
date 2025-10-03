@@ -1,4 +1,3 @@
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +15,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@openpromo/ui/components/sidebar";
+import type { SharedAttachmentSpec } from "@shared/content";
 import type { ReactNode } from "react";
 
 type RenderFn = (

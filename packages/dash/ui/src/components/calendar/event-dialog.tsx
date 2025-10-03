@@ -1,6 +1,5 @@
 "use client";
 
-import type { ContentPublishingStatus } from "@core/schemas/content.sql";
 import { Button } from "@openpromo/ui/components/button";
 import { Calendar } from "@openpromo/ui/components/calendar";
 import { Checkbox } from "@openpromo/ui/components/checkbox";
@@ -33,6 +32,7 @@ import {
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { cn } from "@openpromo/ui/lib/utils";
 import { RiCalendarLine, RiDeleteBinLine } from "@remixicon/react";
+import type { ContentPublishingStatus } from "@shared/content";
 import { format, isBefore } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
 import type { CalendarEvent, EventColor } from "@/components/calendar";

@@ -1,9 +1,9 @@
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import { closestCenter, DndContext, DragOverlay } from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import type { SharedAttachmentSpec } from "@shared/content";
 import type { ReactNode } from "react";
 import { MediaListItem } from "./media-list-item";
 

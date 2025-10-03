@@ -1,5 +1,5 @@
-import type { ContentPublishingStatus } from "@core/schemas/content.sql";
 import { cn } from "@openpromo/ui/lib/utils";
+import type { ContentPublishingStatus } from "@shared/content";
 
 const STATUS_CONFIG: Record<
   ContentPublishingStatus,

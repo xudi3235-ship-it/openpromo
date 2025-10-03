@@ -1,10 +1,10 @@
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
+import type { SharedAttachmentSpec } from "@shared/content";
 import type { ReactNode } from "react";
 
 type RenderFn = (

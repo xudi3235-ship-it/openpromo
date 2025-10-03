@@ -1,6 +1,6 @@
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import type { SharedAttachmentSpec } from "@shared/content";
 import { GripVertical, ImageIcon, X } from "lucide-react";
 import type { ReactNode } from "react";
 

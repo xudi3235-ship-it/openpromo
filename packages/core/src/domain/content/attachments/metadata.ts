@@ -1,4 +1,4 @@
-import { ContentPublishingStatusZod } from "@core/schemas/content.sql";
+import { ContentPublishingStatusZod } from "@shared/content";
 import { z } from "zod";
 
 // NOTE: DO NOT use boolean flags here. it can't be serialized properly

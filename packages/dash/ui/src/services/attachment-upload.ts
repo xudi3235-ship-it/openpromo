@@ -1,4 +1,4 @@
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
+import type { SharedAttachmentSpec } from "@shared/content";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/hono-client";
 

@@ -7,15 +7,17 @@ import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { db } from "@core/helpers/db/db";
 import {
-  BasePlacementSpec,
-  FBFeedPlacementSpec,
-  IGFeedPlacementSpec,
   PendingContentGroupSelect,
   pendingContentGroupTable,
-  TikTokFeedPlacementSpec,
   UnifiedContentSelect,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
+import {
+  BasePlacementSpec,
+  FBFeedPlacementSpec,
+  IGFeedPlacementSpec,
+  TikTokFeedPlacementSpec,
+} from "@shared/content";
 import { and, asc, count, eq, gte, lte } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";

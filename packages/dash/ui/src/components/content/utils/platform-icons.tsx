@@ -1,4 +1,4 @@
-import type { AllPlacement } from "@core/schemas/content.sql";
+import type { AllPlacement } from "@shared/content";
 import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
 
 export function getPlatformIcon(placement: AllPlacement) {

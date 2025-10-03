@@ -1,4 +1,4 @@
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
+import type { SharedAttachmentSpec } from "@shared/content";
 import { useCallback, useEffect, useState } from "react";
 import { type MediaItem, MediaService } from "@/lib/media";
 

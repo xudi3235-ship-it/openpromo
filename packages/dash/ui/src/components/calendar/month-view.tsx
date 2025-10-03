@@ -1,11 +1,11 @@
 "use client";
 
-import type { PlacementSpec } from "@core/schemas/content.sql";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@openpromo/ui/components/popover";
+import type { PlacementSpec } from "@shared/content";
 import type { ContentEntity } from "@worker/routes/api/workspaces/content";
 import {
   addDays,

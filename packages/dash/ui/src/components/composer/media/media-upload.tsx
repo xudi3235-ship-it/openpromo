@@ -1,6 +1,6 @@
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import { Label } from "@openpromo/ui/components/label";
 import { Switch } from "@openpromo/ui/components/switch";
+import type { SharedAttachmentSpec } from "@shared/content";
 import { Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Dropzone } from "@/components/dropzone";

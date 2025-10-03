@@ -4,7 +4,7 @@ import type {
   Platform,
   TikTokAccountMetadata,
 } from "@core/schemas/connected-account.sql";
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
+import type { SharedAttachmentSpec } from "@shared/content";
 import { useMemo } from "react";
 import type { ConnectedAccount } from "@/lib/hono-client";
 import { useComposerStore } from "@/stores/composer-store";

@@ -1,8 +1,8 @@
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@openpromo/ui/components/button";
 import { cn } from "@openpromo/ui/lib/utils";
+import type { SharedAttachmentSpec } from "@shared/content";
 import {
   FileText,
   GripVertical,

@@ -1,4 +1,4 @@
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
+import type { SharedAttachmentSpec } from "@shared/content";
 import type {
   ImageUploadResult,
   UploadResult,

@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/complexity/noStaticOnlyClass: lib */
 
-import type { SharedAttachmentSpec } from "@core/schemas/content.sql";
+import type { SharedAttachmentSpec } from "@shared/content";
 import { uploadAttachments as uploadAttachmentsService } from "@/services/attachment-upload";
 import { MediaItemFactory } from "./factory";
 import type { MediaItem } from "./types";

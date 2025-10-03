@@ -2,7 +2,7 @@ import type {
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
   TikTokFeedPlacementSpec,
-} from "@core/schemas/content.sql";
+} from "@shared/content";
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import { recalculateValidation } from "../utils/validation";
 import type { ComposerSlice } from "./types";

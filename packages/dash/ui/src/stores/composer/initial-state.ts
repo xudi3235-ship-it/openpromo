@@ -2,7 +2,7 @@ import type {
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
   TikTokFeedPlacementSpec,
-} from "@core/schemas/content.sql";
+} from "@shared/content";
 import type { ComposerProps, ComposerState } from "./types";
 import { validateComposerState } from "./utils/validation";
 

@@ -1,9 +1,9 @@
+import type { UnifiedContentSelect } from "@core/schemas/content.sql";
 import type {
   AllPlacement,
   ContentPublishingStatus,
   PlacementSpec,
-  UnifiedContentSelect,
-} from "@core/schemas/content.sql";
+} from "@shared/content";
 import { isSameDay } from "date-fns";
 import type { CalendarEvent, EventColor } from "@/components/calendar";
 import { matchEntity } from "@/lib/hono-client";
