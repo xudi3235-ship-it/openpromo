@@ -73,6 +73,7 @@ function useContentListQueryParams(
       search: search || undefined,
       sortBy,
       sortOrder,
+      platform: filters.platform,
     };
   }, [sorting, pagination, filters, search]);
 }

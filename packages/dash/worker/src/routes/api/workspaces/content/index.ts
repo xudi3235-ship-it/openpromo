@@ -47,6 +47,7 @@ const listContentQuerySchema = z.object({
     .optional()
     .default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+  platform: z.enum(["facebook", "instagram", "tiktok"]).optional(),
 });
 
 const GroupEntity = z.object({
@@ -165,6 +166,7 @@ export const contentRoute = new Hono<ApiEnv>()
       search,
       sortBy,
       sortOrder,
+      platform,
     } = c.req.valid("query");
     // await createDummyPendingContent();
     const wsID = Actor.workspaceID();
@@ -176,6 +178,22 @@ export const contentRoute = new Hono<ApiEnv>()
       whereConditions.push(
         eq(unifiedContentTable.publishingStatus, publishingStatus),
       );
+    }
+
+    // Filter by platform
+    if (platform) {
+      const placementPrefix: Record<string, string> = {
+        facebook: "FB_",
+        instagram: "IG_",
+        tiktok: "TT_",
+      };
+      const prefix = placementPrefix[platform];
+      if (prefix) {
+        // Filter by placement that starts with the platform prefix
+        whereConditions.push(
+          sql`${unifiedContentTable.placement}::text LIKE ${prefix + "%"}`,
+        );
+      }
     }
 
     if (search) {

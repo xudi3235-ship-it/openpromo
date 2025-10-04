@@ -8,12 +8,21 @@ import {
 } from "@openpromo/ui/components/select";
 import { DateRangePicker } from "@openpromo/ui/components/time/date-range-picker";
 import type { LucideIcon } from "lucide-react";
-import { AlertCircle, CheckCircle2, CircleDashed, X } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  CircleDashed,
+  Facebook,
+  Instagram,
+  Video,
+  X,
+} from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
 export interface ContentFilters {
   publishingStatus?: string;
   dateRange?: DateRange;
+  platform?: string;
 }
 
 interface ContentFiltersProps {
@@ -31,12 +40,22 @@ const PUBLISHING_STATUS_OPTIONS: Array<{
   { value: "FAILED_TO_PUBLISH", label: "Failed", icon: AlertCircle },
 ];
 
+const PLATFORM_OPTIONS: Array<{
+  value: string;
+  label: string;
+  icon: LucideIcon;
+}> = [
+  { value: "facebook", label: "Facebook", icon: Facebook },
+  { value: "instagram", label: "Instagram", icon: Instagram },
+  { value: "tiktok", label: "TikTok", icon: Video },
+];
+
 export function ContentFilters({
   filters,
   onFiltersChange,
 }: ContentFiltersProps) {
   const hasActiveFilters = Boolean(
-    filters.publishingStatus || filters.dateRange?.from,
+    filters.publishingStatus || filters.dateRange?.from || filters.platform,
   );
 
   const clearFilters = () => {
@@ -50,6 +69,13 @@ export function ContentFilters({
     });
   };
 
+  const updatePlatform = (platform: string | undefined) => {
+    onFiltersChange({
+      ...filters,
+      platform: platform === "all" ? undefined : platform,
+    });
+  };
+
   const updateDateRange = (dateRange: DateRange | undefined) => {
     onFiltersChange({
       ...filters,
@@ -58,7 +84,7 @@ export function ContentFilters({
   };
 
   return (
-    <div className="flex items-center gap-4 mb-4">
+    <div className="flex items-center gap-4 mb-4 flex-wrap">
       {/* Publishing Status Filter */}
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-muted-foreground">
@@ -74,6 +100,32 @@ export function ContentFilters({
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             {PUBLISHING_STATUS_OPTIONS.map(({ value, label, icon: Icon }) => (
+              <SelectItem key={value} value={value}>
+                <span className="flex items-center gap-2">
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Platform Filter */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-muted-foreground">
+          Platform:
+        </span>
+        <Select
+          value={filters.platform || "all"}
+          onValueChange={updatePlatform}
+        >
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Platforms</SelectItem>
+            {PLATFORM_OPTIONS.map(({ value, label, icon: Icon }) => (
               <SelectItem key={value} value={value}>
                 <span className="flex items-center gap-2">
                   <Icon className="h-4 w-4" />
