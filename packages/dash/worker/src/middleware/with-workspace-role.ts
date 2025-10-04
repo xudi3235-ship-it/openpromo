@@ -88,7 +88,7 @@ export const withWorkspaceRole: (
     return Actor.provide("workspace_user", workspaceCtx, next);
   }
 
-  const workspaceUserRole = await getWorkspaceRole(db, workspaceId, user.id);
+  const workspaceUserRole = await getWorkspaceRole(db, workspace.id, user.id);
 
   if (!hasWorkspaceRole(workspaceUserRole, requiredRole)) {
     throw new AppError(403, {
