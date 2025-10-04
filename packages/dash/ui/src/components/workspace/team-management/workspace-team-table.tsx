@@ -12,6 +12,7 @@ import type {
   WorkspaceInviteSummary,
   WorkspaceMember,
 } from "@worker/routes/api/workspaces/team";
+import { useActor } from "@/hooks/useActor";
 import { InviteActionsMenu } from "./invite-actions-menu";
 import { MemberActionsMenu } from "./member-actions-menu";
 import {
@@ -47,6 +48,7 @@ export function WorkspaceTeamTable({
   inviteActionsDisabled,
   memberActionsDisabled,
 }: WorkspaceTeamTableProps) {
+  const actor = useActor();
   const hasMembers = members.length > 0;
   const hasInvites = invites.length > 0;
 
@@ -116,7 +118,7 @@ export function WorkspaceTeamTable({
             !isError &&
             members.map((member) => {
               const email = member.user?.email ?? "—";
-              const isCurrentUser = false; // TODO: Get from auth context
+              const isCurrentUser = member.user?.id === actor.id;
 
               return (
                 <TableRow key={member.id}>
