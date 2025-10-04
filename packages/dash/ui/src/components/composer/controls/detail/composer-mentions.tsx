@@ -4,6 +4,7 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
   CommandList,
 } from "@openpromo/ui/components/command";
@@ -129,6 +130,7 @@ export default function ComposerMentions({
   onChange,
 }: ComposerMentionsProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [trigger, setTrigger] = useState<"@" | "#" | null>(null);
@@ -223,12 +225,28 @@ export default function ComposerMentions({
   const handleTextareaKeyDown = (
     e: React.KeyboardEvent<HTMLTextAreaElement>,
   ) => {
-    if (showDropdown) {
-      if (e.key === "Escape") {
+    if (showDropdown && inputRef.current) {
+      if (
+        e.key === "ArrowDown" ||
+        e.key === "ArrowUp" ||
+        e.key === "Enter" ||
+        e.key === "Escape"
+      ) {
         e.preventDefault();
-        setShowDropdown(false);
-        setTrigger(null);
-        setSearchQuery("");
+        // Forward keyboard event to Command input for navigation
+        const event = new KeyboardEvent("keydown", {
+          key: e.key,
+          code: e.code,
+          bubbles: true,
+        });
+        inputRef.current.dispatchEvent(event);
+
+        // Close on Escape
+        if (e.key === "Escape") {
+          setShowDropdown(false);
+          setTrigger(null);
+          setSearchQuery("");
+        }
       }
     }
   };
@@ -257,6 +275,12 @@ export default function ComposerMentions({
           }}
         >
           <Command className="border-border bg-popover w-[300px] rounded-lg border shadow-md">
+            <CommandInput
+              ref={inputRef}
+              value={searchQuery}
+              onValueChange={setSearchQuery}
+              className="hidden"
+            />
             <CommandList className="max-h-[200px]">
               <CommandEmpty>
                 No {trigger === "@" ? "users" : "hashtags"} found.
