@@ -18,7 +18,7 @@ import {
   IGFeedPlacementSpec,
   TikTokFeedPlacementSpec,
 } from "@shared/content";
-import { and, asc, count, eq, gte, lte, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
 import { AppError } from "../../../../helpers/error";
@@ -210,7 +210,8 @@ export const contentRoute = new Hono<ApiEnv>()
         ),
       )
       .where(and(...whereConditions))
-      .orderBy(asc(unifiedContentTable.createdAt))
+      // descending order by createdAt
+      .orderBy(desc(unifiedContentTable.createdAt))
       .limit(pageSize)
       .offset((page - 1) * pageSize);
 
