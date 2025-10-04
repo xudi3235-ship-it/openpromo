@@ -6,8 +6,8 @@ import { verifyMetaWebhookSignature } from "../../middleware/verify-meta-webhook
 import { zValidator } from "../../middleware/zod-validator";
 import { metaWebhookGetQuerySchema } from "./common";
 
-export const facebookWebhooksRoute = new Hono<ApiEnv>()
-  // GET /webhooks/facebook - this is used by facebook to verify the webhook endpoint
+export const instagramWebhooksRoute = new Hono<ApiEnv>()
+  // GET /webhooks/instagram - this is used by instagram to verify the webhook endpoint
   .get("/", zValidator("query", metaWebhookGetQuerySchema), (c) => {
     const { "hub.challenge": challenge, "hub.verify_token": verifyToken } =
       c.req.valid("query");
@@ -20,7 +20,7 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
 
     return c.text(challenge);
   })
-  // POST /webhooks/facebook - this is used by facebook to send webhook events
+  // POST /webhooks/instagram - this is used by instagram to send webhook events
   .post("/", verifyMetaWebhookSignature(env.FACEBOOK_APP_SECRET), (c) => {
     // TODO: handle webhook events
     return c.text("ok");
