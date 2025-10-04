@@ -8,6 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
   useInviteWorkspaceMember,
+  useRevokeWorkspaceInvite,
   useWorkspaceMembers,
 } from "@/queries/workspace";
 import {
@@ -15,7 +16,11 @@ import {
   type InviteFormState,
   InviteTeammateDialog,
 } from "./invite-teammate-dialog";
-import { formatRoleSlug, getMemberName } from "./utils";
+import {
+  formatRoleSlug,
+  getMemberName,
+  type WorkspaceInviteSummary,
+} from "./utils";
 import { WorkspaceTeamTable } from "./workspace-team-table";
 
 export function TeamManagement() {
@@ -29,6 +34,7 @@ export function TeamManagement() {
   );
 
   const inviteMemberMutation = useInviteWorkspaceMember();
+  const revokeInviteMutation = useRevokeWorkspaceInvite();
 
   const resetDialogState = () => {
     setIsDialogOpen(false);
@@ -95,6 +101,19 @@ export function TeamManagement() {
     });
   };
 
+  const handleRevokeInvite = (invite: WorkspaceInviteSummary) => {
+    revokeInviteMutation.mutate(
+      { inviteId: invite.id },
+      {
+        onSuccess: () => {
+          toast.success("Invitation removed", {
+            description: `${invite.email} can no longer join with that invite link.`,
+          });
+        },
+      },
+    );
+  };
+
   const inviteTrigger = (
     <Button className="gap-2">
       <UserPlus className="h-4 w-4" /> Invite teammate
@@ -137,6 +156,8 @@ export function TeamManagement() {
         isLoading={isPending}
         isError={isError}
         onRemoveMember={handleRemove}
+        onRevokeInvite={handleRevokeInvite}
+        inviteActionsDisabled={revokeInviteMutation.isPending}
       />
     </div>
   );

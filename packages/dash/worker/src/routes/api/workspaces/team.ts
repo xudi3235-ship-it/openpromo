@@ -64,6 +64,11 @@ export type WorkspaceTeamInviteResponse =
       invitation: InvitationSummary;
     };
 
+export type WorkspaceTeamInviteRevokeResponse = {
+  status: "revoked";
+  inviteId: string;
+};
+
 const inviteMemberSchema = z.object({
   email: z.string().email().trim(),
   role: z
@@ -476,5 +481,62 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
         },
         202,
       );
+    },
+  )
+  .delete(
+    "/:inviteId",
+    zValidator("param", z.object({ inviteId: z.string() })),
+    withWorkspaceRole(WORKSPACE_ROLE.ADMIN),
+    async (ctx) => {
+      const { inviteId } = ctx.req.valid("param");
+      const actor = Actor.assert("workspace_user");
+      const workspaceId = actor.properties.workspaceID;
+      const organizationId = actor.properties.organizationID;
+      const db = getDbClient();
+      const workOS = getWorkOS();
+
+      const [invite] = await db
+        .select({
+          id: workspaceInvitesTable.id,
+          invitationId: workspaceInvitesTable.invitationId,
+          status: workspaceInvitesTable.status,
+        })
+        .from(workspaceInvitesTable)
+        .where(
+          and(
+            eq(workspaceInvitesTable.id, inviteId),
+            eq(workspaceInvitesTable.workspaceId, workspaceId),
+            eq(workspaceInvitesTable.organizationId, organizationId),
+          ),
+        )
+        .limit(1);
+
+      if (!invite) {
+        throw new AppError(404, {
+          message: `Invite ${inviteId} not found`,
+        });
+      }
+
+      if (invite.status !== "pending") {
+        throw new AppError(400, {
+          message: "Only pending invites can be revoked",
+        });
+      }
+
+      try {
+        await workOS.userManagement.revokeInvitation(invite.invitationId);
+      } catch (error) {
+        console.error("Failed to revoke WorkOS invitation", error);
+      }
+
+      await db
+        .update(workspaceInvitesTable)
+        .set({ status: "revoked", updatedAt: new Date() })
+        .where(eq(workspaceInvitesTable.id, inviteId));
+
+      return ctx.json<WorkspaceTeamInviteRevokeResponse>({
+        status: "revoked",
+        inviteId,
+      });
     },
   );

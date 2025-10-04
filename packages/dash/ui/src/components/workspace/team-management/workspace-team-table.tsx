@@ -31,6 +31,8 @@ type WorkspaceTeamTableProps = {
   isLoading: boolean;
   isError: boolean;
   onRemoveMember: (member: WorkspaceMember) => void;
+  onRevokeInvite?: (invite: WorkspaceInviteSummary) => void;
+  inviteActionsDisabled?: boolean;
 };
 
 export function WorkspaceTeamTable({
@@ -39,6 +41,8 @@ export function WorkspaceTeamTable({
   isLoading,
   isError,
   onRemoveMember,
+  onRevokeInvite,
+  inviteActionsDisabled,
 }: WorkspaceTeamTableProps) {
   const hasMembers = members.length > 0;
   const hasInvites = invites.length > 0;
@@ -191,7 +195,11 @@ export function WorkspaceTeamTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right text-sm text-muted-foreground">
-                    <InviteActionsMenu invite={invite} disabled />
+                    <InviteActionsMenu
+                      invite={invite}
+                      onRevoke={onRevokeInvite}
+                      disabled={inviteActionsDisabled}
+                    />
                   </TableCell>
                 </TableRow>
               );

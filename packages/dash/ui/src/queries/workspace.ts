@@ -2,6 +2,7 @@ import type { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import type {
   WorkspaceTeamInviteResponse,
+  WorkspaceTeamInviteRevokeResponse,
   WorkspaceTeamResponse,
 } from "@worker/routes/api/workspaces/team";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -41,6 +42,29 @@ export const useInviteWorkspaceMember = () => {
       api.workspaces[":workspaceSlug"].team.$post({
         param: { workspaceSlug: workspace.slug },
         json: variables,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
+      });
+    },
+  });
+};
+
+export const useRevokeWorkspaceInvite = () => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation<
+    WorkspaceTeamInviteRevokeResponse,
+    { inviteId: string }
+  >({
+    mutationFn: (api, variables) =>
+      api.workspaces[":workspaceSlug"].team[":inviteId"].$delete({
+        param: {
+          workspaceSlug: workspace.slug,
+          inviteId: variables.inviteId,
+        },
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({

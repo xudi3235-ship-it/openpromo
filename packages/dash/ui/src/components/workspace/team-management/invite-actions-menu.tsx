@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { WorkspaceInviteSummary } from "./utils";
 
@@ -27,11 +27,6 @@ export function InviteActionsMenu({
   const handleResend = () => {
     setOpen(false);
     onResend?.(invite);
-  };
-
-  const handleRevoke = () => {
-    setOpen(false);
-    onRevoke?.(invite);
   };
 
   const hasActions = Boolean(onResend || onRevoke);
@@ -56,8 +51,15 @@ export function InviteActionsMenu({
           </DropdownMenuItem>
         ) : null}
         {onRevoke ? (
-          <DropdownMenuItem onSelect={handleRevoke}>
-            Revoke invite
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault();
+              setOpen(false);
+              onRevoke?.(invite);
+            }}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" /> Remove invite
           </DropdownMenuItem>
         ) : null}
         {!hasActions ? (
