@@ -3,6 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import type {
   WorkspaceTeamInviteResponse,
   WorkspaceTeamInviteRevokeResponse,
+  WorkspaceTeamMemberRemoveResponse,
+  WorkspaceTeamMemberUpdateResponse,
   WorkspaceTeamResponse,
 } from "@worker/routes/api/workspaces/team";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -60,10 +62,64 @@ export const useRevokeWorkspaceInvite = () => {
     { inviteId: string }
   >({
     mutationFn: (api, variables) =>
-      api.workspaces[":workspaceSlug"].team[":inviteId"].$delete({
+      api.workspaces[":workspaceSlug"].team.invites[":inviteId"].$delete({
         param: {
           workspaceSlug: workspace.slug,
           inviteId: variables.inviteId,
+        },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
+      });
+    },
+  });
+};
+
+export type UpdateMemberRoleVariables = {
+  memberId: string;
+  role: string;
+};
+
+export const useUpdateMemberRole = () => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation<
+    WorkspaceTeamMemberUpdateResponse,
+    UpdateMemberRoleVariables
+  >({
+    mutationFn: (api, variables) =>
+      api.workspaces[":workspaceSlug"].team.members[":memberId"].$patch({
+        param: {
+          workspaceSlug: workspace.slug,
+          memberId: variables.memberId,
+        },
+        json: {
+          role: variables.role as WorkspaceRoleValue,
+        },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
+      });
+    },
+  });
+};
+
+export const useRemoveMember = () => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation<
+    WorkspaceTeamMemberRemoveResponse,
+    { memberId: string }
+  >({
+    mutationFn: (api, variables) =>
+      api.workspaces[":workspaceSlug"].team.members[":memberId"].$delete({
+        param: {
+          workspaceSlug: workspace.slug,
+          memberId: variables.memberId,
         },
       }),
     onSuccess: async () => {

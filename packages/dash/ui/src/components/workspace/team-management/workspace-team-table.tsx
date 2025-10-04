@@ -22,7 +22,6 @@ import {
   getInviteInitials,
   getMemberInitials,
   getMemberName,
-  WORKSPACE_ADMIN_SLUG,
 } from "./utils";
 
 type WorkspaceTeamTableProps = {
@@ -30,9 +29,11 @@ type WorkspaceTeamTableProps = {
   invites: WorkspaceInviteSummary[];
   isLoading: boolean;
   isError: boolean;
+  onEditMemberRole?: (member: WorkspaceMember) => void;
   onRemoveMember: (member: WorkspaceMember) => void;
   onRevokeInvite?: (invite: WorkspaceInviteSummary) => void;
   inviteActionsDisabled?: boolean;
+  memberActionsDisabled?: boolean;
 };
 
 export function WorkspaceTeamTable({
@@ -40,9 +41,11 @@ export function WorkspaceTeamTable({
   invites,
   isLoading,
   isError,
+  onEditMemberRole,
   onRemoveMember,
   onRevokeInvite,
   inviteActionsDisabled,
+  memberActionsDisabled,
 }: WorkspaceTeamTableProps) {
   const hasMembers = members.length > 0;
   const hasInvites = invites.length > 0;
@@ -112,8 +115,8 @@ export function WorkspaceTeamTable({
           {!isLoading &&
             !isError &&
             members.map((member) => {
-              const canRemove = member.role?.slug !== WORKSPACE_ADMIN_SLUG;
               const email = member.user?.email ?? "—";
+              const isCurrentUser = false; // TODO: Get from auth context
 
               return (
                 <TableRow key={member.id}>
@@ -143,12 +146,13 @@ export function WorkspaceTeamTable({
                     <Badge variant="secondary">Active</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    {canRemove ? (
-                      <MemberActionsMenu
-                        member={member}
-                        onRemove={onRemoveMember}
-                      />
-                    ) : null}
+                    <MemberActionsMenu
+                      member={member}
+                      isCurrentUser={isCurrentUser}
+                      onEditRole={onEditMemberRole}
+                      onRemove={!isCurrentUser ? onRemoveMember : undefined}
+                      disabled={memberActionsDisabled}
+                    />
                   </TableCell>
                 </TableRow>
               );

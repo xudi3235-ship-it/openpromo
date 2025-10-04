@@ -8,9 +8,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
   useInviteWorkspaceMember,
+  useRemoveMember,
   useRevokeWorkspaceInvite,
+  useUpdateMemberRole,
   useWorkspaceMembers,
 } from "@/queries/workspace";
+import { EditMemberRoleDialog } from "./edit-member-role-dialog";
 import {
   createInitialInviteFormState,
   type InviteFormState,
@@ -32,9 +35,15 @@ export function TeamManagement() {
   const [formState, setFormState] = useState<InviteFormState>(
     createInitialInviteFormState(),
   );
+  const [editingMember, setEditingMember] = useState<WorkspaceMember | null>(
+    null,
+  );
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const inviteMemberMutation = useInviteWorkspaceMember();
   const revokeInviteMutation = useRevokeWorkspaceInvite();
+  const updateRoleMutation = useUpdateMemberRole();
+  const removeMemberMutation = useRemoveMember();
 
   const resetDialogState = () => {
     setIsDialogOpen(false);
@@ -95,10 +104,37 @@ export function TeamManagement() {
     );
   };
 
+  const handleEditRole = (member: WorkspaceMember) => {
+    setEditingMember(member);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateRole = (memberId: string, newRole: string) => {
+    updateRoleMutation.mutate(
+      { memberId, role: newRole },
+      {
+        onSuccess: () => {
+          toast.success("Member updated", {
+            description: "Changes have been saved successfully.",
+          });
+          setIsEditDialogOpen(false);
+          setEditingMember(null);
+        },
+      },
+    );
+  };
+
   const handleRemove = (member: WorkspaceMember) => {
-    toast.info("Member management coming soon", {
-      description: `${getMemberName(member)} will stay in the workspace until removals are supported.`,
-    });
+    removeMemberMutation.mutate(
+      { memberId: member.id },
+      {
+        onSuccess: () => {
+          toast.success("Member removed", {
+            description: `${getMemberName(member)} has been removed from the workspace.`,
+          });
+        },
+      },
+    );
   };
 
   const handleRevokeInvite = (invite: WorkspaceInviteSummary) => {
@@ -155,9 +191,21 @@ export function TeamManagement() {
         invites={invites}
         isLoading={isPending}
         isError={isError}
+        onEditMemberRole={handleEditRole}
         onRemoveMember={handleRemove}
         onRevokeInvite={handleRevokeInvite}
         inviteActionsDisabled={revokeInviteMutation.isPending}
+        memberActionsDisabled={
+          updateRoleMutation.isPending || removeMemberMutation.isPending
+        }
+      />
+
+      <EditMemberRoleDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        member={editingMember}
+        onConfirm={handleUpdateRole}
+        isLoading={updateRoleMutation.isPending}
       />
     </div>
   );

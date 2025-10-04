@@ -483,8 +483,156 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
       );
     },
   )
+  .patch(
+    "/members/:memberId",
+    zValidator("param", z.object({ memberId: z.string() })),
+    zValidator(
+      "json",
+      z.object({
+        role: z.enum([
+          WORKSPACE_ROLE.ADMIN,
+          WORKSPACE_ROLE.EDITOR,
+          WORKSPACE_ROLE.VIEWER,
+        ]),
+      }),
+    ),
+    withWorkspaceRole(WORKSPACE_ROLE.ADMIN),
+    async (ctx) => {
+      const { memberId } = ctx.req.valid("param");
+      const { role } = ctx.req.valid("json");
+      const actor = Actor.assert("workspace_user");
+      const workspaceId = actor.properties.workspaceID;
+      const db = getDbClient();
+      const workOS = getWorkOS();
+
+      // Get the role record
+      const [roleRecord] = await db
+        .select({
+          id: workspaceRolesTable.id,
+          name: workspaceRolesTable.name,
+          description: workspaceRolesTable.description,
+          slug: workspaceRolesTable.slug,
+        })
+        .from(workspaceRolesTable)
+        .where(eq(workspaceRolesTable.slug, role))
+        .limit(1);
+
+      if (!roleRecord) {
+        throw new AppError(400, {
+          message: `Workspace role ${role} not found`,
+        });
+      }
+
+      // Get the member assignment
+      const [assignment] = await db
+        .select({
+          id: workspaceRoleAssignmentsTable.id,
+          assigneeId: workspaceRoleAssignmentsTable.assigneeId,
+          roleId: workspaceRoleAssignmentsTable.roleId,
+        })
+        .from(workspaceRoleAssignmentsTable)
+        .where(
+          and(
+            eq(workspaceRoleAssignmentsTable.id, memberId),
+            eq(workspaceRoleAssignmentsTable.workspaceId, workspaceId),
+          ),
+        )
+        .limit(1);
+
+      if (!assignment) {
+        throw new AppError(404, {
+          message: `Member ${memberId} not found`,
+        });
+      }
+
+      // Don't allow users to change their own role
+      if (assignment.assigneeId === actor.properties.userID) {
+        throw new AppError(400, {
+          message: "You cannot change your own role",
+        });
+      }
+
+      // Update the role
+      await db
+        .update(workspaceRoleAssignmentsTable)
+        .set({
+          roleId: roleRecord.id,
+          updatedAt: new Date(),
+        })
+        .where(eq(workspaceRoleAssignmentsTable.id, memberId));
+
+      // Fetch updated member details
+      const user = await workOS.userManagement.getUser(assignment.assigneeId);
+
+      const member: WorkspaceMember = {
+        id: memberId,
+        workspaceId,
+        roleId: roleRecord.id,
+        role: {
+          id: roleRecord.id,
+          slug: roleRecord.slug,
+          name: roleRecord.name,
+          description: roleRecord.description ?? undefined,
+        },
+        user: {
+          id: user.id,
+          email: user.email ?? undefined,
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+        },
+      };
+
+      return ctx.json({ member });
+    },
+  )
   .delete(
-    "/:inviteId",
+    "/members/:memberId",
+    zValidator("param", z.object({ memberId: z.string() })),
+    withWorkspaceRole(WORKSPACE_ROLE.ADMIN),
+    async (ctx) => {
+      const { memberId } = ctx.req.valid("param");
+      const actor = Actor.assert("workspace_user");
+      const workspaceId = actor.properties.workspaceID;
+      const db = getDbClient();
+
+      // Get the member assignment
+      const [assignment] = await db
+        .select({
+          id: workspaceRoleAssignmentsTable.id,
+          assigneeId: workspaceRoleAssignmentsTable.assigneeId,
+        })
+        .from(workspaceRoleAssignmentsTable)
+        .where(
+          and(
+            eq(workspaceRoleAssignmentsTable.id, memberId),
+            eq(workspaceRoleAssignmentsTable.workspaceId, workspaceId),
+          ),
+        )
+        .limit(1);
+
+      if (!assignment) {
+        throw new AppError(404, {
+          message: `Member ${memberId} not found`,
+        });
+      }
+
+      // Don't allow users to remove themselves
+      if (assignment.assigneeId === actor.properties.userID) {
+        throw new AppError(400, {
+          message: "You cannot remove yourself from the workspace",
+        });
+      }
+
+      // Delete the assignment
+      await db
+        .delete(workspaceRoleAssignmentsTable)
+        .where(eq(workspaceRoleAssignmentsTable.id, memberId));
+
+      return ctx.json({ success: true, memberId });
+    },
+  )
+  .delete(
+    "/invites/:inviteId",
     zValidator("param", z.object({ inviteId: z.string() })),
     withWorkspaceRole(WORKSPACE_ROLE.ADMIN),
     async (ctx) => {
@@ -540,3 +688,12 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
       });
     },
   );
+
+export type WorkspaceTeamMemberUpdateResponse = {
+  member: WorkspaceMember;
+};
+
+export type WorkspaceTeamMemberRemoveResponse = {
+  success: boolean;
+  memberId: string;
+};
