@@ -12,7 +12,7 @@ export const instagramWebhooksRoute = new Hono<ApiEnv>()
     const { "hub.challenge": challenge, "hub.verify_token": verifyToken } =
       c.req.valid("query");
 
-    if (verifyToken !== env.FACEBOOK_WEBHOOK_VERIFY_TOKEN) {
+    if (verifyToken !== env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN) {
       throw new AppError(400, {
         message: "Invalid facebook webhook verify token",
       });
@@ -21,7 +21,7 @@ export const instagramWebhooksRoute = new Hono<ApiEnv>()
     return c.text(challenge);
   })
   // POST /webhooks/instagram - this is used by instagram to send webhook events
-  .post("/", verifyMetaWebhookSignature(env.FACEBOOK_APP_SECRET), (c) => {
+  .post("/", verifyMetaWebhookSignature(env.INSTAGRAM_APP_SECRET), (c) => {
     // TODO: handle webhook events
     return c.text("ok");
   });
