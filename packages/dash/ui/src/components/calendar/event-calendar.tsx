@@ -52,6 +52,9 @@ export interface EventCalendarProps {
   onEventDelete?: (eventId: string) => void;
   className?: string;
   initialView?: CalendarView;
+  currentDate?: Date;
+  onDateChange?: (date: Date) => void;
+  onViewChange?: (view: CalendarView) => void;
 }
 
 export function ContentCalendar({
@@ -60,8 +63,12 @@ export function ContentCalendar({
   onEventUpdate,
   onEventDelete,
   className,
+  currentDate: externalCurrentDate,
+  onDateChange,
+  onViewChange,
 }: EventCalendarProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [internalCurrentDate, setInternalCurrentDate] = useState(new Date());
+  const currentDate = externalCurrentDate ?? internalCurrentDate;
 
   const { isOpen, openDialog, closeDialog } = useDialogComposerStore();
   const [selectedEvent, setSelectedEvent] =
@@ -74,8 +81,9 @@ export function ContentCalendar({
     (newView: CalendarView) => {
       if (view === newView) return;
       navigate({ search: { view: newView } });
+      onViewChange?.(newView);
     },
-    [navigate, view],
+    [navigate, view, onViewChange],
   );
 
   // Add keyboard shortcuts for view switching
@@ -110,23 +118,32 @@ export function ContentCalendar({
   }, [isOpen, setView]);
 
   const handlePrevious = () => {
-    if (view === "month") {
-      setCurrentDate(subMonths(currentDate, 1));
-    } else if (view === "week") {
-      setCurrentDate(subWeeks(currentDate, 1));
+    const newDate =
+      view === "month" ? subMonths(currentDate, 1) : subWeeks(currentDate, 1);
+    if (onDateChange) {
+      onDateChange(newDate);
+    } else {
+      setInternalCurrentDate(newDate);
     }
   };
 
   const handleNext = () => {
-    if (view === "month") {
-      setCurrentDate(addMonths(currentDate, 1));
-    } else if (view === "week") {
-      setCurrentDate(addWeeks(currentDate, 1));
+    const newDate =
+      view === "month" ? addMonths(currentDate, 1) : addWeeks(currentDate, 1);
+    if (onDateChange) {
+      onDateChange(newDate);
+    } else {
+      setInternalCurrentDate(newDate);
     }
   };
 
   const handleToday = () => {
-    setCurrentDate(new Date());
+    const newDate = new Date();
+    if (onDateChange) {
+      onDateChange(newDate);
+    } else {
+      setInternalCurrentDate(newDate);
+    }
   };
 
   const handleEventSelect = (event: MergedContentEntity) => {

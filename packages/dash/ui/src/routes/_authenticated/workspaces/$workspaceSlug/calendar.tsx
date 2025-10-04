@@ -4,6 +4,7 @@ import { useState } from "react";
 import * as z from "zod";
 import { CalendarSkeleton, EventCalendar } from "@/components/calendar";
 import { CalendarViews } from "@/components/calendar/types";
+import { useCalendarDateRange } from "@/hooks/calendar/useCalendarDateRange";
 import { useContentListQuery } from "@/queries/content";
 
 const calendarSearchSchema = z.object({
@@ -18,7 +19,15 @@ export const Route = createFileRoute(
 });
 
 export default function CalendarPage() {
-  const { data, isLoading } = useContentListQuery();
+  const { view } = Route.useSearch();
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const { fromDate, toDate } = useCalendarDateRange(currentDate, view);
+
+  const { data, isLoading } = useContentListQuery({
+    fromDate,
+    toDate,
+  });
+
   const [events, setEvents] = useState<MergedContentEntity[]>([]);
 
   const handleEventAdd = (event: MergedContentEntity) => {
@@ -50,6 +59,8 @@ export default function CalendarPage() {
       onEventAdd={handleEventAdd}
       onEventUpdate={handleEventUpdate}
       onEventDelete={handleEventDelete}
+      currentDate={currentDate}
+      onDateChange={setCurrentDate}
     />
   );
 }
