@@ -26,7 +26,7 @@ export const workspaceInvitesTable = pgTable(
     status: workspaceInviteStatusEnum().notNull().default("pending"),
   },
   (t) => [
-    uniqueIndex("workspace_invites_invitation_id_idx").on(t.invitationId),
+    index("workspace_invites_invitation_id_idx").on(t.invitationId),
     uniqueIndex("workspace_invites_workspace_email_unique").on(
       t.workspaceId,
       t.email,
