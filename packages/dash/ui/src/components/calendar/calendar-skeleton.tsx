@@ -2,13 +2,6 @@
 "use client";
 
 import { Button } from "@openpromo/ui/components/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from "@openpromo/ui/components/dropdown-menu";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
 import {
@@ -24,7 +17,6 @@ import {
 } from "date-fns";
 import {
   CalendarCheck,
-  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   PlusIcon,
@@ -67,6 +59,18 @@ export function CalendarSkeleton() {
     });
   }, []);
 
+  const viewTitle = useMemo(() => {
+    if (view === "month") {
+      return format(currentDate, "MMMM yyyy");
+    } else if (view === "week") {
+      const start = startOfWeek(currentDate, { weekStartsOn: 0 });
+      const end = endOfWeek(currentDate, { weekStartsOn: 0 });
+      return `${format(start, "MMM d")} - ${format(end, "MMM d, yyyy")}`;
+    } else {
+      return format(currentDate, "MMMM yyyy");
+    }
+  }, [currentDate, view]);
+
   return (
     <div
       className={cn("h-full w-full flex flex-col")}
@@ -78,60 +82,43 @@ export function CalendarSkeleton() {
       }
     >
       {/* Calendar Header */}
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center space-x-4">
-          <Skeleton className="h-8 w-32" /> {/* Month/Year title */}
-          <Button variant="outline" size="sm" disabled>
+      <header className="px-4 pt-4 pb-2">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-semibold text-foreground">Calendar</h1>
+          <p className="text-sm text-muted-foreground">
+            Plan upcoming content across your social accounts.
+          </p>
+        </div>
+      </header>
+      <div className="flex items-center justify-between px-4 pb-4">
+        <div className="flex items-center gap-1 sm:gap-4">
+          {/* View Toggle - Week/Month - Skeleton */}
+          <div className="border rounded-md flex">
+            <Skeleton className="h-8 w-20 rounded-r-none" />
+            <Skeleton className="h-8 w-20 rounded-l-none" />
+          </div>
+
+          <Button
+            variant="outline"
+            className="max-[479px]:aspect-square max-[479px]:p-0!"
+            disabled
+          >
             <CalendarCheck className="min-[480px]:hidden" size={16} />
             <span className="max-[479px]:sr-only">Today</span>
           </Button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" disabled>
-            <ChevronLeftIcon size={16} />
-          </Button>
-          <Button variant="outline" size="sm" disabled>
-            <ChevronRightIcon size={16} />
-          </Button>
+          <div className="flex items-center sm:gap-2">
+            <Button variant="ghost" size="icon" disabled aria-label="Previous">
+              <ChevronLeftIcon size={16} aria-hidden="true" />
+            </Button>
+            <Button variant="ghost" size="icon" disabled aria-label="Next">
+              <ChevronRightIcon size={16} aria-hidden="true" />
+            </Button>
+          </div>
+          <h2 className="text-sm font-semibold sm:text-lg md:text-xl">
+            {viewTitle}
+          </h2>
         </div>
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="gap-1.5 max-[479px]:h-8"
-                disabled
-              >
-                <span>
-                  <span className="min-[480px]:hidden" aria-hidden="true">
-                    {view.charAt(0).toUpperCase()}
-                  </span>
-                  <span className="max-[479px]:sr-only">
-                    {view.charAt(0).toUpperCase() + view.slice(1)}
-                  </span>
-                </span>
-                <ChevronDownIcon
-                  className="-me-1 opacity-60"
-                  size={16}
-                  aria-hidden="true"
-                />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-32">
-              <DropdownMenuItem disabled>
-                Month <DropdownMenuShortcut>M</DropdownMenuShortcut>
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled>
-                Week <DropdownMenuShortcut>W</DropdownMenuShortcut>
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled>
-                Day <DropdownMenuShortcut>D</DropdownMenuShortcut>
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled>
-                Agenda <DropdownMenuShortcut>A</DropdownMenuShortcut>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
           <Button
             className="max-[479px]:aspect-square max-[479px]:p-0!"
             size="sm"
@@ -142,7 +129,7 @@ export function CalendarSkeleton() {
               size={16}
               aria-hidden="true"
             />
-            <span className="max-sm:sr-only">New event</span>
+            <span className="max-sm:sr-only">Create Post</span>
           </Button>
         </div>
       </div>
