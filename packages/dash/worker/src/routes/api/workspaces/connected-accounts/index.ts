@@ -1,5 +1,8 @@
+import {
+  facebookOAuthService,
+  instagramOAuthService,
+} from "@core/domain/connected-account";
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { FacebookMutation } from "@core/domain/content/entity/mutation";
 import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
@@ -37,13 +40,14 @@ export const connectedAccountsRoute = new Hono<ApiEnv>()
       const account = await ConnectedAccount.fromID(accountId);
       switch (account.platform) {
         case "FACEBOOK":
-          await FacebookMutation.teardownWebhook(
-            account.externalAccountId,
+          await facebookOAuthService.teardownWebhook(
             account.encryptedAccessToken,
           );
           break;
         case "INSTAGRAM":
-          // TODO: implement
+          await instagramOAuthService.teardownWebhook(
+            account.encryptedAccessToken,
+          );
           break;
         case "TIKTOK":
           // TODO: implement

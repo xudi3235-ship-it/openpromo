@@ -67,6 +67,11 @@ export class InstagramOAuthService {
     return env.INSTAGRAM_APP_SECRET;
   }
 
+  private get baseUrl(): string {
+    const version = "v23.0";
+    return `https://graph.instagram.com/${version}`;
+  }
+
   /**
    * Generate Instagram OAuth URL for user login
    * Uses Instagram's specific OAuth endpoint
@@ -141,7 +146,7 @@ export class InstagramOAuthService {
     });
 
     const response = await fetch(
-      `https://graph.instagram.com/access_token?${params.toString()}`,
+      `${this.baseUrl}/access_token?${params.toString()}`,
     );
 
     if (!response.ok) {
@@ -159,7 +164,7 @@ export class InstagramOAuthService {
    */
   async getUserProfile(accessToken: string): Promise<InstagramProfile> {
     const response = await fetch(
-      `https://graph.instagram.com/v23.0/me?fields=id,username,account_type,media_count,followers_count,follows_count,name,biography,profile_picture_url,website&access_token=${accessToken}`,
+      `${this.baseUrl}/me?fields=id,username,account_type,media_count,followers_count,follows_count,name,biography,profile_picture_url,website&access_token=${accessToken}`,
     );
 
     if (!response.ok) {
@@ -241,7 +246,7 @@ export class InstagramOAuthService {
     });
 
     const response = await fetch(
-      `https://graph.instagram.com/refresh_access_token?${params.toString()}`,
+      `${this.baseUrl}/refresh_access_token?${params.toString()}`,
     );
 
     if (!response.ok) {
@@ -249,6 +254,37 @@ export class InstagramOAuthService {
     }
 
     return (await response.json()) as InstagramLongLivedTokenResponse;
+  }
+
+  async setupWebhook(accessToken: string): Promise<void> {
+    const params = new URLSearchParams({
+      access_token: accessToken,
+      subscribed_fields: "comments,messages,message_edit",
+    });
+    const response = await fetch(
+      `${this.baseUrl}/me/subscribed_apps?${params.toString()}`,
+      {
+        method: "POST",
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to setup webhook: ${response.statusText}`);
+    }
+  }
+
+  async teardownWebhook(accessToken: string): Promise<void> {
+    const params = new URLSearchParams({
+      access_token: accessToken,
+    });
+    const response = await fetch(
+      `${this.baseUrl}/me/subscribed_apps?${params.toString()}`,
+      {
+        method: "DELETE",
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to teardown webhook: ${response.statusText}`);
+    }
   }
 }
 

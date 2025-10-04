@@ -330,6 +330,37 @@ export class FacebookOAuthService {
       permissions: this.scopes,
     };
   }
+
+  async setupWebhook(accessToken: string): Promise<void> {
+    const params = new URLSearchParams({
+      subscribed_fields: "feed,messages,message_edits",
+      access_token: accessToken,
+    });
+    const response = await fetch(
+      `${this.baseUrl}/me/subscribed_apps?${params.toString()}`,
+      {
+        method: "POST",
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to setup webhook: ${response.statusText}`);
+    }
+  }
+
+  async teardownWebhook(accessToken: string): Promise<void> {
+    const params = new URLSearchParams({
+      access_token: accessToken,
+    });
+    const response = await fetch(
+      `${this.baseUrl}/me/subscribed_apps?${params.toString()}`,
+      {
+        method: "DELETE",
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to teardown webhook: ${response.statusText}`);
+    }
+  }
 }
 
 // Export singleton instance

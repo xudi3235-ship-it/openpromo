@@ -47,40 +47,45 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>().get(
       // Clear the stored state since we've verified it
       clearAuthStateCookie(ctx);
       const workspaceSlug = actor.properties.workspaceSlug;
-      return Actor.provide("workspace_user", actor.properties, async () => {
-        // 1. Authenticate with Instagram
-        const authResult = await instagramOAuthService.authenticate({
-          code,
-          workspaceSlug,
-        });
-        const profilePicUrl = authResult.picture ? authResult.picture : "";
-        // 2. Create a connected account for the authenticated Instagram account
-        const account = await ConnectedAccount.create({
-          platform: Platform.enum.INSTAGRAM,
-          externalAccountId: authResult.id,
-          accountName: authResult.name,
-          externalUrl: `https://www.instagram.com/${authResult.username}`,
-          profilePicUrl,
-          // TODO: implement encryption
-          encryptedAccessToken: authResult.accessToken,
-          refreshToken: authResult.refreshToken,
-          lastBackfillAt: null,
-          tokenExpiresAt: new Date(Date.now() + authResult.expiresIn * 1000),
-          metadata: {
-            igAccountID: authResult.id,
-            username: authResult.username,
+      return await Actor.provide(
+        "workspace_user",
+        actor.properties,
+        async () => {
+          // 1. Authenticate with Instagram
+          const authResult = await instagramOAuthService.authenticate({
+            code,
+            workspaceSlug,
+          });
+          const profilePicUrl = authResult.picture ? authResult.picture : "";
+          // 2. Create a connected account for the authenticated Instagram account
+          const account = await ConnectedAccount.create({
+            platform: Platform.enum.INSTAGRAM,
+            externalAccountId: authResult.id,
+            accountName: authResult.name,
+            externalUrl: `https://www.instagram.com/${authResult.username}`,
             profilePicUrl,
-            permissions: authResult.permissions,
-          },
-        });
+            // TODO: implement encryption
+            encryptedAccessToken: authResult.accessToken,
+            refreshToken: authResult.refreshToken,
+            lastBackfillAt: null,
+            tokenExpiresAt: new Date(Date.now() + authResult.expiresIn * 1000),
+            metadata: {
+              igAccountID: authResult.id,
+              username: authResult.username,
+              profilePicUrl,
+              permissions: authResult.permissions,
+            },
+          });
+          await instagramOAuthService.setupWebhook(authResult.accessToken);
 
-        const qp = new URLSearchParams({
-          status: "success",
-          event: "accounts_connected",
-          message: `Successfully connected to ${account.accountName}.`,
-        } satisfies PopupRelayQuery).toString();
-        return ctx.redirect(`/api/popup-relay?${qp}`);
-      });
+          const qp = new URLSearchParams({
+            status: "success",
+            event: "accounts_connected",
+            message: `Successfully connected to ${account.accountName}.`,
+          } satisfies PopupRelayQuery).toString();
+          return ctx.redirect(`/api/popup-relay?${qp}`);
+        },
+      );
     } catch (error) {
       console.error(error);
       const qp = new URLSearchParams({
