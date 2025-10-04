@@ -1,5 +1,4 @@
 import { Button } from "@openpromo/ui/components/button";
-import { Textarea } from "@openpromo/ui/components/textarea";
 import {
   MapPin,
   MessageSquare,
@@ -8,6 +7,7 @@ import {
   Smile,
 } from "lucide-react";
 import { useComposerStore } from "@/stores/composer-store";
+import ComposerMentions from "./detail/composer-mentions";
 
 export function PostDetails() {
   const { getCurrentMessage, setCurrentMessage } = useComposerStore();
@@ -21,11 +21,9 @@ export function PostDetails() {
 
       {/* Text Editor */}
       <div className="border rounded-lg">
-        <Textarea
-          placeholder="Write something..."
-          className="border-0 resize-none min-h-[80px]"
+        <ComposerMentions
           value={getCurrentMessage()}
-          onChange={(e) => setCurrentMessage(e.target.value)}
+          onChange={setCurrentMessage}
         />
         <div className="border-t p-2 flex items-center justify-between">
           <div className="flex items-center gap-1">
