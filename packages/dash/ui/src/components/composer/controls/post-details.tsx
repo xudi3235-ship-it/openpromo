@@ -8,9 +8,15 @@ import {
 } from "lucide-react";
 import { useComposerStore } from "@/stores/composer-store";
 import ComposerMentions from "./detail/composer-mentions";
+import { ComposerEmojiPicker } from "./detail/emoji-picker";
 
 export function PostDetails() {
   const { getCurrentMessage, setCurrentMessage } = useComposerStore();
+
+  const handleEmojiSelect = (emoji: string) => {
+    const currentMessage = getCurrentMessage();
+    setCurrentMessage(currentMessage + emoji);
+  };
 
   return (
     <div className="space-y-3">
@@ -30,9 +36,7 @@ export function PostDetails() {
             <Button variant="ghost" size="sm" className="h-6 px-2">
               #
             </Button>
-            <Button variant="ghost" size="sm" className="h-6 px-2">
-              <Smile className="w-3 h-3" />
-            </Button>
+            <ComposerEmojiPicker onEmojiSelect={handleEmojiSelect} />
           </div>
         </div>
       </div>
