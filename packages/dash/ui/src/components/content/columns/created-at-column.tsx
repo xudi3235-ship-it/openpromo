@@ -40,7 +40,9 @@ function formatCreatedAt(date: Date): { primary: string; secondary: string } {
 }
 
 export const createdAtColumn: ColumnDef<MergedContentEntity> = {
-  accessorKey: "Created At",
+  id: "createdAt",
+  accessorKey: "createdAt",
+  enableSorting: true,
   header: ({ column }) => {
     return (
       <Button

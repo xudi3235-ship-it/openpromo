@@ -19,7 +19,7 @@ import {
   IGFeedPlacementSpec,
   TikTokFeedPlacementSpec,
 } from "@shared/content";
-import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
 import { AppError } from "../../../../helpers/error";
@@ -42,6 +42,11 @@ const listContentQuerySchema = z.object({
   fromDate: z.coerce.date().optional(),
   toDate: z.coerce.date().optional(),
   search: z.string().min(1).max(200).optional(),
+  sortBy: z
+    .enum(["createdAt", "scheduledDate"])
+    .optional()
+    .default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
 });
 
 const GroupEntity = z.object({
@@ -151,8 +156,16 @@ export const contentRoute = new Hono<ApiEnv>()
   })
   // list content api
   .get("/", zValidator("query", listContentQuerySchema), async (c) => {
-    const { page, pageSize, publishingStatus, fromDate, toDate, search } =
-      c.req.valid("query");
+    const {
+      page,
+      pageSize,
+      publishingStatus,
+      fromDate,
+      toDate,
+      search,
+      sortBy,
+      sortOrder,
+    } = c.req.valid("query");
     // await createDummyPendingContent();
     const wsID = Actor.workspaceID();
 
@@ -201,6 +214,13 @@ export const contentRoute = new Hono<ApiEnv>()
     const totalCount = totalCountResult[0]?.count ?? 0;
     const totalPages = Math.ceil(totalCount / pageSize);
 
+    // Determine order by clause based on sortBy and sortOrder
+    const orderByFn = sortOrder === "asc" ? asc : desc;
+    const orderByColumn =
+      sortBy === "scheduledDate"
+        ? sql`${unifiedContentTable.placementSpec} -> 'schedulingSpec' ->> 'publishAt'`
+        : unifiedContentTable.createdAt;
+
     const raw = await db()
       .select()
       .from(unifiedContentTable)
@@ -212,8 +232,7 @@ export const contentRoute = new Hono<ApiEnv>()
         ),
       )
       .where(and(...whereConditions))
-      // descending order by createdAt
-      .orderBy(desc(unifiedContentTable.createdAt))
+      .orderBy(orderByFn(orderByColumn))
       .limit(pageSize)
       .offset((page - 1) * pageSize);
 

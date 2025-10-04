@@ -38,7 +38,9 @@ function formatScheduledDate(date: Date): {
 }
 
 export const scheduledDateColumn: ColumnDef<MergedContentEntity> = {
+  id: "scheduledDate",
   accessorKey: "scheduledDate",
+  enableSorting: true,
   header: ({ column }) => {
     return (
       <Button

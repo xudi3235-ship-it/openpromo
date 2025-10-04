@@ -44,6 +44,36 @@ import {
 } from "./content-filters";
 import { ContentTableSkeleton } from "./content-table-skeleton";
 
+function useContentListQueryParams(
+  sorting: SortingState,
+  pagination: { pageIndex: number; pageSize: number },
+  filters: ContentFiltersType,
+  search: string,
+) {
+  return React.useMemo(() => {
+    // TODO: enable multiple sorting conditions
+    // Convert sorting state to API parameters with default fallback
+    const sortBy: "createdAt" | "scheduledDate" =
+      (sorting[0]?.id as "createdAt" | "scheduledDate") || "createdAt";
+    const sortOrder: "asc" | "desc" = sorting[0]
+      ? sorting[0].desc
+        ? "desc"
+        : "asc"
+      : "desc";
+
+    return {
+      page: pagination.pageIndex + 1, // API uses 1-based indexing
+      pageSize: pagination.pageSize,
+      publishingStatus: filters.publishingStatus,
+      fromDate: filters.dateRange?.from,
+      toDate: filters.dateRange?.to,
+      search: search || undefined,
+      sortBy,
+      sortOrder,
+    };
+  }, [sorting, pagination, filters, search]);
+}
+
 export function ContentPage() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -69,14 +99,15 @@ export function ContentPage() {
   const closeRescheduleDialog = useCalendarRescheduleStore(
     (state) => state.close,
   );
-  const { data, isLoading } = useContentListQuery({
-    page: pagination.pageIndex + 1, // API uses 1-based indexing
-    pageSize: pagination.pageSize,
-    publishingStatus: filters.publishingStatus,
-    fromDate: filters.dateRange?.from,
-    toDate: filters.dateRange?.to,
-    search: normalizedSearch || undefined,
-  });
+
+  const queryParams = useContentListQueryParams(
+    sorting,
+    pagination,
+    filters,
+    normalizedSearch,
+  );
+
+  const { data, isLoading } = useContentListQuery(queryParams);
   const table = useReactTable({
     data: (data?.entities as unknown as MergedContentEntity[]) ?? [],
     columns,
@@ -88,8 +119,9 @@ export function ContentPage() {
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     onPaginationChange: setPagination,
-    // Server-side pagination
+    // Server-side pagination and sorting
     manualPagination: true,
+    manualSorting: true,
     pageCount: data?.pagination?.totalPages ?? 0,
     state: {
       sorting,

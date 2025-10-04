@@ -20,6 +20,8 @@ export interface ContentListPaginationParams {
   fromDate?: Date;
   toDate?: Date;
   search?: string;
+  sortBy?: "createdAt" | "scheduledDate";
+  sortOrder?: "asc" | "desc";
 }
 
 export const useContentListQuery = (
@@ -33,6 +35,8 @@ export const useContentListQuery = (
     fromDate,
     toDate,
     search,
+    sortBy,
+    sortOrder,
   } = params;
 
   const queryParams: Record<string, string> = {
@@ -56,6 +60,14 @@ export const useContentListQuery = (
     queryParams.search = search.trim();
   }
 
+  if (sortBy) {
+    queryParams.sortBy = sortBy;
+  }
+
+  if (sortOrder) {
+    queryParams.sortOrder = sortOrder;
+  }
+
   return useHonoQuery({
     queryKey: [
       "content-list",
@@ -65,6 +77,8 @@ export const useContentListQuery = (
       fromDate?.toISOString(),
       toDate?.toISOString(),
       search?.trim() ?? "",
+      sortBy,
+      sortOrder,
     ],
     queryFn: (api) =>
       api.workspaces[":workspaceSlug"].content.$get({
