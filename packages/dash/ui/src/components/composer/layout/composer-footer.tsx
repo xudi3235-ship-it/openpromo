@@ -1,20 +1,29 @@
 import { Button } from "@openpromo/ui/components/button";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { ValidationErrors } from "@/components/composer/controls/validation-errors";
 import { PublishingOverlay } from "@/components/composer/layout/publishing-overlay";
 import { useComposerPublishHandlers } from "@/hooks/composer/useComposerHooks";
 import { useComposerMutations } from "@/queries/content";
 import { useComposerStore } from "@/stores/composer-store";
+import { useDialogComposerStore } from "@/stores/dialog-composer-store";
+import { CancelConfirmationDialog } from "../dialogs/cancel-confirmation-dialog";
 
 export function ComposerFooter() {
   const [publishingState, setPublishingState] = useState<{
     isVisible: boolean;
     status: "loading" | "success" | "error";
   }>({ isVisible: false, status: "loading" });
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  const { setPublishingStatus, contentCreateData, validation, contentGroupID } =
-    useComposerStore();
+  const {
+    setPublishingStatus,
+    contentCreateData,
+    validation,
+    contentGroupID,
+    hasUnsavedChanges,
+  } = useComposerStore();
+  const { isOpen: isDialog, closeDialog } = useDialogComposerStore();
   const onCompleteHandler = useComposerPublishHandlers();
 
   const { create: useCreateMutation, updateGroup: useUpdateGroupMutation } =
@@ -107,15 +116,30 @@ export function ComposerFooter() {
     onCompleteHandler();
   };
 
+  const handleCancel = useCallback(() => {
+    if (hasUnsavedChanges()) {
+      setShowCancelConfirm(true);
+    } else {
+      closeDialog();
+    }
+  }, [hasUnsavedChanges, closeDialog]);
+
+  const handleConfirmCancel = () => {
+    setShowCancelConfirm(false);
+    closeDialog();
+  };
+
   const data = useComposerStore((s) => s.contentCreateData);
 
   return (
     <>
       <div className="border-t bg-background p-4">
         <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm">
-            Cancel
-          </Button>
+          {isDialog && (
+            <Button variant="outline" size="sm" onClick={handleCancel}>
+              Cancel
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -142,6 +166,12 @@ export function ComposerFooter() {
 
         <ValidationErrors errors={validation.errors} />
       </div>
+
+      <CancelConfirmationDialog
+        open={showCancelConfirm}
+        onOpenChange={setShowCancelConfirm}
+        onConfirm={handleConfirmCancel}
+      />
       {import.meta.env.DEV && (
         <div className="max-w-md mx-auto my-4 p-2 bg-muted rounded text-xs overflow-auto">
           <pre>{JSON.stringify(data, null, 2)}</pre>

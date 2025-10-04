@@ -1,6 +1,7 @@
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import type { Draft } from "immer";
 import type { ComposerStore } from "../types";
+import { createSnapshot, hasSnapshotChanged } from "../utils/snapshot";
 import { recalculateValidation } from "../utils/validation";
 import type { ComposerSlice } from "./types";
 
@@ -69,7 +70,8 @@ export const createPublishingSlice: ComposerSlice<{
   setSchedulingSpec: (
     schedulingSpec?: ContentCreateData["base"]["schedulingSpec"],
   ) => void;
-}> = (set) => ({
+  hasUnsavedChanges: () => boolean;
+}> = (set, get) => ({
   setPublishingStatus: (status, schedulingSpec) =>
     set((state) => {
       const previousSchedulingSpec =
@@ -112,4 +114,12 @@ export const createPublishingSlice: ComposerSlice<{
       applySchedulingToPlacements(state, normalized, previousSchedulingSpec);
       recalculateValidation(state);
     }),
+  hasUnsavedChanges: () => {
+    const state = get();
+    const { initialSnapshot, contentCreateData, selectedAccounts } = state;
+
+    // Create a snapshot of the current state and compare with initial
+    const currentSnapshot = createSnapshot(contentCreateData, selectedAccounts);
+    return hasSnapshotChanged(initialSnapshot, currentSnapshot);
+  },
 });

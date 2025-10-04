@@ -4,6 +4,7 @@ import type {
   TikTokFeedPlacementSpec,
 } from "@shared/content";
 import type { ComposerProps, ComposerState } from "./types";
+import { createInitialSnapshot } from "./utils/snapshot";
 import { validateComposerState } from "./utils/validation";
 
 const DEFAULT_PROPS: ComposerProps = {
@@ -159,6 +160,7 @@ export const createComposerInitialState = (
     contentCreateData,
     contentGroupID: props.contentGroupID ?? null,
     validation: { isValid: false, errors: [], canPublish: false },
+    initialSnapshot: createInitialSnapshot(contentCreateData, selectedAccounts),
   };
 
   state.validation = validateComposerState(state);

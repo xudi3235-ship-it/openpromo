@@ -47,6 +47,12 @@ export interface ComposerState {
   contentCreateData: ContentCreateData;
   contentGroupID: string | null;
   validation: ValidationState;
+  initialSnapshot: {
+    message: string;
+    attachments: SharedAttachmentSpec[];
+    selectedAccounts: string[];
+    placements: ContentCreateData["placements"];
+  };
 }
 
 export interface ComposerActions {
@@ -72,6 +78,7 @@ export interface ComposerActions {
   setSchedulingSpec: (
     schedulingSpec?: ContentCreateData["base"]["schedulingSpec"],
   ) => void;
+  hasUnsavedChanges: () => boolean;
 }
 
 export type ComposerStore = ComposerState & ComposerActions;
