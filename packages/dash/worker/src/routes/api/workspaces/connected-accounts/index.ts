@@ -13,14 +13,17 @@ import { tikTokConnectedAccountRoute } from "./tiktok";
 
 export const connectedAccountsRoute = new Hono<ApiEnv>()
   .use(withAuth())
+  // List connected accounts - all workspace members can view
+  .get("/", withWorkspaceRole(WORKSPACE_ROLE.VIEWER), async (c) => {
+    const accounts = await ConnectedAccount.list();
+    return c.json({ accounts });
+  })
+  // OAuth routes require admin access
   .use(withWorkspaceRole(WORKSPACE_ROLE.ADMIN))
   .route("/facebook", facebookConnectedAccountRoute)
   .route("/instagram", instagramConnectedAccountRoute)
   .route("/tiktok", tikTokConnectedAccountRoute)
-  .get("/", async (c) => {
-    const accounts = await ConnectedAccount.list();
-    return c.json({ accounts });
-  })
+  // Delete account requires admin access
   .delete(
     "/:accountId",
     zValidator(
