@@ -167,10 +167,28 @@ export class EntPendingContentGroup {
   ) {
     const result = await EntPendingContentGroup.create(input);
 
-    // Run workflow creation after transaction has committed
-    await onAfterCommit(result.unifiedContents.map((c) => c.id));
-
-    return result;
+    try {
+      // Run workflow creation after transaction has committed
+      await onAfterCommit(result.unifiedContents.map((c) => c.id));
+      return result;
+    } catch (error) {
+      // COMPENSATION: Workflow creation failed, rollback DB changes
+      console.error(
+        "Workflow creation failed, rolling back content group",
+        error,
+      );
+      try {
+        const group = new EntPendingContentGroup(result.pendingContentGroup);
+        await group.delete();
+      } catch (deleteError) {
+        console.error(
+          "Failed to rollback content group after workflow failure",
+          deleteError,
+        );
+      }
+      // Re-throw the original error
+      throw error;
+    }
   }
   // ================== cls methods ==================
 
@@ -307,8 +325,10 @@ export class EntPendingContentGroup {
   }
 
   /**
-   * Wrapper for updateWithContents() that also creates workflows after transaction commits.
-   * Use this when updating scheduled/draft content that needs workflows.
+   * Update with compensation pattern: if workflow creation fails,
+   * we cannot fully rollback the update (old contents already deleted),
+   * but we can delete the new contents to leave the group empty.
+   * This provides best-effort atomicity.
    *
    * @param onAfterCommit - Callback to run after transaction commits (e.g., workflow creation)
    */
@@ -329,9 +349,32 @@ export class EntPendingContentGroup {
   }> {
     const result = await this.updateWithContents(groupUpdate, newContents);
 
-    // Run workflow creation after transaction has committed
-    await onAfterCommit(result.contents.map((c) => c.id));
-
-    return result;
+    try {
+      // Run workflow creation after transaction has committed
+      await onAfterCommit(result.contents.map((c) => c.id));
+      return result;
+    } catch (error) {
+      // COMPENSATION: Workflow creation failed, delete new contents
+      // Note: old contents already deleted by updateWithContents, cannot be restored
+      console.error("Workflow creation failed, deleting new contents", error);
+      try {
+        const workspaceID = Actor.workspaceID();
+        await db()
+          .delete(unifiedContentTable)
+          .where(
+            and(
+              eq(unifiedContentTable.workspaceId, workspaceID),
+              eq(unifiedContentTable.pendingContentGroupId, this.data.id),
+            ),
+          );
+      } catch (deleteError) {
+        console.error(
+          "Failed to delete new contents after workflow failure",
+          deleteError,
+        );
+      }
+      // Re-throw the original error
+      throw error;
+    }
   }
 }

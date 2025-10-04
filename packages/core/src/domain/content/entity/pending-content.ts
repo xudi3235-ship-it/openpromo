@@ -104,12 +104,6 @@ export class EntPendingContent extends EntUnifiedContentBase {
     },
   );
 
-  /**
-   * Wrapper for createManyInternal() that also initializes workflows after transaction commits.
-   * Use this when creating content that needs workflows.
-   *
-   * @param onAfterCommit - Callback to run after transaction commits (e.g., workflow creation)
-   */
   static async createManyWithWorkflows(
     items: Array<Omit<UnifiedContentInsert, "workspaceId">>,
     onAfterCommit: (contentIds: string[]) => Promise<void>,
@@ -117,10 +111,33 @@ export class EntPendingContent extends EntUnifiedContentBase {
     // biome-ignore lint/suspicious/noExplicitAny: Type compatibility with Omit
     const inserted = await EntPendingContent.createManyInternal(items as any);
 
-    // Run workflow creation after transaction has committed
-    await onAfterCommit(inserted.map((c) => c.id));
-
-    return inserted;
+    try {
+      // Run workflow creation after transaction has committed
+      await onAfterCommit(inserted.map((c) => c.id));
+      return inserted;
+    } catch (error) {
+      // COMPENSATION: Workflow creation failed, rollback DB changes
+      console.error("Workflow creation failed, rolling back contents", error);
+      try {
+        const workspaceID = Actor.workspaceID();
+        await db()
+          .delete(unifiedContentTable)
+          .where(
+            and(
+              eq(unifiedContentTable.workspaceId, workspaceID),
+              // Delete all inserted content IDs
+              ...inserted.map((c) => eq(unifiedContentTable.id, c.id)),
+            ),
+          );
+      } catch (deleteError) {
+        console.error(
+          "Failed to rollback contents after workflow failure",
+          deleteError,
+        );
+      }
+      // Re-throw the original error
+      throw error;
+    }
   }
   static createInternal = fn(
     UnifiedContentInsert.omit({ workspaceId: true }),
