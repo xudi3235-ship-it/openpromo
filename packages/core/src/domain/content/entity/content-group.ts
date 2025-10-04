@@ -6,6 +6,7 @@ import {
   type PendingContentGroupSelect,
   pendingContentGroupTable,
   UnifiedContentInsert,
+  type UnifiedContentSelect,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { NotImplementedError } from "@core/utils/error";
@@ -117,6 +118,7 @@ export class EntPendingContentGroup {
     this.Schemas().create,
     async ({ group, contents }) => {
       const workspaceID = Actor.workspaceID();
+
       return createTransaction(async (tx) => {
         // 1. create pending content group
         const [pendingContentGroup] = await tx
@@ -128,6 +130,7 @@ export class EntPendingContentGroup {
           .returning();
         if (!pendingContentGroup)
           throw new Error(`Failed to create pending content group`);
+
         // 2. create unified contents
         const unifiedContents = await tx
           .insert(unifiedContentTable)
@@ -140,14 +143,35 @@ export class EntPendingContentGroup {
           )
           .returning();
 
-        // 3. handle scheduled contents
+        // 3. Initialize metadata after transaction commits
         await afterTx(async () => {
-          // TODO: implement scheduling logic
+          // Initialize attachment metadata for all contents
+          await Promise.all(
+            unifiedContents.map(async (content) => {
+              const ent = new EntPendingContent(content);
+              await ent.initializeAttachmentMetadata();
+            }),
+          );
         });
+
         return { pendingContentGroup, unifiedContents };
       });
     },
   );
+
+  public static async createWithWorkflows(
+    input: z.infer<
+      ReturnType<(typeof EntPendingContentGroup)["Schemas"]>["create"]
+    >,
+    onAfterCommit: (contentIds: string[]) => Promise<void>,
+  ) {
+    const result = await EntPendingContentGroup.create(input);
+
+    // Run workflow creation after transaction has committed
+    await onAfterCommit(result.unifiedContents.map((c) => c.id));
+
+    return result;
+  }
   // ================== cls methods ==================
 
   public async isScheduled(): Promise<boolean> {
@@ -197,5 +221,117 @@ export class EntPendingContentGroup {
         ),
       );
     return contents.map((content) => new EntPendingContent(content));
+  }
+
+  /**
+   * Updates the group metadata and replaces all contents atomically.
+   * Terminates old workflows and creates new ones.
+   */
+  public async updateWithContents(
+    groupUpdate: Partial<
+      Pick<
+        PendingContentGroupInsert,
+        "publishingStatus" | "pendingContentGroupSpec"
+      >
+    >,
+    newContents: Array<
+      Omit<UnifiedContentInsert, "workspaceId" | "pendingContentGroupId">
+    >,
+  ): Promise<{
+    group: PendingContentGroupSelect;
+    contents: UnifiedContentSelect[];
+  }> {
+    const workspaceID = Actor.workspaceID();
+
+    return createTransaction(async (tx) => {
+      // 1. Update the group
+      const [updatedGroup] = await tx
+        .update(pendingContentGroupTable)
+        .set({
+          ...groupUpdate,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(pendingContentGroupTable.id, this.data.id),
+            eq(pendingContentGroupTable.workspaceId, workspaceID),
+          ),
+        )
+        .returning();
+
+      if (!updatedGroup) {
+        throw new Error(`EntPendingContentGroup ${this.data.id} not found`);
+      }
+
+      // 2. Get existing content IDs for workflow termination
+      const existingContents = await tx
+        .select({ id: unifiedContentTable.id })
+        .from(unifiedContentTable)
+        .where(eq(unifiedContentTable.pendingContentGroupId, this.data.id));
+
+      // 3. Delete existing contents
+      await tx
+        .delete(unifiedContentTable)
+        .where(eq(unifiedContentTable.pendingContentGroupId, this.data.id));
+
+      // 4. Insert new contents
+      const insertedContents = await tx
+        .insert(unifiedContentTable)
+        .values(
+          newContents.map((content) => ({
+            ...content,
+            workspaceId: workspaceID,
+            pendingContentGroupId: this.data.id,
+          })),
+        )
+        .returning();
+
+      // 5. Handle workflows after transaction
+      await afterTx(async () => {
+        // Terminate old workflows
+        await Promise.allSettled(
+          existingContents.map((c) => EntPendingContent.killWorkflow(c.id)),
+        );
+
+        // Initialize metadata for new contents
+        await Promise.all(
+          insertedContents.map(async (content) => {
+            const pending = new EntPendingContent(content);
+            await pending.initializeAttachmentMetadata();
+          }),
+        );
+      });
+
+      return { group: updatedGroup, contents: insertedContents };
+    });
+  }
+
+  /**
+   * Wrapper for updateWithContents() that also creates workflows after transaction commits.
+   * Use this when updating scheduled/draft content that needs workflows.
+   *
+   * @param onAfterCommit - Callback to run after transaction commits (e.g., workflow creation)
+   */
+  public async updateWithContentsAndWorkflows(
+    groupUpdate: Partial<
+      Pick<
+        PendingContentGroupInsert,
+        "publishingStatus" | "pendingContentGroupSpec"
+      >
+    >,
+    newContents: Array<
+      Omit<UnifiedContentInsert, "workspaceId" | "pendingContentGroupId">
+    >,
+    onAfterCommit: (contentIds: string[]) => Promise<void>,
+  ): Promise<{
+    group: PendingContentGroupSelect;
+    contents: UnifiedContentSelect[];
+  }> {
+    const result = await this.updateWithContents(groupUpdate, newContents);
+
+    // Run workflow creation after transaction has committed
+    await onAfterCommit(result.contents.map((c) => c.id));
+
+    return result;
   }
 }

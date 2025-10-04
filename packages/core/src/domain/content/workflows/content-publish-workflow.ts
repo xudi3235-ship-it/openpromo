@@ -53,34 +53,7 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
       log.info(
         `wait until scheduled time (${target.toISOString()}) or early publish event`,
       );
-      // Slice wait into chunks so we can also listen for an early event.
-      while (true) {
-        const now = Date.now();
-        if (now >= target.getTime()) {
-          log.info("scheduled time reached");
-          break;
-        }
-        const remaining = target.getTime() - now;
-        const oneHour = 60 * 60 * 1000;
-        const slice = Math.min(remaining, oneHour); // up to 1 hour slices (tune as needed)
-
-        // Try to wait for an early publish event during this slice.
-        // You need a waitForEvent variant that can timeout; if you don't have one yet,
-        // implement an overload that returns null on timeout.
-        const early = await step.waitForEvent(
-          "wait for early publish or time slice",
-          {
-            type: "publish_now",
-            timeout: slice,
-          },
-        );
-
-        if (early) {
-          log.info("early publish event received; publishing now");
-          break;
-        }
-        // loop continues until time reached or event received
-      }
+      await step.sleepUntil("wait until scheduled time", target);
     } else if (isDraft) {
       log.info("is draft");
       await step.waitForEvent("wait for draft publish event", {

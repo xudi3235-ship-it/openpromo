@@ -1,9 +1,11 @@
 import { EntUnifiedContent } from "@core/domain/content/entity/base";
-import { EntPendingContentGroup } from "@core/domain/content/entity/index";
+import {
+  EntPendingContent,
+  EntPendingContentGroup,
+} from "@core/domain/content/entity/index";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { db } from "@core/helpers/db/db";
-import { createTransaction } from "@core/helpers/db/transaction";
 import {
   type ContentPublishingStatus,
   PendingContentGroupSelect,
@@ -23,12 +25,7 @@ import * as z from "zod";
 import { AppError } from "../../../../helpers/error";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
-import {
-  buildContentItems,
-  contentItemsToInsertValues,
-  handleContentCreationWorkflows,
-  handleContentUpdateWorkflows,
-} from "./helpers";
+import { buildContentItems, createWorkflowsForContents } from "./helpers";
 
 const listContentQuerySchema = z.object({
   page: z.coerce.number().default(1),
@@ -280,75 +277,30 @@ export const contentRoute = new Hono<ApiEnv>()
     if (!publishingStatus)
       throw new AppError(400, { message: "publishingStatus is required" });
 
+    // Build content items from placements
     const contentItems = buildContentItems(placements);
 
-    // Use transaction for atomic operations
-    await createTransaction(async (tx) => {
-      // First, verify the group exists and belongs to this workspace
-      const existingGroups = await tx
-        .select()
-        .from(pendingContentGroupTable)
-        .where(
-          and(
-            eq(pendingContentGroupTable.id, id),
-            eq(
-              pendingContentGroupTable.workspaceId,
-              actor.properties.workspaceID,
-            ),
-          ),
-        )
-        .limit(1);
-
-      if (existingGroups.length === 0) {
-        throw new AppError(404, { message: "Content group not found" });
-      }
-
-      // Update the group's base data
-      await tx
-        .update(pendingContentGroupTable)
-        .set({
-          publishingStatus: publishingStatus as ContentPublishingStatus,
-          pendingContentGroupSpec: {
-            baseMessage: base.message,
-            baseAttachments: base.attachments,
-            baseSchedulingSpec: base.schedulingSpec,
-          },
-          updatedAt: new Date(),
-        })
-        .where(eq(pendingContentGroupTable.id, id));
-
-      // Get existing content IDs to terminate their workflows
-      const existingContents = await tx
-        .select({ id: unifiedContentTable.id })
-        .from(unifiedContentTable)
-        .where(eq(unifiedContentTable.pendingContentGroupId, id));
-
-      // Delete existing content entries for this group
-      await tx
-        .delete(unifiedContentTable)
-        .where(eq(unifiedContentTable.pendingContentGroupId, id));
-
-      // Batch insert new content entries
-      const insertedContents = await tx
-        .insert(unifiedContentTable)
-        .values(
-          contentItemsToInsertValues(
-            contentItems,
-            actor.properties.workspaceID,
-            publishingStatus as ContentPublishingStatus,
-            id,
-          ),
-        )
-        .returning();
-
-      // Handle side effects after transaction
-      await handleContentUpdateWorkflows(
-        existingContents.map((c) => c.id),
-        insertedContents,
-        actor,
-        c,
-      );
-    });
+    // Get the group entity and update it with new contents
+    // Workflow creation runs atomically after transaction commits
+    const group = await EntPendingContentGroup.fromID(id);
+    await group.updateWithContentsAndWorkflows(
+      {
+        publishingStatus: publishingStatus as ContentPublishingStatus,
+        pendingContentGroupSpec: {
+          baseMessage: base.message,
+          baseAttachments: base.attachments,
+          baseSchedulingSpec: base.schedulingSpec,
+        },
+      },
+      contentItems.map((item) => ({
+        ...item,
+        publishingStatus: publishingStatus as ContentPublishingStatus,
+      })),
+      // Workflow creation callback - runs after transaction commits
+      async (contentIds: string[]) => {
+        await createWorkflowsForContents(contentIds, actor, c);
+      },
+    );
 
     return c.json({ success: true, groupId: id });
   })
@@ -360,47 +312,47 @@ export const contentRoute = new Hono<ApiEnv>()
 
     const contentItems = buildContentItems(placements);
 
-    // Use transaction for atomic operations
-    const result = await createTransaction(async (tx) => {
-      let groupId: string | null = null;
+    let groupId: string | undefined;
 
-      // Create group for DRAFT and SCHEDULED
-      if (publishingStatus === "DRAFT" || publishingStatus === "SCHEDULED") {
-        const [group] = await tx
-          .insert(pendingContentGroupTable)
-          .values({
-            workspaceId: actor.properties.workspaceID,
-            publishingStatus,
-            pendingContentGroupSpec: {
-              baseMessage: base.message,
-              baseAttachments: base.attachments,
-              baseSchedulingSpec: base.schedulingSpec,
+    // Workflow creation callback - runs after transaction commits
+    const createWorkflows = async (contentIds: string[]) => {
+      await createWorkflowsForContents(contentIds, actor, c);
+    };
+
+    // Create group with contents for DRAFT and SCHEDULED
+    if (publishingStatus === "DRAFT" || publishingStatus === "SCHEDULED") {
+      const { pendingContentGroup } =
+        await EntPendingContentGroup.createWithWorkflows(
+          {
+            group: {
+              publishingStatus,
+              pendingContentGroupSpec: {
+                baseMessage: base.message,
+                baseAttachments: base.attachments,
+                baseSchedulingSpec: base.schedulingSpec,
+              },
             },
-          })
-          .returning();
-        groupId = group.id;
-      }
+            contents: contentItems.map((item) => ({
+              ...item,
+              publishingStatus: publishingStatus as ContentPublishingStatus,
+            })),
+          },
+          createWorkflows, // Workflow creation runs after transaction commits
+        );
+      groupId = pendingContentGroup.id;
+    } else {
+      // For PUBLISH_NOW, create contents directly without group
+      await EntPendingContent.createManyWithWorkflows(
+        contentItems.map((item) => ({
+          ...item,
+          publishingStatus: publishingStatus as ContentPublishingStatus,
+          pendingContentGroupId: null,
+        })),
+        createWorkflows, // Workflow creation runs after transaction commits
+      );
+    }
 
-      // Batch insert all content items
-      const insertedContents = await tx
-        .insert(unifiedContentTable)
-        .values(
-          contentItemsToInsertValues(
-            contentItems,
-            actor.properties.workspaceID,
-            publishingStatus as ContentPublishingStatus,
-            groupId,
-          ),
-        )
-        .returning();
-
-      // Initialize attachment metadata and create workflows after transaction
-      await handleContentCreationWorkflows(insertedContents, actor, c);
-
-      return { groupId };
-    });
-
-    return c.json({ success: true, groupId: result.groupId || undefined });
+    return c.json({ success: true, groupId });
   })
   // read content group api
   .get("/group/:id", async (c) => {

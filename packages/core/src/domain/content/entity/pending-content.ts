@@ -2,7 +2,14 @@ import { ConnectedAccount } from "@core/domain/connected-account/connected-accou
 import { notifyContentPublished } from "@core/domain/workspace/notifications";
 import { Actor } from "@core/helpers/actor";
 import { Binding } from "@core/helpers/api-env";
-import { and, count, db, eq } from "@core/helpers/db";
+import {
+  afterTx,
+  and,
+  count,
+  createTransaction,
+  db,
+  eq,
+} from "@core/helpers/db";
 import { ImageStorage } from "@core/helpers/storage/image";
 import { VideoStorage } from "@core/helpers/storage/video";
 import {
@@ -61,29 +68,60 @@ export class EntPendingContent extends EntUnifiedContentBase {
     const { EntScheduledContent } = await import("./scheduled-content");
     return new EntScheduledContent(this.data);
   }
+  /**
+   * Creates multiple content items in a transaction.
+   */
   static createManyInternal = fn(
     UnifiedContentInsert.omit({ workspaceId: true }).array(),
     async (items) => {
       const actor = Actor.assert("workspace_user");
       if (items.length === 0) throw new Error("No items to create");
-      const inserted = await db()
-        .insert(unifiedContentTable)
-        .values(
-          items.map((item) => ({
-            ...item,
-            workspaceId: actor.properties.workspaceID,
-          })),
-        )
-        .returning();
-      const updated = [] as UnifiedContentSelect[];
-      for (const row of inserted) {
-        const ent = new EntPendingContent(row);
-        await ent.initializeAttachmentMetadata();
-        updated.push(ent.data);
-      }
-      return updated;
+
+      return createTransaction(async (tx) => {
+        // Insert all content items in transaction
+        const inserted = await tx
+          .insert(unifiedContentTable)
+          .values(
+            items.map((item) => ({
+              ...item,
+              workspaceId: actor.properties.workspaceID,
+            })),
+          )
+          .returning();
+
+        // Initialize attachment metadata after transaction commits
+        await afterTx(async () => {
+          await Promise.all(
+            inserted.map(async (row) => {
+              const ent = new EntPendingContent(row);
+              await ent.initializeAttachmentMetadata();
+            }),
+          );
+        });
+
+        return inserted;
+      });
     },
   );
+
+  /**
+   * Wrapper for createManyInternal() that also initializes workflows after transaction commits.
+   * Use this when creating content that needs workflows.
+   *
+   * @param onAfterCommit - Callback to run after transaction commits (e.g., workflow creation)
+   */
+  static async createManyWithWorkflows(
+    items: Array<Omit<UnifiedContentInsert, "workspaceId">>,
+    onAfterCommit: (contentIds: string[]) => Promise<void>,
+  ) {
+    // biome-ignore lint/suspicious/noExplicitAny: Type compatibility with Omit
+    const inserted = await EntPendingContent.createManyInternal(items as any);
+
+    // Run workflow creation after transaction has committed
+    await onAfterCommit(inserted.map((c) => c.id));
+
+    return inserted;
+  }
   static createInternal = fn(
     UnifiedContentInsert.omit({ workspaceId: true }),
     async ({
