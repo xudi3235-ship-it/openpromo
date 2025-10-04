@@ -32,7 +32,10 @@ import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
 import { CalendarRescheduleDialog } from "@/components/calendar/reschedule-dialog";
 import ComposerDialog from "@/components/composer/modal/dialog-composer";
-import { useContentListQuery } from "@/queries/content";
+import {
+  type ContentListPaginationParams,
+  useContentListQuery,
+} from "@/queries/content";
 import { useCalendarRescheduleStore } from "@/stores/calendar-reschedule-store";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import { BatchActionsToolbar } from "./batch-actions-toolbar";
@@ -49,7 +52,7 @@ function useContentListQueryParams(
   pagination: { pageIndex: number; pageSize: number },
   filters: ContentFiltersType,
   search: string,
-) {
+): ContentListPaginationParams {
   return React.useMemo(() => {
     // TODO: enable multiple sorting conditions
     // Convert sorting state to API parameters with default fallback
