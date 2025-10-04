@@ -1,12 +1,11 @@
 import { EntUnifiedContent } from "@core/domain/content/entity/base";
-import {
-  EntPendingContent,
-  EntPendingContentGroup,
-} from "@core/domain/content/entity/index";
+import { EntPendingContentGroup } from "@core/domain/content/entity/index";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { db } from "@core/helpers/db/db";
+import { createTransaction } from "@core/helpers/db/transaction";
 import {
+  type ContentPublishingStatus,
   PendingContentGroupSelect,
   pendingContentGroupTable,
   UnifiedContentSelect,
@@ -24,6 +23,12 @@ import * as z from "zod";
 import { AppError } from "../../../../helpers/error";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
+import {
+  buildContentItems,
+  contentItemsToInsertValues,
+  handleContentCreationWorkflows,
+  handleContentUpdateWorkflows,
+} from "./helpers";
 
 const listContentQuerySchema = z.object({
   page: z.coerce.number().default(1),
@@ -275,80 +280,75 @@ export const contentRoute = new Hono<ApiEnv>()
     if (!publishingStatus)
       throw new AppError(400, { message: "publishingStatus is required" });
 
-    // First, verify the group exists and belongs to this workspace
-    const existingGroups = await db()
-      .select()
-      .from(pendingContentGroupTable)
-      .where(
-        and(
-          eq(pendingContentGroupTable.id, id),
-          eq(
-            pendingContentGroupTable.workspaceId,
-            actor.properties.workspaceID,
+    const contentItems = buildContentItems(placements);
+
+    // Use transaction for atomic operations
+    await createTransaction(async (tx) => {
+      // First, verify the group exists and belongs to this workspace
+      const existingGroups = await tx
+        .select()
+        .from(pendingContentGroupTable)
+        .where(
+          and(
+            eq(pendingContentGroupTable.id, id),
+            eq(
+              pendingContentGroupTable.workspaceId,
+              actor.properties.workspaceID,
+            ),
           ),
-        ),
-      )
-      .limit(1);
+        )
+        .limit(1);
 
-    if (existingGroups.length === 0) {
-      throw new AppError(404, { message: "Content group not found" });
-    }
-
-    // Update the group's base data
-    await db()
-      .update(pendingContentGroupTable)
-      .set({
-        publishingStatus,
-        pendingContentGroupSpec: {
-          baseMessage: base.message,
-          baseAttachments: base.attachments,
-          baseSchedulingSpec: base.schedulingSpec,
-        },
-        updatedAt: new Date(),
-      })
-      .where(eq(pendingContentGroupTable.id, id));
-
-    // Delete existing content entries for this group
-    await db()
-      .delete(unifiedContentTable)
-      .where(eq(unifiedContentTable.pendingContentGroupId, id));
-
-    // Recreate content entries with updated data
-    if (placements.facebookFeed) {
-      for (const spec of placements.facebookFeed) {
-        await EntPendingContent.createInternal({
-          placement: "FB_FEED",
-          placementSpec: spec,
-          publishingStatus,
-          pendingContentGroupId: id,
-          connectedAccountId: spec.identity.connectedAccountID,
-        });
+      if (existingGroups.length === 0) {
+        throw new AppError(404, { message: "Content group not found" });
       }
-    }
 
-    if (placements.instagramFeed) {
-      for (const spec of placements.instagramFeed) {
-        await EntPendingContent.createInternal({
-          placement: "IG_FEED",
-          placementSpec: spec,
-          publishingStatus,
-          pendingContentGroupId: id,
-          connectedAccountId: spec.identity.connectedAccountID,
-        });
-      }
-    }
+      // Update the group's base data
+      await tx
+        .update(pendingContentGroupTable)
+        .set({
+          publishingStatus: publishingStatus as ContentPublishingStatus,
+          pendingContentGroupSpec: {
+            baseMessage: base.message,
+            baseAttachments: base.attachments,
+            baseSchedulingSpec: base.schedulingSpec,
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(pendingContentGroupTable.id, id));
 
-    if (placements.tiktokFeed) {
-      for (const spec of placements.tiktokFeed) {
-        await EntPendingContent.createInternal({
-          placement: "TT_FEED",
-          placementSpec: spec,
-          publishingStatus,
-          pendingContentGroupId: id,
-          connectedAccountId: spec.identity.connectedAccountID,
-        });
-      }
-    }
+      // Get existing content IDs to terminate their workflows
+      const existingContents = await tx
+        .select({ id: unifiedContentTable.id })
+        .from(unifiedContentTable)
+        .where(eq(unifiedContentTable.pendingContentGroupId, id));
+
+      // Delete existing content entries for this group
+      await tx
+        .delete(unifiedContentTable)
+        .where(eq(unifiedContentTable.pendingContentGroupId, id));
+
+      // Batch insert new content entries
+      const insertedContents = await tx
+        .insert(unifiedContentTable)
+        .values(
+          contentItemsToInsertValues(
+            contentItems,
+            actor.properties.workspaceID,
+            publishingStatus as ContentPublishingStatus,
+            id,
+          ),
+        )
+        .returning();
+
+      // Handle side effects after transaction
+      await handleContentUpdateWorkflows(
+        existingContents.map((c) => c.id),
+        insertedContents,
+        actor,
+        c,
+      );
+    });
 
     return c.json({ success: true, groupId: id });
   })
@@ -357,144 +357,50 @@ export const contentRoute = new Hono<ApiEnv>()
     const actor = Actor.assert("workspace_user");
     const { placements, base } = c.req.valid("json");
     const { publishingStatus } = base;
-    // use group for draft
-    if (publishingStatus === "DRAFT") {
-      const [group] = await db()
-        .insert(pendingContentGroupTable)
-        .values({
-          workspaceId: actor.properties.workspaceID,
-          publishingStatus,
-          pendingContentGroupSpec: {
-            baseMessage: base.message,
-            baseAttachments: base.attachments,
-            baseSchedulingSpec: base.schedulingSpec,
-          },
-        })
-        .returning();
-      // TODO: migrate to use inset many operations instead.
-      if (placements.facebookFeed) {
-        for (const spec of placements.facebookFeed) {
-          await EntPendingContent.createInternal({
-            placement: "FB_FEED",
-            placementSpec: spec,
+
+    const contentItems = buildContentItems(placements);
+
+    // Use transaction for atomic operations
+    const result = await createTransaction(async (tx) => {
+      let groupId: string | null = null;
+
+      // Create group for DRAFT and SCHEDULED
+      if (publishingStatus === "DRAFT" || publishingStatus === "SCHEDULED") {
+        const [group] = await tx
+          .insert(pendingContentGroupTable)
+          .values({
+            workspaceId: actor.properties.workspaceID,
             publishingStatus,
-            pendingContentGroupId: group.id,
-            connectedAccountId: spec.identity.connectedAccountID,
-          });
-        }
+            pendingContentGroupSpec: {
+              baseMessage: base.message,
+              baseAttachments: base.attachments,
+              baseSchedulingSpec: base.schedulingSpec,
+            },
+          })
+          .returning();
+        groupId = group.id;
       }
-      if (placements.instagramFeed) {
-        for (const spec of placements.instagramFeed) {
-          await EntPendingContent.createInternal({
-            placement: "IG_FEED",
-            placementSpec: spec,
-            publishingStatus,
-            pendingContentGroupId: group.id,
-            connectedAccountId: spec.identity.connectedAccountID,
-          });
-        }
-      }
-      if (placements.tiktokFeed) {
-        for (const spec of placements.tiktokFeed) {
-          await EntPendingContent.createInternal({
-            placement: "TT_FEED",
-            placementSpec: spec,
-            publishingStatus,
-            pendingContentGroupId: group.id,
-            connectedAccountId: spec.identity.connectedAccountID,
-          });
-        }
-      }
-      return c.json({ success: true, groupId: group.id });
-    }
-    // For scheduled content, also create a group to maintain base data consistency
-    if (publishingStatus === "SCHEDULED") {
-      const [group] = await db()
-        .insert(pendingContentGroupTable)
-        .values({
-          workspaceId: actor.properties.workspaceID,
-          publishingStatus,
-          pendingContentGroupSpec: {
-            baseMessage: base.message,
-            baseAttachments: base.attachments,
-            baseSchedulingSpec: base.schedulingSpec,
-          },
-        })
+
+      // Batch insert all content items
+      const insertedContents = await tx
+        .insert(unifiedContentTable)
+        .values(
+          contentItemsToInsertValues(
+            contentItems,
+            actor.properties.workspaceID,
+            publishingStatus as ContentPublishingStatus,
+            groupId,
+          ),
+        )
         .returning();
 
-      // Create content linked to group
-      if (placements.facebookFeed) {
-        for (const spec of placements.facebookFeed) {
-          await EntPendingContent.createInternal({
-            placement: "FB_FEED",
-            placementSpec: spec,
-            publishingStatus,
-            pendingContentGroupId: group.id,
-            connectedAccountId: spec.identity.connectedAccountID,
-          });
-        }
-      }
-      if (placements.instagramFeed) {
-        for (const spec of placements.instagramFeed) {
-          await EntPendingContent.createInternal({
-            placement: "IG_FEED",
-            placementSpec: spec,
-            publishingStatus,
-            pendingContentGroupId: group.id,
-            connectedAccountId: spec.identity.connectedAccountID,
-          });
-        }
-      }
-      if (placements.tiktokFeed) {
-        for (const spec of placements.tiktokFeed) {
-          await EntPendingContent.createInternal({
-            placement: "TT_FEED",
-            placementSpec: spec,
-            publishingStatus,
-            pendingContentGroupId: group.id,
-            connectedAccountId: spec.identity.connectedAccountID,
-          });
-        }
-      }
-      return c.json({ success: true, groupId: group.id });
-    }
-    // For immediate publishing, create content directly without groups
-    if (publishingStatus === "PUBLISH_NOW") {
-      if (placements.facebookFeed) {
-        for (const spec of placements.facebookFeed) {
-          await EntPendingContent.createInternal({
-            placement: "FB_FEED",
-            placementSpec: spec,
-            publishingStatus,
-            pendingContentGroupId: null, // no group for immediate publish
-            connectedAccountId: spec.identity.connectedAccountID,
-          });
-        }
-      }
-      if (placements.instagramFeed) {
-        for (const spec of placements.instagramFeed) {
-          await EntPendingContent.createInternal({
-            placement: "IG_FEED",
-            placementSpec: spec,
-            publishingStatus,
-            pendingContentGroupId: null, // no group for immediate publish
-            connectedAccountId: spec.identity.connectedAccountID,
-          });
-        }
-      }
-      if (placements.tiktokFeed) {
-        for (const spec of placements.tiktokFeed) {
-          await EntPendingContent.createInternal({
-            placement: "TT_FEED",
-            placementSpec: spec,
-            publishingStatus,
-            pendingContentGroupId: null, // no group for immediate publish
-            connectedAccountId: spec.identity.connectedAccountID,
-          });
-        }
-      }
-    }
-    return c.json({ success: true });
+      // Initialize attachment metadata and create workflows after transaction
+      await handleContentCreationWorkflows(insertedContents, actor, c);
+
+      return { groupId };
+    });
+
+    return c.json({ success: true, groupId: result.groupId || undefined });
   })
   // read content group api
   .get("/group/:id", async (c) => {
