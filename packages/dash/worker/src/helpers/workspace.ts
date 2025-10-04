@@ -1,6 +1,5 @@
 import type { DbClient } from "@core/helpers/db";
 import { getDbClient } from "@core/helpers/db";
-import { getWorkOS } from "@core/providers/workos";
 import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
 import { workspaceInvitesTable } from "@openpromo/core/schemas/workspace-invites.sql";
 import { workspaceRoleAssignmentsTable } from "@openpromo/core/schemas/workspace-role-assignments.sql";
@@ -63,7 +62,7 @@ export async function applyWorkspaceInvitesForUser(params: {
   organizationId?: string | null;
   userId: string;
   email?: string | null;
-}) {
+}): Promise<{ firstWorkspaceSlug: string | null } | undefined> {
   const { organizationId, userId, email } = params;
   if (!organizationId || !email) return;
 
@@ -89,20 +88,7 @@ export async function applyWorkspaceInvitesForUser(params: {
     return;
   }
 
-  const workOS = getWorkOS();
-  const memberships = await workOS.userManagement.listOrganizationMemberships({
-    organizationId,
-    userId,
-  });
-
-  const hasActiveMembership = memberships.data.some(
-    (membership) => membership.status === "active",
-  );
-
-  if (!hasActiveMembership) {
-    return;
-  }
-
+  // Accept all invites and create workspace role assignments
   await Promise.all(
     pendingInvites.map(
       async (invite: { id: string; workspaceId: string; roleId: string }) => {
@@ -144,4 +130,15 @@ export async function applyWorkspaceInvitesForUser(params: {
       },
     ),
   );
+
+  // Get the first workspace slug to set as default
+  const [firstWorkspace] = await db
+    .select({ slug: workspacesTable.slug })
+    .from(workspacesTable)
+    .where(eq(workspacesTable.id, pendingInvites[0].workspaceId))
+    .limit(1);
+
+  return {
+    firstWorkspaceSlug: firstWorkspace?.slug ?? null,
+  };
 }

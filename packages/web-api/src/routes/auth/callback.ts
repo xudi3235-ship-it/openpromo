@@ -1,75 +1,39 @@
-import { ORGANIZATION_ROLE } from "@openpromo/core/domain/workspace/auth";
 import { getDbClient } from "@openpromo/core/helpers/db/index";
 import { getWorkOS } from "@openpromo/core/providers/index";
 import { usersTable } from "@openpromo/core/schemas/users.sql";
 import { env } from "@openpromo/core/utils/env";
 import type { User } from "@workos-inc/node";
-import { type Context, Hono } from "hono";
+import { eq } from "drizzle-orm";
+import { Hono } from "hono";
 import {
   clearAuthStateCookie,
   getAuthState,
   setSessionCookie,
 } from "../../helpers/auth";
 import { AppError } from "../../helpers/error";
-import { createWorkspace } from "../../helpers/workspace";
+import { handleInvitedUserFirstLogin } from "../../helpers/invite";
+import { bootstrapNewUser } from "../../helpers/user-bootstrap";
 import type { ApiEnv } from "../../types";
 
-const bootstrapNewUser = async (
+/**
+ * Handles a user who is part of an existing organization
+ * Checks if this is their first login and handles workspace invites
+ */
+const handleExistingOrganizationUser = async (
   user: User,
-  ctx: Context<ApiEnv>,
-  sealedSession: string,
+  organizationId: string,
 ) => {
-  const workOS = getWorkOS();
   const db = getDbClient();
+  const [existingUser] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.workosId, user.id))
+    .limit(1);
 
-  const namePrefix =
-    user.firstName ?? user.lastName ?? user.email.split("@")[0];
-  // Create an organization for the user
-  const orgName = namePrefix ? `${namePrefix}'s Org` : "My Org";
-  const organization = await workOS.organizations.createOrganization({
-    name: orgName,
-  });
-  await workOS.userManagement.createOrganizationMembership({
-    organizationId: organization.id,
-    userId: user.id,
-    roleSlug: ORGANIZATION_ROLE.OWNER,
-  });
-
-  // Refresh the user's session with the new organization
-  const session = workOS.userManagement.loadSealedSession({
-    sessionData: sealedSession,
-    cookiePassword: env.WORKOS_COOKIE_PASSWORD,
-  });
-  const refreshResult = await session.refresh({
-    organizationId: organization.id,
-  });
-  if (!refreshResult.authenticated) {
-    throw new AppError(500, {
-      message: `Failed to refresh session: ${refreshResult.reason}`,
-    });
+  if (!existingUser) {
+    // New user logging in for the first time - handle workspace invites
+    await handleInvitedUserFirstLogin(db, user.id, user.email, organizationId);
   }
-  if (!refreshResult.sealedSession) {
-    throw new AppError(500, { message: "No sealed session" });
-  }
-  setSessionCookie(ctx, refreshResult.sealedSession);
-
-  // Create a default workspace for the user
-  const workspaceName = namePrefix
-    ? `${namePrefix}'s Workspace`
-    : "My Workspace";
-
-  const workspace = await createWorkspace(
-    db,
-    workspaceName,
-    organization.id,
-    user.id,
-  );
-
-  // Create a user record in our database and set the default workspace
-  await db.insert(usersTable).values({
-    workosId: user.id,
-    defaultWorkspaceSlug: workspace.slug,
-  });
 };
 
 export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
@@ -105,8 +69,13 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
     // bootstrap new user if they don't have an organization
     if (authenticatedUser.organizationId) {
       setSessionCookie(c, sealedSession);
+      await handleExistingOrganizationUser(
+        user,
+        authenticatedUser.organizationId,
+      );
     } else {
-      await bootstrapNewUser(user, c, sealedSession);
+      const db = getDbClient();
+      await bootstrapNewUser(db, user, c, sealedSession);
     }
 
     const redirectUrl = new URL(returnTo ?? "/", env.VITE_DASHBOARD_URL);

@@ -4,8 +4,10 @@ import {
   notFound,
   Outlet,
   useNavigate,
+  useRouterState,
 } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
 import { useWorkspaceNotifications } from "@/hooks/useWorkspaceNotifications";
 import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
@@ -35,12 +37,18 @@ export const Route = createFileRoute(
   component: WorkspaceComponent,
 });
 
+const DISABLED_ACCOUNTS_BAR_PATTERNS: RegExp[] = [
+  /^\/workspaces\/[^/]+\/?$/,
+  /^\/workspaces\/[^/]+\/composer\/?$/,
+];
+
 function WorkspaceComponent() {
   const { workspace } = Route.useLoaderData();
   useWorkspaceNotifications(workspace.slug);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { accounts, isLoading } = useConnectedAccounts();
+  const { location } = useRouterState();
 
   const { mutate: _ } = useHonoMutation({
     mutationFn: (api) =>
@@ -56,6 +64,10 @@ function WorkspaceComponent() {
     },
   });
 
+  const shouldShowAccountsBar = !DISABLED_ACCOUNTS_BAR_PATTERNS.some(
+    (pattern) => pattern.test(location.pathname),
+  );
+
   if (!isLoading && accounts.length === 0) {
     return (
       <WorkspaceNullState
@@ -67,8 +79,13 @@ function WorkspaceComponent() {
   }
 
   return (
-    <div className="flex-1">
-      <Outlet />
+    <div className="flex h-full flex-col gap-4">
+      {shouldShowAccountsBar && (
+        <WorkspaceConnectedAccountsBar className="mx-4 mt-4" />
+      )}
+      <div className="flex-1">
+        <Outlet />
+      </div>
     </div>
   );
 }

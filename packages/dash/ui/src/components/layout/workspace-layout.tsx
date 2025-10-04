@@ -4,22 +4,14 @@ import {
 } from "@openpromo/ui/components/sidebar";
 import { cn } from "@openpromo/ui/lib/utils";
 import { Outlet } from "@tanstack/react-router";
-import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { LayoutProvider } from "@/context/layout-provider";
 import { AppSidebar } from "../app-sidebar";
-import { useShouldShowAccountsBar } from "./use-should-show-accounts-bar";
 
 type WorkspaceLayoutProps = {
   children?: React.ReactNode;
-  showAccountsBar?: boolean;
 };
 
-export function WorkspaceLayout({
-  children,
-  showAccountsBar,
-}: WorkspaceLayoutProps) {
-  const shouldShowAccountsBar = useShouldShowAccountsBar(showAccountsBar);
-
+export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
   return (
     <SidebarProvider>
       <LayoutProvider>
@@ -39,12 +31,7 @@ export function WorkspaceLayout({
             "@container/content",
           )}
         >
-          <div className="flex h-full flex-col gap-4">
-            {shouldShowAccountsBar && (
-              <WorkspaceConnectedAccountsBar className="mx-4 mt-4" />
-            )}
-            <div className="flex-1">{children ?? <Outlet />}</div>
-          </div>
+          <div className="flex-1">{children ?? <Outlet />}</div>
         </SidebarInset>
       </LayoutProvider>
     </SidebarProvider>

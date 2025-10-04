@@ -1,6 +1,6 @@
 import { ORGANIZATION_ROLE } from "@core/domain/workspace/auth";
 import type { ApiEnv } from "@core/helpers/api-env";
-import { getDbClient } from "@core/helpers/db";
+import { eq, getDbClient } from "@core/helpers/db";
 import { getWorkOS } from "@core/providers/workos";
 import { usersTable } from "@core/schemas/users.sql";
 import { env } from "@core/utils/env";
@@ -87,7 +87,9 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
     if (!code) {
       throw new Error("Missing authorization code");
     }
-    if (!passedNonce || !storedNonce || passedNonce !== storedNonce) {
+    // For invitation flows, WorkOS doesn't use our nonce, so allow missing state
+    // Only validate if both exist
+    if (passedNonce && storedNonce && passedNonce !== storedNonce) {
       throw new Error("Authentication state mismatch");
     }
 
@@ -108,11 +110,29 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
     // bootstrap new user if they don't have an organization
     if (authenticatedUser.organizationId) {
       setSessionCookie(c, sealedSession);
-      await applyWorkspaceInvitesForUser({
-        organizationId: authenticatedUser.organizationId,
-        userId: user.id,
-        email: user.email,
-      });
+
+      // Check if user exists in our database
+      const db = getDbClient();
+      const [existingUser] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.workosId, user.id))
+        .limit(1);
+
+      if (!existingUser) {
+        // New invited user - apply workspace invites and create user record
+        const result = await applyWorkspaceInvitesForUser({
+          organizationId: authenticatedUser.organizationId,
+          userId: user.id,
+          email: user.email,
+        });
+
+        // Create user record with first invited workspace as default (if any)
+        await db.insert(usersTable).values({
+          workosId: user.id,
+          defaultWorkspaceSlug: result?.firstWorkspaceSlug ?? null,
+        });
+      }
     } else {
       await bootstrapNewUser(user, c, sealedSession);
     }
