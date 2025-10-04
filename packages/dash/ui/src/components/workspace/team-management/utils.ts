@@ -7,6 +7,8 @@ import type {
 export type WorkspaceRoleValue =
   (typeof WORKSPACE_ROLE)[keyof typeof WORKSPACE_ROLE];
 
+export const WORKSPACE_ADMIN_SLUG = WORKSPACE_ROLE.ADMIN;
+
 export const ROLE_OPTIONS: Array<{ value: WorkspaceRoleValue; label: string }> =
   [
     {
@@ -100,4 +102,4 @@ export function formatInviteDate(value: string) {
   return parsed.toLocaleDateString();
 }
 
-export type { WorkspaceMember, WorkspaceInviteSummary };
+export type { WorkspaceInviteSummary, WorkspaceMember };

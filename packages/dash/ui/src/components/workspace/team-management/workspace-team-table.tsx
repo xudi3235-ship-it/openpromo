@@ -1,7 +1,5 @@
-import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
 import { Avatar, AvatarFallback } from "@openpromo/ui/components/avatar";
 import { Badge } from "@openpromo/ui/components/badge";
-import { Button } from "@openpromo/ui/components/button";
 import {
   Table,
   TableBody,
@@ -14,7 +12,8 @@ import type {
   WorkspaceInviteSummary,
   WorkspaceMember,
 } from "@worker/routes/api/workspaces/team";
-import { X } from "lucide-react";
+import { InviteActionsMenu } from "./invite-actions-menu";
+import { MemberActionsMenu } from "./member-actions-menu";
 import {
   formatInviteDate,
   formatInviteStatus,
@@ -23,6 +22,7 @@ import {
   getInviteInitials,
   getMemberInitials,
   getMemberName,
+  WORKSPACE_ADMIN_SLUG,
 } from "./utils";
 
 type WorkspaceTeamTableProps = {
@@ -108,7 +108,7 @@ export function WorkspaceTeamTable({
           {!isLoading &&
             !isError &&
             members.map((member) => {
-              const canRemove = member.role?.slug !== WORKSPACE_ROLE.ADMIN;
+              const canRemove = member.role?.slug !== WORKSPACE_ADMIN_SLUG;
               const email = member.user?.email ?? "—";
 
               return (
@@ -139,17 +139,12 @@ export function WorkspaceTeamTable({
                     <Badge variant="secondary">Active</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    {canRemove && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground"
-                        onClick={() => onRemoveMember(member)}
-                      >
-                        <X className="h-4 w-4" />
-                        <span className="sr-only">Remove member</span>
-                      </Button>
-                    )}
+                    {canRemove ? (
+                      <MemberActionsMenu
+                        member={member}
+                        onRemove={onRemoveMember}
+                      />
+                    ) : null}
                   </TableCell>
                 </TableRow>
               );
@@ -196,7 +191,7 @@ export function WorkspaceTeamTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right text-sm text-muted-foreground">
-                    —
+                    <InviteActionsMenu invite={invite} disabled />
                   </TableCell>
                 </TableRow>
               );
