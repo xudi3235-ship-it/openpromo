@@ -8,15 +8,10 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { format } from "date-fns";
 import * as React from "react";
-import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
-import { CalendarRescheduleDialog } from "@/components/calendar/reschedule-dialog";
 import ComposerDialog from "@/components/composer/modal/dialog-composer";
 import { useContentListQuery } from "@/queries/content";
-import { useCalendarRescheduleStore } from "@/stores/calendar-reschedule-store";
-import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import { BatchActionsToolbar } from "./batch-actions-toolbar";
 import { columns } from "./columns";
 import {
@@ -26,6 +21,7 @@ import {
 import { ContentPageBody } from "./content-page-body";
 import { ContentPageFooter } from "./content-page-footer";
 import { ContentPageHeader } from "./content-page-header";
+import { ContentRescheduleDialog } from "./content-reschedule-dialog";
 import { useContentListQueryParams } from "./use-content-list-query-params";
 
 export function ContentPage() {
@@ -47,12 +43,6 @@ export function ContentPage() {
     setDebouncedSearch(value.trim());
   }, 400);
   const normalizedSearch = debouncedSearch;
-
-  const openDialog = useDialogComposerStore((state) => state.openDialog);
-  const rescheduleState = useCalendarRescheduleStore((state) => state.state);
-  const closeRescheduleDialog = useCalendarRescheduleStore(
-    (state) => state.close,
-  );
 
   const queryParams = useContentListQueryParams(
     sorting,
@@ -103,21 +93,6 @@ export function ContentPage() {
     .getFilteredSelectedRowModel()
     .rows.map((row) => row.original);
 
-  const handleRescheduleConfirm = (publishAt: Date) => {
-    closeRescheduleDialog();
-    toast("Reschedule pending", {
-      description: format(publishAt, "MMM d, yyyy • h:mma"),
-      position: "bottom-left",
-    });
-  };
-
-  const handleRescheduleEditMore = () => {
-    if (rescheduleState?.groupId) {
-      openDialog(rescheduleState.groupId);
-    }
-    closeRescheduleDialog();
-  };
-
   return (
     <div className="w-full space-y-2">
       <ContentPageHeader
@@ -137,12 +112,7 @@ export function ContentPage() {
 
       <ContentPageFooter table={table} pagination={data?.pagination} />
 
-      <CalendarRescheduleDialog
-        state={rescheduleState}
-        onClose={closeRescheduleDialog}
-        onConfirm={handleRescheduleConfirm}
-        onEditMore={handleRescheduleEditMore}
-      />
+      <ContentRescheduleDialog />
       <ComposerDialog />
     </div>
   );
