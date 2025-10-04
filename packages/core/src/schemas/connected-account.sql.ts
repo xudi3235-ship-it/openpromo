@@ -2,6 +2,7 @@ import { id, timestamp, timestamps, ulid } from "@core/helpers/db";
 import {
   index,
   jsonb,
+  pgEnum,
   pgTable,
   text,
   unique,
@@ -16,7 +17,12 @@ import * as z from "zod";
 import { workspaceID } from "./workspaces.sql";
 
 // Platform enum for supported social media platforms
-export const Platform = z.enum(["FACEBOOK", "INSTAGRAM", "TIKTOK"]);
+export const platformPgEnum = pgEnum("platform", [
+  "FACEBOOK",
+  "INSTAGRAM",
+  "TIKTOK",
+]);
+export const Platform = z.enum(platformPgEnum.enumValues);
 export type Platform = z.infer<typeof Platform>;
 
 const FBPageMetadata = z.object({
@@ -60,7 +66,7 @@ export const connectedAccount = pgTable(
     ...id,
     ...workspaceID,
     ...timestamps,
-    platform: varchar("platform", { length: 50 }).$type<Platform>().notNull(),
+    platform: platformPgEnum().notNull(),
     externalAccountId: varchar("external_account_id", {
       length: 255,
     }).notNull(),
