@@ -43,8 +43,8 @@ export const useInviteWorkspaceMember = () => {
         param: { workspaceSlug: workspace.slug },
         json: variables,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
       });
     },
@@ -66,8 +66,8 @@ export const useRevokeWorkspaceInvite = () => {
           inviteId: variables.inviteId,
         },
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
       });
     },
