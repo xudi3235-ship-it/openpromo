@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { Heart, MessageCircle, Share } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
+import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 
 function formatNumber(num: number): string {
   if (num >= 1000) {
@@ -12,7 +13,14 @@ function formatNumber(num: number): string {
 
 export const engagementColumn: ColumnDef<MergedContentEntity> = {
   accessorKey: "engagement",
-  header: "Engagement",
+  header: () => (
+    <ColumnHeaderWithTooltip
+      tooltip="Likes, comments, and shares for published content"
+      className="cursor-help"
+    >
+      Engagement
+    </ColumnHeaderWithTooltip>
+  ),
   cell: ({ row }) => {
     const entity = row.original;
 

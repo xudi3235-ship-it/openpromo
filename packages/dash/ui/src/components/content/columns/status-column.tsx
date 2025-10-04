@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { AlertCircle, CheckCircle, Clock, FileText, Zap } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
+import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 
 function getStatusBadge(status: ContentPublishingStatus) {
   switch (status) {
@@ -64,7 +65,16 @@ function getStatusBadge(status: ContentPublishingStatus) {
 
 export const statusColumn: ColumnDef<MergedContentEntity> = {
   accessorKey: "Status",
-  header: () => <div className="text-right">Status</div>,
+  header: () => (
+    <div className="text-right">
+      <ColumnHeaderWithTooltip
+        tooltip="Current publishing status of the content"
+        className="cursor-help"
+      >
+        Status
+      </ColumnHeaderWithTooltip>
+    </div>
+  ),
   cell: ({ row }) => {
     return matchEntity(row.original, {
       content: (entity) => (

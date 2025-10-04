@@ -7,6 +7,7 @@ import type {
 import { Image } from "lucide-react";
 import { matchEntity, matchPlacementSpec } from "@/lib/hono-client";
 import { getPlatformIcon } from "../utils/platform-icons";
+import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 
 function getThumbnailFromPlacement(
   placementSpec: PlacementSpec,
@@ -169,7 +170,14 @@ function renderTitle(row: Row<MergedContentEntity>) {
 
 export const titleColumn: ColumnDef<MergedContentEntity> = {
   accessorKey: "Title",
-  header: "Title",
+  header: () => (
+    <ColumnHeaderWithTooltip
+      tooltip="Content preview with thumbnail and platform indicator"
+      className="cursor-help"
+    >
+      Title
+    </ColumnHeaderWithTooltip>
+  ),
   cell: ({ row }) => {
     return renderTitle(row);
   },

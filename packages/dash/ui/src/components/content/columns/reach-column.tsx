@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { Eye } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
+import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 
 function formatNumber(num: number): string {
   if (num >= 1000000) {
@@ -15,7 +16,14 @@ function formatNumber(num: number): string {
 
 export const reachColumn: ColumnDef<MergedContentEntity> = {
   accessorKey: "reach",
-  header: "Reach",
+  header: () => (
+    <ColumnHeaderWithTooltip
+      tooltip="Number of unique accounts reached and total impressions"
+      className="cursor-help"
+    >
+      Reach
+    </ColumnHeaderWithTooltip>
+  ),
   cell: ({ row }) => {
     const entity = row.original;
 

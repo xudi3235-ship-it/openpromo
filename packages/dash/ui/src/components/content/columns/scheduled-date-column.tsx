@@ -4,6 +4,7 @@ import type { MergedContentEntity } from "@worker/routes/api/workspaces/content"
 import { format, isThisWeek, isToday, isTomorrow } from "date-fns";
 import { ArrowUpDown, Calendar } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
+import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 
 function formatScheduledDate(date: Date): {
   primary: string;
@@ -43,13 +44,15 @@ export const scheduledDateColumn: ColumnDef<MergedContentEntity> = {
   enableSorting: true,
   header: ({ column }) => {
     return (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Scheduled
-        <ArrowUpDown />
-      </Button>
+      <ColumnHeaderWithTooltip tooltip="When this content is scheduled to be published">
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Scheduled
+          <ArrowUpDown />
+        </Button>
+      </ColumnHeaderWithTooltip>
     );
   },
   cell: ({ row }) => {

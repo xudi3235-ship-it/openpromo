@@ -9,6 +9,7 @@ import {
   isYesterday,
 } from "date-fns";
 import { ArrowUpDown } from "lucide-react";
+import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 
 function formatCreatedAt(date: Date): { primary: string; secondary: string } {
   if (isToday(date)) {
@@ -45,13 +46,15 @@ export const createdAtColumn: ColumnDef<MergedContentEntity> = {
   enableSorting: true,
   header: ({ column }) => {
     return (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Created At
-        <ArrowUpDown />
-      </Button>
+      <ColumnHeaderWithTooltip tooltip="When this content was created in the system">
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Created At
+          <ArrowUpDown />
+        </Button>
+      </ColumnHeaderWithTooltip>
     );
   },
   cell: ({ row }) => {
