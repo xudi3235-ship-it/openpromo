@@ -10,18 +10,14 @@ import {
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import * as React from "react";
 import { useDebounceCallback } from "usehooks-ts";
-import ComposerDialog from "@/components/composer/modal/dialog-composer";
 import { useContentListQuery } from "@/queries/content";
 import { BatchActionsToolbar } from "./batch-actions-toolbar";
 import { columns } from "./columns";
-import {
-  ContentFilters,
-  type ContentFilters as ContentFiltersType,
-} from "./content-filters";
+import { ContentErrorState } from "./content-error-state";
+import type { ContentFilters as ContentFiltersType } from "./content-filters";
 import { ContentPageBody } from "./content-page-body";
 import { ContentPageFooter } from "./content-page-footer";
-import { ContentPageHeader } from "./content-page-header";
-import { ContentRescheduleDialog } from "./content-reschedule-dialog";
+import { ContentPageLayout } from "./content-page-layout";
 import { useContentListQueryParams } from "./use-content-list-query-params";
 
 export function ContentPage() {
@@ -51,7 +47,7 @@ export function ContentPage() {
     normalizedSearch,
   );
 
-  const { data, isLoading } = useContentListQuery(queryParams);
+  const { data, isLoading, error, refetch } = useContentListQuery(queryParams);
   const table = useReactTable({
     data: (data?.entities as unknown as MergedContentEntity[]) ?? [],
     columns,
@@ -93,16 +89,32 @@ export function ContentPage() {
     .getFilteredSelectedRowModel()
     .rows.map((row) => row.original);
 
-  return (
-    <div className="w-full space-y-2">
-      <ContentPageHeader
+  const handleRetry = () => {
+    refetch();
+  };
+
+  if (error) {
+    return (
+      <ContentPageLayout
         searchValue={searchValue}
         onSearchChange={setSearchValue}
         table={table}
-      />
+        filters={filters}
+        onFiltersChange={setFilters}
+      >
+        <ContentErrorState error={error as Error} onRetry={handleRetry} />
+      </ContentPageLayout>
+    );
+  }
 
-      <ContentFilters filters={filters} onFiltersChange={setFilters} />
-
+  return (
+    <ContentPageLayout
+      searchValue={searchValue}
+      onSearchChange={setSearchValue}
+      table={table}
+      filters={filters}
+      onFiltersChange={setFilters}
+    >
       <BatchActionsToolbar
         selectedRows={selectedRows}
         onClearSelection={() => table.toggleAllPageRowsSelected(false)}
@@ -111,9 +123,6 @@ export function ContentPage() {
       <ContentPageBody table={table} isLoading={isLoading} />
 
       <ContentPageFooter table={table} pagination={data?.pagination} />
-
-      <ContentRescheduleDialog />
-      <ComposerDialog />
-    </div>
+    </ContentPageLayout>
   );
 }
