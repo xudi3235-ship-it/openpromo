@@ -1,5 +1,8 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { notifyContentPublished } from "@core/domain/workspace/notifications";
+import {
+  ContentPublished,
+  WorkspaceNotif,
+} from "@core/domain/workspace/notifications";
 import { Actor } from "@core/helpers/actor";
 import { Binding } from "@core/helpers/api-env";
 import {
@@ -455,12 +458,11 @@ export class EntPendingContent extends EntUnifiedContentBase {
     }
 
     try {
-      await notifyContentPublished({
-        workspaceId: newOne.workspaceId,
+      await WorkspaceNotif.send(newOne.workspaceId, ContentPublished, {
         contentId: newOne.id,
         placement: newOne.placement,
         sourceContentId: newOne.sourceContentId,
-        publishedAt: newOne.updatedAt ?? new Date(),
+        publishedAt: (newOne.updatedAt ?? new Date()).toISOString(),
         shareUrl: options.shareUrl ?? options.permalinkUrl ?? undefined,
       });
     } catch (error) {

@@ -1,3 +1,4 @@
+import { Event } from "@core/experimental/bus/def";
 import { Binding } from "@core/helpers/api-env";
 import { db } from "@core/helpers/db";
 import { workspacesTable } from "@core/schemas/workspaces.sql";
@@ -9,12 +10,37 @@ export type {
   WorkspaceNotification,
   WorkspaceNotificationEnvelope,
 } from "@shared/workspace/notifications";
+
+import {
+  ContentFailedNotificationSchema,
+  ContentPublishedNotificationSchema,
+} from "@shared/workspace/notifications";
+
 export {
   ContentFailedNotificationSchema,
   ContentPublishedNotificationSchema,
   WorkspaceNotificationEnvelopeSchema,
   WorkspaceNotificationSchema,
 } from "@shared/workspace/notifications";
+
+// ============ Notification Definition System ============
+
+const defineNotif = Event.builder({
+  validator: Event.zodValidator,
+  metadata: (_type: string, _properties: unknown) => ({}),
+});
+
+// ============ Notification Definitions ============
+
+export const ContentPublished = defineNotif(
+  "content.published",
+  ContentPublishedNotificationSchema.omit({ type: true }),
+);
+
+export const ContentFailed = defineNotif(
+  "content.failed",
+  ContentFailedNotificationSchema.omit({ type: true }),
+);
 
 const log = Log.create({ namespace: "workspace-notifications" });
 
@@ -38,13 +64,6 @@ async function resolveWorkspaceSlug(
   return workspace.slug;
 }
 
-function normalizeTimestamp(timestamp?: Date | string): string {
-  if (!timestamp) return new Date().toISOString();
-  return typeof timestamp === "string"
-    ? new Date(timestamp).toISOString()
-    : timestamp.toISOString();
-}
-
 async function sendNotification<T extends WorkspaceNotification>(
   workspaceId: string,
   notification: T,
@@ -61,6 +80,31 @@ async function sendNotification<T extends WorkspaceNotification>(
 
   await dispatchWorkspaceNotification(workspaceSlug, notification);
 }
+
+// ============ Unified Notification API ============
+
+export const WorkspaceNotif = {
+  async send<TDef extends Event.Definition>(
+    workspaceId: string,
+    definition: TDef,
+    params: TDef["$input"],
+  ): Promise<void> {
+    // Create and validate using Event system
+    const payload = await definition.create(params);
+
+    const notification: WorkspaceNotification = {
+      type: payload.type,
+      ...payload.properties,
+    } as WorkspaceNotification;
+
+    await sendNotification(workspaceId, notification, {
+      contentId:
+        "contentId" in payload.properties
+          ? String(payload.properties.contentId)
+          : undefined,
+    });
+  },
+};
 
 export async function dispatchWorkspaceNotification(
   workspaceSlug: string,
@@ -79,54 +123,4 @@ export async function dispatchWorkspaceNotification(
       error: (error as Error).message,
     });
   }
-}
-
-interface BaseContentNotificationParams {
-  workspaceId: string;
-  contentId: string;
-  placement: string;
-}
-
-export async function notifyContentPublished(
-  params: BaseContentNotificationParams & {
-    sourceContentId?: string | null;
-    shareUrl?: string | null;
-    publishedAt?: Date | string;
-  },
-): Promise<void> {
-  const notification: WorkspaceNotification = {
-    type: "content.published",
-    contentId: params.contentId,
-    placement: params.placement,
-    sourceContentId: params.sourceContentId ?? undefined,
-    shareUrl: params.shareUrl ?? undefined,
-    publishedAt: normalizeTimestamp(params.publishedAt),
-  };
-
-  await sendNotification(params.workspaceId, notification, {
-    contentId: params.contentId,
-  });
-}
-
-export async function notifyContentFailed(
-  params: BaseContentNotificationParams & {
-    errorMessage?: string;
-    failedAt?: Date | string;
-    groupId?: string | null;
-    isGroupFullyFailed?: boolean;
-  },
-): Promise<void> {
-  const notification: WorkspaceNotification = {
-    type: "content.failed",
-    contentId: params.contentId,
-    placement: params.placement,
-    errorMessage: params.errorMessage,
-    failedAt: normalizeTimestamp(params.failedAt),
-    groupId: params.groupId ?? undefined,
-    isGroupFullyFailed: params.isGroupFullyFailed,
-  };
-
-  await sendNotification(params.workspaceId, notification, {
-    contentId: params.contentId,
-  });
 }

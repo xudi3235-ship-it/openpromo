@@ -99,7 +99,8 @@
     },
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
-    "typescript.experimental.useTsgo": false
+    "typescript.experimental.useTsgo": false,
+    "chatgpt.commentCodeLensEnabled": false
   },
   "extensions": {
     "recommendations": [

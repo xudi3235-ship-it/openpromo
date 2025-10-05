@@ -2,7 +2,10 @@ import {
   EntPendingContent,
   EntPendingContentGroup,
 } from "@core/domain/content/entity";
-import { notifyContentFailed } from "@core/domain/workspace/notifications";
+import {
+  ContentFailed,
+  WorkspaceNotif,
+} from "@core/domain/workspace/notifications";
 import { Actor } from "@core/helpers/actor";
 import {
   type CoreWorkflowContext,
@@ -132,12 +135,11 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
 
         // Send failure notification
         try {
-          await notifyContentFailed({
-            workspaceId: c.data.workspaceId,
+          await WorkspaceNotif.send(c.data.workspaceId, ContentFailed, {
             contentId: c.data.id,
             placement: c.placement(),
             errorMessage,
-            failedAt: new Date(),
+            failedAt: new Date().toISOString(),
             groupId: groupID,
             isGroupFullyFailed,
           });
