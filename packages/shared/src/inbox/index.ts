@@ -1,5 +1,4 @@
 import * as z from "zod";
-import { AllPlatforms } from "../content";
 
 export const FBMessageAttachmentTypes = {
   IMAGE: "image",
@@ -22,7 +21,6 @@ export const AllMessageAttachmentTypes = {
 } as const;
 
 export const FBMessagePayload = z.object({
-  platform: z.literal(AllPlatforms.FACEBOOK),
   sender: z.object({
     /** PSID - Page-scoped ID for the user who sent the message */
     id: z.string(),
@@ -32,13 +30,6 @@ export const FBMessagePayload = z.object({
     id: z.string(),
   }),
   timestamp: z.number(),
-  message_edit: z
-    .object({
-      mid: z.string(),
-      text: z.string(),
-      num_edit: z.number(),
-    })
-    .optional(),
   message: z
     .object({
       is_echo: z.boolean().optional(),
@@ -59,6 +50,13 @@ export const FBMessagePayload = z.object({
         .optional(),
     })
     .optional(),
+  message_edit: z
+    .object({
+      mid: z.string(),
+      text: z.string(),
+      num_edit: z.number(),
+    })
+    .optional(),
 });
 
 export const FBWebhookPayload = z.object({
@@ -76,7 +74,6 @@ export type FBMessagePayload = z.infer<typeof FBMessagePayload>;
 export type FBWebhookPayload = z.infer<typeof FBWebhookPayload>;
 
 export const IGMessagePayload = z.object({
-  platform: z.literal(AllPlatforms.INSTAGRAM),
   sender: z.object({
     /** IGSID - Instagram-scoped ID for the user who sent the message */
     id: z.string(),
@@ -99,18 +96,28 @@ export const IGMessagePayload = z.object({
       }),
     ])
     .optional(),
-  message: z.object({
-    mid: z.string(),
-    text: z.string().optional(),
-    attachments: z
-      .array(
-        z.object({
-          type: z.enum(IGMessageAttachmentTypes),
-          payload: z.object({ url: z.string() }),
-        }),
-      )
-      .optional(),
-  }),
+  message: z
+    .object({
+      is_echo: z.boolean().optional(),
+      mid: z.string(),
+      text: z.string().optional(),
+      attachments: z
+        .array(
+          z.object({
+            type: z.enum(IGMessageAttachmentTypes),
+            payload: z.object({ url: z.string() }),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
+  message_edit: z
+    .object({
+      mid: z.string(),
+      text: z.string(),
+      num_edit: z.number(),
+    })
+    .optional(),
 });
 
 const IGWebhookPayload = z.object({
@@ -127,9 +134,6 @@ const IGWebhookPayload = z.object({
 export type IGMessagePayload = z.infer<typeof IGMessagePayload>;
 export type IGWebhookPayload = z.infer<typeof IGWebhookPayload>;
 
-export const MessagePayload = z.discriminatedUnion("platform", [
-  FBMessagePayload,
-  IGMessagePayload,
-]);
+export const MessagePayload = z.union([FBMessagePayload, IGMessagePayload]);
 
 export type MessagePayload = z.infer<typeof MessagePayload>;

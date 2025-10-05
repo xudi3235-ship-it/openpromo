@@ -35,7 +35,7 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
       }
       for (const entry of body.entry) {
         const { id: pageId } = entry;
-        // 1. Resolve connected account and page token
+        // 1. Resolve connected account
         const account = await ConnectedAccount.fromFBPageID(pageId, {
           skipWorkspaceCheck: true,
         });
@@ -43,6 +43,7 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
           const { sender, recipient, message, message_edit, timestamp } =
             messaging;
           if (!message && !message_edit) continue;
+
           const contactExternalId = message?.is_echo ? recipient.id : sender.id;
           // 2. Resolve existing contact or fetch profile; error if neither
           let contact = await InboxService.findContact({

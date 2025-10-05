@@ -128,6 +128,7 @@ export namespace ConnectedAccount {
   }
   export async function fromFBPageID(
     id: string,
+    // skip workspace check is used for webhooks
     options: { skipWorkspaceCheck?: boolean } = {},
   ) {
     const workspaceId = options.skipWorkspaceCheck
@@ -167,8 +168,14 @@ export namespace ConnectedAccount {
     });
     return newAcc;
   }
-  export async function fromIGAccountID(id: string) {
-    const workspaceId = Actor.workspaceID();
+  export async function fromIGAccountID(
+    id: string,
+    // skip workspace check is used for webhooks
+    options: { skipWorkspaceCheck?: boolean } = {},
+  ) {
+    const workspaceId = options.skipWorkspaceCheck
+      ? undefined
+      : Actor.workspaceID();
     const [acc] = await db()
       .select()
       .from(connectedAccount)
@@ -176,7 +183,9 @@ export namespace ConnectedAccount {
         and(
           eq(connectedAccount.externalAccountId, id),
           eq(connectedAccount.platform, "INSTAGRAM"),
-          eq(connectedAccount.workspaceId, workspaceId),
+          workspaceId
+            ? eq(connectedAccount.workspaceId, workspaceId)
+            : undefined,
         ),
       )
       .limit(1);
