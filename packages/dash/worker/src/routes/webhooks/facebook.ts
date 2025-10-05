@@ -43,21 +43,21 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
           const { sender, recipient, message, message_edit, timestamp } =
             messaging;
           if (!message && !message_edit) continue;
-          const contactId = message?.is_echo ? recipient.id : sender.id;
+          const contactExternalId = message?.is_echo ? recipient.id : sender.id;
           // 2. Resolve existing contact or fetch profile; error if neither
           let contact = await InboxService.findContact({
             platform: Platform.enum.FACEBOOK,
-            externalId: contactId,
+            externalId: contactExternalId,
           });
           if (!contact) {
             const profile = await facebookOAuthService.getUserProfile(
               account.encryptedAccessToken,
-              contactId,
+              contactExternalId,
             );
 
             contact = await InboxService.createContact({
               platform: Platform.enum.FACEBOOK,
-              externalId: contactId,
+              externalId: contactExternalId,
               name: profile.name,
               profilePicUrl: profile.picture.data.url,
             });
@@ -66,12 +66,12 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
           const conversation = message_edit
             ? await InboxService.getConversation({
                 connectedAccountId: account.id,
-                contactId,
+                contactId: contact.id,
               })
             : await InboxService.upsertConversation({
                 connectedAccountId: account.id,
                 platform: Platform.enum.FACEBOOK,
-                contactId,
+                contactId: contact.id,
                 lastMessageAt: new Date(timestamp),
               });
 
