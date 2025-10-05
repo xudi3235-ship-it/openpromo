@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
-import { Actor } from "@openpromo/core/actor";
 import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
-import { ImageStorage } from "@openpromo/core/storage/image";
+import { Actor } from "@openpromo/core/helpers/actor";
+import { ImageStorage } from "@openpromo/core/helpers/storage/image";
 import { Hono } from "hono";
 import * as z from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
