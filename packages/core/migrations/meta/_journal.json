@@ -183,6 +183,13 @@
       "when": 1759696876705,
       "tag": "0025_careless_nuke",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1759697045712,
+      "tag": "0026_spicy_lockjaw",
+      "breakpoints": true
     }
   ]
 }

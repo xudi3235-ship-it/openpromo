@@ -1,4 +1,5 @@
 import { id, timestamp, timestamps, ulid } from "@core/helpers/db";
+import { AllPlatforms } from "@shared/content";
 import {
   index,
   jsonb,
@@ -18,9 +19,9 @@ import { workspaceID } from "./workspaces.sql";
 
 // Platform enum for supported social media platforms
 export const platformPgEnum = pgEnum("platform", [
-  "FACEBOOK",
-  "INSTAGRAM",
-  "TIKTOK",
+  AllPlatforms.FACEBOOK,
+  AllPlatforms.INSTAGRAM,
+  AllPlatforms.TIKTOK,
 ]);
 export const Platform = z.enum(platformPgEnum.enumValues);
 export type Platform = z.infer<typeof Platform>;

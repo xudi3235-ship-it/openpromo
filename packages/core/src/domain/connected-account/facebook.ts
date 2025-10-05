@@ -179,9 +179,12 @@ export class FacebookOAuthService {
   /**
    * Get user profile information using access token
    */
-  async getUserProfile(accessToken: string): Promise<FacebookProfile> {
+  async getUserProfile(
+    accessToken: string,
+    id = "me",
+  ): Promise<FacebookProfile> {
     const response = await fetch(
-      `${this.baseUrl}/me?fields=id,name,picture.width(200).height(200),email&access_token=${accessToken}`,
+      `${this.baseUrl}/${id}?fields=id,name,picture.width(200).height(200),email&access_token=${accessToken}`,
     );
 
     if (!response.ok) {

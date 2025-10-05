@@ -126,8 +126,13 @@ export namespace ConnectedAccount {
     if (!acc) throw new Error("connected account not found");
     return acc;
   }
-  export async function fromFBPageID(id: string) {
-    const workspaceId = Actor.workspaceID();
+  export async function fromFBPageID(
+    id: string,
+    options: { skipWorkspaceCheck?: boolean } = {},
+  ) {
+    const workspaceId = options.skipWorkspaceCheck
+      ? undefined
+      : Actor.workspaceID();
     const [acc] = await db()
       .select()
       .from(connectedAccount)
@@ -135,7 +140,9 @@ export namespace ConnectedAccount {
         and(
           eq(connectedAccount.externalAccountId, id),
           eq(connectedAccount.platform, "FACEBOOK"),
-          eq(connectedAccount.workspaceId, workspaceId),
+          workspaceId
+            ? eq(connectedAccount.workspaceId, workspaceId)
+            : undefined,
         ),
       )
       .limit(1);

@@ -1,5 +1,11 @@
 import * as z from "zod";
 
+export const AllPlatforms = {
+  FACEBOOK: "FACEBOOK",
+  INSTAGRAM: "INSTAGRAM",
+  TIKTOK: "TIKTOK",
+} as const;
+
 export const FBPlacement = {
   FB_FEED: "FB_FEED",
   FB_STORY: "FB_STORY",

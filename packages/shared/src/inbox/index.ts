@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { AllPlatforms } from "../content";
 
 export const FBMessageAttachmentTypes = {
   IMAGE: "image",
@@ -20,43 +21,69 @@ export const AllMessageAttachmentTypes = {
   ...IGMessageAttachmentTypes,
 } as const;
 
-const FBMessagePayload = z.object({
-  platform: z.literal("FACEBOOK"),
+export const FBMessagePayload = z.object({
+  platform: z.literal(AllPlatforms.FACEBOOK),
   sender: z.object({
-    id: z.string(), // PSID
+    /** PSID - Page-scoped ID for the user who sent the message */
+    id: z.string(),
   }),
   recipient: z.object({
-    id: z.string(), // Page ID
+    /** Page ID */
+    id: z.string(),
   }),
   timestamp: z.number(),
-  message: z.object({
-    mid: z.string(),
-    text: z.string().optional(),
-    reply_to: z
-      .object({
-        mid: z.string(),
-      })
-      .optional(),
-    attachments: z
-      .array(
-        z.object({
-          type: z.enum(FBMessageAttachmentTypes),
-          payload: z.object({ url: z.string() }),
-        }),
-      )
-      .optional(),
-  }),
+  message_edit: z
+    .object({
+      mid: z.string(),
+      text: z.string(),
+      num_edit: z.number(),
+    })
+    .optional(),
+  message: z
+    .object({
+      is_echo: z.boolean().optional(),
+      mid: z.string(),
+      text: z.string().optional(),
+      reply_to: z
+        .object({
+          mid: z.string(),
+        })
+        .optional(),
+      attachments: z
+        .array(
+          z.object({
+            type: z.enum(FBMessageAttachmentTypes),
+            payload: z.object({ url: z.string() }),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
+});
+
+export const FBWebhookPayload = z.object({
+  object: z.literal("page"),
+  entry: z.array(
+    z.object({
+      /** Page ID */
+      id: z.string(),
+      messaging: z.array(FBMessagePayload),
+    }),
+  ),
 });
 
 export type FBMessagePayload = z.infer<typeof FBMessagePayload>;
+export type FBWebhookPayload = z.infer<typeof FBWebhookPayload>;
 
-const IGMessagePayload = z.object({
-  platform: z.literal("INSTAGRAM"),
+export const IGMessagePayload = z.object({
+  platform: z.literal(AllPlatforms.INSTAGRAM),
   sender: z.object({
-    id: z.string(), // IGSID - Instagram-scoped ID for the customer who sent the message
+    /** IGSID - Instagram-scoped ID for the user who sent the message */
+    id: z.string(),
   }),
   recipient: z.object({
-    id: z.string(), // IGID - ID of the Instagram professional account
+    /** IGID - ID of the Instagram professional account */
+    id: z.string(),
   }),
   timestamp: z.number(),
   reply_to: z
@@ -66,8 +93,8 @@ const IGMessagePayload = z.object({
       }),
       z.object({
         story: z.object({
-          id: z.string(), // Story ID
-          url: z.string(), // Story CDN URL
+          id: z.string(),
+          url: z.string(),
         }),
       }),
     ])
@@ -86,7 +113,19 @@ const IGMessagePayload = z.object({
   }),
 });
 
+const IGWebhookPayload = z.object({
+  object: z.literal("instagram"),
+  entry: z.array(
+    z.object({
+      /** IGID - ID of the Instagram professional account */
+      id: z.string(),
+      messaging: z.array(IGMessagePayload),
+    }),
+  ),
+});
+
 export type IGMessagePayload = z.infer<typeof IGMessagePayload>;
+export type IGWebhookPayload = z.infer<typeof IGWebhookPayload>;
 
 export const MessagePayload = z.discriminatedUnion("platform", [
   FBMessagePayload,
