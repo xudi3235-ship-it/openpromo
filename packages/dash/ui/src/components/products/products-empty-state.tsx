@@ -3,9 +3,13 @@ import { Package, Plus } from "lucide-react";
 
 interface ProductsEmptyStateProps {
   hasFilters: boolean;
+  onAddProduct?: () => void;
 }
 
-export function ProductsEmptyState({ hasFilters }: ProductsEmptyStateProps) {
+export function ProductsEmptyState({
+  hasFilters,
+  onAddProduct,
+}: ProductsEmptyStateProps) {
   if (hasFilters) {
     return (
       <div className="flex h-full items-center justify-center py-12">
@@ -30,7 +34,7 @@ export function ProductsEmptyState({ hasFilters }: ProductsEmptyStateProps) {
           images, connect to platforms like Amazon or Shopify, or add custom
           product links.
         </p>
-        <Button className="mt-6">
+        <Button className="mt-6" onClick={onAddProduct}>
           <Plus className="h-4 w-4 mr-2" />
           Add Your First Product
         </Button>

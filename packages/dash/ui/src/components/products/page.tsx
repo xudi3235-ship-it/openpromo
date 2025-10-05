@@ -12,6 +12,7 @@ import { Plus, Search } from "lucide-react";
 import * as React from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { useProductListQuery } from "@/queries/product";
+import { CreateProductModal } from "./create-product-modal";
 import { ProductCard } from "./product-card";
 import { ProductsEmptyState } from "./products-empty-state";
 import { ProductsLoadingState } from "./products-loading-state";
@@ -20,6 +21,7 @@ export function ProductsPage() {
   const [searchValue, setSearchValue] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [source, setSource] = React.useState<string | undefined>();
+  const [createModalOpen, setCreateModalOpen] = React.useState(false);
 
   const updateDebouncedSearch = useDebounceCallback((value: string) => {
     setDebouncedSearch(value.trim());
@@ -65,7 +67,7 @@ export function ProductsPage() {
             Manage your product catalog for content generation
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Product
         </Button>
@@ -103,7 +105,10 @@ export function ProductsPage() {
       {isLoading ? (
         <ProductsLoadingState />
       ) : products.length === 0 ? (
-        <ProductsEmptyState hasFilters={hasFilters} />
+        <ProductsEmptyState
+          hasFilters={hasFilters}
+          onAddProduct={() => setCreateModalOpen(true)}
+        />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {products.map((product) => (
@@ -115,6 +120,11 @@ export function ProductsPage() {
           ))}
         </div>
       )}
+
+      <CreateProductModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+      />
     </div>
   );
 }
