@@ -29,7 +29,7 @@ export const productTable = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     category: text("category"),
-    tags: jsonb("tags").$type<string[]>().default([]),
+    tags: jsonb("tags").$type<string[]>().notNull().default([]),
 
     // Source tracking
     source: productSourceEnum().notNull().default("MANUAL"),
@@ -38,6 +38,7 @@ export const productTable = pgTable(
     // Media attachments (reuses SharedAttachmentSpec from content)
     attachments: jsonb("attachments")
       .$type<SharedAttachmentSpec[]>()
+      .notNull()
       .default([]),
     primaryAttachmentId: text("primary_attachment_id"),
 

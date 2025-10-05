@@ -1,0 +1,1 @@
+export { EntProduct } from "./entity";

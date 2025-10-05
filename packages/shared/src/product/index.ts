@@ -16,17 +16,18 @@ export const ProductSourceZod = z.enum(ProductSource);
 /**
  * Product metadata - flexible structure for different sources
  */
-export const ProductMetadata = z
-  .object({
-    // Pricing (useful for AI context)
-    price: z.string().optional(),
-    currency: z.string().optional(),
+export const ProductMetadata = z.object({
+  // Pricing (useful for AI context)
+  price: z.string().optional(),
+  currency: z.string().optional(),
 
-    // Scraping metadata
-    scrapedAt: z.string().optional(),
-    lastSyncedAt: z.string().optional(),
-  })
-  .catchall(z.unknown()); // Allow additional fields for extensibility
+  // Scraping metadata
+  scrapedAt: z.string().optional(),
+  lastSyncedAt: z.string().optional(),
+
+  // Allow additional fields for extensibility
+  extra: z.record(z.string(), z.any()).optional(),
+});
 
 export type ProductMetadata = z.infer<typeof ProductMetadata>;
 
