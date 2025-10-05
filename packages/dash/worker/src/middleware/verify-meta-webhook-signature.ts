@@ -17,7 +17,7 @@ export const verifyMetaWebhookSignature =
     }
     const valid = await hmacSha256Verify(
       secret,
-      await c.req.raw.bytes(),
+      await c.req.raw.clone().bytes(),
       signature,
     );
     if (!valid) {
