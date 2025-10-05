@@ -1,4 +1,8 @@
-import { EntPendingContent } from "@core/domain/content/entity";
+import {
+  EntPendingContent,
+  EntPendingContentGroup,
+} from "@core/domain/content/entity";
+import { notifyContentFailed } from "@core/domain/workspace/notifications";
 import { Actor } from "@core/helpers/actor";
 import {
   type CoreWorkflowContext,
@@ -82,10 +86,70 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
       }
     } catch (err) {
       console.error("publish failed", err);
+
+      const errorMessage = err instanceof Error ? err.message : String(err);
+
       await step.do("mark content as failed", async () => {
         const c = await EntPendingContent.fromID(pendingContentID);
         await c.setPublishingStatus("FAILED_TO_PUBLISH");
-        // TODO: push notification
+      });
+
+      // Check if all contents in the group have failed and send notification
+      await step.do("check group failure and send notification", async () => {
+        const c = await EntPendingContent.fromID(pendingContentID);
+        const groupID = c.data.pendingContentGroupId;
+
+        let isGroupFullyFailed = false;
+
+        if (groupID) {
+          const result =
+            await EntPendingContentGroup.checkAndMarkGroupFailureByID(groupID);
+
+          if (!result) {
+            log.error(
+              new Error(`failed to check group failure for group ${groupID}`),
+            );
+          } else {
+            isGroupFullyFailed = result.groupUpdated;
+
+            if (result.groupUpdated) {
+              log.info(
+                `all ${result.totalCount} contents in group ${groupID} have failed, marked group as failed`,
+              );
+            } else if (result.allFailed) {
+              log.warn(
+                `all contents failed but group was not updated for group ${groupID}`,
+              );
+            } else {
+              log.info(
+                `group ${groupID} has ${result.totalCount - result.failedCount} of ${result.totalCount} contents still pending`,
+              );
+            }
+          }
+        } else {
+          log.info("content not part of a group, skip group status check");
+        }
+
+        // Send failure notification
+        try {
+          await notifyContentFailed({
+            workspaceId: c.data.workspaceId,
+            contentId: c.data.id,
+            placement: c.placement(),
+            errorMessage,
+            failedAt: new Date(),
+            groupId: groupID,
+            isGroupFullyFailed,
+          });
+          log.info(
+            `sent content failure notification for content ${c.data.id}`,
+          );
+        } catch (notifyError) {
+          log.warn("failed to send content failure notification", {
+            contentId: c.data.id,
+            error: notifyError,
+          });
+        }
       });
     }
     step.do("publish to placements", async () => {

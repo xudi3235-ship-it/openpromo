@@ -1,16 +1,39 @@
 import { z } from "zod";
 
-export const ContentPublishedNotificationSchema = z.object({
-  type: z.literal("content.published"),
+// ============ Base Schemas ============
+
+/**
+ * Base fields shared by all content notifications
+ */
+const BaseContentNotificationSchema = z.object({
   contentId: z.string(),
   placement: z.string(),
-  sourceContentId: z.string().nullish(),
-  shareUrl: z.string().url().optional(),
-  publishedAt: z.string(),
 });
+
+// ============ Notification Type Schemas ============
+
+export const ContentPublishedNotificationSchema =
+  BaseContentNotificationSchema.extend({
+    type: z.literal("content.published"),
+    sourceContentId: z.string().nullish(),
+    shareUrl: z.string().url().optional(),
+    publishedAt: z.string(),
+  });
+
+export const ContentFailedNotificationSchema =
+  BaseContentNotificationSchema.extend({
+    type: z.literal("content.failed"),
+    errorMessage: z.string().optional(),
+    failedAt: z.string(),
+    groupId: z.string().nullish(),
+    isGroupFullyFailed: z.boolean().optional(),
+  });
+
+// ============ Union Schema ============
 
 export const WorkspaceNotificationSchema = z.discriminatedUnion("type", [
   ContentPublishedNotificationSchema,
+  ContentFailedNotificationSchema,
 ]);
 
 export type WorkspaceNotification = z.infer<typeof WorkspaceNotificationSchema>;

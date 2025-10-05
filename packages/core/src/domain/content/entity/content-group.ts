@@ -242,6 +242,91 @@ export class EntPendingContentGroup {
   }
 
   /**
+   * Checks if all contents in the group have failed to publish.
+   * If so, marks the group as FAILED_TO_PUBLISH.
+   *
+   * @returns Object with status info: { allFailed: boolean, failedCount: number, totalCount: number, groupUpdated: boolean }
+   */
+  public async checkAndMarkGroupFailureIfNeeded(): Promise<{
+    allFailed: boolean;
+    failedCount: number;
+    totalCount: number;
+    groupUpdated: boolean;
+  }> {
+    const workspaceID = Actor.workspaceID();
+
+    // Get all contents in the group
+    const allContents = await db()
+      .select()
+      .from(unifiedContentTable)
+      .where(
+        and(
+          eq(unifiedContentTable.pendingContentGroupId, this.data.id),
+          eq(unifiedContentTable.workspaceId, workspaceID),
+        ),
+      );
+
+    const totalCount = allContents.length;
+    const failedCount = allContents.filter(
+      (content) => content.publishingStatus === "FAILED_TO_PUBLISH",
+    ).length;
+    const allFailed = failedCount === totalCount && totalCount > 0;
+
+    let groupUpdated = false;
+
+    if (allFailed) {
+      // All contents have failed, mark the group as failed
+      const [updatedGroup] = await db()
+        .update(pendingContentGroupTable)
+        .set({
+          publishingStatus: "FAILED_TO_PUBLISH",
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(pendingContentGroupTable.id, this.data.id),
+            eq(pendingContentGroupTable.workspaceId, workspaceID),
+          ),
+        )
+        .returning();
+
+      if (updatedGroup) {
+        this.data = updatedGroup;
+        groupUpdated = true;
+      }
+    }
+
+    return {
+      allFailed,
+      failedCount,
+      totalCount,
+      groupUpdated,
+    };
+  }
+
+  /**
+   * Static helper to check and mark group failure for a given group ID.
+   * Useful when you only have the group ID and don't want to instantiate the entity first.
+   */
+  public static async checkAndMarkGroupFailureByID(groupID: string): Promise<{
+    allFailed: boolean;
+    failedCount: number;
+    totalCount: number;
+    groupUpdated: boolean;
+  } | null> {
+    try {
+      const group = await EntPendingContentGroup.fromID(groupID);
+      return await group.checkAndMarkGroupFailureIfNeeded();
+    } catch (error) {
+      console.error(
+        `Failed to check group failure for group ${groupID}:`,
+        error,
+      );
+      return null;
+    }
+  }
+
+  /**
    * Updates the group metadata and replaces all contents atomically.
    * Terminates old workflows and creates new ones.
    */
