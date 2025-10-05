@@ -245,9 +245,6 @@ importers:
       framer-motion:
         specifier: ^12.23.12
         version: 12.23.12(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      frimousse:
-        specifier: ^0.3.0
-        version: 0.3.0(react@19.1.1)(typescript@5.9.3)
       hono:
         specifier: 'catalog:'
         version: 4.9.7
@@ -391,6 +388,9 @@ importers:
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@19.1.1)
+      frimousse:
+        specifier: ^0.3.0
+        version: 0.3.0(react@19.1.1)(typescript@5.9.3)
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
