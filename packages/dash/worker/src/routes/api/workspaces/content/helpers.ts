@@ -2,7 +2,7 @@ import type { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import type { UnifiedContentInsert } from "@core/schemas/content.sql";
 import type { Context } from "hono";
-import type { ContentCreateData } from "./index";
+import type { ContentCreateData } from "./routes/create-content";
 
 export type ContentItemBase = Pick<
   UnifiedContentInsert,
