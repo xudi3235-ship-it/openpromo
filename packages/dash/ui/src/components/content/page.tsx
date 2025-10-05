@@ -18,6 +18,7 @@ import type { ContentFilters as ContentFiltersType } from "./content-filters";
 import { ContentPageBody } from "./content-page-body";
 import { ContentPageFooter } from "./content-page-footer";
 import { ContentPageLayout } from "./content-page-layout";
+import { SortingIndicator } from "./sorting-indicator";
 import { useContentListQueryParams } from "./use-content-list-query-params";
 
 export function ContentPage() {
@@ -118,6 +119,11 @@ export function ContentPage() {
       <BatchActionsToolbar
         selectedRows={selectedRows}
         onClearSelection={() => table.toggleAllPageRowsSelected(false)}
+      />
+
+      <SortingIndicator
+        sorting={sorting}
+        onClearSorting={() => setSorting([])}
       />
 
       <ContentPageBody table={table} isLoading={isLoading} />
