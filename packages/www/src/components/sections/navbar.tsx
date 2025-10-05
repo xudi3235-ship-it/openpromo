@@ -14,7 +14,13 @@ import { cn } from "@/lib/utils";
 import logoSrc from "../../assets/logo.png";
 import { ThemeToggle } from "../elements/theme-toggle";
 
-const Navbar = ({ currentPage = "/" }: { currentPage: string }) => {
+const Navbar = ({
+  currentPage = "/",
+  dashboardUrl,
+}: {
+  currentPage: string;
+  dashboardUrl: string;
+}) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const pathname = currentPage;
@@ -127,14 +133,14 @@ const Navbar = ({ currentPage = "/" }: { currentPage: string }) => {
             >
               <ThemeToggle />
             </div>
-            <a href="/login" className="hidden lg:block">
+            <a href={dashboardUrl} className="hidden lg:block">
               <Button variant="outline" className="gap-1">
                 Login
                 <ChevronRight className="size-4" />
               </Button>
             </a>
             <a
-              href="/signup"
+              href={dashboardUrl}
               className={`transition-opacity duration-300 ${isMenuOpen ? "pointer-events-none opacity-0" : "opacity-100"}`}
             >
               <Button className="gap-1">
