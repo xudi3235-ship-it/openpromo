@@ -3,6 +3,7 @@ import {
   Home,
   Inbox,
   LayoutList,
+  Package,
   Settings,
   SquarePen,
   TrendingUp,
@@ -40,6 +41,11 @@ export const sidebarData: SidebarData = {
           title: "Content",
           url: "/workspaces/$workspaceSlug/content",
           icon: LayoutList,
+        },
+        {
+          title: "Products",
+          url: "/workspaces/$workspaceSlug/products",
+          icon: Package,
         },
         {
           title: "Calendar",
