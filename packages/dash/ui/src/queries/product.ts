@@ -1,0 +1,115 @@
+import type { QueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import type { InferRequestType } from "hono/client";
+import { toast } from "sonner";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import {
+  type apiClient,
+  useHonoMutation,
+  useHonoQuery,
+} from "@/lib/hono-client";
+
+type ProductCreateInput = InferRequestType<
+  (typeof apiClient)["workspaces"][":workspaceSlug"]["products"]["$post"]
+>["json"];
+
+type ProductUpdateInput = InferRequestType<
+  (typeof apiClient)["workspaces"][":workspaceSlug"]["products"][":id"]["$patch"]
+>["json"];
+
+type ProductListParams = InferRequestType<
+  (typeof apiClient)["workspaces"][":workspaceSlug"]["products"]["$get"]
+>["query"];
+
+export const invalidateProductListQueries = async (queryClient: QueryClient) =>
+  queryClient.invalidateQueries({
+    predicate: (query) =>
+      Array.isArray(query.queryKey) && query.queryKey[0] === "product-list",
+    type: "all",
+  });
+
+export const useProductListQuery = (params: ProductListParams = {}) => {
+  const { workspace } = useWorkspace();
+
+  return useHonoQuery({
+    queryKey: ["product-list", params],
+    queryFn: (api) =>
+      api.workspaces[":workspaceSlug"].products.$get({
+        query: params,
+        param: { workspaceSlug: workspace.slug },
+      }),
+  });
+};
+
+export const useProductQuery = (productId: string | undefined) => {
+  const { workspace } = useWorkspace();
+
+  return useHonoQuery({
+    queryKey: ["product", productId],
+    queryFn: (api) =>
+      api.workspaces[":workspaceSlug"].products[":id"].$get({
+        param: {
+          workspaceSlug: workspace.slug,
+          // biome-ignore lint/style/noNonNullAssertion: guarded by enabled
+          id: productId!,
+        },
+      }),
+    enabled: !!productId,
+  });
+};
+
+export const useProductCreateMutation = (onSuccess?: () => void) => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation({
+    mutationFn: (api, data: ProductCreateInput) =>
+      api.workspaces[":workspaceSlug"].products.$post({
+        param: { workspaceSlug: workspace.slug },
+        json: data,
+      }),
+    onSuccess: async () => {
+      await invalidateProductListQueries(queryClient);
+      toast.success("Product created");
+      onSuccess?.();
+    },
+  });
+};
+
+export const useProductUpdateMutation = (onSuccess?: () => void) => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation({
+    mutationFn: (api, { id, data }: { id: string; data: ProductUpdateInput }) =>
+      api.workspaces[":workspaceSlug"].products[":id"].$patch({
+        param: { workspaceSlug: workspace.slug, id },
+        json: data,
+      }),
+    onSuccess: async (_data, { id }) => {
+      await invalidateProductListQueries(queryClient);
+      await queryClient.invalidateQueries({
+        queryKey: ["product", id],
+      });
+      toast.success("Product updated");
+      onSuccess?.();
+    },
+  });
+};
+
+export const useProductDeleteMutation = (onSuccess?: () => void) => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation({
+    mutationFn: (api, productId: string) =>
+      api.workspaces[":workspaceSlug"].products[":id"].$delete({
+        param: { workspaceSlug: workspace.slug, id: productId },
+      }),
+    onSuccess: async () => {
+      await invalidateProductListQueries(queryClient);
+      toast.success("Product deleted");
+      onSuccess?.();
+    },
+  });
+};

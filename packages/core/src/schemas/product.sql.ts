@@ -49,7 +49,7 @@ export const productTable = pgTable(
 );
 
 const productRefinements = {
-  source: z.enum(ProductSource),
+  source: z.enum(ProductSource).optional(),
   sourceUrl: z.string().url().optional().nullable(),
   tags: z.array(z.string()).default([]),
 };
