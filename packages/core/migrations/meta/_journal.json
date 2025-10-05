@@ -169,6 +169,13 @@
       "when": 1759595657409,
       "tag": "0023_lush_young_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1759689715726,
+      "tag": "0024_clean_pyro",
+      "breakpoints": true
     }
   ]
 }

@@ -9,6 +9,11 @@ export const messageType = pgEnum("message_type", [
   ...Object.values(AllMessageAttachmentTypes),
 ]);
 
+type MessageAttachment = {
+  type: (typeof AllMessageAttachmentTypes)[keyof typeof AllMessageAttachmentTypes];
+  url: string;
+};
+
 export const inboxMessagesTable = pgTable(
   "inbox_messages",
   {
@@ -21,9 +26,8 @@ export const inboxMessagesTable = pgTable(
     senderContactId: ulid().references(() => inboxContactsTable.id, {
       onDelete: "cascade",
     }),
-    messageType: messageType().notNull(),
     text: text(),
-    mediaUrl: text(),
+    attachments: jsonb().$type<MessageAttachment[]>().notNull(),
     payload: jsonb().$type<MessagePayload>().notNull(), // raw payload from the platform
   },
   (t) => [uniqueIndex().on(t.inboxConversationId, t.externalId)],
