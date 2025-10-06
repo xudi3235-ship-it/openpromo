@@ -164,12 +164,29 @@ export class InstagramOAuthService {
    * Get user profile information using access token
    * Uses Instagram Graph API
    */
+  async getUserProfile(accessToken: string): Promise<InstagramProfile>;
   async getUserProfile(
     accessToken: string,
-    id = "me",
-  ): Promise<InstagramProfile> {
+    id: string,
+  ): Promise<Omit<InstagramProfile, "user_id">>;
+  async getUserProfile(accessToken: string, id = "me") {
+    const fields = [
+      "id",
+      "username",
+      "account_type",
+      "media_count",
+      "followers_count",
+      "follows_count",
+      "name",
+      "biography",
+      "profile_picture_url",
+      "website",
+    ];
+    if (id === "me") {
+      fields.push("user_id");
+    }
     const response = await fetch(
-      `${this.baseUrl}/${id}?fields=id,user_id,username,account_type,media_count,followers_count,follows_count,name,biography,profile_picture_url,website&access_token=${accessToken}`,
+      `${this.baseUrl}/${id}?fields=${fields.join(",")}&access_token=${accessToken}`,
     );
 
     if (!response.ok) {
@@ -178,7 +195,7 @@ export class InstagramOAuthService {
       throw new Error(`Failed to get user profile: ${response.statusText}`);
     }
 
-    return (await response.json()) as InstagramProfile;
+    return await response.json();
   }
 
   /**
