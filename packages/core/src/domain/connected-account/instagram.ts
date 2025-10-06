@@ -168,20 +168,22 @@ export class InstagramOAuthService {
   async getUserProfile(
     accessToken: string,
     id: string,
-  ): Promise<Omit<InstagramProfile, "user_id" | "account_type">>;
+  ): Promise<
+    Pick<InstagramProfile, "name" | "username" | "profile_picture_url">
+  >;
   async getUserProfile(accessToken: string, id = "me") {
-    const userFields = [
+    const userFields = ["name", "username", "profile_picture_url"];
+    const meFields = [
+      ...userFields,
       "id",
-      "username",
+      "user_id",
       "media_count",
       "followers_count",
       "follows_count",
-      "name",
+      "account_type",
       "biography",
-      "profile_picture_url",
       "website",
     ];
-    const meFields = [...userFields, "user_id", "account_type"];
     const response = await fetch(
       `${this.baseUrl}/${id}?fields=${(id === "me" ? meFields : userFields).join(",")}&access_token=${accessToken}`,
     );
