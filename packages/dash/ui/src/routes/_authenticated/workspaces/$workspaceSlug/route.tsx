@@ -38,7 +38,6 @@ export const Route = createFileRoute(
 });
 
 const DISABLED_ACCOUNTS_BAR_PATTERNS: RegExp[] = [
-  /^\/workspaces\/[^/]+\/?$/,
   /^\/workspaces\/[^/]+\/composer\/?$/,
 ];
 

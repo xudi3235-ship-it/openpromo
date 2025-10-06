@@ -2,7 +2,6 @@ import { Button } from "@openpromo/ui/components/button";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus, TrendingUp } from "lucide-react";
-import { ConnectedAccountsSection } from "@/components/workspace/connected-accounts-section";
 import { useConnectedAccounts } from "@/queries/connected-account";
 
 export const Route = createFileRoute(
@@ -13,15 +12,13 @@ export const Route = createFileRoute(
 
 function WorkspaceIndex() {
   const { workspaceSlug } = Route.useParams();
-  const { accounts, isLoading } = useConnectedAccounts();
+  const { isLoading } = useConnectedAccounts();
 
   // Show loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-5xl mx-auto space-y-6">
-          <ConnectedAccountsSection accounts={[]} isLoading={true} />
-
           <Skeleton className="h-32" />
           <Skeleton className="h-64" />
         </div>
@@ -34,9 +31,6 @@ function WorkspaceIndex() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Connected Accounts - Top Priority */}
-        <ConnectedAccountsSection accounts={accounts} isLoading={false} />
-
         {/* Welcome Header */}
         <div className="flex items-center justify-between">
           <div>
