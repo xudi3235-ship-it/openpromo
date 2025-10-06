@@ -28,6 +28,7 @@
     "@t3-oss/env-core": "^0.13.8",
     "@workos-inc/node": "catalog:",
     "agents": "^0.0.113",
+    "ai": "^5.0.60",
     "aws4fetch": "^1.0.20",
     "cloudflare": "catalog:",
     "cookie": "^1.0.2",
