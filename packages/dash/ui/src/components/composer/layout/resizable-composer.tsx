@@ -1,13 +1,9 @@
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@openpromo/ui/components/resizable";
 import type { ConnectedAccount } from "@/lib/hono-client";
 import { ComposerProvider } from "@/providers/composer-provider";
 import type { ComposerProps } from "@/stores/composer-store";
 import { ComposerLeft } from "./composer-left";
 import { ComposerRight } from "./composer-right";
+import { TwoColumnLayout } from "./two-column-layout";
 
 interface ResizableComposerProps {
   accounts: ConnectedAccount[];
@@ -27,17 +23,11 @@ export function ResizableComposer({
   } as ComposerProps;
   return (
     <ComposerProvider {...props}>
-      <div className={`relative h-full ${className}`}>
-        <ResizablePanelGroup direction="horizontal" className="h-full">
-          <ResizablePanel defaultSize={40} minSize={30} maxSize={60}>
-            <ComposerLeft />
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={60}>
-            <ComposerRight />
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
+      <TwoColumnLayout
+        left={<ComposerLeft />}
+        right={<ComposerRight />}
+        className={className}
+      />
     </ComposerProvider>
   );
 }
