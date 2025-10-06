@@ -160,11 +160,12 @@ export class EntProduct extends Ent<ProductSelectType> {
   }
 
   /**
-   * Delete product
+   * Delete product and cleanup attachments
    */
   async delete(): Promise<ProductSelectType> {
     const workspaceID = Actor.workspaceID();
 
+    // Delete product from database first
     const [deleted] = await db()
       .delete(productTable)
       .where(
@@ -177,6 +178,48 @@ export class EntProduct extends Ent<ProductSelectType> {
 
     if (!deleted) throw new Error(`Product ${this.data.id} not found`);
 
+    // Cleanup attachments asynchronously (don't block on this)
+    this.cleanupAttachments(deleted.attachments).catch((error) => {
+      console.error(
+        `Failed to cleanup attachments for product ${this.data.id}:`,
+        error,
+      );
+    });
+
     return deleted;
+  }
+
+  /**
+   * Cleanup R2 storage for product attachments
+   */
+  private async cleanupAttachments(
+    attachments: typeof this.data.attachments,
+  ): Promise<void> {
+    const { EntAttachment } = await import("../content/entity/media");
+    const { Storage } = await import("@core/helpers/storage");
+
+    for (const attachmentSpec of attachments) {
+      try {
+        const attachment = EntAttachment.fromSharedSpec(
+          this.data.workspaceId,
+          attachmentSpec,
+        );
+
+        // Find R2 location
+        const r2Location =
+          attachment.primaryLocation().kind === "r2"
+            ? attachment.primaryLocation()
+            : attachment.mirrors().find((m) => m.kind === "r2");
+
+        if (r2Location && r2Location.kind === "r2") {
+          await Storage.deleteFile(r2Location.key, Storage.PUBLIC_BUCKET);
+        }
+      } catch (error) {
+        console.error(
+          `Failed to cleanup attachment ${attachmentSpec.id}:`,
+          error,
+        );
+      }
+    }
   }
 }

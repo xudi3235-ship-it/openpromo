@@ -118,6 +118,7 @@ export function CreateProductModal({
             ? ("photo" as const)
             : ("video" as const),
           publicUrl: result.publicUrl,
+          s3Key: result.key, // Store R2 key for cleanup
         }));
       }
 
