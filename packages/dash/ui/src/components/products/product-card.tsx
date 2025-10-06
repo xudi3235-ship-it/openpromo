@@ -9,12 +9,15 @@ import {
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
 import { ExternalLink, MoreHorizontal, Pencil, Trash } from "lucide-react";
+import * as React from "react";
+import { DeleteProductDialog } from "./delete-product-dialog";
 
 interface ProductCardProps {
   product: ProductSelectType;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const primaryAttachment = product.attachments.find(
     (a) => a.id === product.primaryAttachmentId,
   );
@@ -107,7 +110,10 @@ export function ProductCard({ product }: ProductCardProps) {
                   View Source
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem
+                className="text-destructive"
+                onSelect={() => setDeleteDialogOpen(true)}
+              >
                 <Trash className="h-4 w-4 mr-2" />
                 Delete
               </DropdownMenuItem>
@@ -115,6 +121,12 @@ export function ProductCard({ product }: ProductCardProps) {
           </DropdownMenu>
         </div>
       </CardContent>
+
+      <DeleteProductDialog
+        product={product}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+      />
     </Card>
   );
 }
