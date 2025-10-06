@@ -11,16 +11,9 @@ export const bootstrap =
       c.env.HYPERDRIVE?.connectionString ?? env.DATABASE_URL;
     // chain the bindings in providers here.
     return Database.provide(connectionString, async () =>
-      // env actually has tons of stuff, we cherry pick
-      // the workers bindings
       Binding.provide(
         {
-          HYPERDRIVE: c.env.HYPERDRIVE,
-          WorkspacePusher: c.env.WorkspacePusher,
-          WORKFLOW: c.env.WORKFLOW,
-          ContainerBackend: c.env.ContainerBackend,
-          Bucket: c.env.Bucket,
-          ContentBackfillWorkflow: c.env.ContentBackfillWorkflow,
+          ...c.env,
         },
         next,
       ),
