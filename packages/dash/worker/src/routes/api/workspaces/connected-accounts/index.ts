@@ -5,6 +5,7 @@ import {
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
 import type { ApiEnv } from "@core/helpers/api-env";
+import { AllPlatforms } from "@shared/content";
 import { Hono } from "hono";
 import * as z from "zod";
 import { withAuth } from "../../../../middleware/with-auth";
@@ -39,17 +40,17 @@ export const connectedAccountsRoute = new Hono<ApiEnv>()
       const { accountId } = ctx.req.valid("param");
       const account = await ConnectedAccount.fromID(accountId);
       switch (account.platform) {
-        case "FACEBOOK":
+        case AllPlatforms.FACEBOOK:
           await facebookOAuthService.teardownWebhook(
             account.encryptedAccessToken,
           );
           break;
-        case "INSTAGRAM":
+        case AllPlatforms.INSTAGRAM:
           await instagramOAuthService.teardownWebhook(
             account.encryptedAccessToken,
           );
           break;
-        case "TIKTOK":
+        case AllPlatforms.TIKTOK:
           // TODO: implement
           break;
       }
