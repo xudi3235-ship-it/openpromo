@@ -10,6 +10,7 @@ import {
 } from "@openpromo/ui/components/dropdown-menu";
 import { ExternalLink, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import * as React from "react";
+import { CreateProductModal } from "./create-product-modal";
 import { DeleteProductDialog } from "./delete-product-dialog";
 
 interface ProductCardProps {
@@ -18,6 +19,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [editModalOpen, setEditModalOpen] = React.useState(false);
   const primaryAttachment = product.attachments.find(
     (a) => a.id === product.primaryAttachmentId,
   );
@@ -100,12 +102,17 @@ export function ProductCard({ product }: ProductCardProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setEditModalOpen(true)}>
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit
               </DropdownMenuItem>
               {product.sourceUrl && (
-                <DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() =>
+                    product.sourceUrl &&
+                    window.open(product.sourceUrl, "_blank")
+                  }
+                >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   View Source
                 </DropdownMenuItem>
@@ -121,6 +128,12 @@ export function ProductCard({ product }: ProductCardProps) {
           </DropdownMenu>
         </div>
       </CardContent>
+
+      <CreateProductModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        product={product}
+      />
 
       <DeleteProductDialog
         product={product}

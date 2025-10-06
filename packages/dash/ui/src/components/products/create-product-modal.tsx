@@ -1,3 +1,4 @@
+import type { ProductSelectType } from "@core/schemas/product.sql";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@openpromo/ui/components/button";
 import {
@@ -31,13 +32,16 @@ import {
 } from "@openpromo/ui/components/select";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { ChevronDown, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 import { Dropzone } from "@/components/dropzone";
 import { useStorageUpload } from "@/hooks/useStorageUpload";
-import { useProductCreateMutation } from "@/queries/product";
+import {
+  useProductCreateMutation,
+  useProductUpdateMutation,
+} from "@/queries/product";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required").max(200),
@@ -53,26 +57,36 @@ type FormValues = z.infer<typeof schema>;
 interface CreateProductModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  product?: ProductSelectType;
 }
 
 export function CreateProductModal({
   open,
   onOpenChange,
+  product,
 }: CreateProductModalProps) {
+  const isEditMode = Boolean(product);
   const [tagInput, setTagInput] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [existingAttachments, setExistingAttachments] = useState<
+    ProductSelectType["attachments"]
+  >([]);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   const { uploadFiles, clearUploads } = useStorageUpload();
 
-  const createProduct = useProductCreateMutation(() => {
+  const resetForm = () => {
     form.reset();
     setSelectedFiles([]);
+    setExistingAttachments([]);
     setDetailsOpen(false);
     clearUploads();
     onOpenChange(false);
-  });
+  };
+
+  const createProduct = useProductCreateMutation(resetForm);
+  const updateProduct = useProductUpdateMutation(resetForm);
 
   const handleFileDrop = (files: File[]) => {
     setSelectedFiles((prev) => [...prev, ...files]);
@@ -80,6 +94,10 @@ export function CreateProductModal({
 
   const removeFile = (index: number) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingAttachment = (index: number) => {
+    setExistingAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
   const form = useForm<FormValues>({
@@ -94,6 +112,27 @@ export function CreateProductModal({
     },
   });
 
+  // Populate form when editing
+  useEffect(() => {
+    if (product && open) {
+      form.reset({
+        name: product.name,
+        description: product.description || "",
+        category: product.category || "",
+        tags: product.tags || [],
+        source: product.source || "MANUAL",
+        sourceUrl: product.sourceUrl || "",
+      });
+      setExistingAttachments(product.attachments || []);
+      setDetailsOpen(true);
+    } else if (!open) {
+      form.reset();
+      setTagInput("");
+      setSelectedFiles([]);
+      setExistingAttachments([]);
+    }
+  }, [product, open, form]);
+
   const selectedSource = form.watch("source");
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
@@ -106,7 +145,7 @@ export function CreateProductModal({
         publicUrl: string;
       }> = [];
 
-      // Upload files if any
+      // Upload new files if any
       if (selectedFiles.length > 0) {
         toast.info("Uploading files...");
         const uploadResults = await uploadFiles(selectedFiles);
@@ -118,20 +157,28 @@ export function CreateProductModal({
             ? ("photo" as const)
             : ("video" as const),
           publicUrl: result.publicUrl,
-          s3Key: result.key, // Store R2 key for cleanup
+          s3Key: result.key,
         }));
       }
+
+      // Merge existing attachments with new uploads
+      const allAttachments = [...existingAttachments, ...attachments];
 
       const data = {
         ...values,
         sourceUrl: values.sourceUrl || undefined,
         description: values.description || undefined,
         category: values.category || undefined,
-        attachments,
-        primaryAttachmentId: attachments[0]?.id,
+        attachments: allAttachments,
+        primaryAttachmentId:
+          allAttachments[0]?.id || product?.primaryAttachmentId,
       };
 
-      createProduct.mutate(data);
+      if (isEditMode && product) {
+        updateProduct.mutate({ id: product.id, data });
+      } else {
+        createProduct.mutate(data);
+      }
     } catch (error) {
       toast.error("Failed to upload files");
       console.error(error);
@@ -163,13 +210,56 @@ export function CreateProductModal({
     );
   };
 
+  const isPending = createProduct.isPending || updateProduct.isPending;
+  const isProcessing = isPending || isUploading;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Loading Overlay */}
+        {isProcessing && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/70 dark:bg-black/70 backdrop-blur-[2px] rounded-lg pointer-events-none">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-12 min-w-80">
+              <div className="flex flex-col items-center text-center space-y-6">
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full border-2 border-gray-100 dark:border-gray-800" />
+                  <div className="absolute inset-0 w-12 h-12 rounded-full border-2 border-transparent border-t-gray-900 dark:border-t-gray-100 animate-spin" />
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                    {isUploading
+                      ? "Uploading files"
+                      : isEditMode
+                        ? "Updating product"
+                        : "Creating product"}
+                  </h3>
+                </div>
+
+                <div className="flex space-x-1.5">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
+                  <div
+                    className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"
+                    style={{ animationDelay: "0.1s" }}
+                  />
+                  <div
+                    className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"
+                    style={{ animationDelay: "0.2s" }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <DialogHeader>
-          <DialogTitle>Add Product</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? "Edit Product" : "Add Product"}
+          </DialogTitle>
           <DialogDescription>
-            Add a product to your catalog for content generation
+            {isEditMode
+              ? "Update product details in your catalog"
+              : "Add a product to your catalog for content generation"}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -224,13 +314,58 @@ export function CreateProductModal({
                   </div>
                 </Dropzone>
 
-                {selectedFiles.length > 0 && (
+                {(existingAttachments.length > 0 ||
+                  selectedFiles.length > 0) && (
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground">
-                      {selectedFiles.length} file
-                      {selectedFiles.length > 1 ? "s" : ""} selected
+                      {existingAttachments.length + selectedFiles.length} file
+                      {existingAttachments.length + selectedFiles.length > 1
+                        ? "s"
+                        : ""}{" "}
+                      {isEditMode && existingAttachments.length > 0
+                        ? `(${existingAttachments.length} existing${selectedFiles.length > 0 ? `, ${selectedFiles.length} new` : ""})`
+                        : "selected"}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
+                      {/* Existing attachments */}
+                      {existingAttachments.map((attachment, index) => {
+                        const imageUrl =
+                          attachment.type === "photo"
+                            ? attachment.publicUrl || attachment.presignedUrl
+                            : null;
+                        return (
+                          <div
+                            key={attachment.id || `existing-${index}`}
+                            className="relative group rounded-lg border overflow-hidden"
+                          >
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={`Attachment ${index + 1}`}
+                                className="w-full aspect-square object-cover"
+                              />
+                            ) : (
+                              <div className="w-full aspect-square bg-muted flex items-center justify-center">
+                                <span className="text-xs text-muted-foreground">
+                                  Video
+                                </span>
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeExistingAttachment(index)}
+                              className="absolute top-1 right-1 p-1 bg-background/80 hover:bg-destructive hover:text-destructive-foreground rounded-md transition-colors"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/80 to-transparent p-2">
+                              <p className="text-xs truncate">Existing</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* New files */}
                       {selectedFiles.map((file, index) => (
                         <div
                           key={`${file.name}-${file.size}-${index}`}
@@ -408,19 +543,20 @@ export function CreateProductModal({
                 type="button"
                 variant="outline"
                 onClick={() => handleOpenChange(false)}
-                disabled={createProduct.isPending}
+                disabled={isPending}
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={createProduct.isPending || isUploading}
-              >
+              <Button type="submit" disabled={isPending || isUploading}>
                 {isUploading
                   ? "Uploading..."
-                  : createProduct.isPending
-                    ? "Adding..."
-                    : "Add Product"}
+                  : isPending
+                    ? isEditMode
+                      ? "Updating..."
+                      : "Adding..."
+                    : isEditMode
+                      ? "Update Product"
+                      : "Add Product"}
               </Button>
             </DialogFooter>
           </form>
