@@ -33,8 +33,10 @@ import { Textarea } from "@openpromo/ui/components/textarea";
 import { ChevronDown, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { type SubmitHandler, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import * as z from "zod";
 import { Dropzone } from "@/components/dropzone";
+import { useStorageUpload } from "@/hooks/useStorageUpload";
 import { useProductCreateMutation } from "@/queries/product";
 
 const schema = z.object({
@@ -60,11 +62,15 @@ export function CreateProductModal({
   const [tagInput, setTagInput] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const { uploadFiles, uploads, clearUploads } = useStorageUpload();
 
   const createProduct = useProductCreateMutation(() => {
     form.reset();
     setSelectedFiles([]);
     setDetailsOpen(false);
+    clearUploads();
     onOpenChange(false);
   });
 
@@ -90,14 +96,49 @@ export function CreateProductModal({
 
   const selectedSource = form.watch("source");
 
-  const onSubmit: SubmitHandler<FormValues> = (values) => {
-    const data = {
-      ...values,
-      sourceUrl: values.sourceUrl || undefined,
-      description: values.description || undefined,
-      category: values.category || undefined,
-    };
-    createProduct.mutate(data);
+  const onSubmit: SubmitHandler<FormValues> = async (values) => {
+    try {
+      setIsUploading(true);
+
+      let attachments: Array<{
+        id: string;
+        type: "photo" | "video";
+        publicUrl: string;
+      }> = [];
+
+      // Upload files if any
+      if (selectedFiles.length > 0) {
+        toast.info("Uploading files...");
+        await uploadFiles(selectedFiles);
+
+        // Get public URLs from uploads
+        attachments = uploads
+          .filter((u) => u.status === "success" && u.publicUrl && u.key)
+          .map((u) => ({
+            id: u.key as string,
+            type: u.file.type.startsWith("image/")
+              ? ("photo" as const)
+              : ("video" as const),
+            publicUrl: u.publicUrl as string,
+          }));
+      }
+
+      const data = {
+        ...values,
+        sourceUrl: values.sourceUrl || undefined,
+        description: values.description || undefined,
+        category: values.category || undefined,
+        attachments,
+        primaryAttachmentId: attachments[0]?.id,
+      };
+
+      createProduct.mutate(data);
+    } catch (error) {
+      toast.error("Failed to upload files");
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -372,8 +413,15 @@ export function CreateProductModal({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createProduct.isPending}>
-                {createProduct.isPending ? "Adding..." : "Add Product"}
+              <Button
+                type="submit"
+                disabled={createProduct.isPending || isUploading}
+              >
+                {isUploading
+                  ? "Uploading..."
+                  : createProduct.isPending
+                    ? "Adding..."
+                    : "Add Product"}
               </Button>
             </DialogFooter>
           </form>
