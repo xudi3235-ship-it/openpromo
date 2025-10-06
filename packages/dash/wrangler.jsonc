@@ -26,6 +26,11 @@
       "class_name": "ContentBackfillWorkflow",
       "binding": "ContentBackfillWorkflow",
       "name": "ContentBackfillWorkflow"
+    },
+    {
+      "class_name": "ProductProcessingWorkflow",
+      "binding": "ProductProcessingWorkflow",
+      "name": "ProductProcessingWorkflow"
     }
   ],
   "durable_objects": {

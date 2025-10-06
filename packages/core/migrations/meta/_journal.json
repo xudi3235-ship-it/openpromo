@@ -190,6 +190,13 @@
       "when": 1759701383116,
       "tag": "0026_wise_vapor",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1759731552965,
+      "tag": "0027_typical_sinister_six",
+      "breakpoints": true
     }
   ]
 }

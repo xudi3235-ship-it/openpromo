@@ -1,6 +1,11 @@
 import { id, timestamps } from "@core/helpers/db";
 import type { SharedAttachmentSpec } from "@shared/content";
-import { type ProductMetadata, ProductSource } from "@shared/product";
+import {
+  type ProductMetadata,
+  ProductSource,
+  ProductState,
+  ProductStateZod,
+} from "@shared/product";
 import { jsonb, pgEnum, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 import {
   createInsertSchema,
@@ -14,6 +19,7 @@ export * from "@shared/product";
 
 // ----- enums -----
 export const productSourceEnum = pgEnum("product_source", ProductSource);
+export const productStateEnum = pgEnum("product_state", ProductState);
 
 /**
  * Product catalog table - stores user products for content generation
@@ -35,6 +41,13 @@ export const productTable = pgTable(
     source: productSourceEnum().notNull().default("MANUAL"),
     sourceUrl: text("source_url"),
 
+    // Processing state
+    state: productStateEnum().notNull().default("pending"),
+    stateMessage: text("state_message"), // Error message or status details
+
+    // Workflow tracking
+    workflowInstanceId: text("workflow_instance_id"), // CF Workflow instance ID
+
     // Media attachments (reuses SharedAttachmentSpec from content)
     attachments: jsonb("attachments")
       .$type<SharedAttachmentSpec[]>()
@@ -51,6 +64,7 @@ export const productTable = pgTable(
 const productRefinements = {
   source: z.enum(ProductSource).optional(),
   sourceUrl: z.string().url().optional().nullable(),
+  state: ProductStateZod.default("not_started"),
   tags: z.array(z.string()).default([]),
 };
 
