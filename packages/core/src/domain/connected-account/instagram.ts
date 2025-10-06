@@ -3,6 +3,7 @@ import { Log } from "@core/utils/log";
 
 interface InstagramProfile {
   id: string;
+  user_id: string;
   username: string;
   account_type: "BUSINESS" | "MEDIA_CREATOR" | "PERSONAL";
   media_count?: number;
@@ -37,6 +38,7 @@ export interface InstagramAuthTokenDetails {
   expiresIn: number;
   accessToken: string;
   id: string;
+  userId: string;
   name: string;
   picture: string;
   username: string;
@@ -167,7 +169,7 @@ export class InstagramOAuthService {
     id = "me",
   ): Promise<InstagramProfile> {
     const response = await fetch(
-      `${this.baseUrl}/${id}?fields=id,username,account_type,media_count,followers_count,follows_count,name,biography,profile_picture_url,website&access_token=${accessToken}`,
+      `${this.baseUrl}/${id}?fields=id,user_id,username,account_type,media_count,followers_count,follows_count,name,biography,profile_picture_url,website&access_token=${accessToken}`,
     );
 
     if (!response.ok) {
@@ -206,6 +208,7 @@ export class InstagramOAuthService {
 
     return {
       id: profile.id,
+      userId: profile.user_id,
       name: profile.name || profile.username,
       accessToken: longToken.access_token,
       refreshToken: longToken.access_token, // Instagram doesn't provide separate refresh tokens
@@ -227,6 +230,7 @@ export class InstagramOAuthService {
 
     return {
       id: profile.id,
+      userId: profile.user_id,
       name: profile.name || profile.username,
       accessToken: accessToken,
       refreshToken: accessToken,
