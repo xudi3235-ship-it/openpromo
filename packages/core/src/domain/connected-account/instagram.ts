@@ -2,7 +2,7 @@ import { env } from "@core/utils/env";
 import { Log } from "@core/utils/log";
 
 interface InstagramProfile {
-  user_id: string;
+  id: string;
   username: string;
   account_type: "BUSINESS" | "MEDIA_CREATOR" | "PERSONAL";
   media_count?: number;
@@ -167,7 +167,7 @@ export class InstagramOAuthService {
     id = "me",
   ): Promise<InstagramProfile> {
     const response = await fetch(
-      `${this.baseUrl}/${id}?fields=user_id,username,account_type,media_count,followers_count,follows_count,name,biography,profile_picture_url,website&access_token=${accessToken}`,
+      `${this.baseUrl}/${id}?fields=id,username,account_type,media_count,followers_count,follows_count,name,biography,profile_picture_url,website&access_token=${accessToken}`,
     );
 
     if (!response.ok) {
@@ -205,7 +205,7 @@ export class InstagramOAuthService {
     log.info("User profile obtained");
 
     return {
-      id: profile.user_id,
+      id: profile.id,
       name: profile.name || profile.username,
       accessToken: longToken.access_token,
       refreshToken: longToken.access_token, // Instagram doesn't provide separate refresh tokens
@@ -226,7 +226,7 @@ export class InstagramOAuthService {
     const expiresIn = 5184000; // 60 days
 
     return {
-      id: profile.user_id,
+      id: profile.id,
       name: profile.name || profile.username,
       accessToken: accessToken,
       refreshToken: accessToken,
@@ -289,20 +289,6 @@ export class InstagramOAuthService {
       throw new Error(`Failed to teardown webhook: ${response.statusText}`);
     }
   }
-
-  // async getRealId(webhookId: string, accessToken: string): Promise<string> {
-  //   const params = new URLSearchParams({
-  //     access_token: accessToken,
-  //   });
-  //   const response = await fetch(
-  //     `${this.baseUrl}/${webhookId}?${params.toString()}`,
-  //   );
-  //   if (!response.ok) {
-  //     throw new Error(`Failed to get real id: ${response.statusText}`);
-  //   }
-  //   const data = (await response.json()) as { id: string };
-  //   return data.id;
-  // }
 }
 
 // Export singleton instance
