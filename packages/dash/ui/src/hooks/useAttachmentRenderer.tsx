@@ -118,7 +118,7 @@ export function useAttachmentRenderer(options: AttachmentRendererOptions = {}) {
 
       if (attachment.type === "photo") {
         if (!url) return null;
-        return <img src={url} alt="Preview" className={className} />;
+        return <img key={url} src={url} alt="Preview" className={className} />;
       }
 
       if (attachment.type === "video") {
@@ -126,6 +126,25 @@ export function useAttachmentRenderer(options: AttachmentRendererOptions = {}) {
           | string
           | undefined;
 
+        // Prioritize local file if it exists
+        if (url && attachment.file) {
+          return (
+            <video
+              key={url}
+              src={url}
+              className={className}
+              controls={controls}
+              muted={!controls}
+              autoPlay
+              loop
+              playsInline
+            >
+              <track kind="captions" label="auto-generated" />
+            </video>
+          );
+        }
+
+        // Use stream preview for uploaded videos without local file
         if (previewIframeUrl && !attachment.file) {
           return (
             <StreamVideoPreview
@@ -140,10 +159,12 @@ export function useAttachmentRenderer(options: AttachmentRendererOptions = {}) {
           );
         }
 
+        // Fallback to any available URL
         if (!url) return null;
 
         return (
           <video
+            key={url}
             src={url}
             className={className}
             controls={controls}
