@@ -64,7 +64,7 @@ export function CreateProductModal({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const { uploadFiles, uploads, clearUploads } = useStorageUpload();
+  const { uploadFiles, clearUploads } = useStorageUpload();
 
   const createProduct = useProductCreateMutation(() => {
     form.reset();
@@ -109,18 +109,16 @@ export function CreateProductModal({
       // Upload files if any
       if (selectedFiles.length > 0) {
         toast.info("Uploading files...");
-        await uploadFiles(selectedFiles);
+        const uploadResults = await uploadFiles(selectedFiles);
 
-        // Get public URLs from uploads
-        attachments = uploads
-          .filter((u) => u.status === "success" && u.publicUrl && u.key)
-          .map((u) => ({
-            id: u.key as string,
-            type: u.file.type.startsWith("image/")
-              ? ("photo" as const)
-              : ("video" as const),
-            publicUrl: u.publicUrl as string,
-          }));
+        // Create attachments from upload results
+        attachments = uploadResults.map((result, index) => ({
+          id: result.key,
+          type: selectedFiles[index].type.startsWith("image/")
+            ? ("photo" as const)
+            : ("video" as const),
+          publicUrl: result.publicUrl,
+        }));
       }
 
       const data = {

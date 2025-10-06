@@ -16,7 +16,9 @@ export function useStorageUpload() {
     new Map(),
   );
 
-  const uploadFile = async (file: File): Promise<string> => {
+  const uploadFile = async (
+    file: File,
+  ): Promise<{ key: string; publicUrl: string }> => {
     const fileId = `${file.name}-${file.size}-${Date.now()}`;
 
     setUploads((prev) => {
@@ -99,7 +101,7 @@ export function useStorageUpload() {
         return next;
       });
 
-      return key;
+      return { key, publicUrl };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Upload failed";
@@ -121,7 +123,9 @@ export function useStorageUpload() {
     }
   };
 
-  const uploadFiles = async (files: File[]): Promise<string[]> => {
+  const uploadFiles = async (
+    files: File[],
+  ): Promise<Array<{ key: string; publicUrl: string }>> => {
     const uploadPromises = files.map((file) => uploadFile(file));
     return Promise.all(uploadPromises);
   };
