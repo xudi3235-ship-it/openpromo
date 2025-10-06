@@ -18,6 +18,7 @@ import { connectedAccountsRoute } from "./connected-accounts";
 import { contentRoute } from "./content";
 import { mediaRoute } from "./media";
 import { productsRoute } from "./products";
+import { storageRoute } from "./storage";
 import { workspaceTeamRoute } from "./team";
 
 export const workspacesRoute = new Hono<ApiEnv>()
@@ -186,6 +187,7 @@ export const workspacesRoute = new Hono<ApiEnv>()
   )
   .route("/:workspaceSlug/connected_accounts", connectedAccountsRoute)
   .route("/:workspaceSlug/media", mediaRoute)
+  .route("/:workspaceSlug/storage", storageRoute)
   .route("/:workspaceSlug/team", workspaceTeamRoute)
   .route("/:workspaceSlug/content", contentRoute)
   .route("/:workspaceSlug/products", productsRoute);
