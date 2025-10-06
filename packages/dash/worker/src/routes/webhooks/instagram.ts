@@ -63,7 +63,7 @@ export const instagramWebhooksRoute = new Hono<ApiEnv>()
                 platform: Platform.enum.INSTAGRAM,
                 externalId: contactExternalId,
                 name: profile.name || profile.username,
-                profilePicUrl: profile.profile_picture_url || "",
+                profilePicUrl: profile.profile_pic || "",
               });
             }
             // 3. Get or upsert conversation

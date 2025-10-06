@@ -1,7 +1,7 @@
 import { env } from "@core/utils/env";
 import { Log } from "@core/utils/log";
 
-interface InstagramProfile {
+interface InstagramBusinessUserProfile {
   id: string;
   user_id: string;
   username: string;
@@ -13,6 +13,12 @@ interface InstagramProfile {
   biography?: string;
   profile_picture_url?: string;
   website?: string;
+}
+
+interface InstagramUserProfile {
+  name?: string;
+  username: string;
+  profile_pic?: string;
 }
 
 interface InstagramTokenResponse {
@@ -161,22 +167,19 @@ export class InstagramOAuthService {
   }
 
   /**
-   * Get user profile information using access token
+   * Get business user profile information using access token
    * Uses Instagram Graph API
    */
-  async getUserProfile(accessToken: string): Promise<InstagramProfile>;
-  async getUserProfile(
+  async getBusinessUserProfile(
     accessToken: string,
-    id: string,
-  ): Promise<
-    Pick<InstagramProfile, "name" | "username" | "profile_picture_url">
-  >;
-  async getUserProfile(accessToken: string, id = "me") {
-    const userFields = ["name", "username", "profile_picture_url"];
-    const meFields = [
-      ...userFields,
+    id = "me",
+  ): Promise<InstagramBusinessUserProfile> {
+    const fields = [
       "id",
       "user_id",
+      "name",
+      "username",
+      "profile_picture_url",
       "media_count",
       "followers_count",
       "follows_count",
@@ -185,7 +188,30 @@ export class InstagramOAuthService {
       "website",
     ];
     const response = await fetch(
-      `${this.baseUrl}/${id}?fields=${(id === "me" ? meFields : userFields).join(",")}&access_token=${accessToken}`,
+      `${this.baseUrl}/${id}?fields=${fields.join(",")}&access_token=${accessToken}`,
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Failed to get business user profile", { errorText });
+      throw new Error(
+        `Failed to get business user profile: ${response.statusText}`,
+      );
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Get user profile information using access token
+   */
+  async getUserProfile(
+    accessToken: string,
+    id: string,
+  ): Promise<InstagramUserProfile> {
+    const fields = ["name", "username", "profile_pic"];
+    const response = await fetch(
+      `${this.baseUrl}/${id}?fields=${fields.join(",")}&access_token=${accessToken}`,
     );
 
     if (!response.ok) {
@@ -219,7 +245,7 @@ export class InstagramOAuthService {
     log.info("Long-lived access token obtained");
 
     // Get user profile using the user ID from the token response
-    const profile = await this.getUserProfile(longToken.access_token);
+    const profile = await this.getBusinessUserProfile(longToken.access_token);
     log.info("User profile obtained");
 
     return {
@@ -239,7 +265,7 @@ export class InstagramOAuthService {
    * Reconnect to a specific Instagram account
    */
   async reConnect(accessToken: string): Promise<InstagramAuthTokenDetails> {
-    const profile = await this.getUserProfile(accessToken);
+    const profile = await this.getBusinessUserProfile(accessToken);
 
     // Calculate expiration (60 days)
     const expiresIn = 5184000; // 60 days
