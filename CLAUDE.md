@@ -67,6 +67,7 @@ hosted on `dash.openpromo.app`, main dashboard for using app. react SPA using ta
 1. using tailwind css, ensure all color works for dark mode.
 2. ensure you run `pnpm check && pnpm typecheck` to ensure type checks are passing after changes
 3. when designing UI, use mimal, optimzied for UX, elegant, flat design principles.
+4. backend we use Entity class, e.g. EntAttachment, EntPendingContentGroup, which encapsulates business logic. API layer we use hono, each file be its own handelr, and use .route(..., subRoute) to chain them. Then, for the shared zod / JS types, define them in `packages/shared` so to reuse across fullstack. After api is ready, we define queries which uses react query + hono RPC features. then we are ready to use them in the UI.
 
 
 ### `package/ui`
