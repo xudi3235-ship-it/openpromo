@@ -1,14 +1,5 @@
 import type { ProductSelectType } from "@core/schemas/product.sql";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@openpromo/ui/components/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useProductDeleteMutation } from "@/queries/product";
 
 interface DeleteProductDialogProps {
@@ -34,26 +25,15 @@ export function DeleteProductDialog({
   if (!product) return null;
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete product?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete "{product.name}"? This action cannot
-            be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleDelete}
-            disabled={deleteMutation.isPending}
-            className="bg-destructive text-white hover:bg-destructive/90 dark:text-white"
-          >
-            {deleteMutation.isPending ? "Deleting..." : "Delete"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Delete product?"
+      desc={`Are you sure you want to delete "${product.name}"? This action cannot be undone.`}
+      confirmText={deleteMutation.isPending ? "Deleting..." : "Delete"}
+      destructive
+      handleConfirm={handleDelete}
+      isLoading={deleteMutation.isPending}
+    />
   );
 }
