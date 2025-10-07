@@ -222,4 +222,11 @@ export class EntProduct extends Ent<ProductSelectType> {
       }
     }
   }
+  // -------------------------- helpers --------------------------
+  async setWorkflowInstance(workflowInstanceId: string) {
+    return await this.update({ workflowInstanceId });
+  }
+  async setState(state: ProductSelectType["state"], stateMessage?: string) {
+    return await this.update({ state, stateMessage });
+  }
 }
