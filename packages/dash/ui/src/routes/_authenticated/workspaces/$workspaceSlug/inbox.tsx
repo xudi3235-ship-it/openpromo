@@ -1,8 +1,12 @@
 import { InboxRealtimeEvent, InboxRealtimeEventTypes } from "@shared/inbox";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useCallback } from "react";
 import { Inbox } from "@/components/inbox";
-import { useWorkspaceNotifications } from "@/hooks/useWorkspaceNotifications";
+import {
+  type GenericEvent,
+  useWorkspaceNotifications,
+} from "@/hooks/useWorkspaceNotifications";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/inbox",
@@ -13,8 +17,8 @@ export const Route = createFileRoute(
 function InboxRoute() {
   const { workspaceSlug } = Route.useParams();
   const queryClient = useQueryClient();
-  useWorkspaceNotifications(workspaceSlug, {
-    onEvent: (event) => {
+  const onEvent = useCallback(
+    (event: GenericEvent) => {
       const inboxRealtimeEvent = InboxRealtimeEvent.parse(event);
       if (
         inboxRealtimeEvent.type === InboxRealtimeEventTypes.ConversationUpserted
@@ -47,6 +51,12 @@ function InboxRoute() {
         });
       }
     },
+    [workspaceSlug, queryClient],
+  );
+
+  useWorkspaceNotifications(workspaceSlug, {
+    autoToast: false,
+    onEvent,
   });
 
   return <Inbox />;

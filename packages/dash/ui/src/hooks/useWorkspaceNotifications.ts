@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useNotificationToast } from "./useNotificationToast";
 
-type GenericEvent = {
+export type GenericEvent = {
   type: string;
   message?: unknown;
   timestamp: number;
