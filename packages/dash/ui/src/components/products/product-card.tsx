@@ -52,10 +52,17 @@ export function ProductCard({ product }: ProductCardProps) {
   const createdDate = formatDate(product.createdAt);
   const attachmentCount = product.attachments.length;
 
+  const handleCardClick = () => {
+    // Only open edit modal if no dialogs are currently open
+    if (!deleteDialogOpen && !editModalOpen) {
+      setEditModalOpen(true);
+    }
+  };
+
   return (
     <Card
       className="group overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer border-0 bg-card"
-      onClick={() => setEditModalOpen(true)}
+      onClick={handleCardClick}
     >
       <CardHeader className="p-0">
         <div className="aspect-square bg-muted relative overflow-hidden">
@@ -107,7 +114,10 @@ export function ProductCard({ product }: ProductCardProps) {
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent
+                align="end"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <DropdownMenuItem onSelect={() => setEditModalOpen(true)}>
                   <Pencil className="h-4 w-4 mr-2" />
                   Edit
