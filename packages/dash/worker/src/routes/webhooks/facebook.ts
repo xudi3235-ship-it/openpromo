@@ -93,7 +93,7 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
             });
             const event: InboxRealtimeEvent = {
               type: InboxRealtimeEventTypes.MessageUpserted,
-              timestamp: new Date(timestamp).getTime(),
+              timestamp,
               conversationId: conversation.id,
               message: {
                 id: "", // will not be used by client for edits
@@ -121,7 +121,7 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
             });
             const event: InboxRealtimeEvent = {
               type: InboxRealtimeEventTypes.MessageUpserted,
-              timestamp: new Date(timestamp).getTime(),
+              timestamp,
               conversationId: conversation.id,
               message: {
                 id: "", // not needed for client append correctness
@@ -137,7 +137,7 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
           // conversation bump event
           const conversationEvent: InboxRealtimeEvent = {
             type: InboxRealtimeEventTypes.ConversationUpserted,
-            timestamp: new Date(timestamp).getTime(),
+            timestamp,
             conversationId: conversation.id,
             lastMessageAt: new Date(timestamp),
             platform: Platform.enum.FACEBOOK,

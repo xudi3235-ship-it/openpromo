@@ -96,7 +96,7 @@ export const instagramWebhooksRoute = new Hono<ApiEnv>()
               });
               const event: InboxRealtimeEvent = {
                 type: InboxRealtimeEventTypes.MessageUpserted,
-                timestamp: new Date(timestamp).getTime(),
+                timestamp,
                 conversationId: conversation.id,
                 message: {
                   id: "",
@@ -124,7 +124,7 @@ export const instagramWebhooksRoute = new Hono<ApiEnv>()
               });
               const event: InboxRealtimeEvent = {
                 type: InboxRealtimeEventTypes.MessageUpserted,
-                timestamp: new Date(timestamp).getTime(),
+                timestamp,
                 conversationId: conversation.id,
                 message: {
                   id: "",
@@ -139,7 +139,7 @@ export const instagramWebhooksRoute = new Hono<ApiEnv>()
             }
             const conversationEvent: InboxRealtimeEvent = {
               type: InboxRealtimeEventTypes.ConversationUpserted,
-              timestamp: new Date(timestamp).getTime(),
+              timestamp,
               conversationId: conversation.id,
               lastMessageAt: new Date(timestamp),
               platform: Platform.enum.INSTAGRAM,
