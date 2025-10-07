@@ -16,6 +16,7 @@ import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
 import { zValidator } from "../../../middleware/zod-validator";
 import { connectedAccountsRoute } from "./connected-accounts";
 import { contentRoute } from "./content";
+import { inboxRoute } from "./inbox";
 import { mediaRoute } from "./media";
 import { productsRoute } from "./products";
 import { storageRoute } from "./storage";
@@ -186,6 +187,7 @@ export const workspacesRoute = new Hono<ApiEnv>()
     },
   )
   .route("/:workspaceSlug/connected_accounts", connectedAccountsRoute)
+  .route("/:workspaceSlug/inbox", inboxRoute)
   .route("/:workspaceSlug/media", mediaRoute)
   .route("/:workspaceSlug/storage", storageRoute)
   .route("/:workspaceSlug/team", workspaceTeamRoute)

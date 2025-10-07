@@ -137,3 +137,72 @@ export type IGWebhookPayload = z.infer<typeof IGWebhookPayload>;
 export const MessagePayload = z.union([FBMessagePayload, IGMessagePayload]);
 
 export type MessagePayload = z.infer<typeof MessagePayload>;
+
+// ===== Unified Inbox API/Realtime shared types =====
+
+// Keep platform strings aligned with core connected-account Platform
+export const InboxPlatform = z.enum(["FACEBOOK", "INSTAGRAM", "TIKTOK"]);
+export type InboxPlatform = z.infer<typeof InboxPlatform>;
+
+export const InboxAttachment = z.object({
+  type: z.enum(AllMessageAttachmentTypes),
+  url: z.string(),
+});
+export type InboxAttachment = z.infer<typeof InboxAttachment>;
+
+export const InboxMessageSchema = z.object({
+  id: z.string(),
+  externalId: z.string(),
+  sender: z.enum(["user", "self"]),
+  text: z.string().nullable(),
+  attachments: z.array(InboxAttachment),
+  createdAt: z.coerce.date(),
+});
+export type InboxMessage = z.infer<typeof InboxMessageSchema>;
+
+export const InboxContactSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  profilePicUrl: z.string(),
+});
+export type InboxContact = z.infer<typeof InboxContactSchema>;
+
+export const InboxConnectedAccountSummary = z.object({
+  id: z.string(),
+  accountName: z.string().nullable(),
+});
+export type InboxConnectedAccountSummary = z.infer<
+  typeof InboxConnectedAccountSummary
+>;
+
+export const InboxConversationSummarySchema = z.object({
+  id: z.string(),
+  platform: InboxPlatform,
+  lastMessageAt: z.coerce.date(),
+  contact: InboxContactSchema,
+  connectedAccount: InboxConnectedAccountSummary,
+});
+export type InboxConversationSummary = z.infer<
+  typeof InboxConversationSummarySchema
+>;
+
+// Realtime events over WorkspacePusher
+export const InboxConversationUpsertedEvent = z.object({
+  type: z.literal("inbox.conversation.upserted"),
+  conversationId: z.string(),
+  lastMessageAt: z.coerce.date(),
+  platform: InboxPlatform,
+  contact: InboxContactSchema,
+});
+
+export const InboxMessageUpsertedEvent = z.object({
+  type: z.literal("inbox.message.upserted"),
+  conversationId: z.string(),
+  message: InboxMessageSchema,
+});
+
+export const InboxRealtimeEvent = z.union([
+  InboxConversationUpsertedEvent,
+  InboxMessageUpsertedEvent,
+]);
+export type InboxRealtimeEvent = z.infer<typeof InboxRealtimeEvent>;

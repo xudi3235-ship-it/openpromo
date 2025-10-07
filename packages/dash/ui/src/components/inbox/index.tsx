@@ -6,8 +6,15 @@ import {
 import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Separator } from "@openpromo/ui/components/separator";
+import { Skeleton } from "@openpromo/ui/components/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
   Edit,
@@ -21,49 +28,58 @@ import {
   Send,
   Video,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Fragment } from "react/jsx-runtime";
 import { Main } from "@/components/layout/main";
-import type { ChatUser, Convo } from "./data/chat-types";
-import { conversations } from "./data/convo.json"; // Fake Data
+import { useWorkspaceNotifications } from "@/hooks/useWorkspaceNotifications";
+import { useInboxConversations, useInboxMessages } from "@/queries/inbox";
+import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import { NewChat } from "./new-chat";
 
 export function Inbox() {
+  const { workspaceSlug } = Route.useParams();
   const [search, setSearch] = useState("");
-  const [selectedUser, setSelectedUser] = useState<ChatUser | null>(null);
-  const [mobileSelectedUser, setMobileSelectedUser] = useState<ChatUser | null>(
-    null,
-  );
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(25);
+  const [platformFilter] = useState<
+    "FACEBOOK" | "INSTAGRAM" | "TIKTOK" | undefined
+  >(undefined);
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
+  const [mobileSelectedConversationId, setMobileSelectedConversationId] =
+    useState<string | null>(null);
   const [createConversationDialogOpened, setCreateConversationDialog] =
     useState(false);
 
-  // Filtered data based on the search query
-  const filteredChatList = conversations.filter(({ fullName }) =>
-    fullName.toLowerCase().includes(search.trim().toLowerCase()),
-  );
-
-  const currentMessage = selectedUser?.messages.reduce(
-    (acc: Record<string, Convo[]>, obj) => {
-      const key = format(obj.timestamp, "d MMM, yyyy");
-
-      // Create an array for the category if it doesn't exist
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-
-      // Push the current object to the array
-      acc[key].push(obj);
-
-      return acc;
+  const { data: convoData, isLoading: isConvosLoading } = useInboxConversations(
+    workspaceSlug,
+    {
+      page,
+      pageSize,
+      q: search.trim() || undefined,
+      platform: platformFilter,
     },
-    {},
+  );
+  const conversationsList = convoData?.items ?? [];
+  const selectedConversation = useMemo(
+    () =>
+      conversationsList.find((c) => c.id === selectedConversationId) || null,
+    [conversationsList, selectedConversationId],
   );
 
-  const users = conversations.map(({ messages, ...user }) => user);
+  const { data: messagesData, isLoading: isMessagesLoading } = useInboxMessages(
+    workspaceSlug,
+    selectedConversationId ?? undefined,
+    { page: 1, pageSize: 50 },
+  );
+  const messages = messagesData?.items ?? [];
+
+  useWorkspaceNotifications(workspaceSlug);
 
   return (
     <Main fixed>
-      <section className="flex h-full gap-6">
+      <section className="flex min-h-0 flex-1 gap-6">
         {/* Left Side */}
         <div className="flex w-full flex-col gap-2 sm:w-56 lg:w-72 2xl:w-80">
           <div className="bg-background sticky top-0 z-10 -mx-4 px-4 pb-3 shadow-md sm:static sm:z-auto sm:mx-0 sm:p-0 sm:shadow-none">
@@ -96,19 +112,28 @@ export function Inbox() {
                 className="w-full flex-1 bg-inherit text-sm focus-visible:outline-hidden"
                 placeholder="Search chat..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearch(e.target.value);
+                }}
               />
             </label>
           </div>
 
           <ScrollArea className="-mx-3 h-full overflow-scroll p-3">
-            {filteredChatList.map((chatUsr) => {
-              const { id, profile, username, messages, fullName } = chatUsr;
-              const lastConvo = messages[0];
-              const lastMsg =
-                lastConvo.sender === "You"
-                  ? `You: ${lastConvo.message}`
-                  : lastConvo.message;
+            {isConvosLoading && (
+              <div className="space-y-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            )}
+            {conversationsList.map((convo) => {
+              const { id, contact } = convo;
+              const lastMsg = format(
+                new Date(convo.lastMessageAt),
+                "d MMM, yyyy h:mm a",
+              );
               return (
                 <Fragment key={id}>
                   <button
@@ -116,21 +141,24 @@ export function Inbox() {
                     className={cn(
                       "group hover:bg-accent hover:text-accent-foreground",
                       `flex w-full rounded-md px-2 py-2 text-start text-sm`,
-                      selectedUser?.id === id && "sm:bg-muted",
+                      selectedConversationId === id && "sm:bg-muted",
                     )}
                     onClick={() => {
-                      setSelectedUser(chatUsr);
-                      setMobileSelectedUser(chatUsr);
+                      setSelectedConversationId(id);
+                      setMobileSelectedConversationId(id);
                     }}
                   >
                     <div className="flex gap-2">
                       <Avatar>
-                        <AvatarImage src={profile} alt={username} />
-                        <AvatarFallback>{username}</AvatarFallback>
+                        <AvatarImage
+                          src={contact.profilePicUrl}
+                          alt={contact.name}
+                        />
+                        <AvatarFallback>{contact.name}</AvatarFallback>
                       </Avatar>
                       <div>
                         <span className="col-start-2 row-span-2 font-medium">
-                          {fullName}
+                          {contact.name}
                         </span>
                         <span className="text-muted-foreground group-hover:text-accent-foreground/90 col-start-2 row-span-2 row-start-2 line-clamp-2 text-ellipsis">
                           {lastMsg}
@@ -146,11 +174,11 @@ export function Inbox() {
         </div>
 
         {/* Right Side */}
-        {selectedUser ? (
+        {selectedConversation ? (
           <div
             className={cn(
-              "bg-background absolute inset-0 start-full z-50 hidden w-full flex-1 flex-col border shadow-xs sm:static sm:z-auto sm:flex sm:rounded-md",
-              mobileSelectedUser && "start-0 flex",
+              "bg-background absolute inset-0 start-full z-50 hidden w-full flex-1 min-h-0 flex-col border shadow-xs sm:static sm:z-auto sm:flex sm:rounded-md",
+              mobileSelectedConversationId && "start-0 flex",
             )}
           >
             {/* Top Part */}
@@ -161,24 +189,23 @@ export function Inbox() {
                   size="icon"
                   variant="ghost"
                   className="-ms-2 h-full sm:hidden"
-                  onClick={() => setMobileSelectedUser(null)}
+                  onClick={() => setMobileSelectedConversationId(null)}
                 >
                   <ArrowLeft className="rtl:rotate-180" />
                 </Button>
                 <div className="flex items-center gap-2 lg:gap-4">
                   <Avatar className="size-9 lg:size-11">
                     <AvatarImage
-                      src={selectedUser.profile}
-                      alt={selectedUser.username}
+                      src={selectedConversation.contact.profilePicUrl}
+                      alt={selectedConversation.contact.name}
                     />
-                    <AvatarFallback>{selectedUser.username}</AvatarFallback>
+                    <AvatarFallback>
+                      {selectedConversation.contact.name}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
                     <span className="col-start-2 row-span-2 text-sm font-medium lg:text-base">
-                      {selectedUser.fullName}
-                    </span>
-                    <span className="text-muted-foreground col-start-2 row-span-2 row-start-2 line-clamp-1 block max-w-32 text-xs text-nowrap text-ellipsis lg:max-w-none lg:text-sm">
-                      {selectedUser.title}
+                      {selectedConversation.contact.name}
                     </span>
                   </div>
                 </div>
@@ -211,38 +238,67 @@ export function Inbox() {
             </div>
 
             {/* Conversation */}
-            <div className="flex flex-1 flex-col gap-2 rounded-md px-4 pt-0 pb-4">
-              <div className="flex size-full flex-1">
-                <div className="chat-text-container relative -me-4 flex flex-1 flex-col overflow-y-hidden">
-                  <div className="chat-flex flex h-40 w-full grow flex-col-reverse justify-start gap-4 overflow-y-auto py-2 pe-4 pb-4">
-                    {currentMessage &&
-                      Object.keys(currentMessage).map((key) => (
-                        <Fragment key={key}>
-                          {currentMessage[key].map((msg, index) => (
-                            <div
-                              key={`${msg.sender}-${msg.timestamp}-${index}`}
-                              className={cn(
-                                "chat-box max-w-72 px-3 py-2 break-words shadow-lg",
-                                msg.sender === "You"
-                                  ? "bg-primary/90 text-primary-foreground/75 self-end rounded-[16px_16px_0_16px]"
-                                  : "bg-muted self-start rounded-[16px_16px_16px_0]",
-                              )}
-                            >
-                              {msg.message}{" "}
+            <div className="flex flex-1 min-h-0 flex-col gap-2 rounded-md px-4 pt-0 pb-4">
+              <div className="flex size-full flex-1 min-h-0">
+                <div className="chat-text-container relative -me-4 flex flex-1 min-h-0 flex-col overflow-y-hidden">
+                  <div className="chat-flex flex w-full flex-1 min-h-0 flex-col-reverse justify-start gap-4 overflow-y-auto py-2 pe-4 pb-4">
+                    {isMessagesLoading && (
+                      <div className="space-y-2 w-full">
+                        <Skeleton className="h-10 w-2/3 self-start" />
+                        <Skeleton className="h-10 w-1/2 self-end" />
+                        <Skeleton className="h-10 w-2/5 self-start" />
+                      </div>
+                    )}
+                    {messages.map((msg) => (
+                      <div
+                        key={msg.id + msg.externalId}
+                        className={cn(
+                          "chat-box max-w-72 px-3 py-2 break-words shadow-lg",
+                          msg.sender === "self"
+                            ? "bg-primary/90 text-primary-foreground/75 self-end rounded-[16px_16px_0_16px]"
+                            : "bg-muted self-start rounded-[16px_16px_16px_0]",
+                        )}
+                      >
+                        {msg.text ||
+                          (!msg.attachments?.length && <UnsupportedMessage />)}
+                        {msg.attachments?.length ? (
+                          <div className="mt-2 space-y-2">
+                            {msg.attachments.map((att) => (
+                              <AttachmentPreview
+                                key={att.url}
+                                type={att.type}
+                                url={att.url}
+                              />
+                            ))}
+                          </div>
+                        ) : null}
+                        <TooltipProvider>
+                          <Tooltip delayDuration={200}>
+                            <TooltipTrigger asChild>
                               <span
                                 className={cn(
-                                  "text-foreground/75 mt-1 block text-xs font-light italic",
-                                  msg.sender === "You" &&
+                                  "text-foreground/75 mt-1 block text-xs font-light italic w-fit",
+                                  msg.sender === "self" &&
                                     "text-primary-foreground/85 text-end",
                                 )}
                               >
-                                {format(msg.timestamp, "h:mm a")}
+                                {formatDistanceToNow(new Date(msg.createdAt), {
+                                  addSuffix: true,
+                                })}
                               </span>
-                            </div>
-                          ))}
-                          <div className="text-center text-xs">{key}</div>
-                        </Fragment>
-                      ))}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {format(new Date(msg.createdAt), "PPpp")}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    ))}
+                    {!isMessagesLoading && messages.length === 0 && (
+                      <div className="text-center text-sm text-muted-foreground w-full">
+                        No messages yet.
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -286,17 +342,19 @@ export function Inbox() {
                       type="text"
                       placeholder="Type your messages..."
                       className="h-8 w-full bg-inherit focus-visible:outline-hidden"
+                      disabled
                     />
                   </label>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="hidden sm:inline-flex"
+                    disabled
                   >
                     <Send size={20} />
                   </Button>
                 </div>
-                <Button className="h-full sm:hidden">
+                <Button className="h-full sm:hidden" disabled>
                   <Send size={18} /> Send
                 </Button>
               </form>
@@ -326,10 +384,46 @@ export function Inbox() {
         )}
       </section>
       <NewChat
-        users={users}
+        users={[]}
         onOpenChange={setCreateConversationDialog}
         open={createConversationDialogOpened}
       />
     </Main>
+  );
+}
+
+function AttachmentPreview({ type, url }: { type: string; url: string }) {
+  if (type === "image") {
+    return (
+      <img
+        src={url}
+        alt="attachment"
+        className="max-h-60 max-w-[18rem] rounded"
+        loading="lazy"
+      />
+    );
+  }
+  if (type === "video") {
+    return (
+      <video src={url} controls className="max-h-60 max-w-[18rem] rounded" />
+    );
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="underline text-primary break-all"
+    >
+      View attachment
+    </a>
+  );
+}
+
+function UnsupportedMessage() {
+  return (
+    <div className="italic">
+      Unsupported message type. View it on the source platform.
+    </div>
   );
 }

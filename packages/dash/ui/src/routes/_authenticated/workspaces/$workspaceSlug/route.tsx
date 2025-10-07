@@ -82,7 +82,7 @@ function WorkspaceComponent() {
       {shouldShowAccountsBar && (
         <WorkspaceConnectedAccountsBar className="mx-4 mt-4" />
       )}
-      <div className="flex-1 h-full p-4">
+      <div className="flex flex-col flex-1 min-h-0 p-4">
         <Outlet />
       </div>
     </div>

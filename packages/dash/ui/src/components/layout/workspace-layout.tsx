@@ -31,7 +31,7 @@ export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
             "@container/content",
           )}
         >
-          <div className="flex-1">{children ?? <Outlet />}</div>
+          <div className="flex-1 min-h-0">{children ?? <Outlet />}</div>
         </SidebarInset>
       </LayoutProvider>
     </SidebarProvider>

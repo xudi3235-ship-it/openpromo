@@ -1,10 +1,11 @@
 import { instagramOAuthService } from "@core/domain/connected-account";
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { InboxService } from "@core/domain/inbox";
+import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Platform } from "@core/schemas/connected-account.sql";
 import { env } from "@core/utils/env";
-import type { IGWebhookPayload } from "@shared/inbox";
+import type { IGWebhookPayload, InboxRealtimeEvent } from "@shared/inbox";
 import { Hono } from "hono";
 import { AppError } from "../../helpers/error";
 import { verifyMetaWebhookSignature } from "../../middleware/verify-meta-webhook-signature";
@@ -89,6 +90,19 @@ export const instagramWebhooksRoute = new Hono<ApiEnv>()
                 payload: messaging,
                 sender: message?.is_echo ? "self" : "user",
               });
+              const event: InboxRealtimeEvent = {
+                type: "inbox.message.upserted",
+                conversationId: conversation.id,
+                message: {
+                  id: "",
+                  externalId: message_edit.mid,
+                  sender: message?.is_echo ? "self" : "user",
+                  text: message_edit.text,
+                  attachments: [],
+                  createdAt: new Date(timestamp),
+                },
+              };
+              await dispatchWorkspaceEvent(account.workspaceId, event);
             } else if (message) {
               const attachments = (message.attachments || []).map((a) => ({
                 type: a.type,
@@ -103,7 +117,35 @@ export const instagramWebhooksRoute = new Hono<ApiEnv>()
                 payload: messaging,
                 sender: message.is_echo ? "self" : "user",
               });
+              const event: InboxRealtimeEvent = {
+                type: "inbox.message.upserted",
+                conversationId: conversation.id,
+                message: {
+                  id: "",
+                  externalId: message.mid,
+                  sender: message.is_echo ? "self" : "user",
+                  text: message.text ?? null,
+                  attachments,
+                  createdAt: new Date(timestamp),
+                },
+              };
+              await dispatchWorkspaceEvent(account.workspaceId, event);
             }
+            const conversationEvent: InboxRealtimeEvent = {
+              type: "inbox.conversation.upserted",
+              conversationId: conversation.id,
+              lastMessageAt: new Date(timestamp),
+              platform: Platform.enum.INSTAGRAM,
+              contact: {
+                id: contact.id,
+                name: contact.name,
+                profilePicUrl: contact.profilePicUrl,
+              },
+            };
+            await dispatchWorkspaceEvent(
+              account.workspaceId,
+              conversationEvent,
+            );
           }
         }
         return c.status(200);

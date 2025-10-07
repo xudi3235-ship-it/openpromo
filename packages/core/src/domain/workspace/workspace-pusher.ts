@@ -133,6 +133,15 @@ export class WorkspacePusher extends Pusher {
     );
   }
 
+  sendEvent(event: unknown) {
+    try {
+      const payload = JSON.stringify(event);
+      this.sendMessageToAllUsers(payload);
+    } catch (error) {
+      console.error("Failed to serialize event for sendEvent", error);
+    }
+  }
+
   async sendNotification(notification: WorkspaceNotification) {
     const payload = {
       type: "notification" as const,
