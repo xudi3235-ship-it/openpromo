@@ -14,8 +14,6 @@ import {
   TooltipTrigger,
 } from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
-import { InboxRealtimeEvent, InboxRealtimeEventTypes } from "@shared/inbox";
-import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
@@ -33,14 +31,12 @@ import {
 import { useMemo, useState } from "react";
 import { Fragment } from "react/jsx-runtime";
 import { Main } from "@/components/layout/main";
-import { useWorkspaceNotifications } from "@/hooks/useWorkspaceNotifications";
 import { useInboxConversations, useInboxMessages } from "@/queries/inbox";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import { NewChat } from "./new-chat";
 
 export function Inbox() {
   const { workspaceSlug } = Route.useParams();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
@@ -77,42 +73,6 @@ export function Inbox() {
     { page: 1, pageSize: 50 },
   );
   const messages = messagesData?.items ?? [];
-
-  useWorkspaceNotifications(workspaceSlug, {
-    onEvent: (event) => {
-      const inboxRealtimeEvent = InboxRealtimeEvent.parse(event);
-      if (
-        inboxRealtimeEvent.type === InboxRealtimeEventTypes.ConversationUpserted
-      ) {
-        queryClient.invalidateQueries({
-          predicate: (q) => {
-            const key = q.queryKey as unknown[];
-            return (
-              Array.isArray(key) &&
-              key[0] === "inbox" &&
-              key[1] === "conversations" &&
-              key[2] === workspaceSlug
-            );
-          },
-        });
-      } else if (
-        inboxRealtimeEvent.type === InboxRealtimeEventTypes.MessageUpserted
-      ) {
-        queryClient.invalidateQueries({
-          predicate: (q) => {
-            const key = q.queryKey as unknown[];
-            return (
-              Array.isArray(key) &&
-              key[0] === "inbox" &&
-              key[1] === "messages" &&
-              key[2] === workspaceSlug &&
-              key[3] === inboxRealtimeEvent.conversationId
-            );
-          },
-        });
-      }
-    },
-  });
 
   return (
     <Main fixed>
