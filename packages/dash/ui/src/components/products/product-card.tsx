@@ -20,6 +20,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [editModalOpen, setEditModalOpen] = React.useState(false);
+  const dialogJustClosedRef = React.useRef(false);
   const primaryAttachment = product.attachments.find(
     (a) => a.id === product.primaryAttachmentId,
   );
@@ -53,10 +54,27 @@ export function ProductCard({ product }: ProductCardProps) {
   const attachmentCount = product.attachments.length;
 
   const handleCardClick = () => {
+    // Prevent reopening if dialog just closed
+    if (dialogJustClosedRef.current) {
+      dialogJustClosedRef.current = false;
+      return;
+    }
+
     // Only open edit modal if no dialogs are currently open
     if (!deleteDialogOpen && !editModalOpen) {
       setEditModalOpen(true);
     }
+  };
+
+  const handleEditModalChange = (open: boolean) => {
+    if (!open) {
+      dialogJustClosedRef.current = true;
+      // Reset the flag after a short delay
+      setTimeout(() => {
+        dialogJustClosedRef.current = false;
+      }, 100);
+    }
+    setEditModalOpen(open);
   };
 
   return (
@@ -193,7 +211,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       <CreateProductModal
         open={editModalOpen}
-        onOpenChange={setEditModalOpen}
+        onOpenChange={handleEditModalChange}
         product={product}
       />
 
