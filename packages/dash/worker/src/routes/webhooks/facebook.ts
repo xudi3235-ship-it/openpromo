@@ -5,7 +5,11 @@ import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Platform } from "@core/schemas/connected-account.sql";
 import { env } from "@core/utils/env";
-import type { FBWebhookPayload, InboxRealtimeEvent } from "@shared/inbox";
+import {
+  type FBWebhookPayload,
+  type InboxRealtimeEvent,
+  InboxRealtimeEventTypes,
+} from "@shared/inbox";
 import { Hono } from "hono";
 import { AppError } from "../../helpers/error";
 import { verifyMetaWebhookSignature } from "../../middleware/verify-meta-webhook-signature";
@@ -88,7 +92,8 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
               sender: message?.is_echo ? "self" : "user",
             });
             const event: InboxRealtimeEvent = {
-              type: "inbox.message.upserted",
+              type: InboxRealtimeEventTypes.MessageUpserted,
+              timestamp: new Date(timestamp).getTime(),
               conversationId: conversation.id,
               message: {
                 id: "", // will not be used by client for edits
@@ -115,7 +120,8 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
               sender: message.is_echo ? "self" : "user",
             });
             const event: InboxRealtimeEvent = {
-              type: "inbox.message.upserted",
+              type: InboxRealtimeEventTypes.MessageUpserted,
+              timestamp: new Date(timestamp).getTime(),
               conversationId: conversation.id,
               message: {
                 id: "", // not needed for client append correctness
@@ -130,7 +136,8 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
           }
           // conversation bump event
           const conversationEvent: InboxRealtimeEvent = {
-            type: "inbox.conversation.upserted",
+            type: InboxRealtimeEventTypes.ConversationUpserted,
+            timestamp: new Date(timestamp).getTime(),
             conversationId: conversation.id,
             lastMessageAt: new Date(timestamp),
             platform: Platform.enum.FACEBOOK,

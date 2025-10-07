@@ -186,19 +186,26 @@ export type InboxConversationSummary = z.infer<
   typeof InboxConversationSummarySchema
 >;
 
+export enum InboxRealtimeEventTypes {
+  ConversationUpserted = "inbox.conversation.upserted",
+  MessageUpserted = "inbox.message.upserted",
+}
+
 // Realtime events over WorkspacePusher
 export const InboxConversationUpsertedEvent = z.object({
-  type: z.literal("inbox.conversation.upserted"),
+  type: z.literal(InboxRealtimeEventTypes.ConversationUpserted),
   conversationId: z.string(),
   lastMessageAt: z.coerce.date(),
   platform: InboxPlatform,
   contact: InboxContactSchema,
+  timestamp: z.number(),
 });
 
 export const InboxMessageUpsertedEvent = z.object({
-  type: z.literal("inbox.message.upserted"),
+  type: z.literal(InboxRealtimeEventTypes.MessageUpserted),
   conversationId: z.string(),
   message: InboxMessageSchema,
+  timestamp: z.number(),
 });
 
 export const InboxRealtimeEvent = z.union([

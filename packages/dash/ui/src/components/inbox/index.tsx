@@ -14,6 +14,8 @@ import {
   TooltipTrigger,
 } from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
+import { InboxRealtimeEvent, InboxRealtimeEventTypes } from "@shared/inbox";
+import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
@@ -38,6 +40,7 @@ import { NewChat } from "./new-chat";
 
 export function Inbox() {
   const { workspaceSlug } = Route.useParams();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
@@ -75,7 +78,41 @@ export function Inbox() {
   );
   const messages = messagesData?.items ?? [];
 
-  useWorkspaceNotifications(workspaceSlug);
+  useWorkspaceNotifications(workspaceSlug, {
+    onEvent: (event) => {
+      const inboxRealtimeEvent = InboxRealtimeEvent.parse(event);
+      if (
+        inboxRealtimeEvent.type === InboxRealtimeEventTypes.ConversationUpserted
+      ) {
+        queryClient.invalidateQueries({
+          predicate: (q) => {
+            const key = q.queryKey as unknown[];
+            return (
+              Array.isArray(key) &&
+              key[0] === "inbox" &&
+              key[1] === "conversations" &&
+              key[2] === workspaceSlug
+            );
+          },
+        });
+      } else if (
+        inboxRealtimeEvent.type === InboxRealtimeEventTypes.MessageUpserted
+      ) {
+        queryClient.invalidateQueries({
+          predicate: (q) => {
+            const key = q.queryKey as unknown[];
+            return (
+              Array.isArray(key) &&
+              key[0] === "inbox" &&
+              key[1] === "messages" &&
+              key[2] === workspaceSlug &&
+              key[3] === inboxRealtimeEvent.conversationId
+            );
+          },
+        });
+      }
+    },
+  });
 
   return (
     <Main fixed>
