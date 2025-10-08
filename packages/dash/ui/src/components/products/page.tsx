@@ -86,7 +86,12 @@ export function ProductsPage() {
             className="pl-9"
           />
         </div>
-        <Select value={source} onValueChange={setSource}>
+        <Select
+          value={source ?? "__all__"}
+          onValueChange={(value) =>
+            setSource(value === "__all__" ? undefined : value)
+          }
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="All sources" />
           </SelectTrigger>
