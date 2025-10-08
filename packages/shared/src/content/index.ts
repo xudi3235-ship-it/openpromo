@@ -176,3 +176,72 @@ export const PlacementSpec = z.discriminatedUnion("placement", [
 ]);
 
 export type PlacementSpec = z.infer<typeof PlacementSpec>;
+
+// ----------------------------------------------------------------
+// validation layer
+// ----------------------------------------------------------------
+
+function hasAttachments(spec: BasePlacementSpec) {
+  return spec.attachments && spec.attachments.length > 0;
+}
+function hasPhoto(spec: BasePlacementSpec) {
+  return spec.attachments?.some((att) => att.type === "photo");
+}
+function hasVideo(spec: BasePlacementSpec) {
+  return spec.attachments?.some((att) => att.type === "video");
+}
+function hasPhotoAndVideo(spec: BasePlacementSpec) {
+  return hasPhoto(spec) && hasVideo(spec);
+}
+
+export const FBFeedValidationSpec = FBFeedPlacementSpec.superRefine(
+  (data, ctx) => {
+    if (!hasAttachments(data)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "At least one attachment is required for FB Feed posts.",
+      });
+    }
+    if (data.attachments && data.attachments.length > 10) {
+      ctx.addIssue({
+        code: "custom",
+        message: "A maximum of 10 attachments are allowed for FB Feed posts.",
+      });
+    }
+  },
+);
+
+export const IGFeedValidationSpec = IGFeedPlacementSpec.superRefine(
+  (data, ctx) => {
+    if (!hasAttachments(data)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "At least one attachment is required for IG Feed posts.",
+      });
+    }
+    if (data.attachments && data.attachments.length > 10) {
+      ctx.addIssue({
+        code: "custom",
+        message: "A maximum of 10 attachments are allowed for IG Feed posts.",
+      });
+    }
+  },
+);
+
+export const TikTokFeedValidationSpec = TikTokFeedPlacementSpec.superRefine(
+  (data, ctx) => {
+    if (!hasAttachments(data)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "At least one attachment is required for TikTok posts.",
+      });
+    }
+    if (hasPhotoAndVideo(data)) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Cannot have both photo and video attachments for TikTok posts.",
+      });
+    }
+  },
+);

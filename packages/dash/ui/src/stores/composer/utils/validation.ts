@@ -1,3 +1,8 @@
+import {
+  FBFeedValidationSpec,
+  IGFeedValidationSpec,
+  TikTokFeedValidationSpec,
+} from "@shared/content";
 import type { Draft } from "immer";
 import type {
   ComposerState,
@@ -11,6 +16,7 @@ export const validateComposerState = (
 ): ValidationState => {
   const errors: ValidationError[] = [];
 
+  // Account selection validation
   if (state.selectedAccounts.length === 0) {
     errors.push({
       type: "no_accounts",
@@ -20,6 +26,7 @@ export const validateComposerState = (
     });
   }
 
+  // Base message validation
   if (!state.contentCreateData.base.message?.trim()) {
     errors.push({
       type: "no_message",
@@ -29,15 +36,7 @@ export const validateComposerState = (
     });
   }
 
-  if (!state.contentCreateData.base.attachments?.length) {
-    errors.push({
-      type: "no_media",
-      message: "Add at least one photo or video to your post",
-      severity: "warning",
-      field: "media",
-    });
-  }
-
+  // Upload status validation
   const hasPendingUploads = state.contentCreateData.base.attachments?.some(
     (att) =>
       att.metadata &&
@@ -70,6 +69,7 @@ export const validateComposerState = (
     });
   }
 
+  // Scheduling validation
   if (state.contentCreateData.base.publishingStatus === "SCHEDULED") {
     const publishAt = state.contentCreateData.base.schedulingSpec?.publishAt;
     if (!publishAt || new Date(publishAt) <= new Date()) {
@@ -82,16 +82,7 @@ export const validateComposerState = (
     }
   }
 
-  const attachmentCount = state.contentCreateData.base.attachments?.length || 0;
-  if (attachmentCount > 10) {
-    errors.push({
-      type: "platform_limit_exceeded",
-      message: "Too many attachments. Maximum 10 files allowed",
-      severity: "error",
-      field: "media",
-    });
-  }
-
+  // File size validation
   const hasOversizedFiles = state.contentCreateData.base.attachments?.some(
     (att) => {
       if (!att.file) return false;
@@ -108,6 +99,54 @@ export const validateComposerState = (
       severity: "error",
       field: "media",
     });
+  }
+
+  // Platform-specific validation using Zod schemas
+  // Validate Facebook Feed placements
+  for (const placement of state.contentCreateData.placements.facebookFeed ||
+    []) {
+    const result = FBFeedValidationSpec.safeParse(placement);
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        errors.push({
+          type: "platform_limit_exceeded",
+          message: `Facebook: ${issue.message}`,
+          severity: "error",
+          field: "media",
+        });
+      }
+    }
+  }
+
+  // Validate Instagram Feed placements
+  for (const placement of state.contentCreateData.placements.instagramFeed ||
+    []) {
+    const result = IGFeedValidationSpec.safeParse(placement);
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        errors.push({
+          type: "platform_limit_exceeded",
+          message: `Instagram: ${issue.message}`,
+          severity: "error",
+          field: "media",
+        });
+      }
+    }
+  }
+
+  // Validate TikTok Feed placements
+  for (const placement of state.contentCreateData.placements.tiktokFeed || []) {
+    const result = TikTokFeedValidationSpec.safeParse(placement);
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        errors.push({
+          type: "platform_limit_exceeded",
+          message: `TikTok: ${issue.message}`,
+          severity: "error",
+          field: "media",
+        });
+      }
+    }
   }
 
   const hasErrors = errors.some((error) => error.severity === "error");
