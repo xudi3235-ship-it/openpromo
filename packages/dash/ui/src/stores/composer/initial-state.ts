@@ -5,7 +5,7 @@ import type {
 } from "@shared/content";
 import type { ComposerProps, ComposerState } from "./types";
 import { createInitialSnapshot } from "./utils/snapshot";
-import { validateComposerState } from "./utils/validation";
+import { validateComposerState } from "./utils/validation/index";
 
 const DEFAULT_PROPS: ComposerProps = {
   initialAccounts: [],
