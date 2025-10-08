@@ -12,7 +12,7 @@ export const likesColumn: ColumnDef<MergedContentEntity> = {
       tooltip="Total likes and reactions on published content"
       className="cursor-help"
     >
-      Likes
+      Likes & Reactions
     </ColumnHeaderWithTooltip>
   ),
   cell: ({ row }) => {
