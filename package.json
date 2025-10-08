@@ -1,7 +1,7 @@
 {
   "name": "openpromo",
   "version": "0.0.0",
-  "packageManager": "pnpm@10.18.0",
+  "packageManager": "pnpm@10.18.1",
   "scripts": {
     "dev": "sst dev",
     "check": "biome check --write --diagnostic-level=warn",
