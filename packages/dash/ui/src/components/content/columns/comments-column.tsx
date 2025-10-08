@@ -1,18 +1,18 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { Eye } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 import { formatNumber } from "./utils";
 
-export const reachColumn: ColumnDef<MergedContentEntity> = {
-  accessorKey: "reach",
+export const commentsColumn: ColumnDef<MergedContentEntity> = {
+  accessorKey: "comments",
   header: () => (
     <ColumnHeaderWithTooltip
-      tooltip="Number of unique accounts reached"
+      tooltip="Total comments on published content"
       className="cursor-help"
     >
-      Reach
+      Comments
     </ColumnHeaderWithTooltip>
   ),
   cell: ({ row }) => {
@@ -21,12 +21,12 @@ export const reachColumn: ColumnDef<MergedContentEntity> = {
     return matchEntity(entity, {
       content: () => {
         // TODO: replace with api
-        const reach = 0;
+        const comments = 0;
 
         return (
           <div className="flex items-center space-x-1.5 text-sm text-gray-600 dark:text-gray-400">
-            <Eye className="w-4 h-4" />
-            <span>{formatNumber(reach)}</span>
+            <MessageCircle className="w-4 h-4" />
+            <span>{formatNumber(comments)}</span>
           </div>
         );
       },

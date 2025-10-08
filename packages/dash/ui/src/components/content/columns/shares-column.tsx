@@ -1,18 +1,18 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { Eye } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 import { formatNumber } from "./utils";
 
-export const reachColumn: ColumnDef<MergedContentEntity> = {
-  accessorKey: "reach",
+export const sharesColumn: ColumnDef<MergedContentEntity> = {
+  accessorKey: "shares",
   header: () => (
     <ColumnHeaderWithTooltip
-      tooltip="Number of unique accounts reached"
+      tooltip="Total shares and reposts of published content"
       className="cursor-help"
     >
-      Reach
+      Shares
     </ColumnHeaderWithTooltip>
   ),
   cell: ({ row }) => {
@@ -21,12 +21,12 @@ export const reachColumn: ColumnDef<MergedContentEntity> = {
     return matchEntity(entity, {
       content: () => {
         // TODO: replace with api
-        const reach = 0;
+        const shares = 0;
 
         return (
           <div className="flex items-center space-x-1.5 text-sm text-gray-600 dark:text-gray-400">
-            <Eye className="w-4 h-4" />
-            <span>{formatNumber(reach)}</span>
+            <Share2 className="w-4 h-4" />
+            <span>{formatNumber(shares)}</span>
           </div>
         );
       },
