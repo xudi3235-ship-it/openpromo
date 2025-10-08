@@ -20,7 +20,6 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [editModalOpen, setEditModalOpen] = React.useState(false);
-  const dialogJustClosedRef = React.useRef(false);
   const primaryAttachment = product.attachments.find(
     (a) => a.id === product.primaryAttachmentId,
   );
@@ -54,27 +53,10 @@ export function ProductCard({ product }: ProductCardProps) {
   const attachmentCount = product.attachments.length;
 
   const handleCardClick = () => {
-    // Prevent reopening if dialog just closed
-    if (dialogJustClosedRef.current) {
-      dialogJustClosedRef.current = false;
-      return;
-    }
-
     // Only open edit modal if no dialogs are currently open
     if (!deleteDialogOpen && !editModalOpen) {
       setEditModalOpen(true);
     }
-  };
-
-  const handleEditModalChange = (open: boolean) => {
-    if (!open) {
-      dialogJustClosedRef.current = true;
-      // Reset the flag after a short delay
-      setTimeout(() => {
-        dialogJustClosedRef.current = false;
-      }, 100);
-    }
-    setEditModalOpen(open);
   };
 
   return (
@@ -100,7 +82,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
 
           {/* Top badges */}
-          <div className="absolute top-2 left-2 right-2 flex items-start justify-between gap-2">
+          <div className="absolute top-2 left-2 flex flex-col gap-1.5">
             <Badge
               className={`text-[10px] px-2 py-0.5 font-medium backdrop-blur-sm ${
                 product.source
@@ -211,7 +193,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       <CreateProductModal
         open={editModalOpen}
-        onOpenChange={handleEditModalChange}
+        onOpenChange={setEditModalOpen}
         product={product}
       />
 
