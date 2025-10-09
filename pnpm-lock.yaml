@@ -19,8 +19,8 @@ catalogs:
       specifier: ^5.0.0
       version: 5.0.0
     drizzle-orm:
-      specifier: ^0.44.4
-      version: 0.44.4
+      specifier: ^0.44.6
+      version: 0.44.6
     hono:
       specifier: ^4.9.7
       version: 4.9.7
@@ -132,10 +132,10 @@ importers:
         version: 1.0.2
       drizzle-orm:
         specifier: 'catalog:'
-        version: 0.44.4(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7)
+        version: 0.44.6(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7)
       drizzle-zod:
         specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.44.4(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7))(zod@4.1.0)
+        version: 0.8.3(drizzle-orm@0.44.6(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7))(zod@4.1.0)
       facebook-nodejs-business-sdk:
         specifier: ^23.0.1
         version: 23.0.1
@@ -253,7 +253,7 @@ importers:
         version: 4.1.0
       drizzle-orm:
         specifier: 'catalog:'
-        version: 0.44.4(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7)
+        version: 0.44.6(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7)
       framer-motion:
         specifier: ^12.23.12
         version: 12.23.12(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -475,7 +475,7 @@ importers:
         version: 7.66.0(express@5.1.0)
       drizzle-orm:
         specifier: 'catalog:'
-        version: 0.44.4(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7)
+        version: 0.44.6(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7)
       hono:
         specifier: 'catalog:'
         version: 4.9.7
@@ -5233,8 +5233,8 @@ packages:
     resolution: {integrity: sha512-tCPWVZWZqWVx2XUsVpJRnH9Mx0ClVOf5YUHerZ5so1OKSlqww4zy1R5ksEdGRcO3tM3zj0PYN6V48TbQCL1RfA==}
     hasBin: true
 
-  drizzle-orm@0.44.4:
-    resolution: {integrity: sha512-ZyzKFpTC/Ut3fIqc2c0dPZ6nhchQXriTsqTNs4ayRgl6sZcFlMs9QZKPSHXK4bdOf41GHGWf+FrpcDDYwW+W6Q==}
+  drizzle-orm@0.44.6:
+    resolution: {integrity: sha512-uy6uarrrEOc9K1u5/uhBFJbdF5VJ5xQ/Yzbecw3eAYOunv5FDeYkR2m8iitocdHBOHbvorviKOW5GVw0U1j4LQ==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
       '@cloudflare/workers-types': '>=4'
@@ -13546,7 +13546,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.44.4(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7):
+  drizzle-orm@0.44.6(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20250903.0
       '@neondatabase/serverless': 1.0.1
@@ -13557,9 +13557,9 @@ snapshots:
       pg: 8.16.3
       postgres: 3.4.7
 
-  drizzle-zod@0.8.3(drizzle-orm@0.44.4(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7))(zod@4.1.0):
+  drizzle-zod@0.8.3(drizzle-orm@0.44.6(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7))(zod@4.1.0):
     dependencies:
-      drizzle-orm: 0.44.4(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7)
+      drizzle-orm: 0.44.6(@cloudflare/workers-types@4.20250903.0)(@neondatabase/serverless@1.0.1)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.15.5)(kysely@0.28.4)(pg@8.16.3)(postgres@3.4.7)
       zod: 4.1.0
 
   dset@3.1.4: {}
