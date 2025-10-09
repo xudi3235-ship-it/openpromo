@@ -5,7 +5,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
-import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import { useConnectedAccounts } from "@/queries/connected-account";
 import { useContentGroupQuery } from "@/queries/content";
 import type { ComposerProps } from "@/stores/composer-store";
@@ -14,8 +13,12 @@ import { ComposerSkeleton } from "../layout/composer-skeleton";
 import { ResizableComposer } from "../layout/resizable-composer";
 
 export default function ComposerDialog() {
-  const { isOpen, pendingContentGroupID, closeDialog } =
-    useDialogComposerStore();
+  const {
+    isOpen,
+    pendingContentGroupID,
+    initialContentCreateData,
+    closeDialog,
+  } = useDialogComposerStore();
   const { accounts: accountsData, isLoading: accountsLoading } =
     useConnectedAccounts();
   const { data: contentGroupData, isLoading: contentGroupLoading } =
@@ -24,7 +27,7 @@ export default function ComposerDialog() {
 
   const initComposerProps = {
     initContentCreateData:
-      contentGroupData?.contentCreateData as ContentCreateData,
+      contentGroupData?.contentCreateData ?? initialContentCreateData,
     contentGroupID: pendingContentGroupID,
   } as ComposerProps;
   return (

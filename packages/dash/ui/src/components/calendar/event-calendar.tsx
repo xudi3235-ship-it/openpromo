@@ -6,12 +6,16 @@ import {
   ToggleGroupItem,
 } from "@openpromo/ui/components/toggle-group";
 import { cn } from "@openpromo/ui/lib/utils";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type {
+  ContentCreateData,
+  MergedContentEntity,
+} from "@worker/routes/api/workspaces/content";
 import {
   addMonths,
   addWeeks,
   endOfWeek,
   format,
+  isToday,
   startOfWeek,
   subMonths,
   subWeeks,
@@ -146,6 +150,27 @@ export function ContentCalendar({
     }
   };
 
+  const buildInitialContentCreateData = useCallback(
+    (publishAt?: Date): ContentCreateData => {
+      const base: ContentCreateData["base"] = {
+        message: "",
+        publishingStatus: publishAt ? "SCHEDULED" : "PUBLISH_NOW",
+        attachments: [],
+        schedulingSpec: publishAt ? { publishAt } : undefined,
+      };
+
+      return {
+        base,
+        placements: {
+          facebookFeed: [],
+          instagramFeed: [],
+          tiktokFeed: [],
+        },
+      };
+    },
+    [],
+  );
+
   const handleEventSelect = (event: MergedContentEntity) => {
     setSelectedEvent(event);
     // TODO:
@@ -173,7 +198,17 @@ export function ContentCalendar({
       "SCHEDULED",
     );
     setSelectedEvent(newEvent);
-    openDialog();
+    const publishAt = (() => {
+      if (!isToday(startTime)) return new Date(startTime);
+      const now = new Date();
+      const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
+      return startTime >= thirtyMinutesFromNow
+        ? new Date(startTime)
+        : undefined;
+    })();
+
+    const initialContentData = buildInitialContentCreateData(publishAt);
+    openDialog(undefined, { contentCreateData: initialContentData });
   };
 
   const handleEventSave = (event: MergedContentEntity) => {

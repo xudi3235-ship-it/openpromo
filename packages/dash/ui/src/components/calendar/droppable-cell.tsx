@@ -2,6 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@openpromo/ui/lib/utils";
+import type React from "react";
 import { useCalendarDnd } from "@/components/calendar";
 
 interface DroppableCellProps {
@@ -10,7 +11,7 @@ interface DroppableCellProps {
   time?: number; // For week/day views, represents hours (e.g., 9.25 for 9:15)
   children?: React.ReactNode;
   className?: string;
-  onClick?: () => void;
+  onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 export function DroppableCell({

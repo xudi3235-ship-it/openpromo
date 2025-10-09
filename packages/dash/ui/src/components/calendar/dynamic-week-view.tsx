@@ -171,23 +171,62 @@ export function DynamicWeekView({
   const isCreatableDay = (day: Date) =>
     !isBefore(startOfDay(day), startOfDay(new Date()));
 
-  const handleCreateEvent = (day: Date) => {
+  const handleCreateEvent = (
+    day: Date,
+    clickEvent?: React.MouseEvent<HTMLDivElement>,
+  ) => {
     if (!isCreatableDay(day)) {
       toast.warning("Cannot create events in the past.");
       return;
     }
-    // Create event at 9 AM by default, or current time if today
+    // Create event based on click position when available
     const startTime = new Date(day);
-    if (isToday(day)) {
-      const now = new Date();
-      startTime.setHours(
-        now.getHours(),
-        Math.ceil(now.getMinutes() / 10) * 10,
+
+    if (clickEvent) {
+      const { currentTarget, clientY } = clickEvent;
+      const rect = currentTarget.getBoundingClientRect();
+      const offsetY = clientY - rect.top;
+      const boundedOffset = Math.max(0, Math.min(offsetY, rect.height));
+      const ratio = rect.height > 0 ? boundedOffset / rect.height : 0;
+      const minutesFromMidnight = Math.round((ratio * 24 * 60) / 15) * 15;
+      const clampedMinutes = Math.max(
         0,
-        0,
+        Math.min(23 * 60 + 45, minutesFromMidnight),
       );
+      const hours = Math.floor(clampedMinutes / 60);
+      const minutes = clampedMinutes % 60;
+      startTime.setHours(hours, minutes, 0, 0);
+    } else if (isToday(day)) {
+      const now = new Date();
+      const roundedMinutes = Math.ceil(now.getMinutes() / 15) * 15;
+      if (roundedMinutes === 60) {
+        const nextHour = now.getHours() + 1;
+        const clampedHour = Math.min(nextHour, 23);
+        const minute = nextHour >= 24 ? 45 : 0;
+        startTime.setHours(clampedHour, minute, 0, 0);
+      } else {
+        startTime.setHours(now.getHours(), roundedMinutes, 0, 0);
+      }
     } else {
       startTime.setHours(9, 0, 0, 0);
+    }
+
+    if (isToday(day)) {
+      const now = new Date();
+      if (startTime < now) {
+        const adjusted = new Date(now);
+        const roundedMinutes = Math.ceil(adjusted.getMinutes() / 15) * 15;
+        if (roundedMinutes === 60) {
+          const nextHour = adjusted.getHours() + 1;
+          if (nextHour >= 24) {
+            toast.warning("All remaining time slots for today have passed.");
+            return;
+          }
+          startTime.setHours(nextHour, 0, 0, 0);
+        } else {
+          startTime.setHours(adjusted.getHours(), roundedMinutes, 0, 0);
+        }
+      }
     }
     onEventCreate(startTime);
   };
@@ -243,7 +282,7 @@ export function DynamicWeekView({
                   ? "cursor-pointer hover:bg-accent/10"
                   : "cursor-not-allowed opacity-80",
               )}
-              onClick={() => handleCreateEvent(day)}
+              onClick={(event) => handleCreateEvent(day, event)}
             >
               <div className="space-y-2 h-full">
                 {/* Events list */}
