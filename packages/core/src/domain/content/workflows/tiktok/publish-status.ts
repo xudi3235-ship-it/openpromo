@@ -33,6 +33,8 @@ export async function waitForTikTokPublishCompletion(
       },
     );
 
+    console.log("status:", JSON.stringify(status));
+
     log.info("tiktok publish status", {
       publishId,
       status: status.status,
@@ -52,7 +54,7 @@ export async function waitForTikTokPublishCompletion(
 
     await step.sleep(
       `wait for tiktok publish status (attempt ${attempt})`,
-      Math.min(10_000, attempt * 2_000),
+      Math.min(30_000, attempt * 2_000),
     );
   }
 

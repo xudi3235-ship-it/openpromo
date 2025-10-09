@@ -231,6 +231,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     if (!publishId) {
       throw new WorkflowError("TikTok video init response missing publish_id");
     }
+    console.log({ initPublishId: publishId, uploadUrl: data.upload_url });
 
     return {
       publishId,

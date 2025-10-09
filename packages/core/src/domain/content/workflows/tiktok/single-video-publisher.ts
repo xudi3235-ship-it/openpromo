@@ -73,7 +73,7 @@ export async function publishTikTokFeedVideo(
       videoUrl: verifiedVideoUrl,
       caption: c.caption(),
       mimeType: videoAttachment.mimeType,
-      privacyLevel: "SELF_ONLY",
+      privacyLevel: "SELF_ONLY", // TODO: update this once app repview is done
     });
   });
 
