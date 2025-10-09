@@ -97,7 +97,9 @@ export const useContentActionController = ({
 
         publishContentGroup.mutate(content.pendingContentGroupId, {
           onSuccess: () => {
-            toast.success("Content published successfully!");
+            toast.success(
+              "Content is publishing now. This might take a little while—we'll notify you once it's live.",
+            );
           },
           onError: () => {
             toast.error("Failed to publish content. Please try again.");
@@ -108,7 +110,9 @@ export const useContentActionController = ({
         const group = groupEntity.entity;
         publishContentGroup.mutate(group.id, {
           onSuccess: () => {
-            toast.success("Content group published successfully!");
+            toast.success(
+              "Content group is publishing now. This might take a little while—we'll notify you once it's live.",
+            );
           },
           onError: () => {
             toast.error("Failed to publish content group. Please try again.");

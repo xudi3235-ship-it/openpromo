@@ -13,7 +13,10 @@ import {
   type CoreWorkflowEvent,
   type CoreWorkflowStep,
 } from "@core/helpers/workflow";
-import { AllPlacement } from "@core/schemas/content.sql";
+import {
+  AllPlacement,
+  ContentPublishingStatus,
+} from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
 import z from "zod";
 import { FacebookPublisher } from "./facebook-publisher";
@@ -67,6 +70,11 @@ export class PendingContentPublishWorkflow extends CoreWorkflowEntrypoint<Publis
         type: "publish_draft",
       });
     }
+    // start publishing, mark as publishing state
+    await step.do("mark content as publishing", async () => {
+      const c = await EntPendingContent.fromID(pendingContentID);
+      await c.setPublishingStatus(ContentPublishingStatus.PUBLISH_NOW);
+    });
     try {
       switch (placement) {
         case AllPlacement.FB_FEED: {
