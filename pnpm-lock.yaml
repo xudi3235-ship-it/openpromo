@@ -44,6 +44,10 @@ overrides:
 importers:
 
   .:
+    dependencies:
+      ts-pattern:
+        specifier: ^5.8.0
+        version: 5.8.0
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.2.2
@@ -7249,6 +7253,9 @@ packages:
 
   trough@2.2.0:
     resolution: {integrity: sha512-tmMpK00BjZiUyVyvrBK7knerNgmgvcV/KLVyuma/SC+TQN167GrMRciANTz09+k3zW8L8t60jWO1GpfkZdjTaw==}
+
+  ts-pattern@5.8.0:
+    resolution: {integrity: sha512-kIjN2qmWiHnhgr5DAkAafF9fwb0T5OhMVSWrm8XEdTFnX6+wfXwYOFjeF86UZ54vduqiR7BfqScFmXSzSaH8oA==}
 
   tsconfck@3.1.6:
     resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
@@ -16100,6 +16107,8 @@ snapshots:
   trim-lines@3.0.1: {}
 
   trough@2.2.0: {}
+
+  ts-pattern@5.8.0: {}
 
   tsconfck@3.1.6(typescript@5.9.3):
     optionalDependencies:
