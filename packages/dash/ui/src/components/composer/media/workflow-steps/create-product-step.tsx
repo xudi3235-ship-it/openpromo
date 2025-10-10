@@ -76,83 +76,96 @@ export function CreateProductStep() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        {/* Media Preview */}
-        {prefilledAttachments.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">
-              {prefilledAttachments.length} file
-              {prefilledAttachments.length > 1 ? "s" : ""} ready
-            </p>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {prefilledAttachments.slice(0, 8).map((attachment, idx) => {
-                const imageUrl =
-                  attachment.type === "photo"
-                    ? attachment.publicUrl || attachment.presignedUrl
-                    : null;
-                return (
-                  <div
-                    key={attachment.id || idx}
-                    className="flex-shrink-0 w-20 h-20 rounded-lg border overflow-hidden bg-muted"
-                  >
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={`Preview ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                        Video
-                      </div>
-                    )}
+      <form
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className="h-full flex flex-col"
+      >
+        <div className="flex-1 space-y-6 pb-4">
+          {/* Media Preview */}
+          {prefilledAttachments.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">
+                  {prefilledAttachments.length} file
+                  {prefilledAttachments.length > 1 ? "s" : ""} selected
+                </p>
+                <p className="text-xs text-muted-foreground">From composer</p>
+              </div>
+              <div className="grid grid-cols-6 gap-2">
+                {prefilledAttachments.slice(0, 11).map((attachment, idx) => {
+                  const imageUrl =
+                    attachment.type === "photo"
+                      ? attachment.publicUrl || attachment.presignedUrl
+                      : null;
+                  return (
+                    <div
+                      key={attachment.id || idx}
+                      className="aspect-square rounded-lg border overflow-hidden bg-muted"
+                    >
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={`Preview ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
+                          Video
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {prefilledAttachments.length > 11 && (
+                  <div className="aspect-square rounded-lg border bg-muted flex items-center justify-center text-xs text-muted-foreground font-medium">
+                    +{prefilledAttachments.length - 11}
                   </div>
-                );
-              })}
-              {prefilledAttachments.length > 8 && (
-                <div className="flex-shrink-0 w-20 h-20 rounded-lg border bg-muted flex items-center justify-center text-xs text-muted-foreground">
-                  +{prefilledAttachments.length - 8}
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Form Fields */}
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Product Name *</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g. Summer Beach Towel" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
           )}
-        />
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description (Optional)</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Brief description of your product..."
-                  rows={4}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          {/* Form Fields */}
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Product Name *</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="e.g. Summer Beach Towel"
+                    className="h-11"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {/* Actions */}
-        <div className="flex justify-between pt-4 gap-2">
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description (Optional)</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Brief description of your product..."
+                    rows={6}
+                    className="resize-none"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Actions - Fixed at bottom */}
+        <div className="flex justify-between pt-4 border-t gap-2 flex-shrink-0">
           <Button type="button" variant="ghost" onClick={handleSkip}>
             Skip for now
           </Button>

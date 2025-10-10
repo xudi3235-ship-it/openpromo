@@ -67,111 +67,121 @@ export function GenerateAIStep({ onComplete }: GenerateAIStepProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
-        {/* Product Context Card */}
-        {!skipProduct && productFormData.name && (
-          <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">
-              Generating for:
-            </p>
-            <p className="text-sm font-semibold">{productFormData.name}</p>
-            {productFormData.description && (
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {productFormData.description}
+      <form
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className="h-full flex flex-col"
+      >
+        <div className="flex-1 space-y-6 pb-4">
+          {/* Product Context Card */}
+          {!skipProduct && productFormData.name && (
+            <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                Generating for:
               </p>
-            )}
-          </div>
-        )}
-
-        {/* Prompt Field */}
-        <FormField
-          control={form.control}
-          name="prompt"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Generation Prompt *</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Describe the scene or style... e.g. 'Product floating on water with sunset background, professional product photography'"
-                  rows={5}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+              <p className="text-sm font-semibold">{productFormData.name}</p>
+              {productFormData.description && (
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {productFormData.description}
+                </p>
+              )}
+            </div>
           )}
-        />
 
-        {/* Style and Settings Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Prompt Field */}
           <FormField
             control={form.control}
-            name="style"
+            name="prompt"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Style</FormLabel>
+                <FormLabel className="text-base">Generation Prompt *</FormLabel>
                 <FormControl>
-                  <select
+                  <Textarea
+                    placeholder="Describe the scene or style... e.g. 'Product floating on water with sunset background, professional product photography'"
+                    rows={8}
+                    className="resize-none"
                     {...field}
-                    className="w-full h-10 px-3 rounded-md border bg-background text-sm"
-                  >
-                    <option value="lifestyle">Lifestyle</option>
-                    <option value="product-shot">Product Shot</option>
-                    <option value="studio">Studio</option>
-                    <option value="creative">Creative</option>
-                  </select>
+                  />
                 </FormControl>
+                <p className="text-xs text-muted-foreground">
+                  Be specific about lighting, background, and composition
+                </p>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="aspectRatio"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Aspect Ratio</FormLabel>
-                <FormControl>
-                  <select
-                    {...field}
-                    className="w-full h-10 px-3 rounded-md border bg-background text-sm"
-                  >
-                    <option value="1:1">1:1 (Square)</option>
-                    <option value="4:5">4:5 (Portrait)</option>
-                    <option value="16:9">16:9 (Landscape)</option>
-                  </select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Style and Settings Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="style"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Style</FormLabel>
+                  <FormControl>
+                    <select
+                      {...field}
+                      className="w-full h-11 px-3 rounded-md border bg-background text-sm"
+                    >
+                      <option value="lifestyle">Lifestyle</option>
+                      <option value="product-shot">Product Shot</option>
+                      <option value="studio">Studio</option>
+                      <option value="creative">Creative</option>
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="aspectRatio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Aspect Ratio</FormLabel>
+                  <FormControl>
+                    <select
+                      {...field}
+                      className="w-full h-11 px-3 rounded-md border bg-background text-sm"
+                    >
+                      <option value="1:1">1:1 (Square)</option>
+                      <option value="4:5">4:5 (Portrait)</option>
+                      <option value="16:9">16:9 (Landscape)</option>
+                    </select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="variants"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Variants</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={4}
+                      className="h-11"
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(Number.parseInt(e.target.value, 10))
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
-        <FormField
-          control={form.control}
-          name="variants"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Number of Variants</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min={1}
-                  max={4}
-                  {...field}
-                  onChange={(e) =>
-                    field.onChange(Number.parseInt(e.target.value, 10))
-                  }
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Actions */}
-        <div className="flex justify-between pt-4">
+        {/* Actions - Fixed at bottom */}
+        <div className="flex justify-between pt-4 border-t gap-2 flex-shrink-0">
           <Button
             type="button"
             variant="outline"

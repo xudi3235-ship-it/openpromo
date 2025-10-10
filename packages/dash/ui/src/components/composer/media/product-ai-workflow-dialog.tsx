@@ -64,8 +64,8 @@ export function ProductAIWorkflowDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-4xl h-[80vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
             <DialogTitle>{currentStepInfo.title}</DialogTitle>
@@ -74,7 +74,7 @@ export function ProductAIWorkflowDialog({
         </DialogHeader>
 
         {/* Step Indicator */}
-        <div className="flex items-center justify-center gap-2 py-2">
+        <div className="flex items-center justify-center gap-2 py-3 flex-shrink-0">
           <div
             className={`h-2 w-2 rounded-full transition-colors ${
               currentStep === "create-product"
@@ -92,8 +92,8 @@ export function ProductAIWorkflowDialog({
           />
         </div>
 
-        {/* Step Content */}
-        <div className="py-2">
+        {/* Step Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto px-1">
           {currentStep === "create-product" && <CreateProductStep />}
           {currentStep === "generate-ai" && (
             <GenerateAIStep onComplete={handleComplete} />
