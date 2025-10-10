@@ -1,5 +1,4 @@
 import * as z from "zod";
-import { SharedAttachmentSpec } from "../content";
 
 export const ProductSource = [
   "MANUAL",
@@ -32,6 +31,34 @@ export type ProductState = (typeof ProductState)[number];
 
 export const ProductStateZod = z.enum(ProductState);
 
+const ProductContext = z.object({
+  name: z.string(),
+  description: z
+    .string()
+    .describe("short description of the product in detail"),
+  meta: z.object({
+    industry: z
+      .string()
+      .describe("industry the product belongs to, e.g. fashion, retail, etc"),
+    category: z
+      .string()
+      .describe("category the product belongs to, et.g. shoes, bags, etc"),
+    socialMediaTags: z
+      .array(z.string())
+      .describe(
+        "social media viral tags that are often used for this product / category",
+      ),
+  }),
+});
+
+export const ProductIdentificationSchema = z.object({
+  hasValidProduct: z
+    .boolean()
+    .describe("whether a valid product is identified"),
+  errorReason: z.string().optional().describe("if not valid, reason why"),
+  productContext: ProductContext.describe("identified product details"),
+});
+
 /**
  * Product metadata - flexible structure for different sources
  */
@@ -44,31 +71,11 @@ export const ProductMetadata = z.object({
   scrapedAt: z.string().optional(),
   lastSyncedAt: z.string().optional(),
 
+  // Identified product details
+  productContext: ProductContext.optional(),
+
   // Allow additional fields for extensibility
   extra: z.record(z.string(), z.any()).optional(),
 });
 
 export type ProductMetadata = z.infer<typeof ProductMetadata>;
-
-/**
- * Base product spec - used in DB jsonb column
- */
-export const ProductSpec = z.object({
-  name: z.string(),
-  description: z.string().optional(),
-  category: z.string().optional(),
-  tags: z.array(z.string()).default([]),
-
-  // Source tracking
-  source: ProductSourceZod,
-  sourceUrl: z.string().optional(),
-
-  // Media
-  attachments: z.array(SharedAttachmentSpec).default([]),
-  primaryAttachmentId: z.string().optional(),
-
-  // Metadata
-  metadata: ProductMetadata.optional(),
-});
-
-export type ProductSpec = z.infer<typeof ProductSpec>;

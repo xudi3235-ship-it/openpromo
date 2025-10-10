@@ -22,7 +22,7 @@ export const productSourceEnum = pgEnum("product_source", ProductSource);
 export const productStateEnum = pgEnum("product_state", ProductState);
 
 /**
- * Product catalog table - stores user products for content generation
+ * represents a product of business.
  */
 export const productTable = pgTable(
   "product",
@@ -42,20 +42,20 @@ export const productTable = pgTable(
     sourceUrl: text("source_url"),
 
     // Processing state
-    state: productStateEnum().notNull().default("pending"),
+    state: productStateEnum().notNull().default("not_started"),
     stateMessage: text("state_message"), // Error message or status details
 
     // Workflow tracking
     workflowInstanceId: text("workflow_instance_id"), // CF Workflow instance ID
 
-    // Media attachments (reuses SharedAttachmentSpec from content)
+    // product assets, e.g. images, videos, or links.
     attachments: jsonb("attachments")
       .$type<SharedAttachmentSpec[]>()
       .notNull()
       .default([]),
     primaryAttachmentId: text("primary_attachment_id"),
 
-    // Additional product data (price, variants, etc.)
+    // more stuff
     metadata: jsonb("metadata").$type<ProductMetadata>(),
   },
   (t) => [uniqueIndex().on(t.id, t.workspaceId)],
@@ -76,11 +76,11 @@ export const ProductUpdate = createUpdateSchema(
   productTable,
   productRefinements,
 );
-export const ProductSelectSchema = createSelectSchema(
+export const ProductSelect = createSelectSchema(
   productTable,
   productRefinements,
 );
 
 export type ProductInsertType = z.infer<typeof ProductInsert>;
 export type ProductUpdateType = z.infer<typeof ProductUpdate>;
-export type ProductSelectType = z.infer<typeof ProductSelectSchema>;
+export type ProductSelectType = z.infer<typeof ProductSelect>;

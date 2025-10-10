@@ -1,4 +1,5 @@
 import { Actor } from "@core/helpers/actor";
+import { Binding } from "@core/helpers/api-env";
 import { and, count, db, eq, ilike, or } from "@core/helpers/db";
 import { Ent } from "@core/helpers/ent";
 import {
@@ -45,7 +46,21 @@ export class EntProduct extends Ent<ProductSelectType> {
       })
       .returning();
 
-    return new EntProduct(product);
+    // start product processing workflow
+    const wf = await Binding.use().ProductProcessingWorkflow.create({
+      params: {
+        actor: Actor.assert("workspace_user"),
+        productId: product.id,
+      },
+    });
+
+    const [newProduct] = await db()
+      .update(productTable)
+      .set({ workflowInstanceId: wf.id })
+      .where(eq(productTable.id, product.id))
+      .returning();
+
+    return new EntProduct(newProduct);
   });
 
   /**

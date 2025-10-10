@@ -29,6 +29,10 @@ export const env = createEnv({
     CLOUDFLARE_DEFAULT_ACCOUNT_ID: z.string().min(1),
     CLOUDFLARE_IMAGE_ACCOUNT_HASH: z.string().min(1),
     CLOUDFLARE_STREAM_CUSTOMER_DOMAIN: z.string().min(1),
+    // AI
+    OPENAI_API_KEY: z.string().min(1),
+    GEMINI_API_KEY: z.string().min(1),
+    REPLICATE_API_TOKEN: z.string().min(1),
     // R2
     CLOUDFLARE_R2_ACCESS_KEY_ID: z.string().min(1),
     CLOUDFLARE_R2_SECRET_ACCESS_KEY: z.string().min(1),

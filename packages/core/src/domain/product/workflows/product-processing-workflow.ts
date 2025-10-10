@@ -1,3 +1,4 @@
+import { ProductImageGen } from "@core/domain/genai";
 import { Actor } from "@core/helpers/actor";
 import {
   type CoreWorkflowContext,
@@ -34,6 +35,7 @@ export class ProductProcessingWorkflow extends CoreWorkflowEntrypoint<ProductPro
       await step.do("mark-product-processing", async () => {
         const product = await EntProduct.fromID(productId);
         await product.setState("processing");
+        console.log("marked product as processing");
         return;
       });
       // 2. process attachments
@@ -54,8 +56,46 @@ export class ProductProcessingWorkflow extends CoreWorkflowEntrypoint<ProductPro
 }
 
 async function processAttachments(step: CoreWorkflowStep, productId: string) {
-  // 1. for now assume just images
-  await step.do("generate meta for imgs", async () => {
-    await EntProduct.fromID(productId);
+  // 1. identify product
+  const { hasValidProduct, errorReason, productContext } = await step.do(
+    "generate meta for imgs",
+    async () => {
+      console.log("identifying product");
+      const p = await EntProduct.fromID(productId);
+      return await ProductImageGen.identifyProduct(p);
+    },
+  );
+  console.log("identified product", {
+    hasValidProduct,
+    errorReason,
+    productContext,
   });
+
+  if (!hasValidProduct) {
+    // mark product as invalid
+    await step.do("mark-product-invalid", async () => {
+      const p = await EntProduct.fromID(productId);
+      await p.setState(
+        "failed",
+        `Invalid product: ${errorReason ?? "unknown"}`,
+      );
+      return;
+    });
+    log.info("// Product is invalid, stopping workflow");
+    return;
+  }
+  console.log("identified product context", productContext);
+  // 2. save meta to product and mark as ready
+  await step.do("producty-ready", async () => {
+    const p = await EntProduct.fromID(productId);
+    await p.update({
+      state: "ready",
+      metadata: {
+        ...p.data.metadata,
+        productContext,
+      },
+    });
+    return;
+  });
+  // 3. generate the prompt for image gen.
 }
