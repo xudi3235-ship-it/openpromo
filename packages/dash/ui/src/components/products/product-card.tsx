@@ -34,6 +34,31 @@ export function ProductCard({ product }: ProductCardProps) {
     CUSTOM_URL: "bg-blue-500/10 text-blue-500",
   };
 
+  const stateConfig = {
+    not_started: {
+      label: "New",
+      className: "bg-gray-500/20 text-gray-100",
+    },
+    pending: {
+      label: "Pending",
+      className: "bg-yellow-500/20 text-yellow-100",
+    },
+    processing: {
+      label: "Processing",
+      className: "bg-blue-500/20 text-blue-100",
+    },
+    ready: {
+      label: "Ready",
+      className: "bg-green-500/20 text-green-100",
+    },
+    failed: {
+      label: "Failed",
+      className: "bg-red-500/20 text-red-100",
+    },
+  };
+
+  const currentState = stateConfig[product.state];
+
   const imageUrl =
     imageAttachment?.type === "photo"
       ? (imageAttachment.publicUrl ?? imageAttachment.presignedUrl)
@@ -67,35 +92,49 @@ export function ProductCard({ product }: ProductCardProps) {
       <CardHeader className="p-0">
         <div className="aspect-square bg-muted relative overflow-hidden">
           {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={product.name}
-              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
-            />
+            <>
+              <img
+                src={imageUrl}
+                alt={product.name}
+                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
+              />
+              {/* Top gradient for badge visibility */}
+              <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/40 to-transparent" />
+            </>
           ) : (
             <div className="flex h-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
               <span className="text-5xl opacity-20">📦</span>
             </div>
           )}
 
-          {/* Overlay gradient for better text readability */}
+          {/* Overlay gradient for better text readability on hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
 
           {/* Top badges */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1.5">
-            <Badge
-              className={`text-[10px] px-2 py-0.5 font-medium backdrop-blur-sm ${
-                product.source
-                  ? (sourceColors[product.source] ??
-                    "bg-gray-500/10 text-gray-500")
-                  : "bg-gray-500/10 text-gray-500"
-              }`}
-            >
-              {product.source?.toLowerCase() ?? "unknown"}
-            </Badge>
+          <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
+            <div className="flex gap-1.5">
+              <Badge
+                className={`text-[10px] px-2 py-0.5 font-semibold backdrop-blur-md shadow-sm ${
+                  product.source
+                    ? (sourceColors[product.source] ??
+                      "bg-gray-500/20 text-gray-100")
+                    : "bg-gray-500/20 text-gray-100"
+                }`}
+              >
+                {product.source?.toLowerCase() ?? "unknown"}
+              </Badge>
+
+              {currentState && (
+                <Badge
+                  className={`text-[10px] px-2 py-0.5 font-semibold backdrop-blur-md border-0 shadow-sm ${currentState.className}`}
+                >
+                  {currentState.label}
+                </Badge>
+              )}
+            </div>
 
             {attachmentCount > 1 && (
-              <Badge className="text-[10px] px-2 py-0.5 bg-black/50 text-white backdrop-blur-sm border-0">
+              <Badge className="text-[10px] px-2 py-0.5 bg-black/60 text-white backdrop-blur-md border-0 shadow-sm font-medium">
                 {attachmentCount} files
               </Badge>
             )}
