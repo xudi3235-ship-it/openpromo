@@ -58,12 +58,19 @@ interface CreateProductModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product?: ProductSelectType;
+  prefilledAttachments?: Array<{
+    id: string;
+    type: "photo" | "video";
+    publicUrl?: string;
+    presignedUrl?: string;
+  }>;
 }
 
 export function CreateProductModal({
   open,
   onOpenChange,
   product,
+  prefilledAttachments,
 }: CreateProductModalProps) {
   const isEditMode = Boolean(product);
   const [tagInput, setTagInput] = useState("");
@@ -112,7 +119,7 @@ export function CreateProductModal({
     },
   });
 
-  // Populate form when editing
+  // Populate form when editing or prefilling
   useEffect(() => {
     if (product && open) {
       form.reset({
@@ -125,13 +132,19 @@ export function CreateProductModal({
       });
       setExistingAttachments(product.attachments || []);
       setDetailsOpen(true);
+    } else if (prefilledAttachments && open && !product) {
+      // Pre-fill attachments from composer media
+      setExistingAttachments(
+        prefilledAttachments as ProductSelectType["attachments"],
+      );
+      setDetailsOpen(false);
     } else if (!open) {
       form.reset();
       setTagInput("");
       setSelectedFiles([]);
       setExistingAttachments([]);
     }
-  }, [product, open, form]);
+  }, [product, prefilledAttachments, open, form]);
 
   const selectedSource = form.watch("source");
 

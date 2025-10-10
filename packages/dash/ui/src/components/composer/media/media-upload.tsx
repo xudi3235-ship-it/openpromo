@@ -9,6 +9,7 @@ export function MediaUpload() {
     <MediaSection>
       <MediaSection.Header />
       <MediaSection.Content />
+      <MediaSection.ProductActions />
       <MediaSection.Footer />
       <MediaSection.Dialogs />
     </MediaSection>

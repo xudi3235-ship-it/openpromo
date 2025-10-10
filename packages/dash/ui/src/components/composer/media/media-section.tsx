@@ -1,9 +1,16 @@
+import { Button } from "@openpromo/ui/components/button";
 import { Label } from "@openpromo/ui/components/label";
 import { Switch } from "@openpromo/ui/components/switch";
 import type { SharedAttachmentSpec } from "@shared/content";
-import { Upload } from "lucide-react";
-import type { ReactNode } from "react";
-import { createContext, useContext, useMemo, useState } from "react";
+import { Package, Upload } from "lucide-react";
+import React, {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Dropzone } from "@/components/dropzone";
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
 import { useComposerMediaUploader } from "@/hooks/useComposerMediaUploader";
@@ -44,6 +51,8 @@ interface MediaSectionContextValue {
   setDragOverlay: (
     overlay: { attachment: SharedAttachmentSpec; index: number } | null,
   ) => void;
+  productModalOpen: boolean;
+  setProductModalOpen: (open: boolean) => void;
 }
 
 const MediaSectionContext = createContext<MediaSectionContextValue | null>(
@@ -103,6 +112,7 @@ function MediaSectionRoot({ children }: MediaSectionRootProps) {
     attachment: SharedAttachmentSpec;
     index: number;
   } | null>(null);
+  const [productModalOpen, setProductModalOpen] = useState(false);
 
   const value: MediaSectionContextValue = {
     attachments,
@@ -121,6 +131,8 @@ function MediaSectionRoot({ children }: MediaSectionRootProps) {
     setEditingMedia,
     dragOverlay,
     setDragOverlay,
+    productModalOpen,
+    setProductModalOpen,
   };
 
   return (
@@ -132,7 +144,8 @@ function MediaSectionRoot({ children }: MediaSectionRootProps) {
 
 // ============= Header =============
 function MediaSectionHeader() {
-  const { attachments, viewMode, setViewMode, config } = useMediaSection();
+  const { attachments, viewMode, setViewMode, config, setProductModalOpen } =
+    useMediaSection();
 
   return (
     <div className="flex items-center justify-between gap-3">
@@ -143,6 +156,15 @@ function MediaSectionHeader() {
             <span className="text-xs text-muted-foreground">
               {attachments.length}/{config.maxFiles} files
             </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs gap-1.5 text-primary hover:text-primary/80"
+              onClick={() => setProductModalOpen(true)}
+            >
+              <Package className="h-3 w-3" />
+              Generate with AI
+            </Button>
             <div className="flex items-center gap-2">
               <Switch
                 id="media-view-switch"
@@ -325,6 +347,27 @@ function MediaSectionFooter() {
   );
 }
 
+// ============= Product Actions =============
+function MediaSectionProductActions() {
+  const { attachments, setProductModalOpen } = useMediaSection();
+
+  if (attachments.length === 0) return null;
+
+  return (
+    <div className="border-t pt-3">
+      <Button
+        variant="default"
+        size="sm"
+        className="w-full gap-2"
+        onClick={() => setProductModalOpen(true)}
+      >
+        <Package className="h-4 w-4" />
+        Generate with AI
+      </Button>
+    </div>
+  );
+}
+
 // ============= Dialogs =============
 function MediaSectionDialogs() {
   const {
@@ -333,7 +376,36 @@ function MediaSectionDialogs() {
     editingMedia,
     setEditingMedia,
     renderAttachment,
+    attachments,
+    productModalOpen,
+    setProductModalOpen,
   } = useMediaSection();
+
+  // Lazy load ProductAIWorkflowDialog
+  const [ProductAIWorkflowDialog, setProductAIWorkflowDialog] =
+    useState<
+      React.ComponentType<{
+        open: boolean;
+        onOpenChange: (open: boolean) => void;
+        prefilledAttachments?: SharedAttachmentSpec[];
+      }>
+    >();
+
+  // Dynamically import ProductAIWorkflowDialog when needed
+  useEffect(() => {
+    if (productModalOpen && !ProductAIWorkflowDialog) {
+      import("./product-ai-workflow-dialog").then((module) => {
+        setProductAIWorkflowDialog(
+          () =>
+            module.ProductAIWorkflowDialog as React.ComponentType<{
+              open: boolean;
+              onOpenChange: (open: boolean) => void;
+              prefilledAttachments?: SharedAttachmentSpec[];
+            }>,
+        );
+      });
+    }
+  }, [productModalOpen, ProductAIWorkflowDialog]);
 
   return (
     <>
@@ -347,6 +419,13 @@ function MediaSectionDialogs() {
         onClose={() => setEditingMedia(null)}
         renderAttachment={renderAttachment}
       />
+      {ProductAIWorkflowDialog && (
+        <ProductAIWorkflowDialog
+          open={productModalOpen}
+          onOpenChange={setProductModalOpen}
+          prefilledAttachments={attachments}
+        />
+      )}
     </>
   );
 }
@@ -363,6 +442,7 @@ MediaSectionRoot.Upload = MediaSectionUpload;
 MediaSectionRoot.Gallery = MediaSectionGallery;
 MediaSectionRoot.Content = MediaSectionContent;
 MediaSectionRoot.Footer = MediaSectionFooter;
+MediaSectionRoot.ProductActions = MediaSectionProductActions;
 MediaSectionRoot.Dialogs = MediaSectionDialogs;
 MediaSectionRoot.AIActions = MediaSectionAIActions;
 
