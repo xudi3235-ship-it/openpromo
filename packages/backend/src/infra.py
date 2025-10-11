@@ -16,8 +16,8 @@ image = (
     .add_local_python_source("src")
 )
 secret = modal.Secret.from_name(
-    "openpromo-backend-r2-secret",
-    required_keys=["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+    "openpromo-secrets",
+    required_keys=["CLOUDFLARE_R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_SECRET_ACCESS_KEY"],
 )
 
 vols = {

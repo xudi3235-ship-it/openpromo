@@ -87,6 +87,17 @@ jobs:
       - name: Sync UV dependencies
         working-directory: packages/backend
         run: uv sync --frozen
+      - name: Sync Modal secrets
+        working-directory: packages/backend
+        run: |
+          tmpfile=$(mktemp)
+          doppler secrets --config=${{ github.ref_name }} --json | jq 'with_entries(.value = .value.computed)' > "$tmpfile"
+          uv run modal secret create --force --from-json "$tmpfile" openpromo-secrets
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+          # MODAL_ENVIRONMENT: ${{ github.ref_name }}
       - name: Deploy Modal Infra 
         working-directory: packages/backend
         run: |

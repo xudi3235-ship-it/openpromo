@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from fastapi.openapi.utils import get_openapi
 
 from src.common import url_to_temp_path
+from src.routes.experimental import router as experimental_router
 
 
 def custom_openapi():
@@ -42,6 +43,7 @@ fapi = FastAPI(
     ],
 )
 fapi.openapi = custom_openapi
+fapi.include_router(experimental_router)
 
 
 class EchoResponse(BaseModel):
