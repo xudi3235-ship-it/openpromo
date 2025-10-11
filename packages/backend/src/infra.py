@@ -17,7 +17,7 @@ image = (
 )
 secret = modal.Secret.from_name(
     "openpromo-secrets",
-    required_keys=["CLOUDFLARE_R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_SECRET_ACCESS_KEY"],
+    required_keys=["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
 )
 
 vols = {
