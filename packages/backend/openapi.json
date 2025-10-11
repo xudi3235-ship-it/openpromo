@@ -22,10 +22,45 @@
         }
       }
     },
+    "/video/transcode": {
+      "post": {
+        "tags": ["video"],
+        "summary": "Transcode Video",
+        "operationId": "transcode_video_video_transcode_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TranscodeVideoRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranscodeVideoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ffprobe": {
       "post": {
+        "tags": ["ffprobe"],
         "summary": "Run Ffprobe",
-        "description": "Run arbitrary ffprobe command on a given input URL",
         "operationId": "run_ffprobe_ffprobe_post",
         "requestBody": {
           "content": {
@@ -57,6 +92,7 @@
     },
     "/job/submit": {
       "post": {
+        "tags": ["jobs"],
         "summary": "Submit Job",
         "operationId": "submit_job_job_submit_post",
         "requestBody": {
@@ -91,8 +127,9 @@
     },
     "/job/result/{call_id}": {
       "get": {
-        "summary": "Get Job Result Endpoint",
-        "operationId": "get_job_result_endpoint_job_result__call_id__get",
+        "tags": ["jobs"],
+        "summary": "Get Job Result",
+        "operationId": "get_job_result_job_result__call_id__get",
         "parameters": [
           {
             "name": "call_id",
@@ -121,34 +158,21 @@
         }
       }
     },
-    "/video/transcode": {
-      "post": {
-        "summary": "Transcode Video",
-        "operationId": "transcode_video_video_transcode_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/TranscodeVideoRequest" }
-            }
-          },
-          "required": true
-        },
+    "/experimental/ping": {
+      "get": {
+        "tags": ["experimental"],
+        "summary": "Ping",
+        "operationId": "ping_experimental_ping_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TranscodeVideoResponse"
+                  "additionalProperties": { "type": "string" },
+                  "type": "object",
+                  "title": "Response Ping Experimental Ping Get"
                 }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
               }
             }
           }
@@ -193,8 +217,7 @@
           "cmd": {
             "items": { "type": "string" },
             "type": "array",
-            "title": "Cmd",
-            "default": ["-version"]
+            "title": "Cmd"
           }
         },
         "type": "object",
