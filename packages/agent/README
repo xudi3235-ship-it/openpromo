@@ -1,6 +1,0 @@
-// experimental
-advanced setup for running claude code agent with fullstack dev setup.
-
-I'm gonna setup playwright MCP, local dev server full setup for claude code -- it will use it for iterative fullstack dev.
-
-runtime is nodejs, it can be plugged in different workflows, e.g. in ci/cd? on cloudflare as a service? or just spin up a flyio container. i'd prefer cicd for now
