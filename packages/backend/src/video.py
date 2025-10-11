@@ -2,7 +2,7 @@ from pathlib import Path
 from attr import dataclass
 from fastapi import requests
 
-from src.api import VideoEditRequest, VideoEditResponse
+from src.routes.schemas import VideoEditRequest, VideoEditResponse
 from src.common import s3_client, url_to_temp_path
 from src.infra import image, secret, vols
 import modal
