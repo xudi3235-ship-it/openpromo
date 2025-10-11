@@ -3,7 +3,7 @@
   "root": false,
   "extends": "//",
   "files": {
-    "includes": ["**", "!**/migrations"]
+    "includes": ["**", "!**/migrations", "!core/src/generated/v2"]
   },
   "linter": {
     "rules": {
