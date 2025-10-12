@@ -8,12 +8,16 @@ import {
   useStyleCreateMutation,
   useStylesInfiniteQuery,
 } from "@/queries/styles";
+import { useStyleComposerStore } from "@/stores/style-composer-store";
+import { StyleComposer } from "./composer";
 import { StyleCard } from "./style-card";
 
 export function StylesPage() {
   const [searchValue, setSearchValue] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState<string>();
   const observerTarget = React.useRef<HTMLDivElement>(null);
+
+  const openComposer = useStyleComposerStore((state) => state.openComposer);
 
   const updateSearch = useDebounceCallback((value: string) => {
     setDebouncedSearch(value.trim() || undefined);
@@ -168,15 +172,19 @@ export function StylesPage() {
             Browse reusable visual styles for generated product imagery.
           </p>
         </div>
-        <Button
-          onClick={handleCreateDummyStyles}
-          disabled={createStyleMutation.isPending}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {createStyleMutation.isPending
-            ? "Creating..."
-            : "Create 5 Dummy Styles"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleCreateDummyStyles}
+            disabled={createStyleMutation.isPending}
+          >
+            {createStyleMutation.isPending ? "Creating..." : "Add Dummy Data"}
+          </Button>
+          <Button onClick={openComposer}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Style
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-md">
@@ -217,6 +225,13 @@ export function StylesPage() {
           )}
         </>
       )}
+
+      {/* Style Composer Modal */}
+      <StyleComposer
+        onSuccess={() => {
+          // Refresh will happen automatically via mutation invalidation
+        }}
+      />
     </div>
   );
 }
