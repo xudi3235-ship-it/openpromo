@@ -162,6 +162,41 @@ export const useStyleGenerationsQuery = (
   });
 };
 
+export const useStyleGenerationsInfiniteQuery = (
+  styleId: string | undefined,
+  params: Omit<StyleGenerationsParams, "page"> = {},
+) => {
+  const { workspace } = useWorkspace();
+
+  return useInfiniteQuery({
+    queryKey: ["style-generations-infinite", styleId, params],
+    enabled: Boolean(styleId),
+    queryFn: async ({ pageParam = "1" }) => {
+      const response = await apiClient.workspaces[":workspaceSlug"].styles[
+        ":styleId"
+      ].generations.$get({
+        // biome-ignore lint/style/noNonNullAssertion: later
+        param: { workspaceSlug: workspace.slug, styleId: styleId! },
+        query: serializeStyleGenerationsParams({
+          ...params,
+          page: String(pageParam),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch generations");
+      }
+
+      return response.json();
+    },
+    initialPageParam: "1",
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? String(page + 1) : undefined;
+    },
+  });
+};
+
 export const useStyleCreateMutation = (onSuccess?: () => void) => {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
