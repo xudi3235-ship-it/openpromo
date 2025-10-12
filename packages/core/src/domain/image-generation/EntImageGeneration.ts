@@ -134,6 +134,17 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
 
     if (!deleted) throw new Error(`Image generation ${this.data.id} not found`);
 
+    // Cleanup output images asynchronously (don't block deletion)
+    // Note: Most AI-generated images are external URLs (Replicate, Cloudflare)
+    // Only R2-stored images will be deleted
+    const { cleanupImagesAsync } = await import(
+      "@core/helpers/storage/cleanup"
+    );
+    cleanupImagesAsync(deleted.outputImages, {
+      entityType: "image_generation",
+      entityId: this.data.id,
+    });
+
     return deleted;
   }
 }
