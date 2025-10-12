@@ -69,19 +69,18 @@ export namespace ProductImageGen {
     product: EntProduct,
   ): Promise<StyleComponent> {
     // 2. for a ready product, we do a matching and find the best style
-    const sysPrompt = `You are an expert in social media marketing n trend analysis and building effective ads creative. You will read the product's context(details, industry, category, etc) and try to find it with the best matching style. This style will contain a couple images that can be used as style of reference for producing good product images. Each style has its own suitable usecases and scnearios.
+    const sysPrompt = `You are a senior social ad creative director. Review the product context (name, description, industry, category, audience cues) and match it with the most effective visual style for high-performing paid and organic social campaigns.
 
-    Examples: close-up studio shot of korean super model, real skin texture and natural glow -> this is suitable for all beuty products, skincare product, makeups, etc. 
+Available styles:
+${JSON.stringify(allStyleComponents, null, 2)}
 
-    // styles available:
-    ${Array.from(allStyleComponents.values())}
+Instructions:
+1. Analyse the product details and infer the target audience, positioning, and use case.
+2. Score every style for fit with the product's industry/category and aspirational vibe; pick the top scoring option and return only that style's name.
+3. Craft a vivid 3-4 sentence image generation prompt that describes the desired final image, covering background, lighting, camera framing, props, the product placement, and mood. Anchor the description in the chosen style's signature traits.
+4. If the selected style involves portraits or models, explicitly mention realistic skin texture and a natural glow.
+5. Do not invent new style names. Return JSON that matches the schema exactly.`;
 
-    RULES:
-    1. you have to select one, even there's no perfect match.
-    2. pick the one that is the most suitable for the product's industry and category
-    3. You will also generate the image gen prompt!! it should be a paragraph that uses verbs n adjectives to describe the final image to produce, including the product and how it shows up/positioned in along with the style(which might have avatar).
-    4. for portrait related styles, ensure the prompt specifiy the realisitc skin texture and natural glow.
-    `;
     const res = await generateObject({
       model: openai("gpt-5-mini"),
       schema: StyleComponent.pick({
@@ -97,7 +96,7 @@ export namespace ProductImageGen {
         },
         {
           role: "user",
-          content: `product details: ${JSON.stringify(product.data)}`,
+          content: `Product details:\n${JSON.stringify(product.data, null, 2)}`,
         },
       ],
     });

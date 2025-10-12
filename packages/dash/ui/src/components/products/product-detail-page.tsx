@@ -65,7 +65,6 @@ const getHostname = (url: string): string | null => {
     return null;
   }
 };
-
 export function ProductDetailPage() {
   const params = useParams({
     from: "/_authenticated/workspaces/$workspaceSlug/products/$productId",
@@ -75,10 +74,10 @@ export function ProductDetailPage() {
 
   const [generatedImage, setGeneratedImage] =
     React.useState<ProductImageGenerateResponse | null>(null);
-
   const { data, isLoading, error } = useProductQuery(productId);
 
   const generateImage = useProductImageGenerateMutation();
+  const isGenerating = generateImage.isPending;
 
   const product = data?.product;
   const productContext = product?.metadata?.productContext;
@@ -117,7 +116,7 @@ export function ProductDetailPage() {
   }
 
   const handleGenerate = () => {
-    if (!productId) return;
+    if (!productId || isGenerating) return;
     generateImage.mutate(
       { productId },
       {
@@ -127,6 +126,10 @@ export function ProductDetailPage() {
       },
     );
   };
+
+  const previewContainerClass = generatedImage
+    ? "relative overflow-hidden rounded-lg border border-border/60 bg-muted/20"
+    : "relative overflow-hidden rounded-lg border border-dashed border-border/70 bg-muted/10";
 
   if (isLoading) {
     return <ProductDetailSkeleton />;
@@ -322,10 +325,10 @@ export function ProductDetailPage() {
               </p>
               <Button
                 onClick={handleGenerate}
-                disabled={generateImage.isPending}
+                disabled={isGenerating}
                 className="w-full justify-center gap-2"
               >
-                {generateImage.isPending ? (
+                {isGenerating ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Generating…
@@ -339,23 +342,38 @@ export function ProductDetailPage() {
               </Button>
             </div>
 
-            {generatedImage ? (
-              <div className="mt-6 space-y-3">
-                <div className="overflow-hidden rounded-lg border border-border/60 bg-muted/20">
-                  <img
-                    src={generatedImage.imageUrl}
-                    alt={`Generated preview for ${product.name}`}
-                    className="w-full object-cover"
-                  />
+            <div className="mt-6 flex flex-1 flex-col gap-3">
+              <div className={previewContainerClass}>
+                <div className="aspect-square w-full">
+                  {generatedImage ? (
+                    <img
+                      src={generatedImage.imageUrl}
+                      alt={`Generated preview for ${product.name}`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : !isGenerating ? (
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground">
+                      <Sparkles className="h-5 w-5" />
+                      Click “Generate image” to create a fresh visual using this
+                      product&apos;s context.
+                    </div>
+                  ) : null}
                 </div>
+                {isGenerating ? (
+                  <>
+                    <div className="absolute inset-0 overflow-hidden rounded-lg">
+                      <Skeleton className="h-full w-full animate-pulse" />
+                    </div>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background/60 backdrop-blur-sm">
+                      <div className="h-12 w-12 rounded-full border border-border/60 bg-gradient-to-br from-primary/10 via-transparent to-transparent animate-pulse" />
+                      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Generating preview
+                      </span>
+                    </div>
+                  </>
+                ) : null}
               </div>
-            ) : (
-              <div className="mt-6 flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/10 p-6 text-center text-sm text-muted-foreground">
-                <Sparkles className="mb-2 h-5 w-5" />
-                Click “Generate image” to create a fresh visual using this
-                product&apos;s context.
-              </div>
-            )}
+            </div>
           </section>
         </div>
       </div>

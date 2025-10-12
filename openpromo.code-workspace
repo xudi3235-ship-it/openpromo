@@ -96,7 +96,8 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
     "typescript.experimental.useTsgo": false,
-    "chatgpt.commentCodeLensEnabled": false
+    "chatgpt.commentCodeLensEnabled": false,
+    "chatgpt.openOnStartup": true
   },
   "extensions": {
     "recommendations": [
