@@ -27,7 +27,11 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
 
   static Schemas() {
     return {
-      create: ImageGenerationInsert,
+      create: ImageGenerationInsert.omit({
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+      }),
       update: ImageGenerationUpdate,
     };
   }
