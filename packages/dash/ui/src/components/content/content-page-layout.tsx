@@ -1,6 +1,5 @@
 import type { Table } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import ComposerDialog from "@/components/composer/modal/dialog-composer";
 import {
   ContentFilters,
   type ContentFilters as ContentFiltersType,
@@ -44,7 +43,6 @@ export function ContentPageLayout({
       {children}
 
       <ContentRescheduleDialog />
-      <ComposerDialog />
     </div>
   );
 }

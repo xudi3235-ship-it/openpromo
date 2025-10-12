@@ -43,7 +43,6 @@ import {
 import { useCalendarDragUpdate } from "@/hooks/calendar/useCalendarDragUpdate";
 import { Route as CalendarRoute } from "@/routes/_authenticated/workspaces/$workspaceSlug/calendar";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
-import ComposerDialog from "../composer/modal/dialog-composer";
 import { CalendarRescheduleDialog } from "./reschedule-dialog";
 
 export interface EventCalendarProps {
@@ -410,7 +409,6 @@ export function ContentCalendar({
           onSave={handleEventSave}
           onDelete={handleEventDelete}
         />
-        <ComposerDialog />
         <CalendarRescheduleDialog
           state={rescheduleState}
           onClose={closeRescheduleDialog}

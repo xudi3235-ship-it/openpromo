@@ -6,6 +6,7 @@ import { cn } from "@openpromo/ui/lib/utils";
 import { Outlet } from "@tanstack/react-router";
 import { LayoutProvider } from "@/context/layout-provider";
 import { AppSidebar } from "../app-sidebar";
+import ComposerDialog from "../composer/modal/dialog-composer";
 
 type WorkspaceLayoutProps = {
   children?: React.ReactNode;
@@ -33,6 +34,9 @@ export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
         >
           <div className="flex-1 min-h-0">{children ?? <Outlet />}</div>
         </SidebarInset>
+
+        {/* Global Composer Dialog - can be opened from anywhere in the workspace */}
+        <ComposerDialog />
       </LayoutProvider>
     </SidebarProvider>
   );
