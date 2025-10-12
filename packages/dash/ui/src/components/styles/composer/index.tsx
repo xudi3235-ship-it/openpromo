@@ -58,8 +58,6 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
         description: description.trim(),
         imageGenPrompt: imageGenPrompt.trim(),
         imageRefs,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
     } catch (error) {
       const message =

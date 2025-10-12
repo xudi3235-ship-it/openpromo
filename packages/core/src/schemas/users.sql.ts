@@ -5,9 +5,9 @@ export const usersTable = pgTable(
   "users",
   {
     ...id,
+    ...timestamps,
     workosId: text().notNull(),
     defaultWorkspaceSlug: text(),
-    ...timestamps,
   },
   (t) => [uniqueIndex().on(t.workosId)],
 );

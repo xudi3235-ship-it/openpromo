@@ -1,0 +1,1 @@
+ALTER TABLE "style_component" ADD COLUMN "creator_id" text NOT NULL;

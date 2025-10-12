@@ -204,6 +204,13 @@
       "when": 1760244199179,
       "tag": "0028_wealthy_lyja",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1760248348850,
+      "tag": "0029_smooth_wiccan",
+      "breakpoints": true
     }
   ]
 }

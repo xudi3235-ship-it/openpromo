@@ -1,7 +1,7 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDebounceCallback, useIntersectionObserver } from "usehooks-ts";
 import {
@@ -26,7 +26,6 @@ export function StylesPage() {
 
   const handleCreateDummyStyles = async () => {
     const timestamp = Date.now();
-    const now = new Date();
     const dummyStyles = [
       {
         name: `minimalist-modern-${timestamp}`,
@@ -39,8 +38,6 @@ export function StylesPage() {
           "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=80",
           "https://images.unsplash.com/photo-1595246140625-573b715d11dc?w=800&q=80",
         ],
-        createdAt: now,
-        updatedAt: now,
       },
       {
         name: `vintage-retro-${timestamp}`,
@@ -54,8 +51,6 @@ export function StylesPage() {
           "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=800&q=80",
           "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&q=80",
         ],
-        createdAt: now,
-        updatedAt: now,
       },
       {
         name: `bold-vibrant-${timestamp}`,
@@ -69,8 +64,6 @@ export function StylesPage() {
           "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80",
           "https://images.unsplash.com/photo-1506443432602-ac2fcd6f54e0?w=800&q=80",
         ],
-        createdAt: now,
-        updatedAt: now,
       },
       {
         name: `natural-organic-${timestamp}`,
@@ -83,8 +76,6 @@ export function StylesPage() {
           "https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80",
           "https://images.unsplash.com/photo-1600420254571-16e0ae37e68a?w=800&q=80",
         ],
-        createdAt: now,
-        updatedAt: now,
       },
       {
         name: `luxe-elegant-${timestamp}`,
@@ -96,8 +87,6 @@ export function StylesPage() {
           "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&q=80",
           "https://images.unsplash.com/photo-1528991435120-e73e05a58897?w=800&q=80",
         ],
-        createdAt: now,
-        updatedAt: now,
       },
     ];
 
@@ -248,17 +237,39 @@ interface StylesEmptyStateProps {
 }
 
 function StylesEmptyState({ hasFilters }: StylesEmptyStateProps) {
+  const openComposer = useStyleComposerStore((state) => state.openComposer);
+
+  if (hasFilters) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed p-16 text-center">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+          <Search className="h-7 w-7 text-muted-foreground" />
+        </div>
+        <h2 className="text-xl font-semibold">No matching styles found</h2>
+        <p className="mt-2 max-w-md text-sm text-muted-foreground">
+          Try adjusting your search terms or explore our full collection of
+          creative styles.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/60 bg-muted/10 p-10 text-center">
-      <div className="text-5xl mb-4">🖌️</div>
-      <h2 className="text-lg font-semibold">
-        {hasFilters ? "No styles match your search" : "No styles yet"}
+    <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed p-16 text-center">
+      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/10 to-purple-500/10">
+        <Sparkles className="h-9 w-9 text-muted-foreground" />
+      </div>
+      <h2 className="text-2xl font-bold">
+        Start Building Your Style Collection
       </h2>
-      <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-        {hasFilters
-          ? "Try a different search term or clear your filters."
-          : "Once styles are created they will appear here. In the meantime, explore available presets in the feed below."}
+      <p className="mt-3 max-w-lg text-base text-muted-foreground leading-relaxed">
+        Create your first visual style to transform product imagery. Each style
+        can be reused across campaigns to maintain brand consistency.
       </p>
+      <Button onClick={openComposer} size="lg" className="mt-8 gap-2">
+        <Plus className="h-4 w-4" />
+        Create Your First Style
+      </Button>
     </div>
   );
 }

@@ -94,6 +94,7 @@ export const styleComponentTable = pgTable(
   {
     ...id,
     ...timestamps,
+    creatorID: text("creator_id").notNull(), // user id of the creator
     name: text("name").notNull(),
     slug: text("slug").notNull(),
     description: text("description").notNull(),
