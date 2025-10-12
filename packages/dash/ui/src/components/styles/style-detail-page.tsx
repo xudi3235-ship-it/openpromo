@@ -30,22 +30,6 @@ const buildMetadata = (style: StyleResponse["style"]) => {
     metadata.push({ label: "Slug", value: style.slug });
   }
 
-  if (style.creatorID) {
-    metadata.push({ label: "Creator", value: style.creatorID });
-  }
-
-  const createdAt = formatDate(style.createdAt);
-  if (createdAt) {
-    metadata.push({ label: "Created", value: createdAt });
-  }
-
-  const updatedAt = formatDate(style.updatedAt);
-  if (updatedAt) {
-    metadata.push({ label: "Updated", value: updatedAt });
-  }
-
-  metadata.push({ label: "Style ID", value: style.id });
-
   return metadata;
 };
 
@@ -127,9 +111,9 @@ export function StyleDetailPage() {
         )}
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
         <div className="space-y-4">
-          <div className="relative overflow-hidden rounded-xl border border-border/60 bg-muted/20">
+          <div className="overflow-hidden rounded-xl bg-muted/20">
             {heroImage ? (
               <img
                 src={heroImage}
@@ -137,7 +121,7 @@ export function StyleDetailPage() {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+              <div className="flex aspect-[5/6] w-full flex-col items-center justify-center gap-2 text-muted-foreground">
                 <ImageOff className="h-8 w-8" />
                 <span className="text-xs">No primary image</span>
               </div>
@@ -145,87 +129,94 @@ export function StyleDetailPage() {
           </div>
 
           {galleryImages.length > 0 && (
-            <div className="rounded-xl border border-border/60 bg-background/60 p-4">
-              <h2 className="text-sm font-semibold text-muted-foreground">
-                Gallery
-              </h2>
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                {galleryImages.map((image) => (
-                  <div
-                    key={image}
-                    className="relative overflow-hidden rounded-lg border border-border/40 bg-muted/20"
-                  >
-                    <img
-                      src={image}
-                      alt={`${style.name} preview`}
-                      className="aspect-square w-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
+            <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+              {galleryImages.slice(0, 6).map((image) => (
+                <img
+                  key={image}
+                  src={image}
+                  alt={`${style.name} preview`}
+                  className="aspect-square w-full rounded-lg object-cover"
+                />
+              ))}
             </div>
           )}
         </div>
 
-        <aside className="flex flex-col gap-4">
-          <section className="rounded-xl border border-border/70 bg-background/80 p-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Details
-            </h2>
-            <dl className="mt-3 space-y-3 text-sm">
+        <div className="space-y-4 text-sm text-muted-foreground">
+          {style.creatorID && (
+            <p>
+              <span className="uppercase text-[11px] tracking-wide">
+                Creator
+              </span>
+              <br />
+              <span className="font-medium text-foreground">
+                {style.creatorID}
+              </span>
+            </p>
+          )}
+
+          <p>
+            <span className="uppercase text-[11px] tracking-wide">
+              Style ID
+            </span>
+            <br />
+            <span className="font-medium text-foreground">{style.id}</span>
+          </p>
+
+          {metadata.length > 0 && (
+            <dl className="space-y-1 text-xs">
               {metadata.map((item) => (
-                <div
-                  key={`${item.label}-${item.value}`}
-                  className="flex justify-between gap-3"
-                >
-                  <dt className="text-muted-foreground">{item.label}</dt>
-                  <dd className="font-medium text-foreground">{item.value}</dd>
+                <div key={`${item.label}-${item.value}`}>
+                  <dt className="inline text-muted-foreground">
+                    {item.label}:
+                  </dt>{" "}
+                  <dd className="inline text-foreground">{item.value}</dd>
                 </div>
               ))}
             </dl>
-          </section>
+          )}
 
           {style.imageGenPrompt && (
-            <section className="rounded-xl border border-border/70 bg-background/80 p-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Image Prompt
-              </h2>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+            <div className="space-y-2">
+              <span className="uppercase text-[11px] tracking-wide">
+                Prompt Blueprint
+              </span>
+              <p className="whitespace-pre-wrap leading-relaxed text-foreground">
                 {style.imageGenPrompt}
               </p>
-            </section>
+            </div>
           )}
-        </aside>
+        </div>
       </div>
 
-      <section className="rounded-xl border border-border/70 bg-background/80 p-4">
-        <div className="flex items-center justify-between gap-3">
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Recent Generations
           </h2>
           {generationTotal > 0 ? (
             <span className="text-xs text-muted-foreground">
-              {generationTotal} total
+              {generationTotal} saved
             </span>
           ) : null}
         </div>
 
         {generationsQuery.isLoading ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {Array.from({ length: 6 }).map((_, index) => (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, index) => (
               <Skeleton
-                // biome-ignore lint/suspicious/noArrayIndexKey: static skeletons
+                // biome-ignore lint/suspicious/noArrayIndexKey: placeholder list
                 key={index}
-                className="aspect-square w-full rounded-lg"
+                className="aspect-[4/5] w-full rounded-lg"
               />
             ))}
           </div>
         ) : generationsQuery.isError ? (
-          <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-center text-sm text-destructive">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-center text-sm text-destructive">
             Failed to load generated images.
           </div>
         ) : generations.length > 0 ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {generations.map((generation) => {
               const coverImage = generation.outputImages?.[0];
               const createdAt = formatDate(generation.createdAt);
@@ -233,7 +224,7 @@ export function StyleDetailPage() {
               return (
                 <div
                   key={generation.id}
-                  className="group relative overflow-hidden rounded-lg border border-border/60 bg-muted/20"
+                  className="group relative overflow-hidden rounded-lg bg-muted/20"
                 >
                   {coverImage ? (
                     <img
@@ -242,19 +233,19 @@ export function StyleDetailPage() {
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="flex h-36 items-center justify-center text-xs text-muted-foreground">
+                    <div className="flex h-48 items-center justify-center text-xs text-muted-foreground">
                       No image available
                     </div>
                   )}
 
-                  <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-3 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                  <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-gradient-to-t from-black/80 via-black/25 to-transparent p-4 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                     {createdAt && (
                       <span className="font-medium tracking-wide">
                         {createdAt}
                       </span>
                     )}
                     {generation.prompt && (
-                      <p className="line-clamp-2 text-[11px] text-white/80">
+                      <p className="line-clamp-3 text-[11px] text-white/80">
                         {generation.prompt}
                       </p>
                     )}
@@ -264,7 +255,7 @@ export function StyleDetailPage() {
             })}
           </div>
         ) : (
-          <div className="mt-4 rounded-lg border border-dashed border-border/60 bg-background/60 p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-lg border border-dashed border-border/60 bg-background/60 p-6 text-center text-sm text-muted-foreground">
             No generated images yet. Generate assets with this style to see them
             here.
           </div>
@@ -280,49 +271,37 @@ export function StyleDetailSkeleton() {
       <Skeleton className="h-9 w-40" />
 
       <div className="space-y-3">
-        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-8 w-60" />
         <Skeleton className="h-4 w-2/3" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
         <div className="space-y-4">
-          <Skeleton className="aspect-[4/3] w-full rounded-xl" />
-          <div className="rounded-xl border border-border/60 bg-background/60 p-4">
-            <Skeleton className="h-4 w-24" />
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              <Skeleton className="aspect-square w-full rounded-lg" />
-              <Skeleton className="aspect-square w-full rounded-lg" />
-              <Skeleton className="aspect-square w-full rounded-lg" />
-            </div>
+          <Skeleton className="aspect-[5/6] w-full rounded-xl" />
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton
+                // biome-ignore lint/suspicious/noArrayIndexKey: placeholder list
+                key={index}
+                className="aspect-square w-full rounded-lg"
+              />
+            ))}
           </div>
         </div>
 
-        <aside className="flex flex-col gap-4">
-          <div className="rounded-xl border border-border/70 bg-background/80 p-4 space-y-3">
-            <Skeleton className="h-4 w-20" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
-              <Skeleton className="h-4 w-4/5" />
-              <Skeleton className="h-4 w-3/4" />
-            </div>
-          </div>
-          <div className="rounded-xl border border-border/70 bg-background/80 p-4 space-y-3">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-16 w-full" />
-          </div>
-        </aside>
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-24 w-full" />
+        </div>
       </div>
 
-      <div className="rounded-xl border border-border/70 bg-background/80 p-4 space-y-4">
-        <Skeleton className="h-4 w-28" />
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton
-              // biome-ignore lint/suspicious/noArrayIndexKey: placeholder list
-              key={index}
-              className="aspect-square w-full rounded-lg"
-            />
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-36" />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: placeholder list
+            <Skeleton key={index} className="aspect-[4/5] w-full rounded-lg" />
           ))}
         </div>
       </div>
