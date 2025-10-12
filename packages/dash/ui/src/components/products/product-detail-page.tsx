@@ -282,9 +282,6 @@ export function ProductDetailPage() {
               <div className="space-y-3">
                 <div className="space-y-1">
                   <h3 className="text-sm font-medium">Latest result</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Style: {generatedImage.style?.name ?? "N/A"}
-                  </p>
                 </div>
                 <div className="overflow-hidden rounded-md border border-border bg-muted/30">
                   <img
@@ -293,11 +290,6 @@ export function ProductDetailPage() {
                     className="w-full object-cover"
                   />
                 </div>
-                {generatedImage.style?.description ? (
-                  <p className="text-xs text-muted-foreground">
-                    {generatedImage.style.description}
-                  </p>
-                ) : null}
               </div>
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center rounded-md border border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">

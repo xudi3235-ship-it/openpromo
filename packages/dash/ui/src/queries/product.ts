@@ -1,7 +1,6 @@
-import type { StyleName } from "@shared/product";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
-import type { InferRequestType } from "hono/client";
+import type { InferRequestType, InferResponseType } from "hono/client";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import {
@@ -22,19 +21,13 @@ type ProductListParams = InferRequestType<
   (typeof apiClient)["workspaces"][":workspaceSlug"]["products"]["$get"]
 >["query"];
 
-type ProductImageGenerateInput = {
-  productId: string;
-  styleName?: StyleName;
-};
+export type ProductImageGenerateInput = InferRequestType<
+  (typeof apiClient)["workspaces"][":workspaceSlug"]["image-gen"]["generate"]["$post"]
+>["json"];
 
-export type ProductImageGenerateResponse = {
-  imageUrl: string;
-  style?: {
-    name: string;
-    description: string;
-    imageRefs: string[];
-  };
-};
+export type ProductImageGenerateResponse = InferResponseType<
+  (typeof apiClient)["workspaces"][":workspaceSlug"]["image-gen"]["generate"]["$post"]
+>;
 
 export const invalidateProductListQueries = async (queryClient: QueryClient) =>
   queryClient.invalidateQueries({
