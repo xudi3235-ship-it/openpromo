@@ -2,6 +2,7 @@ import { Button } from "@openpromo/ui/components/button";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus, TrendingUp } from "lucide-react";
+import { StylesInfiniteGrid } from "@/components/styles/styles-infinite-grid";
 import { useConnectedAccounts } from "@/queries/connected-account";
 
 function Loading() {
@@ -91,6 +92,41 @@ function WorkspaceIndex() {
             <p className="text-xs text-muted-foreground/70">
               Your posts and activities will appear here
             </p>
+          </div>
+        </div>
+
+        {/* Styles Marketplace Preview */}
+        <div className="bg-card rounded-xl border border-border/40 p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-medium text-foreground">
+                Explore Creative Styles
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Discover reusable visual systems to accelerate your next
+                campaign.
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="self-start sm:self-auto"
+            >
+              <Link
+                to="/workspaces/$workspaceSlug/styles"
+                params={{ workspaceSlug }}
+              >
+                View marketplace
+              </Link>
+            </Button>
+          </div>
+
+          <div className="mt-4">
+            <StylesInfiniteGrid
+              className="gap-3"
+              gridClassName="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            />
           </div>
         </div>
       </div>

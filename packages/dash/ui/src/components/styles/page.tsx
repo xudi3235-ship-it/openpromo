@@ -1,16 +1,12 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
-import { Skeleton } from "@openpromo/ui/components/skeleton";
-import { Plus, Search, Sparkles } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { useDebounceCallback, useIntersectionObserver } from "usehooks-ts";
-import {
-  useStyleCreateMutation,
-  useStylesInfiniteQuery,
-} from "@/queries/styles";
+import { Plus, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useDebounceCallback } from "usehooks-ts";
+import { StylesInfiniteGrid } from "@/components/styles/styles-infinite-grid";
+import { useStyleCreateMutation } from "@/queries/styles";
 import { useStyleComposerStore } from "@/stores/style-composer-store";
 import { StyleComposer } from "./composer";
-import { StyleCard } from "./style-card";
 
 export function StylesPage() {
   const [searchValue, setSearchValue] = useState("");
@@ -100,51 +96,6 @@ export function StylesPage() {
     return () => updateSearch.cancel();
   }, [searchValue, updateSearch]);
 
-  const {
-    data,
-    isLoading,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useStylesInfiniteQuery({
-    search: debouncedSearch,
-  });
-
-  const styles = useMemo(
-    () => data?.pages.flatMap((page) => page.styles) ?? [],
-    [data],
-  );
-
-  const hasSearch = Boolean(debouncedSearch);
-
-  // Infinite scroll observer using usehooks-ts
-  const { isIntersecting, ref: observerRef } = useIntersectionObserver({
-    threshold: 0.1,
-    rootMargin: "100px",
-  });
-
-  useEffect(() => {
-    if (isIntersecting && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  if (error) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Failed to load styles.
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {error instanceof Error ? error.message : "Unknown error"}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Header Section */}
@@ -195,32 +146,9 @@ export function StylesPage() {
         </div>
       </div>
 
-      {isLoading ? (
-        <StylesLoadingState />
-      ) : styles.length === 0 ? (
-        <StylesEmptyState hasFilters={hasSearch} />
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {styles.map((style) => (
-              <StyleCard key={style.id} style={style} />
-            ))}
-          </div>
-
-          {/* Infinite scroll trigger */}
-          <div ref={observerRef} className="h-4" />
-
-          {/* Loading indicator for next page */}
-          {isFetchingNextPage && (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {Array.from({ length: 5 }).map((_, index) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: loading skeleton
-                <CardSkeleton key={index} />
-              ))}
-            </div>
-          )}
-        </>
-      )}
+      <StylesInfiniteGrid
+        params={debouncedSearch ? { search: debouncedSearch } : undefined}
+      />
 
       {/* Style Composer Modal */}
       <StyleComposer
@@ -228,67 +156,6 @@ export function StylesPage() {
           // Refresh will happen automatically via mutation invalidation
         }}
       />
-    </div>
-  );
-}
-
-interface StylesEmptyStateProps {
-  hasFilters: boolean;
-}
-
-function StylesEmptyState({ hasFilters }: StylesEmptyStateProps) {
-  const openComposer = useStyleComposerStore((state) => state.openComposer);
-
-  if (hasFilters) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed p-16 text-center">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <Search className="h-7 w-7 text-muted-foreground" />
-        </div>
-        <h2 className="text-xl font-semibold">No matching styles found</h2>
-        <p className="mt-2 max-w-md text-sm text-muted-foreground">
-          Try adjusting your search terms or explore our full collection of
-          creative styles.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed p-16 text-center">
-      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/10 to-purple-500/10">
-        <Sparkles className="h-9 w-9 text-muted-foreground" />
-      </div>
-      <h2 className="text-2xl font-bold">
-        Start Building Your Style Collection
-      </h2>
-      <p className="mt-3 max-w-lg text-base text-muted-foreground leading-relaxed">
-        Create your first visual style to transform product imagery. Each style
-        can be reused across campaigns to maintain brand consistency.
-      </p>
-      <Button onClick={openComposer} size="lg" className="mt-8 gap-2">
-        <Plus className="h-4 w-4" />
-        Create Your First Style
-      </Button>
-    </div>
-  );
-}
-
-function StylesLoadingState() {
-  return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {Array.from({ length: 10 }).map((_, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: later
-        <CardSkeleton key={index} />
-      ))}
-    </div>
-  );
-}
-
-function CardSkeleton() {
-  return (
-    <div className="group relative aspect-[3/4] overflow-hidden rounded-lg">
-      <Skeleton className="h-full w-full" />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { apiClient, useHonoMutation, useHonoQuery } from "@/lib/hono-client";
 
-type StylesListParams = InferRequestType<
+export type StylesListParams = InferRequestType<
   (typeof apiClient)["workspaces"][":workspaceSlug"]["styles"]["$get"]
 >["query"];
 
