@@ -146,18 +146,18 @@ export function StylesPage() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-6">
+    <div className="flex h-full flex-col gap-4">
       {/* Header Section */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Title and Actions */}
         <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 space-y-2">
             {/* Main Heading */}
-            <div className="space-y-1.5">
-              <h1 className="text-4xl font-bold tracking-tight">
+            <div className="space-y-1">
+              <h1 className="text-xl font-bold tracking-tight">
                 Creative Style Marketplace
               </h1>
-              <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">
+              <p className="text-sm text-muted-foreground max-w-2xl">
                 Professionally curated visual styles designed to elevate your
                 product ads and maximize performance.
               </p>
@@ -174,7 +174,7 @@ export function StylesPage() {
             >
               {createStyleMutation.isPending ? "Creating..." : "Add Dummy Data"}
             </Button>
-            <Button onClick={openComposer} size="lg" className="gap-2">
+            <Button onClick={openComposer} className="gap-2">
               <Plus className="h-4 w-4" />
               Create Style
             </Button>
@@ -182,7 +182,7 @@ export function StylesPage() {
         </div>
 
         {/* Search Bar */}
-        <div className="relative max-w-xl">
+        <div className="relative max-w-lg">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search by name, description, or aesthetic..."
@@ -190,7 +190,7 @@ export function StylesPage() {
             onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
               setSearchValue(event.target.value)
             }
-            className="pl-9 h-11"
+            className="pl-9"
           />
         </div>
       </div>
