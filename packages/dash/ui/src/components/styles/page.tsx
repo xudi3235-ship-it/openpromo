@@ -157,39 +157,53 @@ export function StylesPage() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Styles</h1>
-          <p className="text-sm text-muted-foreground">
-            Browse reusable visual styles for generated product imagery.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleCreateDummyStyles}
-            disabled={createStyleMutation.isPending}
-          >
-            {createStyleMutation.isPending ? "Creating..." : "Add Dummy Data"}
-          </Button>
-          <Button onClick={openComposer}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Style
-          </Button>
-        </div>
-      </div>
+    <div className="flex h-full flex-col gap-6">
+      {/* Header Section */}
+      <div className="space-y-6">
+        {/* Title and Actions */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 space-y-4">
+            {/* Main Heading */}
+            <div className="space-y-1.5">
+              <h1 className="text-4xl font-bold tracking-tight">
+                Creative Style Marketplace
+              </h1>
+              <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">
+                Professionally curated visual styles designed to elevate your
+                product ads and maximize performance.
+              </p>
+            </div>
+          </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search styles..."
-          value={searchValue}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-            setSearchValue(event.target.value)
-          }
-          className="pl-9"
-        />
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCreateDummyStyles}
+              disabled={createStyleMutation.isPending}
+              className="hidden lg:flex"
+            >
+              {createStyleMutation.isPending ? "Creating..." : "Add Dummy Data"}
+            </Button>
+            <Button onClick={openComposer} size="lg" className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create Style
+            </Button>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative max-w-xl">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, description, or aesthetic..."
+            value={searchValue}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              setSearchValue(event.target.value)
+            }
+            className="pl-9 h-11"
+          />
+        </div>
       </div>
 
       {isLoading ? (
