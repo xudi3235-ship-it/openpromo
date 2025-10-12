@@ -22,6 +22,7 @@ import { Route as AuthenticatedWorkspacesWorkspaceSlugInboxRouteImport } from '.
 import { Route as AuthenticatedWorkspacesWorkspaceSlugContentRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/content'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugComposerRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/composer'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugCalendarRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/calendar'
+import { Route as AuthenticatedWorkspacesWorkspaceSlugStylesIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/styles/index'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugProductsIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/products/index'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/products/$productId'
 
@@ -99,6 +100,12 @@ const AuthenticatedWorkspacesWorkspaceSlugCalendarRoute =
     path: '/calendar',
     getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRouteRoute,
   } as any)
+const AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute =
+  AuthenticatedWorkspacesWorkspaceSlugStylesIndexRouteImport.update({
+    id: '/styles/',
+    path: '/styles/',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRouteRoute,
+  } as any)
 const AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute =
   AuthenticatedWorkspacesWorkspaceSlugProductsIndexRouteImport.update({
     id: '/products/',
@@ -127,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
   '/workspaces/$workspaceSlug/products/$productId': typeof AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute
   '/workspaces/$workspaceSlug/products': typeof AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute
+  '/workspaces/$workspaceSlug/styles': typeof AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -141,6 +149,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
   '/workspaces/$workspaceSlug/products/$productId': typeof AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute
   '/workspaces/$workspaceSlug/products': typeof AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute
+  '/workspaces/$workspaceSlug/styles': typeof AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -159,6 +168,7 @@ export interface FileRoutesById {
   '/_authenticated/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
   '/_authenticated/workspaces/$workspaceSlug/products/$productId': typeof AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute
   '/_authenticated/workspaces/$workspaceSlug/products/': typeof AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute
+  '/_authenticated/workspaces/$workspaceSlug/styles/': typeof AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug/'
     | '/workspaces/$workspaceSlug/products/$productId'
     | '/workspaces/$workspaceSlug/products'
+    | '/workspaces/$workspaceSlug/styles'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug'
     | '/workspaces/$workspaceSlug/products/$productId'
     | '/workspaces/$workspaceSlug/products'
+    | '/workspaces/$workspaceSlug/styles'
   id:
     | '__root__'
     | '/'
@@ -208,6 +220,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/$workspaceSlug/'
     | '/_authenticated/workspaces/$workspaceSlug/products/$productId'
     | '/_authenticated/workspaces/$workspaceSlug/products/'
+    | '/_authenticated/workspaces/$workspaceSlug/styles/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -309,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugCalendarRouteImport
       parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteRoute
     }
+    '/_authenticated/workspaces/$workspaceSlug/styles/': {
+      id: '/_authenticated/workspaces/$workspaceSlug/styles/'
+      path: '/styles'
+      fullPath: '/workspaces/$workspaceSlug/styles'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugStylesIndexRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteRoute
+    }
     '/_authenticated/workspaces/$workspaceSlug/products/': {
       id: '/_authenticated/workspaces/$workspaceSlug/products/'
       path: '/products'
@@ -336,6 +356,7 @@ interface AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren {
   AuthenticatedWorkspacesWorkspaceSlugIndexRoute: typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
   AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute: typeof AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute
   AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute: typeof AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute
+  AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute: typeof AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute
 }
 
 const AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren: AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren =
@@ -358,6 +379,8 @@ const AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren: AuthenticatedWorks
       AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute,
     AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute:
       AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute,
+    AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute:
+      AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute,
   }
 
 const AuthenticatedWorkspacesWorkspaceSlugRouteRouteWithChildren =

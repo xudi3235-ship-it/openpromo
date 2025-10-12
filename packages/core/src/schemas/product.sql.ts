@@ -105,6 +105,8 @@ export const styleComponentTable = pgTable(
 
 const styleComponentRefinements = {
   imageRefs: z.array(z.string()).default([]),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 };
 
 export const StyleComponentInsert = createInsertSchema(
