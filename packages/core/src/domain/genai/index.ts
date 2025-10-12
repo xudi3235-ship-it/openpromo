@@ -110,7 +110,7 @@ export namespace ProductImageGen {
     // @ts-expect-error,
     const imageUrl = output.url();
 
-    const imageUrls = imageUrl ? [imageUrl] : [];
+    const imageUrls = imageUrl ? [String(imageUrl)] : [];
 
     return {
       imageUrls,

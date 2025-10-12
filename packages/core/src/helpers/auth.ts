@@ -56,10 +56,6 @@ export async function authenticateWithCookie(
   const result = await session.authenticate();
 
   if (result.authenticated) {
-    console.log(
-      "feature flags in authenticateWithCookie:",
-      result.featureFlags,
-    );
     return {
       authenticated: true,
       user: result.user,
