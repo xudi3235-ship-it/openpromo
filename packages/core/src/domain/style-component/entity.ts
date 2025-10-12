@@ -1,5 +1,8 @@
+import { EntImageGeneration } from "@core/domain/image-generation";
+import { Actor } from "@core/helpers/actor";
 import { and, asc, count, db, desc, eq, ilike, or } from "@core/helpers/db";
 import { Ent } from "@core/helpers/ent";
+import { FeatureFlag } from "@core/helpers/featureflag";
 import {
   StyleComponentInsert,
   type StyleComponentSelectType,
@@ -27,7 +30,13 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
 
   static Schemas() {
     return {
-      create: StyleComponentInsert,
+      create: StyleComponentInsert.omit({
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        isOfficial: true,
+        creatorID: true,
+      }),
       update: StyleComponentUpdate,
     };
   }
@@ -35,7 +44,13 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
   static create = fn(this.Schemas().create, async (input) => {
     const [component] = await db()
       .insert(styleComponentTable)
-      .values(input)
+      .values({
+        ...input,
+        isOfficial: FeatureFlag.isInternal(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        creatorID: Actor.userID(),
+      })
       .returning();
 
     if (!component) throw new Error("Failed to create style component");
@@ -142,6 +157,32 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
         hasPreviousPage: page > 1,
       },
     };
+  }
+
+  static async listOfficial(options: { pageSize?: number } = {}) {
+    const styles: EntStyleComponent[] = [];
+    const pageSize = options.pageSize ?? 100;
+    let page = 1;
+    let hasNext = true;
+
+    while (hasNext) {
+      const result = await EntStyleComponent.list({
+        page,
+        pageSize,
+        officialOnly: true,
+      });
+      styles.push(...result.styles);
+      hasNext = result.pagination.hasNextPage;
+      page += 1;
+    }
+
+    return styles;
+  }
+
+  async listGenerations(
+    params?: Parameters<typeof EntImageGeneration.listForStyle>[1],
+  ) {
+    return EntImageGeneration.listForStyle(this.data.id, params);
   }
 
   async update(input: StyleComponentUpdateInput): Promise<this> {

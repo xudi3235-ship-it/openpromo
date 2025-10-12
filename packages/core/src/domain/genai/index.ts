@@ -1,16 +1,36 @@
 import { openai } from "@ai-sdk/openai";
 import { env } from "@core/utils/env";
-import { ProductIdentificationSchema, StyleComponent } from "@shared/product";
+import { ProductIdentificationSchema } from "@shared/product";
 import { generateObject, type ModelMessage, type UserModelMessage } from "ai";
 import Replicate from "replicate";
+import { z } from "zod";
 import type { EntProduct } from "../product";
-import { allStyleComponents } from "./styles";
+import type { EntStyleComponent } from "../style-component";
 
 const replicate = new Replicate({
   auth: env.REPLICATE_API_TOKEN,
 });
 
 export namespace ProductImageGen {
+  export interface ImageStyleInput {
+    imageGenPrompt: string;
+    imageRefs: string[];
+    name?: string;
+    description?: string;
+  }
+
+  export interface GeneratedImageResult {
+    imageUrls: string[];
+    prompt: string;
+    negativePrompt?: string;
+    metadata?: Record<string, unknown>;
+  }
+
+  const MatchedStyleSchema = z.object({
+    styleId: z.string(),
+    imageGenPrompt: z.string().min(10),
+  });
+
   /**
    *
    * for generating ready-to-use product images
@@ -65,57 +85,15 @@ export namespace ProductImageGen {
     return res.object;
   }
 
-  export async function matchProductWithStyles(
-    product: EntProduct,
-  ): Promise<StyleComponent> {
-    // 2. for a ready product, we do a matching and find the best style
-    const sysPrompt = `You are a senior social ad creative director. Review the product context (name, description, industry, category, audience cues) and match it with the most effective visual style for high-performing paid and organic social campaigns.
-
-Available styles:
-${JSON.stringify(allStyleComponents, null, 2)}
-
-Instructions:
-1. Analyse the product details and infer the target audience, positioning, and use case.
-2. Score every style for fit with the product's industry/category and aspirational vibe; pick the top scoring option and return only that style's name.
-3. Craft a vivid 3-4 sentence image generation prompt that describes the desired final image, covering background, lighting, camera framing, props, the product placement, and mood. Anchor the description in the chosen style's signature traits.
-4. If the selected style involves portraits or models, explicitly mention realistic skin texture and a natural glow.
-5. Do not invent new style names. Return JSON that matches the schema exactly.`;
-
-    const res = await generateObject({
-      model: openai("gpt-5-mini"),
-      schema: StyleComponent.pick({
-        name: true,
-        imageGenPrompt: true,
-      }),
-      temperature: 0.2,
-      maxOutputTokens: 3000,
-      messages: [
-        {
-          role: "system",
-          content: sysPrompt,
-        },
-        {
-          role: "user",
-          content: `Product details:\n${JSON.stringify(product.data, null, 2)}`,
-        },
-      ],
-    });
-    const styleName = res.object.name;
-
-    const style = allStyleComponents.get(styleName);
-    if (!style) throw new Error(`style not found: ${styleName}`);
-    console.log({ resp: res.object });
-    return { ...style, imageGenPrompt: res.object.imageGenPrompt };
-  }
-
   export async function genImage(opts: {
     product: EntProduct;
-    style: StyleComponent;
-  }): Promise<string> {
-    // TODO: need to generate this prompt
+    style: ImageStyleInput;
+  }): Promise<GeneratedImageResult> {
+    const negativePrompt =
+      "low quality, blurry, deformed, distorted, disfigured, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, mutated, extra limbs";
     const sysPrompt = `MUST follow the style references provided, including lighting, shooting styles, composition, etc.
     ${opts.style.imageGenPrompt}
-    negative prompt: low quality, blurry, deformed, distorted, disfigured, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, mutated, extra limbs
+    negative prompt: ${negativePrompt}
     `;
     const input = {
       prompt: sysPrompt,
@@ -130,13 +108,84 @@ Instructions:
     });
 
     // @ts-expect-error,
-    const url = output.url();
-    return url as string;
+    const imageUrl = output.url();
+
+    const imageUrls = imageUrl ? [imageUrl] : [];
+
+    return {
+      imageUrls,
+      prompt: sysPrompt,
+      negativePrompt,
+      metadata: {
+        replicateInput: input,
+        styleName: opts.style.name,
+        productId: opts.product.data.id,
+      },
+    };
   }
 
   // ------------------------------------------------------------------------
   // helpers
   // ------------------------------------------------------------------------
+  export async function matchProductWithStyles(
+    product: EntProduct,
+    styles: EntStyleComponent[],
+  ): Promise<{ style: EntStyleComponent; prompt: string }> {
+    if (styles.length === 0) {
+      throw new Error("No styles available for matching");
+    }
+
+    const styleSummaries = styles.map((style) => ({
+      id: style.data.id,
+      name: style.data.name,
+      slug: style.data.slug,
+      description: style.data.description,
+      imageGenPrompt: style.data.imageGenPrompt,
+    }));
+
+    const systemPrompt = `You are a senior social ad creative director. Review the product data and select the most effective visual style from the provided options.
+
+Return JSON with the following shape:
+{
+  "styleId": "<id from the provided list>",
+  "imageGenPrompt": "<updated prompt tailored to the product>"
+}
+
+Important rules:
+- Only choose styles from the provided list.
+- Reuse the existing style prompt if it is already strong; otherwise adjust or enhance it for the product.
+- The image prompt must remain concise (<= 6 sentences) and include composition, subject focus, lighting, mood, and any props.
+- Consider the product's audience, category, and positioning.
+- You must return a valid styleId from the list.`;
+
+    const { object: match } = await generateObject({
+      model: openai("gpt-5-mini"),
+      schema: MatchedStyleSchema,
+      temperature: 0.2,
+      maxOutputTokens: 2000,
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: `Available styles:\n${JSON.stringify(styleSummaries, null, 2)}\n\nProduct details:\n${JSON.stringify(product.data, null, 2)}`,
+        },
+      ],
+    });
+
+    const matchedStyle = styles.find(
+      (style) => style.data.id === match.styleId,
+    );
+
+    if (!matchedStyle) {
+      throw new Error(`Matched style ${match.styleId} no longer available`);
+    }
+
+    return { style: matchedStyle, prompt: match.imageGenPrompt };
+  }
+
   function attachmentsToMessages(product: EntProduct): ModelMessage[] {
     // map the attachments to messages
     const messages = product.data.attachments

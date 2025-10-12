@@ -25,6 +25,14 @@ export type StyleResponse = InferResponseType<
   (typeof apiClient)["workspaces"][":workspaceSlug"]["styles"][":styleId"]["$get"]
 >;
 
+export type StyleGenerationsParams = InferRequestType<
+  (typeof apiClient)["workspaces"][":workspaceSlug"]["styles"][":styleId"]["generations"]["$get"]
+>["query"];
+
+export type StyleGenerationsResponse = InferResponseType<
+  (typeof apiClient)["workspaces"][":workspaceSlug"]["styles"][":styleId"]["generations"]["$get"]
+>;
+
 const serializeStylesListParams = (params: Partial<StylesListParams> = {}) => {
   const query: Record<string, string | string[] | object> = {};
 
@@ -45,6 +53,27 @@ const serializeStylesListParams = (params: Partial<StylesListParams> = {}) => {
   }
   if ("order" in params && params.order) {
     query.order = params.order;
+  }
+
+  return query;
+};
+
+const serializeStyleGenerationsParams = (
+  params: Partial<StyleGenerationsParams> = {},
+) => {
+  const query: Record<string, unknown> = {};
+
+  if ("page" in params && params.page != null) {
+    query.page = String(params.page);
+  }
+  if ("pageSize" in params && params.pageSize != null) {
+    query.pageSize = String(params.pageSize);
+  }
+  if ("productId" in params && params.productId) {
+    query.productId = params.productId;
+  }
+  if ("productOnly" in params && params.productOnly != null) {
+    query.productOnly = String(params.productOnly);
   }
 
   return query;
@@ -111,6 +140,24 @@ export const useStyleDetailsQuery = (styleId: string | undefined) => {
       api.workspaces[":workspaceSlug"].styles[":styleId"].$get({
         // biome-ignore lint/style/noNonNullAssertion: later
         param: { workspaceSlug: workspace.slug, styleId: styleId! },
+      }),
+  });
+};
+
+export const useStyleGenerationsQuery = (
+  styleId: string | undefined,
+  params: StyleGenerationsParams = {},
+) => {
+  const { workspace } = useWorkspace();
+
+  return useHonoQuery<StyleGenerationsResponse>({
+    queryKey: ["style-generations", styleId, params],
+    enabled: Boolean(styleId),
+    queryFn: (api) =>
+      api.workspaces[":workspaceSlug"].styles[":styleId"].generations.$get({
+        // biome-ignore lint/style/noNonNullAssertion: later
+        param: { workspaceSlug: workspace.slug, styleId: styleId! },
+        query: serializeStyleGenerationsParams(params),
       }),
   });
 };

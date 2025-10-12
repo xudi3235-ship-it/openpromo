@@ -1,0 +1,1 @@
+export { EntImageGeneration } from "./entity";

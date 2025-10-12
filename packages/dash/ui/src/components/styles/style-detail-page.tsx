@@ -5,7 +5,10 @@ import { Link, useParams } from "@tanstack/react-router";
 import { ChevronLeft, ImageOff } from "lucide-react";
 import { useMemo } from "react";
 import type { StyleResponse } from "@/queries/styles";
-import { useStyleDetailsQuery } from "@/queries/styles";
+import {
+  useStyleDetailsQuery,
+  useStyleGenerationsQuery,
+} from "@/queries/styles";
 
 const formatDate = (
   value: string | Date | null | undefined,
@@ -52,6 +55,9 @@ export function StyleDetailPage() {
   });
   const { styleId, workspaceSlug } = params;
   const { data, isLoading, error } = useStyleDetailsQuery(styleId);
+  const generationsQuery = useStyleGenerationsQuery(styleId, {
+    pageSize: String(12),
+  });
 
   const style = data?.style;
 
@@ -59,6 +65,9 @@ export function StyleDetailPage() {
     const refs = style?.imageRefs ?? [];
     return [refs[0], refs.slice(1)];
   }, [style]);
+
+  const generations = generationsQuery.data?.generations ?? [];
+  const generationTotal = generationsQuery.data?.pagination.total ?? 0;
 
   if (isLoading) {
     return <StyleDetailSkeleton />;
@@ -188,6 +197,79 @@ export function StyleDetailPage() {
           )}
         </aside>
       </div>
+
+      <section className="rounded-xl border border-border/70 bg-background/80 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Recent Generations
+          </h2>
+          {generationTotal > 0 ? (
+            <span className="text-xs text-muted-foreground">
+              {generationTotal} total
+            </span>
+          ) : null}
+        </div>
+
+        {generationsQuery.isLoading ? (
+          <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton
+                // biome-ignore lint/suspicious/noArrayIndexKey: static skeletons
+                key={index}
+                className="aspect-square w-full rounded-lg"
+              />
+            ))}
+          </div>
+        ) : generationsQuery.isError ? (
+          <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-center text-sm text-destructive">
+            Failed to load generated images.
+          </div>
+        ) : generations.length > 0 ? (
+          <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {generations.map((generation) => {
+              const coverImage = generation.outputImages?.[0];
+              const createdAt = formatDate(generation.createdAt);
+
+              return (
+                <div
+                  key={generation.id}
+                  className="group relative overflow-hidden rounded-lg border border-border/60 bg-muted/20"
+                >
+                  {coverImage ? (
+                    <img
+                      src={coverImage}
+                      alt={`${style.name} generation`}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-36 items-center justify-center text-xs text-muted-foreground">
+                      No image available
+                    </div>
+                  )}
+
+                  <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-3 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                    {createdAt && (
+                      <span className="font-medium tracking-wide">
+                        {createdAt}
+                      </span>
+                    )}
+                    {generation.prompt && (
+                      <p className="line-clamp-2 text-[11px] text-white/80">
+                        {generation.prompt}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-lg border border-dashed border-border/60 bg-background/60 p-6 text-center text-sm text-muted-foreground">
+            No generated images yet. Generate assets with this style to see them
+            here.
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -230,6 +312,19 @@ export function StyleDetailSkeleton() {
             <Skeleton className="h-16 w-full" />
           </div>
         </aside>
+      </div>
+
+      <div className="rounded-xl border border-border/70 bg-background/80 p-4 space-y-4">
+        <Skeleton className="h-4 w-28" />
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton
+              // biome-ignore lint/suspicious/noArrayIndexKey: placeholder list
+              key={index}
+              className="aspect-square w-full rounded-lg"
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

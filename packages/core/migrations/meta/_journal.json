@@ -218,6 +218,13 @@
       "when": 1760292883316,
       "tag": "0030_far_dark_beast",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1760298213461,
+      "tag": "0031_steady_justice",
+      "breakpoints": true
     }
   ]
 }
