@@ -25,6 +25,31 @@ export type StyleResponse = InferResponseType<
   (typeof apiClient)["workspaces"][":workspaceSlug"]["styles"][":styleId"]["$get"]
 >;
 
+const serializeStylesListParams = (params: Partial<StylesListParams> = {}) => {
+  const query: Record<string, string | string[] | object> = {};
+
+  if ("page" in params && params.page != null) {
+    query.page = String(params.page);
+  }
+  if ("pageSize" in params && params.pageSize != null) {
+    query.pageSize = String(params.pageSize);
+  }
+  if ("search" in params && params.search) {
+    query.search = params.search;
+  }
+  if ("officialOnly" in params && params.officialOnly != null) {
+    query.officialOnly = String(params.officialOnly);
+  }
+  if ("sort" in params && params.sort) {
+    query.sort = params.sort;
+  }
+  if ("order" in params && params.order) {
+    query.order = params.order;
+  }
+
+  return query;
+};
+
 export const invalidateStylesListQueries = async (queryClient: QueryClient) => {
   await queryClient.invalidateQueries({
     predicate: (query) =>
@@ -43,7 +68,7 @@ export const useStylesListQuery = (params: StylesListParams = {}) => {
     queryFn: (api) =>
       api.workspaces[":workspaceSlug"].styles.$get({
         param: { workspaceSlug: workspace.slug },
-        query: params,
+        query: serializeStylesListParams(params),
       }),
   });
 };
@@ -56,10 +81,13 @@ export const useStylesInfiniteQuery = (
   return useInfiniteQuery({
     queryKey: ["styles-list-infinite", params],
     queryFn: async ({ pageParam }) => {
+      const query = serializeStylesListParams(params);
+      query.page = String(pageParam);
+
       const response = await apiClient.workspaces[":workspaceSlug"].styles.$get(
         {
           param: { workspaceSlug: workspace.slug },
-          query: { ...params, page: String(pageParam) },
+          query,
         },
       );
       return await response.json();

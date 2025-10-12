@@ -72,10 +72,17 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
       page?: number;
       pageSize?: number;
       search?: string;
-      order?: "asc" | "desc";
+      officialOnly?: boolean;
+      sort?: "latest" | "oldest" | "most_used";
     } = {},
   ) {
-    const { page = 1, pageSize = 20, search, order = "desc" } = params;
+    const {
+      page = 1,
+      pageSize = 20,
+      search,
+      officialOnly = false,
+      sort = "latest",
+    } = params;
 
     const filters = [];
     if (search) {
@@ -89,25 +96,38 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
       );
     }
 
+    if (officialOnly) {
+      filters.push(eq(styleComponentTable.isOfficial, true));
+    }
+
     const whereClause = filters.length > 0 ? and(...filters) : undefined;
 
-    // Count total records
+    // Count total records with filters
     const countQuery = db()
       .select({ count: count() })
-      .from(styleComponentTable);
+      .from(styleComponentTable)
+      .where(whereClause);
     const totalCountResult = await countQuery;
     const totalCount = totalCountResult[0]?.count ?? 0;
     const totalPages = Math.ceil(totalCount / pageSize);
+
+    const orderExpressions = [desc(styleComponentTable.isOfficial)];
+    if (sort === "oldest") {
+      orderExpressions.push(asc(styleComponentTable.createdAt));
+      orderExpressions.push(desc(styleComponentTable.updatedAt));
+    } else if (sort === "most_used") {
+      orderExpressions.push(desc(styleComponentTable.updatedAt));
+      orderExpressions.push(desc(styleComponentTable.createdAt));
+    } else {
+      orderExpressions.push(desc(styleComponentTable.createdAt));
+      orderExpressions.push(desc(styleComponentTable.updatedAt));
+    }
 
     const styles = await db()
       .select()
       .from(styleComponentTable)
       .where(whereClause)
-      .orderBy(
-        order === "asc"
-          ? asc(styleComponentTable.createdAt)
-          : desc(styleComponentTable.createdAt),
-      )
+      .orderBy(...orderExpressions)
       .limit(pageSize)
       .offset((page - 1) * pageSize);
 
