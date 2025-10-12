@@ -32,7 +32,7 @@ import {
   extractAttachmentMetadata,
   mergeAttachmentMetadata,
 } from "../attachments/metadata";
-import { EntUnifiedContentBase } from "./base";
+import { EntUnifiedContentBase } from "./EntUnifiedContent";
 
 export class EntPendingContent extends EntUnifiedContentBase {
   protected async deleteSrc(): Promise<void> {
@@ -64,11 +64,11 @@ export class EntPendingContent extends EntUnifiedContentBase {
     return new EntPendingContent(data);
   }
   async toScheduledContent(): Promise<
-    import("./scheduled-content").EntScheduledContent
+    import("./EntScheduledContent").EntScheduledContent
   > {
     // Import moved to separate file to avoid circular dependency
     // Using dynamic import to avoid circular dependency at module level
-    const { EntScheduledContent } = await import("./scheduled-content");
+    const { EntScheduledContent } = await import("./EntScheduledContent");
     return new EntScheduledContent(this.data);
   }
   /**

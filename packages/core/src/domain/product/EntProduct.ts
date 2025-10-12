@@ -10,6 +10,7 @@ import {
 } from "@core/schemas/product.sql";
 import { fn } from "@core/utils/fn";
 import type * as z from "zod";
+import type { AttachmentLocation } from "../content/entity/EntAttachment";
 
 export class EntProduct extends Ent<ProductSelectType> {
   static type = "product";
@@ -210,7 +211,7 @@ export class EntProduct extends Ent<ProductSelectType> {
   private async cleanupAttachments(
     attachments: typeof this.data.attachments,
   ): Promise<void> {
-    const { EntAttachment } = await import("../content/entity/media");
+    const { EntAttachment } = await import("../content/entity/EntAttachment");
     const { Storage } = await import("@core/helpers/storage");
 
     for (const attachmentSpec of attachments) {
@@ -224,7 +225,9 @@ export class EntProduct extends Ent<ProductSelectType> {
         const r2Location =
           attachment.primaryLocation().kind === "r2"
             ? attachment.primaryLocation()
-            : attachment.mirrors().find((m) => m.kind === "r2");
+            : attachment
+                .mirrors()
+                .find((m: AttachmentLocation) => m.kind === "r2");
 
         if (r2Location && r2Location.kind === "r2") {
           await Storage.deleteFile(r2Location.key, Storage.PUBLIC_BUCKET);

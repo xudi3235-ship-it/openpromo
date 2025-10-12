@@ -1,6 +1,6 @@
 import type { UnifiedContentSelect } from "@core/schemas/content.sql";
 import { nullThrows } from "@core/utils/common";
-import { EntPendingContent } from "./pending-content";
+import { EntPendingContent } from "./EntContent";
 
 export class EntScheduledContent extends EntPendingContent {
   constructor(data: UnifiedContentSelect) {

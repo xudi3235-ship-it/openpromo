@@ -8,7 +8,7 @@ import {
 } from "@core/helpers/workflow";
 import { Log } from "@core/utils/log";
 import z from "zod";
-import { EntProduct } from "../entity";
+import { EntProduct } from "../EntProduct";
 
 const ProductProcessingWorkflowParams = z.object({
   actor: Actor.WorkspaceUserSchema,

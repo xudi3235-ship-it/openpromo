@@ -13,8 +13,8 @@ import {
   buildAttachmentMetadata,
   mergeAttachmentMetadata,
 } from "../attachments/metadata";
+import { EntPendingContent } from "./EntContent";
 import { facebookGraphRequest, resolveFacebookIdentity } from "./facebook/api";
-import { EntPendingContent } from "./pending-content";
 
 const log = Log.create({ namespace: "facebook-feed-entity" });
 

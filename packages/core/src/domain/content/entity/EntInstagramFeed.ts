@@ -14,11 +14,11 @@ import {
   buildAttachmentMetadata,
   mergeAttachmentMetadata,
 } from "../attachments/metadata";
+import { EntPendingContent } from "./EntContent";
 import {
   instagramGraphRequest,
   resolveInstagramIdentity,
 } from "./instagram/api";
-import { EntPendingContent } from "./pending-content";
 
 const log = Log.create({ namespace: "instagram-feed-entity" });
 

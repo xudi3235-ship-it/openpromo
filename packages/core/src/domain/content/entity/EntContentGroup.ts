@@ -12,7 +12,7 @@ import {
 import { NotImplementedError } from "@core/utils/error";
 import { fn } from "@core/utils/fn";
 import * as z from "zod";
-import { EntPendingContent } from "./pending-content";
+import { EntPendingContent } from "./EntContent";
 
 /**
  * Entity representing a pending content group. A pending content group supports scheduling & drafts, containing N unified content.

@@ -147,24 +147,24 @@ export class EntUnifiedContent extends EntUnifiedContentBase {
   }
   async delete(): Promise<UnifiedContentSelect> {
     const placement = this.placement();
-    const { EntPendingContent } = await import("./pending-content");
+    const { EntPendingContent } = await import("./EntContent");
     const pendingAdapter = new EntPendingContent(this.data);
     await pendingAdapter.deleteLocalAttachmentAssets();
 
     if (this.isPublished()) {
       switch (placement) {
         case AllPlacementEnum.FB_FEED: {
-          const { EntFacebookPost } = await import("./platform-posts");
+          const { EntFacebookPost } = await import("./EntPlatformPosts");
           const post = new EntFacebookPost(this.data);
           return await post._delete();
         }
         case AllPlacementEnum.IG_FEED: {
-          const { EntInstagramPost } = await import("./platform-posts");
+          const { EntInstagramPost } = await import("./EntPlatformPosts");
           const post = new EntInstagramPost(this.data);
           return await post._delete();
         }
         case AllPlacementEnum.TT_FEED: {
-          const { EntTikTokPost } = await import("./platform-posts");
+          const { EntTikTokPost } = await import("./EntPlatformPosts");
           const post = new EntTikTokPost(this.data);
           return await post._delete();
         }
@@ -177,12 +177,12 @@ export class EntUnifiedContent extends EntUnifiedContentBase {
 
     switch (placement) {
       case AllPlacementEnum.FB_FEED: {
-        const { EntFBFeedPendingContent } = await import("./facebook-feed");
+        const { EntFBFeedPendingContent } = await import("./EntFacebookFeed");
         const pending = new EntFBFeedPendingContent(this.data);
         return await pending._delete();
       }
       case AllPlacementEnum.IG_FEED: {
-        const { EntIGFeedPendingContent } = await import("./instagram-feed");
+        const { EntIGFeedPendingContent } = await import("./EntInstagramFeed");
         const pending = new EntIGFeedPendingContent(this.data);
         return await pending._delete();
       }

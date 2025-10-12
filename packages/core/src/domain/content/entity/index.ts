@@ -1,14 +1,15 @@
 // Base entity exports
-export { EntUnifiedContentBase } from "./base";
-// Content group entity
-export { EntPendingContentGroup } from "./content-group";
-// Platform-specific feed entities
-export { EntFBFeedPendingContent } from "./facebook-feed";
-export { EntIGFeedPendingContent } from "./instagram-feed";
-export { EntAttachment } from "./media";
+
+export { EntAttachment } from "./EntAttachment";
 // Content entities
-export { EntPendingContent } from "./pending-content";
+export { EntPendingContent } from "./EntContent";
+// Content group entity
+export { EntPendingContentGroup } from "./EntContentGroup";
+// Platform-specific feed entities
+export { EntFBFeedPendingContent } from "./EntFacebookFeed";
+export { EntIGFeedPendingContent } from "./EntInstagramFeed";
 // Platform-specific post entities
-export { EntFacebookPost, EntInstagramPost } from "./platform-posts";
-export { EntScheduledContent } from "./scheduled-content";
-export { EntTikTokFeedPendingContent } from "./tiktok-feed";
+export { EntFacebookPost, EntInstagramPost } from "./EntPlatformPosts";
+export { EntScheduledContent } from "./EntScheduledContent";
+export { EntTikTokFeedPendingContent } from "./EntTikTokFeed";
+export { EntUnifiedContentBase } from "./EntUnifiedContent";

@@ -1,4 +1,4 @@
-import { EntUnifiedContent } from "@core/domain/content/entity/base";
+import { EntUnifiedContent } from "@core/domain/content/entity/EntUnifiedContent";
 import { EntPendingContentGroup } from "@core/domain/content/entity/index";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";

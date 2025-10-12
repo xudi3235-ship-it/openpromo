@@ -10,7 +10,7 @@ import {
   TikTokFeedPlacementSpec,
 } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
-import { EntUnifiedContentBase } from "./base";
+import { EntUnifiedContentBase } from "./EntUnifiedContent";
 import { facebookGraphRequest, resolveFacebookIdentity } from "./facebook/api";
 
 /**

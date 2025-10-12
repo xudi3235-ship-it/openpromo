@@ -1,4 +1,4 @@
-import { EntUnifiedContent } from "@core/domain/content/entity/base";
+import { EntUnifiedContent } from "@core/domain/content/entity/EntUnifiedContent";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
 import { AppError } from "../../../../../helpers/error";

@@ -8,7 +8,7 @@ import {
   type AttachmentDependencies,
   type AttachmentLocation,
   EntAttachment,
-} from "./media";
+} from "./EntAttachment";
 
 describe("EntAttachment", () => {
   const workspaceId = "ws-123";

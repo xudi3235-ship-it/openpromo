@@ -1,1 +1,1 @@
-export { EntStyleComponent } from "./entity";
+export { EntStyleComponent } from "./EntStyleComponent";

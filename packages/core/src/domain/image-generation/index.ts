@@ -1,1 +1,1 @@
-export { EntImageGeneration } from "./entity";
+export { EntImageGeneration } from "./EntImageGeneration";
