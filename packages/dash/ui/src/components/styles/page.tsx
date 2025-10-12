@@ -2,8 +2,8 @@ import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Plus, Search } from "lucide-react";
-import * as React from "react";
-import { useDebounceCallback } from "usehooks-ts";
+import { useEffect, useMemo, useState } from "react";
+import { useDebounceCallback, useIntersectionObserver } from "usehooks-ts";
 import {
   useStyleCreateMutation,
   useStylesInfiniteQuery,
@@ -13,9 +13,8 @@ import { StyleComposer } from "./composer";
 import { StyleCard } from "./style-card";
 
 export function StylesPage() {
-  const [searchValue, setSearchValue] = React.useState("");
-  const [debouncedSearch, setDebouncedSearch] = React.useState<string>();
-  const observerTarget = React.useRef<HTMLDivElement>(null);
+  const [searchValue, setSearchValue] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>();
 
   const openComposer = useStyleComposerStore((state) => state.openComposer);
 
@@ -107,7 +106,7 @@ export function StylesPage() {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     updateSearch(searchValue);
     return () => updateSearch.cancel();
   }, [searchValue, updateSearch]);
@@ -123,30 +122,24 @@ export function StylesPage() {
     search: debouncedSearch,
   });
 
-  const styles = React.useMemo(
+  const styles = useMemo(
     () => data?.pages.flatMap((page) => page.styles) ?? [],
     [data],
   );
 
   const hasSearch = Boolean(debouncedSearch);
 
-  // Infinite scroll observer
-  React.useEffect(() => {
-    const target = observerTarget.current;
-    if (!target) return;
+  // Infinite scroll observer using usehooks-ts
+  const { isIntersecting, ref: observerRef } = useIntersectionObserver({
+    threshold: 0.1,
+    rootMargin: "100px",
+  });
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.1 },
-    );
-
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  useEffect(() => {
+    if (isIntersecting && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (error) {
     return (
@@ -212,7 +205,7 @@ export function StylesPage() {
           </div>
 
           {/* Infinite scroll trigger */}
-          <div ref={observerTarget} className="h-4" />
+          <div ref={observerRef} className="h-4" />
 
           {/* Loading indicator for next page */}
           {isFetchingNextPage && (
