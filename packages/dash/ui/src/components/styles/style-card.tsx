@@ -4,7 +4,9 @@ import {
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
 import { Badge } from "@openpromo/ui/components/badge";
+import { useNavigate } from "@tanstack/react-router";
 import { CheckCircle2 } from "lucide-react";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import type { StyleResponse } from "@/queries/styles";
 import { StyleCardActions } from "./style-card-actions";
 
@@ -45,12 +47,37 @@ const getCreatorForStyle = (styleName: string) => {
 };
 
 export function StyleCard({ style }: StyleCardProps) {
+  const navigate = useNavigate();
+  const { workspace } = useWorkspace();
   const [primaryImage, ...otherRefs] = style.imageRefs;
   const imageCount = style.imageRefs.length;
   const creator = getCreatorForStyle(style.name);
 
+  const handleOpen = () => {
+    navigate({
+      to: "/workspaces/$workspaceSlug/styles/$styleId",
+      params: {
+        workspaceSlug: workspace.slug,
+        styleId: style.id,
+      },
+    });
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleOpen();
+    }
+  };
+
   return (
-    <div className="group relative aspect-[3/4] overflow-hidden rounded-lg bg-muted transition-all duration-300 hover:shadow-xl">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleOpen}
+      onKeyDown={handleKeyDown}
+      className="group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-lg bg-muted transition-all duration-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       {/* Main Image */}
       {primaryImage ? (
         <img
