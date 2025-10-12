@@ -5,6 +5,7 @@ import {
 } from "@openpromo/ui/components/avatar";
 import { Badge } from "@openpromo/ui/components/badge";
 import type { StyleResponse } from "@/queries/styles";
+import { StyleCardActions } from "./style-card-actions";
 
 interface StyleCardProps {
   style: StyleResponse["style"];
@@ -63,15 +64,21 @@ export function StyleCard({ style }: StyleCardProps) {
         </div>
       )}
 
-      {/* Image Count Badge - Always visible */}
-      {imageCount > 0 && (
-        <div className="absolute right-2 top-2 rounded-full bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
-          {imageCount} {imageCount === 1 ? "image" : "images"}
-        </div>
-      )}
+      {/* Top Right Actions */}
+      <div className="absolute right-2 top-2 z-20 flex items-center gap-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        {/* Image Count Badge - Visible on hover */}
+        {imageCount > 0 && (
+          <div className="rounded-full bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
+            {imageCount} {imageCount === 1 ? "image" : "images"}
+          </div>
+        )}
+
+        {/* Actions Dropdown - Visible on hover */}
+        <StyleCardActions style={style} />
+      </div>
 
       {/* Overlay with metadata - Appears on hover */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+      <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
         <div className="flex h-full flex-col justify-end p-4">
           {/* Title */}
           <h3 className="mb-2 text-lg font-bold text-white">{style.name}</h3>
@@ -125,7 +132,7 @@ export function StyleCard({ style }: StyleCardProps) {
       </div>
 
       {/* Creator Avatar - Bottom Right on Hover */}
-      <div className="absolute bottom-3 right-3 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+      <div className="absolute bottom-3 right-3 z-20 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
         <Avatar className="size-10 ring-2 ring-white/20 transition-all duration-300 hover:ring-white/40">
           <AvatarImage src={creator.avatar} alt={creator.name} />
           <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-xs font-semibold text-white">
