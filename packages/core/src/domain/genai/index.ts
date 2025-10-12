@@ -1,13 +1,8 @@
 import { openai } from "@ai-sdk/openai";
 import { env } from "@core/utils/env";
-import {
-  ProductIdentificationSchema,
-  type StyleComponent,
-  StyleName,
-} from "@shared/product";
+import { ProductIdentificationSchema, StyleComponent } from "@shared/product";
 import { generateObject, type ModelMessage, type UserModelMessage } from "ai";
 import Replicate from "replicate";
-import z from "zod";
 import type { EntProduct } from "../product";
 import { allStyleComponents } from "./styles";
 
@@ -85,11 +80,13 @@ export namespace ProductImageGen {
     1. you have to select one, even there's no perfect match.
     2. pick the one that is the most suitable for the product's industry and category
     3. You will also generate the image gen prompt!! it should be a paragraph that uses verbs n adjectives to describe the final image to produce, including the product and how it shows up/positioned in along with the style(which might have avatar).
+    4. for portrait related styles, ensure the prompt specifiy the realisitc skin texture and natural glow.
     `;
     const res = await generateObject({
       model: openai("gpt-5-mini"),
-      schema: z.object({
-        styleName: StyleName.describe("the best matched style name"),
+      schema: StyleComponent.pick({
+        name: true,
+        imageGenPrompt: true,
       }),
       temperature: 0.2,
       maxOutputTokens: 3000,
@@ -104,11 +101,12 @@ export namespace ProductImageGen {
         },
       ],
     });
-    const styleName = res.object.styleName;
+    const styleName = res.object.name;
 
     const style = allStyleComponents.get(styleName);
     if (!style) throw new Error(`style not found: ${styleName}`);
-    return style;
+    console.log({ resp: res.object });
+    return { ...style, imageGenPrompt: res.object.imageGenPrompt };
   }
 
   export async function genImage(opts: {
@@ -126,6 +124,7 @@ export namespace ProductImageGen {
       // style references
       style_reference_images: opts.style.imageRefs,
     };
+    console.log("generating image with input", input);
 
     const output = await replicate.run("ideogram-ai/ideogram-v3-turbo", {
       input,
