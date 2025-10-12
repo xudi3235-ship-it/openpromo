@@ -1,12 +1,6 @@
 import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@openpromo/ui/components/card";
-import { Separator } from "@openpromo/ui/components/separator";
+import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Link, useParams } from "@tanstack/react-router";
 import { ChevronLeft, Loader2, Sparkles } from "lucide-react";
 import * as React from "react";
@@ -33,24 +27,43 @@ const STATE_CONFIG: Record<
 > = {
   not_started: {
     label: "New",
-    className: "bg-gray-500/20 text-gray-100",
+    className: "bg-gray-500/10 text-gray-500",
   },
   pending: {
     label: "Pending",
-    className: "bg-yellow-500/20 text-yellow-100",
+    className: "bg-yellow-500/10 text-yellow-500",
   },
   processing: {
     label: "Processing",
-    className: "bg-blue-500/20 text-blue-100",
+    className: "bg-blue-500/10 text-blue-500",
   },
   ready: {
     label: "Ready",
-    className: "bg-green-500/20 text-green-100",
+    className: "bg-green-500/10 text-green-500",
   },
   failed: {
     label: "Failed",
-    className: "bg-red-500/20 text-red-100",
+    className: "bg-red-500/10 text-red-500",
   },
+};
+
+const formatDate = (value: string | Date | null | undefined): string | null => {
+  if (!value) return null;
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const getHostname = (url: string): string | null => {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
 };
 
 export function ProductDetailPage() {
@@ -78,6 +91,31 @@ export function ProductDetailPage() {
   );
   const heroImage = primaryAttachment ?? fallbackAttachment;
 
+  const createdDate = formatDate(product?.createdAt);
+  const attachmentCount = product?.attachments.length ?? 0;
+
+  const infoItems: Array<{ label: string; value: string; href?: string }> = [];
+
+  if (product?.category) {
+    infoItems.push({ label: "Category", value: product.category });
+  }
+  if (createdDate) {
+    infoItems.push({ label: "Created", value: createdDate });
+  }
+  if (attachmentCount > 0) {
+    infoItems.push({
+      label: "Attachments",
+      value: `${attachmentCount}`,
+    });
+  }
+  if (product?.sourceUrl) {
+    infoItems.push({
+      label: "Source URL",
+      value: getHostname(product.sourceUrl) ?? product.sourceUrl,
+      href: product.sourceUrl,
+    });
+  }
+
   const handleGenerate = () => {
     if (!productId) return;
     generateImage.mutate(
@@ -91,14 +129,7 @@ export function ProductDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Loading product…</span>
-        </div>
-      </div>
-    );
+    return <ProductDetailSkeleton />;
   }
 
   if (error) {
@@ -123,167 +154,194 @@ export function ProductDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link
-              to="/workspaces/$workspaceSlug/products"
-              params={{ workspaceSlug }}
+      <div className="flex flex-wrap items-center gap-3">
+        <Button asChild variant="ghost" size="sm">
+          <Link
+            to="/workspaces/$workspaceSlug/products"
+            params={{ workspaceSlug }}
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Back to products
+          </Link>
+        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-semibold text-foreground">
+            {product.name}
+          </h1>
+          {product.state && STATE_CONFIG[product.state] && (
+            <Badge
+              className={`text-xs font-medium ${STATE_CONFIG[product.state].className}`}
             >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              Back to products
-            </Link>
-          </Button>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold">{product.name}</h1>
-            {product.state && STATE_CONFIG[product.state] && (
-              <Badge
-                className={`text-xs ${STATE_CONFIG[product.state].className}`}
-              >
-                {STATE_CONFIG[product.state].label}
-              </Badge>
-            )}
-            {product.source && (
-              <Badge variant="outline" className="text-xs">
-                {SOURCE_LABELS[product.source] ?? product.source}
-              </Badge>
-            )}
-          </div>
+              {STATE_CONFIG[product.state].label}
+            </Badge>
+          )}
+          {product.source && (
+            <Badge variant="outline" className="text-xs font-medium">
+              {SOURCE_LABELS[product.source] ?? product.source}
+            </Badge>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_minmax(0,1fr)]">
-        <Card className="overflow-hidden">
-          {heroImage && heroImage.type === "photo" ? (
-            <div className="relative h-80 w-full bg-muted">
-              <img
-                src={heroImage.publicUrl ?? heroImage.presignedUrl ?? ""}
-                alt={product.name}
-                className="h-full w-full object-cover"
-              />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="space-y-4">
+          <section className="rounded-xl border border-border/70 bg-background/80 p-4">
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+              <div className="aspect-square w-full overflow-hidden rounded-lg border border-border/60 bg-muted/30">
+                {heroImage && heroImage.type === "photo" ? (
+                  <img
+                    src={heroImage.publicUrl ?? heroImage.presignedUrl ?? ""}
+                    alt={product.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-4xl text-muted-foreground/60">
+                    📦
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-4">
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  {product.description ? (
+                    <p>{product.description}</p>
+                  ) : (
+                    <p className="italic text-muted-foreground/70">
+                      No description provided yet.
+                    </p>
+                  )}
+                </div>
+
+                {product.tags?.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {product.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : null}
+
+                {infoItems.length > 0 ? (
+                  <dl className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+                    {infoItems.map(({ label, value, href }) => (
+                      <div key={label} className="space-y-1">
+                        <dt className="font-medium text-foreground">{label}</dt>
+                        <dd className="truncate">
+                          {href ? (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              {value}
+                            </a>
+                          ) : (
+                            value
+                          )}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : null}
+              </div>
             </div>
-          ) : (
-            <div className="flex h-80 items-center justify-center bg-muted">
-              <span className="text-5xl opacity-20">📦</span>
-            </div>
-          )}
-          <CardHeader className="space-y-2">
-            <CardTitle className="text-xl">{product.name}</CardTitle>
-            {product.description && (
-              <p className="text-sm text-muted-foreground">
-                {product.description}
-              </p>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {product.tags?.length ? (
-              <div className="flex flex-wrap gap-2">
-                {product.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-xs">
-                    {tag}
-                  </Badge>
+          </section>
+
+          {product.attachments.length > 0 ? (
+            <section className="rounded-xl border border-border/70 bg-background/80 p-4">
+              <h2 className="text-sm font-medium text-foreground">
+                Media Library
+              </h2>
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {product.attachments.map((att, index) => (
+                  <AttachmentPreview
+                    key={
+                      att.id ??
+                      att.publicUrl ??
+                      att.presignedUrl ??
+                      `attachment-${index}`
+                    }
+                    attachment={att}
+                  />
                 ))}
               </div>
-            ) : null}
+            </section>
+          ) : null}
 
-            {product.attachments.length > 0 ? (
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Attachments</h3>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {product.attachments.map((att, index) => (
-                    <AttachmentPreview
-                      key={
-                        att.id ??
-                        att.publicUrl ??
-                        att.presignedUrl ??
-                        `attachment-${index}`
-                      }
-                      attachment={att}
-                    />
-                  ))}
-                </div>
+          {productContext ? (
+            <section className="rounded-xl border border-border/70 bg-background/80 p-4">
+              <h2 className="text-sm font-medium text-foreground">
+                Identified Context
+              </h2>
+              <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <p>
+                  <span className="font-medium text-foreground">Name:</span>{" "}
+                  {productContext.name}
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">
+                    Description:
+                  </span>{" "}
+                  {productContext.description}
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">Industry:</span>{" "}
+                  {productContext.meta.industry}
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">Category:</span>{" "}
+                  {productContext.meta.category}
+                </p>
+                {productContext.meta.socialMediaTags?.length ? (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {productContext.meta.socialMediaTags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="text-xs font-normal"
+                      >
+                        #{tag}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : null}
               </div>
-            ) : null}
+            </section>
+          ) : null}
+        </div>
 
-            {productContext ? (
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Identified Context</h3>
-                <div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground space-y-1.5">
-                  <div>
-                    <span className="font-medium text-foreground">Name:</span>{" "}
-                    {productContext.name}
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground">
-                      Description:
-                    </span>{" "}
-                    {productContext.description}
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground">
-                      Industry:
-                    </span>{" "}
-                    {productContext.meta.industry}
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground">
-                      Category:
-                    </span>{" "}
-                    {productContext.meta.category}
-                  </div>
-                  {productContext.meta.socialMediaTags?.length ? (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {productContext.meta.socialMediaTags.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="outline"
-                          className="text-xs font-normal"
-                        >
-                          #{tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <Card className="flex flex-col">
-          <CardHeader>
-            <CardTitle>Generate Product Image</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Generate a marketing-ready image using the latest product context.
-            </p>
-          </CardHeader>
-          <CardContent className="flex flex-1 flex-col gap-4">
-            <Button
-              onClick={handleGenerate}
-              disabled={generateImage.isPending}
-              className="w-full justify-center gap-2"
-            >
-              {generateImage.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Generate image
-                </>
-              )}
-            </Button>
-
-            <Separator />
+        <div className="space-y-4">
+          <section className="flex h-full flex-col rounded-xl border border-border/70 bg-background/80 p-6">
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">
+                Generate Product Image
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Use your product context to generate a marketing-ready creative.
+              </p>
+              <Button
+                onClick={handleGenerate}
+                disabled={generateImage.isPending}
+                className="w-full justify-center gap-2"
+              >
+                {generateImage.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Generate image
+                  </>
+                )}
+              </Button>
+            </div>
 
             {generatedImage ? (
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <h3 className="text-sm font-medium">Latest result</h3>
-                </div>
-                <div className="overflow-hidden rounded-md border border-border bg-muted/30">
+              <div className="mt-6 space-y-3">
+                <div className="overflow-hidden rounded-lg border border-border/60 bg-muted/20">
                   <img
                     src={generatedImage.imageUrl}
                     alt={`Generated preview for ${product.name}`}
@@ -292,13 +350,108 @@ export function ProductDetailPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-1 flex-col items-center justify-center rounded-md border border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+              <div className="mt-6 flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/10 p-6 text-center text-sm text-muted-foreground">
                 <Sparkles className="mb-2 h-5 w-5" />
-                Click “Generate image” to create a new visual for this product.
+                Click “Generate image” to create a fresh visual using this
+                product&apos;s context.
               </div>
             )}
-          </CardContent>
-        </Card>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ProductDetailSkeleton() {
+  const params = useParams({
+    from: "/_authenticated/workspaces/$workspaceSlug/products/$productId",
+  });
+  const workspaceSlug = params.workspaceSlug;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button asChild variant="ghost" size="sm">
+          <Link
+            to="/workspaces/$workspaceSlug/products"
+            params={{ workspaceSlug }}
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Back to products
+          </Link>
+        </Button>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-7 w-40" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-20 rounded-full" />
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="space-y-4">
+          <section className="rounded-xl border border-border/70 bg-background/80 p-4">
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+              <Skeleton className="aspect-square w-full rounded-lg" />
+              <div className="flex flex-col gap-4">
+                <Skeleton className="h-16 w-full" />
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-12 rounded-full" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-border/70 bg-background/80 p-4">
+            <Skeleton className="h-5 w-32" />
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <Skeleton
+                  // biome-ignore lint/suspicious/noArrayIndexKey: skeleton layout
+                  key={idx}
+                  className="aspect-square w-full rounded-md"
+                />
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-border/70 bg-background/80 p-4">
+            <Skeleton className="h-5 w-36" />
+            <div className="mt-3 space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-2/3" />
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-5 w-14 rounded-full" />
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div className="space-y-4">
+          <section className="flex h-full flex-col rounded-xl border border-border/70 bg-background/80 p-6">
+            <div className="space-y-3">
+              <Skeleton className="h-6 w-40" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+            <div className="mt-6 rounded-lg border border-dashed border-border/70 bg-muted/10 p-6">
+              <Skeleton className="h-48 w-full rounded-md" />
+              <Skeleton className="mt-3 h-4 w-1/2" />
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );
@@ -324,7 +477,7 @@ function AttachmentPreview({ attachment }: AttachmentPreviewProps) {
 
     if (imageSrc) {
       return (
-        <div className="relative aspect-square overflow-hidden rounded-md border border-border bg-muted">
+        <div className="relative aspect-square overflow-hidden rounded-md border border-border/60 bg-muted/20">
           <img src={imageSrc} alt="" className="h-full w-full object-cover" />
         </div>
       );
@@ -332,7 +485,7 @@ function AttachmentPreview({ attachment }: AttachmentPreviewProps) {
   }
 
   return (
-    <div className="flex aspect-square items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground">
+    <div className="flex aspect-square items-center justify-center rounded-md border border-dashed border-border/60 text-xs text-muted-foreground">
       {attachment.type}
     </div>
   );
