@@ -7,6 +7,10 @@ import { useStyleDetailsQuery } from "@/queries/styles";
 import { GenerationsInfiniteGrid } from "./generations-infinite-grid";
 import { StyleDetails } from "./style-details";
 
+/**
+ * StyleDetailPage - Displays style details and associated generations
+ * Route: /workspaces/:workspaceSlug/styles/:styleId
+ */
 export function StyleDetailPage() {
   const params = useParams({
     from: "/_authenticated/workspaces/$workspaceSlug/styles/$styleId",

@@ -17,7 +17,11 @@ import { ProductCard } from "./product-card";
 import { ProductsEmptyState } from "./products-empty-state";
 import { ProductsLoadingState } from "./products-loading-state";
 
-export function ProductsPage() {
+/**
+ * ProductListPage - Displays grid of products with search and filters
+ * Route: /workspaces/:workspaceSlug/products
+ */
+export function ProductListPage() {
   const [searchValue, setSearchValue] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [source, setSource] = React.useState<string | undefined>();

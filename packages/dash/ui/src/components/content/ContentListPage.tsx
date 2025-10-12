@@ -21,7 +21,11 @@ import { ContentPageLayout } from "./content-page-layout";
 import { SortingIndicator } from "./sorting-indicator";
 import { useContentListQueryParams } from "./use-content-list-query-params";
 
-export function ContentPage() {
+/**
+ * ContentListPage - Displays paginated list of content with filters
+ * Route: /workspaces/:workspaceSlug/content
+ */
+export function ContentListPage() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],

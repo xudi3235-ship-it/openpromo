@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { StylesPage } from "@/components/styles/page";
+import { StyleListPage } from "@/components/styles/StyleListPage";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/styles/",
 )({
-  component: StylesPage,
+  component: StyleListPage,
 });

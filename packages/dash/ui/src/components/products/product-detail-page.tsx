@@ -65,6 +65,11 @@ const getHostname = (url: string): string | null => {
     return null;
   }
 };
+
+/**
+ * ProductDetailPage - Displays detailed product information with image generation
+ * Route: /workspaces/:workspaceSlug/products/:productId
+ */
 export function ProductDetailPage() {
   const params = useParams({
     from: "/_authenticated/workspaces/$workspaceSlug/products/$productId",

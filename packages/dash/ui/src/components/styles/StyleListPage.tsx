@@ -21,7 +21,11 @@ import { StyleComposer } from "./composer";
 
 type SortOption = "latest" | "oldest" | "most_used";
 
-export function StylesPage() {
+/**
+ * StyleListPage - Displays infinite scroll grid of creative styles
+ * Route: /workspaces/:workspaceSlug/styles
+ */
+export function StyleListPage() {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>();
   const [officialOnly, setOfficialOnly] = useState(false);
