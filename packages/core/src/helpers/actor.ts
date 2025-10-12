@@ -12,16 +12,13 @@ export namespace Actor {
       email: z.email(),
       organizationID: z.string(),
       role: z.custom<OrganizationRole>(),
+      featureFlags: z.array(z.string()).default([]),
     }),
   });
 
   export const WorkspaceUserSchema = z.object({
     type: z.literal("workspace_user"),
-    properties: z.object({
-      userID: z.string(),
-      email: z.email(),
-      organizationID: z.string(),
-      role: z.custom<OrganizationRole>(),
+    properties: UserSchema.shape.properties.extend({
       workspaceID: z.string(),
       workspaceSlug: z.string(),
     }),

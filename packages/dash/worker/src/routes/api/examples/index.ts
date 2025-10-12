@@ -14,6 +14,7 @@ export const examplesRoute = new Hono<ApiEnv>()
           role: "org_admin",
           workspaceID: "example-workspace-id",
           workspaceSlug: "example-workspace-slug",
+          featureFlags: ["some", "cool", "features"],
         }),
         pendingContentID: "example-content-id",
       },

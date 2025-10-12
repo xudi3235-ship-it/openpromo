@@ -22,6 +22,7 @@ export interface AuthenticationSuccessResult {
   organizationId: string;
   role: OrganizationRole;
   email: string;
+  featureFlags: string[];
 }
 
 export interface AuthenticationFailedResult {
@@ -55,12 +56,14 @@ export async function authenticateWithCookie(
   const result = await session.authenticate();
 
   if (result.authenticated) {
+    console.log("Session authentication result:", result.featureFlags);
     return {
       authenticated: true,
       user: result.user,
       organizationId: result.organizationId as string,
       role: result.role as OrganizationRole,
       email: result.user.email,
+      featureFlags: result.featureFlags || [],
     };
   }
 
@@ -74,6 +77,7 @@ export async function authenticateWithCookie(
         organizationId: refreshResult.organizationId as string,
         role: refreshResult.role as OrganizationRole,
         email: refreshResult.user.email,
+        featureFlags: refreshResult.featureFlags || [],
       };
     } else {
       onRefreshFailure(refreshResult.reason);

@@ -28,6 +28,8 @@ export const workOSAuth: () => MiddlewareHandler<ApiEnv> =
         },
       });
 
+      console.log("Authentication result:", result);
+
       if (result.authenticated) {
         c.set("user", result.user);
         c.set("organizationId", result.organizationId);
@@ -41,6 +43,7 @@ export const workOSAuth: () => MiddlewareHandler<ApiEnv> =
             organizationID: result.organizationId,
             role: result.role,
             email: result.user.email,
+            featureFlags: result.featureFlags,
           },
           next,
         );
