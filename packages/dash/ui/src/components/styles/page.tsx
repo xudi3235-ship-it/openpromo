@@ -69,7 +69,7 @@ export function StylesPage() {
       ) : styles.length === 0 ? (
         <StylesEmptyState hasFilters={hasSearch} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {styles.map((style) => (
             <StyleCard key={style.id} style={style} />
           ))}
@@ -101,7 +101,7 @@ function StylesEmptyState({ hasFilters }: StylesEmptyStateProps) {
 
 function StylesLoadingState() {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: 6 }).map((_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: later
         <CardSkeleton key={index} />
@@ -112,16 +112,20 @@ function StylesLoadingState() {
 
 function CardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-lg border border-border/60 bg-card">
-      <Skeleton className="aspect-video w-full" />
-      <div className="space-y-3 p-4">
-        <Skeleton className="h-5 w-2/3" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-5/6" />
+    <div className="flex items-start gap-4 rounded-2xl bg-background/60 p-4 shadow-sm ring-1 ring-border/10">
+      <Skeleton className="h-28 w-28 rounded-xl" />
+      <div className="flex flex-1 flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-24 rounded-full" />
+          <Skeleton className="h-4 w-16 rounded-full" />
+        </div>
+        <Skeleton className="h-3 w-full rounded-full" />
+        <Skeleton className="h-3 w-5/6 rounded-full" />
+        <Skeleton className="h-3 w-3/4 rounded-full" />
         <div className="flex gap-2">
-          <Skeleton className="h-14 w-14 rounded-md" />
-          <Skeleton className="h-14 w-14 rounded-md" />
-          <Skeleton className="h-14 w-14 rounded-md" />
+          <Skeleton className="h-12 w-12 rounded-lg" />
+          <Skeleton className="h-12 w-12 rounded-lg" />
+          <Skeleton className="h-12 w-12 rounded-lg" />
         </div>
       </div>
     </div>
