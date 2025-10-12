@@ -1,7 +1,19 @@
 import { openai } from "@ai-sdk/openai";
-import { ProductIdentificationSchema } from "@shared/product";
+import { env } from "@core/utils/env";
+import {
+  ProductIdentificationSchema,
+  type StyleComponent,
+  StyleName,
+} from "@shared/product";
 import { generateObject, type ModelMessage, type UserModelMessage } from "ai";
+import Replicate from "replicate";
+import z from "zod";
 import type { EntProduct } from "../product";
+import { allStyleComponents } from "./styles";
+
+const replicate = new Replicate({
+  auth: env.REPLICATE_API_TOKEN,
+});
 
 export namespace ProductImageGen {
   /**
@@ -33,7 +45,7 @@ export namespace ProductImageGen {
 
   export async function identifyProduct(product: EntProduct) {
     const res = await generateObject({
-      model: openai("gpt-5-nano"),
+      model: openai("gpt-5-mini"),
       schema: ProductIdentificationSchema,
       temperature: 0,
       maxOutputTokens: 1000,
@@ -58,14 +70,70 @@ export namespace ProductImageGen {
     return res.object;
   }
 
-  export async function genPromptForImageGen(_product: EntProduct) {
-    // this will read the product info and prepare a prompt for image gen.
-    // which will be used to produce an image.
-    // TODO: implement
+  export async function matchProductWithStyles(
+    product: EntProduct,
+  ): Promise<StyleComponent> {
+    // 2. for a ready product, we do a matching and find the best style
+    const sysPrompt = `You are an expert in social media marketing n trend analysis and building effective ads creative. You will read the product's context(details, industry, category, etc) and try to find it with the best matching style. This style will contain a couple images that can be used as style of reference for producing good product images. Each style has its own suitable usecases and scnearios.
+
+    Examples: close-up studio shot of korean super model, real skin texture and natural glow -> this is suitable for all beuty products, skincare product, makeups, etc. 
+
+    // styles available:
+    ${Array.from(allStyleComponents.values())}
+
+    RULES:
+    1. you have to select one, even there's no perfect match.
+    2. pick the one that is the most suitable for the product's industry and category
+    3. You will also generate the image gen prompt!! it should be a paragraph that uses verbs n adjectives to describe the final image to produce, including the product and how it shows up/positioned in along with the style(which might have avatar).
+    `;
+    const res = await generateObject({
+      model: openai("gpt-5-mini"),
+      schema: z.object({
+        styleName: StyleName.describe("the best matched style name"),
+      }),
+      temperature: 0.2,
+      maxOutputTokens: 3000,
+      messages: [
+        {
+          role: "system",
+          content: sysPrompt,
+        },
+        {
+          role: "user",
+          content: `product details: ${JSON.stringify(product.data)}`,
+        },
+      ],
+    });
+    const styleName = res.object.styleName;
+
+    const style = allStyleComponents.get(styleName);
+    if (!style) throw new Error(`style not found: ${styleName}`);
+    return style;
   }
 
-  export async function genImage() {
-    // TODO: implement
+  export async function genImage(opts: {
+    product: EntProduct;
+    style: StyleComponent;
+  }): Promise<string> {
+    // TODO: need to generate this prompt
+    const sysPrompt = `MUST follow the style references provided, including lighting, shooting styles, composition, etc.
+    ${opts.style.imageGenPrompt}
+    negative prompt: low quality, blurry, deformed, distorted, disfigured, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, mutated, extra limbs
+    `;
+    const input = {
+      prompt: sysPrompt,
+      aspect_ratio: "1:1",
+      // style references
+      style_reference_images: opts.style.imageRefs,
+    };
+
+    const output = await replicate.run("ideogram-ai/ideogram-v3-turbo", {
+      input,
+    });
+
+    // @ts-expect-error,
+    const url = output.url();
+    return url as string;
   }
 
   // ------------------------------------------------------------------------

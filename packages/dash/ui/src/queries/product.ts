@@ -1,3 +1,4 @@
+import type { StyleName } from "@shared/product";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import type { InferRequestType } from "hono/client";
@@ -20,6 +21,20 @@ type ProductUpdateInput = InferRequestType<
 type ProductListParams = InferRequestType<
   (typeof apiClient)["workspaces"][":workspaceSlug"]["products"]["$get"]
 >["query"];
+
+type ProductImageGenerateInput = {
+  productId: string;
+  styleName?: StyleName;
+};
+
+export type ProductImageGenerateResponse = {
+  imageUrl: string;
+  style?: {
+    name: string;
+    description: string;
+    imageRefs: string[];
+  };
+};
 
 export const invalidateProductListQueries = async (queryClient: QueryClient) =>
   queryClient.invalidateQueries({
@@ -110,6 +125,30 @@ export const useProductDeleteMutation = (onSuccess?: () => void) => {
       await invalidateProductListQueries(queryClient);
       toast.success("Product deleted");
       onSuccess?.();
+    },
+  });
+};
+
+export const useProductImageGenerateMutation = (
+  onSuccess?: (
+    data: ProductImageGenerateResponse,
+    variables: ProductImageGenerateInput,
+  ) => void,
+) => {
+  const { workspace } = useWorkspace();
+
+  return useHonoMutation<
+    ProductImageGenerateResponse,
+    ProductImageGenerateInput
+  >({
+    mutationFn: (api, variables) =>
+      api.workspaces[":workspaceSlug"]["image-gen"].generate.$post({
+        param: { workspaceSlug: workspace.slug },
+        json: variables,
+      }),
+    onSuccess: (data, variables, _context) => {
+      toast.success("Generated new product image");
+      onSuccess?.(data, variables);
     },
   });
 };

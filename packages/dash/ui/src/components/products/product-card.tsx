@@ -8,8 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
+import { useNavigate } from "@tanstack/react-router";
 import { ExternalLink, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import * as React from "react";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { CreateProductModal } from "./create-product-modal";
 import { DeleteProductDialog } from "./delete-product-dialog";
 
@@ -20,6 +22,8 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [editModalOpen, setEditModalOpen] = React.useState(false);
+  const navigate = useNavigate();
+  const { workspace } = useWorkspace();
   const primaryAttachment = product.attachments.find(
     (a) => a.id === product.primaryAttachmentId,
   );
@@ -78,10 +82,14 @@ export function ProductCard({ product }: ProductCardProps) {
   const attachmentCount = product.attachments.length;
 
   const handleCardClick = () => {
-    // Only open edit modal if no dialogs are currently open
-    if (!deleteDialogOpen && !editModalOpen) {
-      setEditModalOpen(true);
-    }
+    if (deleteDialogOpen || editModalOpen) return;
+    navigate({
+      to: "/workspaces/$workspaceSlug/products/$productId",
+      params: {
+        workspaceSlug: workspace.slug,
+        productId: product.id,
+      },
+    });
   };
 
   return (
