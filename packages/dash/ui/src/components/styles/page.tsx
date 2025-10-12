@@ -1,30 +1,121 @@
+import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import * as React from "react";
 import { useDebounceCallback } from "usehooks-ts";
-import { useStylesListQuery } from "@/queries/styles";
+import {
+  useStyleCreateMutation,
+  useStylesInfiniteQuery,
+} from "@/queries/styles";
 import { StyleCard } from "./style-card";
 
 export function StylesPage() {
   const [searchValue, setSearchValue] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState<string>();
+  const observerTarget = React.useRef<HTMLDivElement>(null);
 
   const updateSearch = useDebounceCallback((value: string) => {
     setDebouncedSearch(value.trim() || undefined);
   }, 400);
+
+  const createStyleMutation = useStyleCreateMutation();
+
+  const handleCreateDummyStyles = async () => {
+    const timestamp = Date.now();
+    const now = new Date();
+    const dummyStyles = [
+      {
+        name: "Minimalist Modern",
+        slug: `minimalist-modern-${timestamp}`,
+        description: "Clean lines and simple aesthetics for a modern look",
+        imageGenPrompt:
+          "minimalist modern aesthetic, clean white background, soft lighting",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        name: "Vintage Retro",
+        slug: `vintage-retro-${timestamp}`,
+        description: "Nostalgic vibes with warm tones and classic styling",
+        imageGenPrompt:
+          "vintage retro style, warm sepia tones, classic composition",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        name: "Bold & Vibrant",
+        slug: `bold-vibrant-${timestamp}`,
+        description: "Eye-catching colors and dynamic compositions",
+        imageGenPrompt: "bold vibrant colors, dynamic energy, high contrast",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        name: "Natural Organic",
+        slug: `natural-organic-${timestamp}`,
+        description: "Earthy tones with natural textures and materials",
+        imageGenPrompt:
+          "natural organic materials, earthy tones, soft natural lighting",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        name: "Luxe Elegant",
+        slug: `luxe-elegant-${timestamp}`,
+        description: "Premium feel with sophisticated styling",
+        imageGenPrompt:
+          "luxury elegant aesthetic, premium materials, sophisticated lighting",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
+
+    for (const style of dummyStyles) {
+      await createStyleMutation.mutateAsync(style);
+    }
+  };
 
   React.useEffect(() => {
     updateSearch(searchValue);
     return () => updateSearch.cancel();
   }, [searchValue, updateSearch]);
 
-  const { data, isLoading, error } = useStylesListQuery({
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useStylesInfiniteQuery({
     search: debouncedSearch,
   });
-  const styles = data?.styles ?? [];
+
+  const styles = React.useMemo(
+    () => data?.pages.flatMap((page) => page.styles) ?? [],
+    [data],
+  );
 
   const hasSearch = Boolean(debouncedSearch);
+
+  // Infinite scroll observer
+  React.useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (error) {
     return (
@@ -50,6 +141,15 @@ export function StylesPage() {
             Browse reusable visual styles for generated product imagery.
           </p>
         </div>
+        <Button
+          onClick={handleCreateDummyStyles}
+          disabled={createStyleMutation.isPending}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          {createStyleMutation.isPending
+            ? "Creating..."
+            : "Create 5 Dummy Styles"}
+        </Button>
       </div>
 
       <div className="relative max-w-md">
@@ -69,11 +169,26 @@ export function StylesPage() {
       ) : styles.length === 0 ? (
         <StylesEmptyState hasFilters={hasSearch} />
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {styles.map((style) => (
-            <StyleCard key={style.id} style={style} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {styles.map((style) => (
+              <StyleCard key={style.id} style={style} />
+            ))}
+          </div>
+
+          {/* Infinite scroll trigger */}
+          <div ref={observerTarget} className="h-4" />
+
+          {/* Loading indicator for next page */}
+          {isFetchingNextPage && (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: loading skeleton
+                <CardSkeleton key={index} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -1,13 +1,9 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import type { InferRequestType, InferResponseType } from "hono/client";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import {
-  type apiClient,
-  useHonoMutation,
-  useHonoQuery,
-} from "@/lib/hono-client";
+import { apiClient, useHonoMutation, useHonoQuery } from "@/lib/hono-client";
 
 type StylesListParams = InferRequestType<
   (typeof apiClient)["workspaces"][":workspaceSlug"]["styles"]["$get"]
@@ -47,6 +43,31 @@ export const useStylesListQuery = (params: StylesListParams = {}) => {
         param: { workspaceSlug: workspace.slug },
         query: params,
       }),
+  });
+};
+
+export const useStylesInfiniteQuery = (
+  params: Omit<StylesListParams, "page"> = {},
+) => {
+  const { workspace } = useWorkspace();
+
+  return useInfiniteQuery({
+    queryKey: ["styles-list-infinite", params],
+    queryFn: async ({ pageParam }) => {
+      const response = await apiClient.workspaces[":workspaceSlug"].styles.$get(
+        {
+          param: { workspaceSlug: workspace.slug },
+          query: { ...params, page: String(pageParam) },
+        },
+      );
+      return await response.json();
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage.pagination.hasNextPage
+        ? lastPage.pagination.page + 1
+        : undefined;
+    },
   });
 };
 
