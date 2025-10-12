@@ -55,7 +55,10 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
           </AlertDialogCancel>
           <Button
             variant={destructive ? "destructive" : "default"}
-            onClick={handleConfirm}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleConfirm();
+            }}
             disabled={disabled || isLoading}
           >
             {confirmText ?? "Continue"}
