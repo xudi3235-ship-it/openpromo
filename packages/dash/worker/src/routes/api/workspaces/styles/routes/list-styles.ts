@@ -6,7 +6,7 @@ import { zValidator } from "../../../../../middleware/zod-validator";
 
 const listStylesQuerySchema = z.object({
   page: z.coerce.number().default(1),
-  pageSize: z.coerce.number().max(100).default(20),
+  pageSize: z.coerce.number().max(10).default(10),
   search: z.string().min(1).max(200).optional(),
   order: z.enum(["asc", "desc"]).default("desc"),
 });
