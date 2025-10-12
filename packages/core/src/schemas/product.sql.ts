@@ -84,3 +84,42 @@ export const ProductSelect = createSelectSchema(
 export type ProductInsertType = z.infer<typeof ProductInsert>;
 export type ProductUpdateType = z.infer<typeof ProductUpdate>;
 export type ProductSelectType = z.infer<typeof ProductSelect>;
+
+// ---------------------------------------------------------------------------
+// Style components
+// ---------------------------------------------------------------------------
+
+export const styleComponentTable = pgTable(
+  "style_component",
+  {
+    ...id,
+    ...timestamps,
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    description: text("description").notNull(),
+    imageRefs: jsonb("image_refs").$type<string[]>().notNull().default([]),
+    imageGenPrompt: text("image_gen_prompt").notNull(),
+  },
+  (table) => [uniqueIndex().on(table.slug), uniqueIndex().on(table.name)],
+);
+
+const styleComponentRefinements = {
+  imageRefs: z.array(z.string()).default([]),
+};
+
+export const StyleComponentInsert = createInsertSchema(
+  styleComponentTable,
+  styleComponentRefinements,
+);
+export const StyleComponentUpdate = createUpdateSchema(
+  styleComponentTable,
+  styleComponentRefinements,
+);
+export const StyleComponentSelect = createSelectSchema(
+  styleComponentTable,
+  styleComponentRefinements,
+);
+
+export type StyleComponentInsertType = z.infer<typeof StyleComponentInsert>;
+export type StyleComponentUpdateType = z.infer<typeof StyleComponentUpdate>;
+export type StyleComponentSelectType = z.infer<typeof StyleComponentSelect>;
