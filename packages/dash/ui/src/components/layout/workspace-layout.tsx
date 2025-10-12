@@ -5,6 +5,7 @@ import {
 import { cn } from "@openpromo/ui/lib/utils";
 import { Outlet } from "@tanstack/react-router";
 import { LayoutProvider } from "@/context/layout-provider";
+import { WorkspaceComposerProvider } from "@/providers/workspace-composer-provider";
 import { AppSidebar } from "../app-sidebar";
 import ComposerDialog from "../composer/modal/dialog-composer";
 
@@ -16,27 +17,30 @@ export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
   return (
     <SidebarProvider>
       <LayoutProvider>
-        <AppSidebar />
-        <SidebarInset
-          className={cn(
-            // If layout is fixed, set the height
-            // to 100svh to prevent overflow
-            "has-[[data-layout=fixed]]:h-svh",
+        {/* Workspace-level composer state - persists when switching between dialog/fullscreen */}
+        <WorkspaceComposerProvider>
+          <AppSidebar />
+          <SidebarInset
+            className={cn(
+              // If layout is fixed, set the height
+              // to 100svh to prevent overflow
+              "has-[[data-layout=fixed]]:h-svh",
 
-            // If layout is fixed and sidebar is inset,
-            // set the height to 100svh - 1rem (total margins) to prevent overflow
-            // 'peer-data-[variant=inset]:has-[[data-layout=fixed]]:h-[calc(100svh-1rem)]',
-            "peer-data-[variant=inset]:has-[[data-layout=fixed]]:h-[calc(100svh-(var(--spacing)*4))]",
+              // If layout is fixed and sidebar is inset,
+              // set the height to 100svh - 1rem (total margins) to prevent overflow
+              // 'peer-data-[variant=inset]:has-[[data-layout=fixed]]:h-[calc(100svh-1rem)]',
+              "peer-data-[variant=inset]:has-[[data-layout=fixed]]:h-[calc(100svh-(var(--spacing)*4))]",
 
-            // Set content container, so we can use container queries
-            "@container/content",
-          )}
-        >
-          <div className="flex-1 min-h-0">{children ?? <Outlet />}</div>
-        </SidebarInset>
+              // Set content container, so we can use container queries
+              "@container/content",
+            )}
+          >
+            <div className="flex-1 min-h-0">{children ?? <Outlet />}</div>
+          </SidebarInset>
 
-        {/* Global Composer Dialog - can be opened from anywhere in the workspace */}
-        <ComposerDialog />
+          {/* Global Composer Dialog - can be opened from anywhere in the workspace */}
+          <ComposerDialog />
+        </WorkspaceComposerProvider>
       </LayoutProvider>
     </SidebarProvider>
   );

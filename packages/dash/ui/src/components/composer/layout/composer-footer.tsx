@@ -1,12 +1,18 @@
 import { Button } from "@openpromo/ui/components/button";
+import { useNavigate } from "@tanstack/react-router";
+import { Maximize2 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { ValidationErrors } from "@/components/composer/controls/validation-errors";
 import { PublishingOverlay } from "@/components/composer/layout/publishing-overlay";
 import { useComposerPublishHandlers } from "@/hooks/composer/useComposerHooks";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerMutations } from "@/queries/content";
 import { useComposerStore } from "@/stores/composer-store";
-import { useDialogComposerStore } from "@/stores/dialog-composer-store";
+import {
+  isDialogMode,
+  useDialogComposerStore,
+} from "@/stores/dialog-composer-store";
 import { CancelConfirmationDialog } from "../dialogs/cancel-confirmation-dialog";
 
 export function ComposerFooter() {
@@ -23,11 +29,24 @@ export function ComposerFooter() {
     contentGroupID,
     hasUnsavedChanges,
   } = useComposerStore();
-  const { isOpen: isDialog, closeDialog } = useDialogComposerStore();
+  const { mode, closeComposer, switchToFullscreen } = useDialogComposerStore();
+  const isDialog = mode !== "closed";
+  const showMoreToolsButton = isDialogMode(mode);
   const onCompleteHandler = useComposerPublishHandlers();
+  const ws = useWorkspace();
+  const navigate = useNavigate();
 
   const { create: useCreateMutation, updateGroup: useUpdateGroupMutation } =
     useComposerMutations();
+
+  // Handler to switch to fullscreen and navigate
+  const handleSwitchToFullscreen = useCallback(() => {
+    switchToFullscreen();
+    navigate({
+      to: "/workspaces/$workspaceSlug/composer",
+      params: { workspaceSlug: ws.workspace.slug },
+    });
+  }, [switchToFullscreen, navigate, ws.workspace.slug]);
 
   // Derive action type from store's publishing status
   const actionType =
@@ -120,13 +139,13 @@ export function ComposerFooter() {
     if (hasUnsavedChanges()) {
       setShowCancelConfirm(true);
     } else {
-      closeDialog();
+      closeComposer();
     }
-  }, [hasUnsavedChanges, closeDialog]);
+  }, [hasUnsavedChanges, closeComposer]);
 
   const handleConfirmCancel = () => {
     setShowCancelConfirm(false);
-    closeDialog();
+    closeComposer();
   };
 
   const data = useComposerStore((s) => s.contentCreateData);
@@ -134,34 +153,49 @@ export function ComposerFooter() {
   return (
     <>
       <div className="border-t bg-background p-4">
-        <div className="flex justify-end gap-2">
-          {isDialog && (
-            <Button variant="outline" size="sm" onClick={handleCancel}>
-              Cancel
+        <div className="flex justify-between gap-2">
+          <div className="flex gap-2">
+            {showMoreToolsButton && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSwitchToFullscreen}
+                className="gap-2"
+              >
+                <Maximize2 className="h-4 w-4" />
+                More tools
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {isDialog && (
+              <Button variant="outline" size="sm" onClick={handleCancel}>
+                Cancel
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveDraft}
+              disabled={isPending || !validation.canPublish}
+            >
+              {isPending && actionType === "draft" ? "Saving..." : "Save draft"}
             </Button>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSaveDraft}
-            disabled={isPending || !validation.canPublish}
-          >
-            {isPending && actionType === "draft" ? "Saving..." : "Save draft"}
-          </Button>
-          <Button
-            size="sm"
-            onClick={handlePublish}
-            disabled={isPending || !validation.canPublish}
-          >
-            {isPending &&
-            (actionType === "publish" || actionType === "schedule")
-              ? actionType === "schedule"
-                ? "Scheduling..."
-                : "Publishing..."
-              : actionType === "schedule"
-                ? "Schedule"
-                : "Publish"}
-          </Button>
+            <Button
+              size="sm"
+              onClick={handlePublish}
+              disabled={isPending || !validation.canPublish}
+            >
+              {isPending &&
+              (actionType === "publish" || actionType === "schedule")
+                ? actionType === "schedule"
+                  ? "Scheduling..."
+                  : "Publishing..."
+                : actionType === "schedule"
+                  ? "Schedule"
+                  : "Publish"}
+            </Button>
+          </div>
         </div>
 
         <ValidationErrors errors={validation.errors} />

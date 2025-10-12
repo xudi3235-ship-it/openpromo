@@ -5,33 +5,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
-import { useConnectedAccounts } from "@/queries/connected-account";
-import { useContentGroupQuery } from "@/queries/content";
-import type { ComposerProps } from "@/stores/composer-store";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
-import { ComposerSkeleton } from "../layout/composer-skeleton";
-import { ResizableComposer } from "../layout/resizable-composer";
+import { ComposerLeft } from "../layout/composer-left";
+import { ComposerRight } from "../layout/composer-right";
+import { TwoColumnLayout } from "../layout/two-column-layout";
 
 export default function ComposerDialog() {
-  const {
-    isOpen,
-    pendingContentGroupID,
-    initialContentCreateData,
-    closeDialog,
-  } = useDialogComposerStore();
-  const { accounts: accountsData, isLoading: accountsLoading } =
-    useConnectedAccounts();
-  const { data: contentGroupData, isLoading: contentGroupLoading } =
-    useContentGroupQuery(pendingContentGroupID);
-  const isLoading = accountsLoading || contentGroupLoading;
+  const { mode, closeComposer } = useDialogComposerStore();
 
-  const initComposerProps = {
-    initContentCreateData:
-      contentGroupData?.contentCreateData ?? initialContentCreateData,
-    contentGroupID: pendingContentGroupID,
-  } as ComposerProps;
+  const isOpen = mode === "dialog";
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && closeDialog()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && closeComposer()}>
       <DialogContent className="!max-w-none w-full h-[90vh] p-0 flex flex-col overflow-hidden sm:w-[95vw] md:w-[90vw] lg:w-[85vw] xl:w-[80vw] 2xl:w-[1200px]">
         <DialogHeader className="sr-only">
           <DialogTitle>Create Post</DialogTitle>
@@ -40,14 +25,11 @@ export default function ComposerDialog() {
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-hidden">
-          {isLoading ? (
-            <ComposerSkeleton />
-          ) : (
-            <ResizableComposer
-              accounts={accountsData ?? []}
-              initComposerProps={initComposerProps}
-            />
-          )}
+          <TwoColumnLayout
+            left={<ComposerLeft />}
+            right={<ComposerRight />}
+            className=""
+          />
         </div>
       </DialogContent>
     </Dialog>

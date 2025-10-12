@@ -73,7 +73,8 @@ export function ContentCalendar({
   const [internalCurrentDate, setInternalCurrentDate] = useState(new Date());
   const currentDate = externalCurrentDate ?? internalCurrentDate;
 
-  const { isOpen, openDialog, closeDialog } = useDialogComposerStore();
+  const { mode, openDialog, closeComposer } = useDialogComposerStore();
+  const isOpen = mode !== "closed";
   const [selectedEvent, setSelectedEvent] =
     useState<MergedContentEntity | null>(null);
 
@@ -233,14 +234,14 @@ export function ContentCalendar({
         position: "bottom-left",
       });
     }
-    closeDialog();
+    closeComposer();
     setSelectedEvent(null);
   };
 
   const handleEventDelete = (eventId: string) => {
     const deletedEvent = events.find((e) => String(e.entity?.id) === eventId);
     onEventDelete?.(eventId);
-    closeDialog();
+    closeComposer();
     setSelectedEvent(null);
 
     // Show toast notification when an event is deleted
@@ -403,7 +404,7 @@ export function ContentCalendar({
           event={selectedEvent}
           isOpen={false}
           onClose={() => {
-            closeDialog();
+            closeComposer();
             setSelectedEvent(null);
           }}
           onSave={handleEventSave}

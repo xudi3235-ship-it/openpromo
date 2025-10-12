@@ -6,15 +6,15 @@ import { useWorkspace } from "../useWorkspace";
 export function useComposerPublishHandlers() {
   const ws = useWorkspace();
   const navigate = useNavigate();
-  const { closeDialog, isOpen } = useDialogComposerStore();
+  const { mode, closeComposer } = useDialogComposerStore();
 
   return useCallback(async () => {
-    if (isOpen) {
-      closeDialog();
+    if (mode !== "closed") {
+      closeComposer();
     }
     await navigate({
       to: "/workspaces/$workspaceSlug/content",
       params: { workspaceSlug: ws.workspace.slug },
     });
-  }, [navigate, ws.workspace.slug, closeDialog, isOpen]);
+  }, [navigate, ws.workspace.slug, closeComposer, mode]);
 }
