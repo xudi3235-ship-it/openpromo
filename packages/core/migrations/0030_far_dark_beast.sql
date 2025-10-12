@@ -1,0 +1,1 @@
+ALTER TABLE "style_component" ADD COLUMN "is_official" boolean DEFAULT false NOT NULL;

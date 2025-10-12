@@ -12,6 +12,7 @@ export type ApiEnv = {
     user: User | undefined;
     organizationId: string | undefined;
     role: OrganizationRole | undefined;
+    featureFlags: string[];
   };
   Bindings: {
     HYPERDRIVE: Hyperdrive;

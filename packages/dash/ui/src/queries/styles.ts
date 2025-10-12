@@ -28,7 +28,9 @@ export type StyleResponse = InferResponseType<
 export const invalidateStylesListQueries = async (queryClient: QueryClient) => {
   await queryClient.invalidateQueries({
     predicate: (query) =>
-      Array.isArray(query.queryKey) && query.queryKey[0] === "styles-list",
+      Array.isArray(query.queryKey) &&
+      (query.queryKey[0] === "styles-list" ||
+        query.queryKey[0] === "styles-list-infinite"),
     type: "all",
   });
 };

@@ -6,7 +6,14 @@ import {
   ProductState,
   ProductStateZod,
 } from "@shared/product";
-import { jsonb, pgEnum, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import {
   createInsertSchema,
   createSelectSchema,
@@ -95,6 +102,7 @@ export const styleComponentTable = pgTable(
     ...id,
     ...timestamps,
     creatorID: text("creator_id").notNull(), // user id of the creator
+    isOfficial: boolean("is_official").notNull().default(false),
     name: text("name").notNull(),
     slug: text("slug").notNull(),
     description: text("description").notNull(),

@@ -4,6 +4,7 @@ import {
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
 import { Badge } from "@openpromo/ui/components/badge";
+import { CheckCircle2 } from "lucide-react";
 import type { StyleResponse } from "@/queries/styles";
 import { StyleCardActions } from "./style-card-actions";
 
@@ -61,6 +62,18 @@ export function StyleCard({ style }: StyleCardProps) {
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
           <div className="text-6xl opacity-30">🎨</div>
+        </div>
+      )}
+
+      {/* Official Badge - Top Left */}
+      {style.isOfficial && (
+        <div className="absolute left-2 top-2 z-20 flex items-center gap-1.5">
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/80 backdrop-blur-sm">
+            <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+          </div>
+          <span className="rounded-full bg-black/30 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-md">
+            Official
+          </span>
         </div>
       )}
 
