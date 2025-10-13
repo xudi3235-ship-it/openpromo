@@ -13,8 +13,6 @@ import {
 import { fn } from "@core/utils/fn";
 import type * as z from "zod";
 
-type StyleComponentUpdateInput = z.infer<typeof StyleComponentUpdate>;
-
 export class EntStyleComponent extends Ent<StyleComponentSelectType> {
   static type = "style_component";
 
@@ -38,7 +36,7 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
         isOfficial: true,
         creatorID: true,
       }),
-      update: StyleComponentUpdate,
+      update: StyleComponentUpdate.partial(),
     };
   }
 
@@ -202,7 +200,9 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
     return EntImageGeneration.listForStyle(this.data.id, params);
   }
 
-  async update(input: StyleComponentUpdateInput): Promise<this> {
+  async update(
+    input: z.infer<ReturnType<typeof EntStyleComponent.Schemas>["update"]>,
+  ): Promise<this> {
     if (!input || Object.keys(input).length === 0) return this;
 
     const [updated] = await db()

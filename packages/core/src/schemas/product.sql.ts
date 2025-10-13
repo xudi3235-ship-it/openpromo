@@ -96,6 +96,8 @@ export type ProductSelectType = z.infer<typeof ProductSelect>;
 // Style components
 // ---------------------------------------------------------------------------
 
+const styleComponentStateEnum = pgEnum("style_component_state", ProductState);
+
 export const styleComponentTable = pgTable(
   "style_component",
   {
@@ -105,6 +107,8 @@ export const styleComponentTable = pgTable(
     isOfficial: boolean("is_official").notNull().default(false),
     name: text("name").notNull(),
     slug: text("slug").notNull(),
+    state: styleComponentStateEnum().notNull().default("not_started"),
+    failureReason: text("failure_reason"),
     description: text("description").notNull(),
     imageRefs: jsonb("image_refs").$type<string[]>().notNull().default([]),
     imageGenPrompt: text("image_gen_prompt").notNull(),

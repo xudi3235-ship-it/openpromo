@@ -1,3 +1,4 @@
+import { areInputsSafe } from "@core/domain/genai/helpers";
 import { Actor } from "@core/helpers/actor";
 import {
   type CoreWorkflowContext,
@@ -7,6 +8,7 @@ import {
 } from "@core/helpers/workflow";
 import { Log } from "@core/utils/log";
 import { z } from "zod";
+import { EntStyleComponent } from "../EntStyleComponent";
 
 const StyleComponentWorkflowParams = z.object({
   actor: Actor.WorkspaceUserSchema,
@@ -40,6 +42,24 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
     });
     // here's what we need to do, if it's a new style created
     // 1. guardrail check - if the images are inappropriate, mark it as failed
+    const { safe, reason } = await step.do("guardrail-check-imgs", async () => {
+      const s = await EntStyleComponent.fromID(styleComponentId);
+      return await areInputsSafe(s.data.description, s.data.imageRefs);
+    });
+    if (!safe) {
+      log.warn("// Style component failed guardrail check", {
+        styleComponentId,
+        reason,
+      });
+      await step.do("mark-style-failed", async () => {
+        const s = await EntStyleComponent.fromID(styleComponentId);
+        await s.update({
+          state: "failed",
+          failureReason: reason ?? "Unknown reason",
+        });
+      });
+      return;
+    }
     // 2. process the images, parse them, generate metadata, suitable industry
     // tags, etc.
   }
