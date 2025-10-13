@@ -1,15 +1,20 @@
+import { Actor } from "@core/helpers/actor";
+import { Binding } from "@core/helpers/api-env";
 import { and, count, db, desc, eq, isNull } from "@core/helpers/db";
 import { Ent } from "@core/helpers/ent";
 import {
   ImageGenerationInsert,
   type ImageGenerationSelectType,
+  type ImageGenerationState,
   ImageGenerationUpdate,
   imageGenerationTable,
 } from "@core/schemas/image-generation.sql";
 import { fn } from "@core/utils/fn";
-import type * as z from "zod";
-
-type ImageGenerationUpdateInput = z.infer<typeof ImageGenerationUpdate>;
+import type z from "zod";
+import { ProductImageGen } from "../genai";
+import { EntProduct } from "../product";
+import { EntStyleComponent } from "../style-component";
+import { dispatchWorkspaceEvent } from "../workspace/realtime";
 
 export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
   static type = "image_generation";
@@ -32,20 +37,113 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
         createdAt: true,
         updatedAt: true,
       }),
-      update: ImageGenerationUpdate,
+      update: ImageGenerationUpdate.partial(),
     };
   }
 
   static create = fn(this.Schemas().create, async (input) => {
     const [generation] = await db()
       .insert(imageGenerationTable)
-      .values(input)
+      .values({
+        ...input,
+        state: input.state ?? "pending",
+      })
       .returning();
 
     if (!generation) throw new Error("Failed to create image generation");
 
     return new EntImageGeneration(generation);
   });
+
+  /**
+   * Create and start an image generation process for a product.
+   * This method handles:
+   * 1. Loading the product
+   * 2. Determining which style to use (explicit or matched)
+   * 3. Creating the generation record
+   * 4. Starting the workflow
+   * 5. Dispatching workspace events
+   */
+  static async createAndStart(params: {
+    productId: string;
+    styleId?: string;
+  }): Promise<{ generation: EntImageGeneration; imageUrl?: string }> {
+    const { productId, styleId } = params;
+
+    // Load the product
+    const product = await EntProduct.fromID(productId);
+
+    // Determine which style to use
+    let styleComponent: EntStyleComponent;
+    let promptOverride: string | undefined;
+
+    if (styleId) {
+      styleComponent = await EntStyleComponent.fromID(styleId);
+    } else {
+      // Match product with available styles
+      const officialStyles = await EntStyleComponent.listOfficial();
+
+      if (officialStyles.length === 0) {
+        throw new Error(
+          "No official styles exist yet. Create a style before generating images.",
+        );
+      }
+
+      const match = await ProductImageGen.matchProductWithStyles(
+        product,
+        officialStyles,
+      );
+      styleComponent = match.style;
+      promptOverride = match.prompt;
+    }
+
+    // Prepare style input
+    const styleInput: ProductImageGen.ImageStyleInput = {
+      imageGenPrompt: promptOverride ?? styleComponent.data.imageGenPrompt,
+      imageRefs: styleComponent.data.imageRefs,
+      name: styleComponent.data.slug,
+      description: styleComponent.data.description,
+    };
+
+    // Create the generation record
+    const generation = await EntImageGeneration.create({
+      workspaceId: product.data.workspaceId,
+      styleComponentId: styleComponent.data.id,
+      productId: product.data.id,
+      prompt: styleInput.imageGenPrompt,
+      negativePrompt: ProductImageGen.DEFAULT_NEGATIVE_PROMPT,
+      outputImages: [],
+      metadata: {},
+      context: {},
+      state: "pending",
+    });
+
+    // Start the workflow
+    const workflow = await Binding.use().ImageGenerationWorkflow.create({
+      params: {
+        actor: Actor.assert("workspace_user"),
+        generationId: generation.data.id,
+      },
+    });
+
+    await generation.setWorkflowInstance(workflow.id);
+
+    // Dispatch workspace event
+    await dispatchWorkspaceEvent(product.data.workspaceId, {
+      type: "image_generation.updated",
+      generationId: generation.data.id,
+      styleComponentId: generation.data.styleComponentId,
+      productId: generation.data.productId,
+      state: generation.data.state,
+      payload: generation.toJSON(),
+      timestamp: Date.now(),
+    });
+
+    return {
+      generation,
+      imageUrl: undefined, // TODO: replace this once migration is done
+    };
+  }
 
   static async fromID(id: string): Promise<EntImageGeneration> {
     const [generation] = await db()
@@ -110,8 +208,9 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       },
     };
   }
-
-  async update(input: ImageGenerationUpdateInput): Promise<this> {
+  async update(
+    input: z.infer<ReturnType<typeof EntImageGeneration.Schemas>["update"]>,
+  ): Promise<this> {
     if (!input || Object.keys(input).length === 0) return this;
 
     const [updated] = await db()
@@ -126,6 +225,22 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     return this;
   }
 
+  async setState(
+    state: ImageGenerationState,
+    stateMessage?: string | null,
+  ): Promise<this> {
+    return this.update({
+      state,
+      stateMessage: stateMessage ?? null,
+    });
+  }
+
+  async setWorkflowInstance(workflowInstanceId: string): Promise<this> {
+    return this.update({
+      workflowInstanceId,
+    });
+  }
+
   async delete() {
     const [deleted] = await db()
       .delete(imageGenerationTable)
@@ -133,17 +248,6 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       .returning();
 
     if (!deleted) throw new Error(`Image generation ${this.data.id} not found`);
-
-    // Cleanup output images asynchronously (don't block deletion)
-    // Note: Most AI-generated images are external URLs (Replicate, Cloudflare)
-    // Only R2-stored images will be deleted
-    const { cleanupImagesAsync } = await import(
-      "@core/helpers/storage/cleanup"
-    );
-    cleanupImagesAsync(deleted.outputImages, {
-      entityType: "image_generation",
-      entityId: this.data.id,
-    });
 
     return deleted;
   }

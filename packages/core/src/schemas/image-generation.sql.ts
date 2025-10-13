@@ -1,5 +1,12 @@
 import { id, timestamps, ulid } from "@core/helpers/db";
-import { index, jsonb, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  index,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import {
   createInsertSchema,
   createSelectSchema,
@@ -16,6 +23,20 @@ export type ImageGenMeta = z.infer<typeof ImageGenMeta>;
 
 export const ImageGenContext = z.record(z.string(), z.any()).default({});
 export type ImageGenContext = z.infer<typeof ImageGenContext>;
+
+export const imageGenerationStates = [
+  "not_started",
+  "pending",
+  "generating",
+  "completed",
+  "failed",
+] as const;
+export type ImageGenerationState = (typeof imageGenerationStates)[number];
+
+export const imageGenerationStateEnum = pgEnum(
+  "image_generation_state",
+  imageGenerationStates,
+);
 
 /**
  * represents an image generation run.
@@ -43,12 +64,21 @@ export const imageGenerationTable = pgTable(
       .default([]),
     metadata: jsonb("metadata").$type<ImageGenMeta>().notNull().default({}),
     context: jsonb("context").$type<ImageGenContext>().notNull().default({}),
+    state: imageGenerationStateEnum()
+      .notNull()
+      .default("pending")
+      .$type<ImageGenerationState>(),
+    stateMessage: text("state_message"),
+    workflowInstanceId: text("workflow_instance_id"),
   },
   (table) => [uniqueIndex().on(table.id), index().on(table.createdAt)],
 );
 
 const imageGenerationRefinements = {
   outputImages: z.array(z.string()).default([]),
+  state: z.enum(imageGenerationStates).default("pending"),
+  stateMessage: z.string().optional().nullable(),
+  workflowInstanceId: z.string().optional().nullable(),
 };
 
 export const ImageGenerationInsert = createInsertSchema(

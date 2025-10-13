@@ -31,6 +31,11 @@
       "class_name": "ProductProcessingWorkflow",
       "binding": "ProductProcessingWorkflow",
       "name": "ProductProcessingWorkflow"
+    },
+    {
+      "class_name": "ImageGenerationWorkflow",
+      "binding": "ImageGenerationWorkflow",
+      "name": "ImageGenerationWorkflow"
     }
   ],
   "durable_objects": {
@@ -143,6 +148,11 @@
           "class_name": "ProductProcessingWorkflow",
           "binding": "ProductProcessingWorkflow",
           "name": "ProductProcessingWorkflow"
+        },
+        {
+          "class_name": "ImageGenerationWorkflow",
+          "binding": "ImageGenerationWorkflow",
+          "name": "ImageGenerationWorkflow"
         }
       ],
       "triggers": {

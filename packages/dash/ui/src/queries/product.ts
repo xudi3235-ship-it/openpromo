@@ -140,7 +140,7 @@ export const useProductImageGenerateMutation = (
         json: variables,
       }),
     onSuccess: (data, variables, _context) => {
-      toast.success("Generated new product image");
+      toast.success("Image generation started");
       onSuccess?.(data, variables);
     },
   });

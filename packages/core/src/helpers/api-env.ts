@@ -1,6 +1,7 @@
 import type { ContainerBackend } from "@core/containers";
 import type { ContentBackfillWorkflowParams } from "@core/domain/content/workflows/content-backfill-workflow";
 import type { PublishWorkflowParams } from "@core/domain/content/workflows/content-publish-workflow";
+import type { ImageGenerationWorkflowParams } from "@core/domain/image-generation";
 import type { ProductProcessingWorkflowParams } from "@core/domain/product/workflows/product-processing-workflow";
 import type { OrganizationRole } from "@core/domain/workspace/auth";
 import type { WorkspacePusher } from "@core/durable-objects";
@@ -19,6 +20,7 @@ export type ApiEnv = {
     WORKFLOW: Workflow<PublishWorkflowParams>;
     ContentBackfillWorkflow: Workflow<ContentBackfillWorkflowParams>;
     ProductProcessingWorkflow: Workflow<ProductProcessingWorkflowParams>;
+    ImageGenerationWorkflow: Workflow<ImageGenerationWorkflowParams>;
     WorkspacePusher: DurableObjectNamespace<WorkspacePusher>;
     ContainerBackend: DurableObjectNamespace<ContainerBackend>;
     Bucket: R2Bucket;

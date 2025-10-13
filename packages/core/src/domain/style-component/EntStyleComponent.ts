@@ -207,16 +207,6 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
       .returning();
 
     if (!deleted) throw new Error(`Style component ${this.data.id} not found`);
-
-    // Cleanup uploaded images asynchronously (don't block deletion)
-    const { cleanupImagesAsync } = await import(
-      "@core/helpers/storage/cleanup"
-    );
-    cleanupImagesAsync(deleted.imageRefs, {
-      entityType: "style_component",
-      entityId: this.data.id,
-    });
-
     return deleted;
   }
 }

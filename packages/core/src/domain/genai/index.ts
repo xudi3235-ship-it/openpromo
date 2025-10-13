@@ -12,6 +12,9 @@ const replicate = new Replicate({
 });
 
 export namespace ProductImageGen {
+  export const DEFAULT_NEGATIVE_PROMPT =
+    "low quality, blurry, deformed, distorted, disfigured, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, mutated, extra limbs";
+
   export interface ImageStyleInput {
     imageGenPrompt: string;
     imageRefs: string[];
@@ -89,8 +92,7 @@ export namespace ProductImageGen {
     product: EntProduct;
     style: ImageStyleInput;
   }): Promise<GeneratedImageResult> {
-    const negativePrompt =
-      "low quality, blurry, deformed, distorted, disfigured, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, mutated, extra limbs";
+    const negativePrompt = DEFAULT_NEGATIVE_PROMPT;
     const sysPrompt = `MUST follow the style references provided, including lighting, shooting styles, composition, etc.
     ${opts.style.imageGenPrompt}
     negative prompt: ${negativePrompt}
