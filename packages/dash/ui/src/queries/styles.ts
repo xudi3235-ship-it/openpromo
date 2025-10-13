@@ -197,6 +197,43 @@ export const useStyleGenerationsInfiniteQuery = (
   });
 };
 
+export const useStyleGenerationDeleteMutation = (styleId?: string) => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useHonoMutation({
+    mutationKey: ["style-generation-delete", styleId],
+    mutationFn: (api, generationId: string) => {
+      if (!styleId) {
+        throw new Error("Style ID is required to delete a generation");
+      }
+
+      return api.workspaces[":workspaceSlug"].styles[":styleId"].generations[
+        ":generationId"
+      ].$delete({
+        param: {
+          workspaceSlug: workspace.slug,
+          styleId,
+          generationId,
+        },
+      });
+    },
+    onSuccess: async () => {
+      if (!styleId) return;
+      await queryClient.invalidateQueries({
+        queryKey: ["style-generations-infinite", styleId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["style-generations", styleId],
+      });
+      toast.success("Generation deleted");
+    },
+    onError: () => {
+      toast.error("Failed to delete generation");
+    },
+  });
+};
+
 export const useStyleCreateMutation = (onSuccess?: () => void) => {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();

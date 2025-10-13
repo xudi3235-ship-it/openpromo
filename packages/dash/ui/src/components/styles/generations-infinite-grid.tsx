@@ -43,12 +43,12 @@ export function GenerationsInfiniteGrid({
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 4 }).map((_, index) => (
           <Skeleton
             // biome-ignore lint/suspicious/noArrayIndexKey: placeholder list
             key={index}
-            className="aspect-[3/4] w-full rounded-lg"
+            className="mx-auto aspect-[3/4] w-full max-w-xs rounded-lg"
           />
         ))}
       </div>
@@ -86,25 +86,27 @@ export function GenerationsInfiniteGrid({
   }
 
   return (
-    <div className="space-y-3">
-      {allGenerations.map((generation) => (
-        <GenerationCard
-          key={generation.id}
-          generation={generation}
-          styleName={styleName}
-        />
-      ))}
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {allGenerations.map((generation) => (
+          <GenerationCard
+            key={generation.id}
+            generation={generation}
+            styleName={styleName}
+          />
+        ))}
+      </div>
 
       {/* Load More Trigger */}
       {hasNextPage && (
-        <div ref={loadMoreRef} className="py-4">
+        <div ref={loadMoreRef} className="py-2">
           {isFetchingNextPage && (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 3 }).map((_, index) => (
                 <Skeleton
                   // biome-ignore lint/suspicious/noArrayIndexKey: placeholder list
                   key={index}
-                  className="aspect-[3/4] w-full rounded-lg"
+                  className="mx-auto aspect-[3/4] w-full max-w-xs rounded-lg"
                 />
               ))}
             </div>

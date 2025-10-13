@@ -1,4 +1,5 @@
 import type { StyleGenerationsResponse } from "@/queries/styles";
+import { GenerationCardActions } from "./generation-card-actions";
 
 type Generation = StyleGenerationsResponse["generations"][number];
 
@@ -25,7 +26,10 @@ export function GenerationCard({ generation, styleName }: GenerationCardProps) {
   const createdAt = formatDate(generation.createdAt);
 
   return (
-    <div className="group relative aspect-[3/4] overflow-hidden rounded-lg bg-muted/20">
+    <div className="group relative mx-auto aspect-[3/4] w-full max-w-xs overflow-hidden rounded-lg bg-muted/20">
+      <div className="absolute right-2 top-2 z-10 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <GenerationCardActions generation={generation} styleName={styleName} />
+      </div>
       {coverImage ? (
         <img
           src={coverImage}

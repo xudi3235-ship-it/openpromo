@@ -62,7 +62,12 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
     const [component] = await db()
       .select()
       .from(styleComponentTable)
-      .where(eq(styleComponentTable.id, id))
+      .where(
+        and(
+          eq(styleComponentTable.id, id),
+          eq(styleComponentTable.creatorID, Actor.userID()),
+        ),
+      )
       .limit(1);
 
     if (!component) throw new Error(`Style component ${id} not found`);

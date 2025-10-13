@@ -88,7 +88,12 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     const [generation] = await db()
       .select()
       .from(imageGenerationTable)
-      .where(eq(imageGenerationTable.id, id))
+      .where(
+        and(
+          eq(imageGenerationTable.id, id),
+          eq(imageGenerationTable.workspaceId, Actor.workspaceID()),
+        ),
+      )
       .limit(1);
 
     if (!generation) throw new Error(`Image generation ${id} not found`);
