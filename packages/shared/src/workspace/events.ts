@@ -41,6 +41,7 @@ export const ImageGenerationUpdatedEventSchema = z.object({
   generationId: z.string(),
   state: ImageGenerationStateSchema,
   stateMessage: z.string().nullable().optional(),
+  outputImages: z.array(z.string()).optional(),
   timestamp: z.number(),
 });
 

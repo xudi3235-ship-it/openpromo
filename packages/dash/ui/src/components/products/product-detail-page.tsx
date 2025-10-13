@@ -1,9 +1,15 @@
 import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
+import {
+  ImageGenerationStateSchema,
+  WorkspaceEventType,
+} from "@shared/workspace";
 import { Link, useParams } from "@tanstack/react-router";
 import { ChevronLeft, Loader2, Sparkles } from "lucide-react";
 import * as React from "react";
+import type { GenericEvent } from "@/hooks/useWorkspaceNotifications";
+import { useWorkspaceNotifications } from "@/hooks/useWorkspaceNotifications";
 import {
   type ProductImageGenerateResponse,
   useProductImageGenerateMutation,
@@ -79,10 +85,61 @@ export function ProductDetailPage() {
 
   const [generatedImage, setGeneratedImage] =
     React.useState<ProductImageGenerateResponse | null>(null);
+  const [currentGenerationId, setCurrentGenerationId] = React.useState<
+    string | null
+  >(null);
+  const [generationStatus, setGenerationStatus] = React.useState<
+    "idle" | "generating" | "completed" | "failed"
+  >("idle");
+
   const { data, isLoading, error } = useProductQuery(productId);
 
   const generateImage = useProductImageGenerateMutation();
-  const isGenerating = generateImage.isPending;
+  const isGenerating =
+    generateImage.isPending || generationStatus === "generating";
+
+  // Listen for workspace events
+  const handleWorkspaceEvent = React.useCallback(
+    (event: GenericEvent) => {
+      // Check if this is an image generation event
+      if (event.type === WorkspaceEventType.ImageGenerationUpdated) {
+        const generationId = (event as { generationId?: string }).generationId;
+        const state = (event as { state?: string }).state;
+        const outputImages = (event as { outputImages?: string[] })
+          .outputImages;
+
+        // Only update if this is the generation we're tracking
+        if (generationId === currentGenerationId) {
+          // Validate state
+          const stateResult = ImageGenerationStateSchema.safeParse(state);
+          if (!stateResult.success) return;
+
+          const validState = stateResult.data;
+
+          if (validState === "generating") {
+            setGenerationStatus("generating");
+          } else if (validState === "completed" && outputImages?.[0]) {
+            setGenerationStatus("completed");
+            // Just use the first image URL directly
+            setGeneratedImage({
+              imageUrl: outputImages[0],
+              generation: {
+                id: generationId,
+              } as ProductImageGenerateResponse["generation"],
+            });
+          } else if (validState === "failed") {
+            setGenerationStatus("failed");
+          }
+        }
+      }
+    },
+    [currentGenerationId],
+  );
+
+  useWorkspaceNotifications(workspaceSlug, {
+    onEvent: handleWorkspaceEvent,
+    autoToast: true,
+  });
 
   const product = data?.product;
   const productContext = product?.metadata?.productContext;
@@ -122,11 +179,17 @@ export function ProductDetailPage() {
 
   const handleGenerate = () => {
     if (!productId || isGenerating) return;
+    setGenerationStatus("generating");
     generateImage.mutate(
       { productId },
       {
         onSuccess: (result) => {
-          setGeneratedImage(result);
+          // Track the generation ID to listen for events
+          setCurrentGenerationId(result.generation.id);
+          // Don't set the image immediately - wait for the event
+        },
+        onError: () => {
+          setGenerationStatus("failed");
         },
       },
     );

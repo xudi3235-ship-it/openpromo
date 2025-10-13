@@ -253,4 +253,20 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       outputImages: imageUrls,
     });
   }
+
+  /**
+   * Dispatch a workspace event for this generation update
+   * Call this after updating the generation state to notify clients
+   */
+  async dispatchUpdateEvent(): Promise<void> {
+    await dispatchWorkspaceEvent(
+      this.data.workspaceId,
+      createWorkspaceEvent(WorkspaceEventType.ImageGenerationUpdated, {
+        generationId: this.data.id,
+        state: this.data.state,
+        stateMessage: this.data.stateMessage,
+        outputImages: this.data.outputImages,
+      }),
+    );
+  }
 }

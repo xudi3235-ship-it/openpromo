@@ -225,6 +225,13 @@
       "when": 1760298213461,
       "tag": "0031_steady_justice",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1760321129903,
+      "tag": "0032_sweet_mongu",
+      "breakpoints": true
     }
   ]
 }

@@ -52,7 +52,9 @@ export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerat
       });
       // 2. mark as generating
       await step.do("mark-generating", async () => {
-        (await EntImageGeneration.fromID(generationId)).setState("generating");
+        const ent = await EntImageGeneration.fromID(generationId);
+        await ent.setState("generating");
+        await ent.dispatchUpdateEvent();
       });
 
       // 3. generate image
@@ -66,23 +68,25 @@ export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerat
           imageUrls: out.imageUrls,
         };
       });
-      // 4. mark as completed, store image URLs
+
+      // 4. mark as completed, store image URLs and dispatch event
       await step.do("mark-completed", async () => {
         const ent = await EntImageGeneration.fromID(generationId);
         await ent.update({
           state: "completed",
           outputImages: imageUrls,
         });
+        await ent.dispatchUpdateEvent();
       });
-      // 5. TODO: dispatch events
     } catch (err) {
       console.error("// Image generation workflow failed", {
         generationId,
         error: err,
       });
-      // mark as failed
+      // mark as failed and dispatch event
       const ent = await EntImageGeneration.fromID(generationId);
       await ent.setState("failed", (err as Error).message);
+      await ent.dispatchUpdateEvent();
       return;
     }
   }
