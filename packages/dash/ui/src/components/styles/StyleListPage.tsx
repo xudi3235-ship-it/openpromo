@@ -4,19 +4,11 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@openpromo/ui/components/toggle-group";
-import {
-  BadgeCheck,
-  Clock3,
-  History,
-  Plus,
-  Search,
-  TrendingUp,
-} from "lucide-react";
+import { BadgeCheck, Clock3, History, Search, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { StylesInfiniteGrid } from "@/components/styles/styles-infinite-grid";
 import type { StylesListParams } from "@/queries/styles";
-import { useStyleComposerStore } from "@/stores/style-composer-store";
 import { StyleComposer } from "./composer";
 
 type SortOption = "latest" | "oldest" | "most_used";
@@ -30,8 +22,6 @@ export function StyleListPage() {
   const [debouncedSearch, setDebouncedSearch] = useState<string>();
   const [officialOnly, setOfficialOnly] = useState(false);
   const [sort, setSort] = useState<SortOption>("latest");
-
-  const openComposer = useStyleComposerStore((state) => state.openComposer);
 
   const updateSearch = useDebounceCallback((value: string) => {
     setDebouncedSearch(value.trim() || undefined);
@@ -87,18 +77,10 @@ export function StyleListPage() {
                 Creative Style Marketplace
               </h1>
               <p className="text-sm text-muted-foreground max-w-2xl">
-                Professionally curated visual styles designed to elevate your
-                product ads and maximize performance.
+                Explore curated visual systems and drop 3-5 reference images
+                into the composer dock below to spin up a new style instantly.
               </p>
             </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <Button onClick={openComposer} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create Style
-            </Button>
           </div>
         </div>
 

@@ -1,7 +1,6 @@
-import { Button } from "@openpromo/ui/components/button";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
-import { Plus, Search, Sparkles } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { Fragment, useEffect, useMemo } from "react";
 import { useIntersectionObserver } from "usehooks-ts";
@@ -10,7 +9,6 @@ import {
   type StylesListParams,
   useStylesInfiniteQuery,
 } from "@/queries/styles";
-import { useStyleComposerStore } from "@/stores/style-composer-store";
 import { StyleCard } from "./style-card";
 
 type StyleItem = StyleResponse["style"];
@@ -160,8 +158,6 @@ interface StylesEmptyStateProps {
 }
 
 export function StylesEmptyState({ hasFilters }: StylesEmptyStateProps) {
-  const openComposer = useStyleComposerStore((state) => state.openComposer);
-
   if (hasFilters) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed p-16 text-center">
@@ -186,13 +182,9 @@ export function StylesEmptyState({ hasFilters }: StylesEmptyStateProps) {
         Start Building Your Style Collection
       </h2>
       <p className="mt-3 max-w-lg text-base text-muted-foreground leading-relaxed">
-        Create your first visual style to transform product imagery. Each style
-        can be reused across campaigns to maintain brand consistency.
+        Drag 3-5 reference images into the glassy composer dock at the bottom of
+        this page to create your first reusable visual style.
       </p>
-      <Button onClick={openComposer} size="lg" className="mt-8 gap-2">
-        <Plus className="h-4 w-4" />
-        Create Your First Style
-      </Button>
     </div>
   );
 }
