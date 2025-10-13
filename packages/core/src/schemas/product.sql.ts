@@ -5,6 +5,7 @@ import {
   ProductSource,
   ProductState,
   ProductStateZod,
+  StyleState,
 } from "@shared/product";
 import {
   boolean,
@@ -96,7 +97,10 @@ export type ProductSelectType = z.infer<typeof ProductSelect>;
 // Style components
 // ---------------------------------------------------------------------------
 
-const styleComponentStateEnum = pgEnum("style_component_state", ProductState);
+export const styleComponentStateEnum = pgEnum(
+  "style_component_state",
+  StyleState,
+);
 
 export const styleComponentTable = pgTable(
   "style_component",

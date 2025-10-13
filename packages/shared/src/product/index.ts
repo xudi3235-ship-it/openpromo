@@ -80,16 +80,20 @@ export const ProductMetadata = z.object({
 
 export type ProductMetadata = z.infer<typeof ProductMetadata>;
 
-export const StyleName = z.enum([
-  "skin_portrait_korean",
-  // "fashion_magazine",
-  // "instagram_ootd",
-]);
+export const StyleState = [
+  "not_started",
+  "pending",
+  "processing",
+  "ready",
+  "failed",
+] as const;
 
-export type StyleName = z.infer<typeof StyleName>;
+export type StyleState = (typeof StyleState)[number];
+
+export const StyleStateZod = z.enum(StyleState);
 
 export const StyleComponent = z.object({
-  name: StyleName.describe("name of the style component."),
+  name: z.string().describe("name of the style component."),
   imageRefs: z
     .array(z.string())
     .describe("reference image url for the style component"),
