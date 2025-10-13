@@ -1,8 +1,3 @@
-import {
-  ORGANIZATION_ROLE,
-  WORKSPACE_PERMISSION,
-  WORKSPACE_ROLE,
-} from "@core/domain/workspace/auth";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { getDbClient } from "@core/helpers/db";
@@ -11,6 +6,11 @@ import { workspaceInvitesTable } from "@core/schemas/workspace-invites.sql";
 import { workspaceRoleAssignmentsTable } from "@core/schemas/workspace-role-assignments.sql";
 import { workspaceRolesTable } from "@core/schemas/workspace-roles.sql";
 import { workspacesTable } from "@core/schemas/workspaces.sql";
+import {
+  ORGANIZATION_ROLE,
+  WORKSPACE_PERMISSION,
+  WORKSPACE_ROLE,
+} from "@shared/workspace/auth";
 import type { User } from "@workos-inc/node";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";

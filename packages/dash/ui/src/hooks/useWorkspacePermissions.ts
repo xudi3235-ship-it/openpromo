@@ -1,10 +1,10 @@
-import type { WorkspacePermission } from "@core/domain/workspace/auth";
+import type { WorkspacePermission } from "@shared/workspace/auth";
 import {
   hasAllWorkspacePermissions,
   hasAnyWorkspacePermission,
   hasWorkspacePermission,
   WORKSPACE_PERMISSION,
-} from "@core/domain/workspace/auth";
+} from "@shared/workspace/auth";
 import { useWorkspace } from "./useWorkspace";
 
 /**

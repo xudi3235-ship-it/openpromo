@@ -1,4 +1,4 @@
-import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
+import { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import type {
   WorkspaceInviteSummary,
   WorkspaceMember,

@@ -1,10 +1,10 @@
 import type { DbClient } from "@core/helpers/db";
 import { getDbClient } from "@core/helpers/db";
-import { WORKSPACE_ROLE } from "@openpromo/core/domain/workspace/auth";
 import { workspaceInvitesTable } from "@openpromo/core/schemas/workspace-invites.sql";
 import { workspaceRoleAssignmentsTable } from "@openpromo/core/schemas/workspace-role-assignments.sql";
 import { workspaceRolesTable } from "@openpromo/core/schemas/workspace-roles.sql";
 import { workspacesTable } from "@openpromo/core/schemas/workspaces.sql";
+import { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import { and, eq } from "drizzle-orm";
 import { generateSlug } from "./db";
 import { AppError } from "./error";

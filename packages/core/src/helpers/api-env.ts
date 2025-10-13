@@ -4,9 +4,9 @@ import type { PublishWorkflowParams } from "@core/domain/content/workflows/conte
 import type { ImageGenerationWorkflowParams } from "@core/domain/image-generation";
 import type { ProductProcessingWorkflowParams } from "@core/domain/product/workflows/product-processing-workflow";
 import type { StyleComponentWorkflowParams } from "@core/domain/style-component";
-import type { OrganizationRole } from "@core/domain/workspace/auth";
 import type { WorkspacePusher } from "@core/durable-objects";
 import { createContext } from "@core/utils/context";
+import type { OrganizationRole } from "@shared/workspace/auth";
 import type { User } from "@workos-inc/node";
 
 export type ApiEnv = {

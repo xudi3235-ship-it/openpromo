@@ -1,4 +1,4 @@
-import type { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
+import type { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import type {
   WorkspaceTeamInviteResponse,

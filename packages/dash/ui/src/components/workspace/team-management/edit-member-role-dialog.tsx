@@ -1,4 +1,3 @@
-import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
 import { Button } from "@openpromo/ui/components/button";
 import {
   Dialog,
@@ -14,6 +13,7 @@ import {
   RadioGroupItem,
 } from "@openpromo/ui/components/radio-group";
 import { cn } from "@openpromo/ui/lib/utils";
+import { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import { Check } from "lucide-react";
 import { useState } from "react";
 import type { WorkspaceMember } from "./utils";

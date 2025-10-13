@@ -1,7 +1,7 @@
-import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { VideoStorage } from "@core/helpers/storage/video";
 import { env } from "@core/utils/env";
+import { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import { Hono } from "hono";
 import * as z from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";

@@ -1,5 +1,5 @@
-import type { OrganizationRole } from "@openpromo/core/domain/workspace/auth";
 import type { ApiEnv } from "@openpromo/core/helpers/api-env";
+import type { OrganizationRole } from "@shared/workspace/auth";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";
 import { AppError } from "../helpers/error";

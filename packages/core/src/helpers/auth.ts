@@ -1,6 +1,6 @@
-import type { OrganizationRole } from "@core/domain/workspace/auth";
 import { getWorkOS } from "@core/providers";
 import { env } from "@core/utils/env";
+import type { OrganizationRole } from "@shared/workspace/auth";
 import type {
   AuthenticateWithSessionCookieFailureReason,
   AuthenticateWithSessionCookieSuccessResponse,

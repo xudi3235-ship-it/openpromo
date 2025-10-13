@@ -1,11 +1,11 @@
+import { Actor } from "@openpromo/core/helpers/actor";
+import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import {
   hasAllWorkspacePermissions,
   hasAnyWorkspacePermission,
   hasWorkspacePermission,
   type WorkspacePermission,
-} from "@openpromo/core/domain/workspace/auth";
-import { Actor } from "@openpromo/core/helpers/actor";
-import type { ApiEnv } from "@openpromo/core/helpers/api-env";
+} from "@shared/workspace/auth";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";
 import { AppError } from "../helpers/error";

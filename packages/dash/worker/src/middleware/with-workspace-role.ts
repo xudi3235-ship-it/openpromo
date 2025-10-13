@@ -1,10 +1,3 @@
-import {
-  getWorkspacePermissions,
-  ORGANIZATION_ROLE,
-  type OrganizationRole,
-  WORKSPACE_PERMISSION,
-  type WorkspaceRole,
-} from "@openpromo/core/domain/workspace/auth";
 import { Actor } from "@openpromo/core/helpers/actor";
 import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { getDbClient } from "@openpromo/core/helpers/db/index";
@@ -12,6 +5,13 @@ import {
   type Workspace,
   workspacesTable,
 } from "@openpromo/core/schemas/workspaces.sql";
+import {
+  getWorkspacePermissions,
+  ORGANIZATION_ROLE,
+  type OrganizationRole,
+  WORKSPACE_PERMISSION,
+  type WorkspaceRole,
+} from "@shared/workspace/auth";
 import { and, eq } from "drizzle-orm";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";

@@ -1,4 +1,3 @@
-import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
 import { Button } from "@openpromo/ui/components/button";
 import {
   Dialog,
@@ -17,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@openpromo/ui/components/select";
+import { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import type { ChangeEvent, ReactNode } from "react";
 import type { WorkspaceRoleValue } from "./utils";
 import { ROLE_OPTIONS } from "./utils";

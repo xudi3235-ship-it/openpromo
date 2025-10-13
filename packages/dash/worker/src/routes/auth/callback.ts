@@ -1,9 +1,9 @@
-import { ORGANIZATION_ROLE } from "@core/domain/workspace/auth";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { eq, getDbClient } from "@core/helpers/db";
 import { getWorkOS } from "@core/providers/workos";
 import { usersTable } from "@core/schemas/users.sql";
 import { env } from "@core/utils/env";
+import { ORGANIZATION_ROLE } from "@shared/workspace/auth";
 import type { User } from "@workos-inc/node";
 import { type Context, Hono } from "hono";
 import {

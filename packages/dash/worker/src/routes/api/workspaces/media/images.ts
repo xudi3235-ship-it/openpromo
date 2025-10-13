@@ -1,6 +1,6 @@
-import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { ImageStorage } from "@core/helpers/storage/image";
+import { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import { Hono } from "hono";
 import * as z from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";

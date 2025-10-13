@@ -3,9 +3,9 @@ import {
   instagramOAuthService,
 } from "@core/domain/connected-account";
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { WORKSPACE_ROLE } from "@core/domain/workspace/auth";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { AllPlatforms } from "@shared/content";
+import { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import { Hono } from "hono";
 import * as z from "zod";
 import { withAuth } from "../../../../middleware/with-auth";
