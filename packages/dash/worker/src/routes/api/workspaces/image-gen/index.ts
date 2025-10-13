@@ -21,7 +21,7 @@ export const imageGenRoute = new Hono<ApiEnv>()
     });
 
     return c.json({
-      imageUrl: imageUrl ?? "TODO: replace this once migration is done",
+      imageUrl,
       generation: generation.toJSON(),
     });
   });

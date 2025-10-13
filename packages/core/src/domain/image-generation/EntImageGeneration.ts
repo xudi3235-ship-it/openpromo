@@ -1,5 +1,4 @@
 import { Actor } from "@core/helpers/actor";
-import { Binding } from "@core/helpers/api-env";
 import { and, count, db, desc, eq, isNull } from "@core/helpers/db";
 import { Ent } from "@core/helpers/ent";
 import {
@@ -58,15 +57,6 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     return new EntImageGeneration(generation);
   });
 
-  /**
-   * Create and start an image generation process for a product.
-   * This method handles:
-   * 1. Loading the product
-   * 2. Determining which style to use (explicit or matched)
-   * 3. Creating the generation record
-   * 4. Starting the workflow
-   * 5. Dispatching workspace events
-   */
   static async createAndStart(params: {
     productId: string;
     styleId?: string;
@@ -77,30 +67,20 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       productId: params.productId,
       styleComponentId: params.styleId ?? null,
     });
-
-    // Start the workflow
-    const workflow = await Binding.use().ImageGenerationWorkflow.create({
-      params: {
-        actor: Actor.assert("workspace_user"),
-        generationId: generation.data.id,
-      },
+    // NOTE: for now we do sync gen, workflow migration is WIP
+    // ws approach is not quite stable yet
+    const style = await generation.deriveStyleContext({
+      productID: params.productId,
+      styleId: params.styleId,
     });
-
-    await generation.setWorkflowInstance(workflow.id);
-
-    // Dispatch workspace event
-    await dispatchWorkspaceEvent(
-      Actor.workspaceID(),
-      createWorkspaceEvent(WorkspaceEventType.ImageGenerationUpdated, {
-        generationId: generation.data.id,
-        state: generation.data.state,
-        stateMessage: generation.data.stateMessage,
-      }),
-    );
+    const imageGenResult = await ProductImageGen.genImage({
+      product: await EntProduct.fromID(params.productId),
+      style,
+    });
 
     return {
       generation,
-      imageUrl: undefined, // TODO: replace this once migration is done
+      imageUrl: imageGenResult.imageUrls[0],
     };
   }
 
