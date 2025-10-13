@@ -36,6 +36,11 @@
       "class_name": "ImageGenerationWorkflow",
       "binding": "ImageGenerationWorkflow",
       "name": "ImageGenerationWorkflow"
+    },
+    {
+      "class_name": "StyleComponentWorkflow",
+      "binding": "StyleComponentWorkflow",
+      "name": "StyleComponentWorkflow"
     }
   ],
   "durable_objects": {
@@ -153,6 +158,11 @@
           "class_name": "ImageGenerationWorkflow",
           "binding": "ImageGenerationWorkflow",
           "name": "ImageGenerationWorkflow"
+        },
+        {
+          "class_name": "StyleComponentWorkflow",
+          "binding": "StyleComponentWorkflow",
+          "name": "StyleComponentWorkflow"
         }
       ],
       "triggers": {
@@ -168,6 +178,33 @@
         {
           "pattern": "dash.openpromo.app",
           "custom_domain": true
+        }
+      ],
+      "workflows": [
+        {
+          "class_name": "PendingContentPublishWorkflow",
+          "binding": "WORKFLOW",
+          "name": "PendingContentPublishWorkflow"
+        },
+        {
+          "class_name": "ContentBackfillWorkflow",
+          "binding": "ContentBackfillWorkflow",
+          "name": "ContentBackfillWorkflow"
+        },
+        {
+          "class_name": "ProductProcessingWorkflow",
+          "binding": "ProductProcessingWorkflow",
+          "name": "ProductProcessingWorkflow"
+        },
+        {
+          "class_name": "ImageGenerationWorkflow",
+          "binding": "ImageGenerationWorkflow",
+          "name": "ImageGenerationWorkflow"
+        },
+        {
+          "class_name": "StyleComponentWorkflow",
+          "binding": "StyleComponentWorkflow",
+          "name": "StyleComponentWorkflow"
         }
       ]
     }

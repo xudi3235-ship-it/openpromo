@@ -3,6 +3,7 @@ import type { ContentBackfillWorkflowParams } from "@core/domain/content/workflo
 import type { PublishWorkflowParams } from "@core/domain/content/workflows/content-publish-workflow";
 import type { ImageGenerationWorkflowParams } from "@core/domain/image-generation";
 import type { ProductProcessingWorkflowParams } from "@core/domain/product/workflows/product-processing-workflow";
+import type { StyleComponentWorkflowParams } from "@core/domain/style-component";
 import type { OrganizationRole } from "@core/domain/workspace/auth";
 import type { WorkspacePusher } from "@core/durable-objects";
 import { createContext } from "@core/utils/context";
@@ -20,6 +21,7 @@ export type ApiEnv = {
     WORKFLOW: Workflow<PublishWorkflowParams>;
     ContentBackfillWorkflow: Workflow<ContentBackfillWorkflowParams>;
     ProductProcessingWorkflow: Workflow<ProductProcessingWorkflowParams>;
+    StyleComponentWorkflow: Workflow<StyleComponentWorkflowParams>;
     ImageGenerationWorkflow: Workflow<ImageGenerationWorkflowParams>;
     WorkspacePusher: DurableObjectNamespace<WorkspacePusher>;
     ContainerBackend: DurableObjectNamespace<ContainerBackend>;

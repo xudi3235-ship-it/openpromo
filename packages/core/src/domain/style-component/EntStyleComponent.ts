@@ -1,5 +1,6 @@
 import { EntImageGeneration } from "@core/domain/image-generation";
 import { Actor } from "@core/helpers/actor";
+import { Binding } from "@core/helpers/api-env";
 import { and, asc, count, db, desc, eq, ilike, or } from "@core/helpers/db";
 import { Ent } from "@core/helpers/ent";
 import { FeatureFlag } from "@core/helpers/featureflag";
@@ -54,6 +55,17 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
       .returning();
 
     if (!component) throw new Error("Failed to create style component");
+
+    try {
+      await Binding.use().StyleComponentWorkflow.create({
+        params: {
+          actor: Actor.assert("workspace_user"),
+          styleComponentId: component.id,
+        },
+      });
+    } catch (error) {
+      console.error("// Failed to enqueue style component workflow", error);
+    }
 
     return new EntStyleComponent(component);
   });
