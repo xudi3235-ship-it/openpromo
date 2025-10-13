@@ -1,3 +1,10 @@
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@openpromo/ui/components/carousel";
 import { ImageOff } from "lucide-react";
 import type { StyleResponse } from "@/queries/styles";
 
@@ -6,83 +13,34 @@ interface StyleDetailsProps {
 }
 
 export function StyleDetails({ style }: StyleDetailsProps) {
-  const [heroImage, ...galleryImages] = style.imageRefs;
-
-  const metadata: Array<{ label: string; value: string }> = [];
-  if (style.slug) {
-    metadata.push({ label: "Slug", value: style.slug });
-  }
+  const images = style.imageRefs;
 
   return (
-    <div className="space-y-6">
-      {/* Hero Image */}
-      <div className="mx-auto max-w-md overflow-hidden rounded-xl bg-muted/20">
-        {heroImage ? (
-          <img
-            src={heroImage}
-            alt={style.name}
-            className="aspect-[3/4] w-full object-cover"
-          />
-        ) : (
-          <div className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-2 text-muted-foreground">
-            <ImageOff className="h-8 w-8" />
-            <span className="text-xs">No primary image</span>
-          </div>
-        )}
-      </div>
-
-      {/* Gallery Images */}
-      {galleryImages.length > 0 && (
-        <div className="grid gap-2 grid-cols-3 sm:grid-cols-4">
-          {galleryImages.slice(0, 8).map((image) => (
-            <img
-              key={image}
-              src={image}
-              alt={`${style.name} preview`}
-              className="aspect-square w-full rounded-lg object-cover"
-            />
-          ))}
+    <div className="flex w-full max-w-sm flex-col gap-4">
+      {images.length > 0 ? (
+        <Carousel className="w-full">
+          <CarouselContent className="h-full">
+            {images.map((image) => (
+              <CarouselItem key={image}>
+                <div className="overflow-hidden rounded-xl bg-muted/20">
+                  <img
+                    src={image}
+                    alt={style.name}
+                    className="aspect-[3/4] w-full object-cover"
+                  />
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="hidden sm:flex" />
+          <CarouselNext className="hidden sm:flex" />
+        </Carousel>
+      ) : (
+        <div className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/40 bg-muted/10 text-muted-foreground">
+          <ImageOff className="h-8 w-8" />
+          <span className="text-xs">No images generated yet</span>
         </div>
       )}
-
-      {/* Metadata Section */}
-      <div className="space-y-3 rounded-lg border border-border/40 bg-muted/20 p-4 text-xs">
-        <h3 className="font-semibold uppercase tracking-wide text-muted-foreground">
-          Details
-        </h3>
-
-        <div className="space-y-2 text-muted-foreground">
-          {style.creatorID && (
-            <div>
-              <span className="font-medium text-foreground">Creator:</span>{" "}
-              {style.creatorID}
-            </div>
-          )}
-
-          <div>
-            <span className="font-medium text-foreground">Style ID:</span>{" "}
-            {style.id}
-          </div>
-
-          {metadata.map((item) => (
-            <div key={`${item.label}-${item.value}`}>
-              <span className="font-medium text-foreground">{item.label}:</span>{" "}
-              {item.value}
-            </div>
-          ))}
-        </div>
-
-        {style.imageGenPrompt && (
-          <div className="space-y-1.5 pt-2 border-t border-border/40">
-            <span className="font-semibold uppercase tracking-wide text-muted-foreground">
-              Prompt Blueprint
-            </span>
-            <p className="whitespace-pre-wrap leading-relaxed text-foreground">
-              {style.imageGenPrompt}
-            </p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

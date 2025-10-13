@@ -77,7 +77,7 @@ export function StyleDetailPage() {
       </header>
 
       {/* Two-column layout: Left = Style Details, Right = Recent Generations */}
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
         {/* Left Column: Style Details */}
         <StyleDetails style={style} />
 
@@ -111,20 +111,15 @@ export function StyleDetailSkeleton() {
         <Skeleton className="h-4 w-2/3" />
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
         {/* Left Column Skeleton */}
-        <div className="space-y-6">
-          <Skeleton className="aspect-[3/4] w-full max-w-md rounded-xl" />
-          <div className="grid gap-2 grid-cols-3 sm:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <Skeleton
-                // biome-ignore lint/suspicious/noArrayIndexKey: placeholder list
-                key={index}
-                className="aspect-square w-full rounded-lg"
-              />
-            ))}
+        <div className="flex w-full max-w-sm flex-col gap-4">
+          <Skeleton className="aspect-[3/4] w-full rounded-xl" />
+          <div className="flex items-center justify-between px-6">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <Skeleton className="h-2 w-24" />
+            <Skeleton className="h-10 w-10 rounded-full" />
           </div>
-          <Skeleton className="h-48 w-full rounded-lg" />
         </div>
 
         {/* Right Column Skeleton */}
