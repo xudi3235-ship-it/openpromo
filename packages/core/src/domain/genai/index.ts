@@ -1,15 +1,10 @@
 import { openai } from "@ai-sdk/openai";
-import { env } from "@core/utils/env";
+import { replicate } from "@core/providers/replicate";
 import { ProductIdentificationSchema } from "@shared/product";
 import { generateObject, type ModelMessage, type UserModelMessage } from "ai";
-import Replicate from "replicate";
 import { z } from "zod";
 import type { EntProduct } from "../product";
 import type { EntStyleComponent } from "../style-component";
-
-const replicate = new Replicate({
-  auth: env.REPLICATE_API_TOKEN,
-});
 
 export namespace ProductImageGen {
   export const DEFAULT_NEGATIVE_PROMPT =

@@ -38,5 +38,9 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
       log.info("// Style component workflow noop step", { styleComponentId });
       return;
     });
+    // here's what we need to do, if it's a new style created
+    // 1. guardrail check - if the images are inappropriate, mark it as failed
+    // 2. process the images, parse them, generate metadata, suitable industry
+    // tags, etc.
   }
 }
