@@ -21,7 +21,11 @@ export const usersRoute = new Hono<ApiEnv>()
       .where(eq(usersTable.workosId, user.id))
       .limit(1);
 
-    return ctx.json({ ...user, ...dbUser });
+    return ctx.json({
+      ...user,
+      ...dbUser,
+      featureFlags: ctx.get("featureFlags"),
+    });
   })
   .patch(
     "/metadata",
