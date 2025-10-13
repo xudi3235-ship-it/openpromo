@@ -79,15 +79,3 @@ export const ProductMetadata = z.object({
 });
 
 export type ProductMetadata = z.infer<typeof ProductMetadata>;
-
-export const StyleState = [
-  "not_started",
-  "pending",
-  "processing",
-  "ready",
-  "failed",
-] as const;
-
-export type StyleState = (typeof StyleState)[number];
-
-export const StyleStateZod = z.enum(StyleState);

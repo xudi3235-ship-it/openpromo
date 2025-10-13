@@ -1,4 +1,3 @@
-import { StyleContext } from "@core/domain/style-component/workflows/style-component-workflow";
 import { id, timestamps } from "@core/helpers/db";
 import type { SharedAttachmentSpec } from "@shared/content";
 import {
@@ -6,16 +5,8 @@ import {
   ProductSource,
   ProductState,
   ProductStateZod,
-  StyleState,
 } from "@shared/product";
-import {
-  boolean,
-  jsonb,
-  pgEnum,
-  pgTable,
-  text,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
+import { jsonb, pgEnum, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 import {
   createInsertSchema,
   createSelectSchema,
@@ -93,57 +84,3 @@ export const ProductSelect = createSelectSchema(
 export type ProductInsertType = z.infer<typeof ProductInsert>;
 export type ProductUpdateType = z.infer<typeof ProductUpdate>;
 export type ProductSelectType = z.infer<typeof ProductSelect>;
-
-// ---------------------------------------------------------------------------
-// Style components
-// ---------------------------------------------------------------------------
-
-export const styleComponentStateEnum = pgEnum(
-  "style_component_state",
-  StyleState,
-);
-
-export const styleComponentTable = pgTable(
-  "style_component",
-  {
-    ...id,
-    ...timestamps,
-    creatorID: text("creator_id").notNull(), // user id of the creator
-    isOfficial: boolean("is_official").notNull().default(false),
-    name: text("name").notNull(),
-    slug: text("slug").notNull(),
-    // state machine
-    state: styleComponentStateEnum().notNull().default("not_started"),
-    failureReason: text("failure_reason"),
-    // fields
-    description: text("description").notNull(),
-    imageRefs: jsonb("image_refs").$type<string[]>().notNull().default([]),
-    imageGenPrompt: text("image_gen_prompt").notNull(),
-    context: jsonb("context").$type<StyleContext | null>().default(null),
-  },
-  (table) => [uniqueIndex().on(table.slug), uniqueIndex().on(table.name)],
-);
-
-const styleComponentRefinements = {
-  imageRefs: z.array(z.string()).default([]),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-  context: StyleContext.nullable().default(null),
-};
-
-export const StyleComponentInsert = createInsertSchema(
-  styleComponentTable,
-  styleComponentRefinements,
-);
-export const StyleComponentUpdate = createUpdateSchema(
-  styleComponentTable,
-  styleComponentRefinements,
-);
-export const StyleComponentSelect = createSelectSchema(
-  styleComponentTable,
-  styleComponentRefinements,
-);
-
-export type StyleComponentInsertType = z.infer<typeof StyleComponentInsert>;
-export type StyleComponentUpdateType = z.infer<typeof StyleComponentUpdate>;
-export type StyleComponentSelectType = z.infer<typeof StyleComponentSelect>;

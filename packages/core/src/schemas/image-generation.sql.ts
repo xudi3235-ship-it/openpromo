@@ -13,7 +13,8 @@ import {
   createUpdateSchema,
 } from "drizzle-zod";
 import * as z from "zod";
-import { productTable, styleComponentTable } from "./product.sql";
+import { productTable } from "./product.sql";
+import { styleComponentTable } from "./style.sql";
 import { workspaceID } from "./workspaces.sql";
 
 // ----- Image Generation -----

@@ -9,7 +9,8 @@ import {
   type StyleComponentSelectType,
   StyleComponentUpdate,
   styleComponentTable,
-} from "@core/schemas/product.sql";
+} from "@core/schemas/style.sql";
+
 import { fn } from "@core/utils/fn";
 import type * as z from "zod";
 

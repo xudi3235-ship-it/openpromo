@@ -7,6 +7,7 @@ import {
   type CoreWorkflowEvent,
   type CoreWorkflowStep,
 } from "@core/helpers/workflow";
+import { StyleContext } from "@core/schemas/style.sql";
 import { Log } from "@core/utils/log";
 import { generateObject, type ImagePart } from "ai";
 import { z } from "zod";
@@ -72,23 +73,6 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
     });
   }
 }
-
-export const StyleContext = z.object({
-  imagesPrompt: z
-    .string()
-    .describe(
-      "image prompts of the input images, detailed, effective, concise, can be used to generate similar images to refs",
-    ),
-  industry: z.array(z.string()).describe("industries suitable for this style"),
-  categories: z
-    .array(z.string())
-    .describe("categories suitable for this style"),
-  searchKeywords: z
-    .array(z.string())
-    .describe("4-7 search keywords that can be used to search for this style."),
-});
-
-export type StyleContext = z.infer<typeof StyleContext>;
 
 async function generateStyleContext(
   style: EntStyleComponent,
