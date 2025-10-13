@@ -13,6 +13,7 @@ export namespace Actor {
       organizationID: z.string(),
       role: z.custom<OrganizationRole>(),
       featureFlags: z.array(z.string()).default([]),
+      permissions: z.array(z.string()).default([]),
     }),
   });
 

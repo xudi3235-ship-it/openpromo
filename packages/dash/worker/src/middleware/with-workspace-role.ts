@@ -78,6 +78,7 @@ export const withWorkspaceRole: (
     email: user.email,
     workspaceSlug: workspace.slug,
     featureFlags: c.get("featureFlags"),
+    permissions: c.get("permissions"),
   };
 
   // 3. check if user has the required role

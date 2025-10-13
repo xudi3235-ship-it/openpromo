@@ -33,6 +33,7 @@ export const workOSAuth: () => MiddlewareHandler<ApiEnv> =
         c.set("organizationId", result.organizationId);
         c.set("role", result.role);
         c.set("featureFlags", result.featureFlags ?? []);
+        c.set("permissions", result.permissions ?? []);
         // this uses node async local storage, so that we can reuse our core business logic in any Nodejs runtimes: worker, lambda, container, etc.
         // feels a bit duplicated compared to hono's ctx, maybe we can use local storage as source of truth?
         return Actor.provide(
@@ -43,6 +44,7 @@ export const workOSAuth: () => MiddlewareHandler<ApiEnv> =
             role: result.role,
             email: result.user.email,
             featureFlags: result.featureFlags,
+            permissions: result.permissions ?? [],
           },
           next,
         );

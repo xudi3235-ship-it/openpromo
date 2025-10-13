@@ -21,10 +21,12 @@ export const usersRoute = new Hono<ApiEnv>()
       .where(eq(usersTable.workosId, user.id))
       .limit(1);
 
+    // FIXME: we should refactor this, we wanna see how to have a single source of truth for user data
     return ctx.json({
       ...user,
       ...dbUser,
       featureFlags: ctx.get("featureFlags"),
+      permissions: ctx.get("permissions"),
     });
   })
   .patch(

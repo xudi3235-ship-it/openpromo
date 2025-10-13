@@ -3,8 +3,8 @@ import { getWorkOS } from "@core/providers";
 import { env } from "@core/utils/env";
 import type {
   AuthenticateWithSessionCookieFailureReason,
+  AuthenticateWithSessionCookieSuccessResponse,
   RefreshAndSealSessionDataFailureReason,
-  User,
 } from "@workos-inc/node";
 
 export const WORKOS_SESSION_COOKIE_NAME = "wos-session";
@@ -16,14 +16,13 @@ export interface AuthenticateWithCookieOptions {
   onRefreshFailure?: (reason: RefreshAndSealSessionDataFailureReason) => void;
 }
 
-export interface AuthenticationSuccessResult {
-  authenticated: true;
-  user: User;
-  organizationId: string;
-  role: OrganizationRole;
-  email: string;
-  featureFlags: string[];
-}
+export type AuthenticationSuccessResult =
+  AuthenticateWithSessionCookieSuccessResponse & {
+    organizationId: string;
+    role: OrganizationRole;
+    email: string;
+    featureFlags: string[];
+  };
 
 export interface AuthenticationFailedResult {
   authenticated: false;
@@ -57,8 +56,7 @@ export async function authenticateWithCookie(
 
   if (result.authenticated) {
     return {
-      authenticated: true,
-      user: result.user,
+      ...result,
       organizationId: result.organizationId as string,
       role: result.role as OrganizationRole,
       email: result.user.email,
@@ -71,12 +69,12 @@ export async function authenticateWithCookie(
     if (refreshResult.authenticated) {
       onRefreshSuccess(refreshResult.sealedSession as string);
       return {
-        authenticated: true,
-        user: refreshResult.user,
         organizationId: refreshResult.organizationId as string,
+        // @ts-expect-error
         role: refreshResult.role as OrganizationRole,
         email: refreshResult.user.email,
         featureFlags: refreshResult.featureFlags || [],
+        ...refreshResult,
       };
     } else {
       onRefreshFailure(refreshResult.reason);
