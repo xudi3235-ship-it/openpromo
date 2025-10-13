@@ -31,7 +31,7 @@ type WorkspaceTeamTableProps = {
   isLoading: boolean;
   isError: boolean;
   onEditMemberRole?: (member: WorkspaceMember) => void;
-  onRemoveMember: (member: WorkspaceMember) => void;
+  onRemoveMember?: (member: WorkspaceMember) => void;
   onRevokeInvite?: (invite: WorkspaceInviteSummary) => void;
   inviteActionsDisabled?: boolean;
   memberActionsDisabled?: boolean;

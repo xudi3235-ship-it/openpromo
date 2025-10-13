@@ -22,6 +22,7 @@ export namespace Actor {
     properties: UserSchema.shape.properties.extend({
       workspaceID: z.string(),
       workspaceSlug: z.string(),
+      workspacePermissions: z.array(z.string()).default([]),
     }),
   });
 
@@ -94,6 +95,18 @@ export namespace Actor {
       "authentication",
       ErrorCodes.Authentication.UNAUTHORIZED,
       `You don't have permission to access this resource.`,
+    );
+  }
+
+  export function workspacePermissions(): string[] {
+    const actor = Context.use();
+    if (actor.type === "workspace_user") {
+      return actor.properties.workspacePermissions;
+    }
+    throw new VisibleError(
+      "authentication",
+      ErrorCodes.Authentication.UNAUTHORIZED,
+      `No workspace context set. User must select a workspace.`,
     );
   }
 

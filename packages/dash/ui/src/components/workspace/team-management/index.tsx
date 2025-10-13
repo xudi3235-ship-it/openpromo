@@ -6,6 +6,7 @@ import type {
 import { UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useWorkspacePermissions } from "@/hooks/useWorkspacePermissions";
 import {
   useInviteWorkspaceMember,
   useRemoveMember,
@@ -27,6 +28,7 @@ import {
 import { WorkspaceTeamTable } from "./workspace-team-table";
 
 export function TeamManagement() {
+  const permissions = useWorkspacePermissions();
   const { data, isPending, isError } = useWorkspaceMembers();
   const members = data?.members ?? [];
   const invites = data?.invites ?? [];
@@ -150,11 +152,11 @@ export function TeamManagement() {
     );
   };
 
-  const inviteTrigger = (
+  const inviteTrigger = permissions.canInviteTeam ? (
     <Button className="gap-2">
       <UserPlus className="h-4 w-4" /> Invite teammate
     </Button>
-  );
+  ) : null;
 
   const handleFormChange = (state: InviteFormState) => {
     setFormState(state);
@@ -170,15 +172,17 @@ export function TeamManagement() {
               Manage who can collaborate in this workspace and what they can do.
             </p>
           </div>
-          <InviteTeammateDialog
-            trigger={inviteTrigger}
-            isOpen={isDialogOpen}
-            onOpenChange={setIsDialogOpen}
-            formState={formState}
-            onFormChange={handleFormChange}
-            onSubmit={handleInvite}
-            isSubmitting={inviteMemberMutation.isPending}
-          />
+          {permissions.canInviteTeam && (
+            <InviteTeammateDialog
+              trigger={inviteTrigger}
+              isOpen={isDialogOpen}
+              onOpenChange={setIsDialogOpen}
+              formState={formState}
+              onFormChange={handleFormChange}
+              onSubmit={handleInvite}
+              isSubmitting={inviteMemberMutation.isPending}
+            />
+          )}
         </div>
         <p className="text-xs text-muted-foreground">
           Admins can publish and manage members, editors can collaborate on
@@ -191,9 +195,13 @@ export function TeamManagement() {
         invites={invites}
         isLoading={isPending}
         isError={isError}
-        onEditMemberRole={handleEditRole}
-        onRemoveMember={handleRemove}
-        onRevokeInvite={handleRevokeInvite}
+        onEditMemberRole={
+          permissions.canManageRoles ? handleEditRole : undefined
+        }
+        onRemoveMember={permissions.canRemoveTeam ? handleRemove : undefined}
+        onRevokeInvite={
+          permissions.canRemoveTeam ? handleRevokeInvite : undefined
+        }
         inviteActionsDisabled={revokeInviteMutation.isPending}
         memberActionsDisabled={
           updateRoleMutation.isPending || removeMemberMutation.isPending

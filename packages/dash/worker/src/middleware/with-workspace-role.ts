@@ -1,6 +1,8 @@
 import {
+  getWorkspacePermissions,
   ORGANIZATION_ROLE,
   type OrganizationRole,
+  WORKSPACE_PERMISSION,
   type WorkspaceRole,
 } from "@openpromo/core/domain/workspace/auth";
 import { Actor } from "@openpromo/core/helpers/actor";
@@ -70,23 +72,23 @@ export const withWorkspaceRole: (
     });
   }
 
-  const workspaceCtx = {
-    userID: user.id,
-    workspaceID: workspace.id,
-    organizationID: organizationId,
-    role: orgRole as OrganizationRole,
-    email: user.email,
-    workspaceSlug: workspace.slug,
-    featureFlags: c.get("featureFlags"),
-    permissions: c.get("permissions"),
-  };
-
   // 3. check if user has the required role
   if (
     orgRole === ORGANIZATION_ROLE.OWNER ||
     orgRole === ORGANIZATION_ROLE.ADMIN
   ) {
     // org owner or admin has unrestricted access to all workspaces
+    const workspaceCtx = {
+      userID: user.id,
+      workspaceID: workspace.id,
+      organizationID: organizationId,
+      role: orgRole as OrganizationRole,
+      email: user.email,
+      workspaceSlug: workspace.slug,
+      featureFlags: c.get("featureFlags"),
+      permissions: c.get("permissions"),
+      workspacePermissions: [WORKSPACE_PERMISSION.ALL], // Org admins get all workspace permissions
+    };
     return Actor.provide("workspace_user", workspaceCtx, next);
   }
 
@@ -97,12 +99,23 @@ export const withWorkspaceRole: (
       message: `Insufficient workspace permissions. User role: ${workspaceUserRole}, Required role: ${requiredRole}.`,
     });
   }
+
+  // Compute workspace permissions based on role
+  const workspacePermissions = getWorkspacePermissions(workspaceUserRole);
+
   // scoped selector
   return Actor.provide(
     "workspace_user",
     {
-      ...workspaceCtx,
+      userID: user.id,
+      workspaceID: workspace.id,
+      organizationID: organizationId,
       role: workspaceUserRole as OrganizationRole,
+      email: user.email,
+      workspaceSlug: workspace.slug,
+      featureFlags: c.get("featureFlags"),
+      permissions: c.get("permissions"),
+      workspacePermissions,
     },
     next,
   );

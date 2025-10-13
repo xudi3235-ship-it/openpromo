@@ -1,4 +1,5 @@
 import { ORGANIZATION_ROLE, WORKSPACE_ROLE } from "@core/domain/workspace/auth";
+import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { getDbClient } from "@core/helpers/db";
 import { usersTable } from "@core/schemas/users.sql";
@@ -70,6 +71,7 @@ export const workspacesRoute = new Hono<ApiEnv>()
     withWorkspaceRole(WORKSPACE_ROLE.VIEWER),
     async (ctx) => {
       const db = getDbClient();
+      const actor = Actor.assert("workspace_user");
 
       const { workspaceSlug } = ctx.req.valid("param");
 
@@ -84,7 +86,12 @@ export const workspacesRoute = new Hono<ApiEnv>()
           message: `Workspace ${workspaceSlug} not found`,
         });
       }
-      return ctx.json(workspace);
+
+      // Return workspace with user's permissions
+      return ctx.json({
+        ...workspace,
+        userPermissions: actor.properties.workspacePermissions,
+      });
     },
   )
   // Create a new workspace

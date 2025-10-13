@@ -1,4 +1,8 @@
-import { ORGANIZATION_ROLE, WORKSPACE_ROLE } from "@core/domain/workspace/auth";
+import {
+  ORGANIZATION_ROLE,
+  WORKSPACE_PERMISSION,
+  WORKSPACE_ROLE,
+} from "@core/domain/workspace/auth";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { getDbClient } from "@core/helpers/db";
@@ -14,6 +18,7 @@ import * as z from "zod";
 import { assertUser } from "../../../helpers/auth";
 import { AppError } from "../../../helpers/error";
 import { withAuth } from "../../../middleware/with-auth";
+import { withWorkspacePermission } from "../../../middleware/with-workspace-permission";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
 import { zValidator } from "../../../middleware/zod-validator";
 
@@ -79,112 +84,121 @@ const inviteMemberSchema = z.object({
 export const workspaceTeamRoute = new Hono<ApiEnv>()
   .use(withAuth())
   .use(withWorkspaceRole(WORKSPACE_ROLE.VIEWER))
-  .get("/", async (ctx) => {
-    const workspaceSlug = ctx.req.param("workspaceSlug");
-    if (!workspaceSlug)
-      throw new AppError(400, { message: "Workspace slug is required" });
-    const db = getDbClient();
-    const workOS = getWorkOS();
-    const actor = Actor.assert("workspace_user");
-    const workspaceId = actor.properties.workspaceID;
+  .get(
+    "/",
+    withWorkspacePermission(WORKSPACE_PERMISSION.TEAM_VIEW),
+    async (ctx) => {
+      const workspaceSlug = ctx.req.param("workspaceSlug");
+      if (!workspaceSlug)
+        throw new AppError(400, { message: "Workspace slug is required" });
+      const db = getDbClient();
+      const workOS = getWorkOS();
+      const actor = Actor.assert("workspace_user");
+      const workspaceId = actor.properties.workspaceID;
 
-    const assignments = await db
-      .select({
-        id: workspaceRoleAssignmentsTable.id,
-        workspaceId: workspaceRoleAssignmentsTable.workspaceId,
-        assigneeId: workspaceRoleAssignmentsTable.assigneeId,
-        roleId: workspaceRoleAssignmentsTable.roleId,
-        roleName: workspaceRolesTable.name,
-        roleSlug: workspaceRolesTable.slug,
-        roleDescription: workspaceRolesTable.description,
-      })
-      .from(workspaceRoleAssignmentsTable)
-      .innerJoin(
-        workspaceRolesTable,
-        eq(workspaceRoleAssignmentsTable.roleId, workspaceRolesTable.id),
-      )
-      .where(
-        and(
-          eq(workspaceRoleAssignmentsTable.workspaceId, workspaceId),
-          eq(workspaceRoleAssignmentsTable.assigneeType, "user"),
-        ),
+      const assignments = await db
+        .select({
+          id: workspaceRoleAssignmentsTable.id,
+          workspaceId: workspaceRoleAssignmentsTable.workspaceId,
+          assigneeId: workspaceRoleAssignmentsTable.assigneeId,
+          roleId: workspaceRoleAssignmentsTable.roleId,
+          roleName: workspaceRolesTable.name,
+          roleSlug: workspaceRolesTable.slug,
+          roleDescription: workspaceRolesTable.description,
+        })
+        .from(workspaceRoleAssignmentsTable)
+        .innerJoin(
+          workspaceRolesTable,
+          eq(workspaceRoleAssignmentsTable.roleId, workspaceRolesTable.id),
+        )
+        .where(
+          and(
+            eq(workspaceRoleAssignmentsTable.workspaceId, workspaceId),
+            eq(workspaceRoleAssignmentsTable.assigneeType, "user"),
+          ),
+        );
+      // fetch user details from WorkOS
+      const members = await Promise.all(
+        assignments.map(async (assignment) => {
+          const user = await workOS.userManagement.getUser(
+            assignment.assigneeId,
+          );
+          return {
+            id: assignment.id,
+            workspaceId: assignment.workspaceId,
+            roleId: assignment.roleId,
+            role: {
+              id: assignment.roleId,
+              slug: assignment.roleSlug,
+              name: assignment.roleName,
+              description: assignment.roleDescription ?? undefined,
+            },
+            user: {
+              id: user.id,
+              email: user.email ?? undefined,
+              firstName: user.firstName || "",
+              lastName: user.lastName || "",
+            },
+          } satisfies WorkspaceMember;
+        }),
       );
-    // fetch user details from WorkOS
-    const members = await Promise.all(
-      assignments.map(async (assignment) => {
-        const user = await workOS.userManagement.getUser(assignment.assigneeId);
-        return {
-          id: assignment.id,
-          workspaceId: assignment.workspaceId,
-          roleId: assignment.roleId,
+
+      const invites = await db
+        .select({
+          id: workspaceInvitesTable.id,
+          workspaceId: workspaceInvitesTable.workspaceId,
+          roleId: workspaceInvitesTable.roleId,
+          roleSlug: workspaceRolesTable.slug,
+          roleName: workspaceRolesTable.name,
+          roleDescription: workspaceRolesTable.description,
+          email: workspaceInvitesTable.email,
+          status: workspaceInvitesTable.status,
+          createdAt: workspaceInvitesTable.createdAt,
+        })
+        .from(workspaceInvitesTable)
+        .innerJoin(
+          workspaceRolesTable,
+          eq(workspaceInvitesTable.roleId, workspaceRolesTable.id),
+        )
+        .innerJoin(
+          workspacesTable,
+          eq(workspaceInvitesTable.workspaceId, workspacesTable.id),
+        )
+        .where(
+          and(
+            eq(workspaceInvitesTable.workspaceId, workspaceId),
+            eq(workspaceInvitesTable.status, "pending"),
+          ),
+        );
+
+      const inviteSummaries: WorkspaceInviteSummary[] = invites.map(
+        (invite) => ({
+          id: invite.id,
+          workspaceId: invite.workspaceId,
+          roleId: invite.roleId,
+          email: invite.email,
+          status: invite.status,
+          invitedAt: invite.createdAt.toISOString(),
           role: {
-            id: assignment.roleId,
-            slug: assignment.roleSlug,
-            name: assignment.roleName,
-            description: assignment.roleDescription ?? undefined,
+            id: invite.roleId,
+            slug: invite.roleSlug,
+            name: invite.roleName,
+            description: invite.roleDescription ?? undefined,
           },
-          user: {
-            id: user.id,
-            email: user.email ?? undefined,
-            firstName: user.firstName || "",
-            lastName: user.lastName || "",
-          },
-        } satisfies WorkspaceMember;
-      }),
-    );
-
-    const invites = await db
-      .select({
-        id: workspaceInvitesTable.id,
-        workspaceId: workspaceInvitesTable.workspaceId,
-        roleId: workspaceInvitesTable.roleId,
-        roleSlug: workspaceRolesTable.slug,
-        roleName: workspaceRolesTable.name,
-        roleDescription: workspaceRolesTable.description,
-        email: workspaceInvitesTable.email,
-        status: workspaceInvitesTable.status,
-        createdAt: workspaceInvitesTable.createdAt,
-      })
-      .from(workspaceInvitesTable)
-      .innerJoin(
-        workspaceRolesTable,
-        eq(workspaceInvitesTable.roleId, workspaceRolesTable.id),
-      )
-      .innerJoin(
-        workspacesTable,
-        eq(workspaceInvitesTable.workspaceId, workspacesTable.id),
-      )
-      .where(
-        and(
-          eq(workspaceInvitesTable.workspaceId, workspaceId),
-          eq(workspaceInvitesTable.status, "pending"),
-        ),
+        }),
       );
 
-    const inviteSummaries: WorkspaceInviteSummary[] = invites.map((invite) => ({
-      id: invite.id,
-      workspaceId: invite.workspaceId,
-      roleId: invite.roleId,
-      email: invite.email,
-      status: invite.status,
-      invitedAt: invite.createdAt.toISOString(),
-      role: {
-        id: invite.roleId,
-        slug: invite.roleSlug,
-        name: invite.roleName,
-        description: invite.roleDescription ?? undefined,
-      },
-    }));
-
-    return ctx.json<WorkspaceTeamResponse>({
-      members,
-      invites: inviteSummaries,
-    });
-  })
+      return ctx.json<WorkspaceTeamResponse>({
+        members,
+        invites: inviteSummaries,
+      });
+    },
+  )
   .post(
     "/",
     zValidator("json", inviteMemberSchema),
     withWorkspaceRole(WORKSPACE_ROLE.ADMIN),
+    withWorkspacePermission(WORKSPACE_PERMISSION.TEAM_INVITE),
     async (ctx) => {
       const { email, role } = ctx.req.valid("json");
       const normalizedEmail = email.toLowerCase();
@@ -497,6 +511,7 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
       }),
     ),
     withWorkspaceRole(WORKSPACE_ROLE.ADMIN),
+    withWorkspacePermission(WORKSPACE_PERMISSION.TEAM_MANAGE_ROLES),
     async (ctx) => {
       const { memberId } = ctx.req.valid("param");
       const { role } = ctx.req.valid("json");
@@ -589,6 +604,7 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
     "/members/:memberId",
     zValidator("param", z.object({ memberId: z.string() })),
     withWorkspaceRole(WORKSPACE_ROLE.ADMIN),
+    withWorkspacePermission(WORKSPACE_PERMISSION.TEAM_REMOVE),
     async (ctx) => {
       const { memberId } = ctx.req.valid("param");
       const actor = Actor.assert("workspace_user");
@@ -635,6 +651,7 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
     "/invites/:inviteId",
     zValidator("param", z.object({ inviteId: z.string() })),
     withWorkspaceRole(WORKSPACE_ROLE.ADMIN),
+    withWorkspacePermission(WORKSPACE_PERMISSION.TEAM_REMOVE),
     async (ctx) => {
       const { inviteId } = ctx.req.valid("param");
       const actor = Actor.assert("workspace_user");
