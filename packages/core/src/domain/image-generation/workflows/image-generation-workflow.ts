@@ -1,3 +1,5 @@
+import { ProductImageGen } from "@core/domain/genai";
+import { EntProduct } from "@core/domain/product";
 import { Actor } from "@core/helpers/actor";
 import {
   type CoreWorkflowContext,
@@ -7,6 +9,7 @@ import {
 } from "@core/helpers/workflow";
 import { Log } from "@core/utils/log";
 import { z } from "zod";
+import { EntImageGeneration } from "../EntImageGeneration";
 
 const ImageGenerationWorkflowParams = z.object({
   actor: Actor.WorkspaceUserSchema,
@@ -23,9 +26,64 @@ export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerat
   async runWithContext(
     _ctx: CoreWorkflowContext,
     event: CoreWorkflowEvent<ImageGenerationWorkflowParams>,
-    _step: CoreWorkflowStep,
+    step: CoreWorkflowStep,
   ) {
     const { generationId } = event.payload;
     log.info("// Starting image generation workflow", { generationId });
+
+    try {
+      // 0. Fetch the generation record
+      const gen = await step.do("fetch-generation", async () => {
+        return (await EntImageGeneration.fromID(generationId)).toJSON();
+      });
+
+      const productID = gen.productId;
+
+      if (!gen) throw new Error("Generation not found");
+      if (!productID) throw new Error("Generation has no product ID");
+
+      // 1. derive style ctx
+      const styleCtx = await step.do("derive-style-ctx", async () => {
+        const ent = await EntImageGeneration.fromID(generationId);
+        return ent.deriveStyleContext({
+          productID,
+          // styleId: gen.styleComponentId,
+        });
+      });
+      // 2. mark as generating
+      await step.do("mark-generating", async () => {
+        (await EntImageGeneration.fromID(generationId)).setState("generating");
+      });
+
+      // 3. generate image
+      const { imageUrls } = await step.do("generate-image", async () => {
+        const product = await EntProduct.fromID(productID);
+        const out = await ProductImageGen.genImage({
+          product,
+          style: styleCtx,
+        });
+        return {
+          imageUrls: out.imageUrls,
+        };
+      });
+      // 4. mark as completed, store image URLs
+      await step.do("mark-completed", async () => {
+        const ent = await EntImageGeneration.fromID(generationId);
+        await ent.update({
+          state: "completed",
+          outputImages: imageUrls,
+        });
+      });
+      // 5. TODO: dispatch events
+    } catch (err) {
+      console.error("// Image generation workflow failed", {
+        generationId,
+        error: err,
+      });
+      // mark as failed
+      const ent = await EntImageGeneration.fromID(generationId);
+      await ent.setState("failed", (err as Error).message);
+      return;
+    }
   }
 }

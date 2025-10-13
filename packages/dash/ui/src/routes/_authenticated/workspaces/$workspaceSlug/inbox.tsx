@@ -1,4 +1,7 @@
-import { InboxRealtimeEvent, InboxRealtimeEventTypes } from "@shared/inbox";
+import {
+  InboxRealtimeEventSchema,
+  InboxRealtimeEventTypes,
+} from "@shared/inbox";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback } from "react";
@@ -19,7 +22,7 @@ function InboxRoute() {
   const queryClient = useQueryClient();
   const onEvent = useCallback(
     (event: GenericEvent) => {
-      const inboxRealtimeEvent = InboxRealtimeEvent.parse(event);
+      const inboxRealtimeEvent = InboxRealtimeEventSchema.parse(event);
       if (
         inboxRealtimeEvent.type === InboxRealtimeEventTypes.ConversationUpserted
       ) {

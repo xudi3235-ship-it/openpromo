@@ -21,7 +21,10 @@ import { workspaceID } from "./workspaces.sql";
 export const ImageGenMeta = z.record(z.string(), z.any()).default({});
 export type ImageGenMeta = z.infer<typeof ImageGenMeta>;
 
-export const ImageGenContext = z.record(z.string(), z.any()).default({});
+export const ImageGenContext = z.object({
+  styleCtx: z.string().describe("serialized style ctx"),
+  productCtx: z.string().describe("serialized product ctx"),
+});
 export type ImageGenContext = z.infer<typeof ImageGenContext>;
 
 export const imageGenerationStates = [
@@ -50,20 +53,22 @@ export const imageGenerationTable = pgTable(
     ...id,
     ...timestamps,
     ...workspaceID,
-    styleComponentId: ulid("style_component_id")
-      .references(() => styleComponentTable.id, { onDelete: "cascade" })
-      .notNull(),
+    // relations
+    styleComponentId: ulid("style_component_id").references(
+      () => styleComponentTable.id,
+      { onDelete: "set null" },
+    ),
     productId: ulid("product_id").references(() => productTable.id, {
       onDelete: "set null",
     }),
-    prompt: text("prompt").notNull(),
-    negativePrompt: text("negative_prompt"),
+    // params
     outputImages: jsonb("output_images")
       .$type<string[]>()
       .notNull()
       .default([]),
     metadata: jsonb("metadata").$type<ImageGenMeta>().notNull().default({}),
-    context: jsonb("context").$type<ImageGenContext>().notNull().default({}),
+    context: jsonb("context").$type<ImageGenContext>(),
+    // tracking state
     state: imageGenerationStateEnum()
       .notNull()
       .default("pending")

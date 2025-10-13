@@ -186,13 +186,21 @@ export type InboxConversationSummary = z.infer<
   typeof InboxConversationSummarySchema
 >;
 
+// ============ Inbox Realtime Events ============
+
+/**
+ * Inbox realtime event types
+ * These events are dispatched through WorkspacePusher for real-time inbox updates
+ */
 export enum InboxRealtimeEventTypes {
   ConversationUpserted = "inbox.conversation.upserted",
   MessageUpserted = "inbox.message.upserted",
 }
 
-// Realtime events over WorkspacePusher
-export const InboxConversationUpsertedEvent = z.object({
+/**
+ * Event fired when a conversation is created or updated
+ */
+export const InboxConversationUpsertedEventSchema = z.object({
   type: z.literal(InboxRealtimeEventTypes.ConversationUpserted),
   conversationId: z.string(),
   lastMessageAt: z.coerce.date(),
@@ -201,15 +209,71 @@ export const InboxConversationUpsertedEvent = z.object({
   timestamp: z.number(),
 });
 
-export const InboxMessageUpsertedEvent = z.object({
+export type InboxConversationUpsertedEvent = z.infer<
+  typeof InboxConversationUpsertedEventSchema
+>;
+
+/**
+ * Event fired when a message is created or updated
+ */
+export const InboxMessageUpsertedEventSchema = z.object({
   type: z.literal(InboxRealtimeEventTypes.MessageUpserted),
   conversationId: z.string(),
   message: InboxMessageSchema,
   timestamp: z.number(),
 });
 
-export const InboxRealtimeEvent = z.union([
-  InboxConversationUpsertedEvent,
-  InboxMessageUpsertedEvent,
+export type InboxMessageUpsertedEvent = z.infer<
+  typeof InboxMessageUpsertedEventSchema
+>;
+
+/**
+ * Discriminated union of all inbox realtime events
+ * Use this for type-safe event handling
+ */
+export const InboxRealtimeEventSchema = z.discriminatedUnion("type", [
+  InboxConversationUpsertedEventSchema,
+  InboxMessageUpsertedEventSchema,
 ]);
-export type InboxRealtimeEvent = z.infer<typeof InboxRealtimeEvent>;
+
+export type InboxRealtimeEvent = z.infer<typeof InboxRealtimeEventSchema>;
+
+// ============ Event Schema Map ============
+
+/**
+ * Map of inbox event types to their corresponding Zod schemas
+ */
+const inboxEventSchemaMap = {
+  [InboxRealtimeEventTypes.ConversationUpserted]:
+    InboxConversationUpsertedEventSchema,
+  [InboxRealtimeEventTypes.MessageUpserted]: InboxMessageUpsertedEventSchema,
+} as const;
+
+type InboxEventSchemaMap = typeof inboxEventSchemaMap;
+
+// ============ Generic Helper Function ============
+
+/**
+ * Generic type-safe inbox event creator
+ * Automatically selects the correct schema based on the event type
+ * and adds the timestamp
+ *
+ * @example
+ * ```ts
+ * const event = createInboxEvent("inbox.message.upserted", {
+ *   conversationId: "123",
+ *   message: {...},
+ * });
+ * ```
+ */
+export function createInboxEvent<T extends InboxRealtimeEvent["type"]>(
+  type: T,
+  data: Omit<Extract<InboxRealtimeEvent, { type: T }>, "type" | "timestamp">,
+): Extract<InboxRealtimeEvent, { type: T }> {
+  const schema = inboxEventSchemaMap[type as keyof InboxEventSchemaMap];
+  return schema.parse({
+    type,
+    ...data,
+    timestamp: Date.now(),
+  }) as Extract<InboxRealtimeEvent, { type: T }>;
+}

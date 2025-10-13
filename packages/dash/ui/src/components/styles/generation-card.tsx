@@ -42,11 +42,6 @@ export function GenerationCard({ generation, styleName }: GenerationCardProps) {
         {createdAt && (
           <span className="font-medium tracking-wide">{createdAt}</span>
         )}
-        {generation.prompt && (
-          <p className="line-clamp-2 text-[11px] text-white/80">
-            {generation.prompt}
-          </p>
-        )}
       </div>
     </div>
   );

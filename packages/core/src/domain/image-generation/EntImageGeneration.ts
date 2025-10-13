@@ -10,6 +10,7 @@ import {
   imageGenerationTable,
 } from "@core/schemas/image-generation.sql";
 import { fn } from "@core/utils/fn";
+import { createWorkspaceEvent, WorkspaceEventType } from "@shared/workspace";
 import type z from "zod";
 import { ProductImageGen } from "../genai";
 import { EntProduct } from "../product";
@@ -36,6 +37,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
         id: true,
         createdAt: true,
         updatedAt: true,
+        workspaceId: true,
       }),
       update: ImageGenerationUpdate.partial(),
     };
@@ -46,6 +48,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       .insert(imageGenerationTable)
       .values({
         ...input,
+        workspaceId: Actor.workspaceID(),
         state: input.state ?? "pending",
       })
       .returning();
@@ -68,54 +71,11 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     productId: string;
     styleId?: string;
   }): Promise<{ generation: EntImageGeneration; imageUrl?: string }> {
-    const { productId, styleId } = params;
-
-    // Load the product
-    const product = await EntProduct.fromID(productId);
-
-    // Determine which style to use
-    let styleComponent: EntStyleComponent;
-    let promptOverride: string | undefined;
-
-    if (styleId) {
-      styleComponent = await EntStyleComponent.fromID(styleId);
-    } else {
-      // Match product with available styles
-      const officialStyles = await EntStyleComponent.listOfficial();
-
-      if (officialStyles.length === 0) {
-        throw new Error(
-          "No official styles exist yet. Create a style before generating images.",
-        );
-      }
-
-      const match = await ProductImageGen.matchProductWithStyles(
-        product,
-        officialStyles,
-      );
-      styleComponent = match.style;
-      promptOverride = match.prompt;
-    }
-
-    // Prepare style input
-    const styleInput: ProductImageGen.ImageStyleInput = {
-      imageGenPrompt: promptOverride ?? styleComponent.data.imageGenPrompt,
-      imageRefs: styleComponent.data.imageRefs,
-      name: styleComponent.data.slug,
-      description: styleComponent.data.description,
-    };
-
     // Create the generation record
     const generation = await EntImageGeneration.create({
-      workspaceId: product.data.workspaceId,
-      styleComponentId: styleComponent.data.id,
-      productId: product.data.id,
-      prompt: styleInput.imageGenPrompt,
-      negativePrompt: ProductImageGen.DEFAULT_NEGATIVE_PROMPT,
-      outputImages: [],
-      metadata: {},
-      context: {},
       state: "pending",
+      productId: params.productId,
+      styleComponentId: params.styleId ?? null,
     });
 
     // Start the workflow
@@ -129,15 +89,14 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     await generation.setWorkflowInstance(workflow.id);
 
     // Dispatch workspace event
-    await dispatchWorkspaceEvent(product.data.workspaceId, {
-      type: "image_generation.updated",
-      generationId: generation.data.id,
-      styleComponentId: generation.data.styleComponentId,
-      productId: generation.data.productId,
-      state: generation.data.state,
-      payload: generation.toJSON(),
-      timestamp: Date.now(),
-    });
+    await dispatchWorkspaceEvent(
+      Actor.workspaceID(),
+      createWorkspaceEvent(WorkspaceEventType.ImageGenerationUpdated, {
+        generationId: generation.data.id,
+        state: generation.data.state,
+        stateMessage: generation.data.stateMessage,
+      }),
+    );
 
     return {
       generation,
@@ -250,5 +209,48 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     if (!deleted) throw new Error(`Image generation ${this.data.id} not found`);
 
     return deleted;
+  }
+  // ------------------------------------------------------------------------
+  // image generation
+  // ------------------------------------------------------------------------
+  async deriveStyleContext(opts: { productID: string; styleId?: string }) {
+    const product = await EntProduct.fromID(opts.productID);
+
+    // Determine which style to use
+    let styleComponent: EntStyleComponent;
+    let promptOverride: string | undefined;
+
+    if (opts.styleId) {
+      styleComponent = await EntStyleComponent.fromID(opts.styleId);
+    } else {
+      // Match product with available styles
+      const officialStyles = await EntStyleComponent.listOfficial();
+
+      if (officialStyles.length === 0) {
+        throw new Error(
+          "No official styles exist yet. Create a style before generating images.",
+        );
+      }
+
+      const match = await ProductImageGen.matchProductWithStyles(
+        product,
+        officialStyles,
+      );
+      styleComponent = match.style;
+      promptOverride = match.prompt;
+    }
+
+    // Prepare style input
+    return {
+      imageGenPrompt: promptOverride ?? styleComponent.data.imageGenPrompt,
+      imageRefs: styleComponent.data.imageRefs,
+      name: styleComponent.data.slug,
+      description: styleComponent.data.description,
+    } as ProductImageGen.ImageStyleInput;
+  }
+  async setOutputImages(imageUrls: string[]): Promise<this> {
+    return this.update({
+      outputImages: imageUrls,
+    });
   }
 }

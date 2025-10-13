@@ -6,8 +6,8 @@ import type { ApiEnv } from "@core/helpers/api-env";
 import { Platform } from "@core/schemas/connected-account.sql";
 import { env } from "@core/utils/env";
 import {
+  createInboxEvent,
   type FBWebhookPayload,
-  type InboxRealtimeEvent,
   InboxRealtimeEventTypes,
 } from "@shared/inbox";
 import { Hono } from "hono";
@@ -91,19 +91,20 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
               payload: messaging,
               sender: message?.is_echo ? "self" : "user",
             });
-            const event: InboxRealtimeEvent = {
-              type: InboxRealtimeEventTypes.MessageUpserted,
-              timestamp,
-              conversationId: conversation.id,
-              message: {
-                id: "", // will not be used by client for edits
-                externalId: message_edit.mid,
-                sender: message?.is_echo ? "self" : "user",
-                text: message_edit.text,
-                attachments: [],
-                createdAt: new Date(timestamp),
+            const event = createInboxEvent(
+              InboxRealtimeEventTypes.MessageUpserted,
+              {
+                conversationId: conversation.id,
+                message: {
+                  id: "", // will not be used by client for edits
+                  externalId: message_edit.mid,
+                  sender: message?.is_echo ? "self" : "user",
+                  text: message_edit.text,
+                  attachments: [],
+                  createdAt: new Date(timestamp),
+                },
               },
-            };
+            );
             await dispatchWorkspaceEvent(account.workspaceId, event);
           } else if (message) {
             const attachments = (message.attachments || []).map((a) => ({
@@ -119,34 +120,36 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
               payload: messaging,
               sender: message.is_echo ? "self" : "user",
             });
-            const event: InboxRealtimeEvent = {
-              type: InboxRealtimeEventTypes.MessageUpserted,
-              timestamp,
-              conversationId: conversation.id,
-              message: {
-                id: "", // not needed for client append correctness
-                externalId: message.mid,
-                sender: message.is_echo ? "self" : "user",
-                text: message.text ?? null,
-                attachments,
-                createdAt: new Date(timestamp),
+            const event = createInboxEvent(
+              InboxRealtimeEventTypes.MessageUpserted,
+              {
+                conversationId: conversation.id,
+                message: {
+                  id: "", // not needed for client append correctness
+                  externalId: message.mid,
+                  sender: message.is_echo ? "self" : "user",
+                  text: message.text ?? null,
+                  attachments,
+                  createdAt: new Date(timestamp),
+                },
               },
-            };
+            );
             await dispatchWorkspaceEvent(account.workspaceId, event);
           }
           // conversation bump event
-          const conversationEvent: InboxRealtimeEvent = {
-            type: InboxRealtimeEventTypes.ConversationUpserted,
-            timestamp,
-            conversationId: conversation.id,
-            lastMessageAt: new Date(timestamp),
-            platform: Platform.enum.FACEBOOK,
-            contact: {
-              id: contact.id,
-              name: contact.name,
-              profilePicUrl: contact.profilePicUrl,
+          const conversationEvent = createInboxEvent(
+            InboxRealtimeEventTypes.ConversationUpserted,
+            {
+              conversationId: conversation.id,
+              lastMessageAt: new Date(timestamp),
+              platform: Platform.enum.FACEBOOK,
+              contact: {
+                id: contact.id,
+                name: contact.name,
+                profilePicUrl: contact.profilePicUrl,
+              },
             },
-          };
+          );
           await dispatchWorkspaceEvent(account.workspaceId, conversationEvent);
         }
       }
