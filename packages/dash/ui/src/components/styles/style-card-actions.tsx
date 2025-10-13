@@ -8,7 +8,7 @@ import {
 import { MoreVertical, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { useActor } from "@/hooks/useActor";
+import { useActor, useInternal } from "@/hooks/useActor";
 import type { StyleResponse } from "@/queries/styles";
 import { useStyleDeleteMutation } from "@/queries/styles";
 
@@ -18,13 +18,15 @@ interface StyleCardActionsProps {
 
 export function StyleCardActions({ style }: StyleCardActionsProps) {
   const actor = useActor();
+  const isInternal = useInternal();
   const deleteMutation = useStyleDeleteMutation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Only show actions if the current user is the creator
   const isOwner = actor.id === style.creatorID;
+  const showActions = isOwner || isInternal;
 
-  if (!isOwner) {
+  if (!showActions) {
     return null;
   }
 

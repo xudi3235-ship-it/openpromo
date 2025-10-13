@@ -69,13 +69,17 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
   });
 
   static async fromID(id: string): Promise<EntStyleComponent> {
+    const isInternal = FeatureFlag.isInternal();
     const [component] = await db()
       .select()
       .from(styleComponentTable)
       .where(
         and(
           eq(styleComponentTable.id, id),
-          eq(styleComponentTable.creatorID, Actor.userID()),
+          // internal have privilege
+          isInternal
+            ? undefined
+            : eq(styleComponentTable.creatorID, Actor.userID()),
         ),
       )
       .limit(1);
