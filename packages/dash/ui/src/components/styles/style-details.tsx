@@ -32,8 +32,8 @@ export function StyleDetails({ style }: StyleDetailsProps) {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="hidden sm:flex" />
-          <CarouselNext className="hidden sm:flex" />
+          <CarouselPrevious className="hidden sm:flex !left-2" />
+          <CarouselNext className="hidden sm:flex !right-2" />
         </Carousel>
       ) : (
         <div className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/40 bg-muted/10 text-muted-foreground">
