@@ -239,6 +239,13 @@
       "when": 1760375493796,
       "tag": "0033_steady_mister_sinister",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1760395227763,
+      "tag": "0034_elite_silver_sable",
+      "breakpoints": true
     }
   ]
 }

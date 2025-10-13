@@ -91,22 +91,3 @@ export const StyleState = [
 export type StyleState = (typeof StyleState)[number];
 
 export const StyleStateZod = z.enum(StyleState);
-
-export const StyleComponent = z.object({
-  name: z.string().describe("name of the style component."),
-  imageRefs: z
-    .array(z.string())
-    .describe("reference image url for the style component"),
-  description: z
-    .string()
-    .describe(
-      "short description of the style component, e.g. 'aesthetic korean skincare product photo, with soft lighting and pastel colors'",
-    ),
-  imageGenPrompt: z
-    .string()
-    .describe(
-      "image generation prompt, the prompt that will be sent to the image generation model, should be concise, effective, and include both the product context as well as consider the style component chosen.",
-    ),
-});
-
-export type StyleComponent = z.infer<typeof StyleComponent>;

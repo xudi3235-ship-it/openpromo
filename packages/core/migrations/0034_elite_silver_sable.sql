@@ -1,0 +1,1 @@
+ALTER TABLE "style_component" ADD COLUMN "context" jsonb DEFAULT 'null'::jsonb;

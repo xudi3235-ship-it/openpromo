@@ -1,3 +1,4 @@
+import { StyleContext } from "@core/domain/style-component/workflows/style-component-workflow";
 import { id, timestamps } from "@core/helpers/db";
 import type { SharedAttachmentSpec } from "@shared/content";
 import {
@@ -111,11 +112,14 @@ export const styleComponentTable = pgTable(
     isOfficial: boolean("is_official").notNull().default(false),
     name: text("name").notNull(),
     slug: text("slug").notNull(),
+    // state machine
     state: styleComponentStateEnum().notNull().default("not_started"),
     failureReason: text("failure_reason"),
+    // fields
     description: text("description").notNull(),
     imageRefs: jsonb("image_refs").$type<string[]>().notNull().default([]),
     imageGenPrompt: text("image_gen_prompt").notNull(),
+    context: jsonb("context").$type<StyleContext | null>().default(null),
   },
   (table) => [uniqueIndex().on(table.slug), uniqueIndex().on(table.name)],
 );
@@ -124,6 +128,7 @@ const styleComponentRefinements = {
   imageRefs: z.array(z.string()).default([]),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
+  context: StyleContext.nullable().default(null),
 };
 
 export const StyleComponentInsert = createInsertSchema(
