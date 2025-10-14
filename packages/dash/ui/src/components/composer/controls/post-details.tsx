@@ -17,12 +17,6 @@ import { useComposerStore } from "@/stores/composer-store";
 import ComposerMentions from "./detail/composer-mentions";
 import { ComposerEmojiPicker } from "./detail/emoji-picker";
 
-const STATE_COLOR: Record<"ok" | "warn" | "error", string> = {
-  ok: "text-muted-foreground",
-  warn: "text-amber-500",
-  error: "text-destructive",
-};
-
 export function PostDetails() {
   const composer = useComposerStore((state) => state);
 
@@ -50,15 +44,16 @@ export function PostDetails() {
 
   const helperText = useMemo(() => {
     if (captionValidation.needsMediaForIG) {
-      return "Instagram requires at least one image or video.";
+      return "Instagram requires at least one image or video";
     }
     if (captionValidation.overLimit) {
-      return "Caption exceeds the limit for one or more platforms.";
+      return "Caption exceeds the limit for one or more platforms";
     }
     if (captionValidation.emptyAll) {
-      return "Add text or attach media to publish.";
+      return "Add text or attach media to publish";
     }
-    return "Compatible with all selected platforms ✅";
+    // Don't show anything when everything is ok
+    return null;
   }, [
     captionValidation.emptyAll,
     captionValidation.needsMediaForIG,
@@ -67,13 +62,21 @@ export function PostDetails() {
 
   const counterClassName = cn(
     "text-[11px] font-medium",
-    STATE_COLOR[captionValidation.state],
+    captionValidation.overLimit
+      ? "text-destructive"
+      : captionValidation.len >= Math.floor(captionValidation.limit * 0.9)
+        ? "text-amber-600 dark:text-amber-500"
+        : "text-muted-foreground",
   );
 
-  const helperTone =
-    STATE_COLOR[
-      captionValidation.overLimit ? "error" : captionValidation.state
-    ];
+  const helperTone = cn(
+    "text-xs",
+    captionValidation.overLimit
+      ? "text-destructive"
+      : captionValidation.needsMediaForIG
+        ? "text-blue-600 dark:text-blue-400"
+        : "text-muted-foreground",
+  );
 
   const handleEmojiSelect = (emoji: string) => {
     const latest = composer.getCurrentMessage() ?? "";
@@ -105,13 +108,11 @@ export function PostDetails() {
               {captionValidation.limit.toLocaleString()}
             </span>
           </div>
-          <p
-            className={`text-xs ${helperTone}`}
-            aria-live="polite"
-            role="status"
-          >
-            {helperText}
-          </p>
+          {helperText && (
+            <p className={helperTone} aria-live="polite" role="status">
+              {helperText}
+            </p>
+          )}
         </div>
       </div>
 
