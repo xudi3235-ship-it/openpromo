@@ -180,6 +180,31 @@
           "custom_domain": true
         }
       ],
+      "hyperdrive": [
+        {
+          "id": "be71de62d7554ec49b940520b04670bd",
+          "binding": "HYPERDRIVE"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "bucket_name": "openpromo-bucket",
+          "binding": "Bucket",
+          "remote": true
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "WorkspacePusher",
+            "class_name": "WorkspacePusher"
+          },
+          {
+            "name": "ContainerBackend",
+            "class_name": "ContainerBackend"
+          }
+        ]
+      },
       "workflows": [
         {
           "class_name": "PendingContentPublishWorkflow",
@@ -206,7 +231,13 @@
           "binding": "StyleComponentWorkflow",
           "name": "StyleComponentWorkflow"
         }
-      ]
+      ],
+      "triggers": {
+        "crons": [
+          // daily
+          "0 0 * * *"
+        ]
+      }
     }
   }
 }
