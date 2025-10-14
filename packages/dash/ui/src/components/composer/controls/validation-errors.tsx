@@ -102,12 +102,12 @@ export function ValidationErrors({ errors }: ValidationErrorsProps) {
               {errorsByType.error.length === 1 ? "Issue" : "Issues"} Found
             </span>
           </div>
-          {errorsByType.error.map((error) => {
+          {errorsByType.error.map((error, index) => {
             const config = getErrorConfig(error.type);
             const Icon = config.icon;
             return (
               <div
-                key={`${error.type}-${error.field || "global"}`}
+                key={`error-${index}-${error.type}-${error.field || "global"}`}
                 className="flex items-start gap-2 text-red-800 dark:text-red-200"
               >
                 <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0" />
@@ -127,12 +127,12 @@ export function ValidationErrors({ errors }: ValidationErrorsProps) {
               {errorsByType.warning.length === 1 ? "" : "s"}
             </span>
           </div>
-          {errorsByType.warning.map((error) => {
+          {errorsByType.warning.map((error, index) => {
             const config = getErrorConfig(error.type);
             const Icon = config.icon;
             return (
               <div
-                key={`${error.type}-${error.field || "global"}`}
+                key={`warning-${index}-${error.type}-${error.field || "global"}`}
                 className="flex items-start gap-2 text-amber-800 dark:text-amber-200"
               >
                 <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0" />
