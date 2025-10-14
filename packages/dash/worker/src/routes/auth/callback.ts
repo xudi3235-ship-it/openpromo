@@ -1,5 +1,6 @@
 import type { ApiEnv } from "@core/helpers/api-env";
 import { eq, getDbClient } from "@core/helpers/db";
+import { ensureUserInEnvironment } from "@core/helpers/user-sync";
 import { getWorkOS } from "@core/providers/workos";
 import { usersTable } from "@core/schemas/users.sql";
 import { env } from "@core/utils/env";
@@ -111,27 +112,25 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
     if (authenticatedUser.organizationId) {
       setSessionCookie(c, sealedSession);
 
-      // Check if user exists in our database
+      // Ensure user exists in this environment's database
       const db = getDbClient();
-      const [existingUser] = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.workosId, user.id))
-        .limit(1);
+      const dbUser = await ensureUserInEnvironment(db, user.id);
 
-      if (!existingUser) {
-        // New invited user - apply workspace invites and create user record
+      // If this is a newly created user in this environment, check for workspace invites
+      if (!dbUser.defaultWorkspaceSlug) {
         const result = await applyWorkspaceInvitesForUser({
           organizationId: authenticatedUser.organizationId,
           userId: user.id,
           email: user.email,
         });
 
-        // Create user record with first invited workspace as default (if any)
-        await db.insert(usersTable).values({
-          workosId: user.id,
-          defaultWorkspaceSlug: result?.firstWorkspaceSlug ?? null,
-        });
+        // Update user record with first invited workspace as default (if any)
+        if (result?.firstWorkspaceSlug) {
+          await db
+            .update(usersTable)
+            .set({ defaultWorkspaceSlug: result.firstWorkspaceSlug })
+            .where(eq(usersTable.id, dbUser.id));
+        }
       }
     } else {
       await bootstrapNewUser(user, c, sealedSession);

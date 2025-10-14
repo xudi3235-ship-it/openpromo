@@ -22,6 +22,7 @@ export type AuthenticationSuccessResult =
     role: OrganizationRole;
     email: string;
     featureFlags: string[];
+    dbUserId?: string; // Environment-specific database user ID (ULID)
   };
 
 export interface AuthenticationFailedResult {

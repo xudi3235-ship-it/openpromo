@@ -51,6 +51,7 @@ export const env = createEnv({
   clientPrefix: "VITE_",
   client: {
     VITE_DASHBOARD_URL: z.string().min(1),
+    VITE_ENVIRONMENT: z.string().default("local"),
   },
   /*
    * Specify what values should be validated by your schemas above.

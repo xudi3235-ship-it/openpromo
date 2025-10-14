@@ -9,7 +9,8 @@ export namespace Actor {
   export const UserSchema = z.object({
     type: z.literal("user"),
     properties: z.object({
-      userID: z.string(),
+      userID: z.string(), // WorkOS user ID (shared across all environments)
+      dbUserID: z.string().optional(), // Environment-specific database user ID (ULID)
       email: z.email(),
       organizationID: z.string(),
       role: z.custom<OrganizationRole>(),
@@ -58,6 +59,16 @@ export namespace Actor {
   export function userID() {
     const actor = Context.use();
     if ("userID" in actor.properties) return actor.properties.userID;
+    throw new VisibleError(
+      "authentication",
+      ErrorCodes.Authentication.UNAUTHORIZED,
+      `You don't have permission to access this resource.`,
+    );
+  }
+
+  export function dbUserID() {
+    const actor = Context.use();
+    if ("dbUserID" in actor.properties) return actor.properties.dbUserID;
     throw new VisibleError(
       "authentication",
       ErrorCodes.Authentication.UNAUTHORIZED,

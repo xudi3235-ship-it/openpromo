@@ -1,3 +1,5 @@
+import { getDbClient } from "@core/helpers/db";
+import { ensureUserInEnvironment } from "@core/helpers/user-sync";
 import { Actor } from "@openpromo/core/helpers/actor";
 import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { authenticateWithCookie } from "@openpromo/core/helpers/auth";
@@ -29,6 +31,11 @@ export const workOSAuth: () => MiddlewareHandler<ApiEnv> =
       });
 
       if (result.authenticated) {
+        // Ensure user exists in this environment's database
+        // This handles multi-environment isolation where WorkOS is shared but DBs are separate
+        const db = getDbClient();
+        const dbUser = await ensureUserInEnvironment(db, result.user.id);
+
         c.set("user", result.user);
         c.set("organizationId", result.organizationId);
         c.set("role", result.role);
@@ -39,7 +46,8 @@ export const workOSAuth: () => MiddlewareHandler<ApiEnv> =
         return Actor.provide(
           "user",
           {
-            userID: result.user.id,
+            userID: result.user.id, // WorkOS user ID (shared across environments)
+            dbUserID: dbUser.id, // Environment-specific database user ID
             organizationID: result.organizationId,
             role: result.role,
             email: result.user.email,

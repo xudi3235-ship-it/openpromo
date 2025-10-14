@@ -3,6 +3,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { EnvironmentBanner } from "@/components/layout/environment-badge";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { useTheme } from "@/context/theme-provider";
 import type { AuthContext } from "@/hooks/useAuth";
@@ -22,6 +23,7 @@ function RootLayout() {
 
   return (
     <>
+      <EnvironmentBanner />
       <NavigationProgress />
       <Toaster richColors theme={theme} />
       <Outlet />
