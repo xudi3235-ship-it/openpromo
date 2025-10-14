@@ -1,6 +1,9 @@
 import { Button } from "@openpromo/ui/components/button";
 import { cn } from "@openpromo/ui/lib/utils";
 import {
+  AlertCircle,
+  ImageIcon,
+  InfoIcon,
   MapPin,
   MessageSquare,
   MoreHorizontal,
@@ -42,17 +45,28 @@ export function PostDetails() {
     [currentMessage, selectedPlatforms, mediaOrLink],
   );
 
-  const helperText = useMemo(() => {
+  const helperBanner = useMemo(() => {
     if (captionValidation.needsMediaForIG) {
-      return "Instagram requires at least one image or video";
+      return {
+        icon: ImageIcon,
+        message: "Add an image or video to post on Instagram",
+        variant: "info" as const,
+      };
     }
     if (captionValidation.overLimit) {
-      return "Caption exceeds the limit for one or more platforms";
+      return {
+        icon: AlertCircle,
+        message: "Caption is too long for selected platforms",
+        variant: "error" as const,
+      };
     }
     if (captionValidation.emptyAll) {
-      return "Add text or attach media to publish";
+      return {
+        icon: InfoIcon,
+        message: "Add text or attach media to publish",
+        variant: "muted" as const,
+      };
     }
-    // Don't show anything when everything is ok
     return null;
   }, [
     captionValidation.emptyAll,
@@ -69,15 +83,6 @@ export function PostDetails() {
         : "text-muted-foreground",
   );
 
-  const helperTone = cn(
-    "text-xs",
-    captionValidation.overLimit
-      ? "text-destructive"
-      : captionValidation.needsMediaForIG
-        ? "text-blue-600 dark:text-blue-400"
-        : "text-muted-foreground",
-  );
-
   const handleEmojiSelect = (emoji: string) => {
     const latest = composer.getCurrentMessage() ?? "";
     composer.setCurrentMessage(latest + emoji);
@@ -89,30 +94,63 @@ export function PostDetails() {
         <h3 className="text-sm font-medium text-foreground">Text</h3>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-hidden">
         <ComposerMentions
           value={currentMessage}
           onChange={composer.setCurrentMessage}
           placeholder={PLACEHOLDER}
         />
-        <div className="border-t p-2 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" className="h-6 px-2">
-                #
-              </Button>
-              <ComposerEmojiPicker onEmojiSelect={handleEmojiSelect} />
-            </div>
-            <span className={counterClassName} title={TOOLTIP}>
-              {captionValidation.len.toLocaleString()} /{" "}
-              {captionValidation.limit.toLocaleString()}
+
+        {/* Apple-style compact info banner */}
+        {helperBanner && (
+          <div
+            className={cn(
+              "px-3 py-2 flex items-center gap-2 text-xs border-t transition-colors",
+              helperBanner.variant === "error" &&
+                "bg-red-50/80 dark:bg-red-950/20 border-red-200/50 dark:border-red-900/30",
+              helperBanner.variant === "info" &&
+                "bg-blue-50/80 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-900/30",
+              helperBanner.variant === "muted" && "bg-muted/50 border-border",
+            )}
+            role="status"
+            aria-live="polite"
+          >
+            <helperBanner.icon
+              className={cn(
+                "h-3.5 w-3.5 shrink-0",
+                helperBanner.variant === "error" &&
+                  "text-red-600 dark:text-red-400",
+                helperBanner.variant === "info" &&
+                  "text-blue-600 dark:text-blue-400",
+                helperBanner.variant === "muted" && "text-muted-foreground",
+              )}
+            />
+            <span
+              className={cn(
+                "flex-1 font-medium",
+                helperBanner.variant === "error" &&
+                  "text-red-900 dark:text-red-100",
+                helperBanner.variant === "info" &&
+                  "text-blue-900 dark:text-blue-100",
+                helperBanner.variant === "muted" && "text-muted-foreground",
+              )}
+            >
+              {helperBanner.message}
             </span>
           </div>
-          {helperText && (
-            <p className={helperTone} aria-live="polite" role="status">
-              {helperText}
-            </p>
-          )}
+        )}
+
+        <div className="border-t p-2 flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="h-6 px-2">
+              #
+            </Button>
+            <ComposerEmojiPicker onEmojiSelect={handleEmojiSelect} />
+          </div>
+          <span className={counterClassName} title={TOOLTIP}>
+            {captionValidation.len.toLocaleString()} /{" "}
+            {captionValidation.limit.toLocaleString()}
+          </span>
         </div>
       </div>
 
