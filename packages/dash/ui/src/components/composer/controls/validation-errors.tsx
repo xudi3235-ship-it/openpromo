@@ -36,6 +36,21 @@ const ERROR_CONFIG: Record<ValidationError["type"], ErrorConfig> = {
     title: "Message Required",
     category: "content",
   },
+  instagram_requires_media: {
+    icon: Image,
+    title: "Instagram Requires Media",
+    category: "media",
+  },
+  message_too_long: {
+    icon: MessageSquare,
+    title: "Caption Too Long",
+    category: "content",
+  },
+  message_length_warning: {
+    icon: MessageSquare,
+    title: "Caption Near Limit",
+    category: "content",
+  },
 
   // Media-related errors
   no_media: {

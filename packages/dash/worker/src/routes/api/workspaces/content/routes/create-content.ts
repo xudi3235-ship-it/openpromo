@@ -13,6 +13,7 @@ import {
 } from "@shared/content";
 import { Hono } from "hono";
 import * as z from "zod";
+import { AppError } from "../../../../../helpers/error";
 import { zValidator } from "../../../../../middleware/zod-validator";
 import { buildContentItems, createWorkflowsForContents } from "../helpers";
 
@@ -38,6 +39,16 @@ export const createContentRoute = new Hono<ApiEnv>().post(
     const actor = Actor.assert("workspace_user");
     const { placements, base } = c.req.valid("json");
     const { publishingStatus } = base;
+
+    const hasMessage = Boolean(base.message?.trim());
+    const hasAttachments =
+      Array.isArray(base.attachments) && base.attachments.length > 0;
+
+    if (!hasMessage && !hasAttachments) {
+      throw new AppError(400, {
+        message: "Add text or attach media to publish.",
+      });
+    }
 
     const contentItems = buildContentItems(placements);
 

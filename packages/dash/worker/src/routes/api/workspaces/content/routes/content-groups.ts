@@ -98,6 +98,15 @@ export const contentGroupsRoute = new Hono<ApiEnv>()
     const actor = Actor.assert("workspace_user");
     const { placements, base } = c.req.valid("json");
     const { publishingStatus } = base;
+    const hasMessage = Boolean(base.message?.trim());
+    const hasAttachments =
+      Array.isArray(base.attachments) && base.attachments.length > 0;
+
+    if (!hasMessage && !hasAttachments) {
+      throw new AppError(400, {
+        message: "Add text or attach media to publish.",
+      });
+    }
 
     if (!publishingStatus)
       throw new AppError(400, { message: "publishingStatus is required" });

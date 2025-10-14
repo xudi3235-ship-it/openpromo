@@ -28,6 +28,7 @@ export function FBFeedPreview({ accountId }: FBFeedPreviewProps) {
     attachments,
   });
   const { message, profilePicUrl, getDisplayName } = previewData;
+  const trimmedMessage = (message || "").trim();
 
   return (
     <div className="w-full max-w-lg mx-auto border rounded-lg p-3 bg-background">
@@ -69,9 +70,11 @@ export function FBFeedPreview({ accountId }: FBFeedPreviewProps) {
       </div>
 
       {/* Post Message */}
-      <div className="mb-3 whitespace-pre-wrap text-sm break-words">
-        {message}
-      </div>
+      {trimmedMessage && (
+        <div className="mb-3 whitespace-pre-wrap text-sm break-words">
+          {trimmedMessage}
+        </div>
+      )}
 
       {/* Post Content (media) */}
       <div className="mb-4">

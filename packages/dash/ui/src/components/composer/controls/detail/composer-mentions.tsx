@@ -10,6 +10,7 @@ import {
 } from "@openpromo/ui/components/command";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { useEffect, useRef, useState } from "react";
+import { PLACEHOLDER } from "@/lib/caption-limit";
 import {
   getCaretCoordinates,
   getCurrentWord,
@@ -123,11 +124,13 @@ const dummyTaggableEntities: TaggableEntity[] = [
 type ComposerMentionsProps = {
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
 };
 
 export default function ComposerMentions({
   value,
   onChange,
+  placeholder = PLACEHOLDER,
 }: ComposerMentionsProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -258,7 +261,7 @@ export default function ComposerMentions({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleTextareaKeyDown}
-        placeholder="What's on your mind?"
+        placeholder={placeholder}
         className="min-h-[80px] resize-none border-0"
       />
 

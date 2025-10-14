@@ -13,6 +13,9 @@ export interface ValidationError {
   type:
     | "no_accounts"
     | "no_message"
+    | "instagram_requires_media"
+    | "message_too_long"
+    | "message_length_warning"
     | "no_media"
     | "invalid_scheduling"
     | "upload_pending"

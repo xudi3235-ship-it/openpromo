@@ -68,7 +68,7 @@ export function TikTokPreview({ accountId }: TikTokPreviewProps) {
   }, [previewData, workspace?.name]);
 
   const displayName = previewData.getDisplayName(workspace?.name);
-  const caption = previewData.message;
+  const trimmedCaption = (previewData.message || "").trim();
 
   return (
     <div className="relative w-[280px] rounded-xl overflow-hidden border border-white/5 bg-[#070708] text-white shadow-[0_20px_45px_-20px_rgba(8,8,11,0.85)]">
@@ -212,9 +212,11 @@ export function TikTokPreview({ accountId }: TikTokPreviewProps) {
             </div>
           </div>
 
-          <p className="mt-3 text-sm text-white/90 leading-relaxed line-clamp-3 break-words">
-            {caption || "Add a caption to preview your TikTok copy."}
-          </p>
+          {trimmedCaption && (
+            <p className="mt-3 text-sm text-white/90 leading-relaxed line-clamp-3 break-words">
+              {trimmedCaption}
+            </p>
+          )}
         </div>
 
         <div className="pointer-events-none absolute inset-0 ring-1 ring-white/5 rounded-xl" />

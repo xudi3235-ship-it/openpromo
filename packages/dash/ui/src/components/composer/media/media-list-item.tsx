@@ -9,6 +9,7 @@ import {
   Loader2,
   Pencil,
   Trash,
+  Type,
   Video,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -25,6 +26,7 @@ interface MediaListItemProps {
   onPreview: (attachment: SharedAttachmentSpec, index: number) => void;
   onEdit: (attachment: SharedAttachmentSpec, index: number) => void;
   onRemove: (index: number) => void;
+  onEditAltText: (attachment: SharedAttachmentSpec, index: number) => void;
 }
 
 const formatFileSize = (bytes?: number) => {
@@ -42,6 +44,7 @@ export function MediaListItem({
   onPreview,
   onEdit,
   onRemove,
+  onEditAltText,
 }: MediaListItemProps) {
   const {
     attributes,
@@ -63,6 +66,10 @@ export function MediaListItem({
     attachment.file?.name || attachment.metadata?.originalFilename;
   const fileSize = formatFileSize(attachment.file?.size);
   const typeLabel = attachment.type === "video" ? "Video" : "Photo";
+  const hasAltText = Boolean(
+    typeof attachment.metadata?.altText === "string" &&
+      (attachment.metadata.altText as string).trim(),
+  );
 
   const previewNode = renderAttachment(
     attachment,
@@ -126,6 +133,16 @@ export function MediaListItem({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onEditAltText(attachment, index)}
+              disabled={uploading}
+            >
+              <Type className="mr-1 h-4 w-4" />
+              {hasAltText ? "Edit alt text" : "Add alt text"}
+            </Button>
             <Button
               type="button"
               variant="ghost"

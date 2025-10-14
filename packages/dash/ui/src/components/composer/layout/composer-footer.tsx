@@ -1,13 +1,19 @@
 import { Button } from "@openpromo/ui/components/button";
 import { useNavigate } from "@tanstack/react-router";
 import { Maximize2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ValidationErrors } from "@/components/composer/controls/validation-errors";
 import { PublishingOverlay } from "@/components/composer/layout/publishing-overlay";
 import { useComposerPublishHandlers } from "@/hooks/composer/useComposerHooks";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { validateCaption } from "@/lib/caption-limit";
+import { logComposerEvent } from "@/lib/instrumentation/composer";
 import { useComposerMutations } from "@/queries/content";
+import {
+  resolveHasMediaOrLink,
+  resolveSelectedPlatforms,
+} from "@/stores/composer/utils/caption";
 import { useComposerStore } from "@/stores/composer-store";
 import {
   isDialogMode,
@@ -22,13 +28,14 @@ export function ComposerFooter() {
   }>({ isVisible: false, status: "loading" });
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
+  const composerStore = useComposerStore();
   const {
     setPublishingStatus,
     contentCreateData,
     validation,
     contentGroupID,
     hasUnsavedChanges,
-  } = useComposerStore();
+  } = composerStore;
   const { mode, closeComposer, switchToFullscreen } = useDialogComposerStore();
   const isDialog = mode !== "closed";
   const showMoreToolsButton = isDialogMode(mode);
@@ -38,6 +45,58 @@ export function ComposerFooter() {
 
   const { create: useCreateMutation, updateGroup: useUpdateGroupMutation } =
     useComposerMutations();
+
+  const selectedPlatforms = useMemo(
+    () =>
+      resolveSelectedPlatforms(
+        composerStore.accounts,
+        composerStore.selectedAccounts,
+      ),
+    [composerStore.accounts, composerStore.selectedAccounts],
+  );
+  const mediaOrLink = useMemo(
+    () =>
+      resolveHasMediaOrLink(
+        composerStore.contentCreateData.base.attachments,
+        composerStore.contentCreateData.placements.facebookFeed,
+      ),
+    [
+      composerStore.contentCreateData.base.attachments,
+      composerStore.contentCreateData.placements.facebookFeed,
+    ],
+  );
+  const captionInfo = useMemo(
+    () =>
+      validateCaption(
+        composerStore.contentCreateData.base.message ?? "",
+        selectedPlatforms,
+        mediaOrLink,
+      ),
+    [
+      composerStore.contentCreateData.base.message,
+      selectedPlatforms,
+      mediaOrLink,
+    ],
+  );
+  const hasText = Boolean(contentCreateData.base.message?.trim());
+  const lastEventRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    const signature = [
+      hasText ? "1" : "0",
+      mediaOrLink ? "1" : "0",
+      captionInfo.state,
+      selectedPlatforms.join(","),
+    ].join("|");
+    if (signature === lastEventRef.current) return;
+    lastEventRef.current = signature;
+    logComposerEvent({
+      has_text: hasText,
+      has_media: mediaOrLink,
+      platforms: selectedPlatforms,
+      validation: captionInfo.state,
+    });
+  }, [hasText, mediaOrLink, selectedPlatforms, captionInfo.state]);
 
   // Handler to switch to fullscreen and navigate
   const handleSwitchToFullscreen = useCallback(() => {
@@ -126,6 +185,13 @@ export function ComposerFooter() {
     if (contentCreateData.base.publishingStatus !== "SCHEDULED") {
       setPublishingStatus("PUBLISH_NOW");
     }
+    logComposerEvent({
+      has_text: hasText,
+      has_media: mediaOrLink,
+      platforms: selectedPlatforms,
+      validation: captionInfo.state,
+      action: "publish_click",
+    });
     setPublishingState({ isVisible: true, status: "loading" });
     triggerMutation();
   };

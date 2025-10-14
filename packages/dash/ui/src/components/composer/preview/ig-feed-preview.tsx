@@ -169,7 +169,7 @@ export function IGFeedPreview({ accountId }: IGFeedPreviewProps) {
             )}
           </>
         ) : (
-          <PreviewMediaNullState />
+          <PreviewMediaNullState message="Add image or video" />
         )}
       </div>
 

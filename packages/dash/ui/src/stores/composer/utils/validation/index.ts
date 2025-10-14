@@ -7,6 +7,7 @@ import type {
 import { validateAccounts } from "./accounts";
 import { validateFileSize } from "./file-size";
 import { validateMessage } from "./message";
+import { validateMessageLength } from "./message-length";
 import { validatePlatforms } from "./platforms";
 import { validateScheduling } from "./scheduling";
 import { validateUploads } from "./uploads";
@@ -17,6 +18,7 @@ export const validateComposerState = (
   const errors = [
     ...validateAccounts(state),
     ...validateMessage(state),
+    ...validateMessageLength(state),
     ...validateUploads(state),
     ...validateScheduling(state),
     ...validateFileSize(state),
@@ -26,7 +28,7 @@ export const validateComposerState = (
   const hasErrors = errors.some((error) => error.severity === "error");
 
   return {
-    isValid: errors.length === 0,
+    isValid: !hasErrors,
     errors,
     canPublish: !hasErrors,
   };

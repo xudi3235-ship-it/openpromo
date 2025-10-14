@@ -118,7 +118,11 @@ export function useAttachmentRenderer(options: AttachmentRendererOptions = {}) {
 
       if (attachment.type === "photo") {
         if (!url) return null;
-        return <img key={url} src={url} alt="Preview" className={className} />;
+        const altText =
+          (typeof attachment.metadata?.altText === "string" &&
+            (attachment.metadata.altText as string).trim()) ||
+          "Uploaded image";
+        return <img key={url} src={url} alt={altText} className={className} />;
       }
 
       if (attachment.type === "video") {
