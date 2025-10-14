@@ -5,11 +5,8 @@ import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Platform } from "@core/schemas/connected-account.sql";
 import { env } from "@core/utils/env";
-import {
-  createInboxEvent,
-  type FBWebhookPayload,
-  InboxRealtimeEventTypes,
-} from "@shared/inbox";
+import { type FBWebhookPayload, InboxRealtimeEventTypes } from "@shared/inbox";
+import { createWorkspaceEvent } from "@shared/workspace/events";
 import { Hono } from "hono";
 import { AppError } from "../../helpers/error";
 import { verifyMetaWebhookSignature } from "../../middleware/verify-meta-webhook-signature";
@@ -91,7 +88,7 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
               payload: messaging,
               sender: message?.is_echo ? "self" : "user",
             });
-            const event = createInboxEvent(
+            const event = createWorkspaceEvent(
               InboxRealtimeEventTypes.MessageUpserted,
               {
                 conversationId: conversation.id,
@@ -120,7 +117,7 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
               payload: messaging,
               sender: message.is_echo ? "self" : "user",
             });
-            const event = createInboxEvent(
+            const event = createWorkspaceEvent(
               InboxRealtimeEventTypes.MessageUpserted,
               {
                 conversationId: conversation.id,
@@ -137,7 +134,7 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
             await dispatchWorkspaceEvent(account.workspaceId, event);
           }
           // conversation bump event
-          const conversationEvent = createInboxEvent(
+          const conversationEvent = createWorkspaceEvent(
             InboxRealtimeEventTypes.ConversationUpserted,
             {
               conversationId: conversation.id,

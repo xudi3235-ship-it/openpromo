@@ -14,10 +14,6 @@ import {
   TooltipTrigger,
 } from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
-import {
-  InboxRealtimeEventSchema,
-  InboxRealtimeEventTypes,
-} from "@shared/inbox";
 import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -37,10 +33,7 @@ import {
 import { useCallback, useMemo, useState } from "react";
 import { Fragment } from "react/jsx-runtime";
 import { Main } from "@/components/layout/main";
-import {
-  type GenericEvent,
-  useWorkspaceNotifications,
-} from "@/hooks/useWorkspaceNotifications";
+import { useSharedWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import {
   useInboxConversations,
   useInboxMessages,
@@ -111,16 +104,10 @@ export function Inbox() {
     });
   }, []);
 
-  const onEvent = useCallback(
-    (event: GenericEvent) => {
-      const inboxRealtimeEvent = InboxRealtimeEventSchema.safeParse(event);
-      if (!inboxRealtimeEvent.success) {
-        return;
-      }
-      if (
-        inboxRealtimeEvent.data.type ===
-        InboxRealtimeEventTypes.ConversationUpserted
-      ) {
+  // Use type-safe workspace events for inbox updates
+  useSharedWorkspaceEvents({
+    handlers: {
+      "inbox.conversation.upserted": () => {
         queryClient.invalidateQueries({
           predicate: (q) => {
             const key = q.queryKey as unknown[];
@@ -132,12 +119,10 @@ export function Inbox() {
             );
           },
         });
-      } else if (
-        inboxRealtimeEvent.data.type === InboxRealtimeEventTypes.MessageUpserted
-      ) {
+      },
+      "inbox.message.upserted": (event) => {
         // Clear pending state for the conversation that just received a message
-        const conversationId = inboxRealtimeEvent.data.conversationId;
-        clearPendingState(conversationId);
+        clearPendingState(event.conversationId);
         queryClient.invalidateQueries({
           predicate: (q) => {
             const key = q.queryKey as unknown[];
@@ -146,18 +131,12 @@ export function Inbox() {
               key[0] === "inbox" &&
               key[1] === "messages" &&
               key[2] === workspaceSlug &&
-              key[3] === inboxRealtimeEvent.data.conversationId
+              key[3] === event.conversationId
             );
           },
         });
-      }
+      },
     },
-    [workspaceSlug, queryClient, clearPendingState],
-  );
-
-  useWorkspaceNotifications(workspaceSlug, {
-    autoToast: false,
-    onEvent,
   });
 
   return (
