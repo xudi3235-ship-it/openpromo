@@ -39,7 +39,7 @@ export interface GraphRequestOptions {
 }
 
 export async function instagramGraphRequest<T = unknown>(
-  ctx: InstagramIdentityContext,
+  ctx: { accessToken: string },
   path: string,
   options: GraphRequestOptions = {},
 ): Promise<T> {
@@ -57,12 +57,13 @@ export async function instagramGraphRequest<T = unknown>(
     method,
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${ctx.accessToken}`,
     },
     body: body ? JSON.stringify(body) : undefined,
   });
 
   log.info("instagram graph request", {
-    path,
+    url: url.toString(),
     method,
     status: response.status,
     statusText: response.statusText,

@@ -14,11 +14,17 @@ import {
   TooltipTrigger,
 } from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
+import {
+  InboxRealtimeEventSchema,
+  InboxRealtimeEventTypes,
+} from "@shared/inbox";
+import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
   Edit,
   ImagePlus,
+  Loader2,
   MessagesSquare,
   MoreVertical,
   Paperclip,
@@ -28,18 +34,30 @@ import {
   Send,
   Video,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Fragment } from "react/jsx-runtime";
 import { Main } from "@/components/layout/main";
-import { useInboxConversations, useInboxMessages } from "@/queries/inbox";
+import {
+  type GenericEvent,
+  useWorkspaceNotifications,
+} from "@/hooks/useWorkspaceNotifications";
+import {
+  useInboxConversations,
+  useInboxMessages,
+  useSendInboxMessage,
+} from "@/queries/inbox";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import { NewChat } from "./new-chat";
 
 export function Inbox() {
+  const queryClient = useQueryClient();
   const { workspaceSlug } = Route.useParams();
+
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
+  const [pendingMessagesByConversation, setPendingMessagesByConversation] =
+    useState<Record<string, string>>({});
   const [platformFilter] = useState<
     "FACEBOOK" | "INSTAGRAM" | "TIKTOK" | undefined
   >(undefined);
@@ -66,6 +84,13 @@ export function Inbox() {
       conversationsList.find((c) => c.id === selectedConversationId) || null,
     [conversationsList, selectedConversationId],
   );
+  const selectedConversationPendingMessage = useMemo(
+    () =>
+      selectedConversationId
+        ? pendingMessagesByConversation[selectedConversationId]
+        : undefined,
+    [pendingMessagesByConversation, selectedConversationId],
+  );
 
   const { data: messagesData, isLoading: isMessagesLoading } = useInboxMessages(
     workspaceSlug,
@@ -73,6 +98,63 @@ export function Inbox() {
     { page: 1, pageSize: 50 },
   );
   const messages = messagesData?.items ?? [];
+  const sendMessage = useSendInboxMessage(
+    workspaceSlug,
+    selectedConversationId ?? undefined,
+  );
+
+  const onEvent = useCallback(
+    (event: GenericEvent) => {
+      const inboxRealtimeEvent = InboxRealtimeEventSchema.safeParse(event);
+      if (!inboxRealtimeEvent.success) {
+        return;
+      }
+      if (
+        inboxRealtimeEvent.data.type ===
+        InboxRealtimeEventTypes.ConversationUpserted
+      ) {
+        queryClient.invalidateQueries({
+          predicate: (q) => {
+            const key = q.queryKey as unknown[];
+            return (
+              Array.isArray(key) &&
+              key[0] === "inbox" &&
+              key[1] === "conversations" &&
+              key[2] === workspaceSlug
+            );
+          },
+        });
+      } else if (
+        inboxRealtimeEvent.data.type === InboxRealtimeEventTypes.MessageUpserted
+      ) {
+        // Clear pending state for the conversation that just received a message
+        const conversationId = inboxRealtimeEvent.data.conversationId;
+        setPendingMessagesByConversation((prev) => {
+          if (!(conversationId in prev)) return prev;
+          const { [conversationId]: _cleared, ...rest } = prev;
+          return rest;
+        });
+        queryClient.invalidateQueries({
+          predicate: (q) => {
+            const key = q.queryKey as unknown[];
+            return (
+              Array.isArray(key) &&
+              key[0] === "inbox" &&
+              key[1] === "messages" &&
+              key[2] === workspaceSlug &&
+              key[3] === inboxRealtimeEvent.data.conversationId
+            );
+          },
+        });
+      }
+    },
+    [workspaceSlug, queryClient],
+  );
+
+  useWorkspaceNotifications(workspaceSlug, {
+    autoToast: false,
+    onEvent,
+  });
 
   return (
     <Main fixed>
@@ -246,6 +328,24 @@ export function Inbox() {
                         <Skeleton className="h-10 w-2/5 self-start" />
                       </div>
                     )}
+                    {!!selectedConversationPendingMessage && (
+                      <div
+                        className={cn(
+                          "chat-box max-w-72 px-3 py-2 break-words shadow-lg",
+                          "bg-primary/60 text-primary-foreground/75 self-end rounded-[16px_16px_0_16px] opacity-80",
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Loader2
+                            className="animate-spin opacity-90"
+                            size={14}
+                          />
+                          <span className="italic opacity-90">
+                            {selectedConversationPendingMessage}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                     {messages.map((msg) => (
                       <div
                         key={msg.id + msg.externalId}
@@ -291,6 +391,7 @@ export function Inbox() {
                         </TooltipProvider>
                       </div>
                     ))}
+
                     {!isMessagesLoading && messages.length === 0 && (
                       <div className="text-center text-sm text-muted-foreground w-full">
                         No messages yet.
@@ -299,7 +400,26 @@ export function Inbox() {
                   </div>
                 </div>
               </div>
-              <form className="flex w-full flex-none gap-2">
+              <form
+                className="flex w-full flex-none gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.currentTarget as HTMLFormElement;
+                  const input = form.querySelector<HTMLInputElement>(
+                    'input[name="chatMessage"]',
+                  );
+                  const value = input?.value?.trim();
+                  if (!value) return;
+                  if (selectedConversationId) {
+                    setPendingMessagesByConversation((prev) => ({
+                      ...prev,
+                      [selectedConversationId]: value,
+                    }));
+                  }
+                  sendMessage.mutate({ text: value });
+                  if (input) input.value = "";
+                }}
+              >
                 <div className="border-input bg-card focus-within:ring-ring flex flex-1 items-center gap-2 rounded-md border px-2 py-1 focus-within:ring-1 focus-within:outline-hidden lg:gap-4">
                   <div className="space-x-1">
                     <Button
@@ -337,22 +457,31 @@ export function Inbox() {
                     <span className="sr-only">Chat Text Box</span>
                     <input
                       type="text"
+                      name="chatMessage"
                       placeholder="Type your messages..."
                       className="h-8 w-full bg-inherit focus-visible:outline-hidden"
-                      disabled
+                      disabled={!!selectedConversationPendingMessage}
                     />
                   </label>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="hidden sm:inline-flex"
-                    disabled
+                    disabled={!!selectedConversationPendingMessage}
                   >
                     <Send size={20} />
                   </Button>
                 </div>
-                <Button className="h-full sm:hidden" disabled>
-                  <Send size={18} /> Send
+                <Button
+                  className="h-full sm:hidden"
+                  disabled={!!selectedConversationPendingMessage}
+                >
+                  {selectedConversationPendingMessage ? (
+                    <Loader2 className="mr-2 animate-spin" size={18} />
+                  ) : (
+                    <Send className="mr-2" size={18} />
+                  )}
+                  Send
                 </Button>
               </form>
             </div>

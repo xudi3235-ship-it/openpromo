@@ -37,7 +37,7 @@ export interface GraphRequestOptions {
 }
 
 export async function facebookGraphRequest<T = unknown>(
-  ctx: FacebookIdentityContext,
+  ctx: { accessToken: string },
   path: string,
   options: GraphRequestOptions = {},
 ): Promise<T> {

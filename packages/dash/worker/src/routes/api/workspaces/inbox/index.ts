@@ -1,3 +1,5 @@
+import { facebookGraphRequest } from "@core/domain/content/entity/facebook/api";
+import { instagramGraphRequest } from "@core/domain/content/entity/instagram/api";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { getDbClient } from "@core/helpers/db";
@@ -27,6 +29,10 @@ const listConversationsQuery = z.object({
 const listMessagesQuery = z.object({
   page: z.coerce.number().default(1),
   pageSize: z.coerce.number().max(200).default(50),
+});
+
+const sendMessageBody = z.object({
+  text: z.string().min(1).max(1000),
 });
 
 export const inboxRoute = new Hono<ApiEnv>()
@@ -214,6 +220,73 @@ export const inboxRoute = new Hono<ApiEnv>()
       );
 
       return c.json({ items, page, pageSize, total });
+    },
+  )
+  // POST /inbox/conversations/:conversationId/messages
+  .post(
+    "/conversations/:conversationId/messages",
+    withWorkspaceRole("workspace_editor"),
+    zValidator("json", sendMessageBody),
+    async (c) => {
+      const db = getDbClient();
+      const { conversationId } = c.req.param();
+      const { text } = c.req.valid("json");
+      const workspaceId = Actor.workspaceID();
+
+      const [row] = await db
+        .select({
+          platform: inboxConversationsTable.platform,
+          externalId: inboxContactsTable.externalId,
+          accessToken: connectedAccount.encryptedAccessToken,
+        })
+        .from(inboxConversationsTable)
+        .innerJoin(
+          connectedAccount,
+          eq(inboxConversationsTable.connectedAccountId, connectedAccount.id),
+        )
+        .innerJoin(
+          inboxContactsTable,
+          eq(inboxConversationsTable.contactId, inboxContactsTable.id),
+        )
+        .where(
+          and(
+            eq(inboxConversationsTable.id, conversationId),
+            eq(connectedAccount.workspaceId, workspaceId),
+          ),
+        )
+        .limit(1);
+
+      if (!row) return c.notFound();
+
+      if (row.platform === "INSTAGRAM") {
+        await instagramGraphRequest(
+          { accessToken: row.accessToken },
+          `/me/messages`,
+          {
+            method: "POST",
+            body: {
+              recipient: { id: row.externalId },
+              message: { text },
+            },
+          },
+        );
+      } else if (row.platform === "FACEBOOK") {
+        await facebookGraphRequest(
+          { accessToken: row.accessToken },
+          "/me/messages",
+          {
+            method: "POST",
+            body: {
+              recipient: { id: row.externalId },
+              messaging_type: "RESPONSE",
+              message: { text },
+            },
+          },
+        );
+      }
+
+      // Do not insert; message will echoed back by and handled by webhook
+      return c.json({ ok: true });
     },
   );
 
