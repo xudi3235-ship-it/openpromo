@@ -20,6 +20,11 @@ export default defineConfig({
   build: {
     minify: "esbuild",
   },
+  define: {
+    // Skip env validation in Workers since process.env doesn't exist
+    // Secrets are injected at runtime via Cloudflare bindings
+    "process.env.SKIP_ENV_VALIDATION": JSON.stringify("1"),
+  },
   plugins: [
     // @ts-expect-error
     flags.useLocalHttps && mkcert({ hosts: [] }),
