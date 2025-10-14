@@ -120,19 +120,15 @@ async function generateStyleContext(
   _style: EntStyleComponent,
   imageUrls: string[],
 ) {
-  const sysMsg = `You are an expert in social media marketing and creative ad concepts. Your task is to analyze multiple user-supplied images, describe the visual "style" of each, extract and articulate notable visual and thematic features, infer the social intent behind each design, and identify industries or product categories where these visual styles can be effectively utilized to drive measurable outcomes (such as increased sales or conversions).
+  const sysMsg = `You are an expert in social media marketing and creative ad concepts. Your task is to analyze multiple user-supplied images to extract a style context so that they can used for matching/generating high performing social visuals.
+  
+  Your job: create image prompt for the style from the input images, including colors, composition, tone, style, lighting mood etc. Fill out the schema
+  and identify industries or product categories where these visual styles can be effectively utilized to drive measurable outcomes (such as increased sales or conversions).
 
-!!!MUST FOLLOW the output schema
-
-INSTRUCTIONS + RULES:
-- for all the images, summarize and consolidate:
-  - A clear and concise summary of the overall visual style.
-  - Key details including main elements, colors, motifs, and composition.
-  - The likely social aim, messaging intent, or engagement purpose behind the design.
-  - A list of relevant industries or product categories where the style could maximize results.
-  - images prompt: image prompts used to generate these images, single paragraph, concise, verbose, effective, detailed.
-- Adhere strictly to the specified output JSON schema. Mark any unknown attribute as 'Unknown'.
-- If the images are NSFW or contains violent, hateful content, use the safe field and reason field to indicate it.
+RULES:
+1. CLOSELY adhere to output schema
+2. If the images are NSFW or contains violent, hateful content, use the safe field and reason field to indicate it.
+3. Image prompt should be single plaintext paragraph, e.g. "studio portrait of a 25yo korean girl, xxxx"
   `;
   try {
     const res = await generateObject({
