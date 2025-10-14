@@ -106,11 +106,9 @@ export function PostDetails() {
           <div
             className={cn(
               "px-3 py-2 flex items-center gap-2 text-xs border-t transition-colors",
-              helperBanner.variant === "error" &&
-                "bg-red-50/80 dark:bg-red-950/20 border-red-200/50 dark:border-red-900/30",
-              helperBanner.variant === "info" &&
-                "bg-blue-50/80 dark:bg-blue-950/20 border-blue-200/50 dark:border-blue-900/30",
-              helperBanner.variant === "muted" && "bg-muted/50 border-border",
+              helperBanner.variant === "error"
+                ? "bg-red-50/80 dark:bg-red-950/20 border-red-200/50 dark:border-red-900/30"
+                : "bg-muted/50 border-border",
             )}
             role="status"
             aria-live="polite"
@@ -118,21 +116,17 @@ export function PostDetails() {
             <helperBanner.icon
               className={cn(
                 "h-3.5 w-3.5 shrink-0",
-                helperBanner.variant === "error" &&
-                  "text-red-600 dark:text-red-400",
-                helperBanner.variant === "info" &&
-                  "text-blue-600 dark:text-blue-400",
-                helperBanner.variant === "muted" && "text-muted-foreground",
+                helperBanner.variant === "error"
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-muted-foreground",
               )}
             />
             <span
               className={cn(
                 "flex-1 font-medium",
-                helperBanner.variant === "error" &&
-                  "text-red-900 dark:text-red-100",
-                helperBanner.variant === "info" &&
-                  "text-blue-900 dark:text-blue-100",
-                helperBanner.variant === "muted" && "text-muted-foreground",
+                helperBanner.variant === "error"
+                  ? "text-red-900 dark:text-red-100"
+                  : "text-muted-foreground",
               )}
             >
               {helperBanner.message}
