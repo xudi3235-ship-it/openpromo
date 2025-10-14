@@ -4,6 +4,7 @@ import {
   InboxMessageUpsertedEventSchema,
   InboxRealtimeEventTypes,
 } from "../inbox";
+import { StyleStateZod } from "../style";
 
 /**
  * Workspace realtime event types
@@ -11,6 +12,7 @@ import {
  */
 export enum WorkspaceEventType {
   ImageGenerationUpdated = "image_generation.updated",
+  StyleComponentUpdated = "style_component.updated",
   // Inbox events are included via their own enum (InboxRealtimeEventTypes)
   // Add more event types as needed
 }
@@ -49,6 +51,24 @@ export type ImageGenerationUpdatedEvent = z.infer<
   typeof ImageGenerationUpdatedEventSchema
 >;
 
+// ============ Style Component Events ============
+
+/**
+ * Event fired when a style component is created or updated
+ * Contains essential fields needed for client-side UI updates
+ */
+export const StyleComponentUpdatedEventSchema = z.object({
+  type: z.literal(WorkspaceEventType.StyleComponentUpdated),
+  styleId: z.string(),
+  state: StyleStateZod,
+  failureReason: z.string().nullable().optional(),
+  timestamp: z.number(),
+});
+
+export type StyleComponentUpdatedEvent = z.infer<
+  typeof StyleComponentUpdatedEventSchema
+>;
+
 // ============ Union of All Workspace Events ============
 
 /**
@@ -58,6 +78,7 @@ export type ImageGenerationUpdatedEvent = z.infer<
  */
 export const WorkspaceEventSchema = z.discriminatedUnion("type", [
   ImageGenerationUpdatedEventSchema,
+  StyleComponentUpdatedEventSchema,
   InboxConversationUpsertedEventSchema,
   InboxMessageUpsertedEventSchema,
   // Add more event schemas here as needed
@@ -74,6 +95,7 @@ export type WorkspaceEvent = z.infer<typeof WorkspaceEventSchema>;
 const eventSchemaMap = {
   [WorkspaceEventType.ImageGenerationUpdated]:
     ImageGenerationUpdatedEventSchema,
+  [WorkspaceEventType.StyleComponentUpdated]: StyleComponentUpdatedEventSchema,
   [InboxRealtimeEventTypes.ConversationUpserted]:
     InboxConversationUpsertedEventSchema,
   [InboxRealtimeEventTypes.MessageUpserted]: InboxMessageUpsertedEventSchema,

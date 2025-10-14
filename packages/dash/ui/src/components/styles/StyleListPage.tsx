@@ -4,11 +4,15 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@openpromo/ui/components/toggle-group";
+import { useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Clock3, History, Search, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
 import { StylesInfiniteGrid } from "@/components/styles/styles-infinite-grid";
+import { useSharedWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import type { StylesListParams } from "@/queries/styles";
+import { invalidateStylesListQueries } from "@/queries/styles";
 import { StyleComposer } from "./composer";
 
 type SortOption = "latest" | "oldest" | "most_used";
@@ -18,6 +22,7 @@ type SortOption = "latest" | "oldest" | "most_used";
  * Route: /workspaces/:workspaceSlug/styles
  */
 export function StyleListPage() {
+  const queryClient = useQueryClient();
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>();
   const [officialOnly, setOfficialOnly] = useState(false);
@@ -26,6 +31,28 @@ export function StyleListPage() {
   const updateSearch = useDebounceCallback((value: string) => {
     setDebouncedSearch(value.trim() || undefined);
   }, 400);
+
+  // Listen for style component updates via the shared WebSocket connection
+  // This reuses the connection from WorkspaceWebSocketProvider (no duplicate connections)
+  useSharedWorkspaceEvents({
+    handlers: {
+      "style_component.updated": (event) => {
+        // Invalidate styles list to refetch with updated style
+        invalidateStylesListQueries(queryClient);
+
+        // Show toast notification based on state
+        if (event.state === "ready") {
+          toast.success("Style is ready!", {
+            description: "Your style has been processed and is now available.",
+          });
+        } else if (event.state === "failed") {
+          toast.error("Style processing failed", {
+            description: event.failureReason || "Unable to process the style.",
+          });
+        }
+      },
+    },
+  });
 
   useEffect(() => {
     updateSearch(searchValue);

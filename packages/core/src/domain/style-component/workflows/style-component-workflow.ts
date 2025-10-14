@@ -8,8 +8,10 @@ import {
 } from "@core/helpers/workflow";
 import { StyleContext } from "@core/schemas/style.sql";
 import { Log } from "@core/utils/log";
+import { createWorkspaceEvent, WorkspaceEventType } from "@shared/workspace";
 import { generateObject, type ImagePart } from "ai";
 import { z } from "zod";
+import { dispatchWorkspaceEvent } from "../../workspace/realtime";
 import { EntStyleComponent } from "../EntStyleComponent";
 
 const StyleComponentWorkflowParams = z.object({
@@ -94,10 +96,21 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
           styleComponentId,
           reason,
         });
+        const failureReason = reason ?? "Content safety check failed";
         await s.update({
           state: "failed",
-          failureReason: reason ?? "Unknown reason",
+          failureReason,
         });
+
+        // Dispatch workspace event to notify clients
+        await dispatchWorkspaceEvent(
+          Actor.workspaceID(),
+          createWorkspaceEvent(WorkspaceEventType.StyleComponentUpdated, {
+            styleId: s.data.id,
+            state: "failed",
+            failureReason,
+          }),
+        );
         return;
       }
       console.log("// Generated style context", { context });
@@ -106,12 +119,22 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
       });
     });
     console.log("// Marking style as ready", { styleComponentId });
-    // 4. mark style as ready
+    // 4. mark style as ready and dispatch event
     await step.do("mark-style-ready", async () => {
       const s = await EntStyleComponent.fromID(styleComponentId);
       await s.update({
         state: "ready",
       });
+
+      // Dispatch workspace event to notify clients
+      await dispatchWorkspaceEvent(
+        Actor.workspaceID(),
+        createWorkspaceEvent(WorkspaceEventType.StyleComponentUpdated, {
+          styleId: s.data.id,
+          state: "ready",
+          failureReason: null,
+        }),
+      );
     });
   }
 }

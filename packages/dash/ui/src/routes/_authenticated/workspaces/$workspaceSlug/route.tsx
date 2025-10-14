@@ -9,7 +9,7 @@ import {
 import { toast } from "sonner";
 import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
-import { useWorkspaceNotifications } from "@/hooks/useWorkspaceNotifications";
+import { WorkspaceWebSocketProvider } from "@/hooks/useWorkspaceWebSocket";
 import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
 import { useConnectedAccounts } from "@/queries/connected-account";
@@ -43,7 +43,6 @@ const DISABLED_ACCOUNTS_BAR_PATTERNS: RegExp[] = [
 
 function WorkspaceComponent() {
   const { workspace } = Route.useLoaderData();
-  useWorkspaceNotifications(workspace.slug);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { accounts, isLoading } = useConnectedAccounts();
@@ -78,13 +77,15 @@ function WorkspaceComponent() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      {shouldShowAccountsBar && (
-        <WorkspaceConnectedAccountsBar className="mx-4 mt-4" />
-      )}
-      <div className="flex flex-col flex-1 min-h-0 p-4">
-        <Outlet />
+    <WorkspaceWebSocketProvider workspaceSlug={workspace.slug}>
+      <div className="flex h-full flex-col gap-4">
+        {shouldShowAccountsBar && (
+          <WorkspaceConnectedAccountsBar className="mx-4 mt-4" />
+        )}
+        <div className="flex flex-col flex-1 min-h-0 p-4">
+          <Outlet />
+        </div>
       </div>
-    </div>
+    </WorkspaceWebSocketProvider>
   );
 }
