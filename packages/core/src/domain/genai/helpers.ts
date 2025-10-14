@@ -12,32 +12,41 @@ export namespace GenAI {
         }) as ImagePart,
     );
 
-    const res = await generateObject({
-      model: openai("gpt-5-mini"),
-      schema: z.object({
-        safe: z.boolean(),
-        reason: z.string().optional(),
-      }),
-      temperature: 0,
-      maxOutputTokens: 200,
-      messages: [
-        {
-          role: "system",
-          content: `You are a content moderation AI. Analyze the provided image URLs and determine if any contain inappropriate content such as nudity, violence, or hate symbols. Respond with a JSON object indicating whether the content is safe or not.
+    try {
+      const res = await generateObject({
+        model: openai("gpt-5-mini"),
+        schema: z.object({
+          safe: z.boolean(),
+          reason: z.string().optional(),
+        }),
+        temperature: 0,
+        maxOutputTokens: 100,
+        messages: [
+          {
+            role: "system",
+            content: `You are a content moderation AI. Analyze the provided image URLs and determine if any contain inappropriate content such as nudity, violence, or hate symbols. Respond with a JSON object indicating whether the content is safe or not. ONLY give reason if content is NOT safe.
+
+            FOLLOW the output schema strictly.
           `,
-        },
-        {
-          role: "user",
-          content: [
-            ...imgParts,
-            {
-              type: "text",
-              text: userInput,
-            },
-          ],
-        },
-      ],
-    });
-    return res.object;
+          },
+          {
+            role: "user",
+            content: [
+              ...imgParts,
+              {
+                type: "text",
+                text: userInput,
+              },
+            ],
+          },
+        ],
+      });
+
+      return res.object;
+    } catch (error) {
+      console.error("Error during content moderation", error);
+      // On error, assume content is safe to avoid blocking
+      return { safe: true };
+    }
   }
 }

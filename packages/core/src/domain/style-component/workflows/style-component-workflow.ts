@@ -1,5 +1,4 @@
 import { openai } from "@ai-sdk/openai";
-import { GenAI } from "@core/domain/genai/helpers";
 import { Actor } from "@core/helpers/actor";
 import {
   type CoreWorkflowContext,
@@ -25,6 +24,29 @@ export type StyleComponentWorkflowParams = z.infer<
 const log = Log.create({ namespace: "style-component-workflow" });
 
 /**
+ * ref:
+ * https://developers.cloudflare.com/images/transform-images/transform-via-url/
+ * compress imgs
+ */
+function tranformImgs(imageUrls: string[]): string[] {
+  return imageUrls.map((url) => {
+    try {
+      const parsedUrl = new URL(url);
+      // For bucket.openpromo.app URLs, transform via cdn-cgi
+      if (parsedUrl.hostname === "bucket.openpromo.app") {
+        console.log("Transforming image URL", { url });
+        // FIXME: replace it with env var for different envs
+        return `https://staging.openpromo.app/cdn-cgi/image/quality=75,format=auto,width=1024,fit=scale-down/${url}`;
+      }
+      return url;
+    } catch (error) {
+      console.error("Failed to transform image URL", { url, error });
+      return url; // Return original on error
+    }
+  });
+}
+
+/**
  * StyleComponentWorkflow
  *
  * Placeholder workflow scaffolding for future automation when a style is created.
@@ -36,84 +58,112 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
     event: CoreWorkflowEvent<StyleComponentWorkflowParams>,
     step: CoreWorkflowStep,
   ) {
+    console.log("// Style component workflow triggered", event);
     const { styleComponentId } = event.payload;
     log.info("// Style component workflow triggered", { styleComponentId });
-
-    await step.do("noop", async () => {
-      log.info("// Style component workflow noop step", { styleComponentId });
-      return;
-    });
-    // here's what we need to do, if it's a new style created
-    // 1. guardrail check - if the images are inappropriate, mark it as failed
-    const { safe, reason } = await step.do("guardrail-check-imgs", async () => {
+    // 0. set style to processing
+    await step.do("mark-style-processing", async () => {
       const s = await EntStyleComponent.fromID(styleComponentId);
-      return await GenAI.areInputsSafe(s.data.description, s.data.imageRefs);
-    });
-    if (!safe) {
-      log.warn("// Style component failed guardrail check", {
-        styleComponentId,
-        reason,
+      await s.update({
+        state: "processing",
       });
-      await step.do("mark-style-failed", async () => {
+    });
+
+    console.log("// Style component workflow triggered", { styleComponentId });
+    // 1. transform and compress images for AI processing
+    const compressedImageUrls = await step.do(
+      "transform-compress-images",
+      async () => {
         const s = await EntStyleComponent.fromID(styleComponentId);
+        return tranformImgs(s.data.imageRefs);
+      },
+    );
+    console.log("// Compressed images for AI", { compressedImageUrls });
+
+    console.log("// Generating style context", { styleComponentId });
+    // 3. generate style context using compressed images
+    await step.do("generate-style-context", async () => {
+      const s = await EntStyleComponent.fromID(styleComponentId);
+      const { context, safe, reason } = await generateStyleContext(
+        s,
+        compressedImageUrls,
+      );
+
+      if (!safe) {
+        log.warn("// Style component failed guardrail check", {
+          styleComponentId,
+          reason,
+        });
         await s.update({
           state: "failed",
           failureReason: reason ?? "Unknown reason",
         });
-      });
-      return;
-    }
-    // 2. generate style context
-    await step.do("generate-style-context", async () => {
-      const s = await EntStyleComponent.fromID(styleComponentId);
-      const context = await generateStyleContext(s);
+        return;
+      }
+      console.log("// Generated style context", { context });
       await s.update({
         context,
+      });
+    });
+    console.log("// Marking style as ready", { styleComponentId });
+    // 4. mark style as ready
+    await step.do("mark-style-ready", async () => {
+      const s = await EntStyleComponent.fromID(styleComponentId);
+      await s.update({
+        state: "ready",
       });
     });
   }
 }
 
 async function generateStyleContext(
-  style: EntStyleComponent,
-): Promise<StyleContext> {
-  const sysMsg = `Developer: Role and Objective:
-You are an expert in social media marketing and creative ad concepts. Your task is to analyze multiple user-supplied images, describe the visual "style" of each, extract and articulate notable visual and thematic features, infer the social intent behind each design, and identify industries or product categories where these visual styles can be effectively utilized to drive measurable outcomes (such as increased sales or conversions).
+  _style: EntStyleComponent,
+  imageUrls: string[],
+) {
+  const sysMsg = `You are an expert in social media marketing and creative ad concepts. Your task is to analyze multiple user-supplied images, describe the visual "style" of each, extract and articulate notable visual and thematic features, infer the social intent behind each design, and identify industries or product categories where these visual styles can be effectively utilized to drive measurable outcomes (such as increased sales or conversions).
 
-Begin with a concise checklist (3-7 bullets) of what you will do; keep items conceptual and high-level.
+!!!MUST FOLLOW the output schema
 
-Instructions:
-- For each image input, provide:
+INSTRUCTIONS + RULES:
+- for all the images, summarize and consolidate:
   - A clear and concise summary of the overall visual style.
   - Key details including main elements, colors, motifs, and composition.
   - The likely social aim, messaging intent, or engagement purpose behind the design.
   - A list of relevant industries or product categories where the style could maximize results.
+  - images prompt: image prompts used to generate these images, single paragraph, concise, verbose, effective, detailed.
 - Adhere strictly to the specified output JSON schema. Mark any unknown attribute as 'Unknown'.
-- Remain brief but thorough; focus on relevant and actionable details only.
-- Set reasoning_effort = medium to ensure sufficient detail without unnecessary verbosity.
-- After producing output, validate that all required fields are present and formatted as specified; if any field cannot be confidently inferred, assign 'Unknown'.
+- If the images are NSFW or contains violent, hateful content, use the safe field and reason field to indicate it.
   `;
-  const res = await generateObject({
-    model: openai("gpt-5"),
-    temperature: 0.2,
-    maxOutputTokens: 1000,
-    messages: [
-      { role: "system", content: sysMsg },
-      {
-        role: "user",
-        content: [
-          ...style.data.imageRefs.map(
-            (i) =>
-              ({
-                type: "image",
-                image: i,
-              }) as ImagePart,
-          ),
-        ],
-      },
-    ],
-    schema: StyleContext,
-  });
+  try {
+    const res = await generateObject({
+      model: openai("gpt-5-mini"),
+      maxOutputTokens: 500,
+      messages: [
+        { role: "system", content: sysMsg },
+        {
+          role: "user",
+          content: [
+            ...imageUrls.map(
+              (i) =>
+                ({
+                  type: "image",
+                  image: i,
+                }) as ImagePart,
+            ),
+          ],
+        },
+      ],
+      schema: z.object({
+        safe: z.boolean().describe("whether the inputs are safe"),
+        reason: z.string().nullable().describe("if not safe, the reason why"),
+        context: StyleContext,
+      }),
+    });
+    console.log("generateStyleContext result", res.object);
 
-  return res.object;
+    return res.object;
+  } catch (error) {
+    console.error("generateStyleContext failed", { error });
+    throw error;
+  }
 }

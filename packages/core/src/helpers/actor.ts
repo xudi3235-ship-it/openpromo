@@ -3,6 +3,7 @@ import * as z from "zod";
 import { createContext } from "../utils/context";
 import { ErrorCodes, VisibleError } from "../utils/error";
 import { Log } from "../utils/log";
+import { FeatureFlag } from "./featureflag";
 
 export namespace Actor {
   export const UserSchema = z.object({
@@ -165,5 +166,9 @@ export namespace Actor {
   // Helper function to validate actor data at runtime
   export function validate(data: unknown): Info {
     return InfoSchema.parse(data);
+  }
+
+  export function isInternal() {
+    return FeatureFlag.isInternal();
   }
 }

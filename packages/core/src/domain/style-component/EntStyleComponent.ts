@@ -4,6 +4,7 @@ import { Binding } from "@core/helpers/api-env";
 import { and, asc, count, db, desc, eq, ilike, or } from "@core/helpers/db";
 import { Ent } from "@core/helpers/ent";
 import { FeatureFlag } from "@core/helpers/featureflag";
+import { Storage } from "@core/helpers/storage";
 import {
   StyleComponentInsert,
   type StyleComponentSelectType,
@@ -56,12 +57,13 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
     if (!component) throw new Error("Failed to create style component");
 
     try {
-      await Binding.use().StyleComponentWorkflow.create({
+      const wf = await Binding.use().StyleComponentWorkflow.create({
         params: {
           actor: Actor.assert("workspace_user"),
           styleComponentId: component.id,
         },
       });
+      console.log("// Enqueued style component workflow", { wf });
     } catch (error) {
       console.error("// Failed to enqueue style component workflow", error);
     }
@@ -208,8 +210,6 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
   async update(
     input: z.infer<ReturnType<typeof EntStyleComponent.Schemas>["update"]>,
   ): Promise<this> {
-    if (!input || Object.keys(input).length === 0) return this;
-
     const [updated] = await db()
       .update(styleComponentTable)
       .set(input)
@@ -223,6 +223,28 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
   }
 
   async delete() {
+    // Delete associated images from R2 storage first
+    const deleteImagePromises = this.data.imageRefs.map(async (imageUrl) => {
+      try {
+        // Extract key from public URL (format: https://bucket.openpromo.app/{key})
+        const url = new URL(imageUrl);
+        if (url.hostname === "bucket.openpromo.app") {
+          const key = url.pathname.slice(1); // Remove leading slash
+          await Storage.deleteFile(key, Storage.PUBLIC_BUCKET);
+        }
+      } catch (error) {
+        console.error("Failed to delete style image", {
+          imageUrl,
+          error: (error as Error).message,
+        });
+        // Don't throw - continue with deletion even if image cleanup fails
+      }
+    });
+
+    // Wait for all image deletions to complete
+    await Promise.allSettled(deleteImagePromises);
+
+    // Delete the style component record from database
     const [deleted] = await db()
       .delete(styleComponentTable)
       .where(eq(styleComponentTable.id, this.data.id))

@@ -77,7 +77,7 @@ export function StyleListPage() {
                 Creative Style Marketplace
               </h1>
               <p className="text-sm text-muted-foreground max-w-2xl">
-                Explore curated visual systems and drop 3-5 reference images
+                Explore curated visual systems and drop 1-3 reference images
                 into the composer dock below to spin up a new style instantly.
               </p>
             </div>

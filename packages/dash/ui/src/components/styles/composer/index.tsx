@@ -31,8 +31,8 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const maxImages = 5;
-  const minImages = 3;
+  const maxImages = 3;
+  const minImages = 1;
 
   const handleFiles = useCallback(
     (files: FileList | File[]) => {
@@ -176,7 +176,7 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
           <div className="flex flex-col items-start">
             <span>Create style</span>
             <span className="text-xs font-normal text-muted-foreground">
-              Drop 3-5 reference images
+              Drop 1-3 reference images
             </span>
           </div>
         </button>
@@ -266,7 +266,7 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
               </div>
               <div className="space-y-0.5 sm:flex-1 sm:px-3">
                 <p className="text-sm font-medium text-foreground sm:text-base">
-                  Drop 3-5 reference images here
+                  Drop 1-3 reference images here
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {selectionCopy} · Supports PNG, JPG, GIF, WebP
