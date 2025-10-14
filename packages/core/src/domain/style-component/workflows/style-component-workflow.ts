@@ -133,7 +133,7 @@ RULES:
   try {
     const res = await generateObject({
       model: openai("gpt-5-mini"),
-      maxOutputTokens: 500,
+      maxOutputTokens: 2_000,
       messages: [
         { role: "system", content: sysMsg },
         {

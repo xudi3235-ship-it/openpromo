@@ -4,6 +4,7 @@ import {
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
 import { Badge } from "@openpromo/ui/components/badge";
+import { cn } from "@openpromo/ui/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { CheckCircle2 } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -53,6 +54,12 @@ export function StyleCard({ style }: StyleCardProps) {
   const imageCount = style.imageRefs.length;
   const creator = getCreatorForStyle(style.name);
 
+  const isProcessing =
+    style.state === "pending" || style.state === "processing";
+  const isFailed = style.state === "failed";
+  const isNotStarted = style.state === "not_started";
+  const isReady = style.state === "ready";
+
   const handleOpen = () => {
     navigate({
       to: "/workspaces/$workspaceSlug/styles/$styleId",
@@ -83,12 +90,45 @@ export function StyleCard({ style }: StyleCardProps) {
         <img
           src={primaryImage}
           alt={style.name}
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+          className={cn(
+            "h-full w-full object-cover transition-transform duration-700 group-hover:scale-110",
+            (isProcessing || isFailed) && "blur-sm",
+          )}
           loading="lazy"
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
           <div className="text-6xl opacity-30">🎨</div>
+        </div>
+      )}
+
+      {/* State Overlay - Processing/Failed */}
+      {isProcessing && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white" />
+            <p className="text-sm font-medium text-white">
+              {style.state === "pending" ? "Pending..." : "Processing..."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isFailed && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-red-500/20 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-2 px-4 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/80">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <p className="text-sm font-semibold text-white">
+              Processing Failed
+            </p>
+            {style.failureReason && (
+              <p className="text-xs text-white/80 line-clamp-2">
+                {style.failureReason}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -101,6 +141,27 @@ export function StyleCard({ style }: StyleCardProps) {
           <span className="rounded-full bg-black/30 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-md">
             Official
           </span>
+        </div>
+      )}
+
+      {/* State Badge - Top Left (below Official or at top) */}
+      {!isReady && !style.isOfficial && (
+        <div className="absolute left-2 top-2 z-20">
+          <Badge
+            variant={
+              isFailed ? "destructive" : isProcessing ? "secondary" : "outline"
+            }
+            className={cn(
+              "text-xs backdrop-blur-sm",
+              isProcessing && "bg-blue-500/80 text-white hover:bg-blue-500/90",
+              isNotStarted && "bg-gray-500/80 text-white hover:bg-gray-500/90",
+            )}
+          >
+            {style.state === "pending" && "Pending"}
+            {style.state === "processing" && "Processing"}
+            {style.state === "not_started" && "Not Started"}
+            {style.state === "failed" && "Failed"}
+          </Badge>
         </div>
       )}
 
