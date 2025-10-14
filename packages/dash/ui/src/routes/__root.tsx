@@ -25,7 +25,7 @@ function RootLayout() {
     <>
       <EnvironmentBanner />
       <NavigationProgress />
-      <Toaster richColors theme={theme} />
+      <Toaster richColors closeButton theme={theme} />
       <Outlet />
       {import.meta.env.MODE === "development" && (
         <TanStackDevtools

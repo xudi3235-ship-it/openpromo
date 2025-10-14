@@ -103,6 +103,14 @@ export function Inbox() {
     selectedConversationId ?? undefined,
   );
 
+  const clearPendingState = useCallback((conversationId: string) => {
+    setPendingMessagesByConversation((prev) => {
+      if (!(conversationId in prev)) return prev;
+      const { [conversationId]: _cleared, ...rest } = prev;
+      return rest;
+    });
+  }, []);
+
   const onEvent = useCallback(
     (event: GenericEvent) => {
       const inboxRealtimeEvent = InboxRealtimeEventSchema.safeParse(event);
@@ -129,11 +137,7 @@ export function Inbox() {
       ) {
         // Clear pending state for the conversation that just received a message
         const conversationId = inboxRealtimeEvent.data.conversationId;
-        setPendingMessagesByConversation((prev) => {
-          if (!(conversationId in prev)) return prev;
-          const { [conversationId]: _cleared, ...rest } = prev;
-          return rest;
-        });
+        clearPendingState(conversationId);
         queryClient.invalidateQueries({
           predicate: (q) => {
             const key = q.queryKey as unknown[];
@@ -148,7 +152,7 @@ export function Inbox() {
         });
       }
     },
-    [workspaceSlug, queryClient],
+    [workspaceSlug, queryClient, clearPendingState],
   );
 
   useWorkspaceNotifications(workspaceSlug, {
@@ -410,13 +414,22 @@ export function Inbox() {
                   );
                   const value = input?.value?.trim();
                   if (!value) return;
-                  if (selectedConversationId) {
+                  const idSnapshot = selectedConversationId;
+                  if (idSnapshot) {
                     setPendingMessagesByConversation((prev) => ({
                       ...prev,
-                      [selectedConversationId]: value,
+                      [idSnapshot]: value,
                     }));
                   }
-                  sendMessage.mutate({ text: value });
+                  sendMessage.mutate(
+                    { text: value },
+                    {
+                      onError: () => {
+                        if (!idSnapshot) return;
+                        clearPendingState(idSnapshot);
+                      },
+                    },
+                  );
                   if (input) input.value = "";
                 }}
               >

@@ -1,6 +1,7 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import type { IGFeedPlacementSpec } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
+import { FacebookGraphError, facebookGraphErrorSchema } from "../facebook/api";
 
 type HttpMethod = "GET" | "POST" | "DELETE" | "PUT";
 
@@ -70,17 +71,15 @@ export async function instagramGraphRequest<T = unknown>(
   });
 
   if (!response.ok) {
-    const text = await response.text();
+    const error = facebookGraphErrorSchema.parse(await response.json());
     log.warn("instagram graph request failed", {
       path,
       method,
       status: response.status,
       statusText: response.statusText,
-      body: text,
+      body: JSON.stringify(error),
     });
-    throw new Error(
-      `instagram graph request failed (${path}): ${response.status} ${response.statusText}`,
-    );
+    throw new FacebookGraphError(error.error.message ?? response.statusText);
   }
 
   return (await response.json()) as T;

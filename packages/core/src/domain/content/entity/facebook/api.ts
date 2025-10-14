@@ -1,6 +1,7 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import type { FBFeedPlacementSpec } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
+import * as z from "zod";
 
 type HttpMethod = "GET" | "POST" | "DELETE" | "PUT";
 
@@ -36,6 +37,20 @@ export interface GraphRequestOptions {
   body?: Record<string, unknown> | null;
 }
 
+export const facebookGraphErrorSchema = z.object({
+  error: z.object({
+    message: z.string().optional(),
+    type: z.string().optional(),
+    code: z.number().optional(),
+  }),
+});
+
+export class FacebookGraphError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 export async function facebookGraphRequest<T = unknown>(
   ctx: { accessToken: string },
   path: string,
@@ -66,17 +81,15 @@ export async function facebookGraphRequest<T = unknown>(
     statusText: response.statusText,
   });
   if (!response.ok) {
-    const text = await response.text();
+    const error = facebookGraphErrorSchema.parse(await response.json());
     log.warn("facebook graph request failed", {
       path,
       method,
       status: response.status,
       statusText: response.statusText,
-      body: text,
+      body: JSON.stringify(error),
     });
-    throw new Error(
-      `facebook graph request failed (${path}): ${response.status} ${response.statusText}`,
-    );
+    throw new FacebookGraphError(error.error.message ?? response.statusText);
   }
 
   return (await response.json()) as T;

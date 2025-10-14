@@ -83,7 +83,7 @@ export const honoApiCall = async <T extends object>(
       : getDefaultErrorMessage(response.status));
 
   if (!options?.disableErrorToast) {
-    toast.error(errorMessage);
+    toast.error(errorMessage, { duration: Infinity });
   }
 
   return {

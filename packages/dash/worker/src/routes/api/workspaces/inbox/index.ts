@@ -1,4 +1,7 @@
-import { facebookGraphRequest } from "@core/domain/content/entity/facebook/api";
+import {
+  FacebookGraphError,
+  facebookGraphRequest,
+} from "@core/domain/content/entity/facebook/api";
 import { instagramGraphRequest } from "@core/domain/content/entity/instagram/api";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
@@ -15,6 +18,7 @@ import {
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
+import { AppError } from "../../../../helpers/error";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
 
@@ -258,31 +262,38 @@ export const inboxRoute = new Hono<ApiEnv>()
 
       if (!row) return c.notFound();
 
-      if (row.platform === "INSTAGRAM") {
-        await instagramGraphRequest(
-          { accessToken: row.accessToken },
-          `/me/messages`,
-          {
-            method: "POST",
-            body: {
-              recipient: { id: row.externalId },
-              message: { text },
+      try {
+        if (row.platform === "INSTAGRAM") {
+          await instagramGraphRequest(
+            { accessToken: row.accessToken },
+            `/me/messages`,
+            {
+              method: "POST",
+              body: {
+                recipient: { id: row.externalId },
+                message: { text },
+              },
             },
-          },
-        );
-      } else if (row.platform === "FACEBOOK") {
-        await facebookGraphRequest(
-          { accessToken: row.accessToken },
-          "/me/messages",
-          {
-            method: "POST",
-            body: {
-              recipient: { id: row.externalId },
-              messaging_type: "RESPONSE",
-              message: { text },
+          );
+        } else if (row.platform === "FACEBOOK") {
+          await facebookGraphRequest(
+            { accessToken: row.accessToken },
+            "/me/messages",
+            {
+              method: "POST",
+              body: {
+                recipient: { id: row.externalId },
+                messaging_type: "RESPONSE",
+                message: { text },
+              },
             },
-          },
-        );
+          );
+        }
+      } catch (error: unknown) {
+        if (error instanceof FacebookGraphError) {
+          throw new AppError(400, { userMessage: error.message });
+        }
+        throw error;
       }
 
       // Do not insert; message will echoed back by and handled by webhook
