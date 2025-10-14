@@ -46,29 +46,32 @@ export function WorkspaceWebSocketProvider({
 }: WorkspaceWebSocketProviderProps) {
   const listenersRef = useRef<Set<EventListener>>(new Set());
 
+  // Stable event handler using useCallback with empty deps
+  const handleEvent = useCallback((genericEvent: GenericEvent) => {
+    try {
+      // Try to parse as WorkspaceEvent
+      const parseResult = WorkspaceEventSchema.safeParse(genericEvent);
+
+      if (parseResult.success) {
+        const event = parseResult.data;
+        // Notify all subscribed listeners
+        for (const listener of listenersRef.current) {
+          try {
+            listener(event);
+          } catch (error) {
+            console.error("Error in workspace event listener:", error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error processing workspace event:", error);
+    }
+  }, []); // Empty deps - listenersRef.current is always up to date
+
   // Single WebSocket connection for the entire workspace
   const { status } = useWorkspaceNotifications(workspaceSlug, {
     autoToast: true, // Show notifications automatically
-    onEvent: (genericEvent: GenericEvent) => {
-      try {
-        // Try to parse as WorkspaceEvent
-        const parseResult = WorkspaceEventSchema.safeParse(genericEvent);
-
-        if (parseResult.success) {
-          const event = parseResult.data;
-          // Notify all subscribed listeners
-          for (const listener of listenersRef.current) {
-            try {
-              listener(event);
-            } catch (error) {
-              console.error("Error in workspace event listener:", error);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error processing workspace event:", error);
-      }
-    },
+    onEvent: handleEvent,
   });
 
   const subscribe = useCallback((listener: EventListener) => {
@@ -78,14 +81,14 @@ export function WorkspaceWebSocketProvider({
     return () => {
       listenersRef.current.delete(listener);
     };
-  }, []);
+  }, []); // Empty deps - this function never changes
 
   const contextValue = useMemo(
     () => ({
       status,
       subscribe,
     }),
-    [status, subscribe],
+    [status, subscribe], // subscribe is stable due to empty deps
   );
 
   return (
