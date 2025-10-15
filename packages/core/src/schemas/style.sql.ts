@@ -37,6 +37,10 @@ export const StyleContext = z.object({
   searchKeywords: z
     .array(z.string())
     .describe("4-7 search keywords that can be used to search for this style."),
+  additionalContext: z
+    .string()
+    .optional()
+    .describe("additional context/info to help understand this style"),
 });
 
 export type StyleContext = z.infer<typeof StyleContext>;

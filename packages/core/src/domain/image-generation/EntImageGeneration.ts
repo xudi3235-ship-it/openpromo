@@ -57,7 +57,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     return new EntImageGeneration(generation);
   });
 
-  static async createAndStart(params: {
+  static async generateProductImage(params: {
     productId: string;
     styleId?: string;
   }): Promise<{ generation: EntImageGeneration; imageUrl?: string }> {
@@ -200,13 +200,8 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
   // ------------------------------------------------------------------------
   async deriveStyleContext(opts: { productID: string; styleId?: string }) {
     const product = await EntProduct.fromID(opts.productID);
-
-    // Determine which style to use
-    let styleComponent: EntStyleComponent;
-    let promptOverride: string | undefined;
-
     if (opts.styleId) {
-      styleComponent = await EntStyleComponent.fromID(opts.styleId);
+      return await EntStyleComponent.fromID(opts.styleId);
     } else {
       // Match product with available styles
       const officialStyles = await EntStyleComponent.listOfficial();
@@ -217,22 +212,13 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
         );
       }
 
-      const match = await ProductImageGen.matchProductWithStyles(
+      return await ProductImageGen.matchProductWithStyles(
         product,
         officialStyles,
       );
-      styleComponent = match.style;
-      promptOverride = match.prompt;
     }
-
-    // Prepare style input
-    return {
-      imageGenPrompt: promptOverride ?? styleComponent.data.imageGenPrompt,
-      imageRefs: styleComponent.data.imageRefs,
-      name: styleComponent.data.slug,
-      description: styleComponent.data.description,
-    } as ProductImageGen.ImageStyleInput;
   }
+
   async setOutputImages(imageUrls: string[]): Promise<this> {
     return this.update({
       outputImages: imageUrls,

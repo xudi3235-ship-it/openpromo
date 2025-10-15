@@ -10,24 +10,12 @@ export namespace ProductImageGen {
   export const DEFAULT_NEGATIVE_PROMPT =
     "low quality, blurry, deformed, distorted, disfigured, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, mutated, extra limbs";
 
-  export interface ImageStyleInput {
-    imageGenPrompt: string;
-    imageRefs: string[];
-    name?: string;
-    description?: string;
-  }
-
   export interface GeneratedImageResult {
     imageUrls: string[];
     prompt: string;
     negativePrompt?: string;
     metadata?: Record<string, unknown>;
   }
-
-  const MatchedStyleSchema = z.object({
-    styleId: z.string(),
-    imageGenPrompt: z.string().min(10),
-  });
 
   /**
    *
@@ -85,18 +73,18 @@ export namespace ProductImageGen {
 
   export async function genImage(opts: {
     product: EntProduct;
-    style: ImageStyleInput;
+    style: EntStyleComponent;
   }): Promise<GeneratedImageResult> {
     const negativePrompt = DEFAULT_NEGATIVE_PROMPT;
     const sysPrompt = `MUST follow the style references provided, including lighting, shooting styles, composition, etc.
-    ${opts.style.imageGenPrompt}
+    ${opts.style.data.imageGenPrompt}
     negative prompt: ${negativePrompt}
     `;
     const input = {
       prompt: sysPrompt,
       aspect_ratio: "1:1",
       // style references
-      style_reference_images: opts.style.imageRefs,
+      style_reference_images: opts.style.data.imageRefs,
     };
     console.log("generating image with input", input);
 
@@ -115,7 +103,7 @@ export namespace ProductImageGen {
       negativePrompt,
       metadata: {
         replicateInput: input,
-        styleName: opts.style.name,
+        styleName: opts.style.data.name,
         productId: opts.product.data.id,
       },
     };
@@ -127,7 +115,7 @@ export namespace ProductImageGen {
   export async function matchProductWithStyles(
     product: EntProduct,
     styles: EntStyleComponent[],
-  ): Promise<{ style: EntStyleComponent; prompt: string }> {
+  ): Promise<EntStyleComponent> {
     if (styles.length === 0) {
       throw new Error("No styles available for matching");
     }
@@ -138,26 +126,20 @@ export namespace ProductImageGen {
       slug: style.data.slug,
       description: style.data.description,
       imageGenPrompt: style.data.imageGenPrompt,
+      context: style.data.context,
     }));
 
-    const systemPrompt = `You are a senior social ad creative director. Review the product data and select the most effective visual style from the provided options.
-
-Return JSON with the following shape:
-{
-  "styleId": "<id from the provided list>",
-  "imageGenPrompt": "<updated prompt tailored to the product>"
-}
+    const systemPrompt = `You are a senior social ad creative director. Review the product data and select the most effective visual style from the provided options that matches with the product, its audience, and marketing needs. This style will later be used to generate ad creatives for this product.
 
 Important rules:
 - Only choose styles from the provided list.
-- Reuse the existing style prompt if it is already strong; otherwise adjust or enhance it for the product.
-- The image prompt must remain concise (<= 6 sentences) and include composition, subject focus, lighting, mood, and any props.
-- Consider the product's audience, category, and positioning.
 - You must return a valid styleId from the list.`;
 
     const { object: match } = await generateObject({
       model: openai("gpt-5-mini"),
-      schema: MatchedStyleSchema,
+      schema: z.object({
+        styleId: z.string().min(1),
+      }),
       temperature: 0.2,
       maxOutputTokens: 2000,
       messages: [
@@ -180,7 +162,7 @@ Important rules:
       throw new Error(`Matched style ${match.styleId} no longer available`);
     }
 
-    return { style: matchedStyle, prompt: match.imageGenPrompt };
+    return matchedStyle;
   }
 
   function attachmentsToMessages(product: EntProduct): ModelMessage[] {

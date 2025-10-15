@@ -152,6 +152,7 @@ RULES:
 1. CLOSELY adhere to output schema
 2. If the images are NSFW or contains violent, hateful content, use the safe field and reason field to indicate it.
 3. Image prompt should be single plaintext paragraph, e.g. "studio portrait of a 25yo korean girl, xxxx"
+3. if there's more fields/info to capture, sue the additionalContext field.
   `;
   try {
     const res = await generateObject({

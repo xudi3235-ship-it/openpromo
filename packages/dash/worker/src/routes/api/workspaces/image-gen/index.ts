@@ -15,10 +15,11 @@ export const imageGenRoute = new Hono<ApiEnv>()
   .post("/generate", zValidator("json", generateImageSchema), async (c) => {
     const { productId, styleId } = c.req.valid("json");
 
-    const { generation, imageUrl } = await EntImageGeneration.createAndStart({
-      productId,
-      styleId,
-    });
+    const { generation, imageUrl } =
+      await EntImageGeneration.generateProductImage({
+        productId,
+        styleId,
+      });
 
     return c.json({
       imageUrl,
