@@ -8,25 +8,11 @@ import { Log } from "@core/utils/log";
 import { BasePublisher } from "./base-publisher";
 import { publishMixedCarousel } from "./instagram/mixed-carousel-publisher";
 import { publishPhotoCarousel } from "./instagram/photo-carousel-publisher";
-import type { InstagramPostType } from "./instagram/post-type";
 import { determineInstagramPostType } from "./instagram/post-type";
 import { publishSinglePhoto } from "./instagram/single-photo-publisher";
 import { publishSingleVideoReel } from "./instagram/single-video-reel-publisher";
 
 const log = Log.create({ namespace: "instagram-publisher" });
-
-type PublisherFn = (
-  ctx: CoreWorkflowContext,
-  step: CoreWorkflowStep,
-  pendingContentID: string,
-) => Promise<string>;
-
-const INSTAGRAM_PUBLISHERS: Record<InstagramPostType, PublisherFn> = {
-  singlePhoto: publishSinglePhoto,
-  photoCarousel: publishPhotoCarousel,
-  mixedCarousel: publishMixedCarousel,
-  singleVideoReel: publishSingleVideoReel,
-};
 
 export class InstagramPublisher extends BasePublisher {
   async publish(
@@ -40,14 +26,22 @@ export class InstagramPublisher extends BasePublisher {
 
     const postType = await determineInstagramPostType(step, pendingContentID);
 
-    const publish = INSTAGRAM_PUBLISHERS[postType];
-    if (!publish) {
-      throw new WorkflowError(
-        `no Instagram publisher registered for type ${postType} (${pendingContentID})`,
-      );
-    }
-
-    const postId = await publish(ctx, step, pendingContentID);
+    const postId = await step.do(`publish ${postType} post`, async () => {
+      switch (postType) {
+        case "singlePhoto":
+          return await publishSinglePhoto(ctx, step, pendingContentID);
+        case "photoCarousel":
+          return await publishPhotoCarousel(ctx, step, pendingContentID);
+        case "mixedCarousel":
+          return await publishMixedCarousel(ctx, step, pendingContentID);
+        case "singleVideoReel":
+          return await publishSingleVideoReel(ctx, step, pendingContentID);
+        default:
+          throw new WorkflowError(
+            `no Instagram publisher registered for type ${postType} (${pendingContentID})`,
+          );
+      }
+    });
 
     if (!postId) {
       throw new WorkflowError(
