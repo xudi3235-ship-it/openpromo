@@ -23,7 +23,7 @@ function AccountSelector({
   activeAccountId,
 }: AccountSelectorProps) {
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className="flex flex-wrap justify-center gap-1">
       {accounts.map((account) => {
         const meta = getPlatformMeta(account.platform);
         const Icon = meta.icon;
@@ -34,11 +34,11 @@ function AccountSelector({
         return (
           <Button
             key={account.id}
-            variant={isSelected ? "default" : "outline"}
+            variant="ghost"
             size="sm"
             className={cn(
               "h-8 px-3 flex items-center gap-2 text-xs",
-              !isSelected && "bg-background",
+              isSelected && "bg-accent text-accent-foreground",
             )}
             onClick={() => onSelectAccount(account.id)}
           >
