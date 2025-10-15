@@ -1,5 +1,4 @@
-import { createContext, useContext } from "react";
-import { createStore, useStore } from "zustand";
+import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import {
   createComposerInitialState,
@@ -21,29 +20,36 @@ export type {
   ValidationState,
 } from "./composer/types";
 
-export const createComposerStore = (initProps: Partial<ComposerProps>) => {
-  const props = resolveComposerProps(initProps);
-  const initialState = createComposerInitialState(props);
+/**
+ * Global composer store instance.
+ *
+ * Since we only ever have one composer active at a time across the workspace,
+ * we use a single global Zustand store instead of Context-based isolated stores.
+ *
+ * To initialize the composer with specific data, call `initializeComposer()`
+ * from the store actions.
+ */
+export const useComposerStore = create<ComposerStore>()(
+  immer((set, get) => {
+    const props = resolveComposerProps({});
+    const initialState = createComposerInitialState(props);
 
-  return createStore<ComposerStore>()(
-    immer((set, get) => ({
+    return {
       ...initialState,
       ...createSelectionSlice(set, get),
       ...createAccountsSlice(set, get),
       ...createMessageSlice(set, get),
       ...createAttachmentsSlice(set, get),
       ...createPublishingSlice(set, get),
-    })),
-  );
-};
 
-export type ComposerStoreType = ReturnType<typeof createComposerStore>;
-
-export const ComposerContext = createContext<ComposerStoreType | null>(null);
-export function useComposerStore<T = ComposerStore>(
-  selector?: (state: ComposerStore) => T,
-): T {
-  const store = useContext(ComposerContext);
-  if (!store) throw new Error("Missing ComposerProvider in the tree");
-  return useStore(store, selector || ((s) => s as T));
-}
+      // Add method to reinitialize composer with new props
+      initializeComposer: (initProps: Partial<ComposerProps>) => {
+        const newProps = resolveComposerProps(initProps);
+        const newState = createComposerInitialState(newProps);
+        set((state) => {
+          Object.assign(state, newState);
+        });
+      },
+    };
+  }),
+);

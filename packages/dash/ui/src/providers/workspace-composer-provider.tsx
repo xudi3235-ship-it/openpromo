@@ -1,43 +1,57 @@
+import { useEffect } from "react";
 import { useConnectedAccounts } from "@/queries/connected-account";
 import { useContentGroupQuery } from "@/queries/content";
-import type { ComposerProps } from "@/stores/composer-store";
+import { useComposerStore } from "@/stores/composer-store";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
-import { ComposerProvider } from "./composer-provider";
 
 interface WorkspaceComposerProviderProps {
   children: React.ReactNode;
 }
 
 /**
- * Provides composer state at the workspace level.
- * This allows the composer state to persist when switching between dialog and fullscreen modes.
+ * Initializes the global composer store at the workspace level.
+ *
+ * When a composer is opened (dialog or fullscreen mode), this component
+ * automatically initializes the global store with the appropriate data.
  */
 export function WorkspaceComposerProvider({
   children,
 }: WorkspaceComposerProviderProps) {
   const { mode, pendingContentGroupID, initialContentCreateData } =
     useDialogComposerStore();
+  const initializeComposer = useComposerStore(
+    (state) => state.initializeComposer,
+  );
 
   const { accounts: accountsData } = useConnectedAccounts();
   const { data: contentGroupData } = useContentGroupQuery(
     pendingContentGroupID,
   );
 
-  // Only create the composer when it's actually open (dialog or fullscreen)
+  // Initialize composer when it becomes active
   const isComposerActive = mode === "dialog" || mode === "fullscreen";
 
-  if (!isComposerActive) {
-    // No composer active, don't provide context
-    return <>{children}</>;
-  }
+  useEffect(() => {
+    if (isComposerActive && accountsData) {
+      const contentData =
+        contentGroupData?.contentCreateData ?? initialContentCreateData;
 
-  const composerProps = {
-    initContentCreateData:
-      contentGroupData?.contentCreateData ?? initialContentCreateData,
-    contentGroupID: pendingContentGroupID,
-    initialAccounts: accountsData ?? [],
-    initialMessage: "",
-  } as Partial<ComposerProps>;
+      initializeComposer({
+        // @ts-expect-error - Type mismatch between API response (string dates) and store type (Date objects)
+        initContentCreateData: contentData || undefined,
+        contentGroupID: pendingContentGroupID,
+        initialAccounts: accountsData,
+        initialMessage: "",
+      });
+    }
+  }, [
+    isComposerActive,
+    accountsData,
+    contentGroupData?.contentCreateData,
+    initialContentCreateData,
+    pendingContentGroupID,
+    initializeComposer,
+  ]);
 
-  return <ComposerProvider {...composerProps}>{children}</ComposerProvider>;
+  return <>{children}</>;
 }

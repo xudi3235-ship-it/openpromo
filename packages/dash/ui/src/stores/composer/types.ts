@@ -59,6 +59,7 @@ export interface ComposerState {
 }
 
 export interface ComposerActions {
+  initializeComposer: (initProps: Partial<ComposerProps>) => void;
   setSelectedPreview: (platform: Platform) => void;
   setMessage: (message: string) => void;
   getCurrentMessage: () => string;
