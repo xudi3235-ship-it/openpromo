@@ -1,6 +1,11 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@openpromo/ui/components/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { SharedAttachmentSpec } from "@shared/content";
 import {
@@ -9,7 +14,6 @@ import {
   Loader2,
   Pencil,
   Trash,
-  Type,
   Video,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -26,7 +30,6 @@ interface MediaListItemProps {
   onPreview: (attachment: SharedAttachmentSpec, index: number) => void;
   onEdit: (attachment: SharedAttachmentSpec, index: number) => void;
   onRemove: (index: number) => void;
-  onEditAltText: (attachment: SharedAttachmentSpec, index: number) => void;
 }
 
 const formatFileSize = (bytes?: number) => {
@@ -44,7 +47,6 @@ export function MediaListItem({
   onPreview,
   onEdit,
   onRemove,
-  onEditAltText,
 }: MediaListItemProps) {
   const {
     attributes,
@@ -66,11 +68,6 @@ export function MediaListItem({
     attachment.file?.name || attachment.metadata?.originalFilename;
   const fileSize = formatFileSize(attachment.file?.size);
   const typeLabel = attachment.type === "video" ? "Video" : "Photo";
-  const hasAltText = Boolean(
-    typeof attachment.metadata?.altText === "string" &&
-      (attachment.metadata.altText as string).trim(),
-  );
-
   const previewNode = renderAttachment(
     attachment,
     "w-full h-full object-cover",
@@ -93,15 +90,23 @@ export function MediaListItem({
         isDragging && "ring-1 ring-ring/50",
       )}
     >
-      <button
-        type="button"
-        className="mt-1 flex h-6 w-6 items-center justify-center rounded bg-muted text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        title="Drag to reorder"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-3 w-3" />
-      </button>
+      <Tooltip delayDuration={150}>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="flex h-6 w-6 items-center justify-center rounded bg-muted text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            style={{ cursor: isDragging ? "grabbing" : "grab" }}
+            aria-label="Drag to reorder"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-3 w-3" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" sideOffset={6}>
+          Drag to reorder
+        </TooltipContent>
+      </Tooltip>
 
       <button
         type="button"
@@ -133,16 +138,6 @@ export function MediaListItem({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onEditAltText(attachment, index)}
-              disabled={uploading}
-            >
-              <Type className="mr-1 h-4 w-4" />
-              {hasAltText ? "Edit alt text" : "Add alt text"}
-            </Button>
             <Button
               type="button"
               variant="ghost"

@@ -24,7 +24,6 @@ interface MediaCompactViewProps {
   onDragEnd: (event: import("@dnd-kit/core").DragEndEvent) => void;
   onRemove: (index: number) => void;
   onPreview: (attachment: SharedAttachmentSpec, index: number) => void;
-  onEditAltText: (attachment: SharedAttachmentSpec, index: number) => void;
   renderAttachment: RenderFn;
 }
 
@@ -36,7 +35,6 @@ export function MediaCompactView({
   onDragEnd,
   onRemove,
   onPreview,
-  onEditAltText,
   renderAttachment,
 }: MediaCompactViewProps) {
   return (
@@ -64,7 +62,6 @@ export function MediaCompactView({
                   index={index}
                   onRemove={onRemove}
                   onClick={onPreview}
-                  onEditAltText={onEditAltText}
                   renderAttachment={renderAttachment}
                 />
               );

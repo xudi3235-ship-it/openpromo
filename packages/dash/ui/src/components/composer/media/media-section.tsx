@@ -16,7 +16,6 @@ import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
 import { useComposerMediaUploader } from "@/hooks/useComposerMediaUploader";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerStore } from "@/stores/composer-store";
-import { AltTextDialog } from "./alt-text-dialog";
 import { MediaCompactView } from "./media-compact-view";
 import { MediaDetailDialog } from "./media-detail-dialog";
 import { MediaEditDialog } from "./media-edit-dialog";
@@ -50,10 +49,6 @@ interface MediaSectionContextValue {
   ) => void;
   editingMedia: { attachment: SharedAttachmentSpec; index: number } | null;
   setEditingMedia: (
-    media: { attachment: SharedAttachmentSpec; index: number } | null,
-  ) => void;
-  altTextEditor: { attachment: SharedAttachmentSpec; index: number } | null;
-  setAltTextEditor: (
     media: { attachment: SharedAttachmentSpec; index: number } | null,
   ) => void;
   dragOverlay: { attachment: SharedAttachmentSpec; index: number } | null;
@@ -121,10 +116,6 @@ function MediaSectionRoot({ children }: MediaSectionRootProps) {
     attachment: SharedAttachmentSpec;
     index: number;
   } | null>(null);
-  const [altTextEditor, setAltTextEditor] = useState<{
-    attachment: SharedAttachmentSpec;
-    index: number;
-  } | null>(null);
   const [dragOverlay, setDragOverlay] = useState<{
     attachment: SharedAttachmentSpec;
     index: number;
@@ -147,8 +138,6 @@ function MediaSectionRoot({ children }: MediaSectionRootProps) {
     setSelectedMedia,
     editingMedia,
     setEditingMedia,
-    altTextEditor,
-    setAltTextEditor,
     dragOverlay,
     setDragOverlay,
     productModalOpen,
@@ -271,7 +260,6 @@ function MediaSectionGallery() {
     renderAttachment,
     setSelectedMedia,
     setEditingMedia,
-    setAltTextEditor,
     dragOverlay,
     setDragOverlay,
   } = useMediaSection();
@@ -321,9 +309,6 @@ function MediaSectionGallery() {
       onDragEnd={handleDragEnd}
       onRemove={handlers.removeAttachment}
       onPreview={(attachment, index) => setSelectedMedia({ attachment, index })}
-      onEditAltText={(attachment, index) =>
-        setAltTextEditor({ attachment, index })
-      }
       renderAttachment={renderAttachment}
     />
   ) : (
@@ -336,9 +321,6 @@ function MediaSectionGallery() {
       onRemove={handlers.removeAttachment}
       onPreview={(attachment, index) => setSelectedMedia({ attachment, index })}
       onEdit={(attachment, index) => setEditingMedia({ attachment, index })}
-      onEditAltText={(attachment, index) =>
-        setAltTextEditor({ attachment, index })
-      }
       renderAttachment={renderAttachment}
     />
   );
@@ -406,9 +388,6 @@ function MediaSectionDialogs() {
     attachments,
     productModalOpen,
     setProductModalOpen,
-    altTextEditor,
-    setAltTextEditor,
-    handlers,
   } = useMediaSection();
 
   // Lazy load ProductAIWorkflowDialog
@@ -448,35 +427,6 @@ function MediaSectionDialogs() {
         editing={editingMedia}
         onClose={() => setEditingMedia(null)}
         renderAttachment={renderAttachment}
-      />
-      <AltTextDialog
-        open={Boolean(altTextEditor)}
-        attachment={altTextEditor?.attachment ?? null}
-        index={altTextEditor?.index ?? null}
-        onOpenChange={(open) => {
-          if (!open) setAltTextEditor(null);
-        }}
-        onSave={(attachmentIndex, altText) => {
-          const target = attachments[attachmentIndex];
-          if (!target) return;
-
-          const baseMetadata = (
-            typeof target.metadata === "object" && target.metadata
-              ? target.metadata
-              : {}
-          ) as Record<string, unknown>;
-          const metadata = { ...baseMetadata };
-
-          if (altText) {
-            metadata.altText = altText;
-          } else {
-            delete metadata.altText;
-          }
-
-          handlers.updateAttachment(attachmentIndex, {
-            metadata,
-          });
-        }}
       />
       {ProductAIWorkflowDialog && (
         <ProductAIWorkflowDialog

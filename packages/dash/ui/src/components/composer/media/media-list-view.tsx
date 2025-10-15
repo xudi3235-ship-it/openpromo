@@ -25,7 +25,6 @@ interface MediaListViewProps {
   onRemove: (index: number) => void;
   onPreview: (attachment: SharedAttachmentSpec, index: number) => void;
   onEdit: (attachment: SharedAttachmentSpec, index: number) => void;
-  onEditAltText: (attachment: SharedAttachmentSpec, index: number) => void;
   renderAttachment: RenderFn;
 }
 
@@ -38,7 +37,6 @@ export function MediaListView({
   onRemove,
   onPreview,
   onEdit,
-  onEditAltText,
   renderAttachment,
 }: MediaListViewProps) {
   return (
@@ -67,7 +65,6 @@ export function MediaListView({
                   onRemove={onRemove}
                   onPreview={onPreview}
                   onEdit={onEdit}
-                  onEditAltText={onEditAltText}
                   renderAttachment={renderAttachment}
                 />
               );
