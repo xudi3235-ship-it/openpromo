@@ -116,34 +116,28 @@ export function PublishingOverlay({
   const subMessage = getSubMessage();
 
   return (
-    <div className="fixed inset-0 bg-white/70 backdrop-blur-[2px] z-50 flex items-center justify-center">
-      <div className="bg-white border border-gray-200 rounded-2xl p-12 min-w-80">
-        <div className="flex flex-col items-center text-center space-y-8">
-          <div className="flex items-center justify-center">{getIcon()}</div>
+    <div className="fixed inset-0 bg-white/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+      <div className="flex flex-col items-center text-center space-y-8">
+        <div className="flex items-center justify-center">{getIcon()}</div>
 
-          <div className="space-y-1">
-            <h3 className="text-lg font-medium text-gray-900">
-              {getMessage()}
-            </h3>
-            {subMessage && (
-              <p className="text-sm text-gray-600">{subMessage}</p>
-            )}
-          </div>
-
-          {status === "loading" && (
-            <div className="flex space-x-1.5">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-              <div
-                className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"
-                style={{ animationDelay: "0.1s" }}
-              ></div>
-              <div
-                className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"
-                style={{ animationDelay: "0.2s" }}
-              ></div>
-            </div>
-          )}
+        <div className="space-y-1">
+          <h3 className="text-lg font-medium text-gray-900">{getMessage()}</h3>
+          {subMessage && <p className="text-sm text-gray-600">{subMessage}</p>}
         </div>
+
+        {status === "loading" && (
+          <div className="flex space-x-1.5">
+            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+            <div
+              className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"
+              style={{ animationDelay: "0.1s" }}
+            ></div>
+            <div
+              className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"
+              style={{ animationDelay: "0.2s" }}
+            ></div>
+          </div>
+        )}
       </div>
     </div>
   );
