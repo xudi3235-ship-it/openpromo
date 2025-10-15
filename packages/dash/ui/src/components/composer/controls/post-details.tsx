@@ -49,14 +49,14 @@ export function PostDetails() {
     if (captionValidation.needsMediaForIG) {
       return {
         icon: ImageIcon,
-        message: "Add an image or video to post on Instagram",
+        message: "Instagram requires at least one image or video",
         variant: "info" as const,
       };
     }
     if (captionValidation.overLimit) {
       return {
         icon: AlertCircle,
-        message: "Caption is too long for selected platforms",
+        message: "Caption exceeds the limit for one or more platforms",
         variant: "error" as const,
       };
     }
