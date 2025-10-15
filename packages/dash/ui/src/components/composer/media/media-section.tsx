@@ -1,5 +1,6 @@
 import { Label } from "@openpromo/ui/components/label";
 import { Switch } from "@openpromo/ui/components/switch";
+import { cn } from "@openpromo/ui/lib/utils";
 import type { SharedAttachmentSpec } from "@shared/content";
 import { Upload } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
@@ -110,30 +111,34 @@ function MediaSectionUpload() {
       maxSize={Math.max(MEDIA_CONFIG.maxVideoSize, MEDIA_CONFIG.maxImageSize)}
       onDrop={handleFiles}
       disabled={isAtLimit}
-      className={`${dropzoneClassName} border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors rounded-lg ${
-        isAtLimit ? "opacity-50 cursor-not-allowed" : ""
-      }`}
+      className={cn(
+        dropzoneClassName,
+        "border border-border/40 bg-muted/20 hover:bg-muted/40 hover:border-border/60 transition-all rounded-lg",
+        isAtLimit && "opacity-50 cursor-not-allowed hover:bg-muted/20",
+      )}
     >
-      <div className="flex h-full items-center justify-center gap-2 text-muted-foreground">
+      <div className="flex h-full items-center justify-center gap-2 text-muted-foreground/70">
         {viewMode === "compact" ? (
           attachments.length === 0 ? (
             <>
-              <Upload className="h-4 w-4" />
+              <Upload className="h-3.5 w-3.5" />
               <span className="text-sm">Drop files or click to upload</span>
             </>
           ) : (
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-0.5">
               <Upload className="h-3 w-3" />
-              <span className="text-xs">{isAtLimit ? "Max" : "Add"}</span>
+              <span className="text-[10px]">{isAtLimit ? "Max" : "Add"}</span>
             </div>
           )
         ) : (
           <>
-            <Upload className="h-4 w-4" />
+            <Upload className="h-3.5 w-3.5" />
             <div className="text-left">
-              <p className="text-sm font-medium">Upload media</p>
-              <p className="text-xs text-muted-foreground">
-                Drag files here or click to browse integrations.
+              <p className="text-sm font-medium text-foreground/80">
+                Upload media
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                Drag files here or click to browse
               </p>
             </div>
           </>
