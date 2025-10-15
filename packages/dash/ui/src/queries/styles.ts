@@ -113,6 +113,55 @@ export const prefetchStylesInfiniteQuery = (
   });
 };
 
+export const prefetchStyleDetails = (
+  queryClient: QueryClient,
+  workspaceSlug: string,
+  styleId: string,
+) => {
+  // do not await
+  queryClient.prefetchQuery({
+    queryKey: ["style", styleId],
+    queryFn: async () => {
+      const response = await apiClient.workspaces[":workspaceSlug"].styles[
+        ":styleId"
+      ].$get({
+        param: { workspaceSlug, styleId },
+      });
+      return await response.json();
+    },
+  });
+};
+
+export const prefetchStyleGenerationsInfiniteQuery = (
+  queryClient: QueryClient,
+  workspaceSlug: string,
+  styleId: string,
+  params: Omit<StyleGenerationsParams, "page"> = {},
+) => {
+  // do not await
+  queryClient.prefetchInfiniteQuery({
+    queryKey: ["style-generations-infinite", styleId, params],
+    queryFn: async ({ pageParam = "1" }) => {
+      const response = await apiClient.workspaces[":workspaceSlug"].styles[
+        ":styleId"
+      ].generations.$get({
+        param: { workspaceSlug, styleId },
+        query: serializeStyleGenerationsParams({
+          ...params,
+          page: String(pageParam),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch generations");
+      }
+
+      return response.json();
+    },
+    initialPageParam: "1",
+  });
+};
+
 export const useStylesListQuery = (params: StylesListParams = {}) => {
   const { workspace } = useWorkspace();
 
