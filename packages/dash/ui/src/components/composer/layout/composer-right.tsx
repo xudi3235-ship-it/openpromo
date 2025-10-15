@@ -1,4 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
+import { cn } from "@openpromo/ui/lib/utils";
 import { Grid3X3, List } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useComposerStore } from "@/stores/composer-store";
@@ -6,6 +7,42 @@ import { CollageView } from "./collage-view";
 import { ListView } from "./list-view";
 
 type ViewMode = "collage" | "list";
+
+interface ViewModeToggleProps {
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
+}
+
+function ViewModeToggle({ viewMode, onViewModeChange }: ViewModeToggleProps) {
+  return (
+    <div className="flex gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className={cn(
+          "h-8 px-2",
+          viewMode === "collage" && "bg-accent text-accent-foreground",
+        )}
+        onClick={() => onViewModeChange("collage")}
+        title="Collage view"
+      >
+        <Grid3X3 className="w-3 h-3" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className={cn(
+          "h-8 px-2",
+          viewMode === "list" && "bg-accent text-accent-foreground",
+        )}
+        onClick={() => onViewModeChange("list")}
+        title="List view"
+      >
+        <List className="w-3 h-3" />
+      </Button>
+    </div>
+  );
+}
 
 export function ComposerRight() {
   const {
@@ -87,27 +124,7 @@ export function ComposerRight() {
         {/* Preview Header */}
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium">Preview</h3>
-          {/* View Mode Toggle */}
-          <div className="flex rounded-lg border">
-            <Button
-              variant={viewMode === "collage" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-r-none h-8 px-2"
-              onClick={() => setViewMode("collage")}
-              title="Collage view"
-            >
-              <Grid3X3 className="w-3 h-3" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              className="rounded-l-none h-8 px-2"
-              onClick={() => setViewMode("list")}
-              title="List view"
-            >
-              <List className="w-3 h-3" />
-            </Button>
-          </div>
+          <ViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
         </div>
 
         {/* Platform Previews */}

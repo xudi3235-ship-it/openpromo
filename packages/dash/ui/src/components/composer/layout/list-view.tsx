@@ -7,6 +7,7 @@ import { IGReelPreview } from "@/components/composer/preview/ig-reel-preview";
 import { TikTokPreview } from "@/components/composer/preview/tiktok-preview";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import type { ConnectedAccount } from "@/lib/hono-client";
+import { PreviewItem } from "./preview-item";
 
 interface AccountSelectorProps {
   accounts: ConnectedAccount[];
@@ -83,6 +84,14 @@ export function ListView({
   const selectedAccount =
     accounts.find((account) => account.id === selectedAccountId) || accounts[0];
 
+  if (!selectedAccount) {
+    return (
+      <div className="max-w-md mx-auto text-sm text-muted-foreground text-center p-6">
+        No account selected.
+      </div>
+    );
+  }
+
   const renderPreview = (account: ConnectedAccount) => {
     switch (account.platform) {
       case "FACEBOOK": {
@@ -100,7 +109,7 @@ export function ListView({
   };
 
   return (
-    <div className="max-w-md mx-auto space-y-4">
+    <div className="mx-auto space-y-4 flex flex-col items-center">
       <AccountSelector
         accounts={accounts}
         selectedAccountId={selectedAccount.id}
@@ -108,9 +117,19 @@ export function ListView({
         activeAccountId={activeAccountId}
       />
 
-      <div className="flex justify-center">
+      <PreviewItem
+        account={selectedAccount}
+        contentType={
+          selectedAccount.platform === "TIKTOK"
+            ? "feed"
+            : isReel
+              ? "reel"
+              : "feed"
+        }
+        isActive={selectedAccount.id === activeAccountId}
+      >
         {renderPreview(selectedAccount)}
-      </div>
+      </PreviewItem>
     </div>
   );
 }
