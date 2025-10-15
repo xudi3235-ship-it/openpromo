@@ -14,6 +14,7 @@ const queryOpts = (workspaceSlug: string) => {
         param: { workspaceSlug },
       }),
     errorMessage: "Failed to load connected accounts",
+    staleTime: 1000 * 60 * 5, // 5 minutes - connected accounts don't change frequently
   });
 };
 
