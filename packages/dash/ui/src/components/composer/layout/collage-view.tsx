@@ -43,18 +43,8 @@ export function CollageView({
     }
   };
 
-  const gridTemplate =
-    previewCount === 1
-      ? "repeat(1, minmax(280px, 1fr))"
-      : previewCount === 2
-        ? "repeat(auto-fit, minmax(280px, 1fr))"
-        : "repeat(auto-fit, minmax(240px, 1fr))";
-
   return (
-    <div
-      className="mx-auto grid w-full max-w-5xl gap-5 justify-items-center items-start"
-      style={{ gridTemplateColumns: gridTemplate }}
-    >
+    <div className="mx-auto flex flex-wrap justify-center items-start gap-6 lg:gap-8 px-4 max-w-[1200px]">
       {accounts.map((account) => (
         <PreviewItem
           key={account.id}

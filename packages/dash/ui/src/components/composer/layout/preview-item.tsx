@@ -24,7 +24,7 @@ export function PreviewItem({
       : `${meta.label} ${contentType === "reel" ? "Reel" : "Feed"}`;
 
   return (
-    <div className="flex w-full max-w-[280px] flex-col gap-2">
+    <div className="flex w-[280px] flex-col gap-2 flex-shrink-0">
       <div className="flex flex-col items-center gap-1 text-center">
         <div className="flex items-center justify-center gap-2 px-1 text-xs font-medium text-foreground">
           <span
@@ -39,7 +39,7 @@ export function PreviewItem({
       </div>
       <div
         className={cn(
-          "w-full rounded-2xl",
+          "w-[280px] rounded-2xl",
           isActive && cn("ring-2 ring-offset-2", meta.accentRingClass),
         )}
       >
