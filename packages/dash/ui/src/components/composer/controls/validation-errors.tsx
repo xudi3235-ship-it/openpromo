@@ -1,4 +1,9 @@
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@openpromo/ui/components/alert";
+import {
   AlertCircle,
   AlertTriangle,
   Calendar,
@@ -107,55 +112,63 @@ export function ValidationErrors({ errors }: ValidationErrorsProps) {
   );
 
   return (
-    <div className="mt-3 space-y-2">
+    <div className="mt-3 space-y-3">
       {errorsByType.error && errorsByType.error.length > 0 && (
-        <div className="rounded-lg border-l-4 border-red-500 bg-red-50/50 dark:bg-red-950/10 backdrop-blur-sm p-3 space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-            <span className="text-xs font-semibold text-red-900 dark:text-red-100">
-              {errorsByType.error.length}{" "}
-              {errorsByType.error.length === 1 ? "Issue" : "Issues"} Found
-            </span>
-          </div>
-          {errorsByType.error.map((error, index) => {
-            const config = getErrorConfig(error.type);
-            const Icon = config.icon;
-            return (
-              <div
-                key={`error-${index}-${error.type}-${error.field || "global"}`}
-                className="flex items-start gap-2 text-red-800 dark:text-red-200"
-              >
-                <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <p className="text-xs leading-relaxed">{error.message}</p>
-              </div>
-            );
-          })}
-        </div>
+        <Alert variant="destructive" className="w-full">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>
+            {errorsByType.error.length}{" "}
+            {errorsByType.error.length === 1 ? "Issue" : "Issues"} Found
+          </AlertTitle>
+          <AlertDescription>
+            <ul className="mt-2 space-y-1.5">
+              {errorsByType.error.map((error, index) => {
+                const config = getErrorConfig(error.type);
+                const Icon = config.icon;
+                return (
+                  <li
+                    key={`error-${index}-${error.type}-${error.field || "global"}`}
+                    className="flex items-start gap-2"
+                  >
+                    <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0 opacity-70" />
+                    <span className="text-xs leading-relaxed">
+                      {error.message}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </AlertDescription>
+        </Alert>
       )}
 
       {errorsByType.warning && errorsByType.warning.length > 0 && (
-        <div className="rounded-lg border-l-4 border-amber-500 bg-amber-50/50 dark:bg-amber-950/10 backdrop-blur-sm p-3 space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <span className="text-xs font-semibold text-amber-900 dark:text-amber-100">
-              {errorsByType.warning.length} Warning
-              {errorsByType.warning.length === 1 ? "" : "s"}
-            </span>
-          </div>
-          {errorsByType.warning.map((error, index) => {
-            const config = getErrorConfig(error.type);
-            const Icon = config.icon;
-            return (
-              <div
-                key={`warning-${index}-${error.type}-${error.field || "global"}`}
-                className="flex items-start gap-2 text-amber-800 dark:text-amber-200"
-              >
-                <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <p className="text-xs leading-relaxed">{error.message}</p>
-              </div>
-            );
-          })}
-        </div>
+        <Alert className="w-full">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>
+            {errorsByType.warning.length} Warning
+            {errorsByType.warning.length === 1 ? "" : "s"}
+          </AlertTitle>
+          <AlertDescription>
+            <ul className="mt-2 space-y-1.5">
+              {errorsByType.warning.map((error, index) => {
+                const config = getErrorConfig(error.type);
+                const Icon = config.icon;
+                return (
+                  <li
+                    key={`warning-${index}-${error.type}-${error.field || "global"}`}
+                    className="flex items-start gap-2"
+                  >
+                    <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0 opacity-70" />
+                    <span className="text-xs leading-relaxed">
+                      {error.message}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );
