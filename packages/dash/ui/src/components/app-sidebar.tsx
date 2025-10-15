@@ -11,7 +11,7 @@ import { useParams, useRouteContext } from "@tanstack/react-router";
 import { useLayout } from "@/context/layout-provider";
 import { useHonoQuery } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
-import { sidebarData } from "./layout/data/sidebar-data";
+import { useSidebarData } from "./layout/data/sidebar-data";
 import { NavGroup } from "./layout/nav-group";
 import { NavUser } from "./layout/nav-user";
 import { WorkspaceSwitcher } from "./workspace-switcher";
@@ -30,6 +30,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       shouldThrow: false,
     }) ?? {};
   const { user } = useRouteContext({ from: "/_authenticated" });
+
+  const sidebarData = useSidebarData();
 
   return (
     <Sidebar {...props} collapsible={collapsible} variant={variant}>

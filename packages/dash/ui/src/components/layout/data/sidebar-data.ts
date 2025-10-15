@@ -11,16 +11,14 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import { useActor } from "@/hooks/useActor";
 import type { SidebarData } from "../types";
 
-export const sidebarData: SidebarData = {
-  user: {
-    name: "satnaing",
-    email: "satnaingdev@gmail.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [],
-  navGroups: [
+export const useSidebarData = (): SidebarData => {
+  const user = useActor();
+  const isInternal = user.featureFlags.includes("is_internal");
+
+  const allNavGroups = [
     {
       title: "Tools",
       items: [
@@ -72,20 +70,28 @@ export const sidebarData: SidebarData = {
         },
       ],
     },
-    {
-      title: "Labs[Internal]",
-      items: [
-        {
-          title: "Realtime Playground",
-          url: "/workspaces/$workspaceSlug/labs/playground",
-          icon: Settings,
-        },
-        {
-          title: "Image Gen",
-          url: "/workspaces/$workspaceSlug/labs/image-gen",
-          icon: Image,
-        },
-      ],
-    },
-  ],
+    ...(isInternal
+      ? [
+          {
+            title: "Labs[Internal]",
+            items: [
+              {
+                title: "Realtime Playground",
+                url: "/workspaces/$workspaceSlug/labs/playground",
+                icon: Settings,
+              },
+              {
+                title: "Image Gen",
+                url: "/workspaces/$workspaceSlug/labs/image-gen",
+                icon: Image,
+              },
+            ],
+          },
+        ]
+      : []),
+  ];
+
+  return {
+    navGroups: allNavGroups,
+  };
 };
