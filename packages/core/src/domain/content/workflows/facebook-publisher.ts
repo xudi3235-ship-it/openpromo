@@ -8,25 +8,11 @@ import { Log } from "@core/utils/log";
 import { BasePublisher } from "./base-publisher";
 import { publishCarouselPost } from "./facebook/carousel-publisher";
 import { publishMultiPhotoPost } from "./facebook/multi-photo-publisher";
-import type { FacebookPostType } from "./facebook/post-type";
 import { determineFacebookPostType } from "./facebook/post-type";
 import { publishSingleVideoPost } from "./facebook/single-video-publisher";
 import { publishTextPost } from "./facebook/text-post-publisher";
 
 const log = Log.create({ namespace: "facebook-publisher" });
-
-type PublisherFn = (
-  ctx: CoreWorkflowContext,
-  step: CoreWorkflowStep,
-  pendingContentID: string,
-) => Promise<string>;
-
-const FACEBOOK_PUBLISHERS: Record<FacebookPostType, PublisherFn> = {
-  text: publishTextPost,
-  multiPhoto: publishMultiPhotoPost,
-  singleVideo: publishSingleVideoPost,
-  carousel: publishCarouselPost,
-};
 
 export class FacebookPublisher extends BasePublisher {
   async publish(
@@ -37,15 +23,23 @@ export class FacebookPublisher extends BasePublisher {
     await this.prepareVideosIfNeeded(step, pendingContentID);
 
     const postType = await determineFacebookPostType(step, pendingContentID);
-    const publish = FACEBOOK_PUBLISHERS[postType];
 
-    if (!publish) {
-      throw new WorkflowError(
-        `no Facebook publisher registered for type ${postType} (${pendingContentID})`,
-      );
-    }
-
-    const postId = await publish(ctx, step, pendingContentID);
+    const postId = await step.do(`publish ${postType} post`, async () => {
+      switch (postType) {
+        case "text":
+          return await publishTextPost(ctx, step, pendingContentID);
+        case "multiPhoto":
+          return await publishMultiPhotoPost(ctx, step, pendingContentID);
+        case "singleVideo":
+          return await publishSingleVideoPost(ctx, step, pendingContentID);
+        case "carousel":
+          return await publishCarouselPost(ctx, step, pendingContentID);
+        default:
+          throw new WorkflowError(
+            `no Facebook publisher registered for type ${postType} (${pendingContentID})`,
+          );
+      }
+    });
 
     if (!postId) {
       throw new WorkflowError(
