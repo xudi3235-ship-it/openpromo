@@ -15,7 +15,7 @@ const queryClient = new QueryClient();
 
 const router = createRouter({
   routeTree,
-  context: { auth: undefined },
+  context: { auth: undefined, queryClient },
   scrollRestoration: true,
   defaultStructuralSharing: true,
   defaultErrorComponent: GeneralError,
@@ -32,7 +32,7 @@ declare module "@tanstack/react-router" {
 const RouteProviderWithContext = () => {
   const auth = useAuth();
 
-  return <RouterProvider router={router} context={{ auth }} />;
+  return <RouterProvider router={router} context={{ auth, queryClient }} />;
 };
 
 const rootElement = document.getElementById("root");

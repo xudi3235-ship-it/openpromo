@@ -14,12 +14,18 @@ import { WorkspaceNullState } from "@/components/workspace/workspace-null-state"
 import { WorkspaceWebSocketProvider } from "@/hooks/useWorkspaceWebSocket";
 import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
-import { useConnectedAccounts } from "@/queries/connected-account";
+import {
+  prefetchConnectedAccounts,
+  useConnectedAccounts,
+} from "@/queries/connected-account";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug",
 )({
-  loader: async ({ params }) => {
+  loader: async ({ params, context }) => {
+    // we need to resolve query waterfall by
+    // prefetching all the queries for the known routes
+    prefetchConnectedAccounts(context.queryClient, params.workspaceSlug);
     const workspace = await honoApiCall((api) =>
       api.workspaces[":workspaceSlug"].$get({
         param: {

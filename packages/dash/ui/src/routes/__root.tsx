@@ -1,5 +1,6 @@
 import { Toaster } from "@openpromo/ui/components/sonner";
 import { TanStackDevtools } from "@tanstack/react-devtools";
+import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
@@ -11,6 +12,7 @@ import { useHashNotification } from "@/hooks/useHashNotification";
 
 interface MyRouterContext {
   auth: AuthContext | undefined;
+  queryClient: QueryClient;
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({

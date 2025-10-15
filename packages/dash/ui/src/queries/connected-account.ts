@@ -1,22 +1,36 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
+import { convertHonoQueryOptions, useHonoMutation } from "@/lib/hono-client";
 import { handlePopupMessage, openPopup } from "@/lib/popup";
 import { QUERY_KEYS } from "@/lib/query";
 
-export const useConnectedAccounts = () => {
-  const { workspace } = useWorkspace();
-  const query = useHonoQuery({
-    queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
+const queryOpts = (workspaceSlug: string) => {
+  return convertHonoQueryOptions({
+    queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspaceSlug),
     queryFn: (api) =>
       api.workspaces[":workspaceSlug"].connected_accounts.$get({
-        param: { workspaceSlug: workspace.slug },
+        param: { workspaceSlug },
       }),
     errorMessage: "Failed to load connected accounts",
-    refetchOnMount: true,
   });
+};
+
+export const prefetchConnectedAccounts = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  workspaceSlug: string,
+) => {
+  // do not await
+  queryClient.prefetchQuery(queryOpts(workspaceSlug));
+};
+
+// Hook to fetch connected accounts
+
+export const useConnectedAccounts = () => {
+  const { workspace } = useWorkspace();
+  const opts = queryOpts(workspace.slug);
+  const query = useQuery(opts);
 
   return {
     accounts: query.data?.accounts || [],
