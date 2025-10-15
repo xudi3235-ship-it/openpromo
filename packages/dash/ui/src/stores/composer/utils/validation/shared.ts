@@ -1,5 +1,5 @@
 import type { Platform } from "@core/schemas/connected-account.sql";
-import type { CaptionPlatform } from "@/lib/caption-limit";
+import { type CaptionPlatform, RULES } from "@/lib/caption-limit";
 import type { ComposerState } from "../../types";
 import { resolveSelectedPlatforms } from "../caption";
 
@@ -29,4 +29,23 @@ export const getSelectedComposerPlatforms = (
   }
 
   return mapCaptionPlatformsToComposer(captionPlatforms);
+};
+
+export const getPlatformsRequiringMedia = (
+  state: ComposerState,
+  hasMediaOrLink: boolean,
+): Platform[] => {
+  if (hasMediaOrLink) return [];
+
+  const captionPlatforms = resolveSelectedPlatforms(
+    state.accounts,
+    state.selectedAccounts,
+  );
+
+  const requiringMedia = captionPlatforms.filter((platform) => {
+    const rule = RULES[platform];
+    return rule ? rule.textOnly === false : false;
+  });
+
+  return mapCaptionPlatformsToComposer(requiringMedia);
 };
