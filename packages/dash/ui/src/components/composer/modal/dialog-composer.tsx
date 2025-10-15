@@ -12,6 +12,7 @@ import { useComposerStore } from "@/stores/composer-store";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import { ComposerLeft } from "../layout/composer-left";
 import { ComposerRight } from "../layout/composer-right";
+import { ComposerSkeleton } from "../layout/composer-skeleton";
 import { TwoColumnLayout } from "../layout/two-column-layout";
 
 export default function ComposerDialog() {
@@ -26,7 +27,7 @@ export default function ComposerDialog() {
   );
 
   const { accounts: accountsData } = useConnectedAccounts();
-  const { data: contentGroupData } = useContentGroupQuery(
+  const { data: contentGroupData, isLoading } = useContentGroupQuery(
     pendingContentGroupID,
   );
 
@@ -64,12 +65,16 @@ export default function ComposerDialog() {
             Create and schedule content for your social media accounts
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-hidden">
-          <TwoColumnLayout
-            left={<ComposerLeft />}
-            right={<ComposerRight />}
-            className=""
-          />
+        <div className="flex-1 flex items-center justify-center overflow-hidden">
+          {isLoading ? (
+            <ComposerSkeleton />
+          ) : (
+            <TwoColumnLayout
+              left={<ComposerLeft />}
+              right={<ComposerRight />}
+              className=""
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>
