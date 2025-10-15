@@ -3,75 +3,24 @@ import { Label } from "@openpromo/ui/components/label";
 import { Switch } from "@openpromo/ui/components/switch";
 import type { SharedAttachmentSpec } from "@shared/content";
 import { Package, Upload } from "lucide-react";
-import React, {
-  createContext,
-  type ReactNode,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Dropzone } from "@/components/dropzone";
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
 import { useComposerMediaUploader } from "@/hooks/useComposerMediaUploader";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerStore } from "@/stores/composer-store";
+import { useMediaUIStore } from "@/stores/media-ui-store";
 import { MediaCompactView } from "./media-compact-view";
 import { MediaDetailDialog } from "./media-detail-dialog";
 import { MediaEditDialog } from "./media-edit-dialog";
 import { MediaListView } from "./media-list-view";
 
-// ============= Context =============
-interface MediaSectionContextValue {
-  attachments: SharedAttachmentSpec[];
-  viewMode: "compact" | "list";
-  setViewMode: (mode: "compact" | "list") => void;
-  config: {
-    maxFiles: number;
-    maxImageSize: number;
-    maxVideoSize: number;
-  };
-  handlers: {
-    handleFiles: (files: File[]) => void;
-    removeAttachment: (index: number) => void;
-    reorderAttachments: (oldIndex: number, newIndex: number) => void;
-    updateAttachment: (
-      index: number,
-      updates: Partial<SharedAttachmentSpec>,
-    ) => void;
-  };
-  renderAttachment: ReturnType<
-    typeof useAttachmentRenderer
-  >["renderAttachment"];
-  selectedMedia: { attachment: SharedAttachmentSpec; index: number } | null;
-  setSelectedMedia: (
-    media: { attachment: SharedAttachmentSpec; index: number } | null,
-  ) => void;
-  editingMedia: { attachment: SharedAttachmentSpec; index: number } | null;
-  setEditingMedia: (
-    media: { attachment: SharedAttachmentSpec; index: number } | null,
-  ) => void;
-  dragOverlay: { attachment: SharedAttachmentSpec; index: number } | null;
-  setDragOverlay: (
-    overlay: { attachment: SharedAttachmentSpec; index: number } | null,
-  ) => void;
-  productModalOpen: boolean;
-  setProductModalOpen: (open: boolean) => void;
-}
-
-const MediaSectionContext = createContext<MediaSectionContextValue | null>(
-  null,
-);
-
-function useMediaSection() {
-  const context = useContext(MediaSectionContext);
-  if (!context) {
-    throw new Error(
-      "MediaSection components must be used within <MediaSection>",
-    );
-  }
-  return context;
-}
+// ============= Configuration =============
+const MEDIA_CONFIG = {
+  maxFiles: 10,
+  maxImageSize: 10 * 1024 * 1024,
+  maxVideoSize: 100 * 1024 * 1024,
+};
 
 // ============= Root Component =============
 interface MediaSectionRootProps {
@@ -79,82 +28,18 @@ interface MediaSectionRootProps {
 }
 
 function MediaSectionRoot({ children }: MediaSectionRootProps) {
-  const { workspace } = useWorkspace();
-  const {
-    contentCreateData,
-    removeAttachment,
-    reorderAttachments,
-    updateAttachment,
-  } = useComposerStore();
+  return <div className="space-y-3">{children}</div>;
+}
+
+// ============= Header =============
+function MediaSectionHeader() {
+  const { contentCreateData } = useComposerStore();
+  const { viewMode, setViewMode, setProductModalOpen } = useMediaUIStore();
 
   const attachments = useMemo(
     () => contentCreateData.base.attachments ?? [],
     [contentCreateData.base.attachments],
   );
-
-  const { renderAttachment } = useAttachmentRenderer({ attachments });
-
-  const config = {
-    maxFiles: 10,
-    maxImageSize: 10 * 1024 * 1024,
-    maxVideoSize: 100 * 1024 * 1024,
-  };
-
-  const { handleFiles } = useComposerMediaUploader({
-    workspaceSlug: workspace?.slug,
-    maxFiles: config.maxFiles,
-    maxImageSize: config.maxImageSize,
-    maxVideoSize: config.maxVideoSize,
-  });
-
-  const [viewMode, setViewMode] = useState<"compact" | "list">("compact");
-  const [selectedMedia, setSelectedMedia] = useState<{
-    attachment: SharedAttachmentSpec;
-    index: number;
-  } | null>(null);
-  const [editingMedia, setEditingMedia] = useState<{
-    attachment: SharedAttachmentSpec;
-    index: number;
-  } | null>(null);
-  const [dragOverlay, setDragOverlay] = useState<{
-    attachment: SharedAttachmentSpec;
-    index: number;
-  } | null>(null);
-  const [productModalOpen, setProductModalOpen] = useState(false);
-
-  const value: MediaSectionContextValue = {
-    attachments,
-    viewMode,
-    setViewMode,
-    config,
-    handlers: {
-      handleFiles,
-      removeAttachment,
-      reorderAttachments,
-      updateAttachment,
-    },
-    renderAttachment,
-    selectedMedia,
-    setSelectedMedia,
-    editingMedia,
-    setEditingMedia,
-    dragOverlay,
-    setDragOverlay,
-    productModalOpen,
-    setProductModalOpen,
-  };
-
-  return (
-    <MediaSectionContext.Provider value={value}>
-      <div className="space-y-3">{children}</div>
-    </MediaSectionContext.Provider>
-  );
-}
-
-// ============= Header =============
-function MediaSectionHeader() {
-  const { attachments, viewMode, setViewMode, config, setProductModalOpen } =
-    useMediaSection();
 
   return (
     <div className="flex items-center justify-between gap-3">
@@ -163,7 +48,7 @@ function MediaSectionHeader() {
         {attachments.length > 0 && (
           <>
             <span className="text-xs text-muted-foreground">
-              {attachments.length}/{config.maxFiles} files
+              {attachments.length}/{MEDIA_CONFIG.maxFiles} files
             </span>
             <Button
               variant="ghost"
@@ -199,10 +84,27 @@ function MediaSectionHeader() {
 
 // ============= Upload =============
 function MediaSectionUpload() {
-  const { attachments, viewMode, config, handlers } = useMediaSection();
+  const { workspace } = useWorkspace();
+  const { contentCreateData } = useComposerStore();
+  const { viewMode } = useMediaUIStore();
 
-  const isAtLimit = attachments.length >= config.maxFiles;
-  const remainingSlots = Math.max(config.maxFiles - attachments.length, 0);
+  const attachments = useMemo(
+    () => contentCreateData.base.attachments ?? [],
+    [contentCreateData.base.attachments],
+  );
+
+  const { handleFiles } = useComposerMediaUploader({
+    workspaceSlug: workspace?.slug,
+    maxFiles: MEDIA_CONFIG.maxFiles,
+    maxImageSize: MEDIA_CONFIG.maxImageSize,
+    maxVideoSize: MEDIA_CONFIG.maxVideoSize,
+  });
+
+  const isAtLimit = attachments.length >= MEDIA_CONFIG.maxFiles;
+  const remainingSlots = Math.max(
+    MEDIA_CONFIG.maxFiles - attachments.length,
+    0,
+  );
 
   const dropzoneClassName =
     viewMode === "compact"
@@ -215,8 +117,8 @@ function MediaSectionUpload() {
     <Dropzone
       accept={{ "image/*": [], "video/*": [] }}
       maxFiles={Math.max(remainingSlots, 1)}
-      maxSize={Math.max(config.maxVideoSize, config.maxImageSize)}
-      onDrop={handlers.handleFiles}
+      maxSize={Math.max(MEDIA_CONFIG.maxVideoSize, MEDIA_CONFIG.maxImageSize)}
+      onDrop={handleFiles}
       disabled={isAtLimit}
       className={`${dropzoneClassName} border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors rounded-lg ${
         isAtLimit ? "opacity-50 cursor-not-allowed" : ""
@@ -253,16 +155,22 @@ function MediaSectionUpload() {
 
 // ============= Gallery =============
 function MediaSectionGallery() {
+  const { contentCreateData, removeAttachment, reorderAttachments } =
+    useComposerStore();
   const {
-    attachments,
     viewMode,
-    handlers,
-    renderAttachment,
     setSelectedMedia,
     setEditingMedia,
     dragOverlay,
     setDragOverlay,
-  } = useMediaSection();
+  } = useMediaUIStore();
+
+  const attachments = useMemo(
+    () => contentCreateData.base.attachments ?? [],
+    [contentCreateData.base.attachments],
+  );
+
+  const { renderAttachment } = useAttachmentRenderer({ attachments });
 
   const getStableKey = (
     attachment: SharedAttachmentSpec,
@@ -274,7 +182,8 @@ function MediaSectionGallery() {
   const handleDragStart = (event: import("@dnd-kit/core").DragStartEvent) => {
     const { active } = event;
     const index = attachments.findIndex(
-      (attachment, idx) => getStableKey(attachment, idx) === active.id,
+      (attachment: SharedAttachmentSpec, idx: number) =>
+        getStableKey(attachment, idx) === active.id,
     );
     if (index !== -1) {
       setDragOverlay({ attachment: attachments[index], index });
@@ -287,13 +196,15 @@ function MediaSectionGallery() {
 
     if (over && active.id !== over.id) {
       const oldIndex = attachments.findIndex(
-        (attachment, idx) => getStableKey(attachment, idx) === active.id,
+        (attachment: SharedAttachmentSpec, idx: number) =>
+          getStableKey(attachment, idx) === active.id,
       );
       const newIndex = attachments.findIndex(
-        (attachment, idx) => getStableKey(attachment, idx) === over.id,
+        (attachment: SharedAttachmentSpec, idx: number) =>
+          getStableKey(attachment, idx) === over.id,
       );
       if (oldIndex !== -1 && newIndex !== -1) {
-        handlers.reorderAttachments(oldIndex, newIndex);
+        reorderAttachments(oldIndex, newIndex);
       }
     }
   };
@@ -307,7 +218,7 @@ function MediaSectionGallery() {
       dragOverlay={dragOverlay}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      onRemove={handlers.removeAttachment}
+      onRemove={removeAttachment}
       onPreview={(attachment, index) => setSelectedMedia({ attachment, index })}
       renderAttachment={renderAttachment}
     />
@@ -318,7 +229,7 @@ function MediaSectionGallery() {
       dragOverlay={dragOverlay}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      onRemove={handlers.removeAttachment}
+      onRemove={removeAttachment}
       onPreview={(attachment, index) => setSelectedMedia({ attachment, index })}
       onEdit={(attachment, index) => setEditingMedia({ attachment, index })}
       renderAttachment={renderAttachment}
@@ -328,7 +239,7 @@ function MediaSectionGallery() {
 
 // ============= Content =============
 function MediaSectionContent() {
-  const { viewMode } = useMediaSection();
+  const { viewMode } = useMediaUIStore();
 
   const dropzoneWrapperClass =
     viewMode === "compact" ? "flex gap-2" : "flex flex-col gap-3";
@@ -343,22 +254,33 @@ function MediaSectionContent() {
 
 // ============= Footer =============
 function MediaSectionFooter() {
-  const { attachments, config } = useMediaSection();
+  const { contentCreateData } = useComposerStore();
+
+  const attachments = useMemo(
+    () => contentCreateData.base.attachments ?? [],
+    [contentCreateData.base.attachments],
+  );
 
   if (attachments.length > 0) return null;
 
   return (
     <p className="text-xs text-muted-foreground">
-      Share photos and videos • Max {config.maxFiles} files • Images:{" "}
-      {config.maxImageSize / (1024 * 1024)}MB • Videos:{" "}
-      {config.maxVideoSize / (1024 * 1024)}MB
+      Share photos and videos • Max {MEDIA_CONFIG.maxFiles} files • Images:{" "}
+      {MEDIA_CONFIG.maxImageSize / (1024 * 1024)}MB • Videos:{" "}
+      {MEDIA_CONFIG.maxVideoSize / (1024 * 1024)}MB
     </p>
   );
 }
 
 // ============= Product Actions =============
 function MediaSectionProductActions() {
-  const { attachments, setProductModalOpen } = useMediaSection();
+  const { contentCreateData } = useComposerStore();
+  const { setProductModalOpen } = useMediaUIStore();
+
+  const attachments = useMemo(
+    () => contentCreateData.base.attachments ?? [],
+    [contentCreateData.base.attachments],
+  );
 
   if (attachments.length === 0) return null;
 
@@ -379,16 +301,22 @@ function MediaSectionProductActions() {
 
 // ============= Dialogs =============
 function MediaSectionDialogs() {
+  const { contentCreateData } = useComposerStore();
   const {
     selectedMedia,
     setSelectedMedia,
     editingMedia,
     setEditingMedia,
-    renderAttachment,
-    attachments,
     productModalOpen,
     setProductModalOpen,
-  } = useMediaSection();
+  } = useMediaUIStore();
+
+  const attachments = useMemo(
+    () => contentCreateData.base.attachments ?? [],
+    [contentCreateData.base.attachments],
+  );
+
+  const { renderAttachment } = useAttachmentRenderer({ attachments });
 
   // Lazy load ProductAIWorkflowDialog
   const [ProductAIWorkflowDialog, setProductAIWorkflowDialog] =
@@ -414,6 +342,8 @@ function MediaSectionDialogs() {
         );
       });
     }
+    // setProductAIWorkflowDialog is stable from useState
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productModalOpen, ProductAIWorkflowDialog]);
 
   return (
