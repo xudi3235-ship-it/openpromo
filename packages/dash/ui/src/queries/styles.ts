@@ -89,6 +89,30 @@ export const invalidateStylesListQueries = async (queryClient: QueryClient) => {
   });
 };
 
+export const prefetchStylesInfiniteQuery = (
+  queryClient: QueryClient,
+  workspaceSlug: string,
+  params: Omit<StylesListParams, "page"> = {},
+) => {
+  // do not await
+  queryClient.prefetchInfiniteQuery({
+    queryKey: ["styles-list-infinite", params],
+    queryFn: async ({ pageParam }) => {
+      const query = serializeStylesListParams(params);
+      query.page = String(pageParam);
+
+      const response = await apiClient.workspaces[":workspaceSlug"].styles.$get(
+        {
+          param: { workspaceSlug },
+          query,
+        },
+      );
+      return await response.json();
+    },
+    initialPageParam: 1,
+  });
+};
+
 export const useStylesListQuery = (params: StylesListParams = {}) => {
   const { workspace } = useWorkspace();
 

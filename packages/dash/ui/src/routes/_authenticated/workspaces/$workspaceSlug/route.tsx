@@ -18,6 +18,7 @@ import {
   prefetchConnectedAccounts,
   useConnectedAccounts,
 } from "@/queries/connected-account";
+import { prefetchStylesInfiniteQuery } from "@/queries/styles";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug",
@@ -26,6 +27,7 @@ export const Route = createFileRoute(
     // we need to resolve query waterfall by
     // prefetching all the queries for the known routes
     prefetchConnectedAccounts(context.queryClient, params.workspaceSlug);
+    prefetchStylesInfiniteQuery(context.queryClient, params.workspaceSlug);
     const workspace = await honoApiCall((api) =>
       api.workspaces[":workspaceSlug"].$get({
         param: {
