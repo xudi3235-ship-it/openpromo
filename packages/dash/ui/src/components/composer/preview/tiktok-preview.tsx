@@ -71,7 +71,7 @@ export function TikTokPreview({ accountId }: TikTokPreviewProps) {
   const trimmedCaption = (previewData.message || "").trim();
 
   return (
-    <div className="relative w-[280px] rounded-xl overflow-hidden border border-white/5 bg-[#070708] text-white shadow-[0_20px_45px_-20px_rgba(8,8,11,0.85)]">
+    <div className="relative max-w-[280px] rounded-xl overflow-hidden border border-white/5 bg-[#070708] text-white shadow-[0_20px_45px_-20px_rgba(8,8,11,0.85)]">
       <div className="relative aspect-[9/16]">
         <div className="absolute inset-0">
           {isVideoPost && videoAttachment ? (
@@ -180,11 +180,12 @@ export function TikTokPreview({ accountId }: TikTokPreviewProps) {
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 z-10 px-4 pb-6 pt-12 bg-gradient-to-t from-black via-black/70 to-transparent">
-          <div className="flex items-center gap-3">
+        <div className="absolute inset-x-0 bottom-0 z-10 px-3 pb-2 pt-12 bg-gradient-to-t from-black via-black/85 via-30% to-transparent">
+          {/* Author Info */}
+          <div className="flex items-center gap-2 mb-2">
             <div className="relative">
-              <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-pink-500/60 via-red-400/50 to-cyan-400/60 blur" />
-              <div className="relative w-9 h-9 rounded-full overflow-hidden bg-black/60 backdrop-blur flex items-center justify-center uppercase font-semibold text-sm">
+              <div className="absolute -inset-0.5 rounded-full bg-gradient-to-br from-pink-500/60 via-red-400/50 to-cyan-400/60 blur" />
+              <div className="relative w-7 h-7 rounded-full overflow-hidden bg-black/60 backdrop-blur flex items-center justify-center uppercase font-semibold text-xs">
                 {previewData.profilePicUrl ? (
                   <img
                     src={previewData.profilePicUrl}
@@ -197,39 +198,41 @@ export function TikTokPreview({ accountId }: TikTokPreviewProps) {
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 text-sm font-semibold">
+              <div className="flex items-center gap-1.5 text-xs font-semibold">
                 @{handle}
                 <button
                   type="button"
-                  className="ml-1 rounded-full border border-white/15 bg-white text-black text-[10px] font-semibold px-2.5 py-0.5"
+                  className="rounded-full border border-white/15 bg-white text-black text-[9px] font-semibold px-2 py-0.5"
                 >
                   Follow
                 </button>
               </div>
-              <div className="text-xs text-white/70 truncate">
+              <div className="text-[10px] text-white/70 truncate">
                 {displayName}
               </div>
             </div>
           </div>
 
+          {/* Caption */}
           {trimmedCaption && (
-            <p className="mt-3 text-sm text-white/90 leading-relaxed line-clamp-3 break-words">
+            <p className="mb-2 text-xs text-white/90 leading-relaxed line-clamp-2 break-words">
               {trimmedCaption}
             </p>
           )}
+
+          {/* Original Sound */}
+          <div className="flex items-center justify-between text-[11px] text-white/80 py-1.5 px-1">
+            <div className="flex items-center gap-2 truncate">
+              <Music2 className="w-3.5 h-3.5" />
+              <span className="truncate max-w-[180px]">
+                Original sound • {displayName}
+              </span>
+            </div>
+            <Bookmark className="w-4 h-4 shrink-0" />
+          </div>
         </div>
 
         <div className="pointer-events-none absolute inset-0 ring-1 ring-white/5 rounded-xl" />
-      </div>
-
-      <div className="px-4 py-3 flex items-center justify-between bg-[#09070b] border-t border-white/5 text-[11px] text-white/70">
-        <div className="flex items-center gap-2 truncate">
-          <Music2 className="w-4 h-4" />
-          <span className="truncate max-w-[160px]">
-            Original sound • {displayName}
-          </span>
-        </div>
-        <Bookmark className="w-4 h-4" />
       </div>
     </div>
   );
