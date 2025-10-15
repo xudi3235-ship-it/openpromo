@@ -10,6 +10,7 @@ import {
 } from "@openpromo/ui/components/command";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { PLACEHOLDER } from "@/lib/caption-limit";
 import {
   getCaretCoordinates,
@@ -254,6 +255,17 @@ export default function ComposerMentions({
     }
   };
 
+  // Calculate absolute position for portal
+  const getAbsolutePosition = () => {
+    if (!textareaRef.current) return { top: 0, left: 0 };
+
+    const textareaRect = textareaRef.current.getBoundingClientRect();
+    return {
+      top: textareaRect.top + dropdownPosition.top,
+      left: textareaRect.left + dropdownPosition.left,
+    };
+  };
+
   return (
     <div className="relative">
       <Textarea
@@ -265,55 +277,57 @@ export default function ComposerMentions({
         className="min-h-[80px] resize-none border-0"
       />
 
-      {showDropdown && (
-        <div
-          className="absolute z-50"
-          style={{
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-          }}
-          onMouseDown={(e) => {
-            // Prevent textarea from losing focus
-            e.preventDefault();
-          }}
-        >
-          <Command className="border-border bg-popover w-[300px] rounded-lg border shadow-md">
-            <CommandInput
-              ref={inputRef}
-              value={searchQuery}
-              onValueChange={setSearchQuery}
-              className="hidden"
-            />
-            <CommandList className="max-h-[200px]">
-              <CommandEmpty>
-                No {trigger === "@" ? "users" : "hashtags"} found.
-              </CommandEmpty>
-              <CommandGroup>
-                {filteredEntities.map((entity) => (
-                  <CommandItem
-                    key={entity.id}
-                    value={entity.name}
-                    onSelect={() => handleSelect(entity)}
-                    className="cursor-pointer"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{entity.name}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {entity.value}
-                      </span>
-                      {entity.description && (
+      {showDropdown &&
+        createPortal(
+          <div
+            className="fixed z-[100]"
+            style={{
+              top: `${getAbsolutePosition().top}px`,
+              left: `${getAbsolutePosition().left}px`,
+            }}
+            onMouseDown={(e) => {
+              // Prevent textarea from losing focus
+              e.preventDefault();
+            }}
+          >
+            <Command className="border-border bg-popover w-[300px] rounded-lg border shadow-lg">
+              <CommandInput
+                ref={inputRef}
+                value={searchQuery}
+                onValueChange={setSearchQuery}
+                className="hidden"
+              />
+              <CommandList className="max-h-[200px]">
+                <CommandEmpty>
+                  No {trigger === "@" ? "users" : "hashtags"} found.
+                </CommandEmpty>
+                <CommandGroup>
+                  {filteredEntities.map((entity) => (
+                    <CommandItem
+                      key={entity.id}
+                      value={entity.name}
+                      onSelect={() => handleSelect(entity)}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{entity.name}</span>
                         <span className="text-muted-foreground text-xs">
-                          {entity.description}
+                          {entity.value}
                         </span>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </div>
-      )}
+                        {entity.description && (
+                          <span className="text-muted-foreground text-xs">
+                            {entity.description}
+                          </span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
