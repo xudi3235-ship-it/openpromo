@@ -134,8 +134,21 @@ export namespace ProductImageGen {
 
     The image prompt is the most critical part. Detailed, effective, specific, about what the image ad creative look like, including composition, lighting, style, and how the product is featured/shown, design it to best maximize the conversion/sales leveraging the style ctx.
 
+e.g. "style_requirement": "studio shot, clean lighting, premium skincare aesthetic"
+
+build on top of this baseline template and adjust as needed to fit the product n style:
+"template": "A {lighting_style} {scene_type} image of {num_people} {model_description} {interaction} with the {product_name}, emphasizing {product_features} and {visual_focus}. The overall tone is {mood} and {style_keywords}. {extra_details}, {lighting_details}, {composition_details}, {color_scheme}."
+
+
+Examples:
+A soft, editorial, high-key studio portrait shot of one korean female model gently applying the hydrating serum to her cheek, emphasizing skin luminosity and bottle reflection. The overall tone is premium, calm, and moist-glow.
+
 RULES:
 - Only choose styles from the provided list, must return a valid styleId from the list.
+- Do not invent new objects or scenes outside the given Style Reference.
+- Always preserve product realism and accurate material details.
+- Ensure composition, lighting, and tone align with the Style Reference.
+- Focus on product interaction and emotional tone as described.
 `;
     const { object } = await generateObject({
       model: openai("gpt-5-mini"),
