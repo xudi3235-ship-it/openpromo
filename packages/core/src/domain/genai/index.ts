@@ -1,10 +1,10 @@
 import { openai } from "@ai-sdk/openai";
-import { replicate } from "@core/providers/replicate";
 import { ProductIdentificationSchema } from "@shared/product";
 import { generateObject, type ModelMessage, type UserModelMessage } from "ai";
 import { z } from "zod";
 import type { EntProduct } from "../product";
 import type { EntStyleComponent } from "../style-component";
+import { GenAI } from "./helpers";
 
 export namespace ProductImageGen {
   export const DEFAULT_NEGATIVE_PROMPT =
@@ -81,29 +81,16 @@ export namespace ProductImageGen {
     ${opts.prompt}
     negative prompt: ${negativePrompt}
     `;
-    const input = {
+    const imageUrl = await GenAI.runSeedreamV4({
       prompt: sysPrompt,
-      aspect_ratio: "1:1",
-      // style references
-      style_reference_images: opts.style.data.imageRefs,
-    };
-    console.log("generating image with input", input);
-
-    const output = await replicate.run("ideogram-ai/ideogram-v3-turbo", {
-      input,
+      imageRefs: opts.style.data.imageRefs,
     });
 
-    // @ts-expect-error,
-    const imageUrl = output.url();
-
-    const imageUrls = imageUrl ? [String(imageUrl)] : [];
-
     return {
-      imageUrls,
+      imageUrls: imageUrl ? [imageUrl] : [],
       prompt: sysPrompt,
       negativePrompt,
       metadata: {
-        replicateInput: input,
         styleName: opts.style.data.name,
         productId: opts.product.data.id,
       },
@@ -130,18 +117,16 @@ export namespace ProductImageGen {
       context: style.data.context,
     }));
 
-    const systemPrompt = `You are a senior social ad creative director. Review the product data and select the most effective visual style from the provided options that matches with the product, its audience, and marketing needs. This style will later be used to generate ad creatives for this product. You'll also generate an image prompt that will be used to generate ad creative, using the product n style as context.
+    const systemPrompt = `
+You are a senior social ad creative director. You will help select best style for creating ads visuals matching this product, as well as an image prompt. This style will later be used to generate ad creatives for this product. You'll also generate an image prompt that will be used to generate ad creative, using the product n style as context.
 
-    The image prompt is the most critical part. Detailed, effective, specific, about what the image ad creative look like, including composition, lighting, style, and how the product is featured/shown, design it to best maximize the conversion/sales leveraging the style ctx.
+The image prompt is the most critical part. Detailed, effective, specific, about what the image ad creative look like, including composition, lighting, style, and how the product is featured/shown, design it to best maximize the conversion/sales leveraging the style ctx.
 
-e.g. "style_requirement": "studio shot, clean lighting, premium skincare aesthetic"
-
-build on top of this baseline template and adjust as needed to fit the product n style:
-"template": "A {lighting_style} {scene_type} image of {num_people} {model_description} {interaction} with the {product_name}, emphasizing {product_features} and {visual_focus}. The overall tone is {mood} and {style_keywords}. {extra_details}, {lighting_details}, {composition_details}, {color_scheme}."
-
-
+// ----- build on top of this baseline examples and adjust as needed to fit the product n style:
 Examples:
-A soft, editorial, high-key studio portrait shot of one korean female model gently applying the hydrating serum to her cheek, emphasizing skin luminosity and bottle reflection. The overall tone is premium, calm, and moist-glow.
+1. A soft, editorial, high-key studio portrait shot of one korean female model gently applying the hydrating serum to her cheek, emphasizing skin luminosity and bottle reflection. The overall tone is premium, calm, and moist-glow.
+2. A premium, editorial macro beauty shot of a young East-Asian woman applying mascara, framed in a tight eye-and-upper-face crop. Her look is fresh and minimal, with dewy, luminous skin and wet, tousled hair pulled back. The scene is lit with soft, diffused frontal lighting and a gentle rim light to create delicate catchlights and separation. Shot with an 85mm portrait feel, the depth of field is extremely shallow, with a razor-sharp focus on the eye, individual lashes, and the fine-bristle wand coated in deep-black mascara. The matte dark-brown cylindrical mascara tube and muted pastel background fall into a soft blur, creating contrast and emphasizing the product's texture. The composition places the wand diagonally, leaving negative space on the right, for a high-resolution, tactile, and commercial finish with realistic retouching that preserves skin texture.
+
 
 RULES:
 - Only choose styles from the provided list, must return a valid styleId from the list.
@@ -149,9 +134,10 @@ RULES:
 - Always preserve product realism and accurate material details.
 - Ensure composition, lighting, and tone align with the Style Reference.
 - Focus on product interaction and emotional tone as described.
+- image prompt is SINGLE paragraph!
 `;
     const { object } = await generateObject({
-      model: openai("gpt-5-mini"),
+      model: openai("gpt-5"),
       schema: z.object({
         styleId: z.string().min(1),
         imageGenPrompt: z
@@ -161,8 +147,8 @@ RULES:
             "the image generation prompt will be used to generate the ad creative, must be detailed and specific",
           ),
       }),
-      temperature: 0.2,
-      maxOutputTokens: 2000,
+      temperature: 0.5,
+      maxOutputTokens: 10_000,
       messages: [
         {
           role: "system",

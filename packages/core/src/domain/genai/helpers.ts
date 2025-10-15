@@ -1,4 +1,5 @@
 import { openai } from "@ai-sdk/openai";
+import { replicate } from "@core/providers/replicate";
 import { generateObject, type ImagePart } from "ai";
 import z from "zod";
 
@@ -48,5 +49,48 @@ export namespace GenAI {
       // On error, assume content is safe to avoid blocking
       return { safe: true };
     }
+  }
+
+  // -----------------------------------------------------------
+  // helpers to call replicate image providers
+  // -----------------------------------------------------------
+  export async function runIdeogramV3Turbo(opts: {
+    prompt: string;
+    imageRefs?: string[];
+  }) {
+    const input = {
+      prompt: opts.prompt,
+      aspect_ratio: "1:1",
+      // style references
+      style_reference_images: opts.imageRefs,
+    };
+    console.log("generating image with input", input);
+
+    const output = await replicate.run("ideogram-ai/ideogram-v3-turbo", {
+      input,
+    });
+
+    // @ts-expect-error,
+    const imageUrl = output.url();
+    return imageUrl ? String(imageUrl) : null;
+  }
+
+  export async function runSeedreamV4(opts: {
+    prompt: string;
+    imageRefs?: string[];
+  }) {
+    const input = {
+      prompt: opts.prompt,
+      image_input: opts.imageRefs,
+      aspect_ratio: "3:4",
+    };
+    console.log("generating image with input", input);
+    const output = await replicate.run("bytedance/seedream-4", {
+      input,
+    });
+    console.log("seedream output", output);
+    // @ts-expect-error,
+    const imageUrl = output[0].url();
+    return imageUrl ? String(imageUrl) : null;
   }
 }
