@@ -57,6 +57,27 @@ function ImageGenPage() {
 
   const isLoading = isLoadingProducts || isLoadingStyles;
 
+  // Helper to get primary product image
+  const getProductImage = (product: (typeof products)[number]) => {
+    if (!product.attachments?.length) return null;
+    const primaryAttachment = product.attachments.find(
+      (a) => a.id === product.primaryAttachmentId,
+    );
+    const attachment = primaryAttachment || product.attachments[0];
+    if (attachment?.type !== "photo") return null;
+    return (
+      attachment.thumbnailUrl ||
+      attachment.publicUrl ||
+      attachment.presignedUrl ||
+      null
+    );
+  };
+
+  // Helper to get style image
+  const getStyleImage = (style: (typeof styles)[number]) => {
+    return style.imageRefs?.[0] || null;
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <h1 className="text-3xl font-bold mb-6">Image Generation Lab</h1>
@@ -91,14 +112,55 @@ function ImageGenPage() {
                 disabled={isLoadingProducts}
               >
                 <SelectTrigger id="product-select" className="w-full">
-                  <SelectValue placeholder="Select a product..." />
+                  <SelectValue placeholder="Select a product...">
+                    {selectedProductId &&
+                      (() => {
+                        const product = products.find(
+                          (p) => p.id === selectedProductId,
+                        );
+                        if (!product) return null;
+                        const imageUrl = getProductImage(product);
+                        return (
+                          <div className="flex items-center gap-2">
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={product.name || product.id}
+                                className="w-6 h-6 object-cover rounded"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                                ?
+                              </div>
+                            )}
+                            <span>{product.name || product.id}</span>
+                          </div>
+                        );
+                      })()}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name || product.id}
-                    </SelectItem>
-                  ))}
+                  {products.map((product) => {
+                    const imageUrl = getProductImage(product);
+                    return (
+                      <SelectItem key={product.id} value={product.id}>
+                        <div className="flex items-center gap-2">
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={product.name || product.id}
+                              className="w-8 h-8 object-cover rounded"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                              ?
+                            </div>
+                          )}
+                          <span>{product.name || product.id}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -113,15 +175,58 @@ function ImageGenPage() {
                 disabled={isLoadingStyles}
               >
                 <SelectTrigger id="style-select" className="w-full">
-                  <SelectValue placeholder="Select a style (optional)..." />
+                  <SelectValue placeholder="Select a style (optional)...">
+                    {selectedStyleId &&
+                      selectedStyleId !== "__none__" &&
+                      (() => {
+                        const style = styles.find(
+                          (s) => s.id === selectedStyleId,
+                        );
+                        if (!style) return null;
+                        const imageUrl = getStyleImage(style);
+                        return (
+                          <div className="flex items-center gap-2">
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={style.name || style.id}
+                                className="w-6 h-6 object-cover rounded"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                                ?
+                              </div>
+                            )}
+                            <span>{style.name || style.id}</span>
+                          </div>
+                        );
+                      })()}
+                    {selectedStyleId === "__none__" && "None"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">None</SelectItem>
-                  {styles.map((style) => (
-                    <SelectItem key={style.id} value={style.id}>
-                      {style.name || style.id}
-                    </SelectItem>
-                  ))}
+                  {styles.map((style) => {
+                    const imageUrl = getStyleImage(style);
+                    return (
+                      <SelectItem key={style.id} value={style.id}>
+                        <div className="flex items-center gap-2">
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={style.name || style.id}
+                              className="w-8 h-8 object-cover rounded"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                              ?
+                            </div>
+                          )}
+                          <span>{style.name || style.id}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
