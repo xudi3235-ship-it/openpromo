@@ -170,8 +170,8 @@ export const useContentActionController = ({
       },
       group: () => {
         if (status === "DRAFT") return "Edit draft";
-        if (status === "SCHEDULED") return "Edit scheduled posts";
-        return "Edit posts";
+        if (status === "SCHEDULED") return "Edit scheduled";
+        return "Edit";
       },
     });
   };

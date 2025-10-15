@@ -153,7 +153,7 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
     });
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center justify-end gap-2 w-full">
       {renderPrimaryAction()}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -184,5 +184,8 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
 export const actionsColumn: ColumnDef<MergedContentEntity> = {
   id: "actions",
   enableHiding: false,
+  size: 200,
+  minSize: 200,
+  maxSize: 200,
   cell: ({ row }) => <ActionsCellComponent entity={row.original} />,
 };
