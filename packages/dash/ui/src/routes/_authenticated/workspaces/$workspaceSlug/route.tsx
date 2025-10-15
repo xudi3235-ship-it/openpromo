@@ -1,4 +1,3 @@
-import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -9,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { toast } from "sonner";
 import ComposerDialog from "@/components/composer/modal/dialog-composer";
+import { WorkspaceLoading } from "@/components/loading/workspace-loading";
 import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
 import { WorkspaceWebSocketProvider } from "@/hooks/useWorkspaceWebSocket";
@@ -37,13 +37,7 @@ export const Route = createFileRoute(
   },
   staleTime: 1000 * 60, // 1 minute
   component: WorkspaceComponent,
-  pendingComponent: () => (
-    <div className="flex h-full w-full flex-col gap-4 p-4">
-      <Skeleton className="h-12 w-full" />
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="flex-1 w-full" />
-    </div>
-  ),
+  pendingComponent: WorkspaceLoading,
 });
 
 const DISABLED_ACCOUNTS_BAR_PATTERNS: RegExp[] = [

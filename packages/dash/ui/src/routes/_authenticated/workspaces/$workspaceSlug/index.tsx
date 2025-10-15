@@ -1,25 +1,15 @@
 import { Button } from "@openpromo/ui/components/button";
-import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus, TrendingUp } from "lucide-react";
+import { WorkspaceLoading } from "@/components/loading/workspace-loading";
 import { StylesInfiniteGrid } from "@/components/styles/styles-infinite-grid";
 import { useConnectedAccounts } from "@/queries/connected-account";
 
-function Loading() {
-  return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
-        <Skeleton className="h-32" />
-        <Skeleton className="h-64" />
-      </div>
-    </div>
-  );
-}
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/",
 )({
   component: WorkspaceIndex,
-  pendingComponent: Loading,
+  pendingComponent: WorkspaceLoading,
 });
 
 function WorkspaceIndex() {
@@ -28,7 +18,7 @@ function WorkspaceIndex() {
 
   // Show loading state
   if (isLoading) {
-    return <Loading />;
+    return <WorkspaceLoading />;
   }
 
   // Layout handles null state now, so we can assume we have accounts here
