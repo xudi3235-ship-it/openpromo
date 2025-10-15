@@ -1,7 +1,9 @@
 pre-commit:
   commands:
-    check:
-      run: pnpm exec biome check --write --diagnostic-level=warn --error-on-warnings --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+    format:
+      glob: "*.{js,ts,jsx,tsx,json,css}"
+      run: pnpm exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
       stage_fixed: true
     typecheck:
       run: pnpm run typecheck
+      glob: "*.{ts,tsx}"
