@@ -1,0 +1,57 @@
+import type { ApiEnv } from "@core/helpers/api-env";
+import { Hono } from "hono";
+import * as z from "zod";
+import { zValidator } from "../../../middleware/zod-validator";
+
+/**
+ * Workspace Pusher routes for WebSocket connections
+ */
+export const workspacePusherRoute = new Hono<ApiEnv>()
+  // GET /workspaces/:workspaceSlug/pusher
+  .get(
+    "/:workspaceSlug/pusher",
+    zValidator("param", z.object({ workspaceSlug: z.string() })),
+    async (ctx) => {
+      const { workspaceSlug } = ctx.req.valid("param");
+      console.log(`WebSocket connection for workspace: ${workspaceSlug}`);
+
+      const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
+      console.log(`WebSocket pusher DO ID: ${pusher.id}`);
+      // Always initialize the workspace slug to ensure it's set correctly
+      await pusher.init(workspaceSlug);
+      return pusher.fetch(ctx.req.raw);
+    },
+  )
+  // POST /workspaces/:workspaceSlug/pusher/message/:userId
+  .post(
+    "/:workspaceSlug/pusher/message/:userId",
+    zValidator(
+      "param",
+      z.object({
+        workspaceSlug: z.string(),
+        userId: z.string(),
+      }),
+    ),
+    zValidator("json", z.object({ message: z.string() })),
+    async (ctx) => {
+      const { workspaceSlug, userId } = ctx.req.valid("param");
+      const { message } = ctx.req.valid("json");
+
+      console.log(
+        `Sending message to workspace: ${workspaceSlug}, user: ${userId}`,
+      );
+
+      const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
+      console.log(`Message pusher DO ID: ${pusher.id}`);
+      // Ensure the pusher is initialized with the correct workspace slug
+      await pusher.init(workspaceSlug);
+
+      if (userId === "all") {
+        await pusher.sendMessageToAllUsers(message);
+        return ctx.json({ message: "Message sent to all users" });
+      } else {
+        await pusher.sendMessageToUser(userId, message);
+        return ctx.json({ message: "Message sent to user" });
+      }
+    },
+  );
