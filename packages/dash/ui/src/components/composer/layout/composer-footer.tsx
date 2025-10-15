@@ -21,6 +21,81 @@ import {
 } from "@/stores/dialog-composer-store";
 import { CancelConfirmationDialog } from "../dialogs/cancel-confirmation-dialog";
 
+// ============= Footer Actions =============
+interface FooterActionsProps {
+  showMoreTools: boolean;
+  isDialog: boolean;
+  isPending: boolean;
+  canPublish: boolean;
+  actionType: "draft" | "schedule" | "publish";
+  onMoreTools: () => void;
+  onCancel: () => void;
+  onSaveDraft: () => void;
+  onPublish: () => void;
+}
+
+function FooterActions({
+  showMoreTools,
+  isDialog,
+  isPending,
+  canPublish,
+  actionType,
+  onMoreTools,
+  onCancel,
+  onSaveDraft,
+  onPublish,
+}: FooterActionsProps) {
+  const getDraftLabel = () => {
+    if (isPending && actionType === "draft") return "Saving...";
+    return "Save draft";
+  };
+
+  const getPublishLabel = () => {
+    if (isPending && (actionType === "publish" || actionType === "schedule")) {
+      return actionType === "schedule" ? "Scheduling..." : "Publishing...";
+    }
+    return actionType === "schedule" ? "Schedule" : "Publish";
+  };
+
+  return (
+    <div className="flex items-center justify-end gap-2">
+      {showMoreTools && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onMoreTools}
+          className="gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <Maximize2 className="h-3.5 w-3.5" />
+          More tools
+        </Button>
+      )}
+      {isDialog && (
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
+      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onSaveDraft}
+        disabled={isPending || !canPublish}
+        className="text-muted-foreground hover:text-foreground disabled:opacity-50"
+      >
+        {getDraftLabel()}
+      </Button>
+      <Button
+        size="sm"
+        onClick={onPublish}
+        disabled={isPending || !canPublish}
+        className="shadow-sm"
+      >
+        {getPublishLabel()}
+      </Button>
+    </div>
+  );
+}
+
 export function ComposerFooter() {
   const [publishingState, setPublishingState] = useState<{
     isVisible: boolean;
@@ -218,51 +293,18 @@ export function ComposerFooter() {
 
   return (
     <>
-      <div className="border-t bg-background p-4">
-        <div className="flex justify-between gap-2">
-          <div className="flex gap-2">
-            {showMoreToolsButton && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSwitchToFullscreen}
-                className="gap-2"
-              >
-                <Maximize2 className="h-4 w-4" />
-                More tools
-              </Button>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {isDialog && (
-              <Button variant="outline" size="sm" onClick={handleCancel}>
-                Cancel
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveDraft}
-              disabled={isPending || !validation.canPublish}
-            >
-              {isPending && actionType === "draft" ? "Saving..." : "Save draft"}
-            </Button>
-            <Button
-              size="sm"
-              onClick={handlePublish}
-              disabled={isPending || !validation.canPublish}
-            >
-              {isPending &&
-              (actionType === "publish" || actionType === "schedule")
-                ? actionType === "schedule"
-                  ? "Scheduling..."
-                  : "Publishing..."
-                : actionType === "schedule"
-                  ? "Schedule"
-                  : "Publish"}
-            </Button>
-          </div>
-        </div>
+      <div className="border-t border-border/40 bg-background/95 backdrop-blur-sm p-3">
+        <FooterActions
+          showMoreTools={showMoreToolsButton}
+          isDialog={isDialog}
+          isPending={isPending}
+          canPublish={validation.canPublish}
+          actionType={actionType}
+          onMoreTools={handleSwitchToFullscreen}
+          onCancel={handleCancel}
+          onSaveDraft={handleSaveDraft}
+          onPublish={handlePublish}
+        />
 
         <ValidationErrors errors={validation.errors} />
       </div>
