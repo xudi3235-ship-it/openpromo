@@ -1,4 +1,10 @@
 import { Button } from "@openpromo/ui/components/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
 import { Grid3X3, List } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -15,32 +21,47 @@ interface ViewModeToggleProps {
 
 function ViewModeToggle({ viewMode, onViewModeChange }: ViewModeToggleProps) {
   return (
-    <div className="flex gap-1">
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          "h-8 px-2",
-          viewMode === "collage" && "bg-accent text-accent-foreground",
-        )}
-        onClick={() => onViewModeChange("collage")}
-        title="Collage view"
-      >
-        <Grid3X3 className="w-3 h-3" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          "h-8 px-2",
-          viewMode === "list" && "bg-accent text-accent-foreground",
-        )}
-        onClick={() => onViewModeChange("list")}
-        title="List view"
-      >
-        <List className="w-3 h-3" />
-      </Button>
-    </div>
+    <TooltipProvider>
+      <div className="flex gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-8 px-2",
+                viewMode === "collage" && "bg-accent text-accent-foreground",
+              )}
+              onClick={() => onViewModeChange("collage")}
+            >
+              <Grid3X3 className="w-3 h-3" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Collage view</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-8 px-2",
+                viewMode === "list" && "bg-accent text-accent-foreground",
+              )}
+              onClick={() => onViewModeChange("list")}
+            >
+              <List className="w-3 h-3" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>List view</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </TooltipProvider>
   );
 }
 
