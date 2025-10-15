@@ -1,9 +1,8 @@
-import { Button } from "@openpromo/ui/components/button";
 import { Label } from "@openpromo/ui/components/label";
 import { Switch } from "@openpromo/ui/components/switch";
 import type { SharedAttachmentSpec } from "@shared/content";
-import { Package, Upload } from "lucide-react";
-import React, { type ReactNode, useEffect, useMemo, useState } from "react";
+import { Upload } from "lucide-react";
+import { type ReactNode, useMemo } from "react";
 import { Dropzone } from "@/components/dropzone";
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
 import { useComposerMediaUploader } from "@/hooks/useComposerMediaUploader";
@@ -34,7 +33,7 @@ function MediaSectionRoot({ children }: MediaSectionRootProps) {
 // ============= Header =============
 function MediaSectionHeader() {
   const { contentCreateData } = useComposerStore();
-  const { viewMode, setViewMode, setProductModalOpen } = useMediaUIStore();
+  const { viewMode, setViewMode } = useMediaUIStore();
 
   const attachments = useMemo(
     () => contentCreateData.base.attachments ?? [],
@@ -50,15 +49,6 @@ function MediaSectionHeader() {
             <span className="text-xs text-muted-foreground">
               {attachments.length}/{MEDIA_CONFIG.maxFiles} files
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 text-xs gap-1.5 text-primary hover:text-primary/80"
-              onClick={() => setProductModalOpen(true)}
-            >
-              <Package className="h-3 w-3" />
-              Generate with AI
-            </Button>
             <div className="flex items-center gap-2">
               <Switch
                 id="media-view-switch"
@@ -272,44 +262,11 @@ function MediaSectionFooter() {
   );
 }
 
-// ============= Product Actions =============
-function MediaSectionProductActions() {
-  const { contentCreateData } = useComposerStore();
-  const { setProductModalOpen } = useMediaUIStore();
-
-  const attachments = useMemo(
-    () => contentCreateData.base.attachments ?? [],
-    [contentCreateData.base.attachments],
-  );
-
-  if (attachments.length === 0) return null;
-
-  return (
-    <div className="border-t pt-3">
-      <Button
-        variant="default"
-        size="sm"
-        className="w-full gap-2"
-        onClick={() => setProductModalOpen(true)}
-      >
-        <Package className="h-4 w-4" />
-        Generate with AI
-      </Button>
-    </div>
-  );
-}
-
 // ============= Dialogs =============
 function MediaSectionDialogs() {
   const { contentCreateData } = useComposerStore();
-  const {
-    selectedMedia,
-    setSelectedMedia,
-    editingMedia,
-    setEditingMedia,
-    productModalOpen,
-    setProductModalOpen,
-  } = useMediaUIStore();
+  const { selectedMedia, setSelectedMedia, editingMedia, setEditingMedia } =
+    useMediaUIStore();
 
   const attachments = useMemo(
     () => contentCreateData.base.attachments ?? [],
@@ -317,34 +274,6 @@ function MediaSectionDialogs() {
   );
 
   const { renderAttachment } = useAttachmentRenderer({ attachments });
-
-  // Lazy load ProductAIWorkflowDialog
-  const [ProductAIWorkflowDialog, setProductAIWorkflowDialog] =
-    useState<
-      React.ComponentType<{
-        open: boolean;
-        onOpenChange: (open: boolean) => void;
-        prefilledAttachments?: SharedAttachmentSpec[];
-      }>
-    >();
-
-  // Dynamically import ProductAIWorkflowDialog when needed
-  useEffect(() => {
-    if (productModalOpen && !ProductAIWorkflowDialog) {
-      import("./product-ai-workflow-dialog").then((module) => {
-        setProductAIWorkflowDialog(
-          () =>
-            module.ProductAIWorkflowDialog as React.ComponentType<{
-              open: boolean;
-              onOpenChange: (open: boolean) => void;
-              prefilledAttachments?: SharedAttachmentSpec[];
-            }>,
-        );
-      });
-    }
-    // setProductAIWorkflowDialog is stable from useState
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productModalOpen, ProductAIWorkflowDialog]);
 
   return (
     <>
@@ -358,21 +287,8 @@ function MediaSectionDialogs() {
         onClose={() => setEditingMedia(null)}
         renderAttachment={renderAttachment}
       />
-      {ProductAIWorkflowDialog && (
-        <ProductAIWorkflowDialog
-          open={productModalOpen}
-          onOpenChange={setProductModalOpen}
-          prefilledAttachments={attachments}
-        />
-      )}
     </>
   );
-}
-
-// ============= AI Actions (placeholder for future) =============
-function MediaSectionAIActions({ children }: { children?: ReactNode }) {
-  // Future: AI generation, enhancement, etc.
-  return <div className="space-y-2">{children}</div>;
 }
 
 // ============= Compound Component Export =============
@@ -381,8 +297,6 @@ MediaSectionRoot.Upload = MediaSectionUpload;
 MediaSectionRoot.Gallery = MediaSectionGallery;
 MediaSectionRoot.Content = MediaSectionContent;
 MediaSectionRoot.Footer = MediaSectionFooter;
-MediaSectionRoot.ProductActions = MediaSectionProductActions;
 MediaSectionRoot.Dialogs = MediaSectionDialogs;
-MediaSectionRoot.AIActions = MediaSectionAIActions;
 
 export const MediaSection = MediaSectionRoot;

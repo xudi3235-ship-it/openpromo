@@ -24,10 +24,6 @@ interface MediaUIState {
     overlay: { attachment: SharedAttachmentSpec; index: number } | null,
   ) => void;
 
-  // Product AI modal
-  productModalOpen: boolean;
-  setProductModalOpen: (open: boolean) => void;
-
   // Reset all state
   reset: () => void;
 }
@@ -37,7 +33,6 @@ const initialState = {
   selectedMedia: null,
   editingMedia: null,
   dragOverlay: null,
-  productModalOpen: false,
 };
 
 export const useMediaUIStore = create<MediaUIState>((set) => ({
@@ -50,8 +45,6 @@ export const useMediaUIStore = create<MediaUIState>((set) => ({
   setEditingMedia: (media) => set({ editingMedia: media }),
 
   setDragOverlay: (overlay) => set({ dragOverlay: overlay }),
-
-  setProductModalOpen: (open) => set({ productModalOpen: open }),
 
   reset: () => set(initialState),
 }));
