@@ -160,17 +160,37 @@ export const useContentActionController = ({
     return Boolean(resolveRescheduleGroupId(entity));
   };
 
-  const editLabel = (entity: CalendarEvent) =>
-    matchEntity(entity, {
-      content: () => "Edit content",
-      group: () => "Edit group",
+  const editLabel = (entity: CalendarEvent) => {
+    const status = publishingStatus(entity);
+    return matchEntity(entity, {
+      content: () => {
+        if (status === "DRAFT") return "Edit draft";
+        if (status === "SCHEDULED") return "Edit scheduled post";
+        return "Edit post";
+      },
+      group: () => {
+        if (status === "DRAFT") return "Edit draft";
+        if (status === "SCHEDULED") return "Edit scheduled posts";
+        return "Edit posts";
+      },
     });
+  };
 
-  const deleteLabel = (entity: CalendarEvent) =>
-    matchEntity(entity, {
-      content: () => "Delete content",
-      group: () => "Delete group",
+  const deleteLabel = (entity: CalendarEvent) => {
+    const status = publishingStatus(entity);
+    return matchEntity(entity, {
+      content: () => {
+        if (status === "DRAFT") return "Delete draft";
+        if (status === "SCHEDULED") return "Delete scheduled post";
+        return "Delete post";
+      },
+      group: () => {
+        if (status === "DRAFT") return "Delete draft";
+        if (status === "SCHEDULED") return "Delete scheduled posts";
+        return "Delete posts";
+      },
     });
+  };
 
   return {
     handleEdit,
