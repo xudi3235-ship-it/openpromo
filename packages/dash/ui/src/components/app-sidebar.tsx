@@ -22,6 +22,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: workspaces, isPending } = useHonoQuery({
     queryKey: QUERY_KEYS.WORKSPACES,
     queryFn: (api) => api.workspaces.$get(),
+    staleTime: 1000 * 60, // 1 minute - workspaces list doesn't change frequently
   });
   const { workspaceSlug: currentWorkspaceSlug } =
     useParams({
