@@ -69,13 +69,14 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     });
     // NOTE: for now we do sync gen, workflow migration is WIP
     // ws approach is not quite stable yet
-    const style = await generation.deriveStyleContext({
+    const { style, imageGenPrompt } = await generation.deriveStyleContext({
       productID: params.productId,
       styleId: params.styleId,
     });
     const imageGenResult = await ProductImageGen.genImage({
       product: await EntProduct.fromID(params.productId),
       style,
+      prompt: imageGenPrompt,
     });
 
     return {
@@ -200,23 +201,19 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
   // ------------------------------------------------------------------------
   async deriveStyleContext(opts: { productID: string; styleId?: string }) {
     const product = await EntProduct.fromID(opts.productID);
-    if (opts.styleId) {
-      return await EntStyleComponent.fromID(opts.styleId);
-    } else {
-      // Match product with available styles
-      const officialStyles = await EntStyleComponent.listOfficial();
+    // Match product with available styles
+    const officialStyles = await EntStyleComponent.listOfficial();
 
-      if (officialStyles.length === 0) {
-        throw new Error(
-          "No official styles exist yet. Create a style before generating images.",
-        );
-      }
-
-      return await ProductImageGen.matchProductWithStyles(
-        product,
-        officialStyles,
+    if (officialStyles.length === 0) {
+      throw new Error(
+        "No official styles exist yet. Create a style before generating images.",
       );
     }
+
+    return await ProductImageGen.selectOptimalStyleForProduct(
+      product,
+      officialStyles,
+    );
   }
 
   async setOutputImages(imageUrls: string[]): Promise<this> {

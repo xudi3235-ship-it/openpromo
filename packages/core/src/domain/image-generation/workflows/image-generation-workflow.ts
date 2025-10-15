@@ -74,7 +74,8 @@ export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerat
         const product = await EntProduct.fromID(productID);
         const out = await ProductImageGen.genImage({
           product,
-          style: styleCtx,
+          style: styleCtx.style,
+          prompt: styleCtx.imageGenPrompt,
         });
         return {
           imageUrls: out.imageUrls,

@@ -74,10 +74,11 @@ export namespace ProductImageGen {
   export async function genImage(opts: {
     product: EntProduct;
     style: EntStyleComponent;
+    prompt: string;
   }): Promise<GeneratedImageResult> {
     const negativePrompt = DEFAULT_NEGATIVE_PROMPT;
     const sysPrompt = `MUST follow the style references provided, including lighting, shooting styles, composition, etc.
-    ${opts.style.data.imageGenPrompt}
+    ${opts.prompt}
     negative prompt: ${negativePrompt}
     `;
     const input = {
@@ -112,10 +113,10 @@ export namespace ProductImageGen {
   // ------------------------------------------------------------------------
   // helpers
   // ------------------------------------------------------------------------
-  export async function matchProductWithStyles(
+  export async function selectOptimalStyleForProduct(
     product: EntProduct,
     styles: EntStyleComponent[],
-  ): Promise<EntStyleComponent> {
+  ): Promise<{ style: EntStyleComponent; imageGenPrompt: string }> {
     if (styles.length === 0) {
       throw new Error("No styles available for matching");
     }
@@ -129,16 +130,23 @@ export namespace ProductImageGen {
       context: style.data.context,
     }));
 
-    const systemPrompt = `You are a senior social ad creative director. Review the product data and select the most effective visual style from the provided options that matches with the product, its audience, and marketing needs. This style will later be used to generate ad creatives for this product.
+    const systemPrompt = `You are a senior social ad creative director. Review the product data and select the most effective visual style from the provided options that matches with the product, its audience, and marketing needs. This style will later be used to generate ad creatives for this product. You'll also generate an image prompt that will be used to generate ad creative, using the product n style as context.
 
-Important rules:
-- Only choose styles from the provided list.
-- You must return a valid styleId from the list.`;
+    The image prompt is the most critical part. Detailed, effective, specific, about what the image ad creative look like, including composition, lighting, style, and how the product is featured/shown, design it to best maximize the conversion/sales leveraging the style ctx.
 
-    const { object: match } = await generateObject({
+RULES:
+- Only choose styles from the provided list, must return a valid styleId from the list.
+`;
+    const { object } = await generateObject({
       model: openai("gpt-5-mini"),
       schema: z.object({
         styleId: z.string().min(1),
+        imageGenPrompt: z
+          .string()
+          .min(20)
+          .describe(
+            "the image generation prompt will be used to generate the ad creative, must be detailed and specific",
+          ),
       }),
       temperature: 0.2,
       maxOutputTokens: 2000,
@@ -155,14 +163,14 @@ Important rules:
     });
 
     const matchedStyle = styles.find(
-      (style) => style.data.id === match.styleId,
+      (style) => style.data.id === object.styleId,
     );
 
     if (!matchedStyle) {
-      throw new Error(`Matched style ${match.styleId} no longer available`);
+      throw new Error(`Matched style ${object.styleId} no longer available`);
     }
 
-    return matchedStyle;
+    return { style: matchedStyle, imageGenPrompt: object.imageGenPrompt };
   }
 
   function attachmentsToMessages(product: EntProduct): ModelMessage[] {
