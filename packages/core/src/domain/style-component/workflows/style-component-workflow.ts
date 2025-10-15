@@ -86,10 +86,8 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
     // 3. generate style context using compressed images
     await step.do("generate-style-context", async () => {
       const s = await EntStyleComponent.fromID(styleComponentId);
-      const { context, safe, reason } = await generateStyleContext(
-        s,
-        compressedImageUrls,
-      );
+      const { context, safe, reason, slug, styleName, description } =
+        await generateStyleContext(s, compressedImageUrls);
 
       if (!safe) {
         log.warn("// Style component failed guardrail check", {
@@ -116,6 +114,9 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
       console.log("// Generated style context", { context });
       await s.update({
         context,
+        name: styleName,
+        slug,
+        description,
       });
     });
     console.log("// Marking style as ready", { styleComponentId });
@@ -176,6 +177,16 @@ RULES:
       schema: z.object({
         safe: z.boolean().describe("whether the inputs are safe"),
         reason: z.string().nullable().describe("if not safe, the reason why"),
+        styleName: z.string().min(1).describe("name of the style, 3-5 words"),
+        slug: z
+          .string()
+          .min(1)
+          .describe(
+            "a short unique identifier for the style, lowercase, hyphen-separated, no spaces",
+          ),
+        description: z
+          .string()
+          .describe("a concise description of the style, 1-2 sentences"),
         context: StyleContext,
       }),
     });
