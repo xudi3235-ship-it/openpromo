@@ -1,5 +1,6 @@
 import type { ComposerState, ValidationError } from "../../types";
 import { resolveHasMediaOrLink } from "../caption";
+import { getSelectedComposerPlatforms } from "./shared";
 
 export const validateMessage = (state: ComposerState): ValidationError[] => {
   const errors: ValidationError[] = [];
@@ -16,6 +17,7 @@ export const validateMessage = (state: ComposerState): ValidationError[] => {
       message: "Add text or attach media to publish.",
       severity: "error",
       field: "message",
+      platforms: getSelectedComposerPlatforms(state),
     });
   }
 

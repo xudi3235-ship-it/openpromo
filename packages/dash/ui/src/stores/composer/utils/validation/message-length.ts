@@ -1,8 +1,6 @@
 import type { ComposerState, ValidationError } from "@/stores/composer/types";
 import { getCaptionValidation } from "../caption";
-
-const formatLimit = (limit: number) =>
-  limit.toLocaleString(undefined, { maximumFractionDigits: 0 });
+import { mapCaptionPlatformsToComposer } from "./shared";
 
 export const validateMessageLength = (
   state: ComposerState,
@@ -17,6 +15,7 @@ export const validateMessageLength = (
       message: "Instagram requires at least one image or video.",
       severity: "error",
       field: "message",
+      platforms: ["INSTAGRAM"],
     });
   }
 
@@ -27,6 +26,8 @@ export const validateMessageLength = (
         "Caption exceeds the limit for one or more platforms. Trim the text or remove a destination.",
       severity: "error",
       field: "message",
+      platforms: mapCaptionPlatformsToComposer(validation.limitPlatforms),
+      limit: validation.limit,
     });
   } else if (
     validation.state === "warn" &&
@@ -36,7 +37,7 @@ export const validateMessageLength = (
   ) {
     errors.push({
       type: "message_length_warning",
-      message: `Approaching the ${formatLimit(validation.limit)} character limit.`,
+      message: `Approaching the ${validation.limit.toLocaleString(undefined, { maximumFractionDigits: 0 })} character limit.`,
       severity: "warning",
       field: "message",
     });

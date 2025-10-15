@@ -19,6 +19,7 @@ export const validatePlatforms = (state: ComposerState): ValidationError[] => {
           message: `Facebook: ${issue.message}`,
           severity: "error",
           field: "media",
+          platforms: ["FACEBOOK"],
         });
       }
     }
@@ -35,6 +36,7 @@ export const validatePlatforms = (state: ComposerState): ValidationError[] => {
           message: `Instagram: ${issue.message}`,
           severity: "error",
           field: "media",
+          platforms: ["INSTAGRAM"],
         });
       }
     }
@@ -50,6 +52,7 @@ export const validatePlatforms = (state: ComposerState): ValidationError[] => {
           message: `TikTok: ${issue.message}`,
           severity: "error",
           field: "media",
+          platforms: ["TIKTOK"],
         });
       }
     }

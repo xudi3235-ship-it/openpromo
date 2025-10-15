@@ -1,4 +1,5 @@
 import type { ComposerState, ValidationError } from "../../types";
+import { getSelectedComposerPlatforms } from "./shared";
 
 export const validateUploads = (state: ComposerState): ValidationError[] => {
   const errors: ValidationError[] = [];
@@ -17,6 +18,7 @@ export const validateUploads = (state: ComposerState): ValidationError[] => {
       message: "Wait for all media uploads to complete",
       severity: "error",
       field: "media",
+      platforms: getSelectedComposerPlatforms(state),
     });
   }
 
@@ -34,6 +36,7 @@ export const validateUploads = (state: ComposerState): ValidationError[] => {
       message: "Some media uploads failed. Remove failed uploads or try again",
       severity: "error",
       field: "media",
+      platforms: getSelectedComposerPlatforms(state),
     });
   }
 

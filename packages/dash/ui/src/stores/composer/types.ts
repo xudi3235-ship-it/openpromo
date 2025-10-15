@@ -24,6 +24,8 @@ export interface ValidationError {
   message: string;
   severity: "error" | "warning";
   field?: string;
+  platforms?: Platform[];
+  limit?: number;
 }
 
 export interface ValidationState {

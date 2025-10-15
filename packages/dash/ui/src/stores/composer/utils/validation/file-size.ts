@@ -1,4 +1,5 @@
 import type { ComposerState, ValidationError } from "../../types";
+import { getSelectedComposerPlatforms } from "./shared";
 
 export const validateFileSize = (state: ComposerState): ValidationError[] => {
   const errors: ValidationError[] = [];
@@ -19,6 +20,7 @@ export const validateFileSize = (state: ComposerState): ValidationError[] => {
       message: "File size too large. Max 100MB for videos, 10MB for images",
       severity: "error",
       field: "media",
+      platforms: getSelectedComposerPlatforms(state),
     });
   }
 

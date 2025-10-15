@@ -40,6 +40,7 @@ export type CaptionValidationState = "ok" | "warn" | "error";
 export interface CaptionValidationResult {
   len: number;
   limit: number;
+  limitPlatforms: CaptionPlatform[];
   ok: boolean;
   state: CaptionValidationState;
   overLimit: boolean;
@@ -50,28 +51,70 @@ export interface CaptionValidationResult {
 export const uCount = (value: string | undefined | null): number =>
   [...(value ?? "")].length;
 
+export interface CaptionLimitDetail {
+  limit: number;
+  platforms: CaptionPlatform[];
+}
+
+const resolvePlatforms = (
+  selectedPlatforms: CaptionPlatform[],
+): CaptionPlatform[] => {
+  if (selectedPlatforms.length === 0) {
+    return ["facebook"];
+  }
+
+  return selectedPlatforms;
+};
+
+const getPlatformLimit = (
+  platform: CaptionPlatform,
+  hasMediaOrLink: boolean,
+  platformCount: number,
+): number => {
+  if (platform === "facebook") {
+    if (platformCount === 1) {
+      return hasMediaOrLink
+        ? RULES.facebook.limitMedia
+        : RULES.facebook.limitText;
+    }
+
+    return RULES.facebook.limitMedia;
+  }
+
+  return RULES[platform].limitText;
+};
+
+export const getCaptionLimitDetail = (
+  selectedPlatforms: CaptionPlatform[],
+  hasMediaOrLink: boolean,
+): CaptionLimitDetail => {
+  const platforms = resolvePlatforms(selectedPlatforms);
+  const platformCount = platforms.length;
+
+  const perPlatformLimits = platforms.map((platform) => ({
+    platform,
+    limit: getPlatformLimit(platform, hasMediaOrLink, platformCount),
+  }));
+
+  const limit = perPlatformLimits.reduce(
+    (min, entry) => Math.min(min, entry.limit),
+    Number.POSITIVE_INFINITY,
+  );
+
+  const enforcingPlatforms = perPlatformLimits
+    .filter((entry) => entry.limit === limit)
+    .map((entry) => entry.platform);
+
+  return {
+    limit,
+    platforms: enforcingPlatforms,
+  };
+};
+
 export const getCaptionLimit = (
   selectedPlatforms: CaptionPlatform[],
   hasMediaOrLink: boolean,
-): number => {
-  if (selectedPlatforms.length === 0) {
-    return RULES.facebook.limitText;
-  }
-
-  if (selectedPlatforms.length === 1 && selectedPlatforms[0] === "facebook") {
-    return hasMediaOrLink
-      ? RULES.facebook.limitMedia
-      : RULES.facebook.limitText;
-  }
-
-  const perPlatformLimits = selectedPlatforms.map((platform) =>
-    platform === "facebook"
-      ? RULES.facebook.limitMedia
-      : RULES[platform].limitText,
-  );
-
-  return Math.min(...perPlatformLimits);
-};
+): number => getCaptionLimitDetail(selectedPlatforms, hasMediaOrLink).limit;
 
 export const getLimit = getCaptionLimit;
 
@@ -80,7 +123,10 @@ export const validateCaption = (
   selectedPlatforms: CaptionPlatform[],
   hasMediaOrLink: boolean,
 ): CaptionValidationResult => {
-  const limit = getCaptionLimit(selectedPlatforms, hasMediaOrLink);
+  const { limit, platforms: limitPlatforms } = getCaptionLimitDetail(
+    selectedPlatforms,
+    hasMediaOrLink,
+  );
   const len = uCount(text);
   const needsMediaForIG =
     selectedPlatforms.includes("instagram") && !hasMediaOrLink;
@@ -101,6 +147,7 @@ export const validateCaption = (
   return {
     len,
     limit,
+    limitPlatforms,
     ok,
     state,
     overLimit,
