@@ -1,6 +1,7 @@
 import {
   Calendar,
   Home,
+  Image,
   Inbox,
   LayoutList,
   Package,
@@ -72,12 +73,17 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
-      title: "Labs",
+      title: "Labs[Internal]",
       items: [
         {
-          title: "[INTERN]Playground",
-          url: "/workspaces/$workspaceSlug/playground",
+          title: "Realtime Playground",
+          url: "/workspaces/$workspaceSlug/labs/playground",
           icon: Settings,
+        },
+        {
+          title: "Image Gen",
+          url: "/workspaces/$workspaceSlug/labs/image-gen",
+          icon: Image,
         },
       ],
     },

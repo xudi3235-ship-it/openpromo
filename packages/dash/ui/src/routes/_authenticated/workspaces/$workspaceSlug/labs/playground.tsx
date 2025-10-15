@@ -211,7 +211,7 @@ function PlaygroundPage() {
 }
 
 export const Route = createFileRoute(
-  "/_authenticated/workspaces/$workspaceSlug/playground",
+  "/_authenticated/workspaces/$workspaceSlug/labs/playground",
 )({
   component: PlaygroundPage,
 });
