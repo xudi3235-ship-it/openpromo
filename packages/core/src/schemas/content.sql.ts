@@ -83,6 +83,20 @@ const pendingContentGroupSpec = z.object({
 
 type PendingContentGroupSpec = z.infer<typeof pendingContentGroupSpec>;
 
+const posInt = z.number().int().nonnegative();
+
+const unifiedContentMetricsSchema = z.object({
+  impressions: posInt.optional(),
+  reach: posInt.optional(),
+  engagement: posInt.optional(),
+  clicks: posInt.optional(),
+  likes: posInt.optional(),
+  comments: posInt.optional(),
+  shares: posInt.optional(),
+});
+
+export type UnifiedContentMetrics = z.infer<typeof unifiedContentMetricsSchema>;
+
 /**
  * Heart of data model supporting scheduling, drafts
  * handling draft & scheduling, 1..N to unified content.
@@ -159,6 +173,10 @@ export const unifiedContentTable = pgTable(
     pendingContentGroupId: ulid("pending_content_group_id").references(
       () => pendingContentGroupTable.id,
     ),
+    metrics: jsonb("metrics")
+      .$type<UnifiedContentMetrics>()
+      .notNull()
+      .default({}),
   },
   (t) => [uniqueIndex().on(t.id, t.workspaceId, t.connectedAccountId)],
 );
@@ -176,18 +194,20 @@ export type UnifiedContentFacebookPost = UnifiedContentForPlacement<"FB_FEED">;
 export type UnifiedContentInstagramPost = UnifiedContentForPlacement<"IG_FEED">;
 export type UnifiedContentTikTokPost = UnifiedContentForPlacement<"TT_FEED">;
 
-export const UnifiedContentInsert = createInsertSchema(unifiedContentTable, {
-  placement: z.enum([...Object.values(AllPlacement)]),
+const opts = {
   publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
-  permalinkUrl: z.string().url().optional(),
-});
-export const UnifiedContentUpdate = createUpdateSchema(unifiedContentTable, {
   placement: z.enum([...Object.values(AllPlacement)]),
-  publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
-  permalinkUrl: z.string().url().optional().nullable(),
-});
-export const UnifiedContentSelect = createSelectSchema(unifiedContentTable, {
-  placement: z.enum([...Object.values(AllPlacement)]),
-  publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
-  permalinkUrl: z.string().url().optional().nullable(),
-});
+  metrics: unifiedContentMetricsSchema.optional(),
+};
+export const UnifiedContentInsert = createInsertSchema(
+  unifiedContentTable,
+  opts,
+);
+export const UnifiedContentUpdate = createUpdateSchema(
+  unifiedContentTable,
+  opts,
+);
+export const UnifiedContentSelect = createSelectSchema(
+  unifiedContentTable,
+  opts,
+);

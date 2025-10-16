@@ -91,7 +91,9 @@ function WorkspaceComponent() {
     <WorkspaceWebSocketProvider workspaceSlug={workspace.slug}>
       <div className="flex h-full flex-col gap-4">
         {shouldShowAccountsBar && (
-          <WorkspaceConnectedAccountsBar className="flex-1" />
+          <div className="px-4 pt-5">
+            <WorkspaceConnectedAccountsBar />
+          </div>
         )}
         <div className="flex flex-col flex-1 min-h-0 px-4 pb-4">
           <Outlet />

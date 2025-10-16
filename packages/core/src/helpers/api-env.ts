@@ -4,7 +4,10 @@ import type { PublishWorkflowParams } from "@core/domain/content/workflows/conte
 import type { ImageGenerationWorkflowParams } from "@core/domain/image-generation";
 import type { ProductProcessingWorkflowParams } from "@core/domain/product/workflows/product-processing-workflow";
 import type { StyleComponentWorkflowParams } from "@core/domain/style-component";
-import type { WorkspacePusher } from "@core/durable-objects";
+import type {
+  WorkspacePusher,
+  WorkspaceSyncCoordinator,
+} from "@core/durable-objects";
 import { createContext } from "@core/utils/context";
 import type { OrganizationRole } from "@shared/workspace/auth";
 import type { User } from "@workos-inc/node";
@@ -25,6 +28,7 @@ export type ApiEnv = {
     StyleComponentWorkflow: Workflow<StyleComponentWorkflowParams>;
     ImageGenerationWorkflow: Workflow<ImageGenerationWorkflowParams>;
     WorkspacePusher: DurableObjectNamespace<WorkspacePusher>;
+    WorkspaceSyncCoordinator: DurableObjectNamespace<WorkspaceSyncCoordinator>;
     ContainerBackend: DurableObjectNamespace<ContainerBackend>;
     Bucket: R2Bucket;
   };

@@ -1,3 +1,4 @@
+import { cn } from "@openpromo/ui/lib/utils";
 import { ConnectedAccountsSection } from "@/components/workspace/connected-accounts-section";
 import { useConnectedAccounts } from "@/queries/connected-account";
 
@@ -15,7 +16,7 @@ export function WorkspaceConnectedAccountsBar({
       accounts={accounts}
       isLoading={isLoading}
       variant="bar"
-      className={className}
+      className={cn("shrink-0", className)}
     />
   );
 }

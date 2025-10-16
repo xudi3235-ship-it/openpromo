@@ -50,6 +50,10 @@
         "class_name": "WorkspacePusher"
       },
       {
+        "name": "WorkspaceSyncCoordinator",
+        "class_name": "WorkspaceSyncCoordinator"
+      },
+      {
         "name": "ContainerBackend",
         "class_name": "ContainerBackend"
       }
@@ -94,6 +98,10 @@
     {
       "tag": "v4",
       "new_sqlite_classes": ["ContainerBackend"]
+    },
+    {
+      "tag": "v5",
+      "new_sqlite_classes": ["WorkspaceSyncCoordinator"]
     }
   ],
   "env": {
@@ -116,6 +124,10 @@
           {
             "name": "WorkspacePusher",
             "class_name": "WorkspacePusher"
+          },
+          {
+            "name": "WorkspaceSyncCoordinator",
+            "class_name": "WorkspaceSyncCoordinator"
           },
           {
             "name": "ContainerBackend",
@@ -198,6 +210,10 @@
           {
             "name": "WorkspacePusher",
             "class_name": "WorkspacePusher"
+          },
+          {
+            "name": "WorkspaceSyncCoordinator",
+            "class_name": "WorkspaceSyncCoordinator"
           },
           {
             "name": "ContainerBackend",

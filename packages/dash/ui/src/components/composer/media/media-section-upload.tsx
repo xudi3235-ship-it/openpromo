@@ -69,14 +69,9 @@ function MediaSectionUpload() {
             </span>
           )
         ) : (
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-foreground/80">
-              Upload media
-            </p>
-            <p className="text-xs text-muted-foreground/80">
-              Drag and drop files, or click to browse
-            </p>
-          </div>
+          <p className="text-sm font-semibold text-foreground/80">
+            Share photos and videos
+          </p>
         )}
         {showRemainingNotice && (
           <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70">

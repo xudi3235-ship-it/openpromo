@@ -65,7 +65,7 @@ function MediaSectionHeader() {
             ? `${remainingSlots} slot${remainingSlots === 1 ? "" : "s"} left.`
             : "All slots are in use."
         }`
-      : `Upload up to ${MEDIA_CONFIG.maxFiles} files. Images ${
+      : `Share up to ${MEDIA_CONFIG.maxFiles} files. Images ${
           MEDIA_CONFIG.maxImageSize / (1024 * 1024)
         }MB, videos ${MEDIA_CONFIG.maxVideoSize / (1024 * 1024)}MB.`;
 
@@ -86,7 +86,9 @@ function MediaSectionHeader() {
     <>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
-          <h3 className="text-sm font-semibold text-foreground">Media</h3>
+          <h3 className="text-sm font-semibold text-foreground">
+            Share photos and videos
+          </h3>
           <p className="text-xs text-muted-foreground">{headerDescription}</p>
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground/90">
