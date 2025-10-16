@@ -1,6 +1,8 @@
+import type { Actor } from "@core/helpers/actor";
 import type { WorkspaceSyncTask } from "@shared/workspace";
 
 export type RunTaskParams = {
+  actor: Actor.WorkspaceUser;
   taskKey: string;
   task: WorkspaceSyncTask;
   workspaceId: string;

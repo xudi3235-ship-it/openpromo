@@ -1,5 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import { WorkspaceSyncManager } from "@core/domain/workspace/sync";
+import type { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import {
   createWorkspaceSyncTask,
@@ -104,7 +105,10 @@ export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
     return Object.values(this.tasks);
   }
 
-  async runTask(taskKey: string): Promise<TaskResult> {
+  async runTask(
+    actor: Actor.WorkspaceUser,
+    taskKey: string,
+  ): Promise<TaskResult> {
     await this.ensureLoaded();
 
     const task = this.tasks[taskKey];
@@ -115,6 +119,7 @@ export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
     const workspaceId = this.requireWorkspaceId();
 
     const { task: updatedTask } = await this.manager.runTask({
+      actor,
       taskKey,
       task,
       workspaceId,
@@ -151,8 +156,11 @@ export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
     return { task: this.tasks[taskKey] };
   }
 
-  async triggerTask(taskKey: string): Promise<TaskResult> {
-    return this.runTask(taskKey);
+  async triggerTask(
+    actor: Actor.WorkspaceUser,
+    taskKey: string,
+  ): Promise<TaskResult> {
+    return this.runTask(actor, taskKey);
   }
 
   private async ensureLoaded() {

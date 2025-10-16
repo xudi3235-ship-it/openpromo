@@ -1,7 +1,9 @@
+import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import type { ContentMetricsTarget } from "@core/domain/content/metrics";
 import { Ent } from "@core/helpers/ent";
 import type { UnifiedContentMetrics } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
+import { facebookGraphRequest } from "./api";
 
 const log = Log.create({ namespace: "facebook-published-content" });
 
@@ -42,19 +44,59 @@ export class EntFacebookPublishedContent extends Ent<ContentMetricsTarget> {
       return null;
     }
 
-    // TODO: integrate with facebookGraphRequest + insights API.
-    log.info("fetching facebook metrics (stub)", {
+    const account = await ConnectedAccount.fromID(
+      this.target.connectedAccountId,
+    );
+
+    const ctx = {
+      accessToken: account.encryptedAccessToken,
+    };
+
+    log.info("fetching facebook metrics", {
       contentId: this.target.id,
       sourceContentId: this.target.sourceContentId,
     });
 
+    // https://developers.facebook.com/docs/graph-api/reference/v24.0/insights
+    const response = await facebookGraphRequest<{
+      data?: Array<{
+        name?: string;
+        values?: Array<{ value?: number } | null>;
+      }>;
+    }>(ctx, `/${this.target.sourceContentId}/insights`, {
+      searchParams: {
+        metric: [
+          "post_impressions_unique",
+          "post_impressions",
+          "post_engaged_users",
+          "post_reactions_by_type_total",
+          "post_comments",
+          "post_shares",
+        ].join(","),
+      },
+    });
+
+    const metrics = new Map<string, number>();
+
+    for (const entry of response.data ?? []) {
+      if (!entry?.name) continue;
+      const first = entry.values?.[0];
+      const value = (first as { value?: number } | null)?.value;
+      if (typeof value === "number") {
+        metrics.set(entry.name, value);
+      }
+    }
+
     return {
-      reach: 0,
-      impressions: 0,
-      engagement: 0,
-      comments: 0,
-      shares: 0,
-      likes: 0,
+      reach: metrics.get("post_impressions_unique") ?? 0,
+      impressions: metrics.get("post_impressions") ?? 0,
+      engagement: metrics.get("post_engaged_users") ?? 0,
+      comments: metrics.get("post_comments") ?? 0,
+      shares: metrics.get("post_shares") ?? 0,
+      likes:
+        metrics.get("post_reactions_by_type_total") ??
+        metrics.get("post_reactions") ??
+        0,
     } satisfies UnifiedContentMetrics;
   }
 }
