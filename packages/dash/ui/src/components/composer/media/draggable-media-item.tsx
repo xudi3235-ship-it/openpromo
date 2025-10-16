@@ -60,7 +60,7 @@ export function DraggableMediaItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative flex-shrink-0 w-16 h-16 group rounded-lg overflow-hidden bg-muted cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring ${
+      className={`relative flex-shrink-0 w-20 h-20 group rounded-lg overflow-hidden bg-muted cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring ${
         isDragging ? "opacity-50 z-50" : ""
       }`}
     >
