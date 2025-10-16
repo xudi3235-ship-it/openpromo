@@ -1,13 +1,13 @@
 import type { ProductSelectType } from "@core/schemas/product.sql";
 import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
-import { Card, CardContent, CardHeader } from "@openpromo/ui/components/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
+import { cn } from "@openpromo/ui/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { ExternalLink, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import * as React from "react";
@@ -25,39 +25,50 @@ export function ProductCard({ product }: ProductCardProps) {
   const navigate = useNavigate();
   const { workspace } = useWorkspace();
   const primaryAttachment = product.attachments.find(
-    (a) => a.id === product.primaryAttachmentId,
+    (attachment) => attachment.id === product.primaryAttachmentId,
   );
   const imageAttachment =
-    primaryAttachment ?? product.attachments.find((a) => a.type === "photo");
+    primaryAttachment ??
+    product.attachments.find((attachment) => attachment.type === "photo");
 
-  const sourceColors: Record<string, string> = {
-    MANUAL: "bg-gray-500/10 text-gray-500",
-    AMAZON: "bg-orange-500/10 text-orange-500",
-    SHOPIFY: "bg-green-500/10 text-green-500",
-    ETSY: "bg-pink-500/10 text-pink-500",
-    CUSTOM_URL: "bg-blue-500/10 text-blue-500",
+  const sourceStyles: Record<string, { badge: string }> = {
+    MANUAL: {
+      badge: "bg-zinc-500/80 text-white",
+    },
+    AMAZON: {
+      badge: "bg-orange-500/80 text-white",
+    },
+    SHOPIFY: {
+      badge: "bg-emerald-500/80 text-white",
+    },
+    ETSY: {
+      badge: "bg-rose-500/80 text-white",
+    },
+    CUSTOM_URL: {
+      badge: "bg-sky-500/80 text-white",
+    },
   };
 
   const stateConfig = {
     not_started: {
       label: "New",
-      className: "bg-gray-500/20 text-gray-100",
+      className: "bg-zinc-500/80 text-white",
     },
     pending: {
       label: "Pending",
-      className: "bg-yellow-500/20 text-yellow-100",
+      className: "bg-amber-400 text-zinc-900",
     },
     processing: {
       label: "Processing",
-      className: "bg-blue-500/20 text-blue-100",
+      className: "bg-blue-500/80 text-white",
     },
     ready: {
       label: "Ready",
-      className: "bg-green-500/20 text-green-100",
+      className: "bg-emerald-500/80 text-white",
     },
     failed: {
       label: "Failed",
-      className: "bg-red-500/20 text-red-100",
+      className: "bg-red-500/80 text-white",
     },
   };
 
@@ -70,8 +81,8 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const formatDate = (date: Date | string | null | undefined) => {
     if (!date) return null;
-    const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
+    const resolvedDate = typeof date === "string" ? new Date(date) : date;
+    return resolvedDate.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -83,6 +94,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const handleCardClick = () => {
     if (deleteDialogOpen || editModalOpen) return;
+
     navigate({
       to: "/workspaces/$workspaceSlug/products/$productId",
       params: {
@@ -92,151 +104,159 @@ export function ProductCard({ product }: ProductCardProps) {
     });
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleCardClick();
+    }
+  };
+
   return (
-    <Card
-      className="group overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer border-0 bg-card"
-      onClick={handleCardClick}
-    >
-      <CardHeader className="p-0">
-        <div className="aspect-square bg-muted relative overflow-hidden">
-          {imageUrl ? (
-            <>
-              <img
-                src={imageUrl}
-                alt={product.name}
-                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
-              />
-              {/* Top gradient for badge visibility */}
-              <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/40 to-transparent" />
-            </>
-          ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-              <span className="text-5xl opacity-20">📦</span>
-            </div>
+    <div className="flex flex-col gap-3">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleCardClick}
+        onKeyDown={handleKeyDown}
+        className="group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+      >
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={product.name}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+            <span className="text-6xl opacity-30">📦</span>
+          </div>
+        )}
+
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/30 to-transparent transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-60" />
+
+        <div className="absolute left-3 top-3 z-20 flex flex-wrap items-center gap-2">
+          <span
+            className={cn(
+              "rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide backdrop-blur-sm",
+              product.source
+                ? sourceStyles[product.source]?.badge
+                : "bg-zinc-500/80 text-white",
+            )}
+          >
+            {product.source?.toLowerCase() ?? "unknown"}
+          </span>
+
+          {currentState && (
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur-sm",
+                currentState.className,
+              )}
+            >
+              {currentState.label}
+            </span>
+          )}
+        </div>
+
+        <div className="absolute right-3 top-3 z-20 flex items-center gap-2">
+          {attachmentCount > 1 && (
+            <span className="rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-medium text-white shadow-sm backdrop-blur">
+              {attachmentCount} files
+            </span>
           )}
 
-          {/* Overlay gradient for better text readability on hover */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-
-          {/* Top badges */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
-            <div className="flex gap-1.5">
-              <Badge
-                className={`text-[10px] px-2 py-0.5 font-semibold backdrop-blur-md shadow-sm ${
-                  product.source
-                    ? (sourceColors[product.source] ??
-                      "bg-gray-500/20 text-gray-100")
-                    : "bg-gray-500/20 text-gray-100"
-                }`}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="pointer-events-auto h-8 w-8 translate-y-2 rounded-full bg-black/55 text-white opacity-0 backdrop-blur transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100"
+                onClick={(event) => event.stopPropagation()}
               >
-                {product.source?.toLowerCase() ?? "unknown"}
-              </Badge>
-
-              {currentState && (
-                <Badge
-                  className={`text-[10px] px-2 py-0.5 font-semibold backdrop-blur-md border-0 shadow-sm ${currentState.className}`}
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-40"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <DropdownMenuItem onSelect={() => setEditModalOpen(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              {product.sourceUrl && (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    product.sourceUrl &&
+                    window.open(product.sourceUrl, "_blank")
+                  }
                 >
-                  {currentState.label}
-                </Badge>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  View Source
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                className="text-destructive"
+                onSelect={() => setDeleteDialogOpen(true)}
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-end p-4">
+          <div className="translate-y-3 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+            <div className="space-y-2 text-white">
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold leading-tight line-clamp-2">
+                  {product.name}
+                </h3>
+                {product.description && (
+                  <p className="text-sm text-white/80 line-clamp-2">
+                    {product.description}
+                  </p>
+                )}
+              </div>
+
+              {product.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {product.tags.slice(0, 3).map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="border border-white/25 bg-white/15 px-2 py-0 text-[11px] font-medium text-white/90 backdrop-blur-sm hover:bg-white/25"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                  {product.tags.length > 3 && (
+                    <Badge
+                      variant="secondary"
+                      className="border border-white/25 bg-white/10 px-2 py-0 text-[11px] font-medium text-white/80 backdrop-blur-sm"
+                    >
+                      +{product.tags.length - 3}
+                    </Badge>
+                  )}
+                </div>
+              )}
+
+              {(product.category || createdDate) && (
+                <div className="flex items-center justify-between text-xs text-white/70">
+                  {product.category && (
+                    <span className="truncate">{product.category}</span>
+                  )}
+                  {createdDate && <span>{createdDate}</span>}
+                </div>
               )}
             </div>
-
-            {attachmentCount > 1 && (
-              <Badge className="text-[10px] px-2 py-0.5 bg-black/60 text-white backdrop-blur-md border-0 shadow-sm font-medium">
-                {attachmentCount} files
-              </Badge>
-            )}
-          </div>
-
-          {/* Menu button */}
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <DropdownMenuItem onSelect={() => setEditModalOpen(true)}>
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Edit
-                </DropdownMenuItem>
-                {product.sourceUrl && (
-                  <DropdownMenuItem
-                    onSelect={() =>
-                      product.sourceUrl &&
-                      window.open(product.sourceUrl, "_blank")
-                    }
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    View Source
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onSelect={() => setDeleteDialogOpen(true)}
-                >
-                  <Trash className="h-4 w-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
-      </CardHeader>
-
-      <CardContent className="p-3 space-y-2">
-        <div className="space-y-1">
-          <h3 className="text-sm font-semibold leading-tight line-clamp-2">
-            {product.name}
-          </h3>
-
-          {product.description && (
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {product.description}
-            </p>
-          )}
-        </div>
-
-        {product.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {product.tags.slice(0, 3).map((tag) => (
-              <Badge
-                key={tag}
-                variant="secondary"
-                className="text-[10px] px-1.5 py-0 h-5 font-normal"
-              >
-                {tag}
-              </Badge>
-            ))}
-            {product.tags.length > 3 && (
-              <Badge
-                variant="secondary"
-                className="text-[10px] px-1.5 py-0 h-5 font-normal"
-              >
-                +{product.tags.length - 3}
-              </Badge>
-            )}
-          </div>
-        )}
-
-        {(product.category || createdDate) && (
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1">
-            {product.category && (
-              <span className="truncate">{product.category}</span>
-            )}
-            {createdDate && <span className="shrink-0">{createdDate}</span>}
-          </div>
-        )}
-      </CardContent>
+      </div>
 
       <CreateProductModal
         open={editModalOpen}
@@ -249,6 +269,6 @@ export function ProductCard({ product }: ProductCardProps) {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
       />
-    </Card>
+    </div>
   );
 }
