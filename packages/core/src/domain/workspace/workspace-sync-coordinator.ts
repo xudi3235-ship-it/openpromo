@@ -2,12 +2,12 @@ import { DurableObject } from "cloudflare:workers";
 import type { ApiEnv } from "@core/helpers/api-env";
 import {
   createWorkspaceSyncTask,
-  type WorkspaceSyncTaskState,
-  WorkspaceSyncTaskStateSchema,
+  mergeWorkspaceSyncTask,
+  parseWorkspaceSyncTaskPatch,
+  type WorkspaceSyncTask,
+  type WorkspaceSyncTaskPatch,
   type WorkspaceSyncTaskStore,
   WorkspaceSyncTaskStoreSchema,
-  type WorkspaceSyncTaskUpsertInput,
-  WorkspaceSyncTaskUpsertSchema,
 } from "@shared/workspace";
 
 const STORAGE_KEYS = {
@@ -21,12 +21,12 @@ export type InitializeResult = {
 };
 
 export type TaskResult = {
-  task: WorkspaceSyncTaskState | null;
+  task: WorkspaceSyncTask | null;
 };
 
 export type StatusResult = {
   workspaceSlug: string | null;
-  tasks: WorkspaceSyncTaskState[];
+  tasks: WorkspaceSyncTask[];
 };
 
 /**
@@ -81,14 +81,14 @@ export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
     };
   }
 
-  async listTasks(): Promise<WorkspaceSyncTaskState[]> {
+  async listTasks(): Promise<WorkspaceSyncTask[]> {
     await this.ensureLoaded();
     return Object.values(this.tasks);
   }
 
   async upsertTask(
     taskKey: string,
-    input: WorkspaceSyncTaskUpsertInput = {},
+    input: WorkspaceSyncTaskPatch = {},
   ): Promise<TaskResult> {
     await this.ensureLoaded();
 
@@ -97,39 +97,23 @@ export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
     }
 
     const existing = this.tasks[taskKey];
-    const parsedInput = WorkspaceSyncTaskUpsertSchema.parse(input);
+    const patch = parseWorkspaceSyncTaskPatch(input);
 
-    const taskType = existing?.type ?? parsedInput.type;
-
-    if (!taskType) {
-      throw new Error("task type is required when creating a new task");
+    if (!existing) {
+      const task = createWorkspaceSyncTask({
+        key: taskKey,
+        metadata: patch.metadata,
+        nextRunAt: patch.nextRunAt ?? undefined,
+        lastTriggeredAt: patch.lastTriggeredAt ?? undefined,
+      });
+      this.tasks[taskKey] = task;
+    } else {
+      this.tasks[taskKey] = mergeWorkspaceSyncTask(existing, patch);
     }
-    if (existing && parsedInput.type && parsedInput.type !== existing.type) {
-      throw new Error("cannot change task type for an existing task");
-    }
 
-    const metadata =
-      parsedInput.metadata !== undefined
-        ? parsedInput.metadata
-        : existing?.metadata;
-    const nextRunAt =
-      parsedInput.nextRunAt !== undefined
-        ? parsedInput.nextRunAt
-        : existing?.nextRunAt;
-
-    const task = createWorkspaceSyncTask({
-      key: taskKey,
-      type: taskType,
-      createdAt: existing?.createdAt,
-      lastTriggeredAt: existing?.lastTriggeredAt,
-      metadata,
-      nextRunAt,
-    });
-
-    this.tasks[taskKey] = task;
     await this.persistTasks();
 
-    return { task };
+    return { task: this.tasks[taskKey] };
   }
 
   /**
@@ -152,8 +136,7 @@ export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
       );
     }
 
-    this.tasks[taskKey] = WorkspaceSyncTaskStateSchema.parse({
-      ...existing,
+    this.tasks[taskKey] = mergeWorkspaceSyncTask(existing, {
       lastTriggeredAt: now,
     });
 

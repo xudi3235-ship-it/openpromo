@@ -4,70 +4,136 @@ export enum WorkspaceSyncTaskType {
   ContentMetricsRefresh = "content.metrics.refresh",
 }
 
-export const WorkspaceSyncTaskTypeSchema = z.enum(
-  Object.values(WorkspaceSyncTaskType),
-);
-
-export const WorkspaceSyncTaskMetadataSchema = z.record(
-  z.string(),
-  z.unknown(),
-);
-
-export const WorkspaceSyncTaskStateSchema = z
+export const ContentMetricsMetadataSchema = z
   .object({
-    key: z.string().min(1),
-    type: WorkspaceSyncTaskTypeSchema,
-    createdAt: z.number().int().nonnegative(),
-    lastTriggeredAt: z.number().int().nonnegative().optional(),
-    nextRunAt: z.number().int().nonnegative().optional(),
-    metadata: WorkspaceSyncTaskMetadataSchema.optional(),
+    cursor: z.string().nullable().optional(),
+    pendingContentIds: z.array(z.string()).min(1).optional(),
+    batchSize: z.number().int().positive().max(200).default(50),
+    retryCount: z.number().int().nonnegative().default(0),
   })
   .strict();
 
+export type ContentMetricsMetadata = z.infer<
+  typeof ContentMetricsMetadataSchema
+>;
+
+const ContentMetricsTaskSchema = z
+  .object({
+    type: z.literal(WorkspaceSyncTaskType.ContentMetricsRefresh),
+    key: z.string().min(1),
+    createdAt: z.number().int().nonnegative(),
+    lastTriggeredAt: z.number().int().nonnegative().optional(),
+    nextRunAt: z.number().int().nonnegative().optional(),
+    metadata: ContentMetricsMetadataSchema,
+  })
+  .strict();
+
+export type ContentMetricsTask = z.infer<typeof ContentMetricsTaskSchema>;
+
+export const WorkspaceSyncTaskSchema = ContentMetricsTaskSchema;
+export type WorkspaceSyncTask = ContentMetricsTask;
+
 export const WorkspaceSyncTaskStoreSchema = z.record(
   z.string(),
-  WorkspaceSyncTaskStateSchema,
+  WorkspaceSyncTaskSchema,
 );
+export type WorkspaceSyncTaskStore = Record<string, WorkspaceSyncTask>;
 
-export const WorkspaceSyncTaskCreateSchema =
-  WorkspaceSyncTaskStateSchema.extend({
-    createdAt: WorkspaceSyncTaskStateSchema.shape.createdAt.optional(),
-  }).strict();
-
-export const WorkspaceSyncTaskUpsertSchema = z
+const ContentMetricsTaskCreateSchema = z
   .object({
-    type: WorkspaceSyncTaskTypeSchema.optional(),
-    metadata: WorkspaceSyncTaskMetadataSchema.optional(),
+    key: z.string().min(1),
+    createdAt: z.number().int().nonnegative().optional(),
+    lastTriggeredAt: z.number().int().nonnegative().optional(),
     nextRunAt: z.number().int().nonnegative().optional(),
+    metadata: ContentMetricsMetadataSchema.optional(),
   })
-  .strict()
-  .partial()
-  .default({});
+  .strict();
 
-export type WorkspaceSyncTaskMetadata = z.infer<
-  typeof WorkspaceSyncTaskMetadataSchema
->;
-export type WorkspaceSyncTaskState = z.infer<
-  typeof WorkspaceSyncTaskStateSchema
->;
-export type WorkspaceSyncTaskStore = z.infer<
-  typeof WorkspaceSyncTaskStoreSchema
->;
-export type WorkspaceSyncTaskCreateInput = z.infer<
-  typeof WorkspaceSyncTaskCreateSchema
->;
-export type WorkspaceSyncTaskUpsertInput = z.infer<
-  typeof WorkspaceSyncTaskUpsertSchema
+export type WorkspaceSyncTaskCreateInput = z.input<
+  typeof ContentMetricsTaskCreateSchema
 >;
 
-export function createWorkspaceSyncTask<
-  T extends WorkspaceSyncTaskType = WorkspaceSyncTaskType,
->(
-  input: WorkspaceSyncTaskCreateInput & { type: T },
-): WorkspaceSyncTaskState & { type: T } {
-  const parsed = WorkspaceSyncTaskCreateSchema.parse(input);
-  return WorkspaceSyncTaskStateSchema.parse({
-    ...parsed,
-    createdAt: parsed.createdAt ?? Date.now(),
-  }) as WorkspaceSyncTaskState & { type: T };
+export const ContentMetricsTaskPatchSchema = z
+  .object({
+    metadata: ContentMetricsMetadataSchema.partial().optional(),
+    nextRunAt: z.number().int().nonnegative().nullable().optional(),
+    lastTriggeredAt: z.number().int().nonnegative().nullable().optional(),
+  })
+  .strict();
+
+export type WorkspaceSyncTaskPatch = z.infer<
+  typeof ContentMetricsTaskPatchSchema
+>;
+
+const METADATA_DEFAULTS: ContentMetricsMetadata = {
+  cursor: null,
+  pendingContentIds: undefined,
+  batchSize: 50,
+  retryCount: 0,
+};
+
+function normalizeMetadata(
+  previous?: ContentMetricsMetadata,
+  patch?: Partial<ContentMetricsMetadata>,
+): ContentMetricsMetadata {
+  const merged = {
+    ...METADATA_DEFAULTS,
+    ...(previous ?? {}),
+    ...(patch ?? {}),
+  };
+
+  return ContentMetricsMetadataSchema.parse(merged);
 }
+
+export function createWorkspaceSyncTask(
+  input: WorkspaceSyncTaskCreateInput,
+): WorkspaceSyncTask {
+  const base = ContentMetricsTaskCreateSchema.parse(input);
+
+  const metadata = normalizeMetadata(undefined, base.metadata);
+
+  return WorkspaceSyncTaskSchema.parse({
+    type: WorkspaceSyncTaskType.ContentMetricsRefresh,
+    key: base.key,
+    createdAt: base.createdAt ?? Date.now(),
+    lastTriggeredAt: base.lastTriggeredAt ?? undefined,
+    nextRunAt: base.nextRunAt ?? undefined,
+    metadata,
+  });
+}
+
+export function parseWorkspaceSyncTaskPatch(
+  patch?: WorkspaceSyncTaskPatch,
+): WorkspaceSyncTaskPatch {
+  return ContentMetricsTaskPatchSchema.parse(patch ?? {});
+}
+
+export function mergeWorkspaceSyncTask(
+  state: WorkspaceSyncTask,
+  patch: WorkspaceSyncTaskPatch,
+): WorkspaceSyncTask {
+  const parsed = parseWorkspaceSyncTaskPatch(patch);
+
+  const metadata =
+    parsed.metadata !== undefined
+      ? normalizeMetadata(state.metadata, parsed.metadata)
+      : state.metadata;
+
+  const nextRunAt =
+    parsed.nextRunAt !== undefined
+      ? (parsed.nextRunAt ?? undefined)
+      : state.nextRunAt;
+  const lastTriggeredAt =
+    parsed.lastTriggeredAt !== undefined
+      ? (parsed.lastTriggeredAt ?? undefined)
+      : state.lastTriggeredAt;
+
+  return WorkspaceSyncTaskSchema.parse({
+    ...state,
+    metadata,
+    nextRunAt,
+    lastTriggeredAt,
+  });
+}
+
+export type WorkspaceSyncTaskMetadata = ContentMetricsMetadata;
