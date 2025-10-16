@@ -16,6 +16,7 @@ import {
   Video,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { useMediaDimensions } from "@/hooks/useMediaDimensions";
 
 interface MediaListItemProps {
   id: string;
@@ -67,6 +68,7 @@ export function MediaListItem({
     attachment.file?.name || attachment.metadata?.originalFilename;
   const fileSize = formatFileSize(attachment.file?.size);
   const typeLabel = attachment.type === "video" ? "Video" : "Photo";
+  const { aspectRatio } = useMediaDimensions(attachment);
   const previewNode = renderAttachment(
     attachment,
     "w-full h-full object-cover",
@@ -132,10 +134,15 @@ export function MediaListItem({
               {fileName || `Media ${index + 1}`}
             </p>
             <p className="text-xs text-muted-foreground">
-              {typeLabel}
-              {fileSize ? ` • ${fileSize}` : ""}
-              {uploading && " • Uploading"}
-              {error && " • Needs attention"}
+              {[
+                typeLabel,
+                aspectRatio,
+                fileSize,
+                uploading ? "Uploading" : null,
+                error ? "Needs attention" : null,
+              ]
+                .filter(Boolean)
+                .join(" • ")}
             </p>
           </div>
           <div className="flex items-center gap-1.5">
