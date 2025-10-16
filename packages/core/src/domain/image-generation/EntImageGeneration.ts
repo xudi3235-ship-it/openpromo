@@ -78,7 +78,11 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       style,
       prompt: imageGenPrompt,
     });
-
+    // done
+    await generation.update({
+      outputImages: imageGenResult.imageUrls,
+      state: "completed",
+    });
     return {
       generation,
       imageUrl: imageGenResult.imageUrls[0],
