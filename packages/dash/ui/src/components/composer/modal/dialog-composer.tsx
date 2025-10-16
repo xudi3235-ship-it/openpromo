@@ -5,10 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
-import { useEffect } from "react";
-import { useConnectedAccounts } from "@/queries/connected-account";
-import { useContentGroupQuery } from "@/queries/content";
-import { useComposerStore } from "@/stores/composer-store";
+import { useComposerDialogLifecycle } from "@/hooks/composer/useComposerHooks";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import { ComposerLeft } from "../layout/composer-left";
 import { ComposerRight } from "../layout/composer-right";
@@ -22,39 +19,12 @@ export default function ComposerDialog() {
     pendingContentGroupID,
     initialContentCreateData,
   } = useDialogComposerStore();
-  const initializeComposer = useComposerStore(
-    (state) => state.initializeComposer,
-  );
-
-  const { accounts: accountsData } = useConnectedAccounts();
-  const { data: contentGroupData, isLoading } = useContentGroupQuery(
-    pendingContentGroupID,
-  );
-
   const isOpen = mode === "dialog";
-
-  // Initialize composer when dialog opens
-  useEffect(() => {
-    if (isOpen && accountsData) {
-      const contentData =
-        contentGroupData?.contentCreateData ?? initialContentCreateData;
-
-      initializeComposer({
-        // @ts-expect-error - Type mismatch between API response (string dates) and store type (Date objects)
-        initContentCreateData: contentData || undefined,
-        contentGroupID: pendingContentGroupID,
-        initialAccounts: accountsData,
-        initialMessage: "",
-      });
-    }
-  }, [
-    isOpen,
-    accountsData,
-    contentGroupData?.contentCreateData,
-    initialContentCreateData,
+  const { isLoading } = useComposerDialogLifecycle({
+    mode,
     pendingContentGroupID,
-    initializeComposer,
-  ]);
+    initialContentCreateData,
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeComposer()}>
