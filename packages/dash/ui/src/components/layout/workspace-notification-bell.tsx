@@ -5,7 +5,6 @@ import {
   PopoverTrigger,
 } from "@openpromo/ui/components/popover";
 import { Separator } from "@openpromo/ui/components/separator";
-import { cn } from "@openpromo/ui/lib/utils";
 import type { WorkspaceNotificationEnvelope } from "@shared/workspace";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, Bell, BellRing, CheckCircle2 } from "lucide-react";
@@ -60,12 +59,7 @@ export function WorkspaceNotificationBell({
           className="relative"
           aria-label="Workspace notifications"
         >
-          <BellIcon
-            className={cn(
-              "size-5 transition-colors",
-              hasUnread ? "text-primary" : "text-muted-foreground",
-            )}
-          />
+          <BellIcon className="size-5" />
           {hasUnread && (
             <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-medium text-destructive-foreground">
               {unreadCount > 9 ? "9+" : unreadCount}
@@ -229,3 +223,5 @@ function formatTimestamp(timestamp: number) {
     minute: "2-digit",
   });
 }
+export const WORKSPACE_NOTIFICATION_PORTAL_ID =
+  "workspace-notification-sidebar-slot";

@@ -52,7 +52,7 @@ export function MediaListView({
           )}
           strategy={verticalListSortingStrategy}
         >
-          <div className="space-y-3">
+          <div className="space-y-2">
             {attachments.map((attachment, index) => {
               const stableKey = getStableKey(attachment, index);
 

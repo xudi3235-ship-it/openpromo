@@ -1,6 +1,5 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Button } from "@openpromo/ui/components/button";
 import {
   Tooltip,
   TooltipContent,
@@ -86,7 +85,7 @@ export function MediaListItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex w-full items-start gap-4 rounded-lg border border-border/70 bg-background/95 p-3 transition shadow-none",
+        "flex w-full items-start gap-3 rounded-lg border border-border/70 bg-background p-3 transition shadow-none",
         isDragging && "ring-1 ring-ring/50",
       )}
     >
@@ -135,43 +134,46 @@ export function MediaListItem({
             <p className="text-xs text-muted-foreground">
               {typeLabel}
               {fileSize ? ` • ${fileSize}` : ""}
+              {uploading && " • Uploading"}
+              {error && " • Needs attention"}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit(attachment, index)}
-              disabled={uploading}
-            >
-              <Pencil className="mr-1 h-4 w-4" /> Edit
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => onRemove(index)}
-              disabled={uploading}
-            >
-              <Trash className="mr-1 h-4 w-4" /> Remove
-            </Button>
+          <div className="flex items-center gap-1.5">
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => onEdit(attachment, index)}
+                  disabled={uploading}
+                  className="flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-muted-foreground transition hover:border-border hover:bg-muted disabled:opacity-50"
+                  aria-label="Edit media"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Edit</TooltipContent>
+            </Tooltip>
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => onRemove(index)}
+                  disabled={uploading}
+                  className="flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-destructive transition hover:border-destructive/40 hover:bg-destructive/10 disabled:opacity-50"
+                  aria-label="Remove media"
+                >
+                  <Trash className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Remove</TooltipContent>
+            </Tooltip>
           </div>
         </div>
-
-        <div className="rounded-md border bg-muted/40 p-2 text-xs text-muted-foreground">
-          {uploading && "Uploading…"}
-          {!uploading &&
-            error &&
-            "Upload failed. Remove or replace this media."}
-          {!uploading && !error && (
-            <span>
-              Ready to publish. Use Edit for cropping, enhancements, or
-              integrations.
-            </span>
-          )}
-        </div>
+        {error && !uploading && (
+          <p className="rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1 text-xs text-destructive">
+            Upload failed. Remove or replace this media.
+          </p>
+        )}
       </div>
     </div>
   );

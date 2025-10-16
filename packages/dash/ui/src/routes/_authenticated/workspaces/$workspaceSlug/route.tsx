@@ -9,7 +9,6 @@ import {
 } from "@tanstack/react-router";
 import { toast } from "sonner";
 import ComposerDialog from "@/components/composer/modal/dialog-composer";
-import { WorkspaceNotificationBell } from "@/components/layout/workspace-notification-bell";
 import { WorkspaceLoading } from "@/components/loading/workspace-loading";
 import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
@@ -101,7 +100,6 @@ function WorkspaceComponent() {
           {shouldShowAccountsBar && (
             <WorkspaceConnectedAccountsBar className="flex-1" />
           )}
-          <WorkspaceNotificationBell workspaceSlug={workspace.slug} />
         </div>
         <div className="flex flex-col flex-1 min-h-0 px-4 pb-4">
           <Outlet />
