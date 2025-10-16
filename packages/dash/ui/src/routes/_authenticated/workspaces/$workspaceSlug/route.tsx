@@ -1,3 +1,4 @@
+import { cn } from "@openpromo/ui/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -8,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { toast } from "sonner";
 import ComposerDialog from "@/components/composer/modal/dialog-composer";
+import { WorkspaceNotificationBell } from "@/components/layout/workspace-notification-bell";
 import { WorkspaceLoading } from "@/components/loading/workspace-loading";
 import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
@@ -90,10 +92,18 @@ function WorkspaceComponent() {
   return (
     <WorkspaceWebSocketProvider workspaceSlug={workspace.slug}>
       <div className="flex h-full flex-col gap-4">
-        {shouldShowAccountsBar && (
-          <WorkspaceConnectedAccountsBar className="mx-4 mt-4" />
-        )}
-        <div className="flex flex-col flex-1 min-h-0 p-4">
+        <div
+          className={cn(
+            "flex items-center gap-4 px-4 pt-4",
+            !shouldShowAccountsBar && "justify-end",
+          )}
+        >
+          {shouldShowAccountsBar && (
+            <WorkspaceConnectedAccountsBar className="flex-1" />
+          )}
+          <WorkspaceNotificationBell workspaceSlug={workspace.slug} />
+        </div>
+        <div className="flex flex-col flex-1 min-h-0 px-4 pb-4">
           <Outlet />
         </div>
       </div>

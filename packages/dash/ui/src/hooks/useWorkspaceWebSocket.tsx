@@ -6,7 +6,10 @@
  * the same connection.
  */
 
-import type { WorkspaceEvent } from "@shared/workspace";
+import type {
+  WorkspaceEvent,
+  WorkspaceNotificationEnvelope,
+} from "@shared/workspace";
 import { WorkspaceEventSchema } from "@shared/workspace";
 import type React from "react";
 import {
@@ -25,6 +28,8 @@ type EventListener = (event: WorkspaceEvent) => void;
 interface WorkspaceWebSocketContextValue {
   status: "connecting" | "open" | "closing" | "closed" | "error";
   subscribe: (listener: EventListener) => () => void;
+  notifications: WorkspaceNotificationEnvelope[];
+  clearNotifications: () => void;
 }
 
 const WorkspaceWebSocketContext =
@@ -69,10 +74,13 @@ export function WorkspaceWebSocketProvider({
   }, []); // Empty deps - listenersRef.current is always up to date
 
   // Single WebSocket connection for the entire workspace
-  const { status } = useWorkspaceNotifications(workspaceSlug, {
-    autoToast: true, // Show notifications automatically
-    onEvent: handleEvent,
-  });
+  const { status, notifications, clearEvents } = useWorkspaceNotifications(
+    workspaceSlug,
+    {
+      autoToast: true, // Show notifications automatically
+      onEvent: handleEvent,
+    },
+  );
 
   const subscribe = useCallback((listener: EventListener) => {
     listenersRef.current.add(listener);
@@ -87,8 +95,10 @@ export function WorkspaceWebSocketProvider({
     () => ({
       status,
       subscribe,
+      notifications,
+      clearNotifications: clearEvents,
     }),
-    [status, subscribe], // subscribe is stable due to empty deps
+    [status, subscribe, notifications, clearEvents],
   );
 
   return (
