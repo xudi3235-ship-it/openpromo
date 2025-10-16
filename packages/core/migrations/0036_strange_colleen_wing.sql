@@ -1,0 +1,1 @@
+ALTER TABLE "unified_content" ADD COLUMN "metrics" jsonb DEFAULT '{}'::jsonb NOT NULL;

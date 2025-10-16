@@ -253,6 +253,13 @@
       "when": 1760585228869,
       "tag": "0035_smart_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1760650664587,
+      "tag": "0036_strange_colleen_wing",
+      "breakpoints": true
     }
   ]
 }
