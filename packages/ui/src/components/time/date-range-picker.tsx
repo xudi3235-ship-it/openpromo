@@ -1,6 +1,13 @@
 "use client";
 
-import { format } from "date-fns";
+import {
+  addDays,
+  endOfMonth,
+  endOfToday,
+  format,
+  startOfMonth,
+  startOfToday,
+} from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import * as React from "react";
 import type { DateRange } from "react-day-picker";
@@ -16,6 +23,57 @@ interface DateRangePickerProps {
   placeholder?: string;
   className?: string;
 }
+
+const DATE_PRESETS: Array<{
+  label: string;
+  getValue: () => DateRange;
+}> = [
+  {
+    label: "Today",
+    getValue: () => ({
+      from: startOfToday(),
+      to: endOfToday(),
+    }),
+  },
+  {
+    label: "Last 7 days",
+    getValue: () => ({
+      from: addDays(startOfToday(), -7),
+      to: endOfToday(),
+    }),
+  },
+  {
+    label: "Last 30 days",
+    getValue: () => ({
+      from: addDays(startOfToday(), -30),
+      to: endOfToday(),
+    }),
+  },
+  {
+    label: "Last 3 months",
+    getValue: () => ({
+      from: addDays(startOfToday(), -90),
+      to: endOfToday(),
+    }),
+  },
+  {
+    label: "This month",
+    getValue: () => ({
+      from: startOfMonth(new Date()),
+      to: endOfMonth(new Date()),
+    }),
+  },
+  {
+    label: "Last month",
+    getValue: () => {
+      const lastMonth = addDays(new Date(), -30);
+      return {
+        from: startOfMonth(lastMonth),
+        to: endOfMonth(lastMonth),
+      };
+    },
+  },
+];
 
 export function DateRangePicker({
   date,
@@ -58,7 +116,52 @@ export function DateRangePicker({
           {getDisplayValue()}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0 flex" align="start">
+        {/* Presets Panel */}
+        <div className="flex flex-col gap-2 p-3 border-r">
+          {DATE_PRESETS.map((preset) => {
+            const presetRange = preset.getValue();
+            const isSelected =
+              date?.from &&
+              date.to &&
+              presetRange.from &&
+              presetRange.to &&
+              format(date.from, "yyyy-MM-dd") ===
+                format(presetRange.from, "yyyy-MM-dd") &&
+              format(date.to, "yyyy-MM-dd") ===
+                format(presetRange.to, "yyyy-MM-dd");
+
+            return (
+              <Button
+                key={preset.label}
+                variant="ghost"
+                className={cn(
+                  "justify-start text-sm",
+                  isSelected && "bg-accent text-accent-foreground",
+                )}
+                onClick={() => {
+                  handleDateSelect(presetRange);
+                }}
+              >
+                {preset.label}
+              </Button>
+            );
+          })}
+          <Button
+            variant="ghost"
+            className={cn(
+              "justify-start text-sm",
+              !date?.from && "bg-accent text-accent-foreground",
+            )}
+            onClick={() => {
+              handleDateSelect(undefined);
+            }}
+          >
+            Clear
+          </Button>
+        </div>
+
+        {/* Calendar Panel */}
         <Calendar
           mode="range"
           selected={date}
