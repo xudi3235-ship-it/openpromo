@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { WorkspaceSyncManager } from "@core/domain/workspace/sync";
 import type { ApiEnv } from "@core/helpers/api-env";
 import {
   createWorkspaceSyncTask,
@@ -12,11 +13,16 @@ import {
 
 const STORAGE_KEYS = {
   workspaceSlug: "workspaceSlug",
+  workspaceId: "workspaceId",
   tasks: "tasks",
 } as const;
 
-export type InitializeResult = {
+export type InitializeParams = {
   workspaceSlug: string;
+  workspaceId: string;
+};
+
+export type InitializeResult = InitializeParams & {
   ok: true;
 };
 
@@ -26,42 +32,55 @@ export type TaskResult = {
 
 export type StatusResult = {
   workspaceSlug: string | null;
+  workspaceId: string | null;
   tasks: WorkspaceSyncTask[];
 };
 
-/**
- * WorkspaceSyncCoordinator is a workspace-scoped durable object that will
- * eventually coordinate background sync workloads (metrics refresh, backfill,
- * etc). RPC methods are intentionally simple so routes or background jobs can
- * orchestrate work without going through the DO's fetch handler.
- */
 export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
   private workspaceSlug: string | null = null;
+  private workspaceId: string | null = null;
   private tasks: WorkspaceSyncTaskStore = {};
   private isLoaded = false;
+  private readonly manager: WorkspaceSyncManager;
+
+  constructor(state: DurableObjectState, env: ApiEnv) {
+    super(state, env);
+    this.manager = new WorkspaceSyncManager();
+  }
 
   protected get storage() {
     return this.ctx.storage;
   }
 
-  /**
-   * Ensure we have workspace context persisted. Subsequent initialize calls
-   * are idempotent to make it safe for callers to invoke before every task.
-   */
-  async initialize(workspaceSlug: string): Promise<InitializeResult> {
+  async initialize(params: InitializeParams): Promise<InitializeResult> {
     await this.ensureLoaded();
+
+    const { workspaceSlug, workspaceId } = params;
 
     if (!workspaceSlug) {
       throw new Error("workspaceSlug is required");
+    }
+    if (!workspaceId) {
+      throw new Error("workspaceId is required");
     }
 
     if (!this.workspaceSlug) {
       this.workspaceSlug = workspaceSlug;
       await this.storage.put(STORAGE_KEYS.workspaceSlug, workspaceSlug);
+    } else if (this.workspaceSlug !== workspaceSlug) {
+      throw new Error("workspace slug mismatch");
+    }
+
+    if (!this.workspaceId) {
+      this.workspaceId = workspaceId;
+      await this.storage.put(STORAGE_KEYS.workspaceId, workspaceId);
+    } else if (this.workspaceId !== workspaceId) {
+      throw new Error("workspace id mismatch");
     }
 
     return {
       workspaceSlug: this.workspaceSlug,
+      workspaceId: this.workspaceId,
       ok: true,
     };
   }
@@ -70,15 +89,14 @@ export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
     await this.ensureLoaded();
     return {
       workspaceSlug: this.workspaceSlug,
+      workspaceId: this.workspaceId,
       tasks: Object.values(this.tasks),
     };
   }
 
   async getTask(taskKey: string): Promise<TaskResult> {
     await this.ensureLoaded();
-    return {
-      task: this.tasks[taskKey] ?? null,
-    };
+    return { task: this.tasks[taskKey] ?? null };
   }
 
   async listTasks(): Promise<WorkspaceSyncTask[]> {
@@ -86,29 +104,46 @@ export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
     return Object.values(this.tasks);
   }
 
+  async runTask(taskKey: string): Promise<TaskResult> {
+    await this.ensureLoaded();
+
+    const task = this.tasks[taskKey];
+    if (!task) {
+      throw new Error(`Task ${taskKey} does not exist`);
+    }
+
+    const workspaceId = this.requireWorkspaceId();
+
+    const { task: updatedTask } = await this.manager.runTask({
+      taskKey,
+      task,
+      workspaceId,
+    });
+
+    this.tasks[taskKey] = updatedTask;
+    await this.persistTasks();
+
+    return { task: updatedTask };
+  }
+
   async upsertTask(
     taskKey: string,
-    input: WorkspaceSyncTaskPatch = {},
+    patch: WorkspaceSyncTaskPatch = {},
   ): Promise<TaskResult> {
     await this.ensureLoaded();
 
-    if (!taskKey) {
-      throw new Error("taskKey is required");
-    }
-
     const existing = this.tasks[taskKey];
-    const patch = parseWorkspaceSyncTaskPatch(input);
+    const parsedPatch = parseWorkspaceSyncTaskPatch(patch);
 
     if (!existing) {
-      const task = createWorkspaceSyncTask({
+      this.tasks[taskKey] = createWorkspaceSyncTask({
         key: taskKey,
-        metadata: patch.metadata,
-        nextRunAt: patch.nextRunAt ?? undefined,
-        lastTriggeredAt: patch.lastTriggeredAt ?? undefined,
+        metadata: parsedPatch.metadata,
+        nextRunAt: parsedPatch.nextRunAt ?? undefined,
+        lastTriggeredAt: parsedPatch.lastTriggeredAt ?? undefined,
       });
-      this.tasks[taskKey] = task;
     } else {
-      this.tasks[taskKey] = mergeWorkspaceSyncTask(existing, patch);
+      this.tasks[taskKey] = mergeWorkspaceSyncTask(existing, parsedPatch);
     }
 
     await this.persistTasks();
@@ -116,33 +151,8 @@ export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
     return { task: this.tasks[taskKey] };
   }
 
-  /**
-   * Record that a task has been dispatched. Future implementations will enqueue
-   * work into queues or workflows. For now we only capture trigger timestamps.
-   */
   async triggerTask(taskKey: string): Promise<TaskResult> {
-    await this.ensureLoaded();
-
-    if (!taskKey) {
-      throw new Error("taskKey is required");
-    }
-
-    const now = Date.now();
-    const existing = this.tasks[taskKey];
-
-    if (!existing) {
-      throw new Error(
-        `Task ${taskKey} does not exist; upsert before triggering`,
-      );
-    }
-
-    this.tasks[taskKey] = mergeWorkspaceSyncTask(existing, {
-      lastTriggeredAt: now,
-    });
-
-    await this.persistTasks();
-
-    return { task: this.tasks[taskKey] };
+    return this.runTask(taskKey);
   }
 
   private async ensureLoaded() {
@@ -150,12 +160,15 @@ export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
       return;
     }
 
-    const [storedSlug, storedTasks] = await Promise.all([
+    const [storedSlug, storedWorkspaceId, storedTasks] = await Promise.all([
       this.storage.get<string>(STORAGE_KEYS.workspaceSlug),
+      this.storage.get<string>(STORAGE_KEYS.workspaceId),
       this.storage.get<unknown>(STORAGE_KEYS.tasks),
     ]);
 
     this.workspaceSlug = storedSlug ?? null;
+    this.workspaceId = storedWorkspaceId ?? null;
+
     const parsedTasks = WorkspaceSyncTaskStoreSchema.safeParse(
       storedTasks ?? {},
     );
@@ -165,5 +178,12 @@ export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
 
   private async persistTasks() {
     await this.storage.put(STORAGE_KEYS.tasks, this.tasks);
+  }
+
+  private requireWorkspaceId(): string {
+    if (!this.workspaceId) {
+      throw new Error("workspace not initialized");
+    }
+    return this.workspaceId;
   }
 }
