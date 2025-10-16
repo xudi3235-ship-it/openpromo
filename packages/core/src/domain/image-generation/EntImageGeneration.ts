@@ -217,6 +217,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     return await ProductImageGen.selectOptimalStyleForProduct(
       product,
       officialStyles,
+      opts.styleId ? await EntStyleComponent.fromID(opts.styleId) : null,
     );
   }
 

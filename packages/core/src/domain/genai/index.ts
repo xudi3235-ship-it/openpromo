@@ -102,13 +102,15 @@ export namespace ProductImageGen {
   // ------------------------------------------------------------------------
   export async function selectOptimalStyleForProduct(
     product: EntProduct,
-    styles: EntStyleComponent[],
+    officialStyles: EntStyleComponent[],
+    stylePreselect: EntStyleComponent | null = null,
   ): Promise<{ style: EntStyleComponent; imageGenPrompt: string }> {
-    if (styles.length === 0) {
+    if (officialStyles.length === 0 || !stylePreselect) {
       throw new Error("No styles available for matching");
     }
-
-    const styleSummaries = styles.map((style) => ({
+    // prefer the preselected style if provided
+    const stylesToUse = stylePreselect ? [stylePreselect] : officialStyles;
+    const styleSummaries = stylesToUse.map((style) => ({
       id: style.data.id,
       name: style.data.name,
       slug: style.data.slug,
@@ -161,7 +163,7 @@ RULES:
       ],
     });
 
-    const matchedStyle = styles.find(
+    const matchedStyle = stylesToUse.find(
       (style) => style.data.id === object.styleId,
     );
 
