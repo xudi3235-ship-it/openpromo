@@ -8,7 +8,7 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import * as React from "react";
+import { useEffect, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { useContentListQuery } from "@/queries/content";
 import { BatchActionsToolbar } from "./batch-actions-toolbar";
@@ -26,20 +26,17 @@ import { useContentListQueryParams } from "./use-content-list-query-params";
  * Route: /workspaces/:workspaceSlug/content
  */
 export function ContentListPage() {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
-  );
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [pagination, setPagination] = React.useState({
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState({});
+  const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
   });
-  const [filters, setFilters] = React.useState<ContentFiltersType>({});
-  const [searchValue, setSearchValue] = React.useState("");
-  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const [filters, setFilters] = useState<ContentFiltersType>({});
+  const [searchValue, setSearchValue] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const updateDebouncedSearch = useDebounceCallback((value: string) => {
     setDebouncedSearch(value.trim());
   }, 400);
@@ -77,14 +74,14 @@ export function ContentListPage() {
     },
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     updateDebouncedSearch(searchValue);
     return () => {
       updateDebouncedSearch.cancel();
     };
   }, [searchValue, updateDebouncedSearch]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setPagination((prev) =>
       prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 },
     );
