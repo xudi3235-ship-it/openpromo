@@ -85,6 +85,8 @@ export const listContentRoute = new Hono<ApiEnv>().get(
           (${unifiedContentTable.placementSpec} -> 'postSpec' ->> 'message') ILIKE ${likeTerm} ESCAPE '\\'
           OR (${unifiedContentTable.placementSpec} ->> 'caption') ILIKE ${likeTerm} ESCAPE '\\'
           OR (${pendingContentGroupTable.pendingContentGroupSpec} ->> 'baseMessage') ILIKE ${likeTerm} ESCAPE '\\'
+          OR ${unifiedContentTable.id} ILIKE ${likeTerm} ESCAPE '\\'
+          OR ${unifiedContentTable.sourceContentId} ILIKE ${likeTerm} ESCAPE '\\'
         )`,
       );
     }
