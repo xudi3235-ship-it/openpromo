@@ -8,16 +8,9 @@ import {
 } from "@openpromo/ui/components/select";
 import { DateRangePicker } from "@openpromo/ui/components/time/date-range-picker";
 import type { LucideIcon } from "lucide-react";
-import {
-  AlertCircle,
-  CheckCircle2,
-  CircleDashed,
-  Facebook,
-  Instagram,
-  Video,
-  X,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, CircleDashed, X } from "lucide-react";
 import type { DateRange } from "react-day-picker";
+import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
 
 export interface ContentFilters {
   publishingStatus?: string;
@@ -43,12 +36,25 @@ const PUBLISHING_STATUS_OPTIONS: Array<{
 const PLATFORM_OPTIONS: Array<{
   value: string;
   label: string;
-  icon: LucideIcon;
+  // biome-ignore lint/suspicious/noExplicitAny: icon can be any renderable element
+  icon: any;
 }> = [
-  { value: "facebook", label: "Facebook", icon: Facebook },
-  { value: "instagram", label: "Instagram", icon: Instagram },
-  { value: "tiktok", label: "TikTok", icon: Video },
-];
+  {
+    value: "facebook",
+    label: "Facebook",
+    icon: <FaFacebook className="h-4 w-4 text-blue-600" />,
+  },
+  {
+    value: "instagram",
+    label: "Instagram",
+    icon: <FaInstagram className="h-4 w-4 text-pink-600" />,
+  },
+  {
+    value: "tiktok",
+    label: "TikTok",
+    icon: <FaTiktok className="h-3 w-3 text-black" />,
+  },
+] as const;
 
 export function ContentFilters({
   filters,
@@ -125,10 +131,10 @@ export function ContentFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Platforms</SelectItem>
-            {PLATFORM_OPTIONS.map(({ value, label, icon: Icon }) => (
+            {PLATFORM_OPTIONS.map(({ value, label, icon }) => (
               <SelectItem key={value} value={value}>
                 <span className="flex items-center gap-2">
-                  <Icon className="h-4 w-4" />
+                  {icon}
                   {label}
                 </span>
               </SelectItem>
