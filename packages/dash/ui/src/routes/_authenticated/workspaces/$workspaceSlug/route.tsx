@@ -11,7 +11,6 @@ import ComposerDialog from "@/components/composer/modal/dialog-composer";
 import { WorkspaceLoading } from "@/components/loading/workspace-loading";
 import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
-import { WorkspaceWebSocketProvider } from "@/hooks/useWorkspaceWebSocket";
 import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
 import {
@@ -88,7 +87,7 @@ function WorkspaceComponent() {
   }
 
   return (
-    <WorkspaceWebSocketProvider workspaceSlug={workspace.slug}>
+    <>
       <div className="flex h-full flex-col gap-4">
         {shouldShowAccountsBar && (
           <div className="px-4 pt-5">
@@ -102,6 +101,6 @@ function WorkspaceComponent() {
 
       {/* Global Composer Dialog - can be opened from anywhere in the workspace */}
       <ComposerDialog />
-    </WorkspaceWebSocketProvider>
+    </>
   );
 }

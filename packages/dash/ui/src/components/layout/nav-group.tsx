@@ -32,28 +32,87 @@ import type {
   NavItem,
   NavLink,
 } from "./types";
+import { WorkspaceNotificationBell } from "./workspace-notification-bell";
 
-export function NavGroup({ title, items }: NavGroupProps) {
+interface NavGroupComponentProps extends NavGroupProps {
+  workspaceSlug?: string;
+}
+
+export function NavGroup({
+  title,
+  items,
+  workspaceSlug,
+}: NavGroupComponentProps) {
   const { state, isMobile } = useSidebar();
   const href = useLocation({ select: (location) => location.href });
+  const renderedItems = items
+    .map((item) => {
+      if (item.kind === "notification") {
+        if (!workspaceSlug) {
+          return null;
+        }
+        return (
+          <SidebarMenuItem key={`${item.title}-notification`}>
+            <WorkspaceNotificationBell
+              workspaceSlug={workspaceSlug}
+              renderTrigger={({ hasUnread, unreadCount, open }) => (
+                <SidebarMenuButton
+                  type="button"
+                  data-state={open ? "open" : "closed"}
+                  tooltip={item.title}
+                  aria-haspopup="dialog"
+                  aria-expanded={open}
+                  className="justify-start"
+                >
+                  {item.icon && <item.icon />}
+                  <span>{item.title}</span>
+                  {hasUnread && (
+                    <NavBadge>{unreadCount > 9 ? "9+" : unreadCount}</NavBadge>
+                  )}
+                </SidebarMenuButton>
+              )}
+            />
+          </SidebarMenuItem>
+        );
+      }
+
+      if (!("items" in item) || !item.items) {
+        return (
+          <SidebarMenuLink
+            key={`${item.title}-${"url" in item ? item.url : "link"}`}
+            item={item as NavLink}
+            href={href}
+          />
+        );
+      }
+
+      if (state === "collapsed" && !isMobile)
+        return (
+          <SidebarMenuCollapsedDropdown
+            key={`${item.title}-collapsible`}
+            item={item}
+            href={href}
+          />
+        );
+
+      return (
+        <SidebarMenuCollapsible
+          key={`${item.title}-collapsible`}
+          item={item}
+          href={href}
+        />
+      );
+    })
+    .filter(Boolean) as ReactNode[];
+
+  if (renderedItems.length === 0) {
+    return null;
+  }
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{title}</SidebarGroupLabel>
-      <SidebarMenu>
-        {items.map((item) => {
-          const key = `${item.title}-${item.url}`;
-
-          if (!item.items)
-            return <SidebarMenuLink key={key} item={item} href={href} />;
-
-          if (state === "collapsed" && !isMobile)
-            return (
-              <SidebarMenuCollapsedDropdown key={key} item={item} href={href} />
-            );
-
-          return <SidebarMenuCollapsible key={key} item={item} href={href} />;
-        })}
-      </SidebarMenu>
+      <SidebarMenu>{renderedItems}</SidebarMenu>
     </SidebarGroup>
   );
 }
@@ -175,6 +234,18 @@ function SidebarMenuCollapsedDropdown({
 
 function checkIsActive(href: string, item: NavItem) {
   const subPath = href.split("?")[0].split("/").slice(3).pop();
-  const itemSubPath = item.url?.split("?")[0].split("/").slice(3).pop();
+
+  if ("items" in item && item.items) {
+    return item.items.some((subItem) => {
+      const subItemPath = subItem.url?.split("?")[0].split("/").slice(3).pop();
+      return subPath === subItemPath;
+    });
+  }
+
+  if (!("url" in item) || !item.url) {
+    return false;
+  }
+
+  const itemSubPath = item.url.split("?")[0].split("/").slice(3).pop();
   return subPath === itemSubPath;
 }

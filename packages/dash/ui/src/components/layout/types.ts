@@ -9,14 +9,22 @@ type BaseNavItem = {
 type NavLink = BaseNavItem & {
   url: LinkProps["to"] | (string & {});
   items?: never;
+  kind?: "link";
 };
 
 type NavCollapsible = BaseNavItem & {
   items: (BaseNavItem & { url: LinkProps["to"] | (string & {}) })[];
   url?: never;
+  kind?: "collapsible";
 };
 
-type NavItem = NavCollapsible | NavLink;
+type NavNotification = BaseNavItem & {
+  kind: "notification";
+  url?: never;
+  items?: never;
+};
+
+type NavItem = NavCollapsible | NavLink | NavNotification;
 
 type NavGroup = {
   title: string;
@@ -27,4 +35,11 @@ type SidebarData = {
   navGroups: NavGroup[];
 };
 
-export type { NavCollapsible, NavGroup, NavItem, NavLink, SidebarData };
+export type {
+  NavCollapsible,
+  NavGroup,
+  NavItem,
+  NavLink,
+  NavNotification,
+  SidebarData,
+};

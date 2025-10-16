@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import { BiNotification } from "react-icons/bi";
 import { useActor } from "@/hooks/useActor";
 import type { SidebarData } from "../types";
 
@@ -20,7 +21,7 @@ export const useSidebarData = (): SidebarData => {
 
   const allNavGroups = [
     {
-      title: "Tools",
+      title: "Core",
       items: [
         {
           title: "Home",
@@ -33,6 +34,11 @@ export const useSidebarData = (): SidebarData => {
           icon: Inbox,
         },
         {
+          title: "Notifications",
+          kind: "notification" as const,
+          icon: BiNotification,
+        },
+        {
           title: "Create Post",
           url: "/workspaces/$workspaceSlug/composer",
           icon: SquarePen,
@@ -41,16 +47,6 @@ export const useSidebarData = (): SidebarData => {
           title: "Content",
           url: "/workspaces/$workspaceSlug/content",
           icon: LayoutList,
-        },
-        {
-          title: "Products",
-          url: "/workspaces/$workspaceSlug/products",
-          icon: Package,
-        },
-        {
-          title: "Styles",
-          url: "/workspaces/$workspaceSlug/styles",
-          icon: Palette,
         },
         {
           title: "Calendar",
@@ -63,6 +59,26 @@ export const useSidebarData = (): SidebarData => {
           badge: "3",
           icon: TrendingUp,
         },
+      ],
+    },
+    {
+      title: "Growth",
+      items: [
+        {
+          title: "Products",
+          url: "/workspaces/$workspaceSlug/products",
+          icon: Package,
+        },
+        {
+          title: "Styles",
+          url: "/workspaces/$workspaceSlug/styles",
+          icon: Palette,
+        },
+      ],
+    },
+    {
+      title: "Workspace",
+      items: [
         {
           title: "Team",
           url: "/workspaces/$workspaceSlug/team",

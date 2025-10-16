@@ -14,12 +14,18 @@ import { useWorkspaceWebSocket } from "@/hooks/useWorkspaceWebSocket";
 
 type WorkspaceNotificationBellProps = {
   workspaceSlug: string;
+  renderTrigger?: (args: {
+    hasUnread: boolean;
+    unreadCount: number;
+    open: boolean;
+  }) => React.ReactElement;
 };
 
 const MAX_VISIBLE_NOTIFICATIONS = 10;
 
 export function WorkspaceNotificationBell({
   workspaceSlug,
+  renderTrigger,
 }: WorkspaceNotificationBellProps) {
   const { notifications, clearNotifications } = useWorkspaceWebSocket();
   const [open, setOpen] = useState(false);
@@ -50,24 +56,32 @@ export function WorkspaceNotificationBell({
     setLastSeenAt(Date.now());
   };
 
+  const triggerElement = renderTrigger ? (
+    renderTrigger({ hasUnread, unreadCount, open })
+  ) : (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="relative"
+      aria-label="Workspace notifications"
+    >
+      <BellIcon className="size-5" />
+      {hasUnread && (
+        <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-medium text-destructive-foreground">
+          {unreadCount > 9 ? "9+" : unreadCount}
+        </span>
+      )}
+    </Button>
+  );
+
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
-          aria-label="Workspace notifications"
-        >
-          <BellIcon className="size-5" />
-          {hasUnread && (
-            <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-medium text-destructive-foreground">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0" sideOffset={8}>
+      <PopoverTrigger asChild>{triggerElement}</PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="w-80 p-0 translate-x-24"
+        sideOffset={8}
+      >
         <div className="flex items-center justify-between px-4 py-3">
           <span className="text-sm font-medium">Notifications</span>
           <Button

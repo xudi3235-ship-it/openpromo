@@ -3,8 +3,9 @@ import {
   SidebarProvider,
 } from "@openpromo/ui/components/sidebar";
 import { cn } from "@openpromo/ui/lib/utils";
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useParams } from "@tanstack/react-router";
 import { LayoutProvider } from "@/context/layout-provider";
+import { WorkspaceWebSocketProvider } from "@/hooks/useWorkspaceWebSocket";
 import { AppSidebar } from "../app-sidebar";
 
 type WorkspaceLayoutProps = {
@@ -12,7 +13,13 @@ type WorkspaceLayoutProps = {
 };
 
 export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
-  return (
+  const { workspaceSlug } =
+    useParams({
+      from: "/_authenticated/workspaces/$workspaceSlug",
+      shouldThrow: false,
+    }) ?? {};
+
+  const layout = (
     <SidebarProvider>
       <LayoutProvider>
         <AppSidebar />
@@ -35,5 +42,15 @@ export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
         </SidebarInset>
       </LayoutProvider>
     </SidebarProvider>
+  );
+
+  if (!workspaceSlug) {
+    return layout;
+  }
+
+  return (
+    <WorkspaceWebSocketProvider workspaceSlug={workspaceSlug}>
+      {layout}
+    </WorkspaceWebSocketProvider>
   );
 }

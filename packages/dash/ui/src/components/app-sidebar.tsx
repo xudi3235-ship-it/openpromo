@@ -65,8 +65,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {sidebarData.navGroups.map((props) => (
-          <NavGroup key={props.title} {...props} />
+        {sidebarData.navGroups.map((group) => (
+          <NavGroup
+            key={group.title}
+            {...group}
+            workspaceSlug={currentWorkspaceSlug}
+          />
         ))}
       </SidebarContent>
       <SidebarFooter>
