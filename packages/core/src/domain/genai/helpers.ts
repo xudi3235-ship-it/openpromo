@@ -93,4 +93,39 @@ export namespace GenAI {
     const imageUrl = output[0].url();
     return imageUrl ? String(imageUrl) : null;
   }
+  export async function runNanoBanana(
+    opts: {
+      prompt: string;
+      image_input?: string[];
+      aspect_ratio?:
+        | "1:1"
+        | "2:3"
+        | "3:2"
+        | "3:4"
+        | "4:3"
+        | "16:9"
+        | "9:16"
+        | "match_input_image";
+      output_format?: "png" | "jpg";
+    } = {
+      prompt: "",
+      aspect_ratio: "match_input_image",
+      output_format: "jpg",
+    },
+  ) {
+    const input = {
+      prompt: opts.prompt,
+      image_input: opts.image_input,
+      aspect_ratio: opts.aspect_ratio,
+    };
+    console.log("generating image with input", input);
+    const output = await replicate.run("google/nano-banana", {
+      input,
+    });
+    console.log("nanobanana output", output);
+    // @ts-expect-error,
+    const imageUrl = output.url();
+    if (!imageUrl) throw new Error("No image URL returned from NanoBanana");
+    return String(imageUrl);
+  }
 }

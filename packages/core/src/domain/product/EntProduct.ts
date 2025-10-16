@@ -247,4 +247,18 @@ export class EntProduct extends Ent<ProductSelectType> {
   async setState(state: ProductSelectType["state"], stateMessage?: string) {
     return await this.update({ state, stateMessage });
   }
+  async setImageVariants(delta: ProductSelectType["imgVariants"]) {
+    return await this.update({
+      imgVariants: {
+        ...this.data.imgVariants,
+        ...delta,
+      },
+    });
+  }
+  imageUrls() {
+    return this.data.attachments
+      .filter((att) => att.type === "photo")
+      .map((att) => att.publicUrl)
+      .filter((url): url is string => !!url);
+  }
 }

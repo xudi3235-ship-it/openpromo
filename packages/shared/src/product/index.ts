@@ -78,4 +78,11 @@ export const ProductMetadata = z.object({
   extra: z.record(z.string(), z.any()).optional(),
 });
 
+// store cleaned no BG img, or other variants/transformations
+// keep this obj nullable for compatibility
+export const ProductImageVariants = z.object({
+  noBg: z.string().optional().describe("image url with background removed"),
+});
+
 export type ProductMetadata = z.infer<typeof ProductMetadata>;
+export type ProductImageVariants = z.infer<typeof ProductImageVariants>;

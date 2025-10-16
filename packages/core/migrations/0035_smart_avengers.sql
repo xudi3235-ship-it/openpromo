@@ -1,0 +1,1 @@
+ALTER TABLE "product" ADD COLUMN "img_variants" jsonb DEFAULT '{}'::jsonb;

@@ -246,6 +246,13 @@
       "when": 1760395227763,
       "tag": "0034_elite_silver_sable",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1760585228869,
+      "tag": "0035_smart_avengers",
+      "breakpoints": true
     }
   ]
 }

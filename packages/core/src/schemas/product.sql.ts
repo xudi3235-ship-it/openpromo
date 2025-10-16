@@ -1,6 +1,7 @@
 import { id, timestamps } from "@core/helpers/db";
 import type { SharedAttachmentSpec } from "@shared/content";
 import {
+  type ProductImageVariants,
   type ProductMetadata,
   ProductSource,
   ProductState,
@@ -48,12 +49,16 @@ export const productTable = pgTable(
     // Workflow tracking
     workflowInstanceId: text("workflow_instance_id"), // CF Workflow instance ID
 
-    // product assets, e.g. images, videos, or links.
+    // product assets, e.g. images, videos, or links. (original)
     attachments: jsonb("attachments")
       .$type<SharedAttachmentSpec[]>()
       .notNull()
       .default([]),
     primaryAttachmentId: text("primary_attachment_id"),
+
+    imgVariants: jsonb("img_variants")
+      .$type<ProductImageVariants>()
+      .default({}),
 
     // more stuff
     metadata: jsonb("metadata").$type<ProductMetadata>(),

@@ -1,4 +1,5 @@
 import { ProductImageGen } from "@core/domain/genai";
+import { GenAI } from "@core/domain/genai/helpers";
 import { Actor } from "@core/helpers/actor";
 import {
   type CoreWorkflowContext,
@@ -85,7 +86,27 @@ async function processAttachments(step: CoreWorkflowStep, productId: string) {
     return;
   }
   console.log("identified product context", productContext);
-  // 2. save meta to product and mark as ready
+
+  // 2. pre-generate the image variants, e.g. no background.
+  await step.do("pre-generate-img-variants", async () => {
+    const p = await EntProduct.fromID(productId);
+    const prompt = `create a clean, well-lit product image of ${p.data.name} on a plain white background, ensuring the product is clearly visible and centered. The image should be high-resolution, with accurate colors and sharp details, suitable for e-commerce display.`;
+
+    const imgs = p.imageUrls();
+    if (imgs.length === 0) {
+      console.error(`no images to process for product ${p.data.id}`);
+      return;
+    }
+    const noBgUrl = await GenAI.runNanoBanana({ prompt, image_input: imgs });
+
+    console.log("no background url", noBgUrl);
+
+    // save to product
+    await p.setImageVariants({ noBg: noBgUrl });
+    return;
+  });
+  console.log("pre-generated image variants");
+  // 3. save meta to product and mark as ready
   await step.do("producty-ready", async () => {
     const p = await EntProduct.fromID(productId);
     await p.update({
@@ -97,5 +118,4 @@ async function processAttachments(step: CoreWorkflowStep, productId: string) {
     });
     return;
   });
-  // 3. generate the prompt for image gen.
 }
