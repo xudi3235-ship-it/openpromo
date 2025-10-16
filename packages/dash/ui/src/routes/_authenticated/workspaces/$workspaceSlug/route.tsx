@@ -1,4 +1,3 @@
-import { cn } from "@openpromo/ui/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -91,16 +90,9 @@ function WorkspaceComponent() {
   return (
     <WorkspaceWebSocketProvider workspaceSlug={workspace.slug}>
       <div className="flex h-full flex-col gap-4">
-        <div
-          className={cn(
-            "flex items-center gap-4 px-4 pt-4",
-            !shouldShowAccountsBar && "justify-end",
-          )}
-        >
-          {shouldShowAccountsBar && (
-            <WorkspaceConnectedAccountsBar className="flex-1" />
-          )}
-        </div>
+        {shouldShowAccountsBar && (
+          <WorkspaceConnectedAccountsBar className="flex-1" />
+        )}
         <div className="flex flex-col flex-1 min-h-0 px-4 pb-4">
           <Outlet />
         </div>
