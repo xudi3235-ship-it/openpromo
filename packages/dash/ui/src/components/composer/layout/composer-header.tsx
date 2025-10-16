@@ -3,7 +3,7 @@ import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 export function ComposerHeader() {
   const { pendingContentGroupID } = useDialogComposerStore();
   const isEditing = !!pendingContentGroupID;
-  const title = isEditing ? "Edit Content" : "Create Content";
+  const title = isEditing ? "Edit Post" : "Create Post";
 
   return (
     <>
