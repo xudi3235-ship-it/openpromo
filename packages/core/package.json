@@ -37,7 +37,6 @@
     "cookie": "^1.0.2",
     "drizzle-orm": "catalog:",
     "drizzle-zod": "^0.8.3",
-    "facebook-nodejs-business-sdk": "^23.0.1",
     "hono": "catalog:",
     "nanoid": "^5.1.5",
     "openpromo-backend": "latest",
@@ -49,7 +48,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/facebook-nodejs-business-sdk": "^22.0.0",
     "drizzle-kit": "^0.31.4",
     "tsx": "^4.20.3",
     "vite-tsconfig-paths": "^5.1.4",
