@@ -1,4 +1,3 @@
-import { EntIGFeedPendingContent } from "@core/domain/content/entity";
 import { Actor } from "@core/helpers/actor";
 import { and, db, eq } from "@core/helpers/db";
 import type {
@@ -10,6 +9,7 @@ import { unifiedContentTable } from "@core/schemas/content.sql";
 import { onlyOrThrow } from "@core/utils/common";
 import { Log } from "@core/utils/log";
 import { waitForVideoContainer } from "./common";
+import { loadInstagramFeedContext } from "./instagram-feed-service";
 
 const log = Log.create({ namespace: "instagram-single-video-reel" });
 
@@ -20,7 +20,7 @@ export async function publishSingleVideoReel(
 ): Promise<string> {
   await step.do("transcode IG reel if needed", async () => {
     // A. sanitize, get the download Url
-    const c = await EntIGFeedPendingContent.fromID(pendingContentID);
+    const { content: c } = await loadInstagramFeedContext(pendingContentID);
     if (!c.isSingleVideoReel()) throw new Error("not a IG reel");
     const { id, presignedUrl } = onlyOrThrow(c.videoAttachments());
     if (!presignedUrl) throw new Error(`no presigned URL for video ${id}`);
@@ -65,20 +65,43 @@ export async function publishSingleVideoReel(
       throw new Error("failed to update content with new attachment");
   });
 
-  const { containerId } = await step.do("create reel container", async () => {
-    console.log("// creating reel container");
-    const c = await EntIGFeedPendingContent.fromID(pendingContentID);
-    console.log("// creating reel container - got pending content", { c });
-    return await c.createReelContainer();
-  });
+  const { containerId, caption } = await step.do(
+    "create reel container",
+    async () => {
+      console.log("// creating reel container");
+      const { content, client } =
+        await loadInstagramFeedContext(pendingContentID);
+      console.log("// creating reel container - got pending content", {
+        id: content.data.id,
+      });
+
+      if (!content.isSingleVideoReel()) {
+        throw new Error("not a IG reel");
+      }
+
+      const { presignedUrl } = onlyOrThrow(content.videoAttachments());
+      if (!presignedUrl) throw new Error("video missing presignedUrl");
+
+      const caption = content.caption() ?? "";
+      const containerId = await client.createMediaContainer({
+        caption,
+        videoUrl: presignedUrl,
+        mediaType: "REELS",
+      });
+      return { containerId, caption };
+    },
+  );
 
   console.log("// created reel container", { containerId });
 
   await waitForVideoContainer(step, pendingContentID, containerId, 0);
 
   const postId = await step.do("publish reel", async () => {
-    const c = await EntIGFeedPendingContent.fromID(pendingContentID);
-    const { postId } = await c.publishReelFromContainer(containerId);
+    const { client } = await loadInstagramFeedContext(pendingContentID);
+    const { postId } = await client.publishContainer({
+      creationId: containerId,
+      caption,
+    });
     return postId;
   });
 

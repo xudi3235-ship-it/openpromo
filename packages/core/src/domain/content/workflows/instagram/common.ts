@@ -1,6 +1,6 @@
-import { EntIGFeedPendingContent } from "@core/domain/content/entity";
 import type { CoreWorkflowStep } from "@core/helpers/workflow";
 import { Log } from "@core/utils/log";
+import { loadInstagramFeedContext } from "./instagram-feed-service";
 
 const log = Log.create({ namespace: "instagram-common" });
 
@@ -20,8 +20,8 @@ export async function waitForVideoContainer(
   const status = await step.do(
     `check video container ${containerId} status`,
     async () => {
-      const c = await EntIGFeedPendingContent.fromID(pendingContentID);
-      return await c.getMediaContainerStatus(containerId);
+      const { client } = await loadInstagramFeedContext(pendingContentID);
+      return await client.getContainerStatus(containerId);
     },
   );
 

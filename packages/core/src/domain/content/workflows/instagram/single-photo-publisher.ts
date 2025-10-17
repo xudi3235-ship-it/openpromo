@@ -1,9 +1,10 @@
-import { EntIGFeedPendingContent } from "@core/domain/content/entity";
 import type {
   CoreWorkflowContext,
   CoreWorkflowStep,
 } from "@core/helpers/workflow";
+import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
+import { loadInstagramFeedContext } from "./instagram-feed-service";
 
 const log = Log.create({ namespace: "instagram-single-photo" });
 
@@ -13,8 +14,31 @@ export async function publishSinglePhoto(
   pendingContentID: string,
 ): Promise<string> {
   const postId = await step.do("create single photo post", async () => {
-    const c = await EntIGFeedPendingContent.fromID(pendingContentID);
-    const { postId } = await c.createSinglePhotoPost();
+    const { content, client } =
+      await loadInstagramFeedContext(pendingContentID);
+
+    if (!content.isSinglePhoto()) {
+      throw new WorkflowError(
+        `content ${pendingContentID} is not an Instagram single photo post`,
+      );
+    }
+
+    const [photo] = content.photosAttachments();
+    if (!photo || !photo.publicUrl) {
+      throw new WorkflowError(
+        `content ${pendingContentID} missing photo publicUrl`,
+      );
+    }
+
+    const caption = content.caption() ?? "";
+    const containerId = await client.createMediaContainer({
+      caption,
+      imageUrl: photo.publicUrl,
+    });
+    const { postId } = await client.publishContainer({
+      creationId: containerId,
+      caption,
+    });
     return postId;
   });
 
