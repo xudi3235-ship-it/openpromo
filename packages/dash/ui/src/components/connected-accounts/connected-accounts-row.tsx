@@ -6,6 +6,7 @@ import {
 } from "@openpromo/ui/components/avatar";
 import { Badge } from "@openpromo/ui/components/badge";
 import { cn } from "@openpromo/ui/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   type MotionValue,
   motion,
@@ -15,9 +16,13 @@ import {
 } from "framer-motion";
 import { Loader2, Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import type { ConnectedAccount } from "@/lib/hono-client";
+import { useHonoMutation } from "@/lib/hono-client";
+import { QUERY_KEYS } from "@/lib/query";
 import { useOAuthWithListener } from "@/queries/connected-account";
 
 function PlatformBadge({ platform }: { platform: Platform }) {
@@ -38,7 +43,6 @@ function PlatformBadge({ platform }: { platform: Platform }) {
 
 interface ConnectedAccountsRowProps {
   accounts: ConnectedAccount[];
-  onDeleteAccount?: (accountId: string) => void;
   showAddButton?: boolean;
   size?: "sm" | "md" | "lg";
   className?: string;
@@ -49,7 +53,6 @@ interface ConnectedAccountsRowProps {
 interface AccountAvatarProps {
   account: ConnectedAccount;
   showTooltip?: boolean;
-  onDelete?: (accountId: string) => void;
   mouseX: MotionValue<number>;
 }
 
@@ -93,12 +96,28 @@ function SkeletonAvatar({ mouseX }: { mouseX: MotionValue<number> }) {
 function AccountAvatar({
   account,
   showTooltip = false,
-  onDelete,
   mouseX,
 }: AccountAvatarProps) {
   const [showConfirm, setShowConfirm] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const meta = getPlatformMeta(account.platform);
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  const { mutateAsync: disconnectAccount } = useHonoMutation({
+    mutationFn: (api, accountId: string) =>
+      api.workspaces[":workspaceSlug"].connected_accounts[":accountId"].$delete(
+        {
+          param: { workspaceSlug: workspace.slug, accountId: accountId },
+        },
+      ),
+    onSuccess: async () => {
+      toast.success("Account disconnected successfully");
+      await queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
+      });
+    },
+  });
 
   const distance = useTransform(mouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
@@ -112,8 +131,8 @@ function AccountAvatar({
     damping: 12,
   });
 
-  const handleDelete = () => {
-    onDelete?.(account.id);
+  const handleDelete = async () => {
+    await disconnectAccount(account.id);
     setShowConfirm(false);
   };
 
@@ -143,19 +162,17 @@ function AccountAvatar({
         <PlatformBadge platform={account.platform} />
 
         {/* Delete Button */}
-        {onDelete && (
-          <button
-            type="button"
-            className="absolute -top-1 -right-1 w-4 h-4 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-200 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-ring z-20 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 dark:hover:text-red-300"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowConfirm(true);
-            }}
-            aria-label={`Remove ${account.accountName || account.platform} account`}
-          >
-            <X className="w-2.5 h-2.5" />
-          </button>
-        )}
+        <button
+          type="button"
+          className="absolute -top-1 -right-1 w-4 h-4 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-200 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-ring z-20 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 dark:hover:text-red-300"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowConfirm(true);
+          }}
+          aria-label={`Remove ${account.accountName || account.platform} account`}
+        >
+          <X className="w-2.5 h-2.5" />
+        </button>
 
         {/* Tooltip */}
         {showTooltip && (
@@ -249,7 +266,6 @@ function AddButton({
 
 export function ConnectedAccountsRow({
   accounts,
-  onDeleteAccount,
   showAddButton = false,
   className = "",
   fullWidth = false,
@@ -287,7 +303,6 @@ export function ConnectedAccountsRow({
             key={account.id}
             account={account}
             showTooltip={true}
-            onDelete={onDeleteAccount}
             mouseX={mouseX}
           />
         ))}

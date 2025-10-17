@@ -25,12 +25,7 @@ export function ConnectedAccountsSection({
     handleConnectInstagram,
     handleConnectTikTok,
     isConnecting,
-    deleteConnectedAccount,
   } = useOAuthWithListener();
-
-  const handleDeleteAccount = (accountId: string) => {
-    deleteConnectedAccount({ accountId });
-  };
 
   if (variant === "bar") {
     if (isLoading) {
@@ -47,7 +42,6 @@ export function ConnectedAccountsSection({
       return (
         <ConnectedAccountsRow
           accounts={accounts}
-          onDeleteAccount={handleDeleteAccount}
           showAddButton={true}
           className={cn("w-full", className)}
           fullWidth
@@ -90,11 +84,7 @@ export function ConnectedAccountsSection({
         </div>
       ) : accounts.length > 0 ? (
         <div className="mt-4">
-          <ConnectedAccountsRow
-            accounts={accounts}
-            onDeleteAccount={handleDeleteAccount}
-            showAddButton={true}
-          />
+          <ConnectedAccountsRow accounts={accounts} showAddButton={true} />
         </div>
       ) : (
         <div className="mt-4 text-center py-4">
