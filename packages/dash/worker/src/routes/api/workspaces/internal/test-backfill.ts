@@ -14,13 +14,13 @@ export const testBackfillRoute = new Hono<ApiEnv>().get("/", async (c) => {
   try {
     const actor = Actor.assert("workspace_user");
     const accounts = await ConnectedAccount.list();
-    // find first fb
-    const fbAccount = accounts.find((acc) => acc.platform === "FACEBOOK");
+    // find first ig, just for test
+    const ig = accounts.find((acc) => acc.platform === "INSTAGRAM");
 
     const instance = await c.env.ContentBackfillWorkflow.create({
       params: {
         actor,
-        connectedAccountID: fbAccount?.id || "",
+        connectedAccountID: ig?.id || "",
         start: new Date(
           new Date().setMonth(new Date().getMonth() - 3),
         ).toISOString(),

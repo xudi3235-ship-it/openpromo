@@ -1,5 +1,8 @@
 import { ConnectedAccount } from "@core/domain/connected-account";
-import { FacebookBackfiller } from "@core/domain/content/backfill";
+import {
+  FacebookBackfiller,
+  InstagramBackfiller,
+} from "@core/domain/content/backfill";
 import { Actor } from "@core/helpers/actor";
 import {
   type CoreWorkflowContext,
@@ -23,6 +26,12 @@ export type ContentBackfillWorkflowParams = z.infer<
 
 const log = Log.create({ namespace: "content-backfill-workflow" });
 
+const noRetries = {
+  retries: {
+    limit: 0,
+    delay: 1000,
+  },
+};
 export class ContentBackfillWorkflow extends CoreWorkflowEntrypoint<ContentBackfillWorkflowParams> {
   async runWithContext(
     _ctx: CoreWorkflowContext,
@@ -37,33 +46,39 @@ export class ContentBackfillWorkflow extends CoreWorkflowEntrypoint<ContentBackf
       end: payload.end,
     });
 
-    await step.do("determine backfiller type", async () => {
+    const platform = await step.do("determine backfiller type", async () => {
       const account = await ConnectedAccount.fromID(payload.connectedAccountID);
-      if (account.platform !== "FACEBOOK") {
-        console.log(
-          "// Unsupported connected account platform:",
-          account.platform,
-        );
-        throw new Error(
-          `unsupported connected account platform: ${account.platform}`,
-        );
-      }
+      return account.platform;
     });
-    console.log(
-      "// Determined backfiller type for account:",
-      payload.connectedAccountID,
-    );
 
-    await step.do(
-      "facebook backfill",
-      {
-        retries: {
-          backoff: "exponential",
-          limit: 0, // dont wanna spam fb api too much
-          delay: 1000,
-        },
-      },
-      async () => {
+    if (platform !== "FACEBOOK" && platform !== "INSTAGRAM") {
+      throw new Error(
+        `Unsupported connected account platform for backfill: ${platform}`,
+      );
+    }
+
+    if (platform === "INSTAGRAM") {
+      return await step.do("instagram backfill", noRetries, async () => {
+        const backfiller = new InstagramBackfiller();
+        const result = await backfiller.backfill({
+          connectedAccountId: payload.connectedAccountID,
+          start: new Date(payload.start),
+          end: new Date(payload.end),
+        });
+
+        log.info("content backfill completed", {
+          connectedAccountId: payload.connectedAccountID,
+          inserted: result.inserted,
+          skipped: result.skipped,
+          fetched: result.fetched,
+        });
+
+        return result;
+      });
+    }
+
+    if (platform === "FACEBOOK") {
+      return await step.do("facebook backfill", noRetries, async () => {
         const backfiller = new FacebookBackfiller();
         const result = await backfiller.backfill({
           connectedAccountId: payload.connectedAccountID,
@@ -79,7 +94,7 @@ export class ContentBackfillWorkflow extends CoreWorkflowEntrypoint<ContentBackf
         });
 
         return result;
-      },
-    );
+      });
+    }
   }
 }

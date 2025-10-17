@@ -136,8 +136,6 @@ export class InstagramBackfiller extends BaseBackfiller<
             metricBreakdowns: {
               profile_activity: "action_type",
             },
-            host: "graph.facebook.com",
-            apiVersion: "v23.0",
           },
         );
 
@@ -219,8 +217,6 @@ export class InstagramBackfiller extends BaseBackfiller<
           limit: "50",
           after,
         },
-        host: "graph.facebook.com",
-        apiVersion: "v23.0",
       });
 
       const pageData = response.data ?? [];
