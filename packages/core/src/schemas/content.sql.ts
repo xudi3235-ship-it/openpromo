@@ -159,7 +159,7 @@ export const unifiedContentTable = pgTable(
     ...timestamps,
     ...connectedAccountId,
     // external content id, for published content / backfilled.
-    sourceContentId: text("source_content_id"),
+    sourceContentId: text("source_content_id").unique(),
     permalinkUrl: text("permalink_url"),
     // declaration of the source platform's spec, json object
     // that defines what a post looks like on src plat.
@@ -178,6 +178,7 @@ export const unifiedContentTable = pgTable(
       .notNull()
       .default({}),
   },
+  // TODO: we prob need more index to speed up get by queries.
   (t) => [uniqueIndex().on(t.id, t.workspaceId, t.connectedAccountId)],
 );
 

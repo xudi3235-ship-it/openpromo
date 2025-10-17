@@ -1,0 +1,1 @@
+ALTER TABLE "unified_content" ADD CONSTRAINT "unified_content_source_content_id_unique" UNIQUE("source_content_id");

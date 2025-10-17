@@ -75,6 +75,7 @@ function renderTitle(row: Row<MergedContentEntity>) {
         IGFeed: (s) => s.caption,
         TTFeed: (s) => s.caption,
       });
+      const displayMessage = message || "Untitled";
 
       return (
         <div className="flex items-center space-x-3">
@@ -86,9 +87,12 @@ function renderTitle(row: Row<MergedContentEntity>) {
               </div>
             )}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-              {message}
+          <div className="flex-1 min-w-0 max-w-[360px]">
+            <p
+              className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate"
+              title={displayMessage}
+            >
+              {displayMessage}
             </p>
           </div>
         </div>
@@ -121,6 +125,7 @@ function renderTitle(row: Row<MergedContentEntity>) {
           )
         : undefined;
 
+      const displayMessage = primaryMessage || "Untitled Group";
       return (
         <div className="flex items-center space-x-3">
           <div className="relative inline-block">
@@ -148,16 +153,22 @@ function renderTitle(row: Row<MergedContentEntity>) {
               )}
             </div>
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 max-w-[360px]">
             <div className="flex items-center gap-2 mb-1">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                {primaryMessage}
+              <p
+                className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate"
+                title={displayMessage}
+              >
+                {displayMessage}
               </p>
               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                 Group
               </span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+            <p
+              className="text-xs text-gray-500 dark:text-gray-400 truncate"
+              title={`${contents.length} placement${contents.length !== 1 ? "s" : ""} • ${platforms.length} platform${platforms.length !== 1 ? "s" : ""}`}
+            >
               {contents.length} placement{contents.length !== 1 ? "s" : ""} •{" "}
               {platforms.length} platform{platforms.length !== 1 ? "s" : ""}
             </p>
@@ -170,6 +181,9 @@ function renderTitle(row: Row<MergedContentEntity>) {
 
 export const titleColumn: ColumnDef<MergedContentEntity> = {
   accessorKey: "Title",
+  size: 420,
+  minSize: 320,
+  maxSize: 420,
   header: () => (
     <ColumnHeaderWithTooltip
       tooltip="Content preview with thumbnail and platform indicator"

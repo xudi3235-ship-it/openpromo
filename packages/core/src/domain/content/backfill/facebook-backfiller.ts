@@ -15,6 +15,7 @@ import {
   type UnifiedContentMetrics,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
+import { sql } from "drizzle-orm";
 import type {
   BackfillParams,
   BackfillResult,
@@ -158,7 +159,24 @@ export class FacebookBackfiller extends BaseBackfiller<
         ),
       );
 
-    await db().insert(unifiedContentTable).values(values);
+    if (values.length === 0) return;
+
+    await db()
+      .insert(unifiedContentTable)
+      .values(values)
+      .onConflictDoUpdate({
+        target: unifiedContentTable.sourceContentId,
+        set: {
+          placementSpec: sql`excluded.placement_spec`,
+          placement: sql`excluded.placement`,
+          connectedAccountId: sql`excluded.connected_account_id`,
+          workspaceId: sql`excluded.workspace_id`,
+          permalinkUrl: sql`excluded.permalink_url`,
+          publishingStatus: sql`excluded.publishing_status`,
+          metrics: sql`excluded.metrics`,
+          updatedAt: sql`excluded.updated_at`,
+        },
+      });
   }
 
   protected mirrorConfig(): MirrorConfig {
