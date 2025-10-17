@@ -7,7 +7,6 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { useEffect, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { useContentListQuery } from "@/queries/content";
@@ -51,7 +50,7 @@ export function ContentListPage() {
 
   const { data, isLoading, error, refetch } = useContentListQuery(queryParams);
   const table = useReactTable({
-    data: (data?.entities as unknown as MergedContentEntity[]) ?? [],
+    data: data?.entities ?? [],
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,

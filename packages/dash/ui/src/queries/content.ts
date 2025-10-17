@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
+import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import {
@@ -150,7 +151,17 @@ export const useContentListQuery = (
   params: ContentListPaginationParams = {},
 ) => {
   const { workspace } = useWorkspace();
-  return useHonoQuery(contentListQueryOpts(workspace.slug, params));
+  const { data, ...rest } = useHonoQuery(
+    contentListQueryOpts(workspace.slug, params),
+  );
+  const { entities, pagination } = data ?? {};
+  return {
+    data: {
+      entities: entities as unknown as MergedContentEntity[],
+      pagination,
+    },
+    ...rest,
+  };
 };
 
 export const useContentGroupQuery = (contentGroupID: string | undefined) => {

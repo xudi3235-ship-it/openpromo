@@ -213,6 +213,8 @@ export type Workspace = ApiResult<typeof apiClient.workspaces.$get>[0];
 export type ConnectedAccount = ApiResult<
   (typeof apiClient.workspaces)[":workspaceSlug"]["connected_accounts"]["$get"]
 >["accounts"][0];
+// these types are treating all dates as strings
+// trying to figure out how to transform these
 export type ContentListResponse = ApiResult<
   (typeof apiClient.workspaces)[":workspaceSlug"]["content"]["$get"]
 >;
