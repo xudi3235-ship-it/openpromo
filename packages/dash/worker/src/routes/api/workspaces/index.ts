@@ -8,6 +8,7 @@ import { deleteWorkspaceRoute } from "./delete-workspace";
 import { getWorkspaceRoute } from "./get-workspace";
 import { imageGenRoute } from "./image-gen";
 import { inboxRoute } from "./inbox";
+import { internalWorkspaceRoute } from "./internal";
 import { listWorkspacesRoute } from "./list-workspaces";
 import { mediaRoute } from "./media";
 import { productsRoute } from "./products";
@@ -29,6 +30,8 @@ export const workspacesRoute = new Hono<ApiEnv>()
   .route("/", deleteWorkspaceRoute)
   // WebSocket pusher routes
   .route("/", workspacePusherRoute)
+  // Internal testing routes
+  .route("/:workspaceSlug/internal", internalWorkspaceRoute)
   // Nested resource routes
   .route("/:workspaceSlug/connected_accounts", connectedAccountsRoute)
   .route("/:workspaceSlug/inbox", inboxRoute)

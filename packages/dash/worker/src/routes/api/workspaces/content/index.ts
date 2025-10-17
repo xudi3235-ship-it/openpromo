@@ -7,7 +7,6 @@ import { contentGroupsRoute } from "./routes/content-groups";
 import { createContentRoute } from "./routes/create-content";
 import { deleteContentRoute } from "./routes/delete-content";
 import { listContentRoute } from "./routes/list-content";
-import { metricsRoute } from "./routes/metrics";
 
 // Re-export types for external consumers
 export type { ContentCreateData } from "./routes/create-content";
@@ -25,5 +24,4 @@ export const contentRoute = new Hono<ApiEnv>()
   .route("/batch", batchDeleteRoute)
   .route("/group", contentGroupsRoute)
   .route("/content", deleteContentRoute)
-  .route("/backfill", backfillRoute)
-  .route("/metrics", metricsRoute);
+  .route("/backfill", backfillRoute);
