@@ -276,9 +276,7 @@ export function ConnectedAccountsRow({
     handleConnectFacebook,
     handleConnectInstagram,
     handleConnectTikTok,
-    isConnectingFacebook,
-    isConnectingInstagram,
-    isConnectingTikTok,
+    isConnecting,
   } = useOAuthWithListener();
 
   if (accounts.length === 0 && !showAddButton) {
@@ -313,19 +311,19 @@ export function ConnectedAccountsRow({
             <AddButton
               platform="FACEBOOK"
               onClick={handleConnectFacebook}
-              isConnecting={isConnectingFacebook}
+              isConnecting={isConnecting}
               mouseX={mouseX}
             />
             <AddButton
               platform="INSTAGRAM"
               onClick={handleConnectInstagram}
-              isConnecting={isConnectingInstagram}
+              isConnecting={isConnecting}
               mouseX={mouseX}
             />
             <AddButton
               platform="TIKTOK"
               onClick={handleConnectTikTok}
-              isConnecting={isConnectingTikTok}
+              isConnecting={isConnecting}
               mouseX={mouseX}
             />
           </>
