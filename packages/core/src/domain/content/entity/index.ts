@@ -14,3 +14,4 @@ export { EntScheduledContent } from "./EntScheduledContent";
 export { EntTikTokFeedPendingContent } from "./EntTikTokFeed";
 export { EntUnifiedContentBase } from "./EntUnifiedContent";
 export { EntFacebookPublishedContent } from "./facebook/EntFacebookPublishedContent";
+export { EntInstagramPublishedContent } from "./instagram/EntInstagramPublishedContent";

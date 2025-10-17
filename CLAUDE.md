@@ -71,6 +71,7 @@ hosted on `dash.openpromo.app`, main dashboard for using app. react SPA using ta
 5. in backend dev, use `console.log([1.])` statements to add debugging / tracing for the flow so that we can understand what's going wrong.
 6. in our dashboard, we have labs internal route, which has api testing route that can quickly test api.
 7. for any hono api routes, we integrate with react query, place them under `queries` dir, so that we can have fully typsafety. When in doubt, read existing routes for code examples.
+8. for the filenaming, it has to be very specific, e.g. `instagram-backfiller.ts` this is to ensure uniqueness and easier for global code search.
 
 
 ### `package/ui`

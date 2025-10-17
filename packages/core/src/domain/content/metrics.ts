@@ -1,4 +1,7 @@
-import { EntFacebookPublishedContent } from "@core/domain/content/entity";
+import {
+  EntFacebookPublishedContent,
+  EntInstagramPublishedContent,
+} from "@core/domain/content/entity";
 import type { UnifiedContentMetrics } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
 import type { AllPlacement } from "@shared/content";
@@ -80,6 +83,10 @@ export class ContentMetricsRefresher {
   ): Promise<UnifiedContentMetrics | null> {
     if (EntFacebookPublishedContent.supports(target)) {
       const entity = EntFacebookPublishedContent.fromTarget(target);
+      return entity.fetchMetrics();
+    }
+    if (EntInstagramPublishedContent.supports(target)) {
+      const entity = EntInstagramPublishedContent.fromTarget(target);
       return entity.fetchMetrics();
     }
 

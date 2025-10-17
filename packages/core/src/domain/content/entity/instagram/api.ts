@@ -37,6 +37,8 @@ export interface GraphRequestOptions {
   method?: HttpMethod;
   searchParams?: Record<string, string | undefined>;
   body?: Record<string, unknown> | null;
+  apiVersion?: string;
+  host?: "graph.instagram.com" | "graph.facebook.com";
 }
 
 export async function instagramGraphRequest<T = unknown>(
@@ -44,9 +46,18 @@ export async function instagramGraphRequest<T = unknown>(
   path: string,
   options: GraphRequestOptions = {},
 ): Promise<T> {
-  const { method = "GET", searchParams = {}, body = null } = options;
+  const {
+    method = "GET",
+    searchParams = {},
+    body = null,
+    apiVersion,
+    host,
+  } = options;
 
-  const url = new URL(`https://graph.instagram.com/v23.0${path}`);
+  const baseHost = host ?? "graph.instagram.com";
+  const version = apiVersion ?? "v23.0";
+
+  const url = new URL(`https://${baseHost}/${version}${path}`);
   url.searchParams.set("access_token", ctx.accessToken);
   for (const [key, value] of Object.entries(searchParams)) {
     if (typeof value !== "undefined") {
