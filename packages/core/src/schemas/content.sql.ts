@@ -116,22 +116,23 @@ export const pendingContentGroupTable = pgTable(
   (t) => [uniqueIndex().on(t.workspaceId, t.id)],
 );
 
-const pendingContentGroupRefinements = {
+const groupOpts = {
   publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
 };
 
 export const PendingContentGroupInsert = createInsertSchema(
   pendingContentGroupTable,
-  pendingContentGroupRefinements,
+  groupOpts,
 );
 export const PendingContentGroupUpdate = createUpdateSchema(
   pendingContentGroupTable,
-  pendingContentGroupRefinements,
+  groupOpts,
 );
 export const PendingContentGroupSelect = createSelectSchema(
   pendingContentGroupTable,
-  pendingContentGroupRefinements,
+  groupOpts,
 );
+
 export type PendingContentGroupInsert = z.infer<
   typeof PendingContentGroupInsert
 >;

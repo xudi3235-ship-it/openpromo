@@ -216,6 +216,12 @@ export type ConnectedAccount = ApiResult<
 export type ContentListResponse = ApiResult<
   (typeof apiClient.workspaces)[":workspaceSlug"]["content"]["$get"]
 >;
+export type TContentEntity = Extract<
+  ContentListResponse["entities"][0],
+  {
+    type: "content";
+  }
+>;
 
 export function matchEntity<T>(
   entity: MergedContentEntity,
