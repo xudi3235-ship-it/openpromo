@@ -8,7 +8,7 @@ import {
 import { env } from "@core/utils/env";
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
-import { FacebookAdsApi, Page, Photo } from "facebook-nodejs-business-sdk";
+import { FacebookAdsApi, Page } from "facebook-nodejs-business-sdk";
 import {
   buildAttachmentMetadata,
   mergeAttachmentMetadata,
@@ -148,15 +148,23 @@ export class EntFBFeedPendingContent extends EntPendingContent {
   async createTextPost() {
     if (!this.isTextOnlyPost()) throw new WorkflowError("no text provided");
     const text = this.spec.postSpec.message;
-    // 0. get page with scoped access token
-    const { page } = await this.identity();
-    // 1. create post
-    const post = await page.createFeed([], {
-      message: text,
-    });
-    // format: <page_id>_<post_id>
-    const rawID = post.id;
-    const postID = rawID?.split("_")[1];
+    const ctx = await resolveFacebookIdentity(this.spec);
+
+    const response = await facebookGraphRequest<{ id?: string }>(
+      ctx,
+      `/${ctx.pageID}/feed`,
+      {
+        method: "POST",
+        body: new URLSearchParams({
+          message: text,
+        }),
+      },
+    );
+
+    const rawID = response.id ?? null;
+    const postID = rawID?.includes("_")
+      ? rawID.split("_")[1]
+      : (rawID ?? undefined);
     console.log({ rawID, postID });
     if (!rawID || !postID)
       throw new WorkflowError(
@@ -166,27 +174,58 @@ export class EntFBFeedPendingContent extends EntPendingContent {
   }
   async createPhotoPost() {
     // ref: https://developers.facebook.com/docs/graph-api/reference/page/photos/
-    const { page } = await this.identity();
+    const ctx = await resolveFacebookIdentity(this.spec);
     if (!this.isMultiPhotoPost())
       throw new Error("no photo attachment provided");
     const photos = this.photosAttachments();
-    // 1. create N unpublished photos
-    // NOTE: ensure the ordering.
-    const fbPhotos = await Promise.all(
-      photos.map(async (p) => {
-        const cdnUrl = await ImageStorage.getImageDeliveryUrl(p.id);
-        const photo = await page.createPhoto([Photo.Fields.id], {
-          url: cdnUrl,
-          published: false, // unpulished, to be attached to post
-        });
-        return photo;
-      }),
-    );
-    // 2. create post with attached photos
-    const post = await page.createFeed([Page.Fields.id], {
-      message: this.spec.postSpec.message,
-      attached_media: fbPhotos.map((p) => ({ media_fbid: p.id })),
+
+    const uploadedPhotoIds: string[] = [];
+
+    for (const attachment of photos) {
+      const cdnUrl = await ImageStorage.getImageDeliveryUrl(attachment.id);
+      const body = new URLSearchParams();
+      body.set("url", cdnUrl);
+      body.set("published", "false");
+
+      const uploadResponse = await facebookGraphRequest<{ id?: string }>(
+        ctx,
+        `/${ctx.pageID}/photos`,
+        {
+          method: "POST",
+          body,
+        },
+      );
+
+      const photoId = uploadResponse.id;
+      if (!photoId) {
+        throw new WorkflowError(
+          `failed to upload photo for content ${this.data.id}`,
+        );
+      }
+      uploadedPhotoIds.push(photoId);
+    }
+
+    const postBody = new URLSearchParams();
+    if (this.spec.postSpec.message) {
+      postBody.set("message", this.spec.postSpec.message);
+    }
+
+    uploadedPhotoIds.forEach((photoId, index) => {
+      postBody.append(
+        `attached_media[${index}]`,
+        JSON.stringify({ media_fbid: photoId }),
+      );
     });
+
+    const post = await facebookGraphRequest<{ id?: string }>(
+      ctx,
+      `/${ctx.pageID}/feed`,
+      {
+        method: "POST",
+        body: postBody,
+      },
+    );
+
     const postID = post.id?.split("_")[1] ?? null;
     if (!postID)
       throw new WorkflowError(

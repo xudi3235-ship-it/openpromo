@@ -34,8 +34,9 @@ export async function resolveFacebookIdentity(
 export interface GraphRequestOptions {
   method?: HttpMethod;
   searchParams?: Record<string, string | undefined>;
-  body?: Record<string, unknown> | null;
+  body?: Record<string, unknown> | URLSearchParams | FormData | string | null;
   apiVersion?: string;
+  headers?: Record<string, string>;
 }
 
 export const facebookGraphErrorSchema = z.object({
@@ -67,6 +68,7 @@ export async function facebookGraphRequest<T = unknown>(
     searchParams = {},
     body = null,
     apiVersion,
+    headers: customHeaders = {},
   } = options;
 
   const version = apiVersion ?? "v23.0";
@@ -78,13 +80,47 @@ export async function facebookGraphRequest<T = unknown>(
     }
   }
 
-  const response = await fetch(url.toString(), {
+  const headers: Record<string, string> = { ...customHeaders };
+
+  let requestBody: BodyInit | undefined;
+  if (body !== null && typeof body !== "undefined") {
+    if (
+      typeof body === "object" &&
+      typeof FormData !== "undefined" &&
+      body instanceof FormData
+    ) {
+      requestBody = body;
+    } else if (body instanceof URLSearchParams) {
+      requestBody = body;
+      if (!headers["Content-Type"]) {
+        headers["Content-Type"] = "application/x-www-form-urlencoded";
+      }
+    } else if (typeof body === "string") {
+      requestBody = body;
+      if (!headers["Content-Type"]) {
+        headers["Content-Type"] = "text/plain";
+      }
+    } else {
+      requestBody = JSON.stringify(body);
+      if (!headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+      }
+    }
+  }
+
+  const fetchOptions: RequestInit = {
     method,
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  };
+
+  if (Object.keys(headers).length > 0) {
+    fetchOptions.headers = headers;
+  }
+
+  if (typeof requestBody !== "undefined") {
+    fetchOptions.body = requestBody;
+  }
+
+  const response = await fetch(url.toString(), fetchOptions);
 
   console.log("// Facebook Graph API response", {
     url: url.toString(),
