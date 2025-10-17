@@ -154,11 +154,11 @@ export const useContentListQuery = (
   const { data, ...rest } = useHonoQuery(
     contentListQueryOpts(workspace.slug, params),
   );
-  const { entities, pagination } = data ?? {};
+  const { entities, ...restData } = data ?? {};
   return {
     data: {
       entities: entities as unknown as MergedContentEntity[],
-      pagination,
+      ...restData,
     },
     ...rest,
   };
