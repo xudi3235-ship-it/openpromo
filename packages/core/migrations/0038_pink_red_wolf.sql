@@ -1,0 +1,1 @@
+ALTER TABLE "unified_content" ALTER COLUMN "placement_spec" SET NOT NULL;

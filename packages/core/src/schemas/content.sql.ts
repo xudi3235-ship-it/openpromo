@@ -3,6 +3,7 @@ import type { PlacementSpec as PlacementSpecType } from "@shared/content";
 import {
   AllPlacement,
   ContentPublishingStatus,
+  PlacementSpec,
   SchedulingSpec,
   SharedAttachmentSpec,
 } from "@shared/content";
@@ -166,7 +167,7 @@ export const unifiedContentTable = pgTable(
     // for scheduled contents: the spec will be translated into multiple api calls, kinda like IaC, due to the dependency graph it needs to sort out, e.g. for a carousel IG posts, we need to create videos 1-3 first, then create a media container for these videos, finally we can create a IGMedia.
     // Similarly, for backfilled contents, upstream services should transform to placement spec.
     // this will be source of truth used in publishing, composer, preview, and backfilling.
-    placementSpec: jsonb("placement_spec").$type<PlacementSpecType>(),
+    placementSpec: jsonb("placement_spec").$type<PlacementSpecType>().notNull(),
     // internal, where this is going to
     placement: placementPgEnum().notNull(),
     publishingStatus: publishingStatusPgEnum().notNull(),
@@ -182,23 +183,11 @@ export const unifiedContentTable = pgTable(
   (t) => [uniqueIndex().on(t.id, t.workspaceId, t.connectedAccountId)],
 );
 
-export type UnifiedContentSelect = typeof unifiedContentTable.$inferSelect;
-export type UnifiedContentInsert = typeof unifiedContentTable.$inferInsert;
-export type UnifiedContentForPlacement<T extends AllPlacement[number]> = {
-  [K in keyof UnifiedContentSelect]: K extends "placement"
-    ? T
-    : K extends "placementSpec"
-      ? Extract<PlacementSpecType, { placement: T }>
-      : UnifiedContentSelect[K];
-};
-export type UnifiedContentFacebookPost = UnifiedContentForPlacement<"FB_FEED">;
-export type UnifiedContentInstagramPost = UnifiedContentForPlacement<"IG_FEED">;
-export type UnifiedContentTikTokPost = UnifiedContentForPlacement<"TT_FEED">;
-
 const opts = {
   publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
   placement: z.enum([...Object.values(AllPlacement)]),
   metrics: unifiedContentMetricsSchema.optional(),
+  placementSpec: PlacementSpec,
 };
 export const UnifiedContentInsert = createInsertSchema(
   unifiedContentTable,
@@ -212,3 +201,18 @@ export const UnifiedContentSelect = createSelectSchema(
   unifiedContentTable,
   opts,
 );
+
+export type UnifiedContentInsert = z.infer<typeof UnifiedContentInsert>;
+export type UnifiedContentUpdate = z.infer<typeof UnifiedContentUpdate>;
+export type UnifiedContentSelect = z.infer<typeof UnifiedContentSelect>;
+
+export type UnifiedContentForPlacement<T extends AllPlacement[number]> = {
+  [K in keyof UnifiedContentSelect]: K extends "placement"
+    ? T
+    : K extends "placementSpec"
+      ? Extract<PlacementSpecType, { placement: T }>
+      : UnifiedContentSelect[K];
+};
+export type UnifiedContentFacebookPost = UnifiedContentForPlacement<"FB_FEED">;
+export type UnifiedContentInstagramPost = UnifiedContentForPlacement<"IG_FEED">;
+export type UnifiedContentTikTokPost = UnifiedContentForPlacement<"TT_FEED">;
