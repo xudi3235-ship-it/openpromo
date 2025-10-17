@@ -5,10 +5,8 @@ import {
   type PlacementSpec,
   type UnifiedContentSelect,
 } from "@core/schemas/content.sql";
-import { env } from "@core/utils/env";
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
-import { FacebookAdsApi, Page } from "facebook-nodejs-business-sdk";
 import {
   buildAttachmentMetadata,
   mergeAttachmentMetadata,
@@ -239,17 +237,31 @@ export class EntFBFeedPendingContent extends EntPendingContent {
    * ref: https://developers.facebook.com/docs/video-api/guides/reels-publishing
    */
   async initVideoUploadSession() {
-    const { page } = await this.identity();
-    const session = await page.createVideoReel([], {
-      upload_phase: "start",
+    const ctx = await resolveFacebookIdentity(this.spec);
+    const body = new URLSearchParams();
+    body.set("upload_phase", "start");
+
+    const session = await facebookGraphRequest<{
+      video_id?: string;
+      upload_url?: string;
+      id?: string;
+      success?: boolean;
+    }>(ctx, `/${ctx.pageID}/video_reels`, {
+      method: "POST",
+      body,
     });
     console.log("// created video upload session", session);
+    const videoId = session.video_id;
+    const uploadUrl = session.upload_url;
+    if (!videoId || !uploadUrl) {
+      throw new WorkflowError(
+        `failed to start video upload session for content ${this.data.id}`,
+      );
+    }
     return {
       session,
-      //@ts-expect-error facebook sdk is missing these fields
-      video_id: session.video_id as string,
-      //@ts-expect-error facebook sdk is missing these fields
-      upload_url: session.upload_url as string,
+      video_id: videoId,
+      upload_url: uploadUrl,
     };
   }
   async uploadInternalVideoToSession(uploadSessionUrl: string) {
@@ -260,7 +272,7 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     const video = videos[0];
     const presignedUrl = video.presignedUrl;
     if (!presignedUrl) throw new Error("no presigned URL for video");
-    const { accessToken } = await this.identity();
+    const { accessToken } = await resolveFacebookIdentity(this.spec);
     // 1. upload the video
     const response = await fetch(uploadSessionUrl, {
       method: "POST",
@@ -344,25 +356,26 @@ export class EntFBFeedPendingContent extends EntPendingContent {
    * ref: https://developers.facebook.com/docs/video-api/guides/reels-publishing/
    */
   async createReel(videoId: string) {
-    const { page } = await this.identity();
+    const ctx = await resolveFacebookIdentity(this.spec);
     const description = this.spec.postSpec.message;
     if (!description) throw new Error("no description provided");
-    // this actually kicks off publishing
-    // it will be processed and published
-    // it's a async step.
-    const video = await page.createVideoReel(
-      [], // fields
-      {
-        video_id: videoId,
-        description: description,
-        upload_phase: "finish",
-        video_state: "PUBLISHED",
-      },
-    );
-    // @ts-expect-error
-    const rawID = video.post_id ?? null;
-    // @ts-expect-error
-    if (!video.success || !rawID)
+    const body = new URLSearchParams();
+    body.set("upload_phase", "finish");
+    body.set("video_id", videoId);
+    body.set("description", description);
+    body.set("video_state", "PUBLISHED");
+
+    const response = await facebookGraphRequest<{
+      success?: boolean;
+      post_id?: string;
+      id?: string;
+    }>(ctx, `/${ctx.pageID}/video_reels`, {
+      method: "POST",
+      body,
+    });
+
+    const rawID = response.post_id ?? response.id ?? null;
+    if (response.success === false || !rawID)
       throw new WorkflowError(
         `failed to publish reel for content ${this.data.id}: response indicates failure or missing postID`,
       );
@@ -585,16 +598,6 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       });
     }
   }
-  protected async api(accessToken: string) {
-    return FacebookAdsApi.init(accessToken).setDebug(env.DEBUG === "true");
-  }
-  protected async identity() {
-    const ctx = await resolveFacebookIdentity(this.spec);
-    const api = this.api(ctx.accessToken);
-    const page = new Page(ctx.pageID, api);
-    return { page, api, accessToken: ctx.accessToken, pageID: ctx.pageID };
-  }
-
   async fetchPermalinkUrl(postId: string): Promise<string | null> {
     try {
       const ctx = await resolveFacebookIdentity(this.spec);
