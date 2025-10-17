@@ -30,13 +30,6 @@ type FacebookBackfillResult = {
   inserted: number;
   skipped: number;
 };
-
-type FacebookPaging = {
-  cursors?: {
-    after?: string;
-  };
-};
-
 type FacebookAttachment = {
   id?: string;
   type?: string;
@@ -57,11 +50,6 @@ type FacebookFeedPost = {
   attachments?: {
     data?: FacebookAttachment[];
   };
-};
-
-type FacebookFeedResponse = {
-  data?: FacebookFeedPost[];
-  paging?: FacebookPaging;
 };
 
 type NormalizedFacebookPost = {
@@ -94,9 +82,11 @@ export class FacebookBackfiller {
   async backfill(
     params: FacebookBackfillParams,
   ): Promise<FacebookBackfillResult> {
+    console.log("[1] Starting Facebook backfill");
     this.assertTimeRange(params.start, params.end);
 
     const { connectedAccountId, start, end } = params;
+    console.log("[2] Loading connected account", { connectedAccountId });
     const account = await ConnectedAccount.fromID(connectedAccountId);
 
     if (account.platform !== "FACEBOOK") {
@@ -105,6 +95,9 @@ export class FacebookBackfiller {
       );
     }
 
+    console.log("[3] Resolving Facebook page account", {
+      externalAccountId: account.externalAccountId,
+    });
     const facebookAccount = await ConnectedAccount.fromFBPageID(
       account.externalAccountId,
     );
@@ -114,26 +107,45 @@ export class FacebookBackfiller {
       accessToken: facebookAccount.encryptedAccessToken,
     };
 
+    console.log("[4] Fetching published posts", {
+      pageID: ctx.pageID,
+      start: start.toISOString(),
+      end: end.toISOString(),
+    });
     const posts = await this.fetchPublishedPosts(ctx, start, end);
     this.log.info("fetched facebook posts", {
       count: posts.length,
       pageID: ctx.pageID,
     });
+    console.log("[5] Fetched posts", { count: posts.length });
 
     if (posts.length === 0) {
+      console.log("[6] No posts fetched, returning early");
       return { fetched: 0, inserted: 0, skipped: 0 };
     }
 
+    console.log("[7] Normalizing posts");
     const normalized = posts
       .map((post) => this.normalizePost(post))
       .filter((post): post is NormalizedFacebookPost => Boolean(post));
+    console.log("[8] Normalized posts", {
+      count: normalized.length,
+      skipped: posts.length - normalized.length,
+    });
 
     if (normalized.length === 0) {
+      console.log("[9] No normalized posts, returning early");
       return { fetched: posts.length, inserted: 0, skipped: posts.length };
     }
 
+    console.log("[10] Filtering existing posts");
     const deduped = await this.filterExisting(facebookAccount.id, normalized);
+    console.log("[11] Deduplication result", {
+      toInsert: deduped.toInsert.length,
+      existing: deduped.existing.size,
+    });
     if (deduped.toInsert.length === 0) {
+      console.log("[12] All posts already exist, returning early");
       return {
         fetched: posts.length,
         inserted: 0,
@@ -141,18 +153,28 @@ export class FacebookBackfiller {
       };
     }
 
+    console.log("[13] Starting attachment thumbnail mirroring", {
+      count: deduped.toInsert.length,
+    });
     await this.mirrorAttachmentThumbnails(
       deduped.toInsert,
       facebookAccount.workspaceId,
     );
+    console.log("[14] Attachment mirroring completed");
 
+    console.log("[15] Inserting posts into database", {
+      count: deduped.toInsert.length,
+    });
     await this.insertPosts(deduped.toInsert, facebookAccount, ctx);
+    console.log("[16] Database insertion completed");
 
-    return {
+    const result = {
       fetched: posts.length,
       inserted: deduped.toInsert.length,
       skipped: normalized.length - deduped.toInsert.length,
     };
+    console.log("[17] Backfill completed", result);
+    return result;
   }
 
   private assertTimeRange(start: Date, end: Date) {
@@ -172,35 +194,43 @@ export class FacebookBackfiller {
     start: Date,
     end: Date,
   ): Promise<FacebookFeedPost[]> {
+    console.log("[4.1] fetchPublishedPosts starting using /feed endpoint");
     const posts: FacebookFeedPost[] = [];
     let after: string | undefined;
+    let pageCount = 0;
 
+    // Use the /page_id/feed endpoint to get posts
     while (true) {
-      const response = await facebookGraphRequest<FacebookFeedResponse>(
-        ctx,
-        `/${ctx.pageID}/published_posts`,
-        {
-          searchParams: {
-            fields: [
-              "id",
-              "message",
-              "created_time",
-              "permalink_url",
-              "type",
-              "attachments{media,type,target,id,subattachments}",
-            ].join(","),
-            limit: "50",
-            since: Math.floor(start.getTime() / 1000).toString(),
-            until: Math.ceil(end.getTime() / 1000).toString(),
-            after,
-          },
+      pageCount++;
+      console.log(`[4.1.${pageCount}] Fetching page ${pageCount}`);
+
+      const response = await facebookGraphRequest<{
+        data?: FacebookFeedPost[];
+        paging?: { cursors?: { after?: string } };
+      }>(ctx, `/${ctx.pageID}/feed`, {
+        searchParams: {
+          fields: [
+            "id",
+            "message",
+            "created_time",
+            "permalink_url",
+            "attachments{media,type,target,id,subattachments}",
+          ].join(","),
+          limit: "50",
+          since: Math.floor(start.getTime() / 1000).toString(),
+          until: Math.ceil(end.getTime() / 1000).toString(),
+          after,
         },
-      );
+      });
 
       const pageData = response.data ?? [];
+      console.log(
+        `[4.1.${pageCount}a] Got ${pageData.length} posts on this page`,
+      );
       posts.push(...pageData);
 
       if (!response.paging?.cursors?.after) {
+        console.log(`[4.1.${pageCount}b] No more pages (no pagination cursor)`);
         break;
       }
 
@@ -208,23 +238,32 @@ export class FacebookBackfiller {
 
       const oldest = pageData[pageData.length - 1];
       if (!oldest) {
+        console.log(`[4.1.${pageCount}c] Page empty, breaking`);
         break;
       }
       const oldestTime = new Date(oldest.created_time);
       if (oldestTime < start) {
+        console.log(
+          `[4.1.${pageCount}d] Oldest post before range (${oldestTime.toISOString()} < ${start.toISOString()}), breaking`,
+        );
         break;
       }
     }
 
-    return posts.filter((post) => {
+    console.log("[4.2] Filtering posts by date range", { total: posts.length });
+    const filtered = posts.filter((post) => {
       const createdAt = new Date(post.created_time);
       return createdAt >= start && createdAt <= end;
     });
+    console.log("[4.3] After date filter", { remaining: filtered.length });
+
+    return filtered;
   }
 
   private normalizePost(post: FacebookFeedPost): NormalizedFacebookPost | null {
     const createdAt = new Date(post.created_time);
     if (Number.isNaN(createdAt.getTime())) {
+      console.log("[7.1] Skipping post with invalid date", { id: post.id });
       this.log.warn("skip facebook post with invalid created_time", {
         id: post.id,
       });
@@ -232,6 +271,11 @@ export class FacebookBackfiller {
     }
 
     const attachments = this.extractAttachments(post);
+    console.log("[7.2] Normalized post", {
+      id: post.id,
+      attachmentCount: attachments.length,
+      hasMessage: !!post.message,
+    });
 
     return {
       id: post.id,
@@ -246,14 +290,27 @@ export class FacebookBackfiller {
   private extractAttachments(post: FacebookFeedPost): SharedAttachmentSpec[] {
     const collected: SharedAttachmentSpec[] = [];
     const attachments = post.attachments?.data ?? [];
+    console.log("[7.2.1] Extracting attachments", {
+      postId: post.id,
+      attachmentCount: attachments.length,
+    });
 
     const visit = (attachment: FacebookAttachment, path: string) => {
       const spec = this.attachmentToSpec(post.id, attachment, path);
       if (spec) {
+        console.log(`[7.2.1.${path}] Converted attachment`, {
+          type: spec.type,
+          path,
+        });
         collected.push(spec);
       }
 
       const subattachments = attachment.subattachments?.data ?? [];
+      if (subattachments.length > 0) {
+        console.log(
+          `[7.2.1.${path}a] Found ${subattachments.length} subattachments`,
+        );
+      }
       subattachments.forEach((subAttachment, index) => {
         visit(subAttachment, `${path}.${index}`);
       });
@@ -263,6 +320,10 @@ export class FacebookBackfiller {
       visit(attachment, `${index}`);
     });
 
+    console.log("[7.2.1z] Attachment extraction complete", {
+      postId: post.id,
+      totalCollected: collected.length,
+    });
     return collected;
   }
 
@@ -319,13 +380,19 @@ export class FacebookBackfiller {
     connectedAccountId: string,
     posts: NormalizedFacebookPost[],
   ) {
+    console.log("[10.1] Starting deduplication check", {
+      connectedAccountId,
+      postsToCheck: posts.length,
+    });
     const ids = posts.map((post) => post.id);
     if (ids.length === 0) {
+      console.log("[10.1a] No posts to check");
       return {
         existing: new Set<string>(),
         toInsert: [] as NormalizedFacebookPost[],
       };
     }
+    console.log("[10.2] Querying database for existing posts");
     const existing = await db()
       .select({ sourceContentId: unifiedContentTable.sourceContentId })
       .from(unifiedContentTable)
@@ -343,6 +410,11 @@ export class FacebookBackfiller {
     );
 
     const toInsert = posts.filter((post) => !existingSet.has(post.id));
+    console.log("[10.3] Deduplication result", {
+      checked: posts.length,
+      alreadyExist: existingSet.size,
+      toInsert: toInsert.length,
+    });
 
     return { existing: existingSet, toInsert };
   }
@@ -351,7 +423,14 @@ export class FacebookBackfiller {
     posts: NormalizedFacebookPost[],
     workspaceId: string,
   ): Promise<void> {
-    if (posts.length === 0) return;
+    console.log("[13.1] Starting attachment thumbnail mirroring", {
+      posts: posts.length,
+      workspaceId,
+    });
+    if (posts.length === 0) {
+      console.log("[13.1a] No posts to mirror");
+      return;
+    }
 
     const cache = new Map<
       string,
@@ -366,6 +445,9 @@ export class FacebookBackfiller {
           const sourceUrl = attachment.publicUrl ?? attachment.thumbnailUrl;
           if (!sourceUrl) continue;
 
+          console.log(`[13.1.${post.id}.${index}] Mirroring photo`, {
+            sourceUrl: sourceUrl.substring(0, 50),
+          });
           const mirrored = await this.mirrorUrlToR2(
             cache,
             sourceUrl,
@@ -377,7 +459,10 @@ export class FacebookBackfiller {
             },
           );
 
-          if (!mirrored) continue;
+          if (!mirrored) {
+            console.log(`[13.1.${post.id}.${index}a] Mirror failed`);
+            continue;
+          }
 
           attachment.publicUrl = mirrored.url;
           attachment.thumbnailUrl = mirrored.url;
@@ -395,6 +480,9 @@ export class FacebookBackfiller {
           const thumbnailUrl = attachment.thumbnailUrl;
           if (!thumbnailUrl) continue;
 
+          console.log(`[13.1.${post.id}.${index}] Mirroring video thumbnail`, {
+            sourceUrl: thumbnailUrl.substring(0, 50),
+          });
           const mirrored = await this.mirrorUrlToR2(
             cache,
             thumbnailUrl,

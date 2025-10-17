@@ -28,6 +28,7 @@ import { Route as AuthenticatedWorkspacesWorkspaceSlugStylesStyleIdRouteImport }
 import { Route as AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/products/$productId'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugLabsPlaygroundRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/labs/playground'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugLabsImageGenRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/labs/image-gen'
+import { Route as AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/labs/api-testing'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -139,6 +140,12 @@ const AuthenticatedWorkspacesWorkspaceSlugLabsImageGenRoute =
     path: '/image-gen',
     getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugLabsRouteRoute,
   } as any)
+const AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRoute =
+  AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRouteImport.update({
+    id: '/api-testing',
+    path: '/api-testing',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugLabsRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceSlug/inbox': typeof AuthenticatedWorkspacesWorkspaceSlugInboxRoute
   '/workspaces/$workspaceSlug/team': typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   '/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
+  '/workspaces/$workspaceSlug/labs/api-testing': typeof AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRoute
   '/workspaces/$workspaceSlug/labs/image-gen': typeof AuthenticatedWorkspacesWorkspaceSlugLabsImageGenRoute
   '/workspaces/$workspaceSlug/labs/playground': typeof AuthenticatedWorkspacesWorkspaceSlugLabsPlaygroundRoute
   '/workspaces/$workspaceSlug/products/$productId': typeof AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute
@@ -171,6 +179,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceSlug/inbox': typeof AuthenticatedWorkspacesWorkspaceSlugInboxRoute
   '/workspaces/$workspaceSlug/team': typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   '/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
+  '/workspaces/$workspaceSlug/labs/api-testing': typeof AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRoute
   '/workspaces/$workspaceSlug/labs/image-gen': typeof AuthenticatedWorkspacesWorkspaceSlugLabsImageGenRoute
   '/workspaces/$workspaceSlug/labs/playground': typeof AuthenticatedWorkspacesWorkspaceSlugLabsPlaygroundRoute
   '/workspaces/$workspaceSlug/products/$productId': typeof AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute
@@ -193,6 +202,7 @@ export interface FileRoutesById {
   '/_authenticated/workspaces/$workspaceSlug/inbox': typeof AuthenticatedWorkspacesWorkspaceSlugInboxRoute
   '/_authenticated/workspaces/$workspaceSlug/team': typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   '/_authenticated/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
+  '/_authenticated/workspaces/$workspaceSlug/labs/api-testing': typeof AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRoute
   '/_authenticated/workspaces/$workspaceSlug/labs/image-gen': typeof AuthenticatedWorkspacesWorkspaceSlugLabsImageGenRoute
   '/_authenticated/workspaces/$workspaceSlug/labs/playground': typeof AuthenticatedWorkspacesWorkspaceSlugLabsPlaygroundRoute
   '/_authenticated/workspaces/$workspaceSlug/products/$productId': typeof AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug/inbox'
     | '/workspaces/$workspaceSlug/team'
     | '/workspaces/$workspaceSlug/'
+    | '/workspaces/$workspaceSlug/labs/api-testing'
     | '/workspaces/$workspaceSlug/labs/image-gen'
     | '/workspaces/$workspaceSlug/labs/playground'
     | '/workspaces/$workspaceSlug/products/$productId'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug/inbox'
     | '/workspaces/$workspaceSlug/team'
     | '/workspaces/$workspaceSlug'
+    | '/workspaces/$workspaceSlug/labs/api-testing'
     | '/workspaces/$workspaceSlug/labs/image-gen'
     | '/workspaces/$workspaceSlug/labs/playground'
     | '/workspaces/$workspaceSlug/products/$productId'
@@ -254,6 +266,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/$workspaceSlug/inbox'
     | '/_authenticated/workspaces/$workspaceSlug/team'
     | '/_authenticated/workspaces/$workspaceSlug/'
+    | '/_authenticated/workspaces/$workspaceSlug/labs/api-testing'
     | '/_authenticated/workspaces/$workspaceSlug/labs/image-gen'
     | '/_authenticated/workspaces/$workspaceSlug/labs/playground'
     | '/_authenticated/workspaces/$workspaceSlug/products/$productId'
@@ -403,16 +416,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugLabsImageGenRouteImport
       parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugLabsRouteRoute
     }
+    '/_authenticated/workspaces/$workspaceSlug/labs/api-testing': {
+      id: '/_authenticated/workspaces/$workspaceSlug/labs/api-testing'
+      path: '/api-testing'
+      fullPath: '/workspaces/$workspaceSlug/labs/api-testing'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugLabsRouteRoute
+    }
   }
 }
 
 interface AuthenticatedWorkspacesWorkspaceSlugLabsRouteRouteChildren {
+  AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRoute: typeof AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRoute
   AuthenticatedWorkspacesWorkspaceSlugLabsImageGenRoute: typeof AuthenticatedWorkspacesWorkspaceSlugLabsImageGenRoute
   AuthenticatedWorkspacesWorkspaceSlugLabsPlaygroundRoute: typeof AuthenticatedWorkspacesWorkspaceSlugLabsPlaygroundRoute
 }
 
 const AuthenticatedWorkspacesWorkspaceSlugLabsRouteRouteChildren: AuthenticatedWorkspacesWorkspaceSlugLabsRouteRouteChildren =
   {
+    AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRoute:
+      AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRoute,
     AuthenticatedWorkspacesWorkspaceSlugLabsImageGenRoute:
       AuthenticatedWorkspacesWorkspaceSlugLabsImageGenRoute,
     AuthenticatedWorkspacesWorkspaceSlugLabsPlaygroundRoute:

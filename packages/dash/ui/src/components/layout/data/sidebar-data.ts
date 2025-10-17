@@ -8,6 +8,7 @@ import {
   Palette,
   Settings,
   SquarePen,
+  TestTube,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -100,6 +101,11 @@ export const useSidebarData = (): SidebarData => {
                 title: "Image Gen",
                 url: "/workspaces/$workspaceSlug/labs/image-gen",
                 icon: Image,
+              },
+              {
+                title: "API Testing",
+                url: "/workspaces/$workspaceSlug/labs/api-testing",
+                icon: TestTube,
               },
             ],
           },

@@ -40,28 +40,46 @@ export class ContentBackfillWorkflow extends CoreWorkflowEntrypoint<ContentBackf
     await step.do("determine backfiller type", async () => {
       const account = await ConnectedAccount.fromID(payload.connectedAccountID);
       if (account.platform !== "FACEBOOK") {
+        console.log(
+          "// Unsupported connected account platform:",
+          account.platform,
+        );
         throw new Error(
           `unsupported connected account platform: ${account.platform}`,
         );
       }
     });
+    console.log(
+      "// Determined backfiller type for account:",
+      payload.connectedAccountID,
+    );
 
-    await step.do("facebook backfill", async () => {
-      const backfiller = new FacebookBackfiller();
-      const result = await backfiller.backfill({
-        connectedAccountId: payload.connectedAccountID,
-        start: new Date(payload.start),
-        end: new Date(payload.end),
-      });
+    await step.do(
+      "facebook backfill",
+      {
+        retries: {
+          backoff: "exponential",
+          limit: 0, // dont wanna spam fb api too much
+          delay: 1000,
+        },
+      },
+      async () => {
+        const backfiller = new FacebookBackfiller();
+        const result = await backfiller.backfill({
+          connectedAccountId: payload.connectedAccountID,
+          start: new Date(payload.start),
+          end: new Date(payload.end),
+        });
 
-      log.info("content backfill completed", {
-        connectedAccountId: payload.connectedAccountID,
-        inserted: result.inserted,
-        skipped: result.skipped,
-        fetched: result.fetched,
-      });
+        log.info("content backfill completed", {
+          connectedAccountId: payload.connectedAccountID,
+          inserted: result.inserted,
+          skipped: result.skipped,
+          fetched: result.fetched,
+        });
 
-      return result;
-    });
+        return result;
+      },
+    );
   }
 }
