@@ -1,11 +1,19 @@
+import type { Platform } from "@core/schemas/connected-account.sql";
 import { cn } from "@openpromo/ui/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AccountSelectionPlatformFilter,
+  type PlatformFilter,
+  type PlatformFilterOption,
+} from "@/components/composer/controls/account-selection-platform-filter";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { AvailablePlatformsRow } from "@/components/connected-accounts/available-platforms-row";
 import { ComposerAccountsRow } from "@/components/connected-accounts/connected-accounts-row";
 import type { ConnectedAccount } from "@/lib/hono-client";
 import { useOAuthWithListener } from "@/queries/connected-account";
 import { useComposerStore } from "@/stores/composer-store";
+
+const PLATFORM_ORDER: Platform[] = ["FACEBOOK", "INSTAGRAM", "TIKTOK"];
 
 function CustomizationScopeBanner({
   account,
@@ -21,7 +29,7 @@ function CustomizationScopeBanner({
   return (
     <div
       role="note"
-      className="space-y-2 rounded-lg border border-border bg-muted/40 px-3 py-2"
+      className="space-y-1.5 rounded-md border border-border/60 bg-muted/20 px-3 py-2"
     >
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         {Icon && <Icon className={cn("h-4 w-4", meta.accentTextClass)} />}
@@ -56,6 +64,7 @@ export function AccountSelection() {
     activeAccount,
     setActiveAccount,
   } = useComposerStore();
+  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("ALL");
 
   const canCustomize = accounts.length > 1;
 
@@ -76,6 +85,69 @@ export function AccountSelection() {
     isConnecting,
   } = useOAuthWithListener();
 
+  const platformCounts = useMemo(() => {
+    return accounts.reduce(
+      (acc, account) => {
+        acc[account.platform] += 1;
+        return acc;
+      },
+      {
+        FACEBOOK: 0,
+        INSTAGRAM: 0,
+        TIKTOK: 0,
+      } as Record<Platform, number>,
+    );
+  }, [accounts]);
+
+  const filteredAccounts = useMemo(() => {
+    if (platformFilter === "ALL") {
+      return accounts;
+    }
+    return accounts.filter((account) => account.platform === platformFilter);
+  }, [accounts, platformFilter]);
+
+  const filteredActiveAccount = useMemo(() => {
+    if (!activeAccount) return null;
+    return filteredAccounts.some((account) => account.id === activeAccount)
+      ? activeAccount
+      : null;
+  }, [activeAccount, filteredAccounts]);
+
+  const visibleSelectedCount = useMemo(() => {
+    return filteredAccounts.filter((account) =>
+      selectedAccounts.includes(account.id),
+    ).length;
+  }, [filteredAccounts, selectedAccounts]);
+
+  const allFilteredSelected =
+    filteredAccounts.length > 0 &&
+    visibleSelectedCount === filteredAccounts.length;
+
+  const platformFilterOptions: PlatformFilterOption[] = useMemo(() => {
+    return [
+      {
+        value: "ALL" as PlatformFilter,
+        label: "All",
+        count: accounts.length,
+      },
+      ...PLATFORM_ORDER.map((platform) => {
+        const meta = getPlatformMeta(platform);
+        return {
+          value: platform as PlatformFilter,
+          label: meta.label,
+          count: platformCounts[platform],
+          meta,
+        };
+      }),
+    ];
+  }, [accounts.length, platformCounts]);
+
+  const activeFilterOption = useMemo(() => {
+    return platformFilterOptions.find(
+      (option) => option.value === platformFilter,
+    );
+  }, [platformFilterOptions, platformFilter]);
+
   const handleToggleAccount = (accountId: string) => {
     const newSelection = selectedAccounts.includes(accountId)
       ? selectedAccounts.filter((id: string) => id !== accountId)
@@ -90,14 +162,54 @@ export function AccountSelection() {
     }
   };
 
+  const handleToggleVisibleSelection = () => {
+    if (filteredAccounts.length === 0) return;
+
+    if (allFilteredSelected) {
+      const visibleIds = new Set(filteredAccounts.map((account) => account.id));
+      const nextSelection = selectedAccounts.filter(
+        (id) => !visibleIds.has(id),
+      );
+      setSelectedAccounts(nextSelection);
+      return;
+    }
+
+    const existing = new Set(selectedAccounts);
+    const additions = filteredAccounts
+      .map((account) => account.id)
+      .filter((id) => !existing.has(id));
+    if (additions.length === 0) return;
+    setSelectedAccounts([...selectedAccounts, ...additions]);
+  };
+
   useEffect(() => {
     if (!canCustomize && activeAccount) {
       setActiveAccount(null);
     }
   }, [canCustomize, activeAccount, setActiveAccount]);
 
+  useEffect(() => {
+    if (activeAccount && !selectedAccounts.includes(activeAccount)) {
+      setActiveAccount(null);
+    }
+  }, [activeAccount, selectedAccounts, setActiveAccount]);
+
+  const handlePlatformFilterChange = (value: PlatformFilter) => {
+    setPlatformFilter(value);
+  };
+
+  const handleConnectForFilter = () => {
+    if (platformFilter === "FACEBOOK") {
+      handleConnectFacebook();
+    } else if (platformFilter === "INSTAGRAM") {
+      handleConnectInstagram();
+    } else if (platformFilter === "TIKTOK") {
+      handleConnectTikTok();
+    }
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {/* Section Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-foreground">Accounts</h3>
@@ -143,14 +255,45 @@ export function AccountSelection() {
           />
         </div>
       ) : (
-        <ComposerAccountsRow
-          accounts={accounts}
-          selectedAccounts={selectedAccounts}
-          activeAccount={canCustomize ? activeAccount : null}
-          onToggleAccount={handleToggleAccount}
-          onSetActiveAccount={handleSetActive}
-          showAddButton={true}
-        />
+        <>
+          <AccountSelectionPlatformFilter
+            options={platformFilterOptions}
+            value={platformFilter}
+            onChange={handlePlatformFilterChange}
+            filteredCount={filteredAccounts.length}
+            visibleSelectedCount={visibleSelectedCount}
+            allFilteredSelected={allFilteredSelected}
+            onToggleVisibleSelection={handleToggleVisibleSelection}
+          />
+
+          {filteredAccounts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border/50 bg-muted/10 py-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                {platformFilter === "ALL"
+                  ? "No accounts available yet."
+                  : `No ${activeFilterOption?.label ?? ""} accounts connected.`}
+              </p>
+              {platformFilter !== "ALL" && (
+                <button
+                  type="button"
+                  onClick={handleConnectForFilter}
+                  className="inline-flex items-center gap-2 rounded-full border border-border/60 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Connect {activeFilterOption?.label}
+                </button>
+              )}
+            </div>
+          ) : (
+            <ComposerAccountsRow
+              accounts={filteredAccounts}
+              selectedAccounts={selectedAccounts}
+              activeAccount={canCustomize ? filteredActiveAccount : null}
+              onToggleAccount={handleToggleAccount}
+              onSetActiveAccount={handleSetActive}
+              showAddButton={true}
+            />
+          )}
+        </>
       )}
     </div>
   );

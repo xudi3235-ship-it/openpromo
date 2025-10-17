@@ -58,20 +58,25 @@ function FooterActions({
   };
 
   return (
-    <div className="flex items-center justify-end gap-2">
+    <div className="flex items-center justify-end gap-2 min-w-0">
       {showMoreTools && (
         <Button
           variant="ghost"
           size="sm"
           onClick={onMoreTools}
-          className="gap-2 text-muted-foreground hover:text-foreground"
+          className="gap-2 text-muted-foreground hover:text-foreground shrink-0"
         >
-          <Maximize2 className="h-3.5 w-3.5" />
-          More tools
+          <Maximize2 className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="hidden sm:inline">More tools</span>
         </Button>
       )}
       {isDialog && (
-        <Button variant="ghost" size="sm" onClick={onCancel}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onCancel}
+          className="shrink-0"
+        >
           Cancel
         </Button>
       )}
@@ -80,7 +85,7 @@ function FooterActions({
         size="sm"
         onClick={onSaveDraft}
         disabled={isPending || !canPublish}
-        className="text-muted-foreground hover:text-foreground disabled:opacity-50"
+        className="text-muted-foreground hover:text-foreground disabled:opacity-50 shrink-0"
       >
         {getDraftLabel()}
       </Button>
@@ -88,7 +93,7 @@ function FooterActions({
         size="sm"
         onClick={onPublish}
         disabled={isPending || !canPublish}
-        className="shadow-sm"
+        className="shadow-sm shrink-0"
       >
         {getPublishLabel()}
       </Button>

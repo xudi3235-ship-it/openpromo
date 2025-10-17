@@ -557,7 +557,7 @@ export function ComposerAccountsRow({
 
   return (
     <div className={className}>
-      <div className="flex items-center gap-2 bg-card border border-border/40 rounded-2xl px-4 py-3">
+      <div className="flex items-center gap-2 bg-card border border-border/40 rounded-2xl px-4 py-2.5">
         {accounts.map((account) => (
           <ComposerAccountAvatar
             key={account.id}
