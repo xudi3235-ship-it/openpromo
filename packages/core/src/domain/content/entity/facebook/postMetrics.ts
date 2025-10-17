@@ -3,6 +3,7 @@ import {
   FacebookGraphError,
   facebookGraphRequest,
 } from "@core/domain/content/entity/facebook/api";
+import type { UnifiedContentMetrics } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
 
 const DEFAULT_MAX_METRICS_PER_REQUEST = 10;
@@ -10,6 +11,19 @@ const MAX_RANGE_DAYS = 90;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export type FacebookPostMetricName = string;
+
+export const FACEBOOK_POST_DEFAULT_METRICS = [
+  // metrics def: https://developers.facebook.com/docs/graph-api/reference/v24.0/insights#page-posts
+  "post_impressions_unique",
+  "post_impressions",
+  "post_clicks",
+  "post_reactions_like_total",
+  "post_reactions_love_total",
+  "post_reactions_wow_total",
+  "post_reactions_haha_total",
+  "post_reactions_sorry_total",
+  "post_reactions_anger_total",
+] as const satisfies readonly FacebookPostMetricName[];
 
 export type FacebookPostMetricsFetchParams = {
   postId: string;
@@ -268,4 +282,78 @@ export class FacebookPostMetricsFetcher {
 
     return null;
   }
+}
+
+function coerceNumber(value: FacebookPostMetricsValue | null | undefined) {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+export function facebookPostMetricsToUnifiedContentMetrics(
+  metrics: FacebookPostMetricsValueMap,
+): UnifiedContentMetrics {
+  const activityTotals = extractActivityTotals(
+    metrics.post_activity_by_action_type,
+  );
+  const reactionsTotal =
+    coerceNumber(metrics.post_reactions_like_total) +
+    coerceNumber(metrics.post_reactions_love_total) +
+    coerceNumber(metrics.post_reactions_wow_total) +
+    coerceNumber(metrics.post_reactions_haha_total) +
+    coerceNumber(metrics.post_reactions_sorry_total) +
+    coerceNumber(metrics.post_reactions_anger_total);
+  const likesFromActivity = activityTotals.like ?? 0;
+  const likesTotal = reactionsTotal > 0 ? reactionsTotal : likesFromActivity;
+
+  return {
+    reach: coerceNumber(metrics.post_impressions_unique),
+    impressions: coerceNumber(metrics.post_impressions),
+    engagement: coerceNumber(metrics.post_engaged_users),
+    clicks: coerceNumber(metrics.post_clicks),
+    comments: activityTotals.comment ?? 0,
+    shares: activityTotals.share ?? 0,
+    likes: likesTotal,
+  };
+}
+
+function extractActivityTotals(
+  value: FacebookPostMetricsValue | null | undefined,
+): Record<string, number> {
+  if (!value || Array.isArray(value)) return {};
+  if (typeof value === "number") {
+    // No breakdown info in this case.
+    return {};
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as Record<string, unknown>;
+      return coerceActivityMap(parsed);
+    } catch {
+      return {};
+    }
+  }
+  return coerceActivityMap(value as Record<string, unknown>);
+}
+
+function coerceActivityMap(
+  value: Record<string, unknown>,
+): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const [action, raw] of Object.entries(value)) {
+    if (typeof raw === "number") {
+      result[action] = raw;
+    } else if (typeof raw === "string") {
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed)) {
+        result[action] = parsed;
+      }
+    }
+  }
+  return result;
 }

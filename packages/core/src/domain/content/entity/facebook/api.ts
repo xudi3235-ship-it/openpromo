@@ -47,8 +47,13 @@ export const facebookGraphErrorSchema = z.object({
 });
 
 export class FacebookGraphError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    public readonly code?: number,
+    public readonly type?: string,
+  ) {
     super(message);
+    this.name = "FacebookGraphError";
   }
 }
 
@@ -96,7 +101,11 @@ export async function facebookGraphRequest<T = unknown>(
       statusText: response.statusText,
       body: JSON.stringify(error),
     });
-    throw new FacebookGraphError(error.error.message ?? response.statusText);
+    throw new FacebookGraphError(
+      error.error.message ?? response.statusText,
+      error.error.code,
+      error.error.type,
+    );
   }
 
   return (await response.json()) as T;

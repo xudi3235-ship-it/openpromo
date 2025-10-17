@@ -8,6 +8,11 @@ import { randomUUID } from "node:crypto";
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import type { FacebookIdentityContext } from "@core/domain/content/entity/facebook/api";
 import { facebookGraphRequest } from "@core/domain/content/entity/facebook/api";
+import {
+  FACEBOOK_POST_DEFAULT_METRICS,
+  FacebookPostMetricsFetcher,
+  facebookPostMetricsToUnifiedContentMetrics,
+} from "@core/domain/content/entity/facebook/postMetrics";
 import { and, db, eq, inArray } from "@core/helpers/db";
 import { Storage } from "@core/helpers/storage";
 import type { ConnectedAccountSelect } from "@core/schemas/connected-account.sql";
@@ -15,6 +20,7 @@ import {
   type FBFeedPlacementSpec as FBFeedPlacementSpecType,
   FBPlacement,
   type SharedAttachmentSpec,
+  type UnifiedContentMetrics,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
@@ -65,18 +71,22 @@ type FacebookBackfillerDependencies = {
   fetch?: typeof fetch;
   storage?: typeof Storage;
   logger?: ReturnType<typeof Log.create>;
+  metricsFetcher?: FacebookPostMetricsFetcher;
 };
 
 export class FacebookBackfiller {
   private readonly fetch: typeof fetch;
   private readonly storage: typeof Storage;
   private readonly log: ReturnType<typeof Log.create>;
+  private readonly metricsFetcher: FacebookPostMetricsFetcher;
 
   constructor(dependencies: FacebookBackfillerDependencies = {}) {
     this.fetch = dependencies.fetch ?? fetch;
     this.storage = dependencies.storage ?? Storage;
     this.log =
       dependencies.logger ?? Log.create({ namespace: "facebook-backfiller" });
+    this.metricsFetcher =
+      dependencies.metricsFetcher ?? new FacebookPostMetricsFetcher();
   }
 
   async backfill(
@@ -144,6 +154,21 @@ export class FacebookBackfiller {
       toInsert: deduped.toInsert.length,
       existing: deduped.existing.size,
     });
+
+    const metricFetchTargets =
+      deduped.toInsert.length > 0 ? deduped.toInsert : normalized;
+    console.log("[11.5] Fetching metrics for candidate posts", {
+      targetCount: metricFetchTargets.length,
+      forInsertion: deduped.toInsert.length,
+    });
+    const metricsByPostId = await this.fetchMetricsForPosts(
+      metricFetchTargets,
+      ctx,
+    );
+    console.log("[11.6] Metrics fetch completed", {
+      fetched: metricsByPostId.size,
+    });
+
     if (deduped.toInsert.length === 0) {
       console.log("[12] All posts already exist, returning early");
       return {
@@ -165,7 +190,12 @@ export class FacebookBackfiller {
     console.log("[15] Inserting posts into database", {
       count: deduped.toInsert.length,
     });
-    await this.insertPosts(deduped.toInsert, facebookAccount, ctx);
+    await this.insertPosts(
+      deduped.toInsert,
+      facebookAccount,
+      ctx,
+      metricsByPostId,
+    );
     console.log("[16] Database insertion completed");
 
     const result = {
@@ -617,16 +647,74 @@ export class FacebookBackfiller {
     } satisfies Record<string, unknown>;
   }
 
+  private async fetchMetricsForPosts(
+    posts: NormalizedFacebookPost[],
+    ctx: FacebookIdentityContext,
+  ): Promise<Map<string, UnifiedContentMetrics>> {
+    const results = new Map<string, UnifiedContentMetrics>();
+    if (posts.length === 0) return results;
+
+    console.log("[14.5] Fetching facebook metrics for posts", {
+      count: posts.length,
+    });
+
+    for (const post of posts) {
+      try {
+        const response = await this.metricsFetcher.fetch(
+          { accessToken: ctx.accessToken },
+          {
+            postId: post.id,
+            metrics: Array.from(FACEBOOK_POST_DEFAULT_METRICS),
+            period: "lifetime",
+          },
+        );
+
+        results.set(
+          post.id,
+          facebookPostMetricsToUnifiedContentMetrics(response.metrics),
+        );
+        console.log("[14.5a] Fetched metrics for post", {
+          postId: post.id,
+          metricCount: Object.keys(response.metrics).length,
+        });
+      } catch (error) {
+        this.log.warn("failed to fetch facebook metrics for post", {
+          postId: post.id,
+          message: error instanceof Error ? error.message : String(error),
+        });
+        console.log("[14.5e] Failed to fetch metrics for post", {
+          postId: post.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    console.log("[14.5z] Completed facebook metrics fetch for posts", {
+      fetched: results.size,
+      requested: posts.length,
+    });
+
+    return results;
+  }
+
   private async insertPosts(
     posts: NormalizedFacebookPost[],
     account: ConnectedAccountSelect,
     ctx: FacebookIdentityContext,
+    metricsByPostId: Map<string, UnifiedContentMetrics>,
   ) {
+    if (posts.length === 0) return;
+
     const values = posts
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-      .map((post) => this.toUnifiedContentInsert(post, account, ctx));
-
-    if (values.length === 0) return;
+      .map((post) =>
+        this.toUnifiedContentInsert(
+          post,
+          account,
+          ctx,
+          metricsByPostId.get(post.id),
+        ),
+      );
 
     await db().insert(unifiedContentTable).values(values);
   }
@@ -635,6 +723,7 @@ export class FacebookBackfiller {
     post: NormalizedFacebookPost,
     account: ConnectedAccountSelect,
     ctx: FacebookIdentityContext,
+    metrics?: UnifiedContentMetrics,
   ): typeof unifiedContentTable.$inferInsert {
     const identityMetadata: Record<string, unknown> = {};
     if (post.permalinkUrl) identityMetadata.permalinkUrl = post.permalinkUrl;
@@ -657,6 +746,8 @@ export class FacebookBackfiller {
       createdAt: post.createdAt,
     };
 
+    const unifiedMetrics: UnifiedContentMetrics = metrics ?? {};
+
     return {
       placement: FBPlacement.FB_FEED,
       placementSpec,
@@ -667,6 +758,7 @@ export class FacebookBackfiller {
       workspaceId: account.workspaceId,
       createdAt: post.createdAt,
       updatedAt: post.createdAt,
+      metrics: unifiedMetrics,
     } satisfies typeof unifiedContentTable.$inferInsert;
   }
 }
