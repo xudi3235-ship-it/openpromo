@@ -44,7 +44,7 @@ export interface InstagramAuthTokenDetails {
   expiresIn: number;
   accessToken: string;
   id: string;
-  userId: string;
+  userId: string; // app-scoped, need to revisit this
   name: string;
   picture: string;
   username: string;

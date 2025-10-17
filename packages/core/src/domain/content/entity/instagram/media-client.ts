@@ -93,8 +93,8 @@ export class InstagramMediaClient {
       {
         method: "POST",
         body,
-        // For publishing we need graph.facebook.com
-        host: "graph.facebook.com",
+        // !! for now our IG login support is all IG-login
+        // later we might support FB-login as well?
       },
     );
 
@@ -133,7 +133,6 @@ export class InstagramMediaClient {
       {
         method: "POST",
         body,
-        host: "graph.facebook.com",
       },
     );
 
@@ -152,7 +151,6 @@ export class InstagramMediaClient {
   async getContainerStatus(containerId: string) {
     const response = await instagramGraphRequest(this.ctx, `/${containerId}`, {
       method: "GET",
-      host: "graph.facebook.com",
       searchParams: {
         fields: "status_code",
       },
@@ -174,7 +172,6 @@ export class InstagramMediaClient {
   async fetchMedia(mediaId: string): Promise<InstagramMediaRecord> {
     const response = await instagramGraphRequest(this.ctx, `/${mediaId}`, {
       method: "GET",
-      host: "graph.facebook.com",
       searchParams: {
         fields:
           "id,media_type,media_url,thumbnail_url,children{id,media_type,media_url,thumbnail_url}",
@@ -197,7 +194,6 @@ export class InstagramMediaClient {
   async fetchPermalink(mediaId: string): Promise<string | null> {
     const response = await instagramGraphRequest(this.ctx, `/${mediaId}`, {
       method: "GET",
-      host: "graph.facebook.com",
       searchParams: {
         fields: "permalink",
       },

@@ -26,6 +26,8 @@ export class InstagramPublisher extends BasePublisher {
 
     const postType = await determineInstagramPostType(step, pendingContentID);
 
+    console.log(`// Determined post type: ${postType}`);
+
     const postId = await step.do(`publish ${postType} post`, async () => {
       switch (postType) {
         case "singlePhoto":

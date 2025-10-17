@@ -60,7 +60,7 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>().get(
           // 2. Create a connected account for the authenticated Instagram account
           const account = await ConnectedAccount.create({
             platform: Platform.enum.INSTAGRAM,
-            externalAccountId: authResult.userId,
+            externalAccountId: authResult.id,
             accountName: authResult.name,
             externalUrl: `https://www.instagram.com/${authResult.username}`,
             profilePicUrl,

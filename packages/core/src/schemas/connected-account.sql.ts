@@ -91,7 +91,9 @@ export const connectedAccount = pgTable(
 );
 
 export const connectedAccountId = {
-  connectedAccountId: ulid("connected_account_id").notNull(),
+  connectedAccountId: ulid("connected_account_id")
+    .notNull()
+    .references(() => connectedAccount.id, { onDelete: "cascade" }),
 };
 
 const opts = {
