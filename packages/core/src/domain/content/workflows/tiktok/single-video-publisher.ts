@@ -1,4 +1,3 @@
-import { EntTikTokFeedPendingContent } from "@core/domain/content/entity";
 import type { TikTokPublishStatusResult } from "@core/domain/content/entity/tiktok-feed";
 import type {
   CoreWorkflowContext,
@@ -7,6 +6,7 @@ import type {
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 import { waitForTikTokPublishCompletion } from "./publish-status";
+import { loadTikTokFeedContext } from "./tiktok-feed-service";
 
 const log = Log.create({ namespace: "tiktok-single-video" });
 
@@ -21,17 +21,22 @@ export async function publishTikTokFeedVideo(
   pendingContentID: string,
 ): Promise<TikTokPublishStatusResult> {
   console.log("// publishTikTokFeedVideo");
-  await step.do("load tiktok pending content", async () => {
-    const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-    c.assertReadyForVideoPublishing();
+  await step.do("validate tiktok feed context", async () => {
+    const { content } = await loadTikTokFeedContext(pendingContentID);
+    content.assertReadyForVideoPublishing();
+  });
+
+  const identity = await step.do("resolve tiktok identity", async () => {
+    const { client } = await loadTikTokFeedContext(pendingContentID);
+    return client.identity;
   });
 
   const videoAttachment = await step.do(
     "prepare videos if needed",
     async () => {
-      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-      const videoAttachment = c.ensureSingleVideoAttachment();
-      return videoAttachment;
+      const { content } = await loadTikTokFeedContext(pendingContentID);
+      const attachment = content.ensureSingleVideoAttachment();
+      return attachment;
     },
   );
 
@@ -41,17 +46,13 @@ export async function publishTikTokFeedVideo(
     );
   }
 
-  const identity = await step.do("resolve tiktok identity", async () => {
-    const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-    return await c.identity();
-  });
   console.log("resolved tiktok identity", identity);
 
   const verifiedVideoUrl = await step.do(
     "ensure video available on verified domain",
     async () => {
-      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-      const { url } = await c.ensureVideoAvailableOnVerifiedDomain({
+      const { content } = await loadTikTokFeedContext(pendingContentID);
+      const { url } = await content.ensureVideoAvailableOnVerifiedDomain({
         id: videoAttachment.id,
         presignedUrl: videoAttachment.presignedUrl as string,
         mimeType: videoAttachment.mimeType,
@@ -61,17 +62,17 @@ export async function publishTikTokFeedVideo(
   );
 
   await step.do("query tiktok creator info", async () => {
-    const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-    const info = await c.queryCreatorInfo(identity);
+    const { client } = await loadTikTokFeedContext(pendingContentID);
+    const info = await client.queryCreatorInfo();
     console.log("tiktok creator info", info);
   });
 
   const { publishId } = await step.do("init tiktok video publish", async () => {
     console.log("init tiktok video publish");
-    const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-    return await c.initDirectVideoPostFromUrl(identity, {
+    const { content, client } = await loadTikTokFeedContext(pendingContentID);
+    return await content.initDirectVideoPostFromUrl(client, {
       videoUrl: verifiedVideoUrl,
-      caption: c.caption(),
+      caption: content.caption(),
       mimeType: videoAttachment.mimeType,
       privacyLevel: "SELF_ONLY", // TODO: update this once app repview is done
     });
@@ -79,8 +80,7 @@ export async function publishTikTokFeedVideo(
 
   const finalStatus = await waitForTikTokPublishCompletion(
     step,
-    pendingContentID,
-    identity,
+    async () => (await loadTikTokFeedContext(pendingContentID)).client,
     publishId,
   );
 

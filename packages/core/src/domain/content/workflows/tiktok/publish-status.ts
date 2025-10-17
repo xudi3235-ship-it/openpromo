@@ -1,8 +1,5 @@
-import { EntTikTokFeedPendingContent } from "@core/domain/content/entity";
-import type {
-  TikTokIdentityContext,
-  TikTokPublishStatusResult,
-} from "@core/domain/content/entity/tiktok-feed";
+import type { TikTokDirectPostClient } from "@core/domain/content/entity/tiktok/direct-post-client";
+import type { TikTokPublishStatusResult } from "@core/domain/content/entity/tiktok-feed";
 import type { CoreWorkflowStep } from "@core/helpers/workflow";
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
@@ -15,8 +12,7 @@ export interface WaitForPublishOptions {
 
 export async function waitForTikTokPublishCompletion(
   step: CoreWorkflowStep,
-  pendingContentID: string,
-  identity: TikTokIdentityContext,
+  loadClient: () => Promise<TikTokDirectPostClient>,
   publishId: string,
   options: WaitForPublishOptions = {},
 ): Promise<TikTokPublishStatusResult> {
@@ -28,8 +24,8 @@ export async function waitForTikTokPublishCompletion(
     const status = await step.do(
       `fetch tiktok publish status (attempt ${attempt})`,
       async () => {
-        const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-        return await c.fetchPublishStatus(identity, publishId);
+        const client = await loadClient();
+        return await client.fetchPublishStatus(publishId);
       },
     );
 

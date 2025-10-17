@@ -1,4 +1,3 @@
-import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { Storage } from "@core/helpers/storage";
 import type {
   SharedAttachmentSpec,
@@ -12,13 +11,14 @@ import { onlyOrThrow } from "@core/utils/common";
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 import { EntPendingContent } from "./EntContent";
-
-export interface TikTokIdentityContext {
-  accessToken: string;
-  refreshToken?: string | null;
-  tiktokUserID: string;
-  connectedAccountID: string;
-}
+import {
+  TikTokDirectPostClient,
+  type TikTokIdentityContext,
+  type TikTokPhotoDirectPostParams,
+  type TikTokPrivacyLevel,
+  type TikTokPublishStatusResult,
+  type TikTokVideoDirectPostParams,
+} from "./tiktok/direct-post-client";
 
 export class EntTikTokFeedPendingContent extends EntPendingContent {
   static type = "tiktok_pending_content";
@@ -77,22 +77,13 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     return onlyOrThrow(videos);
   }
 
-  async identity(): Promise<TikTokIdentityContext> {
-    const account = await ConnectedAccount.fromTikTokAccountID(
-      this.tiktokUserID,
-    );
-    if (!account) {
-      throw new WorkflowError(
-        `connected account not found for TikTok user ${this.tiktokUserID}`,
-      );
-    }
+  private async tiktokClient(): Promise<TikTokDirectPostClient> {
+    return TikTokDirectPostClient.forPlacementSpec(this.spec);
+  }
 
-    return {
-      accessToken: account.encryptedAccessToken,
-      refreshToken: account.refreshToken,
-      tiktokUserID: this.tiktokUserID,
-      connectedAccountID: account.id,
-    } satisfies TikTokIdentityContext;
+  async identity(): Promise<TikTokIdentityContext> {
+    const client = await this.tiktokClient();
+    return client.identity;
   }
 
   logContext() {
@@ -154,20 +145,8 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     }
   }
 
-  async queryCreatorInfo(
-    identity?: TikTokIdentityContext,
-  ): Promise<Record<string, unknown>> {
-    const ctx = identity ?? (await this.identity());
-    const data = await this.tiktokPost<Record<string, unknown>>(
-      ctx,
-      "/v2/post/publish/creator_info/query/",
-      {},
-    );
-    return data;
-  }
-
   async initDirectVideoPostFromUrl(
-    identity: TikTokIdentityContext,
+    client: TikTokDirectPostClient,
     params: TikTokVideoDirectPostParams,
   ): Promise<{ publishId: string; uploadUrl?: string }> {
     if (!params.videoUrl || !/^https?:\/\//i.test(params.videoUrl)) {
@@ -221,22 +200,12 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
       media_type: "VIDEO",
     } satisfies TikTokVideoDirectPostInitPayload;
 
-    const data = await this.tiktokPost<TikTokVideoInitResponse>(
-      identity,
-      "/v2/post/publish/video/init/",
-      payload,
-    );
-
-    const publishId = data.publish_id;
-    if (!publishId) {
-      throw new WorkflowError("TikTok video init response missing publish_id");
-    }
-    console.log({ initPublishId: publishId, uploadUrl: data.upload_url });
-
-    return {
-      publishId,
-      uploadUrl: data.upload_url,
-    };
+    const result = await client.initVideoPost(payload);
+    console.log({
+      initPublishId: result.publishId,
+      uploadUrl: result.uploadUrl,
+    });
+    return result;
   }
 
   async ensurePhotosAvailableOnVerifiedDomain(): Promise<
@@ -334,7 +303,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
   }
 
   async initDirectPhotoPostFromUrls(
-    identity: TikTokIdentityContext,
+    client: TikTokDirectPostClient,
     params: TikTokPhotoDirectPostParams,
   ): Promise<{ publishId: string }> {
     const photoUrls = params.photoUrls
@@ -370,18 +339,7 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
       media_type: "PHOTO",
     } satisfies TikTokPhotoDirectPostInitPayload;
 
-    const data = await this.tiktokPost<TikTokPhotoInitResponse>(
-      identity,
-      "/v2/post/publish/content/init/",
-      payload,
-    );
-
-    const publishId = data.publish_id;
-    if (!publishId) {
-      throw new WorkflowError("TikTok photo init response missing publish_id");
-    }
-
-    return { publishId };
+    return await client.initPhotoPost(payload);
   }
 
   async finalizeTikTokAttachments(
@@ -456,89 +414,6 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     if (deleteTasks.length > 0) {
       await Promise.all(deleteTasks);
     }
-  }
-
-  async fetchPublishStatus(
-    identity: TikTokIdentityContext,
-    publishId: string,
-  ): Promise<TikTokPublishStatusResponse & TikTokPublishStatus> {
-    const data = await this.tiktokPost<TikTokPublishStatusResponse>(
-      identity,
-      "/v2/post/publish/status/fetch/",
-      {
-        publish_id: publishId,
-      },
-    );
-
-    const dataRecord = data as unknown as Record<string, unknown>;
-    const message = data.message || dataRecord?.["status_msg"];
-    const failReason = data.fail_reason || dataRecord?.["fail_msg"];
-
-    return {
-      ...data,
-      shareUrl: data.share_url,
-      failReason: typeof failReason === "string" ? failReason : undefined,
-      message: typeof message === "string" ? message : undefined,
-    } satisfies TikTokPublishStatusResponse & TikTokPublishStatus;
-  }
-
-  private async tiktokPost<T>(
-    identity: TikTokIdentityContext,
-    path: string,
-    body: unknown,
-  ): Promise<T> {
-    const url = new URL(path, "https://open.tiktokapis.com");
-    let response: Response;
-    try {
-      response = await fetch(url.toString(), {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${identity.accessToken}`,
-          "Content-Type": "application/json; charset=UTF-8",
-        },
-        body: JSON.stringify(body ?? {}),
-      });
-    } catch (error) {
-      throw new WorkflowError(
-        `Failed to call TikTok API ${path}: ${(error as Error).message}`,
-      );
-    }
-
-    let json: TikTokAPIResponse<T>;
-    try {
-      json = (await response.json()) as TikTokAPIResponse<T>;
-    } catch (error) {
-      throw new WorkflowError(
-        `TikTok API ${path} returned invalid JSON: ${(error as Error).message}`,
-      );
-    }
-
-    const apiError = json.error;
-    const successCode =
-      apiError?.code === undefined ||
-      apiError?.code === null ||
-      apiError?.code === "ok" ||
-      apiError?.code === "success" ||
-      apiError?.code === 0;
-
-    if (!response.ok || !successCode) {
-      const message =
-        apiError?.message || response.statusText || `TikTok API ${path} failed`;
-      log.warn("tiktok api error", {
-        path,
-        status: response.status,
-        errorCode: apiError?.code,
-        errorMessage: apiError?.message,
-        log_id: apiError?.log_id,
-      });
-      throw new WorkflowError(message);
-    }
-
-    if (!json.data) {
-      throw new WorkflowError(`TikTok API ${path} returned empty data`);
-    }
-
-    return json.data;
   }
 
   private buildPostInfo(caption?: string) {
@@ -626,90 +501,19 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
 }
 const log = Log.create({ namespace: "tiktok-feed-entity" });
 
-type TikTokAPIError = {
-  code?: string | number;
-  message?: string;
-  log_id?: string;
-};
-
-interface TikTokAPIResponse<T> {
-  data?: T;
-  error?: TikTokAPIError;
-}
-
-type TikTokPrivacyLevel =
-  | "PUBLIC_TO_EVERYONE"
-  | "MUTUAL_FOLLOW_FRIENDS"
-  | "FOLLOWER_OF_CREATOR"
-  | "SELF_ONLY";
-
-interface TikTokVideoInitResponse {
-  publish_id: string;
-  upload_url?: string;
-}
-
-interface TikTokPhotoInitResponse {
-  publish_id: string;
-}
-
-interface TikTokPublishStatusResponse {
-  publish_id: string;
-  status: string;
-  post_id?: string;
-  share_id?: string;
-  share_url?: string;
-  fail_reason?: string;
-  message?: string;
-}
-
-export interface TikTokPublishStatus {
-  status: string;
-  shareUrl?: string;
-  failReason?: string;
-  message?: string;
-}
-
-export type TikTokPublishStatusResult = TikTokPublishStatusResponse &
-  TikTokPublishStatus;
+export type {
+  TikTokIdentityContext,
+  TikTokPhotoDirectPostParams,
+  TikTokPrivacyLevel,
+  TikTokPublishStatus,
+  TikTokPublishStatusResult,
+  TikTokVideoDirectPostParams,
+} from "./tiktok/direct-post-client";
 
 type TikTokBasePostInfo = {
   title: string;
   description?: string;
 };
-
-export interface TikTokVideoDirectPostParams {
-  videoUrl: string;
-  caption?: string;
-  mimeType?: string;
-  coverTimestampMs?: number;
-  videoCoverTimestampsMs?: number[];
-  privacyLevel?: TikTokPrivacyLevel;
-  disableComment?: boolean;
-  disableDuet?: boolean;
-  disableStitch?: boolean;
-  autoAddMusic?: boolean;
-  allowAdvancedBoost?: boolean;
-  mentionUserIds?: string[];
-  brandedContentTag?: {
-    business_partner_id: string;
-    display_on_video: boolean;
-  };
-}
-
-export interface TikTokPhotoDirectPostParams {
-  photoUrls: string[];
-  caption?: string;
-  privacyLevel?: TikTokPrivacyLevel;
-  disableComment?: boolean;
-  autoAddMusic?: boolean;
-  allowAdvancedBoost?: boolean;
-  mentionUserIds?: string[];
-  brandedContentTag?: {
-    business_partner_id: string;
-    display_on_video: boolean;
-  };
-  photoCoverIndex?: number;
-}
 
 interface TikTokVideoDirectPostSourceInfo {
   source: "PULL_FROM_URL" | "FILE_UPLOAD";
