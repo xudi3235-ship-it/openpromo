@@ -13,7 +13,7 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion";
-import { Plus, X } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -183,59 +183,21 @@ function AccountAvatar({
   );
 }
 
-function FacebookAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { handleConnectFacebook, isConnectingFacebook } =
-    useOAuthWithListener();
-  const meta = getPlatformMeta("FACEBOOK");
-
-  const distance = useTransform(mouseX, (val: number) => {
-    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
-    return val - bounds.x - bounds.width / 2;
-  });
-
-  const widthSync = useTransform(distance, [-150, 0, 150], [32, 48, 32]);
-  const width = useSpring(widthSync, {
-    mass: 0.1,
-    stiffness: 150,
-    damping: 12,
-  });
-
-  return (
-    <motion.div ref={ref} style={{ width }} className="relative group">
-      <motion.button
-        type="button"
-        style={{ width }}
-        className="relative aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-ring"
-        onClick={handleConnectFacebook}
-        disabled={isConnectingFacebook}
-      >
-        <div
-          className={cn(
-            "w-full h-full rounded-full bg-gradient-to-r p-0.5",
-            meta.avatarGradient,
-          )}
-        >
-          <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
-            <Plus className={cn("h-4 w-4", meta.accentTextClass)} />
-          </div>
-        </div>
-
-        <PlatformBadge platform="FACEBOOK" />
-      </motion.button>
-
-      <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-        Add Facebook
-      </div>
-    </motion.div>
-  );
+interface AddButtonProps {
+  platform: Platform;
+  onClick: () => void;
+  isConnecting: boolean;
+  mouseX: MotionValue<number>;
 }
 
-function InstagramAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
+function AddButton({
+  platform,
+  onClick,
+  isConnecting,
+  mouseX,
+}: AddButtonProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const { handleConnectInstagram, isConnectingInstagram } =
-    useOAuthWithListener();
-  const meta = getPlatformMeta("INSTAGRAM");
+  const meta = getPlatformMeta(platform);
 
   const distance = useTransform(mouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
@@ -255,8 +217,8 @@ function InstagramAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
         type="button"
         style={{ width }}
         className="relative aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-ring"
-        onClick={handleConnectInstagram}
-        disabled={isConnectingInstagram}
+        onClick={onClick}
+        disabled={isConnecting}
       >
         <div
           className={cn(
@@ -265,62 +227,21 @@ function InstagramAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
           )}
         >
           <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
-            <Plus className={cn("h-4 w-4", meta.accentTextClass)} />
+            {isConnecting ? (
+              <Loader2
+                className={cn("h-4 w-4 animate-spin", meta.accentTextClass)}
+              />
+            ) : (
+              <Plus className={cn("h-4 w-4", meta.accentTextClass)} />
+            )}
           </div>
         </div>
 
-        <PlatformBadge platform="INSTAGRAM" />
+        <PlatformBadge platform={platform} />
       </motion.button>
 
       <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-        Add Instagram
-      </div>
-    </motion.div>
-  );
-}
-
-function TikTokAddButton({ mouseX }: { mouseX: MotionValue<number> }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { handleConnectTikTok, isConnectingTikTok } = useOAuthWithListener();
-  const meta = getPlatformMeta("TIKTOK");
-
-  const distance = useTransform(mouseX, (val: number) => {
-    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
-    return val - bounds.x - bounds.width / 2;
-  });
-
-  const widthSync = useTransform(distance, [-150, 0, 150], [32, 48, 32]);
-  const width = useSpring(widthSync, {
-    mass: 0.1,
-    stiffness: 150,
-    damping: 12,
-  });
-
-  return (
-    <motion.div ref={ref} style={{ width }} className="relative group">
-      <motion.button
-        type="button"
-        style={{ width }}
-        className="relative aspect-square rounded-full focus:outline-none focus:ring-2 focus:ring-ring"
-        onClick={handleConnectTikTok}
-        disabled={isConnectingTikTok}
-      >
-        <div
-          className={cn(
-            "w-full h-full rounded-full bg-gradient-to-r p-0.5",
-            meta.avatarGradient,
-          )}
-        >
-          <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
-            <Plus className={cn("h-4 w-4", meta.accentTextClass)} />
-          </div>
-        </div>
-
-        <PlatformBadge platform="TIKTOK" />
-      </motion.button>
-
-      <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-        Add TikTok
+        {isConnecting ? "Connecting..." : `Add ${meta.label}`}
       </div>
     </motion.div>
   );
@@ -335,6 +256,14 @@ export function ConnectedAccountsRow({
   appearance = "default",
 }: ConnectedAccountsRowProps) {
   const mouseX = useMotionValue(Infinity);
+  const {
+    handleConnectFacebook,
+    handleConnectInstagram,
+    handleConnectTikTok,
+    isConnectingFacebook,
+    isConnectingInstagram,
+    isConnectingTikTok,
+  } = useOAuthWithListener();
 
   if (accounts.length === 0 && !showAddButton) {
     return null;
@@ -366,9 +295,24 @@ export function ConnectedAccountsRow({
         {showAddButton && (
           <>
             {accounts.length > 0 && <div className="w-px h-6 bg-border mx-1" />}
-            <FacebookAddButton mouseX={mouseX} />
-            <InstagramAddButton mouseX={mouseX} />
-            <TikTokAddButton mouseX={mouseX} />
+            <AddButton
+              platform="FACEBOOK"
+              onClick={handleConnectFacebook}
+              isConnecting={isConnectingFacebook}
+              mouseX={mouseX}
+            />
+            <AddButton
+              platform="INSTAGRAM"
+              onClick={handleConnectInstagram}
+              isConnecting={isConnectingInstagram}
+              mouseX={mouseX}
+            />
+            <AddButton
+              platform="TIKTOK"
+              onClick={handleConnectTikTok}
+              isConnecting={isConnectingTikTok}
+              mouseX={mouseX}
+            />
           </>
         )}
       </motion.div>
@@ -580,6 +524,14 @@ export function ComposerAccountsRow({
   className = "",
 }: ComposerAccountsRowProps) {
   const staticMouseX = useMotionValue(Infinity);
+  const {
+    handleConnectFacebook,
+    handleConnectInstagram,
+    handleConnectTikTok,
+    isConnectingFacebook,
+    isConnectingInstagram,
+    isConnectingTikTok,
+  } = useOAuthWithListener();
   const canCustomize = accounts.length > 1;
   const hasActiveCustomization = canCustomize && Boolean(activeAccount);
 
@@ -614,9 +566,24 @@ export function ComposerAccountsRow({
         {showAddButton && (
           <>
             {accounts.length > 0 && <div className="w-px h-6 bg-border mx-1" />}
-            <FacebookAddButton mouseX={staticMouseX} />
-            <InstagramAddButton mouseX={staticMouseX} />
-            <TikTokAddButton mouseX={staticMouseX} />
+            <AddButton
+              platform="FACEBOOK"
+              onClick={handleConnectFacebook}
+              isConnecting={isConnectingFacebook}
+              mouseX={staticMouseX}
+            />
+            <AddButton
+              platform="INSTAGRAM"
+              onClick={handleConnectInstagram}
+              isConnecting={isConnectingInstagram}
+              mouseX={staticMouseX}
+            />
+            <AddButton
+              platform="TIKTOK"
+              onClick={handleConnectTikTok}
+              isConnecting={isConnectingTikTok}
+              mouseX={staticMouseX}
+            />
           </>
         )}
       </div>
