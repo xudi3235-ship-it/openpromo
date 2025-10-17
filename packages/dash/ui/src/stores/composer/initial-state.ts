@@ -124,7 +124,14 @@ const buildInitialTikTokPlacements = (
 export const createComposerInitialState = (
   props: ComposerProps,
 ): ComposerState => {
-  const isEditFlow = Boolean(props.initContentCreateData);
+  const placementsFromData = props.initContentCreateData?.placements;
+  const hasExistingPlacements = Boolean(
+    placementsFromData &&
+      ((placementsFromData.facebookFeed?.length ?? 0) > 0 ||
+        (placementsFromData.instagramFeed?.length ?? 0) > 0 ||
+        (placementsFromData.tiktokFeed?.length ?? 0) > 0),
+  );
+  const isEditFlow = hasExistingPlacements || Boolean(props.contentGroupID);
 
   const placements = {
     facebookFeed: buildInitialFacebookPlacements(props, isEditFlow),

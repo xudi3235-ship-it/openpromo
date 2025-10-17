@@ -35,7 +35,7 @@ export default function ComposerDialog() {
             Create and schedule content for your social media accounts
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 flex items-center justify-center overflow-hidden">
+        <div className="flex-1 flex overflow-hidden">
           {isLoading ? (
             <ComposerSkeleton />
           ) : (
