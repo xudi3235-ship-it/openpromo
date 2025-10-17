@@ -3,9 +3,50 @@ import type { ContentMetricsTarget } from "@core/domain/content/metrics";
 import { Ent } from "@core/helpers/ent";
 import type { UnifiedContentMetrics } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
-import { facebookGraphRequest } from "./api";
+import {
+  FacebookPostMetricsFetcher,
+  type FacebookPostMetricsValue,
+} from "./postMetrics";
 
 const log = Log.create({ namespace: "facebook-published-content" });
+const metricsFetcher = new FacebookPostMetricsFetcher();
+
+const DEFAULT_FACEBOOK_POST_METRICS = [
+  "post_impressions_unique",
+  "post_impressions",
+  "post_engaged_users",
+  "post_reactions_by_type_total",
+  "post_reactions",
+  "post_comments",
+  "post_shares",
+] as const;
+
+function coerceNumber(value: FacebookPostMetricsValue | null | undefined) {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function sumReactionTotals(
+  value: FacebookPostMetricsValue | null | undefined,
+): number {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return Object.values(value).reduce<number>((total, entry) => {
+      if (typeof entry === "number") return total + entry;
+      if (typeof entry === "string") {
+        const parsed = Number(entry);
+        return total + (Number.isFinite(parsed) ? parsed : 0);
+      }
+      return total;
+    }, 0);
+  }
+  return coerceNumber(value);
+}
 
 /**
  * Lightweight wrapper around a published Facebook feed unified content entry.
@@ -57,46 +98,21 @@ export class EntFacebookPublishedContent extends Ent<ContentMetricsTarget> {
       sourceContentId: this.target.sourceContentId,
     });
 
-    // https://developers.facebook.com/docs/graph-api/reference/v24.0/insights
-    const response = await facebookGraphRequest<{
-      data?: Array<{
-        name?: string;
-        values?: Array<{ value?: number } | null>;
-      }>;
-    }>(ctx, `/${this.target.sourceContentId}/insights`, {
-      searchParams: {
-        metric: [
-          "post_impressions_unique",
-          "post_impressions",
-          "post_engaged_users",
-          "post_reactions_by_type_total",
-          "post_comments",
-          "post_shares",
-        ].join(","),
-      },
+    const { metrics } = await metricsFetcher.fetch(ctx, {
+      postId: this.target.sourceContentId,
+      metrics: Array.from(DEFAULT_FACEBOOK_POST_METRICS),
+      period: "lifetime",
     });
 
-    const metrics = new Map<string, number>();
-
-    for (const entry of response.data ?? []) {
-      if (!entry?.name) continue;
-      const first = entry.values?.[0];
-      const value = (first as { value?: number } | null)?.value;
-      if (typeof value === "number") {
-        metrics.set(entry.name, value);
-      }
-    }
-
     return {
-      reach: metrics.get("post_impressions_unique") ?? 0,
-      impressions: metrics.get("post_impressions") ?? 0,
-      engagement: metrics.get("post_engaged_users") ?? 0,
-      comments: metrics.get("post_comments") ?? 0,
-      shares: metrics.get("post_shares") ?? 0,
+      reach: coerceNumber(metrics.post_impressions_unique),
+      impressions: coerceNumber(metrics.post_impressions),
+      engagement: coerceNumber(metrics.post_engaged_users),
+      comments: coerceNumber(metrics.post_comments),
+      shares: coerceNumber(metrics.post_shares),
       likes:
-        metrics.get("post_reactions_by_type_total") ??
-        metrics.get("post_reactions") ??
-        0,
+        sumReactionTotals(metrics.post_reactions_by_type_total) ||
+        coerceNumber(metrics.post_reactions),
     } satisfies UnifiedContentMetrics;
   }
 }

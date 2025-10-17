@@ -68,6 +68,9 @@ hosted on `dash.openpromo.app`, main dashboard for using app. react SPA using ta
 2. ensure you run `pnpm check && pnpm typecheck` to ensure type checks are passing after changes
 3. when designing UI, use mimal, optimzied for UX, elegant, flat design principles.
 4. backend we use Entity class, e.g. EntAttachment, EntPendingContentGroup, which encapsulates business logic. API layer we use hono, each file be its own handelr, and use .route(..., subRoute) to chain them. Then, for the shared zod / JS types, define them in `packages/shared` so to reuse across fullstack. After api is ready, we define queries which uses react query + hono RPC features. then we are ready to use them in the UI.
+5. in backend dev, use `console.log([1.])` statements to add debugging / tracing for the flow so that we can understand what's going wrong.
+6. in our dashboard, we have labs internal route, which has api testing route that can quickly test api.
+7. for any hono api routes, we integrate with react query, place them under `queries` dir, so that we can have fully typsafety. When in doubt, read existing routes for code examples.
 
 
 ### `package/ui`

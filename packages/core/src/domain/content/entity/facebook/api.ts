@@ -35,6 +35,7 @@ export interface GraphRequestOptions {
   method?: HttpMethod;
   searchParams?: Record<string, string | undefined>;
   body?: Record<string, unknown> | null;
+  apiVersion?: string;
 }
 
 export const facebookGraphErrorSchema = z.object({
@@ -56,9 +57,15 @@ export async function facebookGraphRequest<T = unknown>(
   path: string,
   options: GraphRequestOptions = {},
 ): Promise<T> {
-  const { method = "GET", searchParams = {}, body = null } = options;
+  const {
+    method = "GET",
+    searchParams = {},
+    body = null,
+    apiVersion,
+  } = options;
 
-  const url = new URL(`https://graph.facebook.com/v23.0${path}`);
+  const version = apiVersion ?? "v23.0";
+  const url = new URL(`https://graph.facebook.com/${version}${path}`);
   url.searchParams.set("access_token", ctx.accessToken);
   for (const [key, value] of Object.entries(searchParams)) {
     if (typeof value !== "undefined") {
