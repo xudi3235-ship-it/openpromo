@@ -159,7 +159,7 @@ export const unifiedContentTable = pgTable(
     ...id,
     ...workspaceID,
     ...timestamps,
-    ...connectedAccountId,
+    ...connectedAccountId, // TODO: enforce connected account scoping
     // external content id, for published content / backfilled.
     sourceContentId: text("source_content_id").unique(),
     permalinkUrl: text("permalink_url"),
