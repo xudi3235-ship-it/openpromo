@@ -293,7 +293,7 @@ export function ComposerFooter() {
 
   return (
     <>
-      <div className="border-t border-border/40 bg-background/95 backdrop-blur-sm p-3">
+      <div className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-4">
         <FooterActions
           showMoreTools={showMoreToolsButton}
           isDialog={isDialog}
