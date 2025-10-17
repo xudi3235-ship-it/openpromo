@@ -1,10 +1,11 @@
 import type { WorkflowStepConfig } from "cloudflare:workers";
-import { EntFBFeedPendingContent } from "@core/domain/content/entity";
 import type {
   CoreWorkflowContext,
   CoreWorkflowStep,
 } from "@core/helpers/workflow";
+import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
+import { loadFacebookFeedContext } from "./facebook-feed-service";
 
 const log = Log.create({ namespace: "facebook-text-post" });
 
@@ -21,8 +22,22 @@ export async function publishTextPost(
   pendingContentID: string,
 ): Promise<string> {
   const postId = await step.do("create text post", STEP_CONFIG, async () => {
-    const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-    const { postId } = await c.createTextPost();
+    const { content, client } = await loadFacebookFeedContext(pendingContentID);
+
+    if (!content.isTextOnlyPost()) {
+      throw new WorkflowError(
+        `content ${pendingContentID} is not a text-only Facebook post`,
+      );
+    }
+
+    const message = content.spec.postSpec.message?.trim();
+    if (!message) {
+      throw new WorkflowError(
+        `content ${pendingContentID} is missing a Facebook message`,
+      );
+    }
+
+    const { postId } = await client.createFeedPost({ message });
     return postId;
   });
 

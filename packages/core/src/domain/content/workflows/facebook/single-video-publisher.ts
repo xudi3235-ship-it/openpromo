@@ -10,6 +10,7 @@ import { unifiedContentTable } from "@core/schemas/content.sql";
 import { onlyOrThrow } from "@core/utils/common";
 import { Log } from "@core/utils/log";
 import { waitForVideoPublish, waitForVideoUpload } from "./common";
+import { loadFacebookFeedContext } from "./facebook-feed-service";
 
 const log = Log.create({ namespace: "facebook-single-video" });
 
@@ -66,19 +67,32 @@ export async function publishSingleVideoPost(
       throw new Error("failed to update content with new attachment");
   });
   const { videoID } = await step.do("create single video post", async () => {
-    const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-    const { video_id: videoID, upload_url } = await c.initVideoUploadSession();
-    const { success, message } =
-      await c.uploadInternalVideoToSession(upload_url);
+    const { content, client } = await loadFacebookFeedContext(pendingContentID);
+    if (!content.isSingleVideoPost())
+      throw new Error("not a single video post");
+    const { presignedUrl } = onlyOrThrow(content.videoAttachments());
+    if (!presignedUrl) throw new Error("no presigned URL for video attachment");
+
+    const { videoId, uploadUrl } = await client.startVideoUpload();
+    const { success, message } = await client.uploadVideoToSession(
+      uploadUrl,
+      presignedUrl,
+    );
     log.info("uploaded video to FB session", { success, message });
-    return { videoID };
+    return { videoID: videoId };
   });
   // wait for upload, and copyright check
   await waitForVideoUpload(step, pendingContentID, videoID);
 
   const postId = await step.do("publish facebook reel", async () => {
-    const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-    const { postId } = await c.createReel(videoID);
+    const { content, client } = await loadFacebookFeedContext(pendingContentID);
+    const description = content.spec.postSpec.message;
+    if (!description) throw new Error("no description provided");
+
+    const { postId } = await client.finishVideoUpload({
+      videoId: videoID,
+      description,
+    });
     return postId;
   });
 

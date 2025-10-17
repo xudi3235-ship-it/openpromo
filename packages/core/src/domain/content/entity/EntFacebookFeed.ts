@@ -12,66 +12,9 @@ import {
   mergeAttachmentMetadata,
 } from "../attachments/metadata";
 import { EntPendingContent } from "./EntContent";
-import { facebookGraphRequest, resolveFacebookIdentity } from "./facebook/api";
+import { FacebookPageClient } from "./facebook/page-client";
 
 const log = Log.create({ namespace: "facebook-feed-entity" });
-
-type FBVideoStatusResponse = {
-  status: {
-    video_status:
-      | "error"
-      | "expired"
-      | "processing"
-      | "ready" // ready to be published
-      | "uploading"
-      | "upload_failed"
-      | "upload_complete";
-    uploading_phase: {
-      status: "complete" | "error" | "not_started" | "in_progress";
-      bytes_transfered?: number;
-      errors?: unknown;
-      source_file_size?: number;
-    };
-    processing_phase: {
-      status: "complete" | "error" | "not_started" | "in_progress";
-      errors?: unknown;
-    };
-    publishing_phase: {
-      status: "complete" | "error" | "not_started" | "in_progress";
-      errors?: unknown;
-      publish_status?: "draft" | "error" | "published" | "scheduled";
-      publish_time?: number;
-    };
-    copyright_check_status: {
-      status?: "in_progress" | "complete" | "error";
-    };
-  };
-};
-
-type FBPostAttachmentsResponse = {
-  attachments?: {
-    data?: Array<{
-      media?: {
-        image?: {
-          src?: string;
-        };
-        source?: string;
-      };
-      type?: string;
-      subattachments?: {
-        data?: Array<{
-          media?: {
-            image?: {
-              src?: string;
-            };
-            source?: string;
-          };
-          type?: string;
-        }>;
-      };
-    }>;
-  };
-};
 
 /**
  * a pending facebook feed content.
@@ -139,270 +82,29 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     const videoCount = atts.filter((a) => a.type === "video").length;
     return photoCount > 0 && videoCount > 0;
   }
+
+  private async facebookClient(): Promise<FacebookPageClient> {
+    return FacebookPageClient.forPlacementSpec(this.spec);
+  }
   /**
    * we expose composable steps to create different types of posts.
    * Workflows should orchestrate these steps.
    */
-  async createTextPost() {
-    if (!this.isTextOnlyPost()) throw new WorkflowError("no text provided");
-    const text = this.spec.postSpec.message;
-    const ctx = await resolveFacebookIdentity(this.spec);
 
-    const response = await facebookGraphRequest<{ id?: string }>(
-      ctx,
-      `/${ctx.pageID}/feed`,
-      {
-        method: "POST",
-        body: new URLSearchParams({
-          message: text,
-        }),
-      },
-    );
-
-    const rawID = response.id ?? null;
-    const postID = rawID?.includes("_")
-      ? rawID.split("_")[1]
-      : (rawID ?? undefined);
-    console.log({ rawID, postID });
-    if (!rawID || !postID)
-      throw new WorkflowError(
-        `failed to create text post, no post ID returned`,
-      );
-    return { postId: postID };
-  }
-  async createPhotoPost() {
-    // ref: https://developers.facebook.com/docs/graph-api/reference/page/photos/
-    const ctx = await resolveFacebookIdentity(this.spec);
-    if (!this.isMultiPhotoPost())
-      throw new Error("no photo attachment provided");
-    const photos = this.photosAttachments();
-
-    const uploadedPhotoIds: string[] = [];
-
-    for (const attachment of photos) {
-      const cdnUrl = await ImageStorage.getImageDeliveryUrl(attachment.id);
-      const body = new URLSearchParams();
-      body.set("url", cdnUrl);
-      body.set("published", "false");
-
-      const uploadResponse = await facebookGraphRequest<{ id?: string }>(
-        ctx,
-        `/${ctx.pageID}/photos`,
-        {
-          method: "POST",
-          body,
-        },
-      );
-
-      const photoId = uploadResponse.id;
-      if (!photoId) {
-        throw new WorkflowError(
-          `failed to upload photo for content ${this.data.id}`,
-        );
-      }
-      uploadedPhotoIds.push(photoId);
-    }
-
-    const postBody = new URLSearchParams();
-    if (this.spec.postSpec.message) {
-      postBody.set("message", this.spec.postSpec.message);
-    }
-
-    uploadedPhotoIds.forEach((photoId, index) => {
-      postBody.append(
-        `attached_media[${index}]`,
-        JSON.stringify({ media_fbid: photoId }),
-      );
-    });
-
-    const post = await facebookGraphRequest<{ id?: string }>(
-      ctx,
-      `/${ctx.pageID}/feed`,
-      {
-        method: "POST",
-        body: postBody,
-      },
-    );
-
-    const postID = post.id?.split("_")[1] ?? null;
-    if (!postID)
-      throw new WorkflowError(
-        `failed to create photo post, no post ID returned`,
-      );
-    return { postId: postID };
-  }
-  /**
-   * video related methods. Involves upload session, polling until
-   * encoding is ready, and then creating the reel.
-   * ref: https://developers.facebook.com/docs/video-api/guides/reels-publishing
-   */
-  async initVideoUploadSession() {
-    const ctx = await resolveFacebookIdentity(this.spec);
-    const body = new URLSearchParams();
-    body.set("upload_phase", "start");
-
-    const session = await facebookGraphRequest<{
-      video_id?: string;
-      upload_url?: string;
-      id?: string;
-      success?: boolean;
-    }>(ctx, `/${ctx.pageID}/video_reels`, {
-      method: "POST",
-      body,
-    });
-    console.log("// created video upload session", session);
-    const videoId = session.video_id;
-    const uploadUrl = session.upload_url;
-    if (!videoId || !uploadUrl) {
-      throw new WorkflowError(
-        `failed to start video upload session for content ${this.data.id}`,
-      );
-    }
-    return {
-      session,
-      video_id: videoId,
-      upload_url: uploadUrl,
-    };
-  }
-  async uploadInternalVideoToSession(uploadSessionUrl: string) {
-    const videos = this.videoAttachments();
-    if (videos.length !== 1) {
-      throw new Error("only single video upload is supported");
-    }
-    const video = videos[0];
-    const presignedUrl = video.presignedUrl;
-    if (!presignedUrl) throw new Error("no presigned URL for video");
-    const { accessToken } = await resolveFacebookIdentity(this.spec);
-    // 1. upload the video
-    const response = await fetch(uploadSessionUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `OAuth ${accessToken}`,
-        file_url: presignedUrl,
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `Failed to upload video: ${response.status} ${response.statusText} - ${errorText}`,
-      );
-    }
-    // 2. check if we got a success or not
-    const uploadRes = (await response.json()) as {
-      message: string;
-      success: boolean;
-    };
-    if (!uploadRes.success) {
-      throw new Error(`Video upload failed: ${uploadRes.message}`);
-    }
-    return uploadRes;
-  }
-
-  async isVideoUploadComplete(videoId: string) {
-    const status = await this.getVideoStatus(videoId);
-    return status.uploading_phase.status === "complete";
-  }
-
-  async isVideoPublishComplete(videoId: string) {
-    const status = await this.getVideoStatus(videoId);
-
-    const videoStatus = status.video_status;
-    const publishingStatus = status.publishing_phase?.status;
-    const publishState = status.publishing_phase?.publish_status;
-
-    if (videoStatus === "ready") {
-      return true;
-    }
-
-    if (publishingStatus === "complete" || publishState === "published") {
-      return true;
-    }
-
-    if (status.processing_phase?.status === "error") {
-      throw new Error(
-        `video ${videoId} failed during processing: ${JSON.stringify(
-          status.processing_phase.errors,
-        )}`,
-      );
-    }
-
-    if (
-      videoStatus === "error" ||
-      publishingStatus === "error" ||
-      publishState === "error"
-    ) {
-      throw new Error(`video ${videoId} failed during publishing`);
-    }
-
-    return false;
-  }
-
-  async getVideoStatus(videoId: string) {
-    const ctx = await resolveFacebookIdentity(this.spec);
-    const resJson = await facebookGraphRequest<FBVideoStatusResponse>(
-      ctx,
-      `/${videoId}`,
-      {
-        searchParams: { fields: "status" },
-      },
-    );
-    console.log("// video status", resJson);
-    return resJson.status;
-  }
   /**
    * requires a FB video in a ready state.
    * description, e.g. "What a beautiful day! #Tag"
    * ref: https://developers.facebook.com/docs/video-api/guides/reels-publishing/
    */
-  async createReel(videoId: string) {
-    const ctx = await resolveFacebookIdentity(this.spec);
-    const description = this.spec.postSpec.message;
-    if (!description) throw new Error("no description provided");
-    const body = new URLSearchParams();
-    body.set("upload_phase", "finish");
-    body.set("video_id", videoId);
-    body.set("description", description);
-    body.set("video_state", "PUBLISHED");
-
-    const response = await facebookGraphRequest<{
-      success?: boolean;
-      post_id?: string;
-      id?: string;
-    }>(ctx, `/${ctx.pageID}/video_reels`, {
-      method: "POST",
-      body,
-    });
-
-    const rawID = response.post_id ?? response.id ?? null;
-    if (response.success === false || !rawID)
-      throw new WorkflowError(
-        `failed to publish reel for content ${this.data.id}: response indicates failure or missing postID`,
-      );
-    // it might be in the format of <page_id>_<post_id> or just <post_id>
-    const postIDOnly = rawID.includes("_") ? rawID.split("_")[1] : rawID;
-    return { postId: postIDOnly };
-  }
 
   async syncAttachmentsFromFacebook(postId: string): Promise<void> {
     const localAttachments = this.attachments();
     if (localAttachments.length === 0) return;
 
-    const ctx = await resolveFacebookIdentity(this.spec);
-    const graphPostId = postId.includes("_")
-      ? postId
-      : `${ctx.pageID}_${postId}`;
+    const client = await this.facebookClient();
+    const graphPostId = client.toGraphPostId(postId);
 
-    const json = await facebookGraphRequest<FBPostAttachmentsResponse>(
-      ctx,
-      `/${graphPostId}`,
-      {
-        searchParams: {
-          fields:
-            "attachments{media{image{src}},subattachments{data{media{image{src}}}}}",
-        },
-      },
-    );
+    const json = await client.fetchPostAttachments(graphPostId);
     const remoteMedia: Array<{
       imageSrc?: string;
       videoSource?: string;
@@ -435,26 +137,10 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     }
 
     if (remoteMedia.length === 0) {
-      const videoMeta = await facebookGraphRequest<
-        { video_id?: string } | undefined
-      >(ctx, `/${graphPostId}`, {
-        searchParams: {
-          fields: "video_id",
-        },
-      });
-
-      const videoId = videoMeta?.video_id;
+      const videoId = await client.fetchVideoIdForPost(graphPostId);
 
       if (videoId) {
-        const videoDetails = await facebookGraphRequest<{
-          id?: string;
-          source?: string;
-          thumbnails?: { data?: Array<{ uri?: string }> };
-        }>(ctx, `/${videoId}`, {
-          searchParams: {
-            fields: "id,source,thumbnails{uri}",
-          },
-        });
+        const videoDetails = await client.fetchVideoDetails(videoId);
 
         const fallbackThumbnail = videoDetails.thumbnails?.data?.[0]?.uri;
 
@@ -600,20 +286,10 @@ export class EntFBFeedPendingContent extends EntPendingContent {
   }
   async fetchPermalinkUrl(postId: string): Promise<string | null> {
     try {
-      const ctx = await resolveFacebookIdentity(this.spec);
-      const graphPostId = postId.includes("_")
-        ? postId
-        : `${ctx.pageID}_${postId}`;
+      const client = await this.facebookClient();
+      const graphPostId = client.toGraphPostId(postId);
 
-      const result = await facebookGraphRequest<
-        { permalink_url?: string } | undefined
-      >(ctx, `/${graphPostId}`, {
-        searchParams: {
-          fields: "permalink_url",
-        },
-      });
-
-      const url = result?.permalink_url;
+      const url = await client.fetchPermalink(graphPostId);
       if (!url) {
         log.warn("facebook post missing permalink_url", {
           postId: graphPostId,

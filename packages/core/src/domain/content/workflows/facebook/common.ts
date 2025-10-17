@@ -1,6 +1,6 @@
-import { EntFBFeedPendingContent } from "@core/domain/content/entity";
 import type { CoreWorkflowStep } from "@core/helpers/workflow";
 import { Log } from "@core/utils/log";
+import { loadFacebookFeedContext } from "./facebook-feed-service";
 
 const log = Log.create({ namespace: "facebook-common" });
 
@@ -20,8 +20,8 @@ export async function waitForVideoUpload(
     `check FB video ${videoID} upload status` +
       (attempt > 1 ? ` attempt ${attempt}` : ""),
     async () => {
-      const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-      return await c.isVideoUploadComplete(videoID);
+      const { client } = await loadFacebookFeedContext(pendingContentID);
+      return await client.isVideoUploadComplete(videoID);
     },
   );
 
@@ -56,8 +56,8 @@ export async function waitForVideoPublish(
     `check FB video ${videoID} publish status` +
       (attempt > 1 ? ` attempt ${attempt}` : ""),
     async () => {
-      const c = await EntFBFeedPendingContent.fromID(pendingContentID);
-      return await c.isVideoPublishComplete(videoID);
+      const { client } = await loadFacebookFeedContext(pendingContentID);
+      return await client.isVideoPublishComplete(videoID);
     },
   );
 
