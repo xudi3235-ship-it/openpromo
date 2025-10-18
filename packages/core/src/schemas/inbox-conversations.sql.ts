@@ -20,8 +20,12 @@ export const inboxConversationsTable = pgTable(
   {
     ...id,
     ...timestamps,
-    connectedAccountId: ulid().references(() => connectedAccount.id),
-    contactId: ulid().references(() => inboxContactsTable.id),
+    connectedAccountId: ulid().references(() => connectedAccount.id, {
+      onDelete: "cascade",
+    }),
+    contactId: ulid().references(() => inboxContactsTable.id, {
+      onDelete: "cascade",
+    }),
     platform: platformPgEnum().notNull(), // redundant, but useful for filtering
     channel: inboxChannelEnum().notNull().default("dm"),
     threadKey: text("thread_key").notNull(),

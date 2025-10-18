@@ -70,7 +70,9 @@ export const connectedAccount = pgTable(
     platform: platformPgEnum().notNull(),
     externalAccountId: varchar("external_account_id", {
       length: 255,
-    }).notNull(),
+    })
+      .notNull()
+      .unique(),
     externalUrl: text().notNull(),
     // display name
     accountName: varchar("account_name", { length: 255 }),
@@ -87,6 +89,7 @@ export const connectedAccount = pgTable(
     index("platform_idx").on(table.platform),
     index("workspace_platform_idx").on(table.workspaceId, table.platform),
     unique().on(table.workspaceId, table.externalAccountId),
+    unique().on(table.platform, table.externalAccountId),
   ],
 );
 

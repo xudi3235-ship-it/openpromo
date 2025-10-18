@@ -9,7 +9,7 @@ import {
 } from "@core/schemas/connected-account.sql";
 import { fn } from "@core/utils/fn";
 import { Log } from "@core/utils/log";
-import { and, eq, getTableColumns } from "drizzle-orm";
+import { and, eq, getTableColumns, ne } from "drizzle-orm";
 import z from "zod";
 import { Actor } from "../../helpers/actor";
 import { facebookOAuthService } from "./facebook";
@@ -43,6 +43,46 @@ export namespace ConnectedAccount {
         ...restInput
       } = input;
 
+      const duplicates = await db()
+        .select()
+        .from(connectedAccount)
+        .where(
+          and(
+            eq(connectedAccount.platform, restInput.platform),
+            eq(connectedAccount.externalAccountId, restInput.externalAccountId),
+          ),
+        );
+
+      const staleDuplicates = duplicates.filter(
+        (acc) => acc.workspaceId !== workspaceId,
+      );
+
+      if (staleDuplicates.length > 0) {
+        console.log([
+          "connected-account.cleanup-duplicate",
+          {
+            platform: restInput.platform,
+            externalAccountId: restInput.externalAccountId,
+            attemptedWorkspaceId: workspaceId,
+            removedWorkspaceIds: staleDuplicates.map((acc) => acc.workspaceId),
+          },
+        ]);
+
+        await db()
+          .delete(connectedAccount)
+          .where(
+            and(
+              eq(connectedAccount.platform, restInput.platform),
+              eq(
+                connectedAccount.externalAccountId,
+                restInput.externalAccountId,
+              ),
+              ne(connectedAccount.workspaceId, workspaceId),
+            ),
+          )
+          .execute();
+      }
+
       const profilePicUrl = await mirrorProfilePictureToR2(rawProfilePicUrl, {
         workspaceId,
         platform: restInput.platform,
@@ -54,7 +94,7 @@ export namespace ConnectedAccount {
         profilePicUrl,
       } satisfies Record<string, unknown>;
 
-      const [acc] = await db()
+      const [duplicate] = await db()
         .insert(connectedAccount)
         .values({
           workspaceId,
@@ -79,7 +119,7 @@ export namespace ConnectedAccount {
         })
         .returning();
 
-      return acc;
+      return duplicate;
     },
   );
 
