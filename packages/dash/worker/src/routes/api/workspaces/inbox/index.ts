@@ -81,7 +81,10 @@ export const inboxRoute = new Hono<ApiEnv>()
         .select({
           id: inboxConversationsTable.id,
           platform: inboxConversationsTable.platform,
+          channel: inboxConversationsTable.channel,
           lastMessageAt: inboxConversationsTable.lastMessageAt,
+          contentId: inboxConversationsTable.contentId,
+          externalThreadId: inboxConversationsTable.externalThreadId,
           contactId: inboxContactsTable.id,
           contactName: inboxContactsTable.name,
           contactProfilePicUrl: inboxContactsTable.profilePicUrl,
@@ -106,6 +109,7 @@ export const inboxRoute = new Hono<ApiEnv>()
         InboxConversationSummarySchema.parse({
           id: r.id,
           platform: r.platform,
+          channel: r.channel,
           lastMessageAt: r.lastMessageAt,
           contact: {
             id: r.contactId,
@@ -113,6 +117,8 @@ export const inboxRoute = new Hono<ApiEnv>()
             profilePicUrl: r.contactProfilePicUrl,
           },
           connectedAccount: { id: r.caId, accountName: r.caName },
+          contentId: r.contentId,
+          externalThreadId: r.externalThreadId,
         }),
       );
 
@@ -129,7 +135,10 @@ export const inboxRoute = new Hono<ApiEnv>()
       .select({
         id: inboxConversationsTable.id,
         platform: inboxConversationsTable.platform,
+        channel: inboxConversationsTable.channel,
         lastMessageAt: inboxConversationsTable.lastMessageAt,
+        contentId: inboxConversationsTable.contentId,
+        externalThreadId: inboxConversationsTable.externalThreadId,
         contactId: inboxContactsTable.id,
         contactName: inboxContactsTable.name,
         contactProfilePicUrl: inboxContactsTable.profilePicUrl,
@@ -158,6 +167,7 @@ export const inboxRoute = new Hono<ApiEnv>()
     const data = InboxConversationSummarySchema.parse({
       id: row.id,
       platform: row.platform,
+      channel: row.channel,
       lastMessageAt: row.lastMessageAt,
       contact: {
         id: row.contactId,
@@ -165,6 +175,8 @@ export const inboxRoute = new Hono<ApiEnv>()
         profilePicUrl: row.contactProfilePicUrl,
       },
       connectedAccount: { id: row.caId, accountName: row.caName },
+      contentId: row.contentId,
+      externalThreadId: row.externalThreadId,
     });
     return c.json(data);
   })
@@ -217,9 +229,12 @@ export const inboxRoute = new Hono<ApiEnv>()
           id: r.id,
           externalId: r.externalId,
           sender: r.sender,
+          channel: r.channel,
           text: r.text ?? null,
           attachments: r.attachments,
           createdAt: r.createdAt,
+          contentId: r.contentId,
+          metadata: r.metadata ?? {},
         }),
       );
 

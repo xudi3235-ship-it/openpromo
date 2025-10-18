@@ -1,8 +1,20 @@
 import { and, db, eq } from "@core/helpers/db";
-import type { Platform } from "@core/schemas/connected-account.sql";
-import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
-import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
 import {
+  connectedAccount,
+  type Platform,
+} from "@core/schemas/connected-account.sql";
+import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
+import {
+  type InboxChannel,
+  inboxChannelEnum,
+  inboxConversationsTable,
+} from "@core/schemas/inbox-conversations.sql";
+import {
+  type InboxMessageStatus,
+  inboxMessageStateTable,
+} from "@core/schemas/inbox-message-state.sql";
+import {
+  type InboxMessageMetadata,
   type InboxMessageSender,
   inboxMessagesTable,
   type MessageAttachment,
@@ -83,68 +95,174 @@ export namespace InboxService {
     platform: Platform;
     contactId: string;
     lastMessageAt: Date;
+    channel?: InboxChannel;
+    threadKey?: string;
+    externalThreadId?: string | null;
+    contentId?: string | null;
+    metadata?: Record<string, unknown>;
   }) {
+    const channel = input.channel ?? inboxChannelEnum.enumValues[0]; // default "dm"
+    const threadKey =
+      input.threadKey ??
+      (channel === "dm"
+        ? input.contactId
+        : (input.externalThreadId ?? input.contactId));
+
+    const insertValues = {
+      connectedAccountId: input.connectedAccountId,
+      contactId: input.contactId,
+      platform: input.platform,
+      channel,
+      threadKey,
+      externalThreadId: input.externalThreadId ?? null,
+      contentId: input.contentId ?? null,
+      metadata: input.metadata ?? {},
+      lastMessageAt: input.lastMessageAt,
+    };
+
+    const updateValues: Partial<typeof insertValues> = {
+      contactId: input.contactId,
+      platform: input.platform,
+      lastMessageAt: input.lastMessageAt,
+    };
+
+    if (input.externalThreadId !== undefined) {
+      updateValues.externalThreadId = input.externalThreadId ?? null;
+    }
+    if (input.contentId !== undefined) {
+      updateValues.contentId = input.contentId ?? null;
+    }
+    if (input.metadata) {
+      updateValues.metadata = input.metadata;
+    }
+    if (input.threadKey) {
+      updateValues.threadKey = input.threadKey;
+    }
+
     const [row] = await db()
       .insert(inboxConversationsTable)
-      .values({
-        connectedAccountId: input.connectedAccountId,
-        contactId: input.contactId,
-        platform: input.platform,
-        lastMessageAt: input.lastMessageAt,
-        threadKey: input.contactId, // for DMs, threadKey is contactId
-      })
+      .values(insertValues)
       .onConflictDoUpdate({
         target: [
           inboxConversationsTable.connectedAccountId,
-          inboxConversationsTable.contactId,
+          inboxConversationsTable.channel,
+          inboxConversationsTable.threadKey,
         ],
-        set: { lastMessageAt: input.lastMessageAt },
+        set: updateValues,
       })
       .returning();
     log.info("upsertConversation", {
       connectedAccountId: input.connectedAccountId,
       contactId: input.contactId,
+      channel,
+      threadKey,
     });
     return row;
   }
 
   export async function upsertMessage(input: {
+    workspaceId?: string;
     inboxConversationId: string;
     externalId: string;
-    senderContactId: string;
     text?: string | null;
     attachments?: MessageAttachment[];
     payload: MessagePayload;
     sender: InboxMessageSender;
+    channel?: InboxChannel;
+    contentId?: string | null;
+    metadata?: InboxMessageMetadata;
+    statusOnInsert?: InboxMessageStatus;
   }) {
+    let channel = input.channel;
+    let workspaceId = input.workspaceId;
+
+    if (!channel || !workspaceId) {
+      const [context] = await db()
+        .select({
+          channel: inboxConversationsTable.channel,
+          workspaceId: connectedAccount.workspaceId,
+        })
+        .from(inboxConversationsTable)
+        .innerJoin(
+          connectedAccount,
+          eq(inboxConversationsTable.connectedAccountId, connectedAccount.id),
+        )
+        .where(eq(inboxConversationsTable.id, input.inboxConversationId))
+        .limit(1);
+
+      if (!context) {
+        throw new Error(
+          `Conversation ${input.inboxConversationId} not found while upserting message`,
+        );
+      }
+
+      channel = channel ?? context.channel;
+      workspaceId = workspaceId ?? context.workspaceId;
+    }
+
+    if (!channel || !workspaceId) {
+      throw new Error(
+        `Unable to resolve channel or workspace for conversation ${input.inboxConversationId}`,
+      );
+    }
+
+    const insertValues = {
+      inboxConversationId: input.inboxConversationId,
+      externalId: input.externalId,
+      sender: input.sender,
+      channel,
+      contentId: input.contentId ?? null,
+      text: input.text ?? null,
+      attachments: input.attachments ?? [],
+      payload: input.payload,
+      metadata: input.metadata ?? {},
+    };
+
+    const updateValues: Partial<typeof insertValues> = {
+      sender: input.sender,
+      text: input.text ?? null,
+      payload: input.payload,
+    };
+
+    if (input.attachments) {
+      updateValues.attachments = input.attachments;
+    }
+    if (input.contentId !== undefined) {
+      updateValues.contentId = input.contentId ?? null;
+    }
+    if (input.metadata) {
+      updateValues.metadata = input.metadata;
+    }
+    updateValues.channel = channel;
+
     const [created] = await db()
       .insert(inboxMessagesTable)
-      .values({
-        inboxConversationId: input.inboxConversationId,
-        externalId: input.externalId,
-        sender: input.sender,
-        text: input.text,
-        attachments: input.attachments ?? [],
-        payload: input.payload,
-      })
+      .values(insertValues)
       .onConflictDoUpdate({
         target: [
           inboxMessagesTable.inboxConversationId,
           inboxMessagesTable.externalId,
         ],
-        set: {
-          text: input.text,
-          payload: input.payload,
-          ...(input.attachments ? { attachments: input.attachments } : {}),
-        },
+        set: updateValues,
       })
       .returning();
+
+    await db()
+      .insert(inboxMessageStateTable)
+      .values({
+        workspaceId,
+        messageId: created.id,
+        status: input.statusOnInsert ?? "open",
+      })
+      .onConflictDoNothing();
+
     log.info("upsertMessage", {
       inboxConversationId: input.inboxConversationId,
       externalId: input.externalId,
       sender: input.sender,
       text: input.text,
       attachmentCount: input.attachments?.length ?? 0,
+      channel,
     });
     return created;
   }

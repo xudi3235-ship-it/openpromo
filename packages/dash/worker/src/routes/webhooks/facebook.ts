@@ -83,10 +83,11 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
             await InboxService.upsertMessage({
               inboxConversationId: conversation.id,
               externalId: message_edit.mid,
-              senderContactId: contact.id,
               text: message_edit.text,
               payload: messaging,
               sender: message?.is_echo ? "self" : "user",
+              workspaceId: account.workspaceId,
+              channel: conversation.channel,
             });
             const event = createWorkspaceEvent(
               InboxRealtimeEventTypes.MessageUpserted,
@@ -99,7 +100,7 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
                   text: message_edit.text,
                   attachments: [],
                   createdAt: new Date(timestamp),
-                  channel: "dm",
+                  channel: conversation.channel,
                   contentId: null,
                   metadata: {},
                 },
@@ -114,11 +115,12 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
             await InboxService.upsertMessage({
               inboxConversationId: conversation.id,
               externalId: message.mid,
-              senderContactId: contact.id,
               text: message.text ?? null,
               attachments,
               payload: messaging,
               sender: message.is_echo ? "self" : "user",
+              workspaceId: account.workspaceId,
+              channel: conversation.channel,
             });
             const event = createWorkspaceEvent(
               InboxRealtimeEventTypes.MessageUpserted,
@@ -131,7 +133,7 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
                   text: message.text ?? null,
                   attachments,
                   createdAt: new Date(timestamp),
-                  channel: "dm",
+                  channel: conversation.channel,
                   contentId: null,
                   metadata: {},
                 },
