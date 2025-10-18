@@ -1,6 +1,5 @@
 import type { InboxConversationSummary } from "@shared/inbox";
 import { useEffect, useMemo } from "react";
-import { Main } from "@/components/layout/main";
 import { useSharedWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import { useInboxConversationsQuery } from "@/queries/inbox/conversations";
 import { useInboxMessagesQuery } from "@/queries/inbox/messages";
@@ -186,25 +185,23 @@ export function Inbox() {
   });
 
   return (
-    <Main fixed>
-      <div className="flex h-full flex-col gap-4">
-        <InboxChannelSwitcher
-          totalCount={conversations.length}
-          isSyncing={conversationsFetching}
+    <div className="flex h-full flex-col gap-4">
+      <InboxChannelSwitcher
+        totalCount={conversations.length}
+        isSyncing={conversationsFetching}
+      />
+      <div className="flex flex-1 gap-4">
+        <InboxSidebar
+          conversations={conversations}
+          isLoading={conversationsInitialLoading}
+          isFetching={conversationsFetching}
         />
-        <div className="flex flex-1 gap-4">
-          <InboxSidebar
-            conversations={conversations}
-            isLoading={conversationsInitialLoading}
-            isFetching={conversationsFetching}
-          />
-          <InboxConversationPanel
-            workspaceSlug={workspaceSlug}
-            isLoading={messagesInitialLoading}
-            isFetching={messagesFetching}
-          />
-        </div>
+        <InboxConversationPanel
+          workspaceSlug={workspaceSlug}
+          isLoading={messagesInitialLoading}
+          isFetching={messagesFetching}
+        />
       </div>
-    </Main>
+    </div>
   );
 }
