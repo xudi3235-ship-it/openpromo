@@ -14,8 +14,10 @@ export function useInboxMessagesQuery(
   workspaceSlug: string | undefined,
   conversationId: string | undefined,
   params: InboxMessagesParams,
+  onSuccess?: (data: InboxMessagesList) => void,
+  onError?: (error: unknown) => void,
 ) {
-  return useHonoQuery<InboxMessagesList>({
+  const { data, ...rest } = useHonoQuery<InboxMessagesList>({
     enabled: Boolean(workspaceSlug && conversationId),
     queryKey: [
       "inbox",
@@ -39,5 +41,20 @@ export function useInboxMessagesQuery(
           pageSize: params.pageSize.toString(),
         },
       }),
+    onSuccess,
+    onError,
   } as unknown as UseHonoQueryOptions<InboxMessagesList>);
+
+  // Parse dates in messages
+  const parsedData = data
+    ? {
+        ...data,
+        items: data.items.map((item) => ({
+          ...item,
+          createdAt: new Date(item.createdAt),
+        })),
+      }
+    : undefined;
+
+  return { data: parsedData, ...rest };
 }

@@ -12,7 +12,7 @@ import type { InboxChannel } from "@/stores/inbox/types";
 import { useInboxStore } from "@/stores/inbox-store";
 
 export function InboxFilters() {
-  const search = useInboxStore((state) => state.search);
+  const search = useInboxStore((state) => state.search) ?? "";
   const selectedPlatform = useInboxStore((state) => state.selectedPlatform);
   const selectedChannel = useInboxStore((state) => state.selectedChannel);
   const setSearch = useInboxStore((state) => state.setSearch);

@@ -12,7 +12,7 @@ export type InboxFiltersState = {
   selectedPlatform: InboxPlatform | null;
   selectedChannel: InboxChannel | null;
   connectedAccountId: string | null;
-  search: string;
+  search: string | null;
 };
 
 export type InboxFiltersActions = {
