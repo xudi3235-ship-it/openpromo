@@ -2,7 +2,6 @@ import type { StateCreator } from "zustand";
 import type {
   InboxFiltersActions,
   InboxFiltersState,
-  InboxMessageStatus,
   InboxStore,
 } from "../types";
 
@@ -12,8 +11,6 @@ export const filtersInitialState: InboxFiltersState = {
   selectedChannel: null,
   connectedAccountId: null,
   search: "",
-  statusFilter: [],
-  assigneeFilter: null,
 };
 
 export const createFiltersSlice: StateCreator<
@@ -31,8 +28,6 @@ export const createFiltersSlice: StateCreator<
       state.selectedChannel = null;
       state.connectedAccountId = null;
       state.search = "";
-      state.statusFilter = [];
-      state.assigneeFilter = null;
     }),
 
   setPlatform: (platform) =>
@@ -55,23 +50,11 @@ export const createFiltersSlice: StateCreator<
       state.search = search;
     }),
 
-  setStatusFilter: (statuses: InboxMessageStatus[]) =>
-    set((state) => {
-      state.statusFilter = statuses;
-    }),
-
-  setAssigneeFilter: (assignee) =>
-    set((state) => {
-      state.assigneeFilter = assignee;
-    }),
-
   clearFilters: () =>
     set((state) => {
       state.selectedPlatform = null;
       state.selectedChannel = null;
       state.connectedAccountId = null;
       state.search = "";
-      state.statusFilter = [];
-      state.assigneeFilter = null;
     }),
 });

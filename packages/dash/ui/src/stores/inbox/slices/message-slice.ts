@@ -1,9 +1,9 @@
 import { produce } from "immer";
 import type { StateCreator } from "zustand";
 import type {
+  InboxMessage,
   InboxMessagesActions,
   InboxMessagesState,
-  InboxMessageWithState,
   InboxStore,
 } from "../types";
 
@@ -20,12 +20,11 @@ const emptyThread = (): InboxMessagesState["threads"][string] => ({
 export const messagesInitialState: InboxMessagesState = {
   currentConversationId: null,
   threads: {},
-  pendingMutations: {},
 };
 
 function mergeMessages(
   thread: InboxMessagesState["threads"][string],
-  items: InboxMessageWithState[],
+  items: InboxMessage[],
 ) {
   for (const message of items) {
     thread.itemsById[message.id] = message;
@@ -112,35 +111,6 @@ export const createMessagesSlice: StateCreator<
       const thread = state.threads[conversationId];
       if (thread) {
         thread.hasMore = hasMore;
-      }
-    }),
-
-  optimisticUpdate: ({ conversationId, messageId, patch, type }) =>
-    set(
-      produce((state: InboxMessagesState) => {
-        const thread = state.threads[conversationId];
-        if (!thread) return;
-
-        const existing = thread.itemsById[messageId];
-        if (!existing) return;
-
-        const updated = { ...existing, ...patch };
-        thread.itemsById[messageId] = updated;
-        mergeMessages(thread, [updated]);
-
-        state.pendingMutations[messageId] = {
-          conversationId,
-          type,
-          timestamp: Date.now(),
-        };
-      }),
-    ),
-
-  clearOptimistic: (conversationId, messageId) =>
-    set((state) => {
-      const thread = state.threads[conversationId];
-      if (thread) {
-        delete state.pendingMutations[messageId];
       }
     }),
 });

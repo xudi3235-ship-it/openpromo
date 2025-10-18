@@ -29,7 +29,7 @@ import {
 import { useEffect, useMemo, useRef } from "react";
 import { Main } from "@/components/layout/main";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
-import type { InboxChannel, InboxMessageWithState } from "@/stores/inbox/types";
+import type { InboxChannel, InboxMessage } from "@/stores/inbox/types";
 import { useInboxStore } from "@/stores/inbox-store";
 
 const environment = import.meta.env.VITE_ENVIRONMENT;
@@ -89,7 +89,7 @@ const MOCK_CONVERSATIONS: InboxConversationSummary[] = [
   },
 ];
 
-const MOCK_MESSAGES: Record<string, InboxMessageWithState[]> = {
+const MOCK_MESSAGES: Record<string, InboxMessage[]> = {
   "conv-1": [
     {
       id: "conv-1-msg-1",
@@ -101,9 +101,6 @@ const MOCK_MESSAGES: Record<string, InboxMessageWithState[]> = {
       createdAt: new Date(Date.now() - 30 * 60 * 1000),
       contentId: null,
       metadata: {},
-      status: "open",
-      assigneeId: null,
-      labels: ["priority"],
     },
     {
       id: "conv-1-msg-2",
@@ -115,9 +112,6 @@ const MOCK_MESSAGES: Record<string, InboxMessageWithState[]> = {
       createdAt: new Date(Date.now() - 12 * 60 * 1000),
       contentId: null,
       metadata: {},
-      status: "open",
-      assigneeId: "workspace-user-1",
-      labels: ["events"],
     },
     {
       id: "conv-1-msg-3",
@@ -129,9 +123,6 @@ const MOCK_MESSAGES: Record<string, InboxMessageWithState[]> = {
       createdAt: new Date(Date.now() - 5 * 60 * 1000),
       contentId: null,
       metadata: {},
-      status: "open",
-      assigneeId: "workspace-user-1",
-      labels: ["events"],
     },
   ],
   "conv-2": [
@@ -147,9 +138,6 @@ const MOCK_MESSAGES: Record<string, InboxMessageWithState[]> = {
       metadata: {
         referencedPost: "Sunny Coffee — Launching Ethiopia Single Origin",
       },
-      status: "open",
-      assigneeId: null,
-      labels: ["product"],
     },
     {
       id: "conv-2-msg-2",
@@ -161,9 +149,6 @@ const MOCK_MESSAGES: Record<string, InboxMessageWithState[]> = {
       createdAt: new Date(Date.now() - 46 * 60 * 1000),
       contentId: "content-1",
       metadata: {},
-      status: "resolved",
-      assigneeId: null,
-      labels: ["product"],
     },
   ],
   "conv-3": [
@@ -182,9 +167,6 @@ const MOCK_MESSAGES: Record<string, InboxMessageWithState[]> = {
       createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
       contentId: null,
       metadata: {},
-      status: "snoozed",
-      assigneeId: null,
-      labels: ["partnership"],
     },
     {
       id: "conv-3-msg-2",
@@ -196,9 +178,6 @@ const MOCK_MESSAGES: Record<string, InboxMessageWithState[]> = {
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
       contentId: null,
       metadata: {},
-      status: "snoozed",
-      assigneeId: "workspace-user-2",
-      labels: ["partnership"],
     },
   ],
 };
@@ -526,13 +505,7 @@ export function Inbox() {
                 />
                 <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline">
-                      Status:{" "}
-                      {(
-                        activeMessages[activeMessages.length - 1]?.status ??
-                        "open"
-                      ).toUpperCase()}
-                    </Badge>
+                    <Badge variant="outline">Status: Open</Badge>
                     <div className="flex items-center gap-1">
                       <Paperclip className="h-3 w-3" />
                       Attachments coming soon
@@ -566,13 +539,12 @@ export function Inbox() {
 }
 
 type MessageBubbleProps = {
-  message: InboxMessageWithState;
+  message: InboxMessage;
 };
 
 function MessageBubble({ message }: MessageBubbleProps) {
   const isSelf = message.sender === "self";
   const timestamp = format(message.createdAt, "MMM d, h:mm a");
-  const status = message.status ?? "open";
   const hasAttachments = message.attachments?.length
     ? message.attachments.length > 0
     : false;
@@ -616,20 +588,6 @@ function MessageBubble({ message }: MessageBubbleProps) {
             </span>
           </div>
         )}
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
-          <Badge variant="outline" className="capitalize">
-            {status}
-          </Badge>
-          {(message.labels ?? []).map((label) => (
-            <Badge
-              key={label}
-              variant={isSelf ? "outline" : "secondary"}
-              className="capitalize"
-            >
-              {label}
-            </Badge>
-          ))}
-        </div>
       </div>
     </div>
   );

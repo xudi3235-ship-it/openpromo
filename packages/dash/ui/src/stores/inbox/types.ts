@@ -7,22 +7,12 @@ import type {
 export type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 
 export type InboxChannel = InboxMessage["channel"];
-export type InboxMessageStatus = "open" | "snoozed" | "resolved";
-
-export type InboxMessageWithState = InboxMessage & {
-  status?: InboxMessageStatus;
-  assigneeId?: string | null;
-  labels?: string[];
-};
-
 export type InboxFiltersState = {
   workspaceSlug: string | null;
   selectedPlatform: InboxPlatform | null;
   selectedChannel: InboxChannel | null;
   connectedAccountId: string | null;
   search: string;
-  statusFilter: InboxMessageStatus[];
-  assigneeFilter: string | "unassigned" | null;
 };
 
 export type InboxFiltersActions = {
@@ -31,8 +21,6 @@ export type InboxFiltersActions = {
   setChannel(channel: InboxChannel | null): void;
   setConnectedAccount(connectedAccountId: string | null): void;
   setSearch(search: string): void;
-  setStatusFilter(status: InboxMessageStatus[]): void;
-  setAssigneeFilter(assignee: string | "unassigned" | null): void;
   clearFilters(): void;
 };
 
@@ -63,8 +51,8 @@ export type InboxConversationsActions = {
 };
 
 export type InboxThreadState = {
-  items: InboxMessageWithState[];
-  itemsById: Record<string, InboxMessageWithState>;
+  items: InboxMessage[];
+  itemsById: Record<string, InboxMessage>;
   page: number;
   pageSize: number;
   total: number;
@@ -75,21 +63,13 @@ export type InboxThreadState = {
 export type InboxMessagesState = {
   currentConversationId: string | null;
   threads: Record<string, InboxThreadState>;
-  pendingMutations: Record<
-    string,
-    {
-      conversationId: string;
-      type: "status" | "assignee" | "labels";
-      timestamp: number;
-    }
-  >;
 };
 
 export type InboxMessagesActions = {
   initializeThread(conversationId: string): void;
   setMessages(payload: {
     conversationId: string;
-    items: InboxMessageWithState[];
+    items: InboxMessage[];
     page: number;
     pageSize: number;
     total: number;
@@ -97,22 +77,15 @@ export type InboxMessagesActions = {
   }): void;
   appendMessages(payload: {
     conversationId: string;
-    items: InboxMessageWithState[];
+    items: InboxMessage[];
   }): void;
   updateMessage(payload: {
     conversationId: string;
     messageId: string;
-    patch: Partial<InboxMessageWithState>;
+    patch: Partial<InboxMessage>;
   }): void;
   setThreadFetching(conversationId: string, isFetching: boolean): void;
   setThreadHasMore(conversationId: string, hasMore: boolean): void;
-  optimisticUpdate(payload: {
-    conversationId: string;
-    messageId: string;
-    patch: Partial<InboxMessageWithState>;
-    type: "status" | "assignee" | "labels";
-  }): void;
-  clearOptimistic(conversationId: string, messageId: string): void;
 };
 
 export type InboxUIState = {
