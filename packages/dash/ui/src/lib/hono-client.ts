@@ -130,8 +130,8 @@ export const useHonoQuery = <T extends object>(
   return useQuery<T>(convertHonoQueryOptions(options));
 };
 
-interface UseHonoMutationOptions<T extends object, V>
-  extends Omit<UseMutationOptions<T, Error, V>, "mutationFn"> {
+interface UseHonoMutationOptions<T extends object, V, C = unknown>
+  extends Omit<UseMutationOptions<T, Error, V, C>, "mutationFn"> {
   mutationFn: (
     api: typeof apiClient,
     variables: V,
@@ -139,11 +139,11 @@ interface UseHonoMutationOptions<T extends object, V>
   disableErrorToast?: boolean;
 }
 
-export const useHonoMutation = <T extends object, V>(
-  options: UseHonoMutationOptions<T, V>,
+export const useHonoMutation = <T extends object, V, C = unknown>(
+  options: UseHonoMutationOptions<T, V, C>,
 ) => {
   const { disableErrorToast, ...useMutationOptions } = options;
-  return useMutation<T, Error, V>({
+  return useMutation<T, Error, V, C>({
     ...useMutationOptions,
     mutationFn: async (variables) => {
       const res = await honoApiCall(

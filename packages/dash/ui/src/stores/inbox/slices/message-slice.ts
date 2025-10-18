@@ -22,11 +22,49 @@ export const messagesInitialState: InboxMessagesState = {
   threads: {},
 };
 
+const OPTIMISTIC_WINDOW_MS = 60_000;
+
+function normalizeMessage(message: InboxMessage): InboxMessage {
+  return {
+    ...message,
+    attachments: message.attachments ?? [],
+    metadata: message.metadata ?? {},
+    createdAt:
+      message.createdAt instanceof Date
+        ? message.createdAt
+        : new Date(message.createdAt),
+  };
+}
+
 function mergeMessages(
   thread: InboxMessagesState["threads"][string],
   items: InboxMessage[],
 ) {
-  for (const message of items) {
+  for (const incoming of items) {
+    const message = normalizeMessage(incoming);
+
+    if (message.sender === "self") {
+      for (const [existingId, existingRaw] of Object.entries(
+        thread.itemsById,
+      )) {
+        const existing = normalizeMessage(existingRaw);
+        const metadata = existing.metadata as { optimistic?: unknown } | null;
+        const existingIsOptimistic = Boolean(
+          metadata && typeof metadata === "object" && metadata.optimistic,
+        );
+        if (!existingIsOptimistic) continue;
+        if (existing.sender !== "self") continue;
+        if (existing.text !== message.text) continue;
+
+        const delta = Math.abs(
+          existing.createdAt.getTime() - message.createdAt.getTime(),
+        );
+        if (Number.isFinite(delta) && delta <= OPTIMISTIC_WINDOW_MS) {
+          delete thread.itemsById[existingId];
+        }
+      }
+    }
+
     thread.itemsById[message.id] = message;
   }
 
@@ -81,6 +119,16 @@ export const createMessagesSlice: StateCreator<
         }
         const thread = state.threads[conversationId];
         mergeMessages(thread, items);
+      }),
+    ),
+
+  removeMessage: ({ conversationId, messageId }) =>
+    set(
+      produce((state: InboxMessagesState) => {
+        const thread = state.threads[conversationId];
+        if (!thread) return;
+        delete thread.itemsById[messageId];
+        thread.items = thread.items.filter((msg) => msg.id !== messageId);
       }),
     ),
 

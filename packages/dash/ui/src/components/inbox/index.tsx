@@ -168,6 +168,7 @@ export function Inbox() {
           isFetching={conversationsFetching}
         />
         <InboxConversationPanel
+          workspaceSlug={workspaceSlug}
           isLoading={messagesInitialLoading}
           isFetching={messagesFetching}
         />

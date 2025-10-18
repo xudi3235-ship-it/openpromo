@@ -79,6 +79,7 @@ export type InboxMessagesActions = {
     conversationId: string;
     items: InboxMessage[];
   }): void;
+  removeMessage(payload: { conversationId: string; messageId: string }): void;
   updateMessage(payload: {
     conversationId: string;
     messageId: string;

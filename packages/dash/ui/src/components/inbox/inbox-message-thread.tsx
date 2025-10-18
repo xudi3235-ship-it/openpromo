@@ -64,6 +64,10 @@ function MessageBubble({ message }: MessageBubbleProps) {
   const hasAttachments = message.attachments?.length
     ? message.attachments.length > 0
     : false;
+  const metadata = message.metadata as { optimistic?: unknown } | undefined;
+  const isOptimistic = Boolean(
+    metadata && typeof metadata === "object" && metadata.optimistic,
+  );
 
   return (
     <div
@@ -78,13 +82,17 @@ function MessageBubble({ message }: MessageBubbleProps) {
           isSelf
             ? "border-primary/10 bg-primary/3 text-foreground"
             : "border-border/60 bg-background text-foreground",
+          isOptimistic && "opacity-80",
         )}
       >
         <div className="flex items-center justify-between gap-2 text-xs">
           <span className="text-muted-foreground">
             {isSelf ? "You" : "Customer"}
           </span>
-          <span className="text-muted-foreground">{timestamp}</span>
+          <span className="flex items-center gap-2 text-muted-foreground">
+            {isOptimistic && <Loader2 className="h-3 w-3 animate-spin" />}
+            {timestamp}
+          </span>
         </div>
         {message.text && (
           <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">

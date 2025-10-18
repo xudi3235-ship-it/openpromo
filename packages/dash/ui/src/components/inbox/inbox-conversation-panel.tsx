@@ -6,11 +6,13 @@ import { InboxMessageInput } from "./inbox-message-input";
 import { InboxMessageThread } from "./inbox-message-thread";
 
 interface InboxConversationPanelProps {
+  workspaceSlug: string | undefined;
   isLoading: boolean;
   isFetching: boolean;
 }
 
 export function InboxConversationPanel({
+  workspaceSlug,
   isLoading,
   isFetching,
 }: InboxConversationPanelProps) {
@@ -44,7 +46,10 @@ export function InboxConversationPanel({
             isLoading={showLoading}
             isRefreshing={showRefreshing && hasMessages}
           />
-          <InboxMessageInput />
+          <InboxMessageInput
+            workspaceSlug={workspaceSlug}
+            conversation={activeConversation}
+          />
         </>
       ) : (
         <InboxEmptyState />
