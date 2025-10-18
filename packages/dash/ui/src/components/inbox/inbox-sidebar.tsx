@@ -17,7 +17,7 @@ export function InboxSidebar({
 }: InboxSidebarProps) {
   return (
     <aside className="flex w-full max-w-md flex-col rounded-xl border border-border/60 bg-background sm:w-80 lg:w-96">
-      <header className="rounded-t-xl border-b border-border/60 bg-muted/20 px-4 py-3">
+      <header className="space-y-3 rounded-t-xl border-b border-border/60 bg-muted/20 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold">Inbox</h1>
@@ -37,9 +37,7 @@ export function InboxSidebar({
             {isFetching ? "Syncing…" : conversations.length}
           </Badge>
         </div>
-        <div className="mt-3">
-          <InboxFilters />
-        </div>
+        <InboxFilters />
       </header>
       <InboxConversationList
         conversations={conversations}

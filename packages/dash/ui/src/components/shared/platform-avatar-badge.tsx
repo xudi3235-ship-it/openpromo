@@ -1,21 +1,8 @@
-import type { Platform } from "@core/schemas/connected-account.sql";
 import { cn } from "@openpromo/ui/lib/utils";
-import type { AllPlatforms } from "@shared";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 
-function toConnectedPlatform(platform: AllPlatforms): Platform {
-  switch (platform) {
-    case "FACEBOOK":
-    case "INSTAGRAM":
-    case "TIKTOK":
-      return platform;
-    default:
-      return "FACEBOOK";
-  }
-}
-
 interface PlatformAvatarBadgeProps {
-  platform: AllPlatforms;
+  platform: "FACEBOOK" | "INSTAGRAM" | "TIKTOK";
   className?: string;
 }
 
@@ -23,9 +10,7 @@ export function PlatformAvatarBadge({
   platform,
   className,
 }: PlatformAvatarBadgeProps) {
-  const { icon: Icon, accentTextClass } = getPlatformMeta(
-    toConnectedPlatform(platform),
-  );
+  const { icon: Icon, accentTextClass } = getPlatformMeta(platform);
   if (!Icon) return null;
 
   return (
