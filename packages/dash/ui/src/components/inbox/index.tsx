@@ -26,170 +26,17 @@ import {
   Sparkles,
   Tag,
 } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { Main } from "@/components/layout/main";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import type { InboxChannel, InboxMessage } from "@/stores/inbox/types";
 import { useInboxStore } from "@/stores/inbox-store";
 
-const environment = import.meta.env.VITE_ENVIRONMENT;
-const USE_MOCK_DATA = environment === "local";
-
-const MOCK_CONVERSATIONS: InboxConversationSummary[] = [
-  {
-    id: "conv-1",
-    platform: "INSTAGRAM",
-    channel: "dm",
-    lastMessageAt: new Date(Date.now() - 5 * 60 * 1000),
-    contact: {
-      id: "contact-ig-1",
-      name: "Emily Chen",
-      profilePicUrl: "https://i.pravatar.cc/150?img=47",
-    },
-    connectedAccount: {
-      id: "acc-ig-1",
-      accountName: "@sunnycafe",
-    },
-    contentId: null,
-    externalThreadId: null,
-  },
-  {
-    id: "conv-2",
-    platform: "FACEBOOK",
-    channel: "post_comment",
-    lastMessageAt: new Date(Date.now() - 45 * 60 * 1000),
-    contact: {
-      id: "contact-fb-1",
-      name: "Robert Garcia",
-      profilePicUrl: "https://i.pravatar.cc/150?img=32",
-    },
-    connectedAccount: {
-      id: "acc-fb-1",
-      accountName: "Sunny Coffee Facebook",
-    },
-    contentId: "content-1",
-    externalThreadId: "fb-comment-thread-22",
-  },
-  {
-    id: "conv-3",
-    platform: "INSTAGRAM",
-    channel: "dm",
-    lastMessageAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    contact: {
-      id: "contact-ig-2",
-      name: "Studio Bloom",
-      profilePicUrl: "",
-    },
-    connectedAccount: {
-      id: "acc-ig-1",
-      accountName: "@sunnycafe",
-    },
-    contentId: null,
-    externalThreadId: null,
-  },
-];
-
-const MOCK_MESSAGES: Record<string, InboxMessage[]> = {
-  "conv-1": [
-    {
-      id: "conv-1-msg-1",
-      externalId: "msg-001",
-      sender: "user",
-      channel: "dm",
-      text: "Hey there! We loved the latte art in your recent post. Do you take catering orders for private events?",
-      attachments: [],
-      createdAt: new Date(Date.now() - 30 * 60 * 1000),
-      contentId: null,
-      metadata: {},
-    },
-    {
-      id: "conv-1-msg-2",
-      externalId: "msg-002",
-      sender: "self",
-      channel: "dm",
-      text: "Hi Emily! Thanks so much. Yes, we cater events up to 80 guests. I can share our seasonal menu if that helps.",
-      attachments: [],
-      createdAt: new Date(Date.now() - 12 * 60 * 1000),
-      contentId: null,
-      metadata: {},
-    },
-    {
-      id: "conv-1-msg-3",
-      externalId: "msg-003",
-      sender: "user",
-      channel: "dm",
-      text: "That would be great! We're looking at an outdoor brunch in June.",
-      attachments: [],
-      createdAt: new Date(Date.now() - 5 * 60 * 1000),
-      contentId: null,
-      metadata: {},
-    },
-  ],
-  "conv-2": [
-    {
-      id: "conv-2-msg-1",
-      externalId: "msg-101",
-      sender: "user",
-      channel: "post_comment",
-      text: "The new single-origin roast is unreal! Do you ship internationally?",
-      attachments: [],
-      createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-      contentId: "content-1",
-      metadata: {
-        referencedPost: "Sunny Coffee — Launching Ethiopia Single Origin",
-      },
-    },
-    {
-      id: "conv-2-msg-2",
-      externalId: "msg-102",
-      sender: "self",
-      channel: "post_comment",
-      text: "Thanks Robert! We ship across the US right now and are working on EU fulfilment this summer.",
-      attachments: [],
-      createdAt: new Date(Date.now() - 46 * 60 * 1000),
-      contentId: "content-1",
-      metadata: {},
-    },
-  ],
-  "conv-3": [
-    {
-      id: "conv-3-msg-1",
-      externalId: "msg-201",
-      sender: "user",
-      channel: "dm",
-      text: "Could we collaborate on a giveaway? We can shoot content at your space.",
-      attachments: [
-        {
-          type: "image",
-          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=400&q=80",
-        },
-      ],
-      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
-      contentId: null,
-      metadata: {},
-    },
-    {
-      id: "conv-3-msg-2",
-      externalId: "msg-202",
-      sender: "self",
-      channel: "dm",
-      text: "Love that idea! Let me share it with the team and circle back.",
-      attachments: [],
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      contentId: null,
-      metadata: {},
-    },
-  ],
-};
-
 export function Inbox() {
   const { workspaceSlug } = Route.useParams();
-  const mockLoadedRef = useRef(false);
 
   const initialize = useInboxStore((state) => state.initialize);
-  const setConversations = useInboxStore((state) => state.setConversations);
   const selectConversation = useInboxStore((state) => state.selectConversation);
-  const setMessages = useInboxStore((state) => state.setMessages);
   const setSearch = useInboxStore((state) => state.setSearch);
   const setChannel = useInboxStore((state) => state.setChannel);
   const setPlatform = useInboxStore((state) => state.setPlatform);
@@ -210,38 +57,6 @@ export function Inbox() {
   useEffect(() => {
     initialize(workspaceSlug);
   }, [workspaceSlug, initialize]);
-
-  useEffect(() => {
-    if (!USE_MOCK_DATA || mockLoadedRef.current) return;
-    mockLoadedRef.current = true;
-
-    setConversations({
-      conversations: MOCK_CONVERSATIONS,
-      pagination: {
-        page: 1,
-        pageSize: MOCK_CONVERSATIONS.length,
-        total: MOCK_CONVERSATIONS.length,
-        isFetching: false,
-      },
-      replace: true,
-    });
-
-    for (const conversation of MOCK_CONVERSATIONS) {
-      const items = MOCK_MESSAGES[conversation.id] ?? [];
-      setMessages({
-        conversationId: conversation.id,
-        items,
-        page: 1,
-        pageSize: 50,
-        total: items.length,
-        reset: true,
-      });
-    }
-
-    if (MOCK_CONVERSATIONS.length > 0) {
-      selectConversation(MOCK_CONVERSATIONS[0].id);
-    }
-  }, [setConversations, setMessages, selectConversation]);
 
   const conversations = useMemo(() => {
     const searchTerm = search.trim().toLowerCase();
