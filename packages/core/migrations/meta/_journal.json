@@ -281,6 +281,13 @@
       "when": 1760762378019,
       "tag": "0039_cynical_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1760808993278,
+      "tag": "0040_nice_outlaw_kid",
+      "breakpoints": true
     }
   ]
 }

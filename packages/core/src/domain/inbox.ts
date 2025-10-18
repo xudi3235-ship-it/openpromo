@@ -91,6 +91,7 @@ export namespace InboxService {
         contactId: input.contactId,
         platform: input.platform,
         lastMessageAt: input.lastMessageAt,
+        threadKey: input.contactId, // for DMs, threadKey is contactId
       })
       .onConflictDoUpdate({
         target: [

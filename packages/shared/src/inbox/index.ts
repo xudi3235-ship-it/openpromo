@@ -144,6 +144,9 @@ export type MessagePayload = z.infer<typeof MessagePayload>;
 export const InboxPlatform = z.enum(["FACEBOOK", "INSTAGRAM", "TIKTOK"]);
 export type InboxPlatform = z.infer<typeof InboxPlatform>;
 
+export const InboxChannel = z.enum(["dm", "post_comment"]);
+export type InboxChannel = z.infer<typeof InboxChannel>;
+
 export const InboxAttachment = z.object({
   type: z.enum(AllMessageAttachmentTypes),
   url: z.string(),
@@ -154,9 +157,12 @@ export const InboxMessageSchema = z.object({
   id: z.string(),
   externalId: z.string(),
   sender: z.enum(["user", "self"]),
+  channel: InboxChannel,
   text: z.string().nullable(),
   attachments: z.array(InboxAttachment),
   createdAt: z.coerce.date(),
+  contentId: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()).default({}),
 });
 export type InboxMessage = z.infer<typeof InboxMessageSchema>;
 
@@ -178,9 +184,12 @@ export type InboxConnectedAccountSummary = z.infer<
 export const InboxConversationSummarySchema = z.object({
   id: z.string(),
   platform: InboxPlatform,
+  channel: InboxChannel,
   lastMessageAt: z.coerce.date(),
   contact: InboxContactSchema,
   connectedAccount: InboxConnectedAccountSummary,
+  contentId: z.string().nullable(),
+  externalThreadId: z.string().nullable(),
 });
 export type InboxConversationSummary = z.infer<
   typeof InboxConversationSummarySchema

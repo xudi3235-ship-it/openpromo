@@ -99,6 +99,9 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
                   text: message_edit.text,
                   attachments: [],
                   createdAt: new Date(timestamp),
+                  channel: "dm",
+                  contentId: null,
+                  metadata: {},
                 },
               },
             );
@@ -128,6 +131,9 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
                   text: message.text ?? null,
                   attachments,
                   createdAt: new Date(timestamp),
+                  channel: "dm",
+                  contentId: null,
+                  metadata: {},
                 },
               },
             );
