@@ -9,6 +9,7 @@ import {
   useHonoQuery,
 } from "@/lib/hono-client";
 
+// TODO: deprecate this file, moved to /inbox dir
 export function useInboxConversations(
   workspaceSlug: string | undefined,
   params: {
