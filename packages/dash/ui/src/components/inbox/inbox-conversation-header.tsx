@@ -5,9 +5,11 @@ import {
 } from "@openpromo/ui/components/avatar";
 import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
+import { cn } from "@openpromo/ui/lib/utils";
 import type { InboxConversationSummary } from "@shared/inbox";
 import { formatDistanceToNow } from "date-fns";
 import { Sparkles, Tag } from "lucide-react";
+import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 
 interface InboxConversationHeaderProps {
   conversation: InboxConversationSummary;
@@ -16,6 +18,8 @@ interface InboxConversationHeaderProps {
 export function InboxConversationHeader({
   conversation,
 }: InboxConversationHeaderProps) {
+  const platformMeta = getPlatformMeta(conversation.platform);
+
   return (
     <header className="flex items-start justify-between gap-4 border-b border-border/60 px-6 py-4">
       <div className="flex items-start gap-3">
@@ -41,6 +45,16 @@ export function InboxConversationHeader({
               {conversation.channel === "dm"
                 ? "Direct message"
                 : "Post comment"}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                "flex items-center gap-1",
+                platformMeta.accentTextClass,
+              )}
+            >
+              {platformMeta.icon && <platformMeta.icon className="h-3 w-3" />}
+              {platformMeta.label}
             </Badge>
             <span>
               Last activity{" "}

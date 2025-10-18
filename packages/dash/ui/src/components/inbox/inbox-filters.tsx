@@ -4,23 +4,15 @@ import { cn } from "@openpromo/ui/lib/utils";
 import type { AllPlatforms } from "@shared";
 import { Search } from "lucide-react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
-import type { InboxChannel } from "@/stores/inbox/types";
 import { useInboxStore } from "@/stores/inbox-store";
 
 const PLATFORM_ORDER: AllPlatforms[] = ["FACEBOOK", "INSTAGRAM", "TIKTOK"];
-
-const channelOptions: { label: string; value: InboxChannel | null }[] = [
-  { label: "All", value: null },
-  { label: "Direct message", value: "dm" },
-  { label: "Post comment", value: "post_comment" },
-];
 
 export function InboxFilters() {
   const search = useInboxStore((state) => state.search) ?? "";
   const selectedPlatform = useInboxStore((state) => state.selectedPlatform);
   const selectedChannel = useInboxStore((state) => state.selectedChannel);
   const setSearch = useInboxStore((state) => state.setSearch);
-  const setChannel = useInboxStore((state) => state.setChannel);
   const setPlatform = useInboxStore((state) => state.setPlatform);
   const clearFilters = useInboxStore((state) => state.clearFilters);
 
@@ -41,34 +33,6 @@ export function InboxFilters() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {channelOptions.map(({ label, value }) => {
-            const isActive = selectedChannel === value;
-            return (
-              <Button
-                key={label}
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => setChannel(isActive ? null : value)}
-                className={cn(
-                  "h-8 rounded-full border border-border/40 bg-muted/15 px-3 text-xs font-medium transition-colors",
-                  isActive
-                    ? "border-border/70 bg-muted/40 text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground/80",
-                )}
-              >
-                {label}
-              </Button>
-            );
-          })}
-        </div>
-
-        <span
-          className="hidden h-4 w-px bg-border/60 sm:block"
-          aria-hidden="true"
-        />
-
         <div className="flex flex-wrap items-center gap-1.5">
           <Button
             type="button"

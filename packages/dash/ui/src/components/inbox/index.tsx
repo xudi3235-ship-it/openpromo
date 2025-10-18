@@ -6,6 +6,7 @@ import { useInboxConversationsQuery } from "@/queries/inbox/conversations";
 import { useInboxMessagesQuery } from "@/queries/inbox/messages";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import { useInboxStore } from "@/stores/inbox-store";
+import { InboxChannelSwitcher } from "./inbox-channel-switcher";
 import { InboxConversationPanel } from "./inbox-conversation-panel";
 import { InboxSidebar } from "./inbox-sidebar";
 
@@ -186,17 +187,23 @@ export function Inbox() {
 
   return (
     <Main fixed>
-      <div className="flex h-full min-h-[640px] gap-6">
-        <InboxSidebar
-          conversations={conversations}
-          isLoading={conversationsInitialLoading}
-          isFetching={conversationsFetching}
+      <div className="flex h-full flex-col gap-4">
+        <InboxChannelSwitcher
+          totalCount={conversations.length}
+          isSyncing={conversationsFetching}
         />
-        <InboxConversationPanel
-          workspaceSlug={workspaceSlug}
-          isLoading={messagesInitialLoading}
-          isFetching={messagesFetching}
-        />
+        <div className="flex flex-1 gap-4">
+          <InboxSidebar
+            conversations={conversations}
+            isLoading={conversationsInitialLoading}
+            isFetching={conversationsFetching}
+          />
+          <InboxConversationPanel
+            workspaceSlug={workspaceSlug}
+            isLoading={messagesInitialLoading}
+            isFetching={messagesFetching}
+          />
+        </div>
       </div>
     </Main>
   );

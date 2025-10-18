@@ -59,6 +59,7 @@ export function NewChat({ users, onOpenChange, open }: NewChatProps) {
               <Badge key={user.id} variant="default">
                 {user.fullName}
                 <button
+                  type="button"
                   className="ring-offset-background focus:ring-ring ms-1 rounded-full outline-hidden focus:ring-2 focus:ring-offset-2"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {

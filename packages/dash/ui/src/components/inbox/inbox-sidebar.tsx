@@ -1,6 +1,5 @@
-import { Badge } from "@openpromo/ui/components/badge";
 import type { InboxConversationSummary } from "@shared/inbox";
-import { Loader2, MessageSquare } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { InboxConversationList } from "./inbox-conversation-list";
 import { InboxFilters } from "./inbox-filters";
 
@@ -16,29 +15,18 @@ export function InboxSidebar({
   isFetching,
 }: InboxSidebarProps) {
   return (
-    <aside className="flex w-full max-w-md flex-col rounded-xl border border-border/60 bg-background sm:w-80 lg:w-96">
-      <header className="space-y-3 rounded-t-xl border-b border-border/60 bg-muted/20 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold">Inbox</h1>
-            <p className="text-xs text-muted-foreground">
-              Manage conversations across platforms
-            </p>
-          </div>
-          <Badge
-            variant="secondary"
-            className="flex items-center gap-1 text-xs font-normal"
-          >
-            {isFetching ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <MessageSquare className="h-3 w-3" />
-            )}
-            {isFetching ? "Syncing…" : conversations.length}
-          </Badge>
-        </div>
+    <aside className="flex  w-full max-w-sm flex-col rounded-xl border border-border/60 bg-background sm:w-72 lg:w-80">
+      <div className="space-y-3 border-b border-border/60 px-3 py-3">
         <InboxFilters />
-      </header>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{conversations.length} conversations</span>
+          {isFetching && (
+            <span className="inline-flex items-center gap-1 text-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" /> Syncing…
+            </span>
+          )}
+        </div>
+      </div>
       <InboxConversationList
         conversations={conversations}
         isLoading={isLoading}
