@@ -22,13 +22,11 @@ export function InboxMessageThread({
     <ScrollArea className="flex-1 px-6 py-6">
       <div className="space-y-4">
         {isLoading
-          ? Array.from({ length: 4 }).map((_, idx) => (
+          ? [true, false, true].map((isSelf, idx) => (
               <MessageSkeleton
-                key={`message-skeleton-${
-                  // biome-ignore lint/suspicious/noArrayIndexKey: ok
-                  idx
-                }`}
-                isSelf={idx % 2 === 0}
+                // biome-ignore lint/suspicious/noArrayIndexKey: loading state only
+                key={`skeleton-${idx}`}
+                isSelf={isSelf}
               />
             ))
           : messages.map((message) => (
@@ -121,19 +119,10 @@ function MessageSkeleton({ isSelf }: { isSelf: boolean }) {
         isSelf ? "justify-end" : "justify-start",
       )}
     >
-      <div
-        className={cn(
-          "max-w-[72%] rounded-lg border px-4 py-3",
-          isSelf
-            ? "border-primary/10 bg-primary/5"
-            : "border-border/60 bg-muted/10",
-        )}
-      >
-        <div className="space-y-2">
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="h-3 w-48" />
-          <Skeleton className="h-3 w-36" />
-        </div>
+      <div className="max-w-[72%] space-y-3">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-64" />
+        <Skeleton className="h-4 w-48" />
       </div>
     </div>
   );
