@@ -10,6 +10,7 @@ import { connectedAccount } from "@core/schemas/connected-account.sql";
 import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
 import { inboxMessagesTable } from "@core/schemas/inbox-messages.sql";
+import { env } from "@core/utils/env";
 import {
   InboxConversationSummarySchema,
   InboxMessageSchema,
@@ -21,6 +22,7 @@ import * as z from "zod";
 import { AppError } from "../../../../helpers/error";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
+import { mockConversations, mockMessages } from "./mock";
 
 const listConversationsQuery = z.object({
   page: z.coerce.number().default(1),
@@ -28,6 +30,7 @@ const listConversationsQuery = z.object({
   q: z.string().min(1).max(200).optional(),
   platform: InboxPlatform.optional(),
   connectedAccountId: z.string().optional(),
+  channel: z.enum(["dm", "post_comment"]).optional(),
 });
 
 const listMessagesQuery = z.object({
@@ -47,13 +50,50 @@ export const inboxRoute = new Hono<ApiEnv>()
     zValidator("query", listConversationsQuery),
     async (c) => {
       const db = getDbClient();
-      const { page, pageSize, q, platform, connectedAccountId } =
+      const { page, pageSize, q, platform, connectedAccountId, channel } =
         c.req.valid("query");
 
       const workspaceId = Actor.workspaceID();
 
+      if (env.VITE_ENVIRONMENT === "local") {
+        const filtered = mockConversations.filter((conversation) => {
+          if (platform && conversation.platform !== platform) return false;
+          if (channel && conversation.channel !== channel) return false;
+          if (
+            connectedAccountId &&
+            conversation.connectedAccount.id !== connectedAccountId
+          )
+            return false;
+          if (q) {
+            const needle = q.trim().toLowerCase();
+            const haystack = [
+              conversation.contact.name,
+              conversation.connectedAccount.accountName ?? "",
+            ]
+              .join(" ")
+              .toLowerCase();
+            return haystack.includes(needle);
+          }
+          return true;
+        });
+
+        const sorted = filtered.sort(
+          (a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime(),
+        );
+        const start = (page - 1) * pageSize;
+        const items = sorted.slice(start, start + pageSize);
+
+        return c.json({
+          items,
+          page,
+          pageSize,
+          total: filtered.length,
+        });
+      }
+
       const where = [eq(connectedAccount.workspaceId, workspaceId)];
       if (platform) where.push(eq(inboxConversationsTable.platform, platform));
+      if (channel) where.push(eq(inboxConversationsTable.channel, channel));
       if (connectedAccountId)
         where.push(
           eq(inboxConversationsTable.connectedAccountId, connectedAccountId),
@@ -185,11 +225,27 @@ export const inboxRoute = new Hono<ApiEnv>()
     "/conversations/:conversationId/messages",
     zValidator("query", listMessagesQuery),
     async (c) => {
-      const db = getDbClient();
       const { conversationId } = c.req.param();
       const { page, pageSize } = c.req.valid("query");
       const workspaceId = Actor.workspaceID();
 
+      if (env.VITE_ENVIRONMENT === "local") {
+        const thread = mockMessages[conversationId] ?? [];
+        const sorted = [...thread].sort(
+          (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+        );
+        const start = (page - 1) * pageSize;
+        const items = sorted.slice(start, start + pageSize);
+
+        return c.json({
+          items,
+          page,
+          pageSize,
+          total: thread.length,
+        });
+      }
+
+      const db = getDbClient();
       // Ensure conversation belongs to this workspace
       const [conv] = await db
         .select({ id: inboxConversationsTable.id })
@@ -247,6 +303,9 @@ export const inboxRoute = new Hono<ApiEnv>()
     withWorkspaceRole("workspace_editor"),
     zValidator("json", sendMessageBody),
     async (c) => {
+      if (env.VITE_ENVIRONMENT === "local") {
+        return c.json({ ok: true });
+      }
       const db = getDbClient();
       const { conversationId } = c.req.param();
       const { text } = c.req.valid("json");

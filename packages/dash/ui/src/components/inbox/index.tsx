@@ -3,545 +3,639 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
+import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
-import { ScrollArea } from "@openpromo/ui/components/scroll-area";
-import { Separator } from "@openpromo/ui/components/separator";
-import { Skeleton } from "@openpromo/ui/components/skeleton";
+import { Input } from "@openpromo/ui/components/input";
+import { ScrollArea, ScrollBar } from "@openpromo/ui/components/scroll-area";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@openpromo/ui/components/tooltip";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@openpromo/ui/components/select";
+import { Textarea } from "@openpromo/ui/components/textarea";
 import { cn } from "@openpromo/ui/lib/utils";
-import { useQueryClient } from "@tanstack/react-query";
+import type { InboxConversationSummary, InboxPlatform } from "@shared/inbox";
 import { format, formatDistanceToNow } from "date-fns";
 import {
-  ArrowLeft,
-  Edit,
-  ImagePlus,
-  Loader2,
-  MessagesSquare,
-  MoreVertical,
+  MessageSquare,
   Paperclip,
-  Phone,
-  Plus,
-  Search as SearchIcon,
+  Search,
   Send,
-  Video,
+  Sparkles,
+  Tag,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
-import { Fragment } from "react/jsx-runtime";
+import { useEffect, useMemo, useRef } from "react";
 import { Main } from "@/components/layout/main";
-import { useSharedWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
-import {
-  useInboxConversations,
-  useInboxMessages,
-  useSendInboxMessage,
-} from "@/queries/inbox";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
-import { NewChat } from "./new-chat";
+import type { InboxChannel, InboxMessageWithState } from "@/stores/inbox/types";
+import { useInboxStore } from "@/stores/inbox-store";
+
+const environment = import.meta.env.VITE_ENVIRONMENT;
+const USE_MOCK_DATA = environment === "local";
+
+const MOCK_CONVERSATIONS: InboxConversationSummary[] = [
+  {
+    id: "conv-1",
+    platform: "INSTAGRAM",
+    channel: "dm",
+    lastMessageAt: new Date(Date.now() - 5 * 60 * 1000),
+    contact: {
+      id: "contact-ig-1",
+      name: "Emily Chen",
+      profilePicUrl: "https://i.pravatar.cc/150?img=47",
+    },
+    connectedAccount: {
+      id: "acc-ig-1",
+      accountName: "@sunnycafe",
+    },
+    contentId: null,
+    externalThreadId: null,
+  },
+  {
+    id: "conv-2",
+    platform: "FACEBOOK",
+    channel: "post_comment",
+    lastMessageAt: new Date(Date.now() - 45 * 60 * 1000),
+    contact: {
+      id: "contact-fb-1",
+      name: "Robert Garcia",
+      profilePicUrl: "https://i.pravatar.cc/150?img=32",
+    },
+    connectedAccount: {
+      id: "acc-fb-1",
+      accountName: "Sunny Coffee Facebook",
+    },
+    contentId: "content-1",
+    externalThreadId: "fb-comment-thread-22",
+  },
+  {
+    id: "conv-3",
+    platform: "INSTAGRAM",
+    channel: "dm",
+    lastMessageAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    contact: {
+      id: "contact-ig-2",
+      name: "Studio Bloom",
+      profilePicUrl: "",
+    },
+    connectedAccount: {
+      id: "acc-ig-1",
+      accountName: "@sunnycafe",
+    },
+    contentId: null,
+    externalThreadId: null,
+  },
+];
+
+const MOCK_MESSAGES: Record<string, InboxMessageWithState[]> = {
+  "conv-1": [
+    {
+      id: "conv-1-msg-1",
+      externalId: "msg-001",
+      sender: "user",
+      channel: "dm",
+      text: "Hey there! We loved the latte art in your recent post. Do you take catering orders for private events?",
+      attachments: [],
+      createdAt: new Date(Date.now() - 30 * 60 * 1000),
+      contentId: null,
+      metadata: {},
+      status: "open",
+      assigneeId: null,
+      labels: ["priority"],
+    },
+    {
+      id: "conv-1-msg-2",
+      externalId: "msg-002",
+      sender: "self",
+      channel: "dm",
+      text: "Hi Emily! Thanks so much. Yes, we cater events up to 80 guests. I can share our seasonal menu if that helps.",
+      attachments: [],
+      createdAt: new Date(Date.now() - 12 * 60 * 1000),
+      contentId: null,
+      metadata: {},
+      status: "open",
+      assigneeId: "workspace-user-1",
+      labels: ["events"],
+    },
+    {
+      id: "conv-1-msg-3",
+      externalId: "msg-003",
+      sender: "user",
+      channel: "dm",
+      text: "That would be great! We're looking at an outdoor brunch in June.",
+      attachments: [],
+      createdAt: new Date(Date.now() - 5 * 60 * 1000),
+      contentId: null,
+      metadata: {},
+      status: "open",
+      assigneeId: "workspace-user-1",
+      labels: ["events"],
+    },
+  ],
+  "conv-2": [
+    {
+      id: "conv-2-msg-1",
+      externalId: "msg-101",
+      sender: "user",
+      channel: "post_comment",
+      text: "The new single-origin roast is unreal! Do you ship internationally?",
+      attachments: [],
+      createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
+      contentId: "content-1",
+      metadata: {
+        referencedPost: "Sunny Coffee — Launching Ethiopia Single Origin",
+      },
+      status: "open",
+      assigneeId: null,
+      labels: ["product"],
+    },
+    {
+      id: "conv-2-msg-2",
+      externalId: "msg-102",
+      sender: "self",
+      channel: "post_comment",
+      text: "Thanks Robert! We ship across the US right now and are working on EU fulfilment this summer.",
+      attachments: [],
+      createdAt: new Date(Date.now() - 46 * 60 * 1000),
+      contentId: "content-1",
+      metadata: {},
+      status: "resolved",
+      assigneeId: null,
+      labels: ["product"],
+    },
+  ],
+  "conv-3": [
+    {
+      id: "conv-3-msg-1",
+      externalId: "msg-201",
+      sender: "user",
+      channel: "dm",
+      text: "Could we collaborate on a giveaway? We can shoot content at your space.",
+      attachments: [
+        {
+          type: "image",
+          url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=400&q=80",
+        },
+      ],
+      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+      contentId: null,
+      metadata: {},
+      status: "snoozed",
+      assigneeId: null,
+      labels: ["partnership"],
+    },
+    {
+      id: "conv-3-msg-2",
+      externalId: "msg-202",
+      sender: "self",
+      channel: "dm",
+      text: "Love that idea! Let me share it with the team and circle back.",
+      attachments: [],
+      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      contentId: null,
+      metadata: {},
+      status: "snoozed",
+      assigneeId: "workspace-user-2",
+      labels: ["partnership"],
+    },
+  ],
+};
 
 export function Inbox() {
-  const queryClient = useQueryClient();
   const { workspaceSlug } = Route.useParams();
+  const mockLoadedRef = useRef(false);
 
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(25);
-  const [pendingMessagesByConversation, setPendingMessagesByConversation] =
-    useState<Record<string, string>>({});
-  const [platformFilter] = useState<
-    "FACEBOOK" | "INSTAGRAM" | "TIKTOK" | undefined
-  >(undefined);
-  const [selectedConversationId, setSelectedConversationId] = useState<
-    string | null
-  >(null);
-  const [mobileSelectedConversationId, setMobileSelectedConversationId] =
-    useState<string | null>(null);
-  const [createConversationDialogOpened, setCreateConversationDialog] =
-    useState(false);
+  const initialize = useInboxStore((state) => state.initialize);
+  const setConversations = useInboxStore((state) => state.setConversations);
+  const selectConversation = useInboxStore((state) => state.selectConversation);
+  const setMessages = useInboxStore((state) => state.setMessages);
+  const setSearch = useInboxStore((state) => state.setSearch);
+  const setChannel = useInboxStore((state) => state.setChannel);
+  const setPlatform = useInboxStore((state) => state.setPlatform);
 
-  const { data: convoData, isLoading: isConvosLoading } = useInboxConversations(
-    workspaceSlug,
-    {
-      page,
-      pageSize,
-      q: search.trim() || undefined,
-      platform: platformFilter,
-    },
+  const search = useInboxStore((state) => state.search);
+  const selectedPlatform = useInboxStore((state) => state.selectedPlatform);
+  const selectedChannel = useInboxStore((state) => state.selectedChannel);
+  const conversationOrder = useInboxStore((state) => state.order);
+  const conversationMap = useInboxStore((state) => state.byId);
+  const threads = useInboxStore((state) => state.threads);
+  const selectedConversationId = useInboxStore(
+    (state) => state.selectedConversationId,
   );
-  const conversationsList = convoData?.items ?? [];
-  const selectedConversation = useMemo(
-    () =>
-      conversationsList.find((c) => c.id === selectedConversationId) || null,
-    [conversationsList, selectedConversationId],
-  );
-  const selectedConversationPendingMessage = useMemo(
-    () =>
-      selectedConversationId
-        ? pendingMessagesByConversation[selectedConversationId]
-        : undefined,
-    [pendingMessagesByConversation, selectedConversationId],
+  const currentConversationId = useInboxStore(
+    (state) => state.currentConversationId,
   );
 
-  const { data: messagesData, isLoading: isMessagesLoading } = useInboxMessages(
-    workspaceSlug,
-    selectedConversationId ?? undefined,
-    { page: 1, pageSize: 50 },
-  );
-  const messages = messagesData?.items ?? [];
-  const sendMessage = useSendInboxMessage(
-    workspaceSlug,
-    selectedConversationId ?? undefined,
-  );
+  useEffect(() => {
+    initialize(workspaceSlug);
+  }, [workspaceSlug, initialize]);
 
-  const clearPendingState = useCallback((conversationId: string) => {
-    setPendingMessagesByConversation((prev) => {
-      if (!(conversationId in prev)) return prev;
-      const { [conversationId]: _cleared, ...rest } = prev;
-      return rest;
+  useEffect(() => {
+    if (!USE_MOCK_DATA || mockLoadedRef.current) return;
+    mockLoadedRef.current = true;
+
+    setConversations({
+      conversations: MOCK_CONVERSATIONS,
+      pagination: {
+        page: 1,
+        pageSize: MOCK_CONVERSATIONS.length,
+        total: MOCK_CONVERSATIONS.length,
+        isFetching: false,
+      },
+      replace: true,
     });
-  }, []);
 
-  // Use type-safe workspace events for inbox updates
-  useSharedWorkspaceEvents({
-    handlers: {
-      "inbox.conversation.upserted": () => {
-        queryClient.invalidateQueries({
-          predicate: (q) => {
-            const key = q.queryKey as unknown[];
-            return (
-              Array.isArray(key) &&
-              key[0] === "inbox" &&
-              key[1] === "conversations" &&
-              key[2] === workspaceSlug
-            );
-          },
-        });
-      },
-      "inbox.message.upserted": (event) => {
-        // Clear pending state for the conversation that just received a message
-        clearPendingState(event.conversationId);
-        queryClient.invalidateQueries({
-          predicate: (q) => {
-            const key = q.queryKey as unknown[];
-            return (
-              Array.isArray(key) &&
-              key[0] === "inbox" &&
-              key[1] === "messages" &&
-              key[2] === workspaceSlug &&
-              key[3] === event.conversationId
-            );
-          },
-        });
-      },
-    },
-  });
+    for (const conversation of MOCK_CONVERSATIONS) {
+      const items = MOCK_MESSAGES[conversation.id] ?? [];
+      setMessages({
+        conversationId: conversation.id,
+        items,
+        page: 1,
+        pageSize: 50,
+        total: items.length,
+        reset: true,
+      });
+    }
+
+    if (MOCK_CONVERSATIONS.length > 0) {
+      selectConversation(MOCK_CONVERSATIONS[0].id);
+    }
+  }, [setConversations, setMessages, selectConversation]);
+
+  const conversations = useMemo(() => {
+    const searchTerm = search.trim().toLowerCase();
+    return conversationOrder
+      .map((id) => conversationMap[id])
+      .filter((conversation): conversation is InboxConversationSummary =>
+        Boolean(conversation),
+      )
+      .filter((conversation) => {
+        if (selectedChannel && conversation.channel !== selectedChannel) {
+          return false;
+        }
+        if (selectedPlatform && conversation.platform !== selectedPlatform) {
+          return false;
+        }
+        if (!searchTerm) return true;
+        const haystacks = [
+          conversation.contact.name,
+          conversation.connectedAccount.accountName ?? "",
+        ]
+          .join(" ")
+          .toLowerCase();
+        return haystacks.includes(searchTerm);
+      });
+  }, [
+    conversationOrder,
+    conversationMap,
+    selectedChannel,
+    selectedPlatform,
+    search,
+  ]);
+
+  const activeConversation = currentConversationId
+    ? (conversationMap[currentConversationId] ?? null)
+    : null;
+  const activeThread = currentConversationId
+    ? threads[currentConversationId]
+    : undefined;
+  const activeMessages = activeThread?.items ?? [];
 
   return (
     <Main fixed>
-      <section className="flex min-h-0 flex-1 gap-6">
-        {/* Left Side */}
-        <div className="flex w-full flex-col gap-2 sm:w-56 lg:w-72 2xl:w-80">
-          <div className="bg-background sticky top-0 z-10 -mx-4 px-4 pb-3 shadow-md sm:static sm:z-auto sm:mx-0 sm:p-0 sm:shadow-none">
-            <div className="flex items-center justify-between py-2">
-              <div className="flex gap-2">
-                <h1 className="text-2xl font-bold">Inbox</h1>
-                <MessagesSquare size={20} />
-              </div>
-
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setCreateConversationDialog(true)}
-                className="rounded-lg"
-              >
-                <Edit size={24} className="stroke-muted-foreground" />
-              </Button>
-            </div>
-
-            <label
-              className={cn(
-                "focus-within:ring-ring focus-within:ring-1 focus-within:outline-hidden",
-                "border-border flex h-10 w-full items-center space-x-0 rounded-md border ps-2",
-              )}
-            >
-              <SearchIcon size={15} className="me-2 stroke-slate-500" />
-              <span className="sr-only">Search</span>
-              <input
-                type="text"
-                className="w-full flex-1 bg-inherit text-sm focus-visible:outline-hidden"
-                placeholder="Search chat..."
-                value={search}
-                onChange={(e) => {
-                  setPage(1);
-                  setSearch(e.target.value);
-                }}
-              />
-            </label>
-          </div>
-
-          <ScrollArea className="-mx-3 h-full overflow-scroll p-3">
-            {isConvosLoading && (
-              <div className="space-y-2">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            )}
-            {conversationsList.map((convo) => {
-              const { id, contact } = convo;
-              const lastMsg = format(
-                new Date(convo.lastMessageAt),
-                "d MMM, yyyy h:mm a",
-              );
-              return (
-                <Fragment key={id}>
-                  <button
-                    type="button"
-                    className={cn(
-                      "group hover:bg-accent hover:text-accent-foreground",
-                      `flex w-full rounded-md px-2 py-2 text-start text-sm`,
-                      selectedConversationId === id && "sm:bg-muted",
-                    )}
-                    onClick={() => {
-                      setSelectedConversationId(id);
-                      setMobileSelectedConversationId(id);
-                    }}
-                  >
-                    <div className="flex gap-2">
-                      <Avatar>
-                        <AvatarImage
-                          src={contact.profilePicUrl}
-                          alt={contact.name}
-                        />
-                        <AvatarFallback>{contact.name}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <span className="col-start-2 row-span-2 font-medium">
-                          {contact.name}
-                        </span>
-                        <span className="text-muted-foreground group-hover:text-accent-foreground/90 col-start-2 row-span-2 row-start-2 line-clamp-2 text-ellipsis">
-                          {lastMsg}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                  <Separator className="my-1" />
-                </Fragment>
-              );
-            })}
-          </ScrollArea>
-        </div>
-
-        {/* Right Side */}
-        {selectedConversation ? (
-          <div
-            className={cn(
-              "bg-background absolute inset-0 start-full z-50 hidden w-full flex-1 min-h-0 flex-col border shadow-xs sm:static sm:z-auto sm:flex sm:rounded-md",
-              mobileSelectedConversationId && "start-0 flex",
-            )}
-          >
-            {/* Top Part */}
-            <div className="bg-card mb-1 flex flex-none justify-between p-4 shadow-lg sm:rounded-t-md">
-              {/* Left */}
-              <div className="flex gap-3">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="-ms-2 h-full sm:hidden"
-                  onClick={() => setMobileSelectedConversationId(null)}
-                >
-                  <ArrowLeft className="rtl:rotate-180" />
-                </Button>
-                <div className="flex items-center gap-2 lg:gap-4">
-                  <Avatar className="size-9 lg:size-11">
-                    <AvatarImage
-                      src={selectedConversation.contact.profilePicUrl}
-                      alt={selectedConversation.contact.name}
-                    />
-                    <AvatarFallback>
-                      {selectedConversation.contact.name}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <span className="col-start-2 row-span-2 text-sm font-medium lg:text-base">
-                      {selectedConversation.contact.name}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right */}
-              <div className="-me-1 flex items-center gap-1 lg:gap-2">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="hidden size-8 rounded-full sm:inline-flex lg:size-10"
-                >
-                  <Video size={22} className="stroke-muted-foreground" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="hidden size-8 rounded-full sm:inline-flex lg:size-10"
-                >
-                  <Phone size={22} className="stroke-muted-foreground" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-10 rounded-md sm:h-8 sm:w-4 lg:h-10 lg:w-6"
-                >
-                  <MoreVertical className="stroke-muted-foreground sm:size-5" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Conversation */}
-            <div className="flex flex-1 min-h-0 flex-col gap-2 rounded-md px-4 pt-0 pb-4">
-              <div className="flex size-full flex-1 min-h-0">
-                <div className="chat-text-container relative -me-4 flex flex-1 min-h-0 flex-col overflow-y-hidden">
-                  <div className="chat-flex flex w-full flex-1 min-h-0 flex-col-reverse justify-start gap-4 overflow-y-auto py-2 pe-4 pb-4">
-                    {isMessagesLoading && (
-                      <div className="space-y-2 w-full">
-                        <Skeleton className="h-10 w-2/3 self-start" />
-                        <Skeleton className="h-10 w-1/2 self-end" />
-                        <Skeleton className="h-10 w-2/5 self-start" />
-                      </div>
-                    )}
-                    {!!selectedConversationPendingMessage && (
-                      <div
-                        className={cn(
-                          "chat-box max-w-72 px-3 py-2 break-words shadow-lg",
-                          "bg-primary/60 text-primary-foreground/75 self-end rounded-[16px_16px_0_16px] opacity-80",
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Loader2
-                            className="animate-spin opacity-90"
-                            size={14}
-                          />
-                          <span className="italic opacity-90">
-                            {selectedConversationPendingMessage}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {messages.map((msg) => (
-                      <div
-                        key={msg.id + msg.externalId}
-                        className={cn(
-                          "chat-box max-w-72 px-3 py-2 break-words shadow-lg",
-                          msg.sender === "self"
-                            ? "bg-primary/90 text-primary-foreground/75 self-end rounded-[16px_16px_0_16px]"
-                            : "bg-muted self-start rounded-[16px_16px_16px_0]",
-                        )}
-                      >
-                        {msg.text ||
-                          (!msg.attachments?.length && <UnsupportedMessage />)}
-                        {msg.attachments?.length ? (
-                          <div className="mt-2 space-y-2">
-                            {msg.attachments.map((att) => (
-                              <AttachmentPreview
-                                key={att.url}
-                                type={att.type}
-                                url={att.url}
-                              />
-                            ))}
-                          </div>
-                        ) : null}
-                        <TooltipProvider>
-                          <Tooltip delayDuration={200}>
-                            <TooltipTrigger asChild>
-                              <span
-                                className={cn(
-                                  "text-foreground/75 mt-1 block text-xs font-light italic w-fit",
-                                  msg.sender === "self" &&
-                                    "text-primary-foreground/85 text-end",
-                                )}
-                              >
-                                {formatDistanceToNow(new Date(msg.createdAt), {
-                                  addSuffix: true,
-                                })}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {format(new Date(msg.createdAt), "PPpp")}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    ))}
-
-                    {!isMessagesLoading && messages.length === 0 && (
-                      <div className="text-center text-sm text-muted-foreground w-full">
-                        No messages yet.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <form
-                className="flex w-full flex-none gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const form = e.currentTarget as HTMLFormElement;
-                  const input = form.querySelector<HTMLInputElement>(
-                    'input[name="chatMessage"]',
-                  );
-                  const value = input?.value?.trim();
-                  if (!value) return;
-                  const idSnapshot = selectedConversationId;
-                  if (idSnapshot) {
-                    setPendingMessagesByConversation((prev) => ({
-                      ...prev,
-                      [idSnapshot]: value,
-                    }));
-                  }
-                  sendMessage.mutate(
-                    { text: value },
-                    {
-                      onError: () => {
-                        if (!idSnapshot) return;
-                        clearPendingState(idSnapshot);
-                      },
-                    },
-                  );
-                  if (input) input.value = "";
-                }}
-              >
-                <div className="border-input bg-card focus-within:ring-ring flex flex-1 items-center gap-2 rounded-md border px-2 py-1 focus-within:ring-1 focus-within:outline-hidden lg:gap-4">
-                  <div className="space-x-1">
-                    <Button
-                      size="icon"
-                      type="button"
-                      variant="ghost"
-                      className="h-8 rounded-md"
-                    >
-                      <Plus size={20} className="stroke-muted-foreground" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      type="button"
-                      variant="ghost"
-                      className="hidden h-8 rounded-md lg:inline-flex"
-                    >
-                      <ImagePlus
-                        size={20}
-                        className="stroke-muted-foreground"
-                      />
-                    </Button>
-                    <Button
-                      size="icon"
-                      type="button"
-                      variant="ghost"
-                      className="hidden h-8 rounded-md lg:inline-flex"
-                    >
-                      <Paperclip
-                        size={20}
-                        className="stroke-muted-foreground"
-                      />
-                    </Button>
-                  </div>
-                  <label className="flex-1">
-                    <span className="sr-only">Chat Text Box</span>
-                    <input
-                      type="text"
-                      name="chatMessage"
-                      placeholder="Type your messages..."
-                      className="h-8 w-full bg-inherit focus-visible:outline-hidden"
-                      disabled={!!selectedConversationPendingMessage}
-                    />
-                  </label>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="hidden sm:inline-flex"
-                    disabled={!!selectedConversationPendingMessage}
-                  >
-                    <Send size={20} />
-                  </Button>
-                </div>
-                <Button
-                  className="h-full sm:hidden"
-                  disabled={!!selectedConversationPendingMessage}
-                >
-                  {selectedConversationPendingMessage ? (
-                    <Loader2 className="mr-2 animate-spin" size={18} />
-                  ) : (
-                    <Send className="mr-2" size={18} />
-                  )}
-                  Send
-                </Button>
-              </form>
-            </div>
-          </div>
-        ) : (
-          <div
-            className={cn(
-              "bg-card absolute inset-0 start-full z-50 hidden w-full flex-1 flex-col justify-center rounded-md border shadow-xs sm:static sm:z-auto sm:flex",
-            )}
-          >
-            <div className="flex flex-col items-center space-y-6">
-              <div className="border-border flex size-16 items-center justify-center rounded-full border-2">
-                <MessagesSquare className="size-8" />
-              </div>
-              <div className="space-y-2 text-center">
-                <h1 className="text-xl font-semibold">Your messages</h1>
-                <p className="text-muted-foreground text-sm">
-                  Send a message to start a chat.
+      <div className="flex h-full min-h-[640px] gap-6">
+        <aside className="flex w-full max-w-md flex-col rounded-xl border border-border/60 bg-background sm:w-80 lg:w-96">
+          <header className="rounded-t-xl border-b border-border/60 bg-muted/20 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-lg font-semibold">Inbox</h1>
+                <p className="text-xs text-muted-foreground">
+                  Manage conversations across platforms
                 </p>
               </div>
-              <Button onClick={() => setCreateConversationDialog(true)}>
-                Send message
-              </Button>
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 text-xs font-normal"
+              >
+                <MessageSquare className="h-3 w-3" />
+                {conversations.length}
+              </Badge>
             </div>
-          </div>
-        )}
-      </section>
-      <NewChat
-        users={[]}
-        onOpenChange={setCreateConversationDialog}
-        open={createConversationDialogOpened}
-      />
+            <div className="mt-3 space-y-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search contacts or conversations"
+                  className="pl-9 text-sm"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Select
+                  value={selectedChannel ?? "__all__"}
+                  onValueChange={(value) =>
+                    setChannel(
+                      value === "__all__" ? null : (value as InboxChannel),
+                    )
+                  }
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Channels" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All channels</SelectItem>
+                    <SelectItem value="dm">Direct messages</SelectItem>
+                    <SelectItem value="post_comment">Post comments</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={selectedPlatform ?? "__all__"}
+                  onValueChange={(value) =>
+                    setPlatform(
+                      value === "__all__" ? null : (value as InboxPlatform),
+                    )
+                  }
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Platform" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All platforms</SelectItem>
+                    <SelectItem value="FACEBOOK">Facebook</SelectItem>
+                    <SelectItem value="INSTAGRAM">Instagram</SelectItem>
+                    <SelectItem value="TIKTOK">TikTok</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </header>
+          <ScrollArea className="flex-1">
+            <ul className="space-y-1 p-3">
+              {conversations.map((conversation) => {
+                const thread = threads[conversation.id];
+                const lastMessage =
+                  thread?.items[thread.items.length - 1] ?? null;
+                const previewText =
+                  lastMessage?.text ??
+                  (lastMessage?.attachments?.length
+                    ? `${lastMessage.attachments.length} attachment${
+                        lastMessage.attachments.length > 1 ? "s" : ""
+                      }`
+                    : "No messages yet");
+                const previewTime =
+                  lastMessage?.createdAt ?? conversation.lastMessageAt;
+                const isSelected = selectedConversationId === conversation.id;
+                return (
+                  <li key={conversation.id}>
+                    <button
+                      type="button"
+                      onClick={() => selectConversation(conversation.id)}
+                      className={cn(
+                        "w-full rounded-lg border border-transparent p-3 text-left transition-colors",
+                        isSelected
+                          ? "border-primary/50 bg-primary/5"
+                          : "hover:border-border/70 hover:bg-muted/20",
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-10 w-10">
+                          {conversation.contact.profilePicUrl ? (
+                            <AvatarImage
+                              src={conversation.contact.profilePicUrl}
+                              alt={conversation.contact.name}
+                            />
+                          ) : (
+                            <AvatarFallback>
+                              {getInitials(conversation.contact.name)}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="truncate text-sm font-medium">
+                              {conversation.contact.name}
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(previewTime, {
+                                addSuffix: true,
+                              })}
+                            </span>
+                          </div>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                            <Badge variant="outline" className="capitalize">
+                              {conversation.channel === "dm"
+                                ? "Direct message"
+                                : "Post comment"}
+                            </Badge>
+                            <span>
+                              {conversation.connectedAccount.accountName}
+                            </span>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                            {previewText}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+              {conversations.length === 0 && (
+                <li className="rounded-md border border-dashed border-border/60 bg-muted/10 p-6 text-center text-sm text-muted-foreground">
+                  No conversations match the current filters.
+                </li>
+              )}
+            </ul>
+            <ScrollBar orientation="vertical" />
+          </ScrollArea>
+        </aside>
+
+        <section className="flex flex-1 flex-col rounded-xl border border-border/60 bg-background">
+          {activeConversation ? (
+            <>
+              <header className="flex items-start justify-between gap-4 border-b border-border/60 px-6 py-4">
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-12 w-12">
+                    {activeConversation.contact.profilePicUrl ? (
+                      <AvatarImage
+                        src={activeConversation.contact.profilePicUrl}
+                        alt={activeConversation.contact.name}
+                      />
+                    ) : (
+                      <AvatarFallback>
+                        {getInitials(activeConversation.contact.name)}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div>
+                    <h2 className="font-semibold">
+                      {activeConversation.contact.name}
+                    </h2>
+                    <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      <Badge variant="outline">
+                        {activeConversation.connectedAccount.accountName ??
+                          "Connected account"}
+                      </Badge>
+                      <Badge variant="secondary" className="capitalize">
+                        {activeConversation.channel === "dm"
+                          ? "Direct message"
+                          : "Post comment"}
+                      </Badge>
+                      <span>
+                        Last activity{" "}
+                        {formatDistanceToNow(activeConversation.lastMessageAt, {
+                          addSuffix: true,
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm">
+                    <Tag className="mr-2 h-4 w-4" />
+                    Add label
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Summarize
+                  </Button>
+                </div>
+              </header>
+              <ScrollArea className="flex-1 px-6 py-6">
+                <div className="space-y-4">
+                  {activeMessages.map((message) => (
+                    <MessageBubble key={message.id} message={message} />
+                  ))}
+                  {activeMessages.length === 0 && (
+                    <div className="rounded-lg border border-dashed border-border/70 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
+                      No messages yet. Messages will appear here when fetched
+                      from the platform.
+                    </div>
+                  )}
+                </div>
+                <ScrollBar orientation="vertical" />
+              </ScrollArea>
+              <footer className="border-t border-border/60 bg-muted/15 px-6 py-4">
+                <Textarea
+                  placeholder="Type a reply… (coming soon)"
+                  disabled
+                  className="min-h-[90px] resize-none"
+                />
+                <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      Status:{" "}
+                      {(
+                        activeMessages[activeMessages.length - 1]?.status ??
+                        "open"
+                      ).toUpperCase()}
+                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Paperclip className="h-3 w-3" />
+                      Attachments coming soon
+                    </div>
+                  </div>
+                  <Button size="sm" disabled>
+                    <Send className="mr-2 h-4 w-4" />
+                    Send
+                  </Button>
+                </div>
+              </footer>
+            </>
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
+              <div className="rounded-full border border-border bg-muted/40 p-4">
+                <MessageSquare className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold">Select a conversation</h2>
+                <p className="text-sm text-muted-foreground">
+                  Choose a conversation on the left to view messages. New
+                  message actions are coming soon.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
     </Main>
   );
 }
 
-function AttachmentPreview({ type, url }: { type: string; url: string }) {
-  if (type === "image") {
-    return (
-      <img
-        src={url}
-        alt="attachment"
-        className="max-h-60 max-w-[18rem] rounded"
-        loading="lazy"
-      />
-    );
-  }
-  if (type === "video") {
-    return (
-      <video src={url} controls className="max-h-60 max-w-[18rem] rounded" />
-    );
-  }
+type MessageBubbleProps = {
+  message: InboxMessageWithState;
+};
+
+function MessageBubble({ message }: MessageBubbleProps) {
+  const isSelf = message.sender === "self";
+  const timestamp = format(message.createdAt, "MMM d, h:mm a");
+  const status = message.status ?? "open";
+  const hasAttachments = message.attachments?.length
+    ? message.attachments.length > 0
+    : false;
+
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noreferrer"
-      className="underline text-primary break-all"
+    <div
+      className={cn(
+        "flex w-full gap-3",
+        isSelf ? "justify-end" : "justify-start",
+      )}
     >
-      View attachment
-    </a>
+      <div
+        className={cn(
+          "max-w-[72%] rounded-lg border px-4 py-3 text-sm transition-colors",
+          isSelf
+            ? "border-primary/30 bg-primary/10 text-foreground"
+            : "border-border/60 bg-background text-foreground",
+        )}
+      >
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <span
+            className={cn(
+              isSelf ? "text-muted-foreground" : "text-muted-foreground",
+            )}
+          >
+            {isSelf ? "You" : "Customer"}
+          </span>
+          <span className={cn("text-muted-foreground")}>{timestamp}</span>
+        </div>
+        {message.text && (
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
+            {message.text}
+          </p>
+        )}
+        {hasAttachments && (
+          <div className="mt-3 flex items-center gap-2 text-xs">
+            <Paperclip className="h-3 w-3" />
+            <span>
+              {message.attachments.length} attachment
+              {message.attachments.length > 1 ? "s" : ""}
+            </span>
+          </div>
+        )}
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+          <Badge variant="outline" className="capitalize">
+            {status}
+          </Badge>
+          {(message.labels ?? []).map((label) => (
+            <Badge
+              key={label}
+              variant={isSelf ? "outline" : "secondary"}
+              className="capitalize"
+            >
+              {label}
+            </Badge>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
-function UnsupportedMessage() {
-  return (
-    <div className="italic">
-      Unsupported message type. View it on the source platform.
-    </div>
-  );
+function getInitials(name: string) {
+  const [first = "", second = ""] = name.split(" ");
+  return `${first.charAt(0)}${second.charAt(0)}`.toUpperCase();
 }
