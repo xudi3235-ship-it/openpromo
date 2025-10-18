@@ -66,17 +66,24 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
             });
           }
           // 3. Get or upsert conversation
-          const conversation = message_edit
+          let conversation = message_edit
             ? await InboxService.getConversation({
                 connectedAccountId: account.id,
                 contactId: contact.id,
+                channel: "dm",
               })
-            : await InboxService.upsertConversation({
-                connectedAccountId: account.id,
-                platform: Platform.enum.FACEBOOK,
-                contactId: contact.id,
-                lastMessageAt: new Date(timestamp),
-              });
+            : null;
+
+          if (!conversation) {
+            conversation = await InboxService.upsertConversation({
+              connectedAccountId: account.id,
+              platform: Platform.enum.FACEBOOK,
+              contactId: contact.id,
+              lastMessageAt: new Date(timestamp),
+              channel: "dm",
+              threadKey: contact.id,
+            });
+          }
 
           // 4. Store or edit message
           if (message_edit) {

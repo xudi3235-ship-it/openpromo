@@ -1,8 +1,5 @@
 import { and, db, eq } from "@core/helpers/db";
-import {
-  connectedAccount,
-  type Platform,
-} from "@core/schemas/connected-account.sql";
+import type { Platform } from "@core/schemas/connected-account.sql";
 import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
 import {
   type InboxChannel,
@@ -28,7 +25,9 @@ export namespace InboxService {
   export async function getConversation(input: {
     connectedAccountId: string;
     contactId: string;
+    channel?: InboxChannel;
   }) {
+    const channel = input.channel ?? "dm";
     const [existing] = await db()
       .select()
       .from(inboxConversationsTable)
@@ -39,6 +38,7 @@ export namespace InboxService {
             input.connectedAccountId,
           ),
           eq(inboxConversationsTable.contactId, input.contactId),
+          eq(inboxConversationsTable.channel, channel),
         ),
       )
       .limit(1);
@@ -161,56 +161,23 @@ export namespace InboxService {
   }
 
   export async function upsertMessage(input: {
-    workspaceId?: string;
+    workspaceId: string;
     inboxConversationId: string;
     externalId: string;
     text?: string | null;
     attachments?: MessageAttachment[];
     payload: MessagePayload;
     sender: InboxMessageSender;
-    channel?: InboxChannel;
+    channel: InboxChannel;
     contentId?: string | null;
     metadata?: InboxMessageMetadata;
     statusOnInsert?: InboxMessageStatus;
   }) {
-    let channel = input.channel;
-    let workspaceId = input.workspaceId;
-
-    if (!channel || !workspaceId) {
-      const [context] = await db()
-        .select({
-          channel: inboxConversationsTable.channel,
-          workspaceId: connectedAccount.workspaceId,
-        })
-        .from(inboxConversationsTable)
-        .innerJoin(
-          connectedAccount,
-          eq(inboxConversationsTable.connectedAccountId, connectedAccount.id),
-        )
-        .where(eq(inboxConversationsTable.id, input.inboxConversationId))
-        .limit(1);
-
-      if (!context) {
-        throw new Error(
-          `Conversation ${input.inboxConversationId} not found while upserting message`,
-        );
-      }
-
-      channel = channel ?? context.channel;
-      workspaceId = workspaceId ?? context.workspaceId;
-    }
-
-    if (!channel || !workspaceId) {
-      throw new Error(
-        `Unable to resolve channel or workspace for conversation ${input.inboxConversationId}`,
-      );
-    }
-
     const insertValues = {
       inboxConversationId: input.inboxConversationId,
       externalId: input.externalId,
       sender: input.sender,
-      channel,
+      channel: input.channel,
       contentId: input.contentId ?? null,
       text: input.text ?? null,
       attachments: input.attachments ?? [],
@@ -233,7 +200,7 @@ export namespace InboxService {
     if (input.metadata) {
       updateValues.metadata = input.metadata;
     }
-    updateValues.channel = channel;
+    updateValues.channel = input.channel;
 
     const [created] = await db()
       .insert(inboxMessagesTable)
@@ -250,7 +217,7 @@ export namespace InboxService {
     await db()
       .insert(inboxMessageStateTable)
       .values({
-        workspaceId,
+        workspaceId: input.workspaceId,
         messageId: created.id,
         status: input.statusOnInsert ?? "open",
       })
@@ -262,7 +229,7 @@ export namespace InboxService {
       sender: input.sender,
       text: input.text,
       attachmentCount: input.attachments?.length ?? 0,
-      channel,
+      channel: input.channel,
     });
     return created;
   }
