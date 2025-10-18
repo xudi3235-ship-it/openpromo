@@ -2,8 +2,10 @@ import {
   ContentMetricsRefresher,
   type ContentMetricsTarget,
 } from "@core/domain/content/metrics";
+import { Actor } from "@core/helpers/actor";
 import { and, db, eq, gt, inArray } from "@core/helpers/db";
 import { unifiedContentTable } from "@core/schemas/content.sql";
+import { workspacesTable } from "@core/schemas/workspaces.sql";
 import { Log } from "@core/utils/log";
 import {
   mergeWorkspaceSyncTask,
@@ -12,6 +14,10 @@ import {
   type WorkspaceSyncTaskPatch,
   WorkspaceSyncTaskType,
 } from "@shared/workspace";
+import {
+  ORGANIZATION_ROLE,
+  WORKSPACE_PERMISSION,
+} from "@shared/workspace/auth";
 import { asc } from "drizzle-orm";
 import type {
   RunTaskParams,
@@ -61,10 +67,47 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
         return { task: nextTask };
       }
 
-      const refreshResult = await this.metricsRefresher.refresh(
-        workspaceId,
-        batch.targets,
+      const [workspaceInfo] = await db()
+        .select({
+          slug: workspacesTable.slug,
+          organizationId: workspacesTable.organizationId,
+        })
+        .from(workspacesTable)
+        .where(eq(workspacesTable.id, workspaceId))
+        .limit(1);
+
+      const actor = Actor.create("workspace_user", {
+        userID: "workspace-metrics-runner",
+        dbUserID: "workspace-metrics-runner",
+        email: "workspace-metrics@openpromo.app",
+        organizationID: workspaceInfo?.organizationId ?? "unknown",
+        role: ORGANIZATION_ROLE.ADMIN,
+        featureFlags: [],
+        permissions: [],
+        workspaceID: workspaceId,
+        workspaceSlug: workspaceInfo?.slug ?? workspaceId,
+        workspacePermissions: [WORKSPACE_PERMISSION.ALL],
+      });
+
+      const refreshTargets = batch.targets.filter((target) => {
+        if (target.placement === "TT_FEED") {
+          log.info("skipping metrics refresh for unsupported placement", {
+            workspaceId,
+            contentId: target.id,
+            placement: target.placement,
+          });
+          return false;
+        }
+        return true;
+      });
+
+      const refreshResult = await Actor.provide(
+        actor.type,
+        actor.properties,
+        () => this.metricsRefresher.refresh(workspaceId, refreshTargets),
       );
+
+      console.log("Metrics refresh result:", refreshResult);
 
       const hadFailures = refreshResult.failures.length > 0;
       const retryCount = hadFailures
@@ -111,6 +154,11 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
       console.error("content metrics refresh failed", {
         workspaceId,
         error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        cause:
+          error instanceof Error && "cause" in error
+            ? (error as Error & { cause?: unknown }).cause
+            : undefined,
         retryCount,
       });
 
@@ -151,7 +199,8 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
     remainingPendingIds?: string[];
     exhausted: boolean;
   }> {
-    const batchSize = metadata.batchSize ?? 50;
+    //const batchSize = metadata.batchSize ?? 50;
+    const batchSize = 3; // FIXME: fix this after we have tested it enough
     const pendingIds = metadata.pendingContentIds ?? [];
 
     if (pendingIds.length > 0) {

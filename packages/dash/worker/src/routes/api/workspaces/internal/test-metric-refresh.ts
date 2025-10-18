@@ -44,6 +44,7 @@ export const testMetricRefreshRoute = new Hono<ApiEnv>().get("/", async (c) => {
   // Test endpoint for metrics refresh within workspace context
   try {
     const actor = Actor.assert("workspace_user");
+    console.log("// actor:", actor);
 
     const task = await refreshContentMetrics(c.env, actor);
 

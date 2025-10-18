@@ -2,7 +2,13 @@ import {
   EntFacebookPublishedContent,
   EntInstagramPublishedContent,
 } from "@core/domain/content/entity";
-import type { UnifiedContentMetrics } from "@core/schemas/content.sql";
+import { and, db, eq } from "@core/helpers/db";
+import {
+  ContentMetricsGranularity,
+  contentMetricsSnapshotTable,
+  type UnifiedContentMetrics,
+  unifiedContentTable,
+} from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
 import type { AllPlacement } from "@shared/content";
 
@@ -18,6 +24,7 @@ export type ContentMetricsTarget = {
 export type ContentMetricsFetchResult = {
   contentId: string;
   metrics: UnifiedContentMetrics;
+  normalizedSourceContentId?: string;
 };
 
 export type ContentMetricsRefreshResult = {
@@ -47,15 +54,19 @@ export class ContentMetricsRefresher {
 
     for (const target of targets) {
       try {
-        const metrics = await this.fetchMetricsForTarget(target);
-        if (!metrics) {
+        const fetchResult = await this.fetchMetricsForTarget(target);
+        if (!fetchResult) {
           failures.push({
             contentId: target.id,
             reason: "unsupported or no metrics returned",
           });
           continue;
         }
-        successes.push({ contentId: target.id, metrics });
+        successes.push({
+          contentId: target.id,
+          metrics: fetchResult.metrics,
+          normalizedSourceContentId: fetchResult.normalizedSourceContentId,
+        });
       } catch (error) {
         failures.push({
           contentId: target.id,
@@ -64,30 +75,53 @@ export class ContentMetricsRefresher {
       }
     }
 
-    log.info("content metrics refresh processed batch", {
-      workspaceId,
-      processed: targets.length,
-      successes: successes.length,
-      failures: failures.length,
-    });
+    let missing: string[] = [];
+    if (successes.length > 0) {
+      missing = await this.persistMetrics(workspaceId, successes);
+      for (const contentId of missing) {
+        failures.push({
+          contentId,
+          reason: "content record missing during metrics persistence",
+        });
+      }
+    }
 
     return {
       processed: targets.length,
-      updated: successes.length,
+      updated: successes.length - missing.length,
       failures,
     };
   }
 
-  private async fetchMetricsForTarget(
-    target: ContentMetricsTarget,
-  ): Promise<UnifiedContentMetrics | null> {
+  private async fetchMetricsForTarget(target: ContentMetricsTarget): Promise<{
+    metrics: UnifiedContentMetrics;
+    normalizedSourceContentId?: string;
+  } | null> {
+    const originalSourceContentId = target.sourceContentId;
+
     if (EntFacebookPublishedContent.supports(target)) {
       const entity = EntFacebookPublishedContent.fromTarget(target);
-      return entity.fetchMetrics();
+      const metrics = await entity.fetchMetrics();
+      if (!metrics) return null;
+      return {
+        metrics,
+        normalizedSourceContentId:
+          entity.target.sourceContentId !== originalSourceContentId
+            ? (entity.target.sourceContentId ?? undefined)
+            : undefined,
+      };
     }
     if (EntInstagramPublishedContent.supports(target)) {
       const entity = EntInstagramPublishedContent.fromTarget(target);
-      return entity.fetchMetrics();
+      const metrics = await entity.fetchMetrics();
+      if (!metrics) return null;
+      return {
+        metrics,
+        normalizedSourceContentId:
+          entity.target.sourceContentId !== originalSourceContentId
+            ? (entity.target.sourceContentId ?? undefined)
+            : undefined,
+      };
     }
 
     console.debug("no metrics provider registered for placement", {
@@ -96,5 +130,56 @@ export class ContentMetricsRefresher {
     });
 
     return null;
+  }
+
+  private async persistMetrics(
+    workspaceId: string,
+    results: ContentMetricsFetchResult[],
+  ): Promise<string[]> {
+    const collectedAt = new Date();
+    const missing: string[] = [];
+
+    await db().transaction(async (tx) => {
+      for (const result of results) {
+        const updateValues: Record<string, unknown> = {
+          metrics: result.metrics,
+          metricsRefreshedAt: collectedAt,
+        };
+
+        if (result.normalizedSourceContentId) {
+          updateValues.sourceContentId = result.normalizedSourceContentId;
+        }
+
+        const [updated] = await tx
+          .update(unifiedContentTable)
+          .set(updateValues)
+          .where(
+            and(
+              eq(unifiedContentTable.workspaceId, workspaceId),
+              eq(unifiedContentTable.id, result.contentId),
+            ),
+          )
+          .returning({ id: unifiedContentTable.id });
+
+        if (!updated) {
+          log.warn("content metrics persistence skipped missing record", {
+            workspaceId,
+            contentId: result.contentId,
+          });
+          missing.push(result.contentId);
+          continue;
+        }
+
+        await tx.insert(contentMetricsSnapshotTable).values({
+          workspaceId,
+          contentId: result.contentId,
+          metrics: result.metrics,
+          collectedAt,
+          granularity: ContentMetricsGranularity.DAILY,
+        });
+      }
+    });
+
+    return missing;
   }
 }

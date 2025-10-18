@@ -274,6 +274,13 @@
       "when": 1760685770574,
       "tag": "0038_pink_red_wolf",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1760762378019,
+      "tag": "0039_cynical_celestials",
+      "breakpoints": true
     }
   ]
 }

@@ -57,17 +57,80 @@ export class EntFacebookPublishedContent extends Ent<ContentMetricsTarget> {
       accessToken: account.encryptedAccessToken,
     };
 
+    const metadataPageId =
+      (account.metadata as { pageID?: string; pageId?: string })?.pageID ??
+      (account.metadata as { pageID?: string; pageId?: string })?.pageId;
+
+    const postId = this.normalizePostId(
+      account.externalAccountId,
+      metadataPageId,
+      this.target.sourceContentId,
+    );
+
+    if (!postId) {
+      log.warn("facebook metrics normalization failed", {
+        contentId: this.target.id,
+        sourceContentId: this.target.sourceContentId,
+        pageId: account.externalAccountId,
+      });
+      return null;
+    }
+
+    const normalizedSourceContentId =
+      postId !== this.target.sourceContentId ? postId : undefined;
+
+    if (normalizedSourceContentId) {
+      log.info("normalized facebook post id for metrics fetch", {
+        contentId: this.target.id,
+        original: this.target.sourceContentId,
+        normalized: normalizedSourceContentId,
+      });
+      (
+        this.data as ContentMetricsTarget & {
+          sourceContentId: string | null;
+        }
+      ).sourceContentId = normalizedSourceContentId;
+    }
+
+    const effectivePostId =
+      this.target.sourceContentId ?? normalizedSourceContentId ?? postId;
+
     log.info("fetching facebook metrics", {
       contentId: this.target.id,
-      sourceContentId: this.target.sourceContentId,
+      sourceContentId: effectivePostId,
     });
 
     const { metrics } = await metricsFetcher.fetch(ctx, {
-      postId: this.target.sourceContentId,
+      postId: effectivePostId,
       metrics: Array.from(FACEBOOK_POST_DEFAULT_METRICS),
       period: "lifetime",
     });
 
     return facebookPostMetricsToUnifiedContentMetrics(metrics);
+  }
+
+  private normalizePostId(
+    externalAccountId: string,
+    metadataPageId: string | undefined,
+    sourceContentId: string | null,
+  ): string | null {
+    if (!sourceContentId) return null;
+    if (sourceContentId.includes("_")) {
+      return sourceContentId;
+    }
+    const candidates = [externalAccountId, metadataPageId];
+    let pageId: string | null = null;
+    for (const candidate of candidates) {
+      if (typeof candidate === "string" && candidate.length > 0) {
+        pageId = candidate.includes("_")
+          ? (candidate.split("_", 1)[0] ?? null)
+          : candidate;
+        if (pageId) break;
+      }
+    }
+    if (!pageId) {
+      return null;
+    }
+    return `${pageId}_${sourceContentId}`;
   }
 }

@@ -1,4 +1,4 @@
-import { id, timestamps, ulid } from "@core/helpers/db";
+import { id, timestamp, timestamps, ulid } from "@core/helpers/db";
 import type { PlacementSpec as PlacementSpecType } from "@shared/content";
 import {
   AllPlacement,
@@ -9,6 +9,7 @@ import {
 } from "@shared/content";
 import type { BuildExtraConfigColumns } from "drizzle-orm";
 import {
+  index,
   jsonb,
   type PgColumnBuilder,
   type PgTableExtraConfigValue,
@@ -179,6 +180,7 @@ export const unifiedContentTable = pgTable(
       .$type<UnifiedContentMetrics>()
       .notNull()
       .default({}),
+    metricsRefreshedAt: timestamp(),
   },
   // TODO: we prob need more index to speed up get by queries.
   (t) => [uniqueIndex().on(t.id, t.workspaceId, t.connectedAccountId)],
@@ -188,6 +190,7 @@ const opts = {
   publishingStatus: z.enum([...Object.values(ContentPublishingStatus)]),
   placement: z.enum([...Object.values(AllPlacement)]),
   metrics: unifiedContentMetricsSchema.optional(),
+  metricsRefreshedAt: z.coerce.date().nullable().optional(),
   placementSpec: PlacementSpec,
 };
 export const UnifiedContentInsert = createInsertSchema(
@@ -217,3 +220,61 @@ export type UnifiedContentForPlacement<T extends AllPlacement[number]> = {
 export type UnifiedContentFacebookPost = UnifiedContentForPlacement<"FB_FEED">;
 export type UnifiedContentInstagramPost = UnifiedContentForPlacement<"IG_FEED">;
 export type UnifiedContentTikTokPost = UnifiedContentForPlacement<"TT_FEED">;
+
+export const ContentMetricsGranularity = {
+  RAW: "raw",
+  HOURLY: "hourly",
+  DAILY: "daily",
+} as const;
+
+export type ContentMetricsGranularity =
+  (typeof ContentMetricsGranularity)[keyof typeof ContentMetricsGranularity];
+
+export const ContentMetricsGranularityZod = z.enum([
+  ...Object.values(ContentMetricsGranularity),
+]);
+
+export const contentMetricsSnapshotTable = pgTable(
+  "content_metrics_snapshot",
+  {
+    ...id,
+    ...workspaceID,
+    // unified content id
+    contentId: ulid("content_id")
+      .references(() => unifiedContentTable.id, { onDelete: "cascade" })
+      .notNull(),
+    collectedAt: timestamp().notNull().defaultNow(),
+    granularity: text("granularity")
+      .$type<ContentMetricsGranularity>()
+      .notNull()
+      .default(ContentMetricsGranularity.DAILY),
+    metrics: jsonb("metrics")
+      .$type<UnifiedContentMetrics>()
+      .notNull()
+      .default({}),
+  },
+  (t) => [
+    index().on(t.workspaceId, t.contentId, t.collectedAt),
+    index().on(t.workspaceId, t.granularity, t.collectedAt),
+  ],
+);
+
+const snapshotOpts = {
+  granularity: ContentMetricsGranularityZod,
+  metrics: unifiedContentMetricsSchema.optional(),
+};
+
+export const ContentMetricsSnapshotInsert = createInsertSchema(
+  contentMetricsSnapshotTable,
+  snapshotOpts,
+);
+export const ContentMetricsSnapshotSelect = createSelectSchema(
+  contentMetricsSnapshotTable,
+  snapshotOpts,
+);
+export type ContentMetricsSnapshotInsert = z.infer<
+  typeof ContentMetricsSnapshotInsert
+>;
+export type ContentMetricsSnapshotSelect = z.infer<
+  typeof ContentMetricsSnapshotSelect
+>;
