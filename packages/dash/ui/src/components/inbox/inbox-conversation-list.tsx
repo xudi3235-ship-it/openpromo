@@ -9,6 +9,7 @@ import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { InboxConversationSummary } from "@shared/inbox";
 import { formatDistanceToNow } from "date-fns";
+import { PlatformAvatarBadge } from "@/components/shared/platform-avatar-badge";
 import { useInboxStore } from "@/stores/inbox-store";
 
 interface InboxConversationListProps {
@@ -81,18 +82,21 @@ export function InboxConversationList({
                   )}
                 >
                   <div className="flex items-start gap-3">
-                    <Avatar className="h-10 w-10">
-                      {conversation.contact.profilePicUrl ? (
-                        <AvatarImage
-                          src={conversation.contact.profilePicUrl}
-                          alt={conversation.contact.name}
-                        />
-                      ) : (
-                        <AvatarFallback>
-                          {getInitials(conversation.contact.name)}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="h-10 w-10">
+                        {conversation.contact.profilePicUrl ? (
+                          <AvatarImage
+                            src={conversation.contact.profilePicUrl}
+                            alt={conversation.contact.name}
+                          />
+                        ) : (
+                          <AvatarFallback>
+                            {getInitials(conversation.contact.name)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <PlatformAvatarBadge platform={conversation.platform} />
+                    </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <div className="truncate text-sm font-medium">

@@ -19,27 +19,12 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { PlatformAvatarBadge } from "@/components/shared/platform-avatar-badge";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import type { ConnectedAccount } from "@/lib/hono-client";
 import { useHonoMutation } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
 import { useOAuthWithListener } from "@/queries/connected-account";
-
-function PlatformBadge({ platform }: { platform: Platform }) {
-  const { icon: Icon, accentTextClass } = getPlatformMeta(platform);
-  if (!Icon) return null;
-
-  return (
-    <div
-      className={cn(
-        "absolute -bottom-1.5 -right-1.5 h-5 w-5 rounded-full border bg-background text-muted-foreground shadow-sm flex items-center justify-center",
-        accentTextClass,
-      )}
-    >
-      <Icon className="h-3 w-3" />
-    </div>
-  );
-}
 
 interface ConnectedAccountsRowProps {
   accounts: ConnectedAccount[];
@@ -159,7 +144,7 @@ function AccountAvatar({
           </div>
         </motion.div>
 
-        <PlatformBadge platform={account.platform} />
+        <PlatformAvatarBadge platform={account.platform} />
 
         {/* Delete Button */}
         <button
@@ -254,7 +239,7 @@ function AddButton({
           </div>
         </div>
 
-        <PlatformBadge platform={platform} />
+        <PlatformAvatarBadge platform={platform} />
       </motion.button>
 
       <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
@@ -447,7 +432,7 @@ function ComposerAccountAvatar({
           </div>
         </div>
 
-        <PlatformBadge platform={account.platform} />
+        <PlatformAvatarBadge platform={account.platform} />
 
         {selected && (
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border border-background rounded-full flex items-center justify-center">
