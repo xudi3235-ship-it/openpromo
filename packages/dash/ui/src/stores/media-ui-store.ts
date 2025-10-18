@@ -1,3 +1,4 @@
+import type { Platform } from "@core/schemas/connected-account.sql";
 import type { SharedAttachmentSpec } from "@shared/content";
 import { create } from "zustand";
 
@@ -13,9 +14,19 @@ interface MediaUIState {
   ) => void;
 
   // Editing media
-  editingMedia: { attachment: SharedAttachmentSpec; index: number } | null;
+  editingMedia: {
+    attachment: SharedAttachmentSpec;
+    index: number;
+    accountId?: string | null;
+    platform?: Platform;
+  } | null;
   setEditingMedia: (
-    media: { attachment: SharedAttachmentSpec; index: number } | null,
+    media: {
+      attachment: SharedAttachmentSpec;
+      index: number;
+      accountId?: string | null;
+      platform?: Platform;
+    } | null,
   ) => void;
 
   // Drag overlay

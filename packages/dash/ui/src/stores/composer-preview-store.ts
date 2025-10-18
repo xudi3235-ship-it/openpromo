@@ -4,7 +4,12 @@ import type {
   Platform,
   TikTokAccountMetadata,
 } from "@core/schemas/connected-account.sql";
-import type { SharedAttachmentSpec } from "@shared/content";
+import type {
+  FBFeedPlacementSpec,
+  IGFeedPlacementSpec,
+  SharedAttachmentSpec,
+  TikTokFeedPlacementSpec,
+} from "@shared/content";
 import { useMemo } from "react";
 import type { ConnectedAccount } from "@/lib/hono-client";
 import { useComposerStore } from "@/stores/composer-store";
@@ -76,6 +81,9 @@ export const useComposerPreview = (
   const contentCreateData = useComposerStore(
     (state) => state.contentCreateData,
   );
+  const placementsByAccount = useComposerStore(
+    (state) => state.placementsByAccount,
+  );
 
   return useMemo(() => {
     // Find the account to display based on active account or selected preview platform
@@ -137,49 +145,33 @@ export const useComposerPreview = (
         return contentCreateData.base.message || "";
       }
 
+      const entry = placementsByAccount?.[targetAccount.id];
+
       // If this is the active account being customized, get its specific message
       if (activeAccount === targetAccount.id) {
-        if (targetAccount.platform === "FACEBOOK") {
-          const fbSpec = contentCreateData.placements.facebookFeed?.find(
-            (spec) => spec.identity.connectedAccountID === targetAccount.id,
-          );
-          return (
-            fbSpec?.postSpec.message || contentCreateData.base.message || ""
-          );
-        } else if (targetAccount.platform === "INSTAGRAM") {
-          const igSpec = contentCreateData.placements.instagramFeed?.find(
-            (spec) => spec.identity.connectedAccountID === targetAccount.id,
-          );
-          return igSpec?.caption || contentCreateData.base.message || "";
-        } else if (targetAccount.platform === "TIKTOK") {
-          const ttSpec = contentCreateData.placements.tiktokFeed?.find(
-            (spec) => spec.identity.connectedAccountID === targetAccount.id,
-          );
-          return ttSpec?.caption || contentCreateData.base.message || "";
+        if (entry?.platform === "FACEBOOK") {
+          const spec = entry.spec as FBFeedPlacementSpec;
+          return spec.postSpec.message || contentCreateData.base.message || "";
+        } else if (entry?.platform === "INSTAGRAM") {
+          const spec = entry.spec as IGFeedPlacementSpec;
+          return spec.caption || contentCreateData.base.message || "";
+        } else if (entry?.platform === "TIKTOK") {
+          const spec = entry.spec as TikTokFeedPlacementSpec;
+          return spec.caption || contentCreateData.base.message || "";
         }
       }
 
       // For non-active accounts, check if they have customized messages
-      if (targetAccount.platform === "FACEBOOK") {
-        const fbSpec = contentCreateData.placements.facebookFeed?.find(
-          (spec) => spec.identity.connectedAccountID === targetAccount.id,
-        );
-        if (fbSpec?.customized) {
-          return fbSpec.postSpec.message || "";
-        }
-      } else if (targetAccount.platform === "INSTAGRAM") {
-        const igSpec = contentCreateData.placements.instagramFeed?.find(
-          (spec) => spec.identity.connectedAccountID === targetAccount.id,
-        );
-        if (igSpec?.customized) {
-          return igSpec.caption || "";
-        }
-      } else if (targetAccount.platform === "TIKTOK") {
-        const ttSpec = contentCreateData.placements.tiktokFeed?.find(
-          (spec) => spec.identity.connectedAccountID === targetAccount.id,
-        );
-        if (ttSpec?.customized) {
-          return ttSpec.caption || "";
+      if (entry?.customized) {
+        if (entry.platform === "FACEBOOK") {
+          const spec = entry.spec as FBFeedPlacementSpec;
+          return spec.postSpec.message || "";
+        } else if (entry.platform === "INSTAGRAM") {
+          const spec = entry.spec as IGFeedPlacementSpec;
+          return spec.caption || "";
+        } else if (entry.platform === "TIKTOK") {
+          const spec = entry.spec as TikTokFeedPlacementSpec;
+          return spec.caption || "";
         }
       }
 
@@ -187,9 +179,46 @@ export const useComposerPreview = (
       return contentCreateData.base.message || "";
     };
 
+    const getAttachmentsForAccount = (): SharedAttachmentSpec[] => {
+      if (!targetAccount) {
+        return contentCreateData.base.attachments || [];
+      }
+
+      const entry = placementsByAccount?.[targetAccount.id];
+      if (!entry) {
+        return contentCreateData.base.attachments || [];
+      }
+
+      if (entry.platform === "FACEBOOK") {
+        return (
+          (entry.spec as FBFeedPlacementSpec).attachments ||
+          contentCreateData.base.attachments ||
+          []
+        );
+      }
+
+      if (entry.platform === "INSTAGRAM") {
+        return (
+          (entry.spec as IGFeedPlacementSpec).attachments ||
+          contentCreateData.base.attachments ||
+          []
+        );
+      }
+
+      if (entry.platform === "TIKTOK") {
+        return (
+          (entry.spec as TikTokFeedPlacementSpec).attachments ||
+          contentCreateData.base.attachments ||
+          []
+        );
+      }
+
+      return contentCreateData.base.attachments || [];
+    };
+
     return {
       ...displayData,
-      attachments: contentCreateData.base.attachments || [],
+      attachments: getAttachmentsForAccount(),
       message: getMessageForAccount(),
       getDisplayName,
       getInstagramUsername,
@@ -202,8 +231,6 @@ export const useComposerPreview = (
     options.platform,
     contentCreateData.base.attachments,
     contentCreateData.base.message,
-    contentCreateData.placements.facebookFeed,
-    contentCreateData.placements.instagramFeed,
-    contentCreateData.placements.tiktokFeed,
+    placementsByAccount,
   ]);
 };

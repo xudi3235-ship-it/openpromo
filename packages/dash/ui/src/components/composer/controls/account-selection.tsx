@@ -60,9 +60,12 @@ export function AccountSelection() {
   const {
     accounts,
     selectedAccounts,
-    setSelectedAccounts,
     activeAccount,
     setActiveAccount,
+    toggleAccountSelection,
+    replaceSelectedAccounts,
+    addSelectedAccounts,
+    removeSelectedAccounts,
   } = useComposerStore();
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("ALL");
 
@@ -149,10 +152,7 @@ export function AccountSelection() {
   }, [platformFilterOptions, platformFilter]);
 
   const handleToggleAccount = (accountId: string) => {
-    const newSelection = selectedAccounts.includes(accountId)
-      ? selectedAccounts.filter((id: string) => id !== accountId)
-      : [...selectedAccounts, accountId];
-    setSelectedAccounts(newSelection);
+    toggleAccountSelection(accountId);
   };
 
   const handleSetActive = (accountId: string) => {
@@ -165,21 +165,19 @@ export function AccountSelection() {
   const handleToggleVisibleSelection = () => {
     if (filteredAccounts.length === 0) return;
 
+    const filteredIds = filteredAccounts.map((account) => account.id);
+
     if (allFilteredSelected) {
-      const visibleIds = new Set(filteredAccounts.map((account) => account.id));
-      const nextSelection = selectedAccounts.filter(
-        (id) => !visibleIds.has(id),
-      );
-      setSelectedAccounts(nextSelection);
+      removeSelectedAccounts(filteredIds);
       return;
     }
 
-    const existing = new Set(selectedAccounts);
-    const additions = filteredAccounts
-      .map((account) => account.id)
-      .filter((id) => !existing.has(id));
-    if (additions.length === 0) return;
-    setSelectedAccounts([...selectedAccounts, ...additions]);
+    if (platformFilter === "ALL") {
+      addSelectedAccounts(filteredIds);
+      return;
+    }
+
+    replaceSelectedAccounts(filteredIds);
   };
 
   useEffect(() => {
@@ -196,6 +194,17 @@ export function AccountSelection() {
 
   const handlePlatformFilterChange = (value: PlatformFilter) => {
     setPlatformFilter(value);
+
+    if (value === "ALL") {
+      const allIds = accounts.map((account) => account.id);
+      replaceSelectedAccounts(allIds);
+      return;
+    }
+
+    const filteredIds = accounts
+      .filter((account) => account.platform === value)
+      .map((account) => account.id);
+    replaceSelectedAccounts(filteredIds);
   };
 
   const handleConnectForFilter = () => {

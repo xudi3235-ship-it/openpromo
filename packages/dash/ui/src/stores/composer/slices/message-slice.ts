@@ -1,4 +1,14 @@
-import { syncToNonCustomizedPlacements } from "../utils/placements";
+import type {
+  FBFeedPlacementSpec,
+  IGFeedPlacementSpec,
+  TikTokFeedPlacementSpec,
+} from "@shared/content";
+import {
+  getPlacementEntry,
+  rebuildPlacementsFromRegistry,
+  syncToNonCustomizedPlacements,
+  updatePlacementEntry,
+} from "../utils/placements";
 import { recalculateValidation } from "../utils/validation";
 import type { ComposerSlice } from "./types";
 
@@ -13,34 +23,23 @@ export const createMessageSlice: ComposerSlice<{
       return state.contentCreateData.base.message || "";
     }
 
-    const activeAccount = state.accounts.find(
-      (acc) => acc.id === state.activeAccount,
-    );
-    if (!activeAccount) {
+    const entry = getPlacementEntry(state, state.activeAccount);
+    if (!entry) {
       return state.contentCreateData.base.message || "";
     }
 
-    if (activeAccount.platform === "FACEBOOK") {
-      const spec = state.contentCreateData.placements.facebookFeed?.find(
-        (placement) =>
-          placement.identity.connectedAccountID === state.activeAccount,
-      );
+    if (entry.platform === "FACEBOOK") {
+      const spec = entry.spec as FBFeedPlacementSpec;
       return spec?.postSpec.message || "";
     }
 
-    if (activeAccount.platform === "INSTAGRAM") {
-      const spec = state.contentCreateData.placements.instagramFeed?.find(
-        (placement) =>
-          placement.identity.connectedAccountID === state.activeAccount,
-      );
+    if (entry.platform === "INSTAGRAM") {
+      const spec = entry.spec as IGFeedPlacementSpec;
       return spec?.caption || "";
     }
 
-    if (activeAccount.platform === "TIKTOK") {
-      const spec = state.contentCreateData.placements.tiktokFeed?.find(
-        (placement) =>
-          placement.identity.connectedAccountID === state.activeAccount,
-      );
+    if (entry.platform === "TIKTOK") {
+      const spec = entry.spec as TikTokFeedPlacementSpec;
       return spec?.caption || "";
     }
 
@@ -62,47 +61,26 @@ export const createMessageSlice: ComposerSlice<{
           },
         });
         recalculateValidation(state);
+        rebuildPlacementsFromRegistry(state);
         return;
       }
 
-      const activeAccount = state.accounts.find(
-        (acc) => acc.id === state.activeAccount,
+      const entry = updatePlacementEntry(
+        state,
+        state.activeAccount,
+        (current) => {
+          if (current.platform === "FACEBOOK") {
+            (current.spec as FBFeedPlacementSpec).postSpec.message = message;
+          } else if (current.platform === "INSTAGRAM") {
+            (current.spec as IGFeedPlacementSpec).caption = message;
+          } else if (current.platform === "TIKTOK") {
+            (current.spec as TikTokFeedPlacementSpec).caption = message;
+          }
+        },
+        { markCustomized: true },
       );
-      if (!activeAccount) return;
-
-      if (activeAccount.platform === "FACEBOOK") {
-        const spec = state.contentCreateData.placements.facebookFeed?.find(
-          (placement) =>
-            placement.identity.connectedAccountID === state.activeAccount,
-        );
-        if (spec) {
-          spec.postSpec.message = message;
-          spec.customized = true;
-        }
-      }
-
-      if (activeAccount.platform === "INSTAGRAM") {
-        const spec = state.contentCreateData.placements.instagramFeed?.find(
-          (placement) =>
-            placement.identity.connectedAccountID === state.activeAccount,
-        );
-        if (spec) {
-          spec.caption = message;
-          spec.customized = true;
-        }
-      }
-
-      if (activeAccount.platform === "TIKTOK") {
-        const spec = state.contentCreateData.placements.tiktokFeed?.find(
-          (placement) =>
-            placement.identity.connectedAccountID === state.activeAccount,
-        );
-        if (spec) {
-          spec.caption = message;
-          spec.customized = true;
-        }
-      }
-
+      if (!entry) return;
+      rebuildPlacementsFromRegistry(state);
       recalculateValidation(state);
     }),
   setMessage: (message) =>
@@ -120,5 +98,6 @@ export const createMessageSlice: ComposerSlice<{
         },
       });
       recalculateValidation(state);
+      rebuildPlacementsFromRegistry(state);
     }),
 });

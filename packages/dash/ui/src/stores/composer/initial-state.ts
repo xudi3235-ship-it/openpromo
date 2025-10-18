@@ -4,6 +4,7 @@ import type {
   TikTokFeedPlacementSpec,
 } from "@shared/content";
 import type { ComposerProps, ComposerState } from "./types";
+import { buildPlacementRegistry } from "./utils/placements";
 import { createInitialSnapshot } from "./utils/snapshot";
 import { validateComposerState } from "./utils/validation/index";
 
@@ -165,6 +166,10 @@ export const createComposerInitialState = (
     selectedAccounts,
     activeAccount: null,
     contentCreateData,
+    placementsByAccount: buildPlacementRegistry(
+      props.initialAccounts || [],
+      contentCreateData.placements,
+    ),
     contentGroupID: props.contentGroupID ?? null,
     validation: { isValid: false, errors: [], canPublish: false },
     initialSnapshot: createInitialSnapshot(contentCreateData, selectedAccounts),

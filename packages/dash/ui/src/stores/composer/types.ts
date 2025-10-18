@@ -9,6 +9,15 @@ import type {
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import type { ConnectedAccount } from "@/lib/hono-client";
 
+export interface PlacementRegistryEntry {
+  accountId: string;
+  platform: Platform;
+  enabled: boolean;
+  customized: boolean;
+  spec: FBFeedPlacementSpec | IGFeedPlacementSpec | TikTokFeedPlacementSpec;
+  attachments?: SharedAttachmentSpec[];
+}
+
 export interface ValidationError {
   type:
     | "no_accounts"
@@ -50,6 +59,7 @@ export interface ComposerState {
   selectedAccounts: string[];
   activeAccount: string | null;
   contentCreateData: ContentCreateData;
+  placementsByAccount: Record<string, PlacementRegistryEntry>;
   contentGroupID: string | null;
   validation: ValidationState;
   initialSnapshot: {
@@ -67,6 +77,10 @@ export interface ComposerActions {
   getCurrentMessage: () => string;
   setCurrentMessage: (message: string) => void;
   setSelectedAccounts: (accountIds: string[]) => void;
+  replaceSelectedAccounts: (accountIds: string[]) => void;
+  addSelectedAccounts: (accountIds: string[]) => void;
+  removeSelectedAccounts: (accountIds: string[]) => void;
+  toggleAccountSelection: (accountId: string) => void;
   setActiveAccount: (accountId: string | null) => void;
   addAttachments: (files: File[]) => void;
   removeAttachment: (index: number) => void;
@@ -77,6 +91,11 @@ export interface ComposerActions {
   clearAttachments: () => void;
   uploadAttachments: (files: File[], workspaceSlug: string) => Promise<void>;
   reorderAttachments: (fromIndex: number, toIndex: number) => void;
+  setPlacementAttachments: (
+    accountId: string,
+    attachments: SharedAttachmentSpec[],
+  ) => void;
+  resetPlacementCustomization: (accountId: string) => void;
   setPublishingStatus: (
     status: ContentCreateData["base"]["publishingStatus"],
     schedulingSpec?: ContentCreateData["base"]["schedulingSpec"],

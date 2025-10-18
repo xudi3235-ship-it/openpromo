@@ -1,6 +1,12 @@
+import type {
+  FBFeedPlacementSpec,
+  IGFeedPlacementSpec,
+  TikTokFeedPlacementSpec,
+} from "@shared/content";
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import type { Draft } from "immer";
 import type { ComposerStore } from "../types";
+import { rebuildPlacementsFromRegistry } from "../utils/placements";
 import { createSnapshot, hasSnapshotChanged } from "../utils/snapshot";
 import { recalculateValidation } from "../utils/validation";
 import type { ComposerSlice } from "./types";
@@ -27,39 +33,38 @@ const applySchedulingToPlacements = (
     ? normalizedPrev.publishAt.getTime()
     : undefined;
 
-  const syncArray = (
-    specs?: Array<{
-      schedulingSpec?: ContentCreateData["base"]["schedulingSpec"];
-    }>,
-  ) => {
-    if (!specs) return;
+  if (!state.placementsByAccount) {
+    state.placementsByAccount = {};
+  }
 
-    specs.forEach((spec) => {
-      if (!normalizedNext) {
-        if (spec.schedulingSpec) {
-          delete spec.schedulingSpec;
-        }
-        return;
+  Object.values(state.placementsByAccount).forEach((entry) => {
+    const spec = entry.spec as
+      | FBFeedPlacementSpec
+      | IGFeedPlacementSpec
+      | TikTokFeedPlacementSpec;
+
+    if (!normalizedNext) {
+      if (spec.schedulingSpec) {
+        delete spec.schedulingSpec;
       }
+      return;
+    }
 
-      const currentTime = spec.schedulingSpec?.publishAt
-        ? new Date(spec.schedulingSpec.publishAt).getTime()
-        : undefined;
+    const currentTime = spec.schedulingSpec?.publishAt
+      ? new Date(spec.schedulingSpec.publishAt).getTime()
+      : undefined;
 
-      const hasCustomSchedule =
-        currentTime !== undefined &&
-        prevTime !== undefined &&
-        currentTime !== prevTime;
+    const hasCustomSchedule =
+      currentTime !== undefined &&
+      prevTime !== undefined &&
+      currentTime !== prevTime;
 
-      if (!hasCustomSchedule) {
-        spec.schedulingSpec = { ...normalizedNext };
-      }
-    });
-  };
+    if (!hasCustomSchedule) {
+      spec.schedulingSpec = { ...normalizedNext };
+    }
+  });
 
-  syncArray(state.contentCreateData.placements.facebookFeed);
-  syncArray(state.contentCreateData.placements.instagramFeed);
-  syncArray(state.contentCreateData.placements.tiktokFeed);
+  rebuildPlacementsFromRegistry(state);
 };
 
 export const createPublishingSlice: ComposerSlice<{

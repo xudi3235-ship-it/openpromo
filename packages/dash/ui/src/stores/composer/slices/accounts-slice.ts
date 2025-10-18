@@ -1,156 +1,157 @@
-import type {
-  FBFeedPlacementSpec,
-  IGFeedPlacementSpec,
-  TikTokFeedPlacementSpec,
-} from "@shared/content";
-import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
+import type { Draft } from "immer";
+import type { ComposerStore } from "../types";
+import {
+  ensurePlacementRegistryEntry,
+  rebuildPlacementsFromRegistry,
+  syncSelectedAccountsFromRegistry,
+} from "../utils/placements";
 import { recalculateValidation } from "../utils/validation";
 import type { ComposerSlice } from "./types";
+
+const uniqueAccountIds = (accountIds: string[]) =>
+  Array.from(new Set(accountIds.filter(Boolean)));
+
+const finalizeSelectionMutation = (state: Draft<ComposerStore>) => {
+  rebuildPlacementsFromRegistry(state);
+  syncSelectedAccountsFromRegistry(state);
+  recalculateValidation(state);
+};
+
+const applySetEnabledAccounts = (
+  state: Draft<ComposerStore>,
+  accountIds: string[],
+) => {
+  if (!state.placementsByAccount) {
+    state.placementsByAccount = {};
+  }
+
+  const nextIds = uniqueAccountIds(accountIds);
+  const accountsById = new Map(
+    state.accounts.map((account) => [account.id, account]),
+  );
+
+  nextIds.forEach((accountId) => {
+    const account = accountsById.get(accountId);
+    if (!account) return;
+    const entry = ensurePlacementRegistryEntry(state, account);
+    if (entry) {
+      entry.enabled = true;
+    }
+  });
+
+  Object.values(state.placementsByAccount).forEach((entry) => {
+    entry.enabled = nextIds.includes(entry.accountId);
+  });
+
+  if (state.activeAccount && !nextIds.includes(state.activeAccount)) {
+    state.activeAccount = null;
+  }
+
+  finalizeSelectionMutation(state);
+};
+
+const applyEnableAccounts = (
+  state: Draft<ComposerStore>,
+  accountIds: string[],
+) => {
+  if (!state.placementsByAccount) {
+    state.placementsByAccount = {};
+  }
+
+  const accountsById = new Map(
+    state.accounts.map((account) => [account.id, account]),
+  );
+
+  const targets = uniqueAccountIds(accountIds);
+  targets.forEach((accountId) => {
+    const account = accountsById.get(accountId);
+    if (!account) return;
+    const entry = ensurePlacementRegistryEntry(state, account);
+    if (entry) {
+      entry.enabled = true;
+    }
+  });
+
+  finalizeSelectionMutation(state);
+};
+
+const applyDisableAccounts = (
+  state: Draft<ComposerStore>,
+  accountIds: string[],
+) => {
+  if (!state.placementsByAccount) {
+    state.placementsByAccount = {};
+  }
+
+  const targets = uniqueAccountIds(accountIds);
+  let deactivatedActive = false;
+
+  targets.forEach((accountId) => {
+    const entry = state.placementsByAccount?.[accountId];
+    if (entry) {
+      entry.enabled = false;
+    }
+    if (state.activeAccount === accountId) {
+      deactivatedActive = true;
+    }
+  });
+
+  if (deactivatedActive) {
+    state.activeAccount = null;
+  }
+
+  finalizeSelectionMutation(state);
+};
 
 export const createAccountsSlice: ComposerSlice<{
   setSelectedAccounts: (accountIds: string[]) => void;
   setActiveAccount: (accountId: string | null) => void;
+  replaceSelectedAccounts: (accountIds: string[]) => void;
+  addSelectedAccounts: (accountIds: string[]) => void;
+  removeSelectedAccounts: (accountIds: string[]) => void;
+  toggleAccountSelection: (accountId: string) => void;
 }> = (set) => ({
   setSelectedAccounts: (accountIds) =>
     set((state) => {
-      state.selectedAccounts = accountIds;
+      applySetEnabledAccounts(state, accountIds);
+    }),
+  replaceSelectedAccounts: (accountIds) =>
+    set((state) => {
+      applySetEnabledAccounts(state, accountIds);
+    }),
+  addSelectedAccounts: (accountIds) =>
+    set((state) => {
+      if (accountIds.length === 0) return;
+      applyEnableAccounts(state, accountIds);
+    }),
+  removeSelectedAccounts: (accountIds) =>
+    set((state) => {
+      if (accountIds.length === 0) return;
+      applyDisableAccounts(state, accountIds);
+    }),
+  toggleAccountSelection: (accountId) =>
+    set((state) => {
+      if (!accountId) return;
 
-      if (state.activeAccount && !accountIds.includes(state.activeAccount)) {
-        state.activeAccount = null;
-      }
-
-      if (!state.contentCreateData.placements.facebookFeed) {
-        state.contentCreateData.placements.facebookFeed = [];
-      }
-      if (!state.contentCreateData.placements.instagramFeed) {
-        state.contentCreateData.placements.instagramFeed = [];
-      }
-      if (!state.contentCreateData.placements.tiktokFeed) {
-        state.contentCreateData.placements.tiktokFeed = [];
-      }
-
-      state.contentCreateData.placements.facebookFeed =
-        state.contentCreateData.placements.facebookFeed.filter((spec) =>
-          accountIds.includes(spec.identity.connectedAccountID),
-        );
-
-      state.contentCreateData.placements.instagramFeed =
-        state.contentCreateData.placements.instagramFeed.filter((spec) =>
-          accountIds.includes(spec.identity.connectedAccountID),
-        );
-
-      state.contentCreateData.placements.tiktokFeed =
-        state.contentCreateData.placements.tiktokFeed.filter((spec) =>
-          accountIds.includes(spec.identity.connectedAccountID),
-        );
-
-      const currentFacebookIds = new Set(
-        state.contentCreateData.placements.facebookFeed.map(
-          (spec) => spec.identity.connectedAccountID,
-        ),
-      );
-      const currentInstagramIds = new Set(
-        state.contentCreateData.placements.instagramFeed.map(
-          (spec) => spec.identity.connectedAccountID,
-        ),
-      );
-      const currentTikTokIds = new Set(
-        state.contentCreateData.placements.tiktokFeed.map(
-          (spec) => spec.identity.connectedAccountID,
-        ),
-      );
-
-      const getSchedulingSpecForPlacement = () => {
-        if (state.contentCreateData.base.publishingStatus !== "SCHEDULED") {
-          return undefined;
-        }
-        const publishAt =
-          state.contentCreateData.base.schedulingSpec?.publishAt;
-        if (!publishAt) {
-          return undefined;
-        }
-        return {
-          publishAt: new Date(publishAt),
-        } as ContentCreateData["base"]["schedulingSpec"];
-      };
-
-      accountIds.forEach((accountId) => {
+      const entry = state.placementsByAccount?.[accountId];
+      if (entry?.enabled) {
+        applyDisableAccounts(state, [accountId]);
+      } else {
         const account = state.accounts.find((acc) => acc.id === accountId);
         if (!account) return;
-
-        if (
-          account.platform === "FACEBOOK" &&
-          !currentFacebookIds.has(accountId)
-        ) {
-          const newFacebookSpec: FBFeedPlacementSpec = {
-            identity: {
-              connectedAccountID: account.id,
-              fbPageID: (account.metadata as { pageID: string }).pageID,
-            },
-            placement: "FB_FEED",
-            attachments: [...(state.contentCreateData.base.attachments || [])],
-            postSpec: {
-              message: state.contentCreateData.base.message || "",
-            },
-            customized: false,
-          };
-          const schedulingSpec = getSchedulingSpecForPlacement();
-          if (schedulingSpec) {
-            newFacebookSpec.schedulingSpec = schedulingSpec;
-          }
-          state.contentCreateData.placements.facebookFeed?.push(
-            newFacebookSpec,
-          );
-        }
-
-        if (
-          account.platform === "INSTAGRAM" &&
-          !currentInstagramIds.has(accountId)
-        ) {
-          const newInstagramSpec: IGFeedPlacementSpec = {
-            identity: {
-              connectedAccountID: account.id,
-              igAccountID: (account.metadata as { igAccountID: string })
-                .igAccountID,
-            },
-            placement: "IG_FEED",
-            caption: state.contentCreateData.base.message || "",
-            attachments: [...(state.contentCreateData.base.attachments || [])],
-            customized: false,
-          };
-          const schedulingSpec = getSchedulingSpecForPlacement();
-          if (schedulingSpec) {
-            newInstagramSpec.schedulingSpec = schedulingSpec;
-          }
-          state.contentCreateData.placements.instagramFeed?.push(
-            newInstagramSpec,
-          );
-        }
-
-        if (account.platform === "TIKTOK" && !currentTikTokIds.has(accountId)) {
-          const newTikTokSpec: TikTokFeedPlacementSpec = {
-            identity: {
-              connectedAccountID: account.id,
-              tiktokUserID: (account.metadata as { tiktokUserId: string })
-                .tiktokUserId,
-            },
-            placement: "TT_FEED",
-            caption: state.contentCreateData.base.message || "",
-            attachments: [...(state.contentCreateData.base.attachments || [])],
-            customized: false,
-          };
-          const schedulingSpec = getSchedulingSpecForPlacement();
-          if (schedulingSpec) {
-            newTikTokSpec.schedulingSpec = schedulingSpec;
-          }
-          state.contentCreateData.placements.tiktokFeed?.push(newTikTokSpec);
-        }
-      });
-
-      recalculateValidation(state);
+        applyEnableAccounts(state, [accountId]);
+      }
     }),
   setActiveAccount: (accountId) =>
     set((state) => {
+      if (
+        accountId &&
+        state.placementsByAccount?.[accountId] &&
+        !state.placementsByAccount[accountId].enabled
+      ) {
+        state.activeAccount = null;
+        return;
+      }
       state.activeAccount = accountId;
     }),
 });

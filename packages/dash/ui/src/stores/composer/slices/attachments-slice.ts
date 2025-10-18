@@ -1,12 +1,28 @@
-import type { SharedAttachmentSpec } from "@shared/content";
+import type {
+  FBFeedPlacementSpec,
+  IGFeedPlacementSpec,
+  SharedAttachmentSpec,
+  TikTokFeedPlacementSpec,
+} from "@shared/content";
 import { MediaService } from "@/lib/media";
 import {
   processUploadResults,
   uploadAttachments as uploadAttachmentsService,
 } from "@/services/attachment-upload";
-import { syncToNonCustomizedPlacements } from "../utils/placements";
+import {
+  rebuildPlacementsFromRegistry,
+  resetPlacementEntryToBase,
+  syncToNonCustomizedPlacements,
+  updatePlacementEntry,
+} from "../utils/placements";
 import { recalculateValidation } from "../utils/validation";
 import type { ComposerSlice } from "./types";
+
+const cloneAttachments = (attachments: SharedAttachmentSpec[]) =>
+  attachments.map((attachment) => ({
+    ...attachment,
+    metadata: attachment.metadata ? { ...attachment.metadata } : undefined,
+  }));
 
 export const createAttachmentsSlice: ComposerSlice<{
   addAttachments: (files: File[]) => void;
@@ -18,6 +34,11 @@ export const createAttachmentsSlice: ComposerSlice<{
   clearAttachments: () => void;
   uploadAttachments: (files: File[], workspaceSlug: string) => Promise<void>;
   reorderAttachments: (fromIndex: number, toIndex: number) => void;
+  setPlacementAttachments: (
+    accountId: string,
+    attachments: SharedAttachmentSpec[],
+  ) => void;
+  resetPlacementCustomization: (accountId: string) => void;
 }> = (set, get) => ({
   addAttachments: (files) =>
     set((state) => {
@@ -50,6 +71,7 @@ export const createAttachmentsSlice: ComposerSlice<{
       });
 
       recalculateValidation(state);
+      rebuildPlacementsFromRegistry(state);
     }),
   removeAttachment: (index) =>
     set((state) => {
@@ -72,6 +94,7 @@ export const createAttachmentsSlice: ComposerSlice<{
       });
 
       recalculateValidation(state);
+      rebuildPlacementsFromRegistry(state);
     }),
   updateAttachment: (index, updates) =>
     set((state) => {
@@ -97,6 +120,7 @@ export const createAttachmentsSlice: ComposerSlice<{
       });
 
       recalculateValidation(state);
+      rebuildPlacementsFromRegistry(state);
     }),
   clearAttachments: () =>
     set((state) => {
@@ -115,6 +139,7 @@ export const createAttachmentsSlice: ComposerSlice<{
       });
 
       recalculateValidation(state);
+      rebuildPlacementsFromRegistry(state);
     }),
   uploadAttachments: async (files, workspaceSlug) => {
     const startingIndex = get().contentCreateData.base.attachments?.length ?? 0;
@@ -154,6 +179,7 @@ export const createAttachmentsSlice: ComposerSlice<{
       });
 
       recalculateValidation(state);
+      rebuildPlacementsFromRegistry(state);
     });
 
     const results = await uploadAttachmentsService(
@@ -203,6 +229,7 @@ export const createAttachmentsSlice: ComposerSlice<{
       });
 
       recalculateValidation(state);
+      rebuildPlacementsFromRegistry(state);
     });
   },
   reorderAttachments: (fromIndex, toIndex) =>
@@ -226,5 +253,53 @@ export const createAttachmentsSlice: ComposerSlice<{
           spec.attachments = reorderedAttachments;
         },
       });
+      recalculateValidation(state);
+      rebuildPlacementsFromRegistry(state);
+    }),
+  setPlacementAttachments: (accountId, attachments) =>
+    set((state) => {
+      if (!accountId) return;
+      const cloned = cloneAttachments(attachments);
+      const thumbnailUrl = MediaService.getFirstThumbnail(cloned);
+
+      const entry = updatePlacementEntry(
+        state,
+        accountId,
+        (current) => {
+          if (current.platform === "FACEBOOK") {
+            const spec = current.spec as FBFeedPlacementSpec;
+            spec.attachments = cloned;
+            if (thumbnailUrl) {
+              spec.thumbnailUrl = thumbnailUrl;
+            }
+          } else if (current.platform === "INSTAGRAM") {
+            const spec = current.spec as IGFeedPlacementSpec;
+            spec.attachments = cloned;
+            if (thumbnailUrl) {
+              spec.thumbnailUrl = thumbnailUrl;
+            }
+          } else if (current.platform === "TIKTOK") {
+            const spec = current.spec as TikTokFeedPlacementSpec;
+            spec.attachments = cloned;
+            if (thumbnailUrl) {
+              spec.thumbnailUrl = thumbnailUrl;
+            }
+          }
+        },
+        { markCustomized: true },
+      );
+
+      if (!entry) return;
+
+      rebuildPlacementsFromRegistry(state);
+      recalculateValidation(state);
+    }),
+  resetPlacementCustomization: (accountId) =>
+    set((state) => {
+      if (!accountId) return;
+      const entry = resetPlacementEntryToBase(state, accountId);
+      if (!entry) return;
+      rebuildPlacementsFromRegistry(state);
+      recalculateValidation(state);
     }),
 });
