@@ -2,6 +2,7 @@ import { Button } from "@openpromo/ui/components/button";
 import { useNavigate } from "@tanstack/react-router";
 import { Maximize2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MdPublish, MdSaveAlt, MdSchedule } from "react-icons/md";
 import { toast } from "sonner";
 import { ValidationErrors } from "@/components/composer/controls/validation-errors";
 import { PublishingOverlay } from "@/components/composer/layout/publishing-overlay";
@@ -85,17 +86,23 @@ function FooterActions({
         size="sm"
         onClick={onSaveDraft}
         disabled={isPending || !canPublish}
-        className="text-muted-foreground hover:text-foreground disabled:opacity-50 shrink-0"
+        className="text-muted-foreground hover:text-foreground disabled:opacity-50 shrink-0 gap-2"
       >
-        {getDraftLabel()}
+        <MdSaveAlt className="h-4 w-4 flex-shrink-0" />
+        <span className="hidden sm:inline">{getDraftLabel()}</span>
       </Button>
       <Button
         size="sm"
         onClick={onPublish}
         disabled={isPending || !canPublish}
-        className="shadow-sm shrink-0"
+        className="shadow-sm shrink-0 gap-2"
       >
-        {getPublishLabel()}
+        {actionType === "schedule" ? (
+          <MdSchedule className="h-4 w-4 flex-shrink-0" />
+        ) : (
+          <MdPublish className="h-4 w-4 flex-shrink-0" />
+        )}
+        <span className="hidden sm:inline">{getPublishLabel()}</span>
       </Button>
     </div>
   );

@@ -1,4 +1,5 @@
 import type { WORKSPACE_ROLE } from "@shared/workspace/auth";
+import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import type {
   WorkspaceTeamInviteResponse,
@@ -8,18 +9,35 @@ import type {
   WorkspaceTeamResponse,
 } from "@worker/routes/api/workspaces/team";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useHonoMutation, useHonoQuery } from "@/lib/hono-client";
+import {
+  convertHonoQueryOptions,
+  useHonoMutation,
+  useHonoQuery,
+} from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
+
+const workspaceMembersQueryOpts = (workspaceSlug: string) => ({
+  queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspaceSlug),
+  queryFn: (api: typeof import("@/lib/hono-client").apiClient) =>
+    api.workspaces[":workspaceSlug"].team.$get({
+      param: { workspaceSlug },
+    }),
+});
+
+export const prefetchWorkspaceMembers = (
+  queryClient: QueryClient,
+  workspaceSlug: string,
+) => {
+  queryClient.prefetchQuery(
+    convertHonoQueryOptions(workspaceMembersQueryOpts(workspaceSlug)),
+  );
+};
 
 export const useWorkspaceMembers = () => {
   const { workspace } = useWorkspace();
 
   return useHonoQuery<WorkspaceTeamResponse>({
-    queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
-    queryFn: (api) =>
-      api.workspaces[":workspaceSlug"].team.$get({
-        param: { workspaceSlug: workspace.slug },
-      }),
+    ...workspaceMembersQueryOpts(workspace.slug),
     errorMessage: "Failed to load workspace members",
     refetchOnMount: true,
   });
