@@ -76,7 +76,7 @@ export function InboxConversationList({
                   className={cn(
                     "w-full rounded-lg border border-transparent p-3 text-left transition-colors",
                     isSelected
-                      ? "border-primary/50 bg-primary/5"
+                      ? "border-primary/10 bg-primary/3"
                       : "hover:border-border/70 hover:bg-muted/20",
                   )}
                 >

@@ -76,7 +76,7 @@ function MessageBubble({ message }: MessageBubbleProps) {
         className={cn(
           "max-w-[72%] rounded-lg border px-4 py-3 text-sm transition-colors",
           isSelf
-            ? "border-primary/30 bg-primary/10 text-foreground"
+            ? "border-primary/10 bg-primary/3 text-foreground"
             : "border-border/60 bg-background text-foreground",
         )}
       >
@@ -117,7 +117,7 @@ function MessageSkeleton({ isSelf }: { isSelf: boolean }) {
         className={cn(
           "max-w-[72%] rounded-lg border px-4 py-3",
           isSelf
-            ? "border-primary/30 bg-primary/10"
+            ? "border-primary/10 bg-primary/5"
             : "border-border/60 bg-muted/10",
         )}
       >
