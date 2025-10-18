@@ -1,4 +1,4 @@
-import type { InboxPlatform } from "@shared/inbox";
+import type { AllPlatforms } from "@shared";
 import type { InboxConversationsList } from "@worker/routes/api/workspaces/inbox";
 import { useMemo } from "react";
 import {
@@ -11,7 +11,7 @@ type InboxConversationsParams = {
   page: number;
   pageSize: number;
   q?: string;
-  platform?: InboxPlatform;
+  platform?: AllPlatforms;
   channel?: "dm" | "post_comment";
   connectedAccountId?: string;
 };

@@ -1,15 +1,12 @@
-import type {
-  InboxConversationSummary,
-  InboxMessage,
-  InboxPlatform,
-} from "@shared/inbox";
+import type { AllPlatforms } from "@shared";
+import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 
 export type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 
 export type InboxChannel = InboxMessage["channel"];
 export type InboxFiltersState = {
   workspaceSlug: string | null;
-  selectedPlatform: InboxPlatform | null;
+  selectedPlatform: AllPlatforms | null;
   selectedChannel: InboxChannel | null;
   connectedAccountId: string | null;
   search: string | null;
@@ -17,7 +14,7 @@ export type InboxFiltersState = {
 
 export type InboxFiltersActions = {
   initializeFilters(workspaceSlug: string): void;
-  setPlatform(platform: InboxPlatform | null): void;
+  setPlatform(platform: AllPlatforms | null): void;
   setChannel(channel: InboxChannel | null): void;
   setConnectedAccount(connectedAccountId: string | null): void;
   setSearch(search: string): void;

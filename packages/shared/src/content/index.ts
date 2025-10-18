@@ -28,6 +28,8 @@ export const AllPlacement = {
   ...TikTokPlacement,
 } as const;
 
+export type AllPlatforms = (typeof AllPlatforms)[keyof typeof AllPlatforms];
+
 export type FBPlacement = (typeof FBPlacement)[keyof typeof FBPlacement];
 export type IGPlacement = (typeof IGPlacement)[keyof typeof IGPlacement];
 export type TikTokPlacement =
@@ -35,6 +37,8 @@ export type TikTokPlacement =
 export type AllPlacement = (typeof AllPlacement)[keyof typeof AllPlacement];
 
 export const AllPlacementZod = z.enum([...Object.values(AllPlacement)]);
+
+export const AllPlatformsZod = z.enum([...Object.values(AllPlatforms)]);
 
 export const ContentPublishingStatus = {
   DRAFT: "DRAFT",

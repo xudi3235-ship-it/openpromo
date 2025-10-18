@@ -5,7 +5,8 @@ import { connectedAccount } from "@core/schemas/connected-account.sql";
 import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
 import { env } from "@core/utils/env";
-import { InboxConversationSummarySchema, InboxPlatform } from "@shared/inbox";
+import { AllPlatforms } from "@shared/content";
+import { InboxConversationSummarySchema } from "@shared/inbox";
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
@@ -16,7 +17,7 @@ const listConversationsQuery = z.object({
   page: z.coerce.number().default(1),
   pageSize: z.coerce.number().max(100).default(25),
   q: z.string().min(1).max(200).optional(),
-  platform: InboxPlatform.optional(),
+  platform: z.enum([...Object.values(AllPlatforms)]).optional(),
   connectedAccountId: z.string().optional(),
   channel: z.enum(["dm", "post_comment"]).optional(),
 });

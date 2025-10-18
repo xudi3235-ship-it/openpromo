@@ -1,11 +1,9 @@
 import type { Platform } from "@core/schemas/connected-account.sql";
 import { cn } from "@openpromo/ui/lib/utils";
-import type { InboxPlatform } from "@shared/inbox";
+import type { AllPlatforms } from "@shared";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 
-type SupportedPlatform = Platform | InboxPlatform;
-
-function toConnectedPlatform(platform: SupportedPlatform): Platform {
+function toConnectedPlatform(platform: AllPlatforms): Platform {
   switch (platform) {
     case "FACEBOOK":
     case "INSTAGRAM":
@@ -17,7 +15,7 @@ function toConnectedPlatform(platform: SupportedPlatform): Platform {
 }
 
 interface PlatformAvatarBadgeProps {
-  platform: SupportedPlatform;
+  platform: AllPlatforms;
   className?: string;
 }
 

@@ -1,3 +1,4 @@
+import { AllPlatforms, AllPlatformsZod } from "@shared/content";
 import * as z from "zod";
 
 export const FBMessageAttachmentTypes = {
@@ -141,8 +142,6 @@ export type MessagePayload = z.infer<typeof MessagePayload>;
 // ===== Unified Inbox API/Realtime shared types =====
 
 // Keep platform strings aligned with core connected-account Platform
-export const InboxPlatform = z.enum(["FACEBOOK", "INSTAGRAM", "TIKTOK"]);
-export type InboxPlatform = z.infer<typeof InboxPlatform>;
 
 export const InboxChannel = z.enum(["dm", "post_comment"]);
 export type InboxChannel = z.infer<typeof InboxChannel>;
@@ -183,7 +182,7 @@ export type InboxConnectedAccountSummary = z.infer<
 
 export const InboxConversationSummarySchema = z.object({
   id: z.string(),
-  platform: InboxPlatform,
+  platform: AllPlatformsZod,
   channel: InboxChannel,
   lastMessageAt: z.coerce.date(),
   contact: InboxContactSchema,
@@ -216,7 +215,7 @@ export const InboxConversationUpsertedEventSchema = z.object({
   type: z.literal(InboxRealtimeEventTypes.ConversationUpserted),
   conversationId: z.string(),
   lastMessageAt: z.coerce.date(),
-  platform: InboxPlatform,
+  platform: AllPlatforms,
   contact: InboxContactSchema,
   timestamp: z.number(),
 });

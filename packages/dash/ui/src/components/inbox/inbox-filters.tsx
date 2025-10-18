@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@openpromo/ui/components/select";
-import type { InboxPlatform } from "@shared/inbox";
+import type { AllPlatforms } from "@shared";
 import { Search } from "lucide-react";
 import type { InboxChannel } from "@/stores/inbox/types";
 import { useInboxStore } from "@/stores/inbox-store";
@@ -49,7 +49,7 @@ export function InboxFilters() {
         <Select
           value={selectedPlatform ?? "__all__"}
           onValueChange={(value) =>
-            setPlatform(value === "__all__" ? null : (value as InboxPlatform))
+            setPlatform(value === "__all__" ? null : (value as AllPlatforms))
           }
         >
           <SelectTrigger className="h-9">
