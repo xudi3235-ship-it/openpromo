@@ -1,13 +1,14 @@
 import type { AllPlatforms } from "@shared";
+import type { QueryClient } from "@tanstack/react-query";
 import type { InboxConversationsList } from "@worker/routes/api/workspaces/inbox";
 import { useMemo } from "react";
 import {
-  type apiClient,
+  apiClient,
   type UseHonoQueryOptions,
   useHonoQuery,
 } from "@/lib/hono-client";
 
-type InboxConversationsParams = {
+export type InboxConversationsParams = {
   page: number;
   pageSize: number;
   q?: string;
@@ -20,13 +21,12 @@ type InboxConversationsQueryOptions = {
   onError?: (error: unknown) => void;
 };
 
-export function useInboxConversationsQuery(
+function getConversationsQueryOpts(
   workspaceSlug: string | undefined,
   params: InboxConversationsParams,
-  options: InboxConversationsQueryOptions = {},
-) {
-  const { onError } = options;
-  const { data, ...rest } = useHonoQuery<InboxConversationsList>({
+  options: InboxConversationsQueryOptions,
+): UseHonoQueryOptions<InboxConversationsList> {
+  return {
     enabled: Boolean(workspaceSlug),
     queryKey: ["inbox", "conversations", workspaceSlug, params],
     queryFn: (api: typeof apiClient) =>
@@ -38,8 +38,18 @@ export function useInboxConversationsQuery(
           pageSize: params.pageSize.toString(),
         },
       }),
-    onError,
-  } as unknown as UseHonoQueryOptions<InboxConversationsList>);
+    onError: options.onError,
+  } as unknown as UseHonoQueryOptions<InboxConversationsList>;
+}
+
+export function useInboxConversationsQuery(
+  workspaceSlug: string | undefined,
+  params: InboxConversationsParams,
+  options: InboxConversationsQueryOptions = {},
+) {
+  const { data, ...rest } = useHonoQuery<InboxConversationsList>(
+    getConversationsQueryOpts(workspaceSlug, params, options),
+  );
 
   const parsedData = useMemo(() => {
     if (!data) return undefined;
@@ -49,8 +59,40 @@ export function useInboxConversationsQuery(
         ...item,
         lastMessageAt: new Date(item.lastMessageAt),
       })),
-    };
+    } satisfies InboxConversationsList;
   }, [data]);
 
   return { data: parsedData, ...rest };
+}
+
+export async function prefetchInboxConversations(
+  queryClient: QueryClient,
+  workspaceSlug: string,
+  params: InboxConversationsParams = { page: 1, pageSize: 25 },
+) {
+  const queryOpts = getConversationsQueryOpts(workspaceSlug, params, {});
+  // prefetch, no await
+  queryClient.prefetchQuery({
+    ...queryOpts,
+    queryFn: async () => {
+      const response = await apiClient.workspaces[
+        ":workspaceSlug"
+      ].inbox.conversations.$get({
+        param: { workspaceSlug },
+        query: {
+          ...params,
+          page: params.page.toString(),
+          pageSize: params.pageSize.toString(),
+        },
+      });
+      const payload = await response.json();
+      return {
+        ...payload,
+        items: payload.items.map((item) => ({
+          ...item,
+          lastMessageAt: new Date(item.lastMessageAt),
+        })),
+      } satisfies InboxConversationsList;
+    },
+  });
 }
