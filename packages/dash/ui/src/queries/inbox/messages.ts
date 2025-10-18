@@ -1,4 +1,5 @@
 import type { InboxMessagesList } from "@worker/routes/api/workspaces/inbox";
+import { useMemo } from "react";
 import {
   type apiClient,
   type UseHonoQueryOptions,
@@ -10,13 +11,17 @@ type InboxMessagesParams = {
   pageSize: number;
 };
 
+type InboxMessagesQueryOptions = {
+  onError?: (error: unknown) => void;
+};
+
 export function useInboxMessagesQuery(
   workspaceSlug: string | undefined,
   conversationId: string | undefined,
   params: InboxMessagesParams,
-  onSuccess?: (data: InboxMessagesList) => void,
-  onError?: (error: unknown) => void,
+  options: InboxMessagesQueryOptions = {},
 ) {
+  const { onError } = options;
   const { data, ...rest } = useHonoQuery<InboxMessagesList>({
     enabled: Boolean(workspaceSlug && conversationId),
     queryKey: [
@@ -41,20 +46,19 @@ export function useInboxMessagesQuery(
           pageSize: params.pageSize.toString(),
         },
       }),
-    onSuccess,
     onError,
   } as unknown as UseHonoQueryOptions<InboxMessagesList>);
 
-  // Parse dates in messages
-  const parsedData = data
-    ? {
-        ...data,
-        items: data.items.map((item) => ({
-          ...item,
-          createdAt: new Date(item.createdAt),
-        })),
-      }
-    : undefined;
+  const parsedData = useMemo(() => {
+    if (!data) return undefined;
+    return {
+      ...data,
+      items: data.items.map((item) => ({
+        ...item,
+        createdAt: new Date(item.createdAt),
+      })),
+    };
+  }, [data]);
 
   return { data: parsedData, ...rest };
 }

@@ -13,7 +13,12 @@ export function Inbox() {
 
   const initialize = useInboxStore((state) => state.initialize);
   const setConversations = useInboxStore((state) => state.setConversations);
+  const setConversationLoadingState = useInboxStore(
+    (state) => state.setConversationLoadingState,
+  );
   const setMessages = useInboxStore((state) => state.setMessages);
+  const setThreadFetching = useInboxStore((state) => state.setThreadFetching);
+  const setThreadHasMore = useInboxStore((state) => state.setThreadHasMore);
   const search = useInboxStore((state) => state.search);
   const selectedPlatform = useInboxStore((state) => state.selectedPlatform);
   const selectedChannel = useInboxStore((state) => state.selectedChannel);
@@ -29,50 +34,88 @@ export function Inbox() {
   }, [workspaceSlug, initialize]);
 
   // Fetch conversations
-  useInboxConversationsQuery(
-    workspaceSlug,
-    {
-      page: 1,
-      pageSize: 25,
-      ...(search?.trim() && { q: search.trim() }),
-      platform: selectedPlatform ?? undefined,
-      channel: selectedChannel ?? undefined,
-    },
-    (data) => {
-      // set conversations on success
-      setConversations({
-        conversations: data.items,
-        pagination: {
-          page: data.page,
-          pageSize: data.pageSize,
-          total: data.total,
-          isFetching: false,
-        },
-        replace: true,
-      });
-    },
-  );
+  const conversationsQuery = useInboxConversationsQuery(workspaceSlug, {
+    page: 1,
+    pageSize: 25,
+    ...(search?.trim() && { q: search.trim() }),
+    platform: selectedPlatform ?? undefined,
+    channel: selectedChannel ?? undefined,
+  });
+
+  useEffect(() => {
+    const data = conversationsQuery.data;
+    if (!data) return;
+
+    setConversations({
+      conversations: data.items,
+      pagination: {
+        page: data.page,
+        pageSize: data.pageSize,
+        total: data.total,
+        isFetching: conversationsQuery.isFetching,
+      },
+      replace: true,
+    });
+  }, [
+    conversationsQuery.data,
+    conversationsQuery.isFetching,
+    setConversations,
+  ]);
+
+  useEffect(() => {
+    if (conversationsQuery.isError) {
+      setConversationLoadingState("error");
+      return;
+    }
+    if (conversationsQuery.isFetching) {
+      setConversationLoadingState("loading");
+      return;
+    }
+    setConversationLoadingState("idle");
+  }, [
+    conversationsQuery.isError,
+    conversationsQuery.isFetching,
+    setConversationLoadingState,
+  ]);
 
   // Fetch messages for current conversation
-  useInboxMessagesQuery(
+  const effectiveConversationId = currentConversationId ?? undefined;
+  const messagesQuery = useInboxMessagesQuery(
     workspaceSlug,
-    currentConversationId ?? undefined,
+    effectiveConversationId,
     {
       page: 1,
       pageSize: 50,
     },
-    (data) => {
-      // set messages on success
-      setMessages({
-        conversationId: currentConversationId ?? "",
-        items: data.items,
-        page: data.page,
-        pageSize: data.pageSize,
-        total: data.total,
-        reset: true,
-      });
-    },
   );
+
+  useEffect(() => {
+    if (!effectiveConversationId) return;
+    setThreadFetching(effectiveConversationId, messagesQuery.isFetching);
+  }, [effectiveConversationId, messagesQuery.isFetching, setThreadFetching]);
+
+  useEffect(() => {
+    if (!effectiveConversationId) return;
+    const data = messagesQuery.data;
+    if (!data) return;
+
+    setMessages({
+      conversationId: effectiveConversationId,
+      items: data.items,
+      page: data.page,
+      pageSize: data.pageSize,
+      total: data.total,
+      reset: true,
+    });
+
+    const hasMore = data.page * data.pageSize < data.total;
+    setThreadHasMore(effectiveConversationId, hasMore);
+  }, [
+    effectiveConversationId,
+    messagesQuery.data,
+    setMessages,
+    setThreadHasMore,
+  ]);
 
   const conversations = useMemo(() => {
     const searchTerm = search?.trim().toLowerCase();
