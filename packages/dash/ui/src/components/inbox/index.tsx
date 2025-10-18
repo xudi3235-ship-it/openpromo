@@ -1,6 +1,7 @@
 import type { InboxConversationSummary } from "@shared/inbox";
 import { useEffect, useMemo } from "react";
 import { Main } from "@/components/layout/main";
+import { useSharedWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import { useInboxConversationsQuery } from "@/queries/inbox/conversations";
 import { useInboxMessagesQuery } from "@/queries/inbox/messages";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
@@ -19,6 +20,8 @@ export function Inbox() {
   const setMessages = useInboxStore((state) => state.setMessages);
   const setThreadFetching = useInboxStore((state) => state.setThreadFetching);
   const setThreadHasMore = useInboxStore((state) => state.setThreadHasMore);
+  const upsertConversation = useInboxStore((state) => state.upsertConversation);
+  const appendMessages = useInboxStore((state) => state.appendMessages);
   const search = useInboxStore((state) => state.search);
   const selectedPlatform = useInboxStore((state) => state.selectedPlatform);
   const selectedChannel = useInboxStore((state) => state.selectedChannel);
@@ -158,6 +161,28 @@ export function Inbox() {
     !messagesQuery.data;
   const messagesFetching =
     Boolean(effectiveConversationId) && messagesQuery.isFetching;
+
+  useSharedWorkspaceEvents({
+    handlers: {
+      "inbox.conversation.upserted": (event) => {
+        const existing = useInboxStore.getState().byId[event.conversationId];
+        if (!existing) return;
+
+        upsertConversation({
+          ...existing,
+          lastMessageAt: new Date(event.lastMessageAt),
+          contact: event.contact,
+        });
+      },
+      "inbox.message.upserted": (event) => {
+        appendMessages({
+          conversationId: event.conversationId,
+          items: [event.message],
+        });
+      },
+    },
+    enabled: Boolean(workspaceSlug),
+  });
 
   return (
     <Main fixed>
