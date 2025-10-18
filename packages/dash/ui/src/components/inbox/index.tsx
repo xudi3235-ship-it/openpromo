@@ -148,11 +148,29 @@ export function Inbox() {
     search,
   ]);
 
+  const conversationsInitialLoading =
+    conversationsQuery.isFetching && !conversationsQuery.data;
+  const conversationsFetching = conversationsQuery.isFetching;
+
+  const messagesInitialLoading =
+    Boolean(effectiveConversationId) &&
+    messagesQuery.isFetching &&
+    !messagesQuery.data;
+  const messagesFetching =
+    Boolean(effectiveConversationId) && messagesQuery.isFetching;
+
   return (
     <Main fixed>
       <div className="flex h-full min-h-[640px] gap-6">
-        <InboxSidebar conversations={conversations} />
-        <InboxConversationPanel />
+        <InboxSidebar
+          conversations={conversations}
+          isLoading={conversationsInitialLoading}
+          isFetching={conversationsFetching}
+        />
+        <InboxConversationPanel
+          isLoading={messagesInitialLoading}
+          isFetching={messagesFetching}
+        />
       </div>
     </Main>
   );
