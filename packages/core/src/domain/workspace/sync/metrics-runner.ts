@@ -199,8 +199,7 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
     remainingPendingIds?: string[];
     exhausted: boolean;
   }> {
-    //const batchSize = metadata.batchSize ?? 50;
-    const batchSize = 3; // FIXME: fix this after we have tested it enough
+    const batchSize = metadata.batchSize ?? 50;
     const pendingIds = metadata.pendingContentIds ?? [];
 
     if (pendingIds.length > 0) {

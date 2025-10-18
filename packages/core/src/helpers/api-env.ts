@@ -8,6 +8,7 @@ import type {
   WorkspacePusher,
   WorkspaceSyncCoordinator,
 } from "@core/durable-objects";
+import type { JobQueueMessage } from "@core/queues/job-queue";
 import { createContext } from "@core/utils/context";
 import type { OrganizationRole } from "@shared/workspace/auth";
 import type { User } from "@workos-inc/node";
@@ -31,6 +32,7 @@ export type ApiEnv = {
     WorkspaceSyncCoordinator: DurableObjectNamespace<WorkspaceSyncCoordinator>;
     ContainerBackend: DurableObjectNamespace<ContainerBackend>;
     Bucket: R2Bucket;
+    JobQueue: Queue<JobQueueMessage>;
   };
 };
 

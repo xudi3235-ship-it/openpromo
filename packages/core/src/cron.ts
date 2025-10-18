@@ -1,13 +1,8 @@
-import { WorkspaceSyncTaskType } from "@shared/workspace";
-import {
-  ORGANIZATION_ROLE,
-  WORKSPACE_PERMISSION,
-} from "@shared/workspace/auth";
-import { Actor } from "./helpers/actor";
 import { type ApiEnv, Binding } from "./helpers/api-env";
 import { Database, db } from "./helpers/db";
 import { ImageStorage } from "./helpers/storage/image";
 import { VideoStorage } from "./helpers/storage/video";
+import type { JobQueueMessage } from "./queues/job-queue";
 import { workspacesTable } from "./schemas/workspaces.sql";
 import { env as runtimeEnv } from "./utils/env";
 import { Log } from "./utils/log";
@@ -61,62 +56,24 @@ async function runWorkspaceContentMetrics(env: ApiEnv["Bindings"]) {
   const workspaces = await db()
     .select({
       id: workspacesTable.id,
-      slug: workspacesTable.slug,
-      organizationId: workspacesTable.organizationId,
     })
     .from(workspacesTable);
 
-  metricsLog.info("starting content metrics refresh sweep", {
-    totalWorkspaces: workspaces.length,
-  });
-
-  for (const workspace of workspaces) {
-    try {
-      const stub = env.WorkspaceSyncCoordinator.getByName(workspace.slug);
-      await stub.initialize({
-        workspaceSlug: workspace.slug,
-        workspaceId: workspace.id,
-      });
-
-      const actor: Actor.WorkspaceUser = Actor.create("workspace_user", {
-        userID: "system-cron",
-        dbUserID: "system-cron",
-        email: "system@openpromo.app",
-        organizationID: workspace.organizationId,
-        role: ORGANIZATION_ROLE.ADMIN,
-        featureFlags: [],
-        permissions: [],
-        workspaceID: workspace.id,
-        workspaceSlug: workspace.slug,
-        workspacePermissions: [WORKSPACE_PERMISSION.ALL],
-      });
-
-      await stub.upsertTask(WorkspaceSyncTaskType.ContentMetricsRefresh, {});
-      const { task } = await stub.runTask(
-        actor,
-        WorkspaceSyncTaskType.ContentMetricsRefresh,
-      );
-
-      if (!task) {
-        metricsLog.warn("content metrics refresh returned no task state", {
-          workspaceId: workspace.id,
-          workspaceSlug: workspace.slug,
-        });
-        continue;
-      }
-
-      metricsLog.info("content metrics refresh executed", {
-        workspaceId: workspace.id,
-        workspaceSlug: workspace.slug,
-        nextRunAt: task.nextRunAt,
-        lastTriggeredAt: task.lastTriggeredAt,
-      });
-    } catch (error) {
-      console.error("metrics refresh failed for workspace", {
-        workspaceId: workspace.id,
-        workspaceSlug: workspace.slug,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
+  if (workspaces.length === 0) {
+    metricsLog.info("no workspaces to enqueue for metrics");
+    return;
   }
+
+  const messages = workspaces.map((workspace) => ({
+    body: {
+      type: "workspace.metrics.refresh",
+      workspaceId: workspace.id,
+    } satisfies JobQueueMessage,
+  }));
+
+  await env.JobQueue.sendBatch(messages);
+
+  metricsLog.info("enqueued workspace metrics refresh tasks", {
+    totalEnqueued: messages.length,
+  });
 }

@@ -83,6 +83,20 @@
       "0 0 * * *"
     ]
   },
+  "queues": {
+    "producers": [
+      {
+        "queue": "jobs",
+        "binding": "JobQueue"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "jobs",
+        "max_batch_size": 10
+      }
+    ]
+  },
   // required for DO
   "migrations": [
     {
@@ -182,6 +196,20 @@
           // daily
           "0 0 * * *"
         ]
+      },
+      "queues": {
+        "producers": [
+          {
+            "queue": "jobs",
+            "binding": "JobQueue"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "jobs",
+            "max_batch_size": 10
+          }
+        ]
       }
     },
     "production": {
@@ -252,6 +280,20 @@
         "crons": [
           // daily
           "0 0 * * *"
+        ]
+      },
+      "queues": {
+        "producers": [
+          {
+            "queue": "jobs",
+            "binding": "JobQueue"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "jobs",
+            "max_batch_size": 10
+          }
         ]
       }
     }
