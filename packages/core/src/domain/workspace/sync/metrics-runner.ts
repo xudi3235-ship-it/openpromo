@@ -25,7 +25,6 @@ import type {
   WorkspaceSyncTaskRunner,
 } from "./types";
 
-const DEFAULT_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const EMPTY_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const RETRY_BASE_DELAY_MS = 5 * 60 * 1000;
 const RETRY_MAX_DELAY_MS = 6 * 60 * 60 * 1000;
@@ -55,14 +54,14 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
       const batch = await this.loadBatch(workspaceId, nextTask.metadata);
 
       if (batch.targets.length === 0) {
-        const delay = batch.exhausted ? EMPTY_INTERVAL_MS : DEFAULT_INTERVAL_MS;
         nextTask = mergeWorkspaceSyncTask(nextTask, {
           metadata: this.buildMetadataPatch(nextTask.metadata, {
             cursor: batch.nextCursor,
             pendingContentIds: batch.remainingPendingIds,
             retryCount: 0,
+            exhausted: batch.exhausted,
           }),
-          nextRunAt: startedAt + delay,
+          nextRunAt: batch.exhausted ? startedAt + EMPTY_INTERVAL_MS : null,
         });
         return { task: nextTask };
       }
@@ -107,26 +106,25 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
         () => this.metricsRefresher.refresh(workspaceId, refreshTargets),
       );
 
-      console.log("Metrics refresh result:", refreshResult);
-
       const hadFailures = refreshResult.failures.length > 0;
       const retryCount = hadFailures
         ? (nextTask.metadata.retryCount ?? 0) + 1
         : 0;
-      const delay = hadFailures
-        ? Math.min(
-            RETRY_BASE_DELAY_MS * 2 ** (retryCount - 1),
-            RETRY_MAX_DELAY_MS,
-          )
-        : DEFAULT_INTERVAL_MS;
 
       nextTask = mergeWorkspaceSyncTask(nextTask, {
         metadata: this.buildMetadataPatch(nextTask.metadata, {
           cursor: batch.nextCursor,
           pendingContentIds: batch.remainingPendingIds,
           retryCount,
+          exhausted: false,
         }),
-        nextRunAt: startedAt + delay,
+        nextRunAt: hadFailures
+          ? startedAt +
+            Math.min(
+              RETRY_BASE_DELAY_MS * 2 ** (retryCount - 1),
+              RETRY_MAX_DELAY_MS,
+            )
+          : null,
       });
 
       log.info("content metrics refresh finished", {
@@ -139,16 +137,18 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
       return { task: nextTask };
     } catch (error) {
       const retryCount = (nextTask.metadata.retryCount ?? 0) + 1;
-      const delay = Math.min(
-        RETRY_BASE_DELAY_MS * 2 ** (retryCount - 1),
-        RETRY_MAX_DELAY_MS,
-      );
 
       nextTask = mergeWorkspaceSyncTask(nextTask, {
         metadata: this.buildMetadataPatch(nextTask.metadata, {
           retryCount,
+          exhausted: false,
         }),
-        nextRunAt: startedAt + delay,
+        nextRunAt:
+          startedAt +
+          Math.min(
+            RETRY_BASE_DELAY_MS * 2 ** (retryCount - 1),
+            RETRY_MAX_DELAY_MS,
+          ),
       });
 
       console.error("content metrics refresh failed", {
@@ -185,6 +185,13 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
     }
     if ("retryCount" in updates) {
       patch.retryCount = updates.retryCount;
+    } else {
+      patch.retryCount = current.retryCount;
+    }
+    if ("exhausted" in updates) {
+      patch.exhausted = updates.exhausted;
+    } else {
+      patch.exhausted = current.exhausted;
     }
 
     return patch;

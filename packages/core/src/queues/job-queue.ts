@@ -10,7 +10,9 @@ const WorkspaceMetricsMessageSchema = z.object({
   workspaceId: z.string().min(1),
 });
 
-export const JobQueueMessageSchema = z.union([WorkspaceMetricsMessageSchema]);
+export const JobQueueMessageSchema = z.discriminatedUnion("type", [
+  WorkspaceMetricsMessageSchema,
+]);
 
 export type JobQueueMessage = z.infer<typeof JobQueueMessageSchema>;
 

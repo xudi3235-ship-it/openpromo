@@ -10,6 +10,7 @@ export const ContentMetricsMetadataSchema = z
     pendingContentIds: z.array(z.string()).min(1).optional(),
     batchSize: z.number().int().positive().max(200).default(50),
     retryCount: z.number().int().nonnegative().default(0),
+    exhausted: z.boolean().default(false),
   })
   .strict();
 
@@ -70,6 +71,7 @@ const METADATA_DEFAULTS: ContentMetricsMetadata = {
   pendingContentIds: undefined,
   batchSize: 50,
   retryCount: 0,
+  exhausted: false,
 };
 
 function normalizeMetadata(

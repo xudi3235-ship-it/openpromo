@@ -29,10 +29,14 @@ const app = new Hono()
 export default {
   fetch: app.fetch,
   scheduled: scheduledHandler,
-  async queue(batch: MessageBatch<JobQueueMessage>, env: ApiEnv["Bindings"]) {
-    await processJobQueueBatch(batch, env);
+  async queue(
+    batch: MessageBatch<JobQueueMessage>,
+    env: ApiEnv["Bindings"],
+    ctx: ExecutionContext,
+  ) {
+    await processJobQueueBatch(batch, env, ctx);
   },
-};
+} satisfies ExportedHandler<ApiEnv["Bindings"], JobQueueMessage>;
 
 export type Routes = typeof app;
 export type ApiRoutes = typeof apiRoutes;

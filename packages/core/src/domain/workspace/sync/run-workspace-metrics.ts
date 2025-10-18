@@ -2,6 +2,7 @@ import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Binding } from "@core/helpers/api-env";
 import { Database, db, eq } from "@core/helpers/db";
+import type { JobQueueMessage } from "@core/queues/job-queue";
 import { workspacesTable } from "@core/schemas/workspaces.sql";
 import { env as runtimeEnv } from "@core/utils/env";
 import { Log } from "@core/utils/log";
@@ -57,12 +58,51 @@ export async function runWorkspaceMetricsTask(
       });
 
       await stub.upsertTask(WorkspaceSyncTaskType.ContentMetricsRefresh, {});
-      await stub.runTask(actor, WorkspaceSyncTaskType.ContentMetricsRefresh);
+      const { task } = await stub.runTask(
+        actor,
+        WorkspaceSyncTaskType.ContentMetricsRefresh,
+      );
+
+      if (!task) {
+        log.warn("workspace metrics task returned no task state", {
+          workspaceId: workspace.id,
+          workspaceSlug: workspace.slug,
+        });
+        return;
+      }
 
       log.info("workspace metrics task executed", {
         workspaceId: workspace.id,
         workspaceSlug: workspace.slug,
+        cursor: task.metadata.cursor,
+        pendingIds: task.metadata.pendingContentIds?.length ?? 0,
+        exhausted: task.metadata.exhausted ?? false,
       });
+
+      const hasPendingIds = (task.metadata.pendingContentIds?.length ?? 0) > 0;
+      const hasCursor = task.metadata.cursor !== null;
+      const exhausted = task.metadata.exhausted ?? false;
+
+      if (!exhausted && (hasPendingIds || hasCursor)) {
+        const now = Date.now();
+        const delayMs = task.nextRunAt ? Math.max(task.nextRunAt - now, 0) : 0;
+        const delaySeconds =
+          delayMs > 0 ? Math.ceil(delayMs / 1000) : undefined;
+
+        await env.JobQueue.send(
+          {
+            type: "workspace.metrics.refresh",
+            workspaceId: workspace.id,
+          } satisfies JobQueueMessage,
+          delaySeconds ? { delaySeconds } : undefined,
+        );
+
+        log.info("workspace metrics task re-enqueued", {
+          workspaceId: workspace.id,
+          workspaceSlug: workspace.slug,
+          delaySeconds: delaySeconds ?? 0,
+        });
+      }
     }),
   );
 }
