@@ -1,4 +1,5 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
+import { Binding } from "@core/helpers/api-env";
 import type { FBFeedPlacementSpec } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
 import * as z from "zod";
@@ -10,6 +11,7 @@ const log = Log.create({ namespace: "facebook-api" });
 export interface FacebookIdentityContext {
   pageID: string;
   accessToken: string;
+  rateLimitKey: string;
 }
 
 export async function resolveFacebookIdentity(
@@ -28,6 +30,7 @@ export async function resolveFacebookIdentity(
   return {
     pageID,
     accessToken: account.encryptedAccessToken,
+    rateLimitKey: `facebook:${account.id}`,
   } satisfies FacebookIdentityContext;
 }
 
@@ -37,6 +40,21 @@ export interface GraphRequestOptions {
   body?: Record<string, unknown> | URLSearchParams | FormData | string | null;
   apiVersion?: string;
   headers?: Record<string, string>;
+  /**
+   * Called when rate limit is hit. Return true to wait and retry, false to throw error.
+   * If not provided, will wait automatically.
+   */
+  onRateLimit?: (params: {
+    rateLimitKey: string;
+    waitUntil: number;
+    waitMs: number;
+    snapshot: {
+      callCount?: number;
+      totalCpuTime?: number;
+      totalTime?: number;
+      estimatedTimeToRegainAccess?: number;
+    };
+  }) => Promise<boolean> | boolean;
 }
 
 export const facebookGraphErrorSchema = z.object({
@@ -58,8 +76,83 @@ export class FacebookGraphError extends Error {
   }
 }
 
+interface RateLimitedFetchOptions {
+  /**
+   * Called when rate limit is hit. Return true to wait and retry, false to throw error.
+   * If not provided, will wait automatically.
+   */
+  onRateLimit?: (params: {
+    rateLimitKey: string;
+    waitUntil: number;
+    waitMs: number;
+    snapshot: {
+      callCount?: number;
+      totalCpuTime?: number;
+      totalTime?: number;
+      estimatedTimeToRegainAccess?: number;
+    };
+  }) => Promise<boolean> | boolean;
+}
+
+async function rateLimitedFetch(
+  rateLimitKey: string,
+  url: string,
+  options: RequestInit,
+  rateLimitOptions?: RateLimitedFetchOptions,
+): Promise<Response> {
+  const rateLimitStub =
+    Binding.use().ApiRateLimitCoordinator.getByName(rateLimitKey);
+
+  const reservation = await rateLimitStub.reserve({ cost: 1 });
+
+  if (!reservation.allowed && reservation.waitUntil) {
+    const waitMs = reservation.waitUntil - Date.now();
+
+    if (waitMs > 0) {
+      const shouldWait = rateLimitOptions?.onRateLimit
+        ? await rateLimitOptions.onRateLimit({
+            rateLimitKey,
+            waitUntil: reservation.waitUntil,
+            waitMs,
+            snapshot: {
+              callCount: reservation.snapshot.callCount,
+              totalCpuTime: reservation.snapshot.totalCpuTime,
+              totalTime: reservation.snapshot.totalTime,
+              estimatedTimeToRegainAccess:
+                reservation.snapshot.estimatedTimeToRegainAccess,
+            },
+          })
+        : false; // Default: don't wait, just throw.
+
+      if (!shouldWait) {
+        throw new Error(
+          `Rate limit exceeded for ${rateLimitKey}. Retry after ${new Date(reservation.waitUntil).toISOString()}`,
+        );
+      }
+
+      log.info("rate limit hit, waiting before request", {
+        rateLimitKey,
+        waitMs,
+        waitUntil: new Date(reservation.waitUntil).toISOString(),
+      });
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+    }
+  }
+
+  const response = await fetch(url, options);
+
+  await rateLimitStub.reportHeaders({
+    cost: 1,
+    timestamp: Date.now(),
+    headers: headersToRecord(response.headers),
+    throttled: !response.ok,
+  });
+
+  return response;
+}
+
 export async function facebookGraphRequest<T = unknown>(
-  ctx: { accessToken: string },
+  ctx: { accessToken: string; rateLimitKey: string },
   path: string,
   options: GraphRequestOptions = {},
 ): Promise<T> {
@@ -69,6 +162,7 @@ export async function facebookGraphRequest<T = unknown>(
     body = null,
     apiVersion,
     headers: customHeaders = {},
+    onRateLimit,
   } = options;
 
   const version = apiVersion ?? "v23.0";
@@ -120,7 +214,12 @@ export async function facebookGraphRequest<T = unknown>(
     fetchOptions.body = requestBody;
   }
 
-  const response = await fetch(url.toString(), fetchOptions);
+  const response = await rateLimitedFetch(
+    ctx.rateLimitKey,
+    url.toString(),
+    fetchOptions,
+    { onRateLimit },
+  );
 
   console.log("// Facebook Graph API response", {
     url: url.toString(),
@@ -145,4 +244,12 @@ export async function facebookGraphRequest<T = unknown>(
   }
 
   return (await response.json()) as T;
+}
+
+function headersToRecord(headers: Headers): Record<string, string> {
+  const record: Record<string, string> = {};
+  for (const [key, value] of headers.entries()) {
+    record[key.toLowerCase()] = value;
+  }
+  return record;
 }

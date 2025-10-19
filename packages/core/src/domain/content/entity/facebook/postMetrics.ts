@@ -128,7 +128,7 @@ export class FacebookPostMetricsFetcher {
   }
 
   async fetch(
-    ctx: Pick<FacebookIdentityContext, "accessToken">,
+    ctx: Pick<FacebookIdentityContext, "accessToken" | "rateLimitKey">,
     params: FacebookPostMetricsFetchParams,
   ): Promise<FacebookPostMetricsResult> {
     const metrics = this.normalizeMetrics(params.metrics);

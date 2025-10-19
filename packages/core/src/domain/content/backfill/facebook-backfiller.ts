@@ -91,6 +91,7 @@ export class FacebookBackfiller extends BaseBackfiller<
       pageID: facebookAccount.externalAccountId,
       accessToken: facebookAccount.encryptedAccessToken,
       connectedAccountId: facebookAccount.id,
+      rateLimitKey: `facebook:${facebookAccount.id}`,
     };
 
     return { platformAccount: facebookAccount, context };
@@ -101,7 +102,7 @@ export class FacebookBackfiller extends BaseBackfiller<
   }
 
   protected async fetchRawItems(
-    context: FacebookIdentityContext,
+    context: FacebookBackfillContext,
     start: Date,
     end: Date,
   ): Promise<FacebookFeedPost[]> {
@@ -193,7 +194,7 @@ export class FacebookBackfiller extends BaseBackfiller<
   }
 
   private async fetchPublishedPosts(
-    ctx: FacebookIdentityContext,
+    ctx: FacebookBackfillContext,
     start: Date,
     end: Date,
   ): Promise<FacebookFeedPost[]> {

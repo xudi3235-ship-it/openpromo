@@ -55,6 +55,7 @@ export class EntFacebookPublishedContent extends Ent<ContentMetricsTarget> {
 
     const ctx = {
       accessToken: account.encryptedAccessToken,
+      rateLimitKey: `facebook:${account.id}`,
     };
 
     const metadataPageId =

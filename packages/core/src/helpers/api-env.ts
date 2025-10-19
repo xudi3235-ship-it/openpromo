@@ -5,6 +5,7 @@ import type { ImageGenerationWorkflowParams } from "@core/domain/image-generatio
 import type { ProductProcessingWorkflowParams } from "@core/domain/product/workflows/product-processing-workflow";
 import type { StyleComponentWorkflowParams } from "@core/domain/style-component";
 import type {
+  ApiRateLimitCoordinator,
   WorkspacePusher,
   WorkspaceSyncCoordinator,
 } from "@core/durable-objects";
@@ -30,6 +31,7 @@ export type ApiEnv = {
     ImageGenerationWorkflow: Workflow<ImageGenerationWorkflowParams>;
     WorkspacePusher: DurableObjectNamespace<WorkspacePusher>;
     WorkspaceSyncCoordinator: DurableObjectNamespace<WorkspaceSyncCoordinator>;
+    ApiRateLimitCoordinator: DurableObjectNamespace<ApiRateLimitCoordinator>;
     ContainerBackend: DurableObjectNamespace<ContainerBackend>;
     Bucket: R2Bucket;
     JobQueue: Queue<JobQueueMessage>;

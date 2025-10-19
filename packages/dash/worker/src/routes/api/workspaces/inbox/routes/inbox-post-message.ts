@@ -37,6 +37,7 @@ export const inboxPostMessageRoute = new Hono<ApiEnv>().post(
         platform: inboxConversationsTable.platform,
         externalId: inboxContactsTable.externalId,
         accessToken: connectedAccount.encryptedAccessToken,
+        connectedAccountId: connectedAccount.id,
       })
       .from(inboxConversationsTable)
       .innerJoin(
@@ -72,7 +73,10 @@ export const inboxPostMessageRoute = new Hono<ApiEnv>().post(
         );
       } else if (row.platform === "FACEBOOK") {
         await facebookGraphRequest(
-          { accessToken: row.accessToken },
+          {
+            accessToken: row.accessToken,
+            rateLimitKey: `facebook:${row.connectedAccountId}`,
+          },
           "/me/messages",
           {
             method: "POST",
