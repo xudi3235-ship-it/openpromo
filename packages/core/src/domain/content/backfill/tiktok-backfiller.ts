@@ -272,7 +272,7 @@ export class TikTokBackfiller extends BaseBackfiller<
         url.searchParams.set("cursor", cursor);
       }
 
-      const response = await this.fetch(url.toString(), {
+      const response = await fetch(url.toString(), {
         method: "GET",
         headers: {
           Authorization: `Bearer ${ctx.accessToken}`,

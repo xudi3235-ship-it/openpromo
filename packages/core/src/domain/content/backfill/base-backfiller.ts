@@ -37,7 +37,6 @@ export type MirrorConfig = {
 
 export type BaseBackfillerDependencies = {
   storage?: typeof Storage;
-  fetch?: typeof fetch;
   logger?: ReturnType<typeof Log.create>;
 };
 
@@ -52,7 +51,6 @@ export abstract class BaseBackfiller<
   TRaw,
 > {
   protected readonly storage: typeof Storage;
-  protected readonly fetch: typeof fetch;
   protected readonly log: ReturnType<typeof Log.create>;
 
   private readonly consolePrefix: string;
@@ -65,7 +63,6 @@ export abstract class BaseBackfiller<
     dependencies: BaseBackfillerDependencies = {},
   ) {
     this.storage = dependencies.storage ?? Storage;
-    this.fetch = dependencies.fetch ?? fetch;
     this.log =
       dependencies.logger ?? Log.create({ namespace: options.namespace });
     this.consolePrefix = options.consolePrefix;
@@ -378,7 +375,7 @@ export abstract class BaseBackfiller<
     }
 
     try {
-      const response = await this.fetch(sourceUrl);
+      const response = await fetch(sourceUrl);
       if (!response.ok || !response.body) {
         return null;
       }
