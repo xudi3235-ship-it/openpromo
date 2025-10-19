@@ -10,6 +10,7 @@ import {
   FacebookContentMetricsProvider,
   InstagramContentMetricsProvider,
   type ProviderFetchResult,
+  TikTokContentMetricsProvider,
 } from "./metrics/providers";
 import type {
   ContentMetricsFetchResult,
@@ -30,6 +31,7 @@ export class ContentMetricsRefresher {
     this.providers = providers ?? [
       new FacebookContentMetricsProvider(),
       new InstagramContentMetricsProvider(),
+      new TikTokContentMetricsProvider(),
     ];
   }
 

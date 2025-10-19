@@ -13,6 +13,7 @@ This file provides guidance for AI Agents working on OpenPromo codebase
 ```bash
 pnpm typecheck # typecheck
 pnpm check # biomejs check
+pnpm lint # runs both tasks, ALWAYS run this to verify your changes are safe
 ```
 
 ## Architecture Overview
