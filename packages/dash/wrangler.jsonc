@@ -295,7 +295,10 @@
             "max_batch_size": 10
           }
         ]
-      }
+      },
+      "containers": [
+        // TODO: we can do this later
+      ]
     }
   }
 }
