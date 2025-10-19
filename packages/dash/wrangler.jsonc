@@ -172,7 +172,7 @@
         },
         {
           "class_name": "ContentBackfillWorkflow",
-          "binding": "CONTENT_BACKFILL_WORKFLOW",
+          "binding": "ContentBackfillWorkflow",
           "name": "ContentBackfillWorkflow"
         },
         {

@@ -9,8 +9,8 @@
     "build:staging": "CLOUDFLARE_ENV=staging vite build",
     "build:production": "CLOUDFLARE_ENV=production vite build",
     "deploy": "wrangler deploy",
-    "deploy:staging": "pnpm build:staging && wrangler deploy",
-    "deploy:production": "pnpm build:production && wrangler deploy",
+    "deploy:staging": "pnpm build:staging && wrangler deploy -e ''",
+    "deploy:production": "pnpm build:production && wrangler deploy -e ''",
     "cf-typegen": "wrangler types ./worker/worker-configuration.d.ts",
     "secrets:sync": "doppler secrets download --format env --no-file > .env"
   },
