@@ -50,7 +50,10 @@ export function useInboxConversationsQuery(
   const { data, ...rest } = useHonoQuery<InboxConversationsList>(
     getConversationsQueryOpts(workspaceSlug, params, options),
   );
-
+  // FIXME: this is kinda a bigger problem, hono does not use superjson
+  // and as a result it just deserializes dates as strings, making it hard for us
+  // to reuse the zod types in client side.
+  // this is not gonna scale, we have so many endpoints that have this problems
   const parsedData = useMemo(() => {
     if (!data) return undefined;
     return {
