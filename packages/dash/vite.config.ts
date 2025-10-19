@@ -19,6 +19,26 @@ export default defineConfig({
   },
   build: {
     minify: "esbuild",
+    rollupOptions: {
+      output: {
+        // https://github.com/vitejs/vite/discussions/9440#discussioncomment-11430454
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            const modulePath = id.split("node_modules/")[1];
+            const topLevelFolder = modulePath.split("/")[0];
+            if (topLevelFolder !== ".pnpm") {
+              return topLevelFolder;
+            }
+            const scopedPackageName = modulePath.split("/")[1];
+            const chunkName =
+              scopedPackageName.split("@")[
+                scopedPackageName.startsWith("@") ? 1 : 0
+              ];
+            return chunkName;
+          }
+        },
+      },
+    },
   },
   define: {
     // Skip env validation in Workers since process.env doesn't exist
