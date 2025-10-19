@@ -238,7 +238,7 @@ export const rebuildPlacementsFromRegistry = (state: Draft<ComposerStore>) => {
   placements.tiktokFeed = [];
 
   state.accounts.forEach((account) => {
-    const entry = state.placementsByAccount![account.id];
+    const entry = state.placementsByAccount[account.id];
     if (!entry) return;
 
     entry.customized = Boolean(

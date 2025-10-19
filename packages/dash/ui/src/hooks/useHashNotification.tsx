@@ -48,5 +48,5 @@ export const useHashNotification = () => {
     });
 
     history.replace(pathname);
-  }, [state.location.hash, state.location.pathname, history.replace]);
+  }, [state.location.hash, state.location.pathname, history.replace, history]);
 };

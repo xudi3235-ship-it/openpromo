@@ -93,7 +93,7 @@
         "source.fixAll": "explicit"
       }
     },
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnSave": true,
     "typescript.experimental.useTsgo": false,
     "chatgpt.commentCodeLensEnabled": false,

@@ -23,7 +23,7 @@ export const useAuth = () => {
 
   const fetchData = useCallback(async () => {
     return queryClient.fetchQuery(convertHonoQueryOptions(userQueryOptions));
-  }, [queryClient.fetchQuery]);
+  }, [queryClient.fetchQuery, queryClient]);
 
   return { ...auth, fetchData };
 };
