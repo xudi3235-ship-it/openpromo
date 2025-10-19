@@ -1,11 +1,7 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { instagramGraphRequest } from "@core/domain/content/entity/instagram/api";
-import {
-  INSTAGRAM_MEDIA_DEFAULT_METRICS,
-  InstagramMediaInsightsFetcher,
-  type InstagramMediaType,
-  instagramMediaMetricsToUnifiedContentMetrics,
-} from "@core/domain/content/entity/instagram/mediaInsights";
+import type { InstagramMediaType } from "@core/domain/content/entity/instagram/mediaInsights";
+import { InstagramContentMetricsProvider } from "@core/domain/content/metrics/providers";
 import { db } from "@core/helpers/db";
 import type { ConnectedAccountSelect } from "@core/schemas/connected-account.sql";
 import {
@@ -51,6 +47,10 @@ type InstagramIdentityContext = {
   accessToken: string;
 };
 
+type InstagramBackfillContext = InstagramIdentityContext & {
+  connectedAccountId: string;
+};
+
 type NormalizedInstagramPost = NormalizedBackfillItem & {
   caption: string;
   permalinkUrl?: string;
@@ -61,21 +61,20 @@ type NormalizedInstagramPost = NormalizedBackfillItem & {
 export type InstagramBackfillParams = BackfillParams;
 export type InstagramBackfillResult = BackfillResult;
 
-type InstagramBackfillerDependencies = BaseBackfillerDependencies & {
-  metricsFetcher?: InstagramMediaInsightsFetcher;
-};
+type InstagramBackfillerDependencies = BaseBackfillerDependencies;
 
 export class InstagramBackfiller extends BaseBackfiller<
   NormalizedInstagramPost,
-  InstagramIdentityContext,
+  InstagramBackfillContext,
   InstagramMedia
 > {
-  private readonly metricsFetcher: InstagramMediaInsightsFetcher;
+  private readonly metricsProvider = new InstagramContentMetricsProvider();
 
   constructor(dependencies: InstagramBackfillerDependencies = {}) {
-    const { metricsFetcher, ...baseDeps } = dependencies;
-    super({ namespace: "instagram-backfiller", consolePrefix: "IG" }, baseDeps);
-    this.metricsFetcher = metricsFetcher ?? new InstagramMediaInsightsFetcher();
+    super(
+      { namespace: "instagram-backfiller", consolePrefix: "IG" },
+      dependencies,
+    );
   }
 
   protected async assertPlatform(account: ConnectedAccountSelect) {
@@ -91,15 +90,16 @@ export class InstagramBackfiller extends BaseBackfiller<
       account.externalAccountId,
     );
 
-    const context: InstagramIdentityContext = {
+    const context: InstagramBackfillContext = {
       igAccountID: instagramAccount.externalAccountId,
       accessToken: instagramAccount.encryptedAccessToken,
+      connectedAccountId: instagramAccount.id,
     };
 
     return { platformAccount: instagramAccount, context };
   }
 
-  protected contextLogData(context: InstagramIdentityContext) {
+  protected contextLogData(context: InstagramBackfillContext) {
     return { igAccountID: context.igAccountID };
   }
 
@@ -119,46 +119,38 @@ export class InstagramBackfiller extends BaseBackfiller<
 
   protected async fetchMetrics(
     posts: NormalizedInstagramPost[],
-    context: InstagramIdentityContext,
+    context: InstagramBackfillContext,
   ): Promise<Map<string, UnifiedContentMetrics>> {
-    const results = new Map<string, UnifiedContentMetrics>();
-
-    for (const post of posts) {
-      const metricsList =
-        INSTAGRAM_MEDIA_DEFAULT_METRICS[post.productType] ??
-        INSTAGRAM_MEDIA_DEFAULT_METRICS.FEED;
-
-      try {
-        const response = await this.metricsFetcher.fetch(
-          { accessToken: context.accessToken },
-          {
-            mediaId: post.id,
-            metrics: Array.from(metricsList),
-            metricBreakdowns: {
-              profile_activity: "action_type",
-            },
-          },
-        );
-
-        results.set(
-          post.id,
-          instagramMediaMetricsToUnifiedContentMetrics(response.metrics),
-        );
-      } catch (error) {
-        this.log.warn("failed to fetch instagram metrics for media", {
-          mediaId: post.id,
-          message: error instanceof Error ? error.message : String(error),
-        });
-      }
+    if (posts.length === 0) {
+      return new Map();
     }
 
-    return results;
+    const providerTargets = posts.map((post) => ({
+      id: post.id,
+      placement: IGPlacement.IG_FEED,
+      sourceContentId: post.id,
+      connectedAccountId: context.connectedAccountId,
+    }));
+
+    const { successes, failures } =
+      await this.metricsProvider.fetchBatch(providerTargets);
+
+    for (const failure of failures) {
+      this.log.warn("failed to fetch instagram metrics for media", {
+        mediaId: failure.contentId,
+        reason: failure.reason,
+      });
+    }
+
+    return new Map(
+      successes.map((result) => [result.contentId, result.metrics]),
+    );
   }
 
   protected async insertPosts(
     posts: NormalizedInstagramPost[],
     account: ConnectedAccountSelect,
-    context: InstagramIdentityContext,
+    context: InstagramBackfillContext,
     metricsByPostId: Map<string, UnifiedContentMetrics>,
   ): Promise<void> {
     if (posts.length === 0) return;

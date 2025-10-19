@@ -1,11 +1,9 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import type { FacebookIdentityContext } from "@core/domain/content/entity/facebook/api";
-import { facebookGraphRequest } from "@core/domain/content/entity/facebook/api";
 import {
-  FACEBOOK_POST_DEFAULT_METRICS,
-  FacebookPostMetricsFetcher,
-  facebookPostMetricsToUnifiedContentMetrics,
-} from "@core/domain/content/entity/facebook/postMetrics";
+  type FacebookIdentityContext,
+  facebookGraphRequest,
+} from "@core/domain/content/entity/facebook/api";
+import { FacebookContentMetricsProvider } from "@core/domain/content/metrics/providers";
 import { db } from "@core/helpers/db";
 import type { ConnectedAccountSelect } from "@core/schemas/connected-account.sql";
 import {
@@ -53,24 +51,27 @@ type NormalizedFacebookPost = NormalizedBackfillItem & {
   postType?: string;
 };
 
+type FacebookBackfillContext = FacebookIdentityContext & {
+  connectedAccountId: string;
+};
+
 export type FacebookBackfillParams = BackfillParams;
 export type FacebookBackfillResult = BackfillResult;
 
-type FacebookBackfillerDependencies = BaseBackfillerDependencies & {
-  metricsFetcher?: FacebookPostMetricsFetcher;
-};
+type FacebookBackfillerDependencies = BaseBackfillerDependencies;
 
 export class FacebookBackfiller extends BaseBackfiller<
   NormalizedFacebookPost,
-  FacebookIdentityContext,
+  FacebookBackfillContext,
   FacebookFeedPost
 > {
-  private readonly metricsFetcher: FacebookPostMetricsFetcher;
+  private readonly metricsProvider = new FacebookContentMetricsProvider();
 
   constructor(dependencies: FacebookBackfillerDependencies = {}) {
-    const { metricsFetcher, ...baseDeps } = dependencies;
-    super({ namespace: "facebook-backfiller", consolePrefix: "" }, baseDeps);
-    this.metricsFetcher = metricsFetcher ?? new FacebookPostMetricsFetcher();
+    super(
+      { namespace: "facebook-backfiller", consolePrefix: "" },
+      dependencies,
+    );
   }
 
   protected async assertPlatform(account: ConnectedAccountSelect) {
@@ -86,15 +87,16 @@ export class FacebookBackfiller extends BaseBackfiller<
       account.externalAccountId,
     );
 
-    const context: FacebookIdentityContext = {
+    const context: FacebookBackfillContext = {
       pageID: facebookAccount.externalAccountId,
       accessToken: facebookAccount.encryptedAccessToken,
+      connectedAccountId: facebookAccount.id,
     };
 
     return { platformAccount: facebookAccount, context };
   }
 
-  protected contextLogData(context: FacebookIdentityContext) {
+  protected contextLogData(context: FacebookBackfillContext) {
     return { pageID: context.pageID };
   }
 
@@ -114,36 +116,38 @@ export class FacebookBackfiller extends BaseBackfiller<
 
   protected async fetchMetrics(
     posts: NormalizedFacebookPost[],
-    context: FacebookIdentityContext,
+    context: FacebookBackfillContext,
   ): Promise<Map<string, UnifiedContentMetrics>> {
-    const metrics = new Map<string, UnifiedContentMetrics>();
-
-    for (const post of posts) {
-      try {
-        const response = await this.metricsFetcher.fetch(context, {
-          postId: post.id,
-          metrics: Array.from(FACEBOOK_POST_DEFAULT_METRICS),
-          period: "lifetime",
-        });
-        metrics.set(
-          post.id,
-          facebookPostMetricsToUnifiedContentMetrics(response.metrics),
-        );
-      } catch (error) {
-        this.log.warn("failed to fetch facebook metrics for post", {
-          postId: post.id,
-          message: error instanceof Error ? error.message : String(error),
-        });
-      }
+    if (posts.length === 0) {
+      return new Map();
     }
 
-    return metrics;
+    const providerTargets = posts.map((post) => ({
+      id: post.id,
+      placement: FBPlacement.FB_FEED,
+      sourceContentId: post.id,
+      connectedAccountId: context.connectedAccountId,
+    }));
+
+    const { successes, failures } =
+      await this.metricsProvider.fetchBatch(providerTargets);
+
+    for (const failure of failures) {
+      this.log.warn("failed to fetch facebook metrics for post", {
+        postId: failure.contentId,
+        reason: failure.reason,
+      });
+    }
+
+    return new Map(
+      successes.map((result) => [result.contentId, result.metrics]),
+    );
   }
 
   protected async insertPosts(
     posts: NormalizedFacebookPost[],
     account: ConnectedAccountSelect,
-    context: FacebookIdentityContext,
+    context: FacebookBackfillContext,
     metricsByPostId: Map<string, UnifiedContentMetrics>,
   ): Promise<void> {
     if (posts.length === 0) return;

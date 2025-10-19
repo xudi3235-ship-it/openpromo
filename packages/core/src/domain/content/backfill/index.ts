@@ -15,3 +15,8 @@ export {
   type InstagramBackfillParams,
   type InstagramBackfillResult,
 } from "./instagram-backfiller";
+export {
+  TikTokBackfiller,
+  type TikTokBackfillParams,
+  type TikTokBackfillResult,
+} from "./tiktok-backfiller";
