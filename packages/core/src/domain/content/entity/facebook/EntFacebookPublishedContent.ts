@@ -1,5 +1,5 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import type { ContentMetricsTarget } from "@core/domain/content/metrics";
+import type { ContentMetricsTarget } from "@core/domain/content/metrics/types";
 import { Ent } from "@core/helpers/ent";
 import type { UnifiedContentMetrics } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";

@@ -1,46 +1,38 @@
-import {
-  EntFacebookPublishedContent,
-  EntInstagramPublishedContent,
-} from "@core/domain/content/entity";
 import { and, db, eq } from "@core/helpers/db";
 import {
   ContentMetricsGranularity,
   contentMetricsSnapshotTable,
-  type UnifiedContentMetrics,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
-import type { AllPlacement } from "@shared/content";
+import {
+  type ContentMetricsProvider,
+  FacebookContentMetricsProvider,
+  InstagramContentMetricsProvider,
+  type ProviderFetchResult,
+} from "./metrics/providers";
+import type {
+  ContentMetricsFetchResult,
+  ContentMetricsRefreshResult,
+  ContentMetricsTarget,
+} from "./metrics/types";
 
 const log = Log.create({ namespace: "content-metrics" });
-
-export type ContentMetricsTarget = {
-  id: string;
-  placement: AllPlacement;
-  sourceContentId: string | null;
-  connectedAccountId: string | null;
-};
-
-export type ContentMetricsFetchResult = {
-  contentId: string;
-  metrics: UnifiedContentMetrics;
-  normalizedSourceContentId?: string;
-};
-
-export type ContentMetricsRefreshResult = {
-  processed: number;
-  updated: number;
-  failures: Array<{
-    contentId: string;
-    reason: string;
-  }>;
-};
 
 /**
  * Placeholder implementation for content metrics refresh.
  * Platform-specific integrations will plug into this class.
  */
 export class ContentMetricsRefresher {
+  private readonly providers: ContentMetricsProvider[];
+
+  constructor(providers?: ContentMetricsProvider[]) {
+    this.providers = providers ?? [
+      new FacebookContentMetricsProvider(),
+      new InstagramContentMetricsProvider(),
+    ];
+  }
+
   async refresh(
     workspaceId: string,
     targets: ContentMetricsTarget[],
@@ -52,27 +44,47 @@ export class ContentMetricsRefresher {
     const successes: ContentMetricsFetchResult[] = [];
     const failures: ContentMetricsRefreshResult["failures"] = [];
 
+    const assignments = new Map<
+      ContentMetricsProvider,
+      ContentMetricsTarget[]
+    >();
+    const unsupported: ContentMetricsTarget[] = [];
+
     for (const target of targets) {
-      try {
-        const fetchResult = await this.fetchMetricsForTarget(target);
-        if (!fetchResult) {
-          failures.push({
-            contentId: target.id,
-            reason: "unsupported or no metrics returned",
-          });
-          continue;
-        }
-        successes.push({
-          contentId: target.id,
-          metrics: fetchResult.metrics,
-          normalizedSourceContentId: fetchResult.normalizedSourceContentId,
-        });
-      } catch (error) {
-        failures.push({
-          contentId: target.id,
-          reason: error instanceof Error ? error.message : String(error),
-        });
+      const provider = this.providers.find((candidate) =>
+        candidate.supports(target),
+      );
+      if (!provider) {
+        unsupported.push(target);
+        continue;
       }
+      const list = assignments.get(provider) ?? [];
+      list.push(target);
+      assignments.set(provider, list);
+    }
+
+    for (const target of unsupported) {
+      log.info("no metrics provider registered for placement", {
+        contentId: target.id,
+        placement: target.placement,
+      });
+      failures.push({
+        contentId: target.id,
+        reason: "unsupported or no metrics provider",
+      });
+    }
+
+    for (const [provider, providerTargets] of assignments.entries()) {
+      const result = await this.runProvider(provider, providerTargets);
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: lib
+      result.successes.forEach((item) =>
+        successes.push({
+          contentId: item.contentId,
+          metrics: item.metrics,
+          normalizedSourceContentId: item.normalizedSourceContentId,
+        }),
+      );
+      failures.push(...result.failures);
     }
 
     let missing: string[] = [];
@@ -93,43 +105,28 @@ export class ContentMetricsRefresher {
     };
   }
 
-  private async fetchMetricsForTarget(target: ContentMetricsTarget): Promise<{
-    metrics: UnifiedContentMetrics;
-    normalizedSourceContentId?: string;
-  } | null> {
-    const originalSourceContentId = target.sourceContentId;
-
-    if (EntFacebookPublishedContent.supports(target)) {
-      const entity = EntFacebookPublishedContent.fromTarget(target);
-      const metrics = await entity.fetchMetrics();
-      if (!metrics) return null;
+  private async runProvider(
+    provider: ContentMetricsProvider,
+    targets: ContentMetricsTarget[],
+  ): Promise<ProviderFetchResult> {
+    try {
+      return await provider.fetchBatch(targets);
+    } catch (error) {
+      log.warn("content metrics provider failed", {
+        provider: provider.constructor.name,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return {
-        metrics,
-        normalizedSourceContentId:
-          entity.target.sourceContentId !== originalSourceContentId
-            ? (entity.target.sourceContentId ?? undefined)
-            : undefined,
+        successes: [],
+        failures: targets.map((target) => ({
+          contentId: target.id,
+          reason:
+            error instanceof Error && error.message
+              ? error.message
+              : "provider failed",
+        })),
       };
     }
-    if (EntInstagramPublishedContent.supports(target)) {
-      const entity = EntInstagramPublishedContent.fromTarget(target);
-      const metrics = await entity.fetchMetrics();
-      if (!metrics) return null;
-      return {
-        metrics,
-        normalizedSourceContentId:
-          entity.target.sourceContentId !== originalSourceContentId
-            ? (entity.target.sourceContentId ?? undefined)
-            : undefined,
-      };
-    }
-
-    console.debug("no metrics provider registered for placement", {
-      contentId: target.id,
-      placement: target.placement,
-    });
-
-    return null;
   }
 
   private async persistMetrics(
@@ -183,3 +180,9 @@ export class ContentMetricsRefresher {
     return missing;
   }
 }
+
+export type {
+  ContentMetricsFetchResult,
+  ContentMetricsRefreshResult,
+  ContentMetricsTarget,
+} from "./metrics/types";
