@@ -24,6 +24,10 @@ export default function CalendarPage() {
   const { fromDate, toDate } = useCalendarDateRange(currentDate, view);
 
   const { data, isLoading } = useContentListQuery({
+    page: 1,
+    pageSize: 100,
+    sortBy: "createdAt",
+    sortOrder: "desc",
     fromDate,
     toDate,
   });

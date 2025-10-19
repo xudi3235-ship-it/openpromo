@@ -34,6 +34,8 @@ const listContentQuerySchema = z.object({
   platform: z.enum(["facebook", "instagram", "tiktok"]).optional(),
 });
 
+export type ListContentQueryParams = z.infer<typeof listContentQuerySchema>;
+
 export const listContentRoute = new Hono<ApiEnv>().get(
   "/",
   zValidator("query", listContentQuerySchema),

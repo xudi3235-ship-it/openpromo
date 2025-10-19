@@ -1,6 +1,6 @@
 import type { SortingState } from "@tanstack/react-table";
-import * as React from "react";
-import type { ContentListPaginationParams } from "@/queries/content";
+import type { ListContentQueryParams } from "@worker/routes/api/workspaces/content/routes/list-content";
+import { useMemo } from "react";
 import type { ContentFilters } from "./content-filters";
 
 /**
@@ -11,8 +11,8 @@ export function useContentListQueryParams(
   pagination: { pageIndex: number; pageSize: number },
   filters: ContentFilters,
   search: string,
-): ContentListPaginationParams {
-  return React.useMemo(() => {
+): ListContentQueryParams {
+  return useMemo(() => {
     // TODO: enable multiple sorting conditions
     // Convert sorting state to API parameters with default fallback
     const sortBy: "createdAt" | "scheduledDate" =
@@ -22,17 +22,17 @@ export function useContentListQueryParams(
         ? "desc"
         : "asc"
       : "desc";
-
     return {
       page: pagination.pageIndex + 1, // API uses 1-based indexing
       pageSize: pagination.pageSize,
-      publishingStatus: filters.publishingStatus,
       fromDate: filters.dateRange?.from,
       toDate: filters.dateRange?.to,
       search: search || undefined,
       sortBy,
       sortOrder,
-      platform: filters.platform,
-    };
+      publishingStatus:
+        filters.publishingStatus as ListContentQueryParams["publishingStatus"],
+      platform: filters.platform as ListContentQueryParams["platform"],
+    } satisfies ListContentQueryParams;
   }, [sorting, pagination, filters, search]);
 }

@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { ListContentQueryParams } from "@worker/routes/api/workspaces/content/routes/list-content";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import {
@@ -18,25 +19,23 @@ export const invalidateContentListQueries = async (queryClient: QueryClient) =>
     type: "all",
   });
 
-export interface ContentListPaginationParams {
-  page?: number;
-  pageSize?: number;
-  publishingStatus?: string;
-  fromDate?: Date;
-  toDate?: Date;
-  search?: string;
-  sortBy?: "createdAt" | "scheduledDate";
-  sortOrder?: "asc" | "desc";
-  platform?: string;
-}
+// export interface ContentListPaginationParams {
+//   page?: number;
+//   pageSize?: number;
+//   publishingStatus?: string;
+//   fromDate?: Date;
+//   toDate?: Date;
+//   search?: string;
+//   sortBy?: "createdAt" | "scheduledDate";
+//   sortOrder?: "asc" | "desc";
+//   platform?: string;
+// }
 
 /**
  * Builds query parameters for content list API calls
  * Shared between prefetch and query hook to avoid duplication
  */
-const buildContentListQueryParams = (
-  params: ContentListPaginationParams = {},
-) => {
+const buildContentListQueryParams = (params: ListContentQueryParams) => {
   const {
     page = 1,
     pageSize = 20,
@@ -89,7 +88,7 @@ const buildContentListQueryParams = (
  * Builds the query key for content list queries
  * Shared between prefetch and query hook to ensure cache consistency
  */
-const buildContentListQueryKey = (params: ContentListPaginationParams = {}) => {
+const buildContentListQueryKey = (params: ListContentQueryParams) => {
   const {
     page = 1,
     pageSize = 20,
@@ -116,13 +115,20 @@ const buildContentListQueryKey = (params: ContentListPaginationParams = {}) => {
   ] as const;
 };
 
+const defaultListContentParams: ListContentQueryParams = {
+  page: 1,
+  pageSize: 20,
+  sortBy: "createdAt",
+  sortOrder: "desc",
+};
+
 /**
  * Builds content list query options
  * Returns raw query options for use with useHonoQuery
  */
 const contentListQueryOpts = (
   workspaceSlug: string,
-  params: ContentListPaginationParams = {},
+  params: ListContentQueryParams,
 ) => {
   const queryParams = buildContentListQueryParams(params);
 
@@ -139,7 +145,7 @@ const contentListQueryOpts = (
 export const prefetchContentList = (
   queryClient: QueryClient,
   workspaceSlug: string,
-  params: ContentListPaginationParams = {},
+  params: ListContentQueryParams = defaultListContentParams,
 ) => {
   // do not await - convert options for prefetch
   queryClient.prefetchQuery(
@@ -148,7 +154,7 @@ export const prefetchContentList = (
 };
 
 export const useContentListQuery = (
-  params: ContentListPaginationParams = {},
+  params: ListContentQueryParams = defaultListContentParams,
 ) => {
   const { workspace } = useWorkspace();
   const { data, ...rest } = useHonoQuery(
