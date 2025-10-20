@@ -62,10 +62,8 @@ function MessageBubble({ message }: MessageBubbleProps) {
   const hasAttachments = message.attachments?.length
     ? message.attachments.length > 0
     : false;
-  const metadata = message.metadata as { optimistic?: unknown } | undefined;
-  const isOptimistic = Boolean(
-    metadata && typeof metadata === "object" && metadata.optimistic,
-  );
+  const isOptimistic = Boolean(message.metadata?.optimistic);
+  const isDeleted = Boolean(message.metadata?.deleted);
 
   return (
     <div
@@ -81,6 +79,7 @@ function MessageBubble({ message }: MessageBubbleProps) {
             ? "border-primary/10 bg-primary/3 text-foreground"
             : "border-border/60 bg-background text-foreground",
           isOptimistic && "opacity-80",
+          isDeleted && "border-dashed bg-muted/20 text-muted-foreground",
         )}
       >
         <div className="flex items-center justify-between gap-2 text-xs">
@@ -92,12 +91,18 @@ function MessageBubble({ message }: MessageBubbleProps) {
             {timestamp}
           </span>
         </div>
-        {message.text && (
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
-            {message.text}
+        {isDeleted ? (
+          <p className="mt-2 whitespace-pre-wrap text-sm italic leading-relaxed">
+            Message deleted
           </p>
+        ) : (
+          message.text && (
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
+              {message.text}
+            </p>
+          )
         )}
-        {hasAttachments && (
+        {!isDeleted && hasAttachments && (
           <div className="mt-3 flex items-center gap-2 text-xs">
             <Paperclip className="h-3 w-3" />
             <span>
