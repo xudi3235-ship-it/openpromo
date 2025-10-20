@@ -67,6 +67,9 @@ export function writeInsightAnalytics(events: InsightAnalyticsEvent[]): void {
       const value = Number(rawValue);
       if (!Number.isFinite(value)) continue;
 
+      // FIXME: closely follow the limits on the analytics engine
+      // and test that we are actually writing to the datasets
+      // https://developers.cloudflare.com/analytics/analytics-engine/limits/
       const indexParts = [
         `workspace=${event.workspaceId}`,
         `domain=${event.domain}`,
