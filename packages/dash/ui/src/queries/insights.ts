@@ -40,9 +40,14 @@ export const useWorkspaceInsightsSummary = () => {
 };
 
 export type TimeSeriesQueryParams = {
-  start: Date;
-  end: Date;
+  start?: Date;
+  end?: Date;
   interval?: "day" | "week";
+};
+
+const defaultTimeSeriesParams = {
+  days: 30,
+  interval: "day" as const,
 };
 
 /**
@@ -50,23 +55,31 @@ export type TimeSeriesQueryParams = {
  */
 const workspaceInsightsTimeSeriesQueryOpts = (
   workspaceSlug: string,
-  params: TimeSeriesQueryParams,
+  params: TimeSeriesQueryParams = {},
 ) => {
-  const { start, end, interval = "day" } = params;
+  const { start, end, interval = defaultTimeSeriesParams.interval } = params;
+
+  // Use provided dates or default to last 30 days
+  const endDate = end || new Date();
+  const startDate =
+    start ||
+    new Date(
+      endDate.getTime() - defaultTimeSeriesParams.days * 24 * 60 * 60 * 1000,
+    );
 
   return {
     queryKey: QUERY_KEYS.WORKSPACE_INSIGHTS_TIMESERIES(
       workspaceSlug,
-      start,
-      end,
+      startDate,
+      endDate,
       interval,
     ),
     queryFn: (api: typeof import("@/lib/hono-client").apiClient) =>
       api.workspaces[":workspaceSlug"].insights.timeseries.$get({
         param: { workspaceSlug },
         query: {
-          start: start.toISOString(),
-          end: end.toISOString(),
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
           interval,
         },
       }),
@@ -79,7 +92,7 @@ const workspaceInsightsTimeSeriesQueryOpts = (
 export const prefetchWorkspaceInsightsTimeSeries = (
   queryClient: QueryClient,
   workspaceSlug: string,
-  params: TimeSeriesQueryParams,
+  params: TimeSeriesQueryParams = {},
 ) => {
   queryClient.prefetchQuery(
     convertHonoQueryOptions(
@@ -93,7 +106,7 @@ export const prefetchWorkspaceInsightsTimeSeries = (
  * Returns time-bucketed metrics for the specified date range
  */
 export const useWorkspaceInsightsTimeSeries = (
-  params: TimeSeriesQueryParams,
+  params: TimeSeriesQueryParams = {},
 ) => {
   const { workspace } = useWorkspace();
 

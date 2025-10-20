@@ -1,7 +1,6 @@
 import { Tabs, TabsList, TabsTrigger } from "@openpromo/ui/components/tabs";
 import { subDays } from "date-fns";
 import { useState } from "react";
-import { WorkspaceLoading } from "@/components/loading/workspace-loading";
 import {
   type TimeSeriesQueryParams,
   useWorkspaceInsightsSummary,
@@ -37,14 +36,6 @@ export function InsightsPage() {
 
   const { data: topContent, isLoading: topContentLoading } =
     useWorkspaceInsightsTopContent({ limit: 5, sortBy: "impressions" });
-
-  // Show loading only if ALL queries are loading (first load)
-  const isInitialLoad =
-    summaryLoading && timeSeriesLoading && topContentLoading;
-
-  if (isInitialLoad) {
-    return <WorkspaceLoading />;
-  }
 
   return (
     <div className="min-h-screen bg-background p-6">

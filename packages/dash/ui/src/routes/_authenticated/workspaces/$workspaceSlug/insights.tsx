@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { subDays } from "date-fns";
 import { InsightsPage } from "@/components/insights/InsightsPage";
+import { WorkspaceLoading } from "@/components/loading/workspace-loading";
 import {
   prefetchWorkspaceInsightsSummary,
   prefetchWorkspaceInsightsTimeSeries,
@@ -11,30 +11,17 @@ export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/insights",
 )({
   loader: ({ params, context }) => {
-    // Prefetch all insights data
+    // Prefetch all insights data with defaults
     prefetchWorkspaceInsightsSummary(context.queryClient, params.workspaceSlug);
-
-    // Default to last 30 days
-    const end = new Date();
-    const start = subDays(end, 30);
     prefetchWorkspaceInsightsTimeSeries(
       context.queryClient,
       params.workspaceSlug,
-      {
-        start,
-        end,
-        interval: "day",
-      },
     );
-
     prefetchWorkspaceInsightsTopContent(
       context.queryClient,
       params.workspaceSlug,
-      {
-        limit: 5,
-        sortBy: "impressions",
-      },
     );
   },
+  pendingComponent: WorkspaceLoading,
   component: InsightsPage,
 });
