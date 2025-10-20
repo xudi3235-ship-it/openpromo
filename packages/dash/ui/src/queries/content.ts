@@ -19,18 +19,6 @@ export const invalidateContentListQueries = async (queryClient: QueryClient) =>
     type: "all",
   });
 
-// export interface ContentListPaginationParams {
-//   page?: number;
-//   pageSize?: number;
-//   publishingStatus?: string;
-//   fromDate?: Date;
-//   toDate?: Date;
-//   search?: string;
-//   sortBy?: "createdAt" | "scheduledDate";
-//   sortOrder?: "asc" | "desc";
-//   platform?: string;
-// }
-
 /**
  * Builds query parameters for content list API calls
  * Shared between prefetch and query hook to avoid duplication
