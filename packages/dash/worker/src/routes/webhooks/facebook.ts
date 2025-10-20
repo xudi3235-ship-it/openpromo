@@ -1,5 +1,6 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { facebookOAuthService } from "@core/domain/connected-account/facebook";
+import { UnifiedContent } from "@core/domain/content/unified-content";
 import { InboxService } from "@core/domain/inbox";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import type { ApiEnv } from "@core/helpers/api-env";
@@ -243,6 +244,10 @@ const handleComment = async (
       channel,
     });
 
+    const content = await UnifiedContent.getBySourceContentId(post_id, {
+      skipWorkspaceCheck: true,
+    });
+
     if (!conversation && (verb === "add" || isTopLevel)) {
       // create conversation for top-level add OR missing on reply (best-effort)
       conversation = await InboxService.upsertConversation({
@@ -252,6 +257,7 @@ const handleComment = async (
         lastMessageAt: createdAt,
         channel,
         externalThreadId,
+        contentId: content?.id,
       });
     }
 
@@ -263,11 +269,12 @@ const handleComment = async (
     await InboxService.upsertMessage({
       inboxConversationId: conversation.id,
       externalId: comment_id,
-      text: verb === "remove" ? null : (message ?? null),
+      text: verb === "remove" ? null : message,
       payload: change,
       sender: isSelf ? "self" : "user",
       workspaceId: account.workspaceId,
       channel,
+      contentId: content?.id,
       metadata: { ...(verb === "remove" ? { deleted: true } : {}) },
     });
 
@@ -279,11 +286,11 @@ const handleComment = async (
           id: "",
           externalId: comment_id,
           sender: isSelf ? "self" : "user",
-          text: verb === "remove" ? null : (message ?? null),
+          text: verb === "remove" ? null : message,
           attachments: [],
           createdAt,
           channel,
-          contentId: null,
+          contentId: content?.id,
           metadata: { ...(verb === "remove" ? { deleted: true } : {}) },
         },
       },

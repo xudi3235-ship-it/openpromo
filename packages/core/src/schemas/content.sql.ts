@@ -183,7 +183,10 @@ export const unifiedContentTable = pgTable(
     metricsRefreshedAt: timestamp(),
   },
   // TODO: we prob need more index to speed up get by queries.
-  (t) => [uniqueIndex().on(t.id, t.workspaceId, t.connectedAccountId)],
+  (t) => [
+    uniqueIndex().on(t.workspaceId, t.connectedAccountId),
+    uniqueIndex().on(t.sourceContentId),
+  ],
 );
 
 const opts = {

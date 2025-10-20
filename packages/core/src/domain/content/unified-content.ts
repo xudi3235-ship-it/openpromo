@@ -50,6 +50,26 @@ export namespace UnifiedContent {
     return withPagination(query, page, limit);
   }
 
+  export async function getBySourceContentId(
+    sourceContentId: string,
+    // skip workspace check is used for webhooks
+    { skipWorkspaceCheck = false },
+  ) {
+    const [content] = await db()
+      .select()
+      .from(unifiedContentTable)
+      .where(
+        and(
+          eq(unifiedContentTable.sourceContentId, sourceContentId),
+          skipWorkspaceCheck
+            ? undefined
+            : eq(unifiedContentTable.workspaceId, Actor.workspaceID()),
+        ),
+      )
+      .limit(1);
+    return content;
+  }
+
   export async function getByID(id: string) {
     const workspaceId = Actor.workspaceID();
     const [content] = await db()
