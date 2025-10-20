@@ -81,10 +81,19 @@ export function writeInsightAnalytics(events: InsightAnalyticsEvent[]): void {
         indexes.push(normalizeDimensionValue(dimensionValue));
       }
       console.log("Writing analytics data point", { indexes, value });
-      dataset.writeDataPoint({
-        indexes,
-        doubles: [value],
-      });
+
+      try {
+        dataset.writeDataPoint({
+          indexes,
+          doubles: [value],
+        });
+      } catch (error) {
+        console.error("Failed to write analytics data point", {
+          indexes,
+          value,
+          error,
+        });
+      }
     }
   }
 }
