@@ -28,44 +28,22 @@ export function InsightsPage() {
     interval,
   };
 
-  // Fetch data
-  const {
-    data: summary,
-    isLoading: summaryLoading,
-    error: summaryError,
-  } = useWorkspaceInsightsSummary();
+  // Fetch data independently
+  const { data: summary, isLoading: summaryLoading } =
+    useWorkspaceInsightsSummary();
 
-  const {
-    data: timeSeries,
-    isLoading: timeSeriesLoading,
-    error: timeSeriesError,
-  } = useWorkspaceInsightsTimeSeries(dateRange);
+  const { data: timeSeries, isLoading: timeSeriesLoading } =
+    useWorkspaceInsightsTimeSeries(dateRange);
 
-  const {
-    data: topContent,
-    isLoading: topContentLoading,
-    error: topContentError,
-  } = useWorkspaceInsightsTopContent({ limit: 5, sortBy: "impressions" });
+  const { data: topContent, isLoading: topContentLoading } =
+    useWorkspaceInsightsTopContent({ limit: 5, sortBy: "impressions" });
 
-  const isLoading = summaryLoading || timeSeriesLoading || topContentLoading;
-  const hasError = summaryError || timeSeriesError || topContentError;
+  // Show loading only if ALL queries are loading (first load)
+  const isInitialLoad =
+    summaryLoading && timeSeriesLoading && topContentLoading;
 
-  if (isLoading) {
+  if (isInitialLoad) {
     return <WorkspaceLoading />;
-  }
-
-  if (hasError) {
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-card rounded-lg p-8 border border-border/40 text-center">
-            <p className="text-muted-foreground">
-              Failed to load insights. Please try again.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -105,7 +83,24 @@ export function InsightsPage() {
         </div>
 
         {/* Summary Cards */}
-        <InsightsSummaryCards summary={summary} />
+        {summaryLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {Array.from({ length: 6 }, (_, i) => `skeleton-summary-${i}`).map(
+              (key) => (
+                <div
+                  key={key}
+                  className="bg-card rounded-lg p-4 border border-border/40 animate-pulse"
+                >
+                  <div className="h-4 w-4 bg-muted rounded mb-2" />
+                  <div className="h-6 bg-muted rounded mb-1" />
+                  <div className="h-3 bg-muted rounded w-20" />
+                </div>
+              ),
+            )}
+          </div>
+        ) : (
+          <InsightsSummaryCards summary={summary} />
+        )}
 
         {/* Time Series Chart */}
         <div className="bg-card rounded-lg p-6 border border-border/40">
@@ -117,7 +112,11 @@ export function InsightsPage() {
               Impressions and engagement trends
             </p>
           </div>
-          <InsightsTimeSeriesChart data={timeSeries} />
+          {timeSeriesLoading ? (
+            <div className="h-[300px] animate-pulse bg-muted rounded" />
+          ) : (
+            <InsightsTimeSeriesChart data={timeSeries} />
+          )}
         </div>
 
         {/* Top Content */}
@@ -130,7 +129,20 @@ export function InsightsPage() {
               Your best performing posts ranked by impressions
             </p>
           </div>
-          <InsightsTopContent items={topContent?.items ?? []} />
+          {topContentLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }, (_, i) => `skeleton-top-${i}`).map(
+                (key) => (
+                  <div
+                    key={key}
+                    className="h-20 animate-pulse bg-muted rounded-lg"
+                  />
+                ),
+              )}
+            </div>
+          ) : (
+            <InsightsTopContent items={topContent?.items ?? []} />
+          )}
         </div>
       </div>
     </div>
