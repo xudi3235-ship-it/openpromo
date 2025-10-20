@@ -1,3 +1,7 @@
+import {
+  type ContentMetricsAnalyticsPoint,
+  writeContentMetricsAnalytics,
+} from "@core/domain/insights/analytics-engine";
 import { and, db, eq } from "@core/helpers/db";
 import {
   ContentMetricsGranularity,
@@ -137,6 +141,7 @@ export class ContentMetricsRefresher {
   ): Promise<string[]> {
     const collectedAt = new Date();
     const missing: string[] = [];
+    const analyticsPoints: ContentMetricsAnalyticsPoint[] = [];
 
     await db().transaction(async (tx) => {
       for (const result of results) {
@@ -158,7 +163,11 @@ export class ContentMetricsRefresher {
               eq(unifiedContentTable.id, result.contentId),
             ),
           )
-          .returning({ id: unifiedContentTable.id });
+          .returning({
+            id: unifiedContentTable.id,
+            placement: unifiedContentTable.placement,
+            sourceContentId: unifiedContentTable.sourceContentId,
+          });
 
         if (!updated) {
           log.warn("content metrics persistence skipped missing record", {
@@ -176,8 +185,21 @@ export class ContentMetricsRefresher {
           collectedAt,
           granularity: ContentMetricsGranularity.DAILY,
         });
+
+        analyticsPoints.push({
+          workspaceId,
+          contentId: updated.id,
+          placement: updated.placement,
+          sourceContentId: updated.sourceContentId,
+          collectedAt,
+          metrics: result.metrics,
+        });
       }
     });
+
+    if (analyticsPoints.length > 0) {
+      writeContentMetricsAnalytics(analyticsPoints);
+    }
 
     return missing;
   }

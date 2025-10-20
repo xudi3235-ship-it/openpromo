@@ -81,6 +81,12 @@
       "remote": true
     }
   ],
+  "analytics_engine_datasets": [
+    {
+      "binding": "WorkspaceInsightsAnalytics",
+      "dataset": "workspace_insights"
+    }
+  ],
   "triggers": {
     "crons": [
       // daily
@@ -175,6 +181,12 @@
           "remote": true
         }
       ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "WorkspaceInsightsAnalytics",
+          "dataset": "workspace_insights"
+        }
+      ],
       // no need to duplicate DO migrations
       "workflows": [
         {
@@ -243,6 +255,12 @@
           "bucket_name": "openpromo-bucket",
           "binding": "Bucket",
           "remote": true
+        }
+      ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "WorkspaceInsightsAnalytics",
+          "dataset": "workspace_insights"
         }
       ],
       "durable_objects": {
