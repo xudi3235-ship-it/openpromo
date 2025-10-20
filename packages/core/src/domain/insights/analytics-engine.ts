@@ -42,7 +42,8 @@ export function writeContentMetricsAnalytics(
     dimensions: {
       placement: point.placement,
       source_content_id: point.sourceContentId ?? null,
-      platform: point.platform ?? null,
+      platform:
+        point.platform ?? inferPlatformFromPlacement(point.placement) ?? null,
     },
   }));
 
@@ -79,7 +80,7 @@ export function writeInsightAnalytics(events: InsightAnalyticsEvent[]): void {
         const dimensionValue = event.dimensions?.[key];
         indexes.push(normalizeDimensionValue(dimensionValue));
       }
-
+      console.log("Writing analytics data point", { indexes, value });
       dataset.writeDataPoint({
         indexes,
         doubles: [value],
@@ -102,9 +103,9 @@ function extractDimensionKeys(events: InsightAnalyticsEvent[]): string[] {
 
 function normalizeDimensionValue(
   value: string | number | boolean | null | undefined,
-): string | null {
+): string {
   if (value === null || value === undefined) {
-    return null;
+    return "";
   }
   if (typeof value === "string") return value;
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -113,7 +114,7 @@ function normalizeDimensionValue(
   if (typeof value === "boolean") {
     return value ? "true" : "false";
   }
-  return null;
+  return "";
 }
 
 function getWorkspaceInsightsDataset(): AnalyticsEngineDataset | null {
@@ -139,4 +140,13 @@ function isAnalyticsDataset(
       typeof (candidate as AnalyticsEngineDataset).writeDataPoint ===
         "function",
   );
+}
+
+function inferPlatformFromPlacement(
+  placement: AllPlacement,
+): "facebook" | "instagram" | "tiktok" | null {
+  if (placement.startsWith("FB_")) return "facebook";
+  if (placement.startsWith("IG_")) return "instagram";
+  if (placement.startsWith("TT_")) return "tiktok";
+  return null;
 }

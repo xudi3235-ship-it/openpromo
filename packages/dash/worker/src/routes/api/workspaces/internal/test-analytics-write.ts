@@ -19,7 +19,8 @@ export const testAnalyticsWriteRoute = new Hono<ApiEnv>().get(
           contentId,
           placement: AllPlacement.FB_FEED,
           collectedAt: now,
-          sourceContentId: null,
+          sourceContentId: "1234567890",
+          platform: "facebook",
           metrics: {
             impressions: 1234,
             engagement: 321,
