@@ -89,8 +89,8 @@ export class WorkspaceInsightsAggregator {
       .where(
         and(
           eq(contentMetricsSnapshotTable.workspaceId, workspaceId),
-          sql`${contentMetricsSnapshotTable.collectedAt} >= ${range.start}`,
-          sql`${contentMetricsSnapshotTable.collectedAt} <= ${range.end}`,
+          sql`${contentMetricsSnapshotTable.collectedAt} >= ${range.start.toISOString()}`,
+          sql`${contentMetricsSnapshotTable.collectedAt} <= ${range.end.toISOString()}`,
         ),
       )
       .groupBy(bucketExpression)
