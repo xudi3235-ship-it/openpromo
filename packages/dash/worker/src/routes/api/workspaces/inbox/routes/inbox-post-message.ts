@@ -61,7 +61,10 @@ export const inboxPostMessageRoute = new Hono<ApiEnv>().post(
     try {
       if (row.platform === "INSTAGRAM") {
         await instagramGraphRequest(
-          { accessToken: row.accessToken },
+          {
+            accessToken: row.accessToken,
+            rateLimitKey: `instagram:${row.connectedAccountId}`,
+          },
           `/me/messages`,
           {
             method: "POST",

@@ -1,5 +1,8 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { instagramGraphRequest } from "@core/domain/content/entity/instagram/api";
+import {
+  type InstagramIdentityContext,
+  instagramGraphRequest,
+} from "@core/domain/content/entity/instagram/api";
 import type { InstagramMediaType } from "@core/domain/content/entity/instagram/mediaInsights";
 import { InstagramContentMetricsProvider } from "@core/domain/content/metrics/providers";
 import { db } from "@core/helpers/db";
@@ -40,11 +43,6 @@ type InstagramMedia = {
   children?: {
     data?: InstagramMediaChild[];
   };
-};
-
-type InstagramIdentityContext = {
-  igAccountID: string;
-  accessToken: string;
 };
 
 type InstagramBackfillContext = InstagramIdentityContext & {
@@ -94,6 +92,7 @@ export class InstagramBackfiller extends BaseBackfiller<
       igAccountID: instagramAccount.externalAccountId,
       accessToken: instagramAccount.encryptedAccessToken,
       connectedAccountId: instagramAccount.id,
+      rateLimitKey: `instagram:${instagramAccount.id}`,
     };
 
     return { platformAccount: instagramAccount, context };
@@ -211,23 +210,27 @@ export class InstagramBackfiller extends BaseBackfiller<
       const response = await instagramGraphRequest<{
         data?: InstagramMedia[];
         paging?: { cursors?: { after?: string } };
-      }>({ accessToken: ctx.accessToken }, `/${ctx.igAccountID}/media`, {
-        searchParams: {
-          fields: [
-            "id",
-            "caption",
-            "media_type",
-            "media_product_type",
-            "media_url",
-            "thumbnail_url",
-            "timestamp",
-            "permalink",
-            "children{id,media_type,media_url,thumbnail_url}",
-          ].join(","),
-          limit: "50",
-          after,
+      }>(
+        { accessToken: ctx.accessToken, rateLimitKey: ctx.rateLimitKey },
+        `/${ctx.igAccountID}/media`,
+        {
+          searchParams: {
+            fields: [
+              "id",
+              "caption",
+              "media_type",
+              "media_product_type",
+              "media_url",
+              "thumbnail_url",
+              "timestamp",
+              "permalink",
+              "children{id,media_type,media_url,thumbnail_url}",
+            ].join(","),
+            limit: "50",
+            after,
+          },
         },
-      });
+      );
 
       const pageData = response.data ?? [];
       this.step(`4.${pageCount}a`, "Fetched media entries", {

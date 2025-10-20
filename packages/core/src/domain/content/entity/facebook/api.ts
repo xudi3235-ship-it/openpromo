@@ -1,5 +1,8 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { Binding } from "@core/helpers/api-env";
+import {
+  fetchWithRateLimit,
+  type RateLimitOptions,
+} from "@core/domain/content/platform-rate-limit";
 import type { FBFeedPlacementSpec } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
 import * as z from "zod";
@@ -40,21 +43,7 @@ export interface GraphRequestOptions {
   body?: Record<string, unknown> | URLSearchParams | FormData | string | null;
   apiVersion?: string;
   headers?: Record<string, string>;
-  /**
-   * Called when rate limit is hit. Return true to wait and retry, false to throw error.
-   * If not provided, will wait automatically.
-   */
-  onRateLimit?: (params: {
-    rateLimitKey: string;
-    waitUntil: number;
-    waitMs: number;
-    snapshot: {
-      callCount?: number;
-      totalCpuTime?: number;
-      totalTime?: number;
-      estimatedTimeToRegainAccess?: number;
-    };
-  }) => Promise<boolean> | boolean;
+  onRateLimit?: RateLimitOptions["onRateLimit"];
 }
 
 export const facebookGraphErrorSchema = z.object({
@@ -74,81 +63,6 @@ export class FacebookGraphError extends Error {
     super(message);
     this.name = "FacebookGraphError";
   }
-}
-
-interface RateLimitedFetchOptions {
-  /**
-   * Called when rate limit is hit. Return true to wait and retry, false to throw error.
-   * If not provided, will wait automatically.
-   */
-  onRateLimit?: (params: {
-    rateLimitKey: string;
-    waitUntil: number;
-    waitMs: number;
-    snapshot: {
-      callCount?: number;
-      totalCpuTime?: number;
-      totalTime?: number;
-      estimatedTimeToRegainAccess?: number;
-    };
-  }) => Promise<boolean> | boolean;
-}
-
-async function rateLimitedFetch(
-  rateLimitKey: string,
-  url: string,
-  options: RequestInit,
-  rateLimitOptions?: RateLimitedFetchOptions,
-): Promise<Response> {
-  const rateLimitStub =
-    Binding.use().ApiRateLimitCoordinator.getByName(rateLimitKey);
-
-  const reservation = await rateLimitStub.reserve({ cost: 1 });
-
-  if (!reservation.allowed && reservation.waitUntil) {
-    const waitMs = reservation.waitUntil - Date.now();
-
-    if (waitMs > 0) {
-      const shouldWait = rateLimitOptions?.onRateLimit
-        ? await rateLimitOptions.onRateLimit({
-            rateLimitKey,
-            waitUntil: reservation.waitUntil,
-            waitMs,
-            snapshot: {
-              callCount: reservation.snapshot.callCount,
-              totalCpuTime: reservation.snapshot.totalCpuTime,
-              totalTime: reservation.snapshot.totalTime,
-              estimatedTimeToRegainAccess:
-                reservation.snapshot.estimatedTimeToRegainAccess,
-            },
-          })
-        : false; // Default: don't wait, just throw.
-
-      if (!shouldWait) {
-        throw new Error(
-          `Rate limit exceeded for ${rateLimitKey}. Retry after ${new Date(reservation.waitUntil).toISOString()}`,
-        );
-      }
-
-      log.info("rate limit hit, waiting before request", {
-        rateLimitKey,
-        waitMs,
-        waitUntil: new Date(reservation.waitUntil).toISOString(),
-      });
-      await new Promise((resolve) => setTimeout(resolve, waitMs));
-    }
-  }
-
-  const response = await fetch(url, options);
-
-  await rateLimitStub.reportHeaders({
-    cost: 1,
-    timestamp: Date.now(),
-    headers: headersToRecord(response.headers),
-    throttled: !response.ok,
-  });
-
-  return response;
 }
 
 export async function facebookGraphRequest<T = unknown>(
@@ -214,10 +128,9 @@ export async function facebookGraphRequest<T = unknown>(
     fetchOptions.body = requestBody;
   }
 
-  const response = await rateLimitedFetch(
+  const response = await fetchWithRateLimit(
     ctx.rateLimitKey,
-    url.toString(),
-    fetchOptions,
+    () => fetch(url.toString(), fetchOptions),
     { onRateLimit },
   );
 
@@ -244,12 +157,4 @@ export async function facebookGraphRequest<T = unknown>(
   }
 
   return (await response.json()) as T;
-}
-
-function headersToRecord(headers: Headers): Record<string, string> {
-  const record: Record<string, string> = {};
-  for (const [key, value] of headers.entries()) {
-    record[key.toLowerCase()] = value;
-  }
-  return record;
 }

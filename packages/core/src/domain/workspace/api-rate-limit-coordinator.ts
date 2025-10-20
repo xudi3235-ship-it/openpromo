@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Log } from "@core/utils/log";
 
+// NOTE: all these runtime params should be Rpc.Serializable.
 export type RateLimitSnapshot = {
   callCount?: number;
   totalCpuTime?: number;

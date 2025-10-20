@@ -137,7 +137,7 @@ export class InstagramMediaInsightsFetcher {
   }
 
   async fetch(
-    ctx: Pick<InstagramIdentityContext, "accessToken">,
+    ctx: Pick<InstagramIdentityContext, "accessToken" | "rateLimitKey">,
     params: InstagramMediaMetricsFetchParams,
   ): Promise<InstagramMediaMetricsResult> {
     if (!params.mediaId) {
@@ -183,7 +183,7 @@ export class InstagramMediaInsightsFetcher {
       });
 
       const response = await this.request<InstagramInsightsResponse>(
-        { accessToken: ctx.accessToken },
+        { accessToken: ctx.accessToken, rateLimitKey: ctx.rateLimitKey },
         `/${params.mediaId}/insights`,
         {
           searchParams,

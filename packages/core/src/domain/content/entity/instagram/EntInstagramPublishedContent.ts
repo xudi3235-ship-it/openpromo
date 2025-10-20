@@ -52,6 +52,7 @@ export class EntInstagramPublishedContent extends Ent<ContentMetricsTarget> {
 
     const ctx = {
       accessToken: account.encryptedAccessToken,
+      rateLimitKey: `instagram:${account.id}`,
     };
 
     log.info("fetching instagram metrics", {

@@ -3,6 +3,8 @@ import {
   type ContentMetricsTarget,
 } from "@core/domain/content/metrics";
 import { Actor } from "@core/helpers/actor";
+import type { ApiEnv } from "@core/helpers/api-env";
+import { Binding } from "@core/helpers/api-env";
 import { and, db, eq, gt, inArray } from "@core/helpers/db";
 import { unifiedContentTable } from "@core/schemas/content.sql";
 import { workspacesTable } from "@core/schemas/workspaces.sql";
@@ -30,6 +32,10 @@ const RETRY_BASE_DELAY_MS = 5 * 60 * 1000;
 const RETRY_MAX_DELAY_MS = 6 * 60 * 60 * 1000;
 
 const log = Log.create({ namespace: "workspace-sync.metrics" });
+
+type RateLimitStub = ReturnType<
+  ApiEnv["Bindings"]["ApiRateLimitCoordinator"]["getByName"]
+>;
 
 export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
   private readonly metricsRefresher: ContentMetricsRefresher;
@@ -100,10 +106,15 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
         return true;
       });
 
-      const refreshResult = await Actor.provide(
-        actor.type,
-        actor.properties,
-        () => this.metricsRefresher.refresh(workspaceId, refreshTargets),
+      const {
+        result: refreshResult,
+        pendingIds,
+        waitUntil,
+      } = await this.refreshWithRateLimit(
+        actor,
+        workspaceId,
+        refreshTargets,
+        batch.remainingPendingIds ?? [],
       );
 
       const hadFailures = refreshResult.failures.length > 0;
@@ -114,17 +125,16 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
       nextTask = mergeWorkspaceSyncTask(nextTask, {
         metadata: this.buildMetadataPatch(nextTask.metadata, {
           cursor: batch.nextCursor,
-          pendingContentIds: batch.remainingPendingIds,
+          pendingContentIds: pendingIds ?? batch.remainingPendingIds,
           retryCount,
           exhausted: false,
         }),
-        nextRunAt: hadFailures
-          ? startedAt +
-            Math.min(
-              RETRY_BASE_DELAY_MS * 2 ** (retryCount - 1),
-              RETRY_MAX_DELAY_MS,
-            )
-          : null,
+        nextRunAt: this.computeNextRunAt({
+          startedAt,
+          retryCount,
+          hadFailures,
+          waitUntil,
+        }),
       });
 
       log.info("content metrics refresh finished", {
@@ -195,6 +205,125 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
     }
 
     return patch;
+  }
+
+  private computeNextRunAt(params: {
+    startedAt: number;
+    retryCount: number;
+    hadFailures: boolean;
+    waitUntil?: number | null;
+  }): number | null {
+    const { startedAt, retryCount, hadFailures, waitUntil } = params;
+    const failureDelay = hadFailures
+      ? startedAt +
+        Math.min(
+          RETRY_BASE_DELAY_MS * 2 ** (retryCount - 1),
+          RETRY_MAX_DELAY_MS,
+        )
+      : null;
+
+    if (!waitUntil) {
+      return failureDelay;
+    }
+
+    const normalizedWait = waitUntil > startedAt ? waitUntil : startedAt;
+    if (!failureDelay) {
+      return normalizedWait;
+    }
+
+    return Math.max(failureDelay, normalizedWait);
+  }
+
+  private async refreshWithRateLimit(
+    actor: Actor.WorkspaceUser,
+    workspaceId: string,
+    targets: ContentMetricsTarget[],
+    initialPendingIds: string[],
+  ): Promise<{
+    result: Awaited<ReturnType<ContentMetricsRefresher["refresh"]>>;
+    pendingIds?: string[];
+    waitUntil?: number | null;
+  }> {
+    if (targets.length === 0) {
+      return {
+        result: { processed: 0, updated: 0, failures: [] },
+        pendingIds: [],
+        waitUntil: null,
+      };
+    }
+
+    const bindings = Binding.use();
+    const groups = this.groupTargetsByRateLimit(targets);
+    const pendingIdSet = new Set(initialPendingIds);
+    const aggregated = {
+      processed: 0,
+      updated: 0,
+      failures: [] as Array<{ contentId: string; reason: string }>,
+    };
+    let earliestWait: number | null = null;
+
+    for (const group of groups) {
+      const { rateLimitKey, targets: groupTargets } = group;
+      if (groupTargets.length === 0) continue;
+
+      if (rateLimitKey) {
+        let stub: RateLimitStub | null = null;
+        try {
+          stub = bindings.ApiRateLimitCoordinator.getByName(rateLimitKey);
+          const { allowed, waitUntil } = await stub.reserve({
+            cost: groupTargets.length,
+          });
+          if (!allowed) {
+            for (const target of groupTargets) {
+              pendingIdSet.add(target.id);
+            }
+            if (typeof waitUntil === "number") {
+              earliestWait =
+                earliestWait === null
+                  ? waitUntil
+                  : Math.min(earliestWait, waitUntil);
+            }
+            log.info("rate limit reservation denied", {
+              rateLimitKey,
+              waitUntil,
+              targetCount: groupTargets.length,
+            });
+            continue;
+          }
+        } catch (error) {
+          console.warn("rate limit coordinator error", {
+            rateLimitKey,
+            error: (error as Error).message,
+          });
+          // If the coordinator errors we proceed without pausing
+        }
+      }
+
+      const groupResult = await Actor.provide(
+        actor.type,
+        actor.properties,
+        () => this.metricsRefresher.refresh(workspaceId, groupTargets),
+      );
+
+      aggregated.processed += groupResult.processed;
+      aggregated.updated += groupResult.updated;
+      aggregated.failures.push(...groupResult.failures);
+
+      // Remove any IDs that may have been pending before
+      for (const target of groupTargets) {
+        pendingIdSet.delete(target.id);
+      }
+    }
+
+    const pendingIdsArray = pendingIdSet.size
+      ? Array.from(pendingIdSet)
+      : undefined;
+
+    return {
+      result: aggregated,
+      pendingIds: pendingIdsArray,
+      waitUntil: earliestWait,
+    };
   }
 
   private async loadBatch(
@@ -335,5 +464,37 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
       sourceContentId: row.sourceContentId,
       connectedAccountId: row.connectedAccountId,
     };
+  }
+
+  private groupTargetsByRateLimit(targets: ContentMetricsTarget[]) {
+    const groups = new Map<
+      string,
+      { rateLimitKey: string | null; targets: ContentMetricsTarget[] }
+    >();
+
+    for (const target of targets) {
+      const rateLimitKey = this.rateLimitKeyForTarget(target);
+      const key =
+        rateLimitKey ?? `no-rate:${target.connectedAccountId ?? "n/a"}`;
+      const existing = groups.get(key);
+      if (existing) {
+        existing.targets.push(target);
+      } else {
+        groups.set(key, { rateLimitKey, targets: [target] });
+      }
+    }
+
+    return Array.from(groups.values());
+  }
+
+  private rateLimitKeyForTarget(target: ContentMetricsTarget): string | null {
+    if (!target.connectedAccountId) return null;
+    if (target.placement.startsWith("FB")) {
+      return `facebook:${target.connectedAccountId}`;
+    }
+    if (target.placement.startsWith("IG")) {
+      return `instagram:${target.connectedAccountId}`;
+    }
+    return null;
   }
 }

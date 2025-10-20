@@ -1,4 +1,8 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
+import {
+  fetchWithRateLimit,
+  type RateLimitOptions,
+} from "@core/domain/content/platform-rate-limit";
 import type { IGFeedPlacementSpec } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
 import { FacebookGraphError, facebookGraphErrorSchema } from "../facebook/api";
@@ -10,6 +14,7 @@ const log = Log.create({ namespace: "instagram-api" });
 export interface InstagramIdentityContext {
   igAccountID: string;
   accessToken: string;
+  rateLimitKey: string;
 }
 
 export async function resolveInstagramIdentity(
@@ -30,6 +35,7 @@ export async function resolveInstagramIdentity(
   return {
     igAccountID,
     accessToken: account.encryptedAccessToken,
+    rateLimitKey: `instagram:${account.id}`,
   } satisfies InstagramIdentityContext;
 }
 
@@ -39,10 +45,11 @@ export interface GraphRequestOptions {
   body?: Record<string, unknown> | null;
   apiVersion?: string;
   host?: "graph.instagram.com" | "graph.facebook.com";
+  onRateLimit?: RateLimitOptions["onRateLimit"];
 }
 
 export async function instagramGraphRequest<T = unknown>(
-  ctx: { accessToken: string },
+  ctx: { accessToken: string; rateLimitKey: string },
   path: string,
   options: GraphRequestOptions = {},
 ): Promise<T> {
@@ -65,14 +72,19 @@ export async function instagramGraphRequest<T = unknown>(
     }
   }
 
-  const response = await fetch(url.toString(), {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${ctx.accessToken}`,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const response = await fetchWithRateLimit(
+    ctx.rateLimitKey,
+    () =>
+      fetch(url.toString(), {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${ctx.accessToken}`,
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      }),
+    { onRateLimit: options.onRateLimit },
+  );
 
   log.info("instagram graph request", {
     url: url.toString(),
