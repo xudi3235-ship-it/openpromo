@@ -16,4 +16,27 @@ export const QUERY_KEYS = {
     workspaceSlug,
     "workspace_members",
   ],
+  WORKSPACE_INSIGHTS_SUMMARY: (workspaceSlug: string) => [
+    workspaceSlug,
+    "insights",
+    "summary",
+  ],
+  WORKSPACE_INSIGHTS_TIMESERIES: (
+    workspaceSlug: string,
+    start: Date,
+    end: Date,
+    interval: "day" | "week",
+  ) => [
+    workspaceSlug,
+    "insights",
+    "timeseries",
+    start.toISOString(),
+    end.toISOString(),
+    interval,
+  ],
+  WORKSPACE_INSIGHTS_TOP_CONTENT: (
+    workspaceSlug: string,
+    limit: number,
+    sortBy: "impressions" | "engagement",
+  ) => [workspaceSlug, "insights", "top-content", limit, sortBy],
 } as const;
