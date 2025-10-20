@@ -67,29 +67,36 @@ export function writeInsightAnalytics(events: InsightAnalyticsEvent[]): void {
       const value = Number(rawValue);
       if (!Number.isFinite(value)) continue;
 
-      const indexes: (string | ArrayBuffer | null)[] = [
-        event.workspaceId,
-        event.domain,
-        event.entityType,
-        event.entityId,
-        metricName,
-        event.collectedAt.toISOString(),
+      const indexParts = [
+        `workspace=${event.workspaceId}`,
+        `domain=${event.domain}`,
+        `entity_type=${event.entityType}`,
+        `entity_id=${event.entityId}`,
+        `metric=${metricName}`,
+        `collected_at=${event.collectedAt.toISOString()}`,
       ];
 
       for (const key of dimensionKeys) {
         const dimensionValue = event.dimensions?.[key];
-        indexes.push(normalizeDimensionValue(dimensionValue));
+        const normalized = normalizeDimensionValue(dimensionValue);
+        if (normalized.length === 0) continue;
+        indexParts.push(`dim.${key}=${normalized}`);
       }
-      console.log("Writing analytics data point", { indexes, value });
+
+      const indexValue = indexParts.join("|");
+      console.log("Writing analytics data point", {
+        index: indexValue,
+        value,
+      });
 
       try {
         dataset.writeDataPoint({
-          indexes,
+          indexes: [indexValue],
           doubles: [value],
         });
       } catch (error) {
         console.error("Failed to write analytics data point", {
-          indexes,
+          index: indexValue,
           value,
           error,
         });
