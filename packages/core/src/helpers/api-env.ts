@@ -35,7 +35,7 @@ export type ApiEnv = {
     ContainerBackend: DurableObjectNamespace<ContainerBackend>;
     Bucket: R2Bucket;
     JobQueue: Queue<JobQueueMessage>;
-    WorkspaceInsightsAnalytics?: AnalyticsEngineDataset;
+    WorkspaceInsightsAnalytics: AnalyticsEngineDataset;
   };
 };
 

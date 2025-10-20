@@ -11,6 +11,10 @@ type TestMetricsRefreshResponse = InferResponseType<
   (typeof apiClient)["workspaces"][":workspaceSlug"]["internal"]["metrics"]["refresh"]["$get"]
 >;
 
+type TestAnalyticsWriteResponse = InferResponseType<
+  (typeof apiClient)["workspaces"][":workspaceSlug"]["internal"]["analytics"]["test-write"]["$get"]
+>;
+
 export const useTestBackfillMutation = (
   onSuccess?: (data: TestBackfillResponse) => void,
 ) => {
@@ -47,6 +51,26 @@ export const useTestMetricsRefreshMutation = (
     },
     onError: (error) => {
       toast.error(error.message || "Failed to refresh metrics");
+    },
+  });
+};
+
+export const useTestAnalyticsWriteMutation = (
+  onSuccess?: (data: TestAnalyticsWriteResponse) => void,
+) => {
+  const { workspace } = useWorkspace();
+
+  return useHonoMutation<TestAnalyticsWriteResponse, void>({
+    mutationFn: (api) =>
+      api.workspaces[":workspaceSlug"].internal.analytics["test-write"].$get({
+        param: { workspaceSlug: workspace.slug },
+      }),
+    onSuccess: (data) => {
+      toast.success("Analytics test point written");
+      onSuccess?.(data);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to write analytics test point");
     },
   });
 };

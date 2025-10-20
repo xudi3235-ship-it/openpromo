@@ -1,6 +1,7 @@
 import { Button } from "@openpromo/ui/components/button";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  useTestAnalyticsWriteMutation,
   useTestBackfillMutation,
   useTestMetricsRefreshMutation,
 } from "@/queries/workspace-internal-testing";
@@ -8,17 +9,19 @@ import {
 function ApiTestingPage() {
   const backfillMutation = useTestBackfillMutation();
   const metricsMutation = useTestMetricsRefreshMutation();
+  const analyticsMutation = useTestAnalyticsWriteMutation();
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-2xl">
       <div>
         <h2 className="text-2xl font-bold mb-2">API Testing Playground</h2>
         <p className="text-muted-foreground">
-          Test internal APIs for backfill and metrics
+          Quick helpers for exercising internal backfill, metrics refresh, and
+          analytics feeds.
         </p>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-4">
         <Button
           onClick={() => {
             backfillMutation.mutate();
@@ -33,6 +36,13 @@ function ApiTestingPage() {
           disabled={metricsMutation.isPending}
         >
           {metricsMutation.isPending ? "Testing..." : "Test Metrics Refresh"}
+        </Button>
+
+        <Button
+          onClick={() => analyticsMutation.mutate(undefined)}
+          disabled={analyticsMutation.isPending}
+        >
+          {analyticsMutation.isPending ? "Testing..." : "Test Analytics Write"}
         </Button>
       </div>
     </div>
