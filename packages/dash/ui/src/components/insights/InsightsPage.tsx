@@ -1,6 +1,6 @@
 import { Tabs, TabsList, TabsTrigger } from "@openpromo/ui/components/tabs";
-import { subDays } from "date-fns";
-import { useState } from "react";
+import { startOfDay, subDays } from "date-fns";
+import { useMemo, useState } from "react";
 import {
   type TimeSeriesQueryParams,
   useWorkspaceInsightsSummary,
@@ -17,15 +17,17 @@ export function InsightsPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
   const [interval, setInterval] = useState<"day" | "week">("day");
 
-  // Calculate date range based on selection
-  const dateRange: TimeSeriesQueryParams = {
-    end: new Date(),
-    start: subDays(
-      new Date(),
-      timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 90,
-    ),
-    interval,
-  };
+  // Memoize date range to prevent constant recreating with new timestamps
+  const dateRange: TimeSeriesQueryParams = useMemo(() => {
+    const today = startOfDay(new Date());
+    const days = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 90;
+
+    return {
+      end: today,
+      start: subDays(today, days),
+      interval,
+    };
+  }, [timeRange, interval]);
 
   // Fetch data independently
   const { data: summary, isLoading: summaryLoading } =

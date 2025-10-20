@@ -36,6 +36,9 @@ export const useWorkspaceInsightsSummary = () => {
   return useHonoQuery({
     ...workspaceInsightsSummaryQueryOpts(workspace.slug),
     errorMessage: "Failed to load workspace insights summary",
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -174,5 +177,8 @@ export const useWorkspaceInsightsTopContent = (
   return useHonoQuery({
     ...workspaceInsightsTopContentQueryOpts(workspace.slug, params),
     errorMessage: "Failed to load workspace top content",
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };

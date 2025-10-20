@@ -1,19 +1,9 @@
-import { and, db, eq, sql } from "@core/helpers/db";
-import {
-  contentMetricsSnapshotTable,
-  unifiedContentTable,
-} from "@core/schemas/content.sql";
 import type {
   TimeSeriesPoint,
   TopContentEntry,
   WorkspaceSummary,
 } from "@shared/insights";
-import {
-  ContentMetricsSummarySchema,
-  TimeSeriesPointSchema,
-  TopContentEntrySchema,
-  WorkspaceSummarySchema,
-} from "@shared/insights";
+import { WorkspaceSummarySchema } from "@shared/insights";
 
 export type InsightsTimeRange = {
   start: Date;
@@ -21,7 +11,24 @@ export type InsightsTimeRange = {
 };
 
 export class WorkspaceInsightsAggregator {
-  async getSummary(params: { workspaceId: string }): Promise<WorkspaceSummary> {
+  async getSummary(_params: {
+    workspaceId: string;
+  }): Promise<WorkspaceSummary> {
+    // TODO: Remove mock data once we have real metrics
+    return WorkspaceSummarySchema.parse({
+      totals: {
+        impressions: 145230,
+        engagement: 8542,
+        clicks: 3421,
+        likes: 4231,
+        comments: 892,
+        shares: 1998,
+      },
+      lastRefreshedAt: new Date(),
+    });
+
+    // Real implementation (commented out for now)
+    /*
     const { workspaceId } = params;
     const rows = await db()
       .select({
@@ -62,6 +69,7 @@ export class WorkspaceInsightsAggregator {
       totals,
       lastRefreshedAt,
     });
+    */
   }
 
   async getTimeSeries(params: {
@@ -69,7 +77,43 @@ export class WorkspaceInsightsAggregator {
     range: InsightsTimeRange;
     interval: "day" | "week";
   }): Promise<TimeSeriesPoint[]> {
-    const { workspaceId, range, interval } = params;
+    const { range, interval } = params;
+
+    // TODO: Remove mock data once we have real metrics
+    // Generate mock data for now
+    const mockData: TimeSeriesPoint[] = [];
+    const dayMs = 24 * 60 * 60 * 1000;
+    const intervalMs = interval === "week" ? dayMs * 7 : dayMs;
+
+    const startTime = range.start.getTime();
+    console.log(
+      "hit getTimeSeries with start:",
+      range.start,
+      "end:",
+      range.end,
+      "interval:",
+      interval,
+    );
+
+    let currentTime = startTime;
+    let iterations = 0;
+    const maxIterations = 1000; // Safety limit
+
+    while (iterations < maxIterations) {
+      mockData.push({
+        bucket: new Date(currentTime),
+        impressions: Math.floor(Math.random() * 10000) + 5000,
+        engagement: Math.floor(Math.random() * 500) + 100,
+      });
+      currentTime += intervalMs;
+      iterations++;
+    }
+    console.log("generated", mockData.length, "data points");
+
+    return mockData;
+
+    // Real implementation (commented out for now)
+    /*
     const bucketExpression =
       interval === "week"
         ? sql`DATE_TRUNC('week', ${contentMetricsSnapshotTable.collectedAt})`
@@ -106,6 +150,7 @@ export class WorkspaceInsightsAggregator {
         engagement: Number(row.engagement ?? 0),
       });
     });
+    */
   }
 
   async getTopContent(params: {
@@ -113,6 +158,32 @@ export class WorkspaceInsightsAggregator {
     limit?: number;
     sortBy?: "impressions" | "engagement";
   }): Promise<TopContentEntry[]> {
+    const { limit = 5 } = params;
+
+    // TODO: Remove mock data once we have real metrics
+    const mockContent: TopContentEntry[] = Array.from(
+      { length: limit },
+      (_, i) => ({
+        contentId: `content-${i + 1}`,
+        sourceContentId: `source-${i + 1}`,
+        placement:
+          ["facebook", "instagram", "twitter", "linkedin"][i % 4] || "facebook",
+        metrics: {
+          impressions: Math.floor(Math.random() * 50000) + 10000,
+          engagement: Math.floor(Math.random() * 2000) + 500,
+          clicks: Math.floor(Math.random() * 1000) + 100,
+          likes: Math.floor(Math.random() * 1500) + 200,
+          comments: Math.floor(Math.random() * 300) + 50,
+          shares: Math.floor(Math.random() * 500) + 50,
+        },
+        lastRefreshedAt: new Date(),
+      }),
+    );
+
+    return mockContent;
+
+    // Real implementation (commented out for now)
+    /*
     const { workspaceId, limit = 5, sortBy = "impressions" } = params;
 
     const rows = await db()
@@ -143,5 +214,6 @@ export class WorkspaceInsightsAggregator {
         });
       })
       .filter((entry): entry is TopContentEntry => Boolean(entry));
+    */
   }
 }
