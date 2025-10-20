@@ -22,6 +22,27 @@ import type { MessagePayload } from "@shared/inbox";
 const log = Log.create({ namespace: "InboxService" });
 
 export namespace InboxService {
+  export async function findConversationByExternalThreadId(input: {
+    connectedAccountId: string;
+    externalThreadId: string;
+    channel: InboxChannel;
+  }) {
+    const [existing] = await db()
+      .select()
+      .from(inboxConversationsTable)
+      .where(
+        and(
+          eq(
+            inboxConversationsTable.connectedAccountId,
+            input.connectedAccountId,
+          ),
+          eq(inboxConversationsTable.channel, input.channel),
+          eq(inboxConversationsTable.externalThreadId, input.externalThreadId),
+        ),
+      )
+      .limit(1);
+    return existing ?? null;
+  }
   export async function getConversation(input: {
     connectedAccountId: string;
     contactId: string;

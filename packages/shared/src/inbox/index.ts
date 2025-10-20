@@ -60,19 +60,49 @@ export const FBMessagePayload = z.object({
     .optional(),
 });
 
+export const FBCommentPayload = z.object({
+  post: z.object({
+    id: z.string(),
+    permalink_url: z.string(),
+  }),
+  from: z.object({
+    id: z.string(),
+    name: z.string(),
+  }),
+  message: z.string(),
+  post_id: z.string(),
+  comment_id: z.string(),
+  parent_id: z.string(),
+  verb: z.enum(["add", "edited", "remove"]),
+  created_time: z.number(),
+});
+
 export const FBWebhookPayload = z.object({
   object: z.literal("page"),
   entry: z.array(
-    z.object({
-      /** Page ID */
-      id: z.string(),
-      messaging: z.array(FBMessagePayload),
-    }),
+    z.union([
+      z.object({
+        /** Page ID */
+        id: z.string(),
+        messaging: z.array(FBMessagePayload),
+      }),
+      z.object({
+        /** Page ID */
+        id: z.string(),
+        changes: z.array(
+          z.object({
+            field: z.literal("feed"),
+            value: FBCommentPayload,
+          }),
+        ),
+      }),
+    ]),
   ),
 });
 
 export type FBMessagePayload = z.infer<typeof FBMessagePayload>;
 export type FBWebhookPayload = z.infer<typeof FBWebhookPayload>;
+export type FBCommentPayload = z.infer<typeof FBCommentPayload>;
 
 export const IGMessagePayload = z.object({
   sender: z.object({
@@ -135,7 +165,12 @@ const IGWebhookPayload = z.object({
 export type IGMessagePayload = z.infer<typeof IGMessagePayload>;
 export type IGWebhookPayload = z.infer<typeof IGWebhookPayload>;
 
-export const MessagePayload = z.union([FBMessagePayload, IGMessagePayload]);
+// MessagePayload now includes FB comments as well for unified storage
+export const MessagePayload = z.union([
+  FBMessagePayload,
+  IGMessagePayload,
+  FBCommentPayload,
+]);
 
 export type MessagePayload = z.infer<typeof MessagePayload>;
 
