@@ -12,7 +12,10 @@ import {
 import { InsightsInboxSummary } from "./InsightsInboxSummary";
 import { InsightsSummaryCards } from "./InsightsSummaryCards";
 import { InsightsTimeSeriesChart } from "./InsightsTimeSeriesChart";
-import { InsightsTopContent } from "./InsightsTopContent";
+import {
+  InsightsTopContent,
+  InsightsTopContentSkeleton,
+} from "./InsightsTopContent";
 
 type TimeRange = "7d" | "30d" | "90d";
 
@@ -26,14 +29,6 @@ const SUMMARY_SKELETON_KEYS = [
 ] as const;
 
 const INBOX_SKELETON_KEYS = ["messages", "response", "rate"] as const;
-
-const TOP_CONTENT_SKELETON_KEYS = [
-  "one",
-  "two",
-  "three",
-  "four",
-  "five",
-] as const;
 
 export function InsightsPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
@@ -167,21 +162,7 @@ export function InsightsPage() {
             </p>
           </div>
           {topContentLoading ? (
-            <div className="space-y-3">
-              {TOP_CONTENT_SKELETON_KEYS.map((key) => (
-                <div
-                  key={`top-content-skeleton-${key}`}
-                  className="border border-border/40 rounded-lg p-4 flex items-center gap-4"
-                >
-                  <Skeleton className="h-6 w-6 rounded" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-40 rounded" />
-                    <Skeleton className="h-3 w-24 rounded" />
-                  </div>
-                  <Skeleton className="h-4 w-24 rounded" />
-                </div>
-              ))}
-            </div>
+            <InsightsTopContentSkeleton rows={5} />
           ) : (
             <InsightsTopContent items={topContent?.items ?? []} />
           )}
