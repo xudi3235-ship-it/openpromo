@@ -33,13 +33,15 @@
   "devDependencies": {
     "@tsconfig/vite-react": "^7.0.0",
     "@types/react": "catalog:",
-    "@types/react-dom": "catalog:"
+    "@types/react-dom": "catalog:",
+    "unplugin-fonts": "^1.4.0"
   },
   "exports": {
     "./*": "./src/*",
     "./hooks/*": "./src/hooks/*.ts",
     "./lib/*": "./src/lib/*.ts",
     "./components/*": "./src/components/*.tsx",
-    "./layout": "./src/layout/index.ts"
+    "./layout": "./src/layout/index.ts",
+    "./styles/fonts": "./src/styles/fonts.ts"
   }
 }
