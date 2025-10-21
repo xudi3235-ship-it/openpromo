@@ -1,18 +1,32 @@
+import { Button } from "@openpromo/ui/components/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { Zap } from "lucide-react";
+import { ArrowUpDown, Zap } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 import { formatNumber } from "./utils";
 
 export const engagementColumn: ColumnDef<MergedContentEntity> = {
-  accessorKey: "engagement",
-  header: () => (
+  id: "engagement",
+  accessorFn: (row) => {
+    if (row.type === "content") {
+      return row.entity.metrics?.engagement ?? 0;
+    }
+    return 0;
+  },
+  enableSorting: true,
+  header: ({ column }) => (
     <ColumnHeaderWithTooltip
       tooltip="Total engagement (likes, comments, shares, etc.)"
       className="cursor-help"
     >
-      Engagement
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Engagement
+        <ArrowUpDown />
+      </Button>
     </ColumnHeaderWithTooltip>
   ),
   cell: ({ row }) => {

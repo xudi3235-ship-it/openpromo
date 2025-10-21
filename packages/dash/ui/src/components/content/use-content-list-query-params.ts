@@ -15,8 +15,8 @@ export function useContentListQueryParams(
   return useMemo(() => {
     // TODO: enable multiple sorting conditions
     // Convert sorting state to API parameters with default fallback
-    const sortBy: "createdAt" | "scheduledDate" =
-      (sorting[0]?.id as "createdAt" | "scheduledDate") || "createdAt";
+    const sortBy: ListContentQueryParams["sortBy"] =
+      (sorting[0]?.id as ListContentQueryParams["sortBy"]) || "createdAt";
     const sortOrder: "asc" | "desc" = sorting[0]
       ? sorting[0].desc
         ? "desc"

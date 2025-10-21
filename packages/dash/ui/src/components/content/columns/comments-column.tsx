@@ -1,18 +1,32 @@
+import { Button } from "@openpromo/ui/components/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { MessageCircle } from "lucide-react";
+import { ArrowUpDown, MessageCircle } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 import { formatNumber } from "./utils";
 
 export const commentsColumn: ColumnDef<MergedContentEntity> = {
-  accessorKey: "comments",
-  header: () => (
+  id: "comments",
+  accessorFn: (row) => {
+    if (row.type === "content") {
+      return row.entity.metrics?.comments ?? 0;
+    }
+    return 0;
+  },
+  enableSorting: true,
+  header: ({ column }) => (
     <ColumnHeaderWithTooltip
       tooltip="Total comments on published content"
       className="cursor-help"
     >
-      Comments
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Comments
+        <ArrowUpDown />
+      </Button>
     </ColumnHeaderWithTooltip>
   ),
   cell: ({ row }) => {

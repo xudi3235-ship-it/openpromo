@@ -1,18 +1,32 @@
+import { Button } from "@openpromo/ui/components/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { Eye } from "lucide-react";
+import { ArrowUpDown, Eye } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 import { formatNumber } from "./utils";
 
 export const reachColumn: ColumnDef<MergedContentEntity> = {
-  accessorKey: "reach",
-  header: () => (
+  id: "reach",
+  accessorFn: (row) => {
+    if (row.type === "content") {
+      return row.entity.metrics?.reach ?? 0;
+    }
+    return 0;
+  },
+  enableSorting: true,
+  header: ({ column }) => (
     <ColumnHeaderWithTooltip
       tooltip="Number of unique accounts reached"
       className="cursor-help"
     >
-      Reach
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Reach
+        <ArrowUpDown />
+      </Button>
     </ColumnHeaderWithTooltip>
   ),
   cell: ({ row }) => {

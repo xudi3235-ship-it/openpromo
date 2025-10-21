@@ -1,18 +1,32 @@
+import { Button } from "@openpromo/ui/components/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { Share2 } from "lucide-react";
+import { ArrowUpDown, Share2 } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 import { formatNumber } from "./utils";
 
 export const sharesColumn: ColumnDef<MergedContentEntity> = {
-  accessorKey: "shares",
-  header: () => (
+  id: "shares",
+  accessorFn: (row) => {
+    if (row.type === "content") {
+      return row.entity.metrics?.shares ?? 0;
+    }
+    return 0;
+  },
+  enableSorting: true,
+  header: ({ column }) => (
     <ColumnHeaderWithTooltip
       tooltip="Total shares and reposts of published content"
       className="cursor-help"
     >
-      Shares
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Shares
+        <ArrowUpDown />
+      </Button>
     </ColumnHeaderWithTooltip>
   ),
   cell: ({ row }) => {

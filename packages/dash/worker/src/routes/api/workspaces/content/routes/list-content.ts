@@ -27,7 +27,14 @@ const listContentQuerySchema = z.object({
   toDate: z.coerce.date().optional(),
   search: z.string().min(1).max(200).optional(),
   sortBy: z
-    .enum(["createdAt", "scheduledDate"])
+    .enum([
+      "createdAt",
+      "scheduledDate",
+      "impressions",
+      "reach",
+      "likes",
+      "shares",
+    ])
     .optional()
     .default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
@@ -119,10 +126,31 @@ export const listContentRoute = new Hono<ApiEnv>().get(
 
     // Determine order by clause based on sortBy and sortOrder
     const orderByFn = sortOrder === "asc" ? asc : desc;
-    const orderByColumn =
-      sortBy === "scheduledDate"
-        ? sql`${unifiedContentTable.placementSpec} -> 'schedulingSpec' ->> 'publishAt'`
-        : unifiedContentTable.createdAt;
+    let orderByColumn:
+      | ReturnType<typeof sql>
+      | typeof unifiedContentTable.createdAt;
+
+    switch (sortBy) {
+      case "scheduledDate":
+        orderByColumn = sql`${unifiedContentTable.placementSpec} -> 'schedulingSpec' ->> 'publishAt'`;
+        break;
+      case "impressions":
+        orderByColumn = sql`COALESCE((${unifiedContentTable.metrics} ->> 'impressions')::integer, 0)`;
+        break;
+      case "reach":
+        orderByColumn = sql`COALESCE((${unifiedContentTable.metrics} ->> 'reach')::integer, 0)`;
+        break;
+      case "likes":
+        orderByColumn = sql`COALESCE((${unifiedContentTable.metrics} ->> 'likes')::integer, 0)`;
+        break;
+      case "shares":
+        orderByColumn = sql`COALESCE((${unifiedContentTable.metrics} ->> 'shares')::integer, 0)`;
+        break;
+      case "createdAt":
+      default:
+        orderByColumn = unifiedContentTable.createdAt;
+        break;
+    }
 
     const raw = await db()
       .select()

@@ -1,18 +1,32 @@
+import { Button } from "@openpromo/ui/components/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { Heart } from "lucide-react";
+import { ArrowUpDown, Heart } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 import { formatNumber } from "./utils";
 
 export const likesColumn: ColumnDef<MergedContentEntity> = {
-  accessorKey: "likes",
-  header: () => (
+  id: "likes",
+  accessorFn: (row) => {
+    if (row.type === "content") {
+      return row.entity.metrics?.likes ?? 0;
+    }
+    return 0;
+  },
+  enableSorting: true,
+  header: ({ column }) => (
     <ColumnHeaderWithTooltip
       tooltip="Total likes and reactions on published content"
       className="cursor-help"
     >
-      Likes & Reactions
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Likes & Reactions
+        <ArrowUpDown />
+      </Button>
     </ColumnHeaderWithTooltip>
   ),
   cell: ({ row }) => {

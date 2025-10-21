@@ -469,6 +469,7 @@ export class InstagramBackfiller extends BaseBackfiller<
       createdAt: post.createdAt,
       updatedAt: post.createdAt,
       metrics: unifiedMetrics,
+      metricsRefreshedAt: new Date(), // just refreshed
     } satisfies typeof unifiedContentTable.$inferInsert;
   }
 }

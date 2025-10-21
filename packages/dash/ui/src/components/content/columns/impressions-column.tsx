@@ -1,18 +1,32 @@
+import { Button } from "@openpromo/ui/components/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { BarChart3 } from "lucide-react";
+import { ArrowUpDown, BarChart3 } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 import { formatNumber } from "./utils";
 
 export const impressionsColumn: ColumnDef<MergedContentEntity> = {
-  accessorKey: "impressions",
-  header: () => (
+  id: "impressions",
+  accessorFn: (row) => {
+    if (row.type === "content") {
+      return row.entity.metrics?.impressions ?? 0;
+    }
+    return 0;
+  },
+  enableSorting: true,
+  header: ({ column }) => (
     <ColumnHeaderWithTooltip
       tooltip="Total number of times content was displayed"
       className="cursor-help"
     >
-      Impressions
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Impressions
+        <ArrowUpDown />
+      </Button>
     </ColumnHeaderWithTooltip>
   ),
   cell: ({ row }) => {
