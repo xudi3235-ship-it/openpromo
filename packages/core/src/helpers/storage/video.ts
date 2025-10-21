@@ -202,6 +202,83 @@ export namespace VideoStorage {
     });
   }
 
+  export type CleanupBatchParams = {
+    workspaceId: string;
+    cursor?: string;
+    limit?: number;
+  };
+
+  export type CleanupBatchResult = {
+    processed: number;
+    deleted: number;
+    hasMore: boolean;
+    nextCursor?: string;
+  };
+
+  export async function cleanupBatch(
+    params: CleanupBatchParams,
+  ): Promise<CleanupBatchResult> {
+    const { workspaceId, cursor, limit = 50 } = params;
+    let processed = 0;
+    let deleted = 0;
+    const videos: StreamVideo[] = [];
+    let hasMore = false;
+    let nextCursor: string | undefined;
+
+    // Fetch a batch of videos for this workspace
+    const c = getCloudflareClient();
+    const requestParams = {
+      account_id: env.CLOUDFLARE_DEFAULT_ACCOUNT_ID,
+      creator: workspaceId,
+    } as StreamListParams;
+
+    // Note: Cloudflare Stream API uses cursor-based pagination
+    // We need to manually handle the cursor since we're processing in batches
+    const iterator = c.stream.list(requestParams);
+    let currentCursor = 0;
+    const targetCursor = cursor ? Number.parseInt(cursor, 10) : 0;
+
+    for await (const video of iterator) {
+      // Skip to the cursor position
+      if (currentCursor < targetCursor) {
+        currentCursor++;
+        continue;
+      }
+
+      videos.push(video);
+      currentCursor++;
+
+      if (videos.length >= limit) {
+        hasMore = true;
+        nextCursor = currentCursor.toString();
+        break;
+      }
+    }
+
+    // Process the batch
+    for (const video of videos) {
+      processed++;
+      if (!video.uid) continue;
+
+      const safe = await isVideoSafeToDelete(video);
+      if (!safe) continue;
+
+      try {
+        await deleteVideo(video.uid);
+        deleted++;
+      } catch (error) {
+        console.error("failed to delete video", { videoId: video.uid, error });
+      }
+    }
+
+    return {
+      processed,
+      deleted,
+      hasMore,
+      nextCursor,
+    };
+  }
+
   export async function batchDeleteVideos(): Promise<void> {
     await iterateVideos(async (video) => {
       if (!video.uid) return;

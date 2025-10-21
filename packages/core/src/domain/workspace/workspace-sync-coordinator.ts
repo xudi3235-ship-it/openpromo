@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { WorkspaceSyncManager } from "@core/domain/workspace/sync";
 import type { Actor } from "@core/helpers/actor";
-import type { ApiEnv } from "@core/helpers/api-env";
+import { type ApiEnv, Binding } from "@core/helpers/api-env";
 import {
   createWorkspaceSyncTask,
   mergeWorkspaceSyncTask,
@@ -117,13 +117,20 @@ export class WorkspaceSyncCoordinator extends DurableObject<ApiEnv> {
     }
 
     const workspaceId = this.requireWorkspaceId();
+    console.log(`Running sync task ${taskKey} for workspace ${workspaceId}`);
 
-    const { task: updatedTask } = await this.manager.runTask({
-      actor,
-      taskKey,
-      task,
-      workspaceId,
-    });
+    // Provide Binding context for the task runner
+    const { task: updatedTask } = await Binding.provide(
+      this.env.Bindings,
+      async () => {
+        return this.manager.runTask({
+          actor,
+          taskKey,
+          task,
+          workspaceId,
+        });
+      },
+    );
 
     this.tasks[taskKey] = updatedTask;
     await this.persistTasks();

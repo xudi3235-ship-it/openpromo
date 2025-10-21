@@ -142,6 +142,69 @@ export namespace ImageStorage {
       await deleteImage(img.id);
     });
   }
+
+  export type CleanupBatchParams = {
+    workspaceId: string;
+    cursor?: string;
+    limit?: number;
+  };
+
+  export type CleanupBatchResult = {
+    processed: number;
+    deleted: number;
+    hasMore: boolean;
+    nextCursor?: string;
+  };
+
+  export async function cleanupBatch(
+    params: CleanupBatchParams,
+  ): Promise<CleanupBatchResult> {
+    const { workspaceId, cursor, limit = 10 } = params;
+    let processed = 0;
+    let deleted = 0;
+
+    const { images, continuation_token } = await list({
+      creator: workspaceId,
+      per_page: limit,
+      continuation_token: cursor,
+    });
+    console.log("cleanupBatch fetched images", {
+      workspaceId,
+      imagesLength: images?.length,
+      cursor,
+    });
+
+    if (!images || images.length === 0) {
+      return {
+        processed: 0,
+        deleted: 0,
+        hasMore: false,
+      };
+    }
+
+    for (const img of images) {
+      processed++;
+      if (!img.id) continue;
+
+      const safe = await isImageSafeToDelete(img.id);
+      if (!safe) continue;
+
+      try {
+        await deleteImage(img.id);
+        deleted++;
+      } catch (error) {
+        console.error("failed to delete image", { imageId: img.id, error });
+      }
+    }
+
+    return {
+      processed,
+      deleted,
+      hasMore: !!continuation_token,
+      nextCursor: continuation_token || undefined,
+    };
+  }
+
   export async function batchDeleteImages(
     params: Partial<ListParams>,
   ): Promise<void> {

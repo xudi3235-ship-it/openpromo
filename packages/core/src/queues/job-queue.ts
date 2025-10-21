@@ -20,11 +20,15 @@ const WorkspaceMetricsMessageSchema = BaseJobMessage.extend({
 });
 
 const ImageCleanupMessageSchema = BaseJobMessage.extend({
-  type: z.literal("storage.images.cleanup"),
+  type: z.literal("storage.workspace.images.cleanup"),
+  workspaceId: z.string().min(1),
+  cursor: z.string().optional(),
 });
 
 const VideoCleanupMessageSchema = BaseJobMessage.extend({
-  type: z.literal("storage.videos.cleanup"),
+  type: z.literal("storage.workspace.videos.cleanup"),
+  workspaceId: z.string().min(1),
+  cursor: z.string().optional(),
 });
 
 export const JobQueueMessageSchema = z.discriminatedUnion("type", [
@@ -43,15 +47,68 @@ async function handleWorkspaceMetricsMessage(message: WorkspaceMetricsMessage) {
   await runWorkspaceMetricsTask(message.workspaceId);
 }
 
-async function handleImageCleanupMessage(_message: ImageCleanupMessage) {
-  // TODO: pass in params for workspace info maybe..?
-  await ImageStorage.batchDeleteImages({});
-  console.log("image cleanup completed");
+async function handleImageCleanupMessage(message: ImageCleanupMessage) {
+  const { workspaceId, cursor } = message;
+
+  const result = await ImageStorage.cleanupBatch({
+    workspaceId,
+    cursor,
+    limit: 50,
+  });
+
+  log.info("workspace image cleanup batch completed", {
+    workspaceId,
+    processed: result.processed,
+    deleted: result.deleted,
+    hasMore: result.hasMore,
+  });
+
+  // If more work remains, enqueue next batch
+  if (result.hasMore && result.nextCursor) {
+    await Binding.use().JobQueue.send({
+      type: "storage.workspace.images.cleanup",
+      workspaceId,
+      cursor: result.nextCursor,
+      actor: message.actor,
+    } satisfies JobQueueMessage);
+
+    log.info("enqueued next image cleanup batch", {
+      workspaceId,
+      cursor: result.nextCursor,
+    });
+  }
 }
 
-async function handleVideoCleanupMessage(_message: VideoCleanupMessage) {
-  await VideoStorage.batchDeleteVideos();
-  log.info("video cleanup completed");
+async function handleVideoCleanupMessage(message: VideoCleanupMessage) {
+  const { workspaceId, cursor } = message;
+
+  const result = await VideoStorage.cleanupBatch({
+    workspaceId,
+    cursor,
+    limit: 10,
+  });
+
+  log.info("workspace video cleanup batch completed", {
+    workspaceId,
+    processed: result.processed,
+    deleted: result.deleted,
+    hasMore: result.hasMore,
+  });
+
+  // If more work remains, enqueue next batch
+  if (result.hasMore && result.nextCursor) {
+    await Binding.use().JobQueue.send({
+      type: "storage.workspace.videos.cleanup",
+      workspaceId,
+      cursor: result.nextCursor,
+      actor: message.actor,
+    } satisfies JobQueueMessage);
+
+    log.info("enqueued next video cleanup batch", {
+      workspaceId,
+      cursor: result.nextCursor,
+    });
+  }
 }
 
 export async function processJobQueueBatch(
@@ -62,6 +119,10 @@ export async function processJobQueueBatch(
   console.log(
     `processing job queue batch of ${batch.messages.length} messages`,
   );
+
+  const connectionString =
+    env.HYPERDRIVE?.connectionString ?? runtimeEnv.DATABASE_URL;
+
   for (const message of batch.messages) {
     const parsed = JobQueueMessageSchema.safeParse(message.body);
     if (!parsed.success) {
@@ -80,10 +141,10 @@ export async function processJobQueueBatch(
           case "workspace.metrics.refresh":
             await handleWorkspaceMetricsMessage(job);
             break;
-          case "storage.images.cleanup":
+          case "storage.workspace.images.cleanup":
             await handleImageCleanupMessage(job);
             break;
-          case "storage.videos.cleanup":
+          case "storage.workspace.videos.cleanup":
             await handleVideoCleanupMessage(job);
             break;
           default:
@@ -104,15 +165,10 @@ export async function processJobQueueBatch(
       }
     };
 
-    const connectionString =
-      env.HYPERDRIVE?.connectionString ?? runtimeEnv.DATABASE_URL;
-
-    // provide context
-    return Actor.provide(job.actor.type, job.actor.properties, () => {
+    // provide context for each message
+    Actor.provide(job.actor.type, job.actor.properties, () => {
       return Database.provide(connectionString, () => {
-        return Binding.provide(env, async () => {
-          await fn();
-        });
+        return Binding.provide(env, fn);
       });
     });
   }

@@ -42,38 +42,48 @@ async function handleCron(controller: ScheduledController) {
 
 async function dailyJob() {
   await runWorkspaceContentMetrics();
-  await enqueueImageCleanup();
-  await enqueueVideoCleanup();
+  await enqueueWorkspaceCleanups();
 }
 
-async function enqueueImageCleanup() {
-  const msg = {
-    type: "storage.images.cleanup",
-    actor: {
-      type: "system",
-      properties: {
-        userID: "cron-job",
-      },
+async function enqueueWorkspaceCleanups() {
+  const workspaces = await db()
+    .select({ id: workspacesTable.id })
+    .from(workspacesTable);
+
+  if (workspaces.length === 0) {
+    log.info("no workspaces to enqueue for cleanup");
+    return;
+  }
+
+  const messages = workspaces.flatMap((workspace) => [
+    {
+      body: {
+        type: "storage.workspace.images.cleanup",
+        workspaceId: workspace.id,
+        actor: {
+          type: "system",
+          properties: { userID: "cron-job" },
+        },
+      } satisfies JobQueueMessage,
     },
-  } satisfies JobQueueMessage;
-
-  await Binding.use().JobQueue.sendBatch([{ body: msg }]);
-  log.info("enqueued image cleanup task");
-}
-
-async function enqueueVideoCleanup() {
-  const msg = {
-    type: "storage.videos.cleanup",
-    actor: {
-      type: "system",
-      properties: {
-        userID: "cron-job",
-      },
+    {
+      body: {
+        type: "storage.workspace.videos.cleanup",
+        workspaceId: workspace.id,
+        actor: {
+          type: "system",
+          properties: { userID: "cron-job" },
+        },
+      } satisfies JobQueueMessage,
     },
-  } satisfies JobQueueMessage;
+  ]);
 
-  await Binding.use().JobQueue.sendBatch([{ body: msg }]);
-  log.info("enqueued video cleanup task");
+  await Binding.use().JobQueue.sendBatch(messages);
+
+  log.info("enqueued workspace cleanup tasks", {
+    totalWorkspaces: workspaces.length,
+    totalTasks: messages.length,
+  });
 }
 
 async function runWorkspaceContentMetrics() {
