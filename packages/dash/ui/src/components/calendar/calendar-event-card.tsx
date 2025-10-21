@@ -135,57 +135,55 @@ export function CalendarEventCard({
   const deleteLabel = getDeleteLabel(event);
 
   const renderActionsMenu = () => (
-    <div className="absolute top-0 right-0 w-10 h-10 flex items-center justify-center">
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 rounded-full bg-black/20 p-0 text-white hover:bg-black/40"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreHorizontal className="h-3.5 w-3.5" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" sideOffset={4} className="w-44">
-            <DropdownMenuItem
-              onClick={(e) => handleView(event, e)}
-              disabled={!contentPermalink}
-            >
-              <Eye className="w-4 h-4 mr-2" /> View content
+    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 rounded-full bg-gray-200/80 dark:bg-gray-700/80 p-0 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreHorizontal className="h-3.5 w-3.5" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" sideOffset={4} className="w-44">
+          <DropdownMenuItem
+            onClick={(e) => handleView(event, e)}
+            disabled={!contentPermalink}
+          >
+            <Eye className="w-4 h-4 mr-2" /> View content
+          </DropdownMenuItem>
+          {isEditable && (
+            <DropdownMenuItem onClick={(e) => handleEdit(event, e)}>
+              <Edit className="w-4 h-4 mr-2" />
+              {editLabel}
             </DropdownMenuItem>
-            {isEditable && (
-              <DropdownMenuItem onClick={(e) => handleEdit(event, e)}>
-                <Edit className="w-4 h-4 mr-2" />
-                {editLabel}
-              </DropdownMenuItem>
-            )}
-            {canReschedule(event) && (
-              <DropdownMenuItem onClick={(e) => handleReschedule(event, e)}>
-                <CalendarClock className="w-4 h-4 mr-2" /> Reschedule
-              </DropdownMenuItem>
-            )}
-            {canPublish && (
-              <DropdownMenuItem
-                onClick={(e) => handlePublish(event, e)}
-                disabled={isPublishing}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                {isPublishing ? "Publishing..." : "Publish now"}
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              onClick={(e) => handleDelete(event, e)}
-              className="text-destructive"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {deleteLabel}
+          )}
+          {canReschedule(event) && (
+            <DropdownMenuItem onClick={(e) => handleReschedule(event, e)}>
+              <CalendarClock className="w-4 h-4 mr-2" /> Reschedule
             </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+          )}
+          {canPublish && (
+            <DropdownMenuItem
+              onClick={(e) => handlePublish(event, e)}
+              disabled={isPublishing}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {isPublishing ? "Publishing..." : "Publish now"}
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            onClick={(e) => handleDelete(event, e)}
+            className="text-destructive"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            {deleteLabel}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 
@@ -212,65 +210,54 @@ export function CalendarEventCard({
             <div
               className={cn(
                 "group w-full h-full rounded-lg transition-all relative overflow-hidden bg-white dark:bg-gray-800",
-                "hover:bg-gray-50 dark:hover:bg-gray-750 min-h-[120px] border-[0.5px] border-gray-200 dark:border-gray-700",
+                "hover:bg-gray-50 dark:hover:bg-gray-750 min-h-[150px] border-[0.5px] border-gray-200 dark:border-gray-700",
+                "flex flex-col",
                 isDragging && "opacity-50 cursor-grabbing",
                 className,
               )}
             >
-              {/* Compact thumbnail - top portion */}
-              {thumbnailSrc && (
-                <div className="h-16 p-2 pb-0">
-                  <ThumbnailImage
-                    src={thumbnailSrc}
-                    className="rounded-lg object-cover w-full h-full"
-                  />
-                </div>
-              )}
-
-              {/* Content area */}
-              <div className="p-3 flex-1">
-                {/* This will contain the message content */}
+              {/* Header with time badge and actions */}
+              <div className="relative flex items-center justify-between px-2 pt-1.5 pb-1 z-10">
+                {/* Time badge */}
+                {showTime && (
+                  <div className="bg-gray-100/80 dark:bg-gray-700/80 text-gray-900 dark:text-white px-1.5 py-0.5 rounded text-[10px] font-medium pointer-events-none">
+                    {formatTimeWithOptionalMinutes(eventData.start)}
+                  </div>
+                )}
+                <div className="flex-1" />
+                {/* Actions menu */}
+                <div>{renderActionsMenu()}</div>
               </div>
 
-              {/* Main clickable area - excludes the top-right corner for actions */}
-              {/* biome-ignore lint/a11y/useButtonType: later */}
-              <button
-                className="absolute inset-0 right-10 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg"
-                onClick={onClick}
-              >
-                <span className="sr-only">Open content</span>
-              </button>
-
-              {/* Time badge - top left */}
-              {showTime && (
-                <div className="absolute top-1.5 left-1.5 bg-white/20 dark:bg-black/20 backdrop-blur-sm text-gray-900 dark:text-white px-1.5 py-0.5 rounded text-[10px] font-medium pointer-events-none">
-                  {formatTimeWithOptionalMinutes(eventData.start)}
+              {/* Thumbnail section */}
+              {thumbnailSrc && (
+                <div className="px-2 pb-2">
+                  <div className="relative h-16 rounded-md overflow-hidden">
+                    <ThumbnailImage
+                      src={thumbnailSrc}
+                      className="rounded-md object-cover w-full h-full"
+                    />
+                  </div>
                 </div>
               )}
 
-              {/* Platform icon - bottom right */}
-              {platformIcon && (
-                <div className="absolute bottom-2 right-2 bg-gray-100 dark:bg-gray-700 rounded-full p-1 pointer-events-none">
-                  {platformIcon}
-                </div>
-              )}
-
-              {/* Actions menu - top right */}
-              {renderActionsMenu()}
-
-              {/* Message content - in content area */}
-              <div className="absolute bottom-3 left-3 right-12 pointer-events-none flex flex-col gap-1">
-                <p className="text-gray-900 dark:text-gray-100 text-sm font-medium line-clamp-2 leading-snug">
+              {/* Content section - grows to fill space */}
+              <div className="flex-1 px-2 pb-2 flex flex-col justify-between min-h-0">
+                {/* Message */}
+                <p className="text-gray-900 dark:text-gray-100 text-xs font-medium line-clamp-2 leading-snug mb-2">
                   {message || eventData.title}
                 </p>
-                {/* Engagement metrics for published content */}
-                {entity.entity.publishingStatus === "PUBLISHED" &&
-                  entity.entity.metrics && (
-                    <div className="flex items-center gap-2">
+
+                {/* Footer with metrics and platform */}
+                <div className="flex items-end justify-between gap-2 mt-auto">
+                  {/* Engagement metrics for published content */}
+                  {entity.entity.publishingStatus === "PUBLISHED" &&
+                  entity.entity.metrics ? (
+                    <div className="flex items-center gap-2 flex-wrap">
                       {entity.entity.metrics.likes != null &&
                         entity.entity.metrics.likes > 0 && (
-                          <div className="flex items-center gap-1">
-                            <Heart className="w-2.5 h-2.5 text-gray-400" />
+                          <div className="flex items-center gap-0.5">
+                            <Heart className="w-3 h-3 text-gray-400" />
                             <span className="text-[10px] text-gray-500 dark:text-gray-400">
                               {entity.entity.metrics.likes.toLocaleString()}
                             </span>
@@ -278,8 +265,8 @@ export function CalendarEventCard({
                         )}
                       {entity.entity.metrics.comments != null &&
                         entity.entity.metrics.comments > 0 && (
-                          <div className="flex items-center gap-1">
-                            <MessageCircle className="w-2.5 h-2.5 text-gray-400" />
+                          <div className="flex items-center gap-0.5">
+                            <MessageCircle className="w-3 h-3 text-gray-400" />
                             <span className="text-[10px] text-gray-500 dark:text-gray-400">
                               {entity.entity.metrics.comments.toLocaleString()}
                             </span>
@@ -287,16 +274,35 @@ export function CalendarEventCard({
                         )}
                       {entity.entity.metrics.reach != null &&
                         entity.entity.metrics.reach > 0 && (
-                          <div className="flex items-center gap-1">
-                            <Eye className="w-2.5 h-2.5 text-gray-400" />
+                          <div className="flex items-center gap-0.5">
+                            <Eye className="w-3 h-3 text-gray-400" />
                             <span className="text-[10px] text-gray-500 dark:text-gray-400">
                               {entity.entity.metrics.reach.toLocaleString()}
                             </span>
                           </div>
                         )}
                     </div>
+                  ) : (
+                    <div />
                   )}
+
+                  {/* Platform icon */}
+                  {platformIcon && (
+                    <div className="flex-shrink-0 bg-gray-100 dark:bg-gray-700 rounded-full p-1">
+                      {platformIcon}
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Main clickable area */}
+              {/* biome-ignore lint/a11y/useButtonType: later */}
+              <button
+                className="absolute inset-0 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg z-0"
+                onClick={onClick}
+              >
+                <span className="sr-only">Open content</span>
+              </button>
             </div>
           );
         },
@@ -334,82 +340,88 @@ export function CalendarEventCard({
             <div
               className={cn(
                 "group w-full h-full rounded-lg transition-all relative overflow-hidden bg-white dark:bg-gray-800",
-                "hover:bg-gray-50 dark:hover:bg-gray-750 min-h-[120px] border-[0.5px] border-gray-200 dark:border-gray-700",
+                "hover:bg-gray-50 dark:hover:bg-gray-750 min-h-[150px] border-[0.5px] border-gray-200 dark:border-gray-700",
+                "flex flex-col",
                 isDragging && "opacity-50 cursor-grabbing",
                 className,
               )}
             >
-              {/* Compact thumbnail - top portion */}
+              {/* Header with time badge and actions */}
+              <div className="relative flex items-center justify-between px-2 pt-1.5 pb-1 z-10">
+                {/* Time badge */}
+                {showTime && (
+                  <div className="bg-gray-100/80 dark:bg-gray-700/80 text-gray-900 dark:text-white px-1.5 py-0.5 rounded text-[10px] font-medium pointer-events-none">
+                    {formatTimeWithOptionalMinutes(eventData.start)}
+                  </div>
+                )}
+                <div className="flex-1" />
+                {/* Actions menu */}
+                <div>{renderActionsMenu()}</div>
+              </div>
+
+              {/* Thumbnail section */}
               {thumbnailUrl && (
-                <div className="h-16 p-2 pb-0">
-                  <ThumbnailImage
-                    src={thumbnailUrl}
-                    className="rounded-lg object-cover w-full h-full"
-                  />
+                <div className="px-2 pb-2">
+                  <div className="relative h-16 rounded-md overflow-hidden">
+                    <ThumbnailImage
+                      src={thumbnailUrl}
+                      className="rounded-md object-cover w-full h-full"
+                    />
+                  </div>
                 </div>
               )}
 
-              {/* Content area */}
-              <div className="p-3 flex-1">
-                {/* This will contain the message content */}
+              {/* Content section - grows to fill space */}
+              <div className="flex-1 px-2 pb-2 flex flex-col justify-between min-h-0">
+                {/* Message */}
+                <p className="text-gray-900 dark:text-gray-100 text-xs font-medium line-clamp-2 leading-snug mb-2">
+                  {primaryMessage || eventData.title}
+                </p>
+
+                {/* Footer with status badge, post count, and platforms */}
+                <div className="flex items-end justify-between gap-2 mt-auto">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Status badge */}
+                    <CalendarStatusBadge
+                      status={entity.entity.publishingStatus}
+                    />
+                    <p className="text-gray-600 dark:text-gray-400 text-[10px]">
+                      {contents.length} post{contents.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+
+                  {/* Platform stack */}
+                  <div className="flex gap-1 flex-shrink-0">
+                    {platforms.slice(0, 2).map((platform) => {
+                      const platformIcon = getPlatformIcon(platform);
+                      return platformIcon ? (
+                        <div
+                          key={platform}
+                          className="bg-gray-100 dark:bg-gray-700 rounded-full p-1"
+                        >
+                          {platformIcon}
+                        </div>
+                      ) : null;
+                    })}
+                    {platforms.length > 2 && (
+                      <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 flex items-center justify-center min-w-4 h-4">
+                        <span className="text-[10px] font-semibold text-gray-900 dark:text-gray-100">
+                          +{platforms.length - 2}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              {/* Main clickable area - excludes the top-right corner for actions */}
+              {/* Main clickable area */}
               {/* biome-ignore lint/a11y/useButtonType: later */}
               <button
-                className="absolute inset-0 right-10 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg"
+                className="absolute inset-0 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg z-0"
                 onClick={onClick}
               >
                 <span className="sr-only">Open content group</span>
               </button>
-
-              {/* Time badge - top left */}
-              {showTime && (
-                <div className="absolute top-1.5 left-1.5 bg-white/20 dark:bg-black/20 backdrop-blur-sm text-gray-900 dark:text-white px-1.5 py-0.5 rounded text-[10px] font-medium pointer-events-none">
-                  {formatTimeWithOptionalMinutes(eventData.start)}
-                </div>
-              )}
-
-              {/* Platform stack - bottom right */}
-              <div className="absolute bottom-2 right-2 flex gap-1 pointer-events-none">
-                {platforms.slice(0, 2).map((platform) => {
-                  const platformIcon = getPlatformIcon(platform);
-                  return platformIcon ? (
-                    <div
-                      key={platform}
-                      className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 shadow-sm"
-                    >
-                      {platformIcon}
-                    </div>
-                  ) : null;
-                })}
-                {platforms.length > 2 && (
-                  <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-1 shadow-sm flex items-center justify-center min-w-4 h-4">
-                    <span className="text-[10px] font-semibold text-gray-900 dark:text-gray-100">
-                      +{platforms.length - 2}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Actions menu - top right */}
-              {renderActionsMenu()}
-
-              {/* Message content and count - in content area */}
-              <div className="absolute bottom-3 left-3 right-12 pointer-events-none">
-                <p className="text-gray-900 dark:text-gray-100 text-sm font-medium line-clamp-1 leading-snug mb-1">
-                  {primaryMessage || eventData.title}
-                </p>
-                <div className="flex items-center gap-2">
-                  {/* Status badge */}
-                  <CalendarStatusBadge
-                    status={entity.entity.publishingStatus}
-                  />
-                  <p className="text-gray-600 dark:text-gray-400 text-xs">
-                    {contents.length} post{contents.length !== 1 ? "s" : ""}
-                  </p>
-                </div>
-              </div>
             </div>
           );
         },

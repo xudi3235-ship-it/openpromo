@@ -291,7 +291,7 @@ export function DynamicWeekView({
                   return (
                     <div
                       key={eventData.id}
-                      className="h-32 w-full" // Updated to match card min-height of 120px + spacing
+                      className="h-40 w-full" // Increased height for better content visibility
                     >
                       <DraggableCalendarCard event={event}>
                         <CalendarEventCard
@@ -307,7 +307,7 @@ export function DynamicWeekView({
 
                 {/* Empty state / create button */}
                 {eventsForDay.length === 0 && isCreatableDay(day) && (
-                  <div className="h-32 w-full">
+                  <div className="h-40 w-full">
                     <EmptyStateButton
                       day={day}
                       onClick={handleCreateEvent}
