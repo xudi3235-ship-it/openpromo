@@ -264,28 +264,38 @@ export function CalendarEventCard({
                   {message || eventData.title}
                 </p>
                 {/* Engagement metrics for published content */}
-                {entity.entity.publishingStatus === "PUBLISHED" && (
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <Heart className="w-2.5 h-2.5 text-gray-400" />
-                      <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                        24
-                      </span>
+                {entity.entity.publishingStatus === "PUBLISHED" &&
+                  entity.entity.metrics && (
+                    <div className="flex items-center gap-2">
+                      {entity.entity.metrics.likes != null &&
+                        entity.entity.metrics.likes > 0 && (
+                          <div className="flex items-center gap-1">
+                            <Heart className="w-2.5 h-2.5 text-gray-400" />
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                              {entity.entity.metrics.likes.toLocaleString()}
+                            </span>
+                          </div>
+                        )}
+                      {entity.entity.metrics.comments != null &&
+                        entity.entity.metrics.comments > 0 && (
+                          <div className="flex items-center gap-1">
+                            <MessageCircle className="w-2.5 h-2.5 text-gray-400" />
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                              {entity.entity.metrics.comments.toLocaleString()}
+                            </span>
+                          </div>
+                        )}
+                      {entity.entity.metrics.reach != null &&
+                        entity.entity.metrics.reach > 0 && (
+                          <div className="flex items-center gap-1">
+                            <Eye className="w-2.5 h-2.5 text-gray-400" />
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                              {entity.entity.metrics.reach.toLocaleString()}
+                            </span>
+                          </div>
+                        )}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <MessageCircle className="w-2.5 h-2.5 text-gray-400" />
-                      <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                        3
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Eye className="w-2.5 h-2.5 text-gray-400" />
-                      <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                        156
-                      </span>
-                    </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
           );
