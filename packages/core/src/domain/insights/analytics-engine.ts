@@ -50,7 +50,9 @@ export function writeContentMetricsAnalytics(
   writeInsightAnalytics(events);
 }
 
-export function writeInsightAnalytics(events: InsightAnalyticsEvent[]): void {
+export async function writeInsightAnalytics(
+  events: InsightAnalyticsEvent[],
+): Promise<void> {
   if (events.length === 0) return;
 
   const dataset = getWorkspaceInsightsDataset();
@@ -67,40 +69,48 @@ export function writeInsightAnalytics(events: InsightAnalyticsEvent[]): void {
       const value = Number(rawValue);
       if (!Number.isFinite(value)) continue;
 
-      // FIXME: closely follow the limits on the analytics engine
-      // and test that we are actually writing to the datasets
-      // https://developers.cloudflare.com/analytics/analytics-engine/limits/
-      const indexParts = [
-        `workspace=${event.workspaceId}`,
-        `domain=${event.domain}`,
-        `entity_type=${event.entityType}`,
-        `entity_id=${event.entityId}`,
-        `metric=${metricName}`,
-        `collected_at=${event.collectedAt.toISOString()}`,
-      ];
+      // Build the full metadata object for the blob field (5120 byte limit)
+      const metadata: Record<string, string> = {
+        workspace: event.workspaceId,
+        domain: event.domain,
+        entity_type: event.entityType,
+        entity_id: event.entityId,
+        metric: metricName,
+        collected_at: event.collectedAt.toISOString(),
+      };
 
       for (const key of dimensionKeys) {
         const dimensionValue = event.dimensions?.[key];
         const normalized = normalizeDimensionValue(dimensionValue);
-        if (normalized.length === 0) continue;
-        indexParts.push(`dim.${key}=${normalized}`);
+        if (normalized.length > 0) {
+          metadata[`dim_${key}`] = normalized;
+        }
       }
 
-      const indexValue = indexParts.join("|");
+      // Create a hash-based index key to stay under 96 bytes limit
+      // Use SHA-256 and take first 16 bytes (32 hex chars) for a compact, deterministic key
+      const indexComponents = `${event.workspaceId}:${event.domain}:${event.entityType}:${event.entityId}:${metricName}`;
+      const indexHash = await hashString(indexComponents);
+      const indexKey = `${event.workspaceId.slice(0, 8)}:${indexHash}`;
+
       console.log("Writing analytics data point", {
-        index: indexValue,
+        index: indexKey,
+        indexComponents,
         value,
+        metadata,
       });
 
       try {
         dataset.writeDataPoint({
-          indexes: [indexValue],
+          indexes: [indexKey],
+          blobs: [JSON.stringify(metadata)],
           doubles: [value],
         });
       } catch (error) {
         console.error("Failed to write analytics data point", {
-          index: indexValue,
+          index: indexKey,
           value,
+          metadata,
           error,
         });
       }
@@ -168,4 +178,16 @@ function inferPlatformFromPlacement(
   if (placement.startsWith("IG_")) return "instagram";
   if (placement.startsWith("TT_")) return "tiktok";
   return null;
+}
+
+async function hashString(input: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  // Take first 16 bytes (32 hex chars) for compact representation
+  return hashArray
+    .slice(0, 16)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
