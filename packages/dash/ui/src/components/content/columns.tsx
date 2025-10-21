@@ -3,6 +3,8 @@ import type { MergedContentEntity } from "@worker/routes/api/workspaces/content"
 import { actionsColumn } from "./columns/actions-column";
 import { commentsColumn } from "./columns/comments-column";
 import { createdAtColumn } from "./columns/created-at-column";
+import { engagementColumn } from "./columns/engagement-column";
+import { impressionsColumn } from "./columns/impressions-column";
 import { likesColumn } from "./columns/likes-column";
 import { reachColumn } from "./columns/reach-column";
 import { scheduledDateColumn } from "./columns/scheduled-date-column";
@@ -17,7 +19,9 @@ export const columns: ColumnDef<MergedContentEntity>[] = [
   statusColumn,
   // ensure action's position
   actionsColumn,
+  impressionsColumn,
   reachColumn,
+  engagementColumn,
   likesColumn,
   commentsColumn,
   sharesColumn,

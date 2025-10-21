@@ -1,18 +1,18 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { MessageCircle } from "lucide-react";
+import { Zap } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 import { formatNumber } from "./utils";
 
-export const commentsColumn: ColumnDef<MergedContentEntity> = {
-  accessorKey: "comments",
+export const engagementColumn: ColumnDef<MergedContentEntity> = {
+  accessorKey: "engagement",
   header: () => (
     <ColumnHeaderWithTooltip
-      tooltip="Total comments on published content"
+      tooltip="Total engagement (likes, comments, shares, etc.)"
       className="cursor-help"
     >
-      Comments
+      Engagement
     </ColumnHeaderWithTooltip>
   ),
   cell: ({ row }) => {
@@ -20,12 +20,12 @@ export const commentsColumn: ColumnDef<MergedContentEntity> = {
 
     return matchEntity(entity, {
       content: (content) => {
-        const comments = content.entity.metrics?.comments ?? 0;
+        const engagement = content.entity.metrics?.engagement ?? 0;
 
         return (
           <div className="flex items-center space-x-1.5 text-sm text-gray-600 dark:text-gray-400">
-            <MessageCircle className="w-4 h-4" />
-            <span>{formatNumber(comments)}</span>
+            <Zap className="w-4 h-4" />
+            <span>{formatNumber(engagement)}</span>
           </div>
         );
       },

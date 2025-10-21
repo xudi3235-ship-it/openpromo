@@ -1,18 +1,18 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { MessageCircle } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";
 import { formatNumber } from "./utils";
 
-export const commentsColumn: ColumnDef<MergedContentEntity> = {
-  accessorKey: "comments",
+export const impressionsColumn: ColumnDef<MergedContentEntity> = {
+  accessorKey: "impressions",
   header: () => (
     <ColumnHeaderWithTooltip
-      tooltip="Total comments on published content"
+      tooltip="Total number of times content was displayed"
       className="cursor-help"
     >
-      Comments
+      Impressions
     </ColumnHeaderWithTooltip>
   ),
   cell: ({ row }) => {
@@ -20,12 +20,12 @@ export const commentsColumn: ColumnDef<MergedContentEntity> = {
 
     return matchEntity(entity, {
       content: (content) => {
-        const comments = content.entity.metrics?.comments ?? 0;
+        const impressions = content.entity.metrics?.impressions ?? 0;
 
         return (
           <div className="flex items-center space-x-1.5 text-sm text-gray-600 dark:text-gray-400">
-            <MessageCircle className="w-4 h-4" />
-            <span>{formatNumber(comments)}</span>
+            <BarChart3 className="w-4 h-4" />
+            <span>{formatNumber(impressions)}</span>
           </div>
         );
       },

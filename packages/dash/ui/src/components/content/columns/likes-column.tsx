@@ -19,9 +19,8 @@ export const likesColumn: ColumnDef<MergedContentEntity> = {
     const entity = row.original;
 
     return matchEntity(entity, {
-      content: () => {
-        // TODO: replace with api
-        const likes = 0;
+      content: (content) => {
+        const likes = content.entity.metrics?.likes ?? 0;
 
         return (
           <div className="flex items-center space-x-1.5 text-sm text-gray-600 dark:text-gray-400">

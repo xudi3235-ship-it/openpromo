@@ -19,9 +19,8 @@ export const sharesColumn: ColumnDef<MergedContentEntity> = {
     const entity = row.original;
 
     return matchEntity(entity, {
-      content: () => {
-        // TODO: replace with api
-        const shares = 0;
+      content: (content) => {
+        const shares = content.entity.metrics?.shares ?? 0;
 
         return (
           <div className="flex items-center space-x-1.5 text-sm text-gray-600 dark:text-gray-400">
