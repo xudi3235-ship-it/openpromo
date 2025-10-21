@@ -1,7 +1,7 @@
 import { WorkspaceInsightsAggregator } from "@core/domain/insights/aggregator";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
-import { WorkspaceSummarySchema } from "@shared/insights";
+import { InboxSummarySchema, WorkspaceSummarySchema } from "@shared/insights";
 import { Hono } from "hono";
 import { z } from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
@@ -17,6 +17,13 @@ const timeSeriesQuerySchema = z.object({
 const topContentQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(20).default(5),
   sortBy: z.enum(["impressions", "engagement"]).default("impressions"),
+});
+
+const inboxRoute = new Hono<ApiEnv>().get("/summary", async (c) => {
+  const summary = await aggregator.getInboxSummary({
+    workspaceId: Actor.workspaceID(),
+  });
+  return c.json(InboxSummarySchema.parse(summary));
 });
 
 export const insightsRoute = new Hono<ApiEnv>()
@@ -48,4 +55,5 @@ export const insightsRoute = new Hono<ApiEnv>()
       });
       return c.json({ items });
     },
-  );
+  )
+  .route("/inbox", inboxRoute);

@@ -1,6 +1,11 @@
+import type { InboxSummary } from "@shared/insights";
 import type { QueryClient } from "@tanstack/react-query";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { convertHonoQueryOptions, useHonoQuery } from "@/lib/hono-client";
+import {
+  convertHonoQueryOptions,
+  type UseHonoQueryOptions,
+  useHonoQuery,
+} from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
 
 /**
@@ -178,6 +183,37 @@ export const useWorkspaceInsightsTopContent = (
     ...workspaceInsightsTopContentQueryOpts(workspace.slug, params),
     errorMessage: "Failed to load workspace top content",
     staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+};
+
+const workspaceInboxSummaryQueryOpts = (
+  workspaceSlug: string,
+): UseHonoQueryOptions<InboxSummary> => ({
+  queryKey: QUERY_KEYS.WORKSPACE_INSIGHTS_INBOX_SUMMARY(workspaceSlug),
+  queryFn: (api: typeof import("@/lib/hono-client").apiClient) =>
+    api.workspaces[":workspaceSlug"].insights["inbox"].summary.$get({
+      param: { workspaceSlug },
+    }),
+});
+
+export const prefetchWorkspaceInsightsInboxSummary = (
+  queryClient: QueryClient,
+  workspaceSlug: string,
+) => {
+  queryClient.prefetchQuery(
+    convertHonoQueryOptions(workspaceInboxSummaryQueryOpts(workspaceSlug)),
+  );
+};
+
+export const useWorkspaceInsightsInboxSummary = () => {
+  const { workspace } = useWorkspace();
+
+  return useHonoQuery({
+    ...workspaceInboxSummaryQueryOpts(workspace.slug),
+    errorMessage: "Failed to load inbox insights",
+    staleTime: 1000 * 60 * 5,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });

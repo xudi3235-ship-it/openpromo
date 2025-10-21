@@ -39,4 +39,10 @@ export const QUERY_KEYS = {
     limit: number,
     sortBy: "impressions" | "engagement",
   ) => [workspaceSlug, "insights", "top-content", limit, sortBy],
+  WORKSPACE_INSIGHTS_INBOX_SUMMARY: (workspaceSlug: string) => [
+    workspaceSlug,
+    "insights",
+    "inbox",
+    "summary",
+  ],
 } as const;

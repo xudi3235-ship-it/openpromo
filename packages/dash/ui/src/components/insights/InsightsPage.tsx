@@ -1,17 +1,39 @@
+import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@openpromo/ui/components/tabs";
 import { startOfDay, subDays } from "date-fns";
 import { useMemo, useState } from "react";
 import {
   type TimeSeriesQueryParams,
+  useWorkspaceInsightsInboxSummary,
   useWorkspaceInsightsSummary,
   useWorkspaceInsightsTimeSeries,
   useWorkspaceInsightsTopContent,
 } from "@/queries/insights";
+import { InsightsInboxSummary } from "./InsightsInboxSummary";
 import { InsightsSummaryCards } from "./InsightsSummaryCards";
 import { InsightsTimeSeriesChart } from "./InsightsTimeSeriesChart";
 import { InsightsTopContent } from "./InsightsTopContent";
 
 type TimeRange = "7d" | "30d" | "90d";
+
+const SUMMARY_SKELETON_KEYS = [
+  "impressions",
+  "engagement",
+  "clicks",
+  "likes",
+  "comments",
+  "shares",
+] as const;
+
+const INBOX_SKELETON_KEYS = ["messages", "response", "rate"] as const;
+
+const TOP_CONTENT_SKELETON_KEYS = [
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+] as const;
 
 export function InsightsPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
@@ -38,6 +60,9 @@ export function InsightsPage() {
 
   const { data: topContent, isLoading: topContentLoading } =
     useWorkspaceInsightsTopContent({ limit: 5, sortBy: "impressions" });
+
+  const { data: inboxSummary, isLoading: inboxSummaryLoading } =
+    useWorkspaceInsightsInboxSummary();
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -78,21 +103,40 @@ export function InsightsPage() {
         {/* Summary Cards */}
         {summaryLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {Array.from({ length: 6 }, (_, i) => `skeleton-summary-${i}`).map(
-              (key) => (
-                <div
-                  key={key}
-                  className="bg-card rounded-lg p-4 border border-border/40 animate-pulse"
-                >
-                  <div className="h-4 w-4 bg-muted rounded mb-2" />
-                  <div className="h-6 bg-muted rounded mb-1" />
-                  <div className="h-3 bg-muted rounded w-20" />
-                </div>
-              ),
-            )}
+            {SUMMARY_SKELETON_KEYS.map((key) => (
+              <div
+                key={`summary-skeleton-${key}`}
+                className="rounded-lg border border-border/40 p-4 bg-card"
+              >
+                <Skeleton className="h-4 w-4 mb-2 rounded" />
+                <Skeleton className="h-6 mb-2 rounded" />
+                <Skeleton className="h-3 w-16 rounded" />
+              </div>
+            ))}
           </div>
         ) : (
           <InsightsSummaryCards summary={summary} />
+        )}
+
+        {/* Inbox Summary */}
+        {inboxSummaryLoading ? (
+          <div className="bg-card rounded-lg p-6 border border-border/40">
+            <Skeleton className="h-5 w-40 mb-4 rounded" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {INBOX_SKELETON_KEYS.map((key) => (
+                <div
+                  key={`inbox-skeleton-${key}`}
+                  className="rounded-lg border border-border/40 p-4 bg-background"
+                >
+                  <Skeleton className="h-3 w-24 mb-3 rounded" />
+                  <Skeleton className="h-6 w-20 mb-2 rounded" />
+                  <Skeleton className="h-3 w-28 rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <InsightsInboxSummary summary={inboxSummary} />
         )}
 
         {/* Time Series Chart */}
@@ -106,7 +150,7 @@ export function InsightsPage() {
             </p>
           </div>
           {timeSeriesLoading ? (
-            <div className="h-[300px] animate-pulse bg-muted rounded" />
+            <Skeleton className="h-[300px] rounded" />
           ) : (
             <InsightsTimeSeriesChart data={timeSeries} />
           )}
@@ -124,14 +168,19 @@ export function InsightsPage() {
           </div>
           {topContentLoading ? (
             <div className="space-y-3">
-              {Array.from({ length: 5 }, (_, i) => `skeleton-top-${i}`).map(
-                (key) => (
-                  <div
-                    key={key}
-                    className="h-20 animate-pulse bg-muted rounded-lg"
-                  />
-                ),
-              )}
+              {TOP_CONTENT_SKELETON_KEYS.map((key) => (
+                <div
+                  key={`top-content-skeleton-${key}`}
+                  className="border border-border/40 rounded-lg p-4 flex items-center gap-4"
+                >
+                  <Skeleton className="h-6 w-6 rounded" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-40 rounded" />
+                    <Skeleton className="h-3 w-24 rounded" />
+                  </div>
+                  <Skeleton className="h-4 w-24 rounded" />
+                </div>
+              ))}
             </div>
           ) : (
             <InsightsTopContent items={topContent?.items ?? []} />

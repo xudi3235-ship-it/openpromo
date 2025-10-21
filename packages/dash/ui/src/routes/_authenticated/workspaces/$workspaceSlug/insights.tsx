@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { InsightsPage } from "@/components/insights/InsightsPage";
 import { WorkspaceLoading } from "@/components/loading/workspace-loading";
 import {
+  prefetchWorkspaceInsightsInboxSummary,
   prefetchWorkspaceInsightsSummary,
   prefetchWorkspaceInsightsTimeSeries,
   prefetchWorkspaceInsightsTopContent,
@@ -18,6 +19,10 @@ export const Route = createFileRoute(
       params.workspaceSlug,
     );
     prefetchWorkspaceInsightsTopContent(
+      context.queryClient,
+      params.workspaceSlug,
+    );
+    prefetchWorkspaceInsightsInboxSummary(
       context.queryClient,
       params.workspaceSlug,
     );

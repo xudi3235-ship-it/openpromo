@@ -1,10 +1,18 @@
 import { and, db, eq, sql } from "@core/helpers/db";
+import { connectedAccount } from "@core/schemas/connected-account.sql";
 import {
   contentMetricsSnapshotTable,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
+import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
+import {
+  inboxMessageStateTable,
+  inboxMessageStatusEnum,
+} from "@core/schemas/inbox-message-state.sql";
+import { inboxMessagesTable } from "@core/schemas/inbox-messages.sql";
 import {
   ContentMetricsSummarySchema,
+  InboxSummarySchema,
   type TimeSeriesPoint,
   TimeSeriesPointSchema,
   type TopContentEntry,
@@ -149,5 +157,108 @@ export class WorkspaceInsightsAggregator {
         });
       })
       .filter((entry): entry is TopContentEntry => entry !== null);
+  }
+
+  async getInboxSummary(params: { workspaceId: string }) {
+    const { workspaceId } = params;
+
+    const [{ count: totalInboundMessages } = { count: 0 }] = await db()
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(inboxMessagesTable)
+      .innerJoin(
+        inboxConversationsTable,
+        eq(inboxMessagesTable.inboxConversationId, inboxConversationsTable.id),
+      )
+      .innerJoin(
+        connectedAccount,
+        eq(inboxConversationsTable.connectedAccountId, connectedAccount.id),
+      )
+      .where(
+        and(
+          eq(connectedAccount.workspaceId, workspaceId),
+          eq(inboxMessagesTable.sender, "user"),
+        ),
+      );
+
+    const responseRows = await db()
+      .select({
+        conversationId: inboxConversationsTable.id,
+        firstUserMessageAt: sql<Date | null>`
+          MIN(CASE WHEN ${inboxMessagesTable.sender} = 'user'::sender THEN ${inboxMessagesTable.createdAt} END)
+        `,
+        firstSelfMessageAt: sql<Date | null>`
+          MIN(CASE WHEN ${inboxMessagesTable.sender} = 'self'::sender THEN ${inboxMessagesTable.createdAt} END)
+        `,
+      })
+      .from(inboxConversationsTable)
+      .innerJoin(
+        connectedAccount,
+        eq(inboxConversationsTable.connectedAccountId, connectedAccount.id),
+      )
+      .leftJoin(
+        inboxMessagesTable,
+        eq(inboxMessagesTable.inboxConversationId, inboxConversationsTable.id),
+      )
+      .where(eq(connectedAccount.workspaceId, workspaceId))
+      .groupBy(inboxConversationsTable.id);
+
+    const conversationsWithUserMessages = responseRows.filter(
+      (row) => row.firstUserMessageAt instanceof Date,
+    );
+
+    const conversationsWithResponses = conversationsWithUserMessages.filter(
+      (row) =>
+        row.firstSelfMessageAt instanceof Date &&
+        row.firstUserMessageAt instanceof Date &&
+        row.firstSelfMessageAt.getTime() >= row.firstUserMessageAt.getTime(),
+    );
+
+    const responseDurationsMinutes = conversationsWithResponses
+      .map((row) => {
+        if (!row.firstSelfMessageAt || !row.firstUserMessageAt) return null;
+        const diff =
+          row.firstSelfMessageAt.getTime() - row.firstUserMessageAt.getTime();
+        return diff >= 0 ? diff / 60000 : 0;
+      })
+      .filter((value): value is number => value !== null);
+
+    const averageFirstResponseMinutes =
+      responseDurationsMinutes.length > 0
+        ? responseDurationsMinutes.reduce((sum, value) => sum + value, 0) /
+          responseDurationsMinutes.length
+        : null;
+
+    const responseRate =
+      conversationsWithUserMessages.length > 0
+        ? conversationsWithResponses.length /
+          conversationsWithUserMessages.length
+        : 0;
+
+    const inboundTotal = Number(totalInboundMessages ?? 0);
+
+    const [{ count: openMessages } = { count: 0 }] = await db()
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(inboxMessageStateTable)
+      .where(
+        and(
+          eq(inboxMessageStateTable.workspaceId, workspaceId),
+          eq(
+            inboxMessageStateTable.status,
+            inboxMessageStatusEnum.enumValues[0] ?? "open",
+          ),
+        ),
+      );
+
+    const openTotal = Number(openMessages ?? 0);
+
+    return InboxSummarySchema.parse({
+      totalConversations: responseRows.length,
+      conversationsWithUserMessages: conversationsWithUserMessages.length,
+      conversationsWithResponses: conversationsWithResponses.length,
+      totalInboundMessages: inboundTotal,
+      openMessages: openTotal,
+      responseRate,
+      averageFirstResponseMinutes,
+    });
   }
 }
