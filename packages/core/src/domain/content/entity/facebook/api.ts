@@ -5,6 +5,7 @@ import {
 } from "@core/domain/content/platform-rate-limit";
 import type { FBFeedPlacementSpec } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
+import { AllPlatforms } from "@shared/content";
 import * as z from "zod";
 
 type HttpMethod = "GET" | "POST" | "DELETE" | "PUT";
@@ -131,7 +132,10 @@ export async function facebookGraphRequest<T = unknown>(
   const response = await fetchWithRateLimit(
     ctx.rateLimitKey,
     () => fetch(url.toString(), fetchOptions),
-    { onRateLimit },
+    {
+      platform: AllPlatforms.FACEBOOK,
+      onRateLimit,
+    },
   );
 
   console.log("// Facebook Graph API response", {

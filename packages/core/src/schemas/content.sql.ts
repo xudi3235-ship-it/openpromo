@@ -184,7 +184,7 @@ export const unifiedContentTable = pgTable(
   },
   // TODO: we prob need more index to speed up get by queries.
   (t) => [
-    uniqueIndex().on(t.workspaceId, t.connectedAccountId),
+    index().on(t.workspaceId, t.connectedAccountId), // Non-unique index for query performance
     uniqueIndex().on(t.sourceContentId),
   ],
 );

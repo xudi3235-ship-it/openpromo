@@ -1,5 +1,6 @@
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Binding } from "@core/helpers/api-env";
+import type { AllPlatforms } from "@shared/content";
 
 export type RateLimitHit = {
   rateLimitKey: string;
@@ -17,6 +18,7 @@ type RateLimitSnapshotSummary = {
 
 export type RateLimitOptions = {
   cost?: number;
+  platform?: AllPlatforms; // Platform identifier for parser selection
   onRateLimit?: (hit: RateLimitHit) => Promise<boolean> | boolean;
 };
 
@@ -29,7 +31,7 @@ export async function fetchWithRateLimit(
   request: () => Promise<Response>,
   options: RateLimitOptions = {},
 ): Promise<Response> {
-  const { cost = 1, onRateLimit } = options;
+  const { cost = 1, platform, onRateLimit } = options;
 
   let stub: RateLimitStub;
   try {
@@ -45,6 +47,7 @@ export async function fetchWithRateLimit(
 
   try {
     const reservation = await stub.reserve({ cost });
+    console.log({ rateLimitKey, reservation });
 
     if (!reservation.allowed && reservation.waitUntil) {
       const waitMs = reservation.waitUntil - Date.now();
@@ -78,11 +81,17 @@ export async function fetchWithRateLimit(
 
     const response = await request();
 
+    console.log("// Rate-limited fetch headers", {
+      rateLimitKey,
+      headers: Array.from(response.headers.entries()),
+    });
+
     await stub.reportHeaders({
       cost,
       timestamp: Date.now(),
       headers: headersToRecord(response.headers),
       throttled: !response.ok,
+      platform,
     });
 
     return response;

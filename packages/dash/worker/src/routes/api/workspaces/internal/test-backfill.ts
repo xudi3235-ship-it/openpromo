@@ -22,7 +22,7 @@ export const testBackfillRoute = new Hono<ApiEnv>().get("/", async (c) => {
         actor,
         connectedAccountID: ig?.id || "",
         start: new Date(
-          new Date().setMonth(new Date().getMonth() - 3),
+          new Date().setDate(new Date().getDate() - 4),
         ).toISOString(),
         end: new Date().toISOString(),
       },

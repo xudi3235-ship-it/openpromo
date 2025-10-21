@@ -167,22 +167,29 @@ export class InstagramBackfiller extends BaseBackfiller<
 
     if (values.length === 0) return;
 
-    await db()
-      .insert(unifiedContentTable)
-      .values(values)
-      .onConflictDoUpdate({
-        target: unifiedContentTable.sourceContentId,
-        set: {
-          placementSpec: sql`excluded.placement_spec`,
-          placement: sql`excluded.placement`,
-          connectedAccountId: sql`excluded.connected_account_id`,
-          workspaceId: sql`excluded.workspace_id`,
-          permalinkUrl: sql`excluded.permalink_url`,
-          publishingStatus: sql`excluded.publishing_status`,
-          metrics: sql`excluded.metrics`,
-          updatedAt: sql`excluded.updated_at`,
-        },
+    try {
+      await db()
+        .insert(unifiedContentTable)
+        .values(values)
+        .onConflictDoUpdate({
+          target: unifiedContentTable.sourceContentId,
+          set: {
+            placementSpec: sql`excluded.placement_spec`,
+            placement: sql`excluded.placement`,
+            connectedAccountId: sql`excluded.connected_account_id`,
+            workspaceId: sql`excluded.workspace_id`,
+            permalinkUrl: sql`excluded.permalink_url`,
+            publishingStatus: sql`excluded.publishing_status`,
+            metrics: sql`excluded.metrics`,
+            updatedAt: sql`excluded.updated_at`,
+          },
+        });
+    } catch (error) {
+      console.error("failed to insert instagram posts during backfill", {
+        error,
       });
+      throw error;
+    }
   }
 
   protected mirrorConfig(): MirrorConfig {

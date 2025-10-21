@@ -5,6 +5,7 @@ import {
 } from "@core/domain/content/platform-rate-limit";
 import type { IGFeedPlacementSpec } from "@core/schemas/content.sql";
 import { Log } from "@core/utils/log";
+import { AllPlatforms } from "@shared/content";
 import { FacebookGraphError, facebookGraphErrorSchema } from "../facebook/api";
 
 type HttpMethod = "GET" | "POST" | "DELETE" | "PUT";
@@ -83,7 +84,10 @@ export async function instagramGraphRequest<T = unknown>(
         },
         body: body ? JSON.stringify(body) : undefined,
       }),
-    { onRateLimit: options.onRateLimit },
+    {
+      platform: AllPlatforms.INSTAGRAM,
+      onRateLimit: options.onRateLimit,
+    },
   );
 
   log.info("instagram graph request", {

@@ -1,0 +1,2 @@
+DROP INDEX "unified_content_workspace_id_connected_account_id_index";--> statement-breakpoint
+CREATE INDEX "unified_content_workspace_id_connected_account_id_index" ON "unified_content" USING btree ("workspace_id","connected_account_id");
