@@ -198,7 +198,7 @@ export class ContentMetricsRefresher {
     });
 
     if (analyticsPoints.length > 0) {
-      writeContentMetricsAnalytics(analyticsPoints);
+      await writeContentMetricsAnalytics(analyticsPoints);
     }
 
     return missing;

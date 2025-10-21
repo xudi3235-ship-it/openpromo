@@ -13,7 +13,7 @@ export const testAnalyticsWriteRoute = new Hono<ApiEnv>().get(
       const now = new Date();
       const contentId = `test-${now.getTime()}`;
 
-      writeContentMetricsAnalytics([
+      await writeContentMetricsAnalytics([
         {
           workspaceId: actor.properties.workspaceID,
           contentId,

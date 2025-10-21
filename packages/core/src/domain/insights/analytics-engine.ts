@@ -27,9 +27,9 @@ export type ContentMetricsAnalyticsPoint = {
   metrics: UnifiedContentMetrics;
 };
 
-export function writeContentMetricsAnalytics(
+export async function writeContentMetricsAnalytics(
   points: ContentMetricsAnalyticsPoint[],
-): void {
+): Promise<void> {
   if (points.length === 0) return;
 
   const events: InsightAnalyticsEvent[] = points.map((point) => ({
@@ -47,7 +47,7 @@ export function writeContentMetricsAnalytics(
     },
   }));
 
-  writeInsightAnalytics(events);
+  await writeInsightAnalytics(events);
 }
 
 export async function writeInsightAnalytics(
@@ -69,7 +69,6 @@ export async function writeInsightAnalytics(
       const value = Number(rawValue);
       if (!Number.isFinite(value)) continue;
 
-      // Build the full metadata object for the blob field (5120 byte limit)
       const metadata: Record<string, string> = {
         workspace: event.workspaceId,
         domain: event.domain,
@@ -87,8 +86,6 @@ export async function writeInsightAnalytics(
         }
       }
 
-      // Create a hash-based index key to stay under 96 bytes limit
-      // Use SHA-256 and take first 16 bytes (32 hex chars) for a compact, deterministic key
       const indexComponents = `${event.workspaceId}:${event.domain}:${event.entityType}:${event.entityId}:${metricName}`;
       const indexHash = await hashString(indexComponents);
       const indexKey = `${event.workspaceId.slice(0, 8)}:${indexHash}`;
@@ -185,7 +182,6 @@ async function hashString(input: string): Promise<string> {
   const data = encoder.encode(input);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  // Take first 16 bytes (32 hex chars) for compact representation
   return hashArray
     .slice(0, 16)
     .map((b) => b.toString(16).padStart(2, "0"))
