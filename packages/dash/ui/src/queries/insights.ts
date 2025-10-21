@@ -1,5 +1,6 @@
 import type { InboxSummary } from "@shared/insights";
 import type { QueryClient } from "@tanstack/react-query";
+import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   convertHonoQueryOptions,
@@ -179,12 +180,15 @@ export const useWorkspaceInsightsTopContent = (
 ) => {
   const { workspace } = useWorkspace();
 
-  return useHonoQuery({
+  return useHonoQuery<{ items: unknown[] }>({
     ...workspaceInsightsTopContentQueryOpts(workspace.slug, params),
     errorMessage: "Failed to load workspace top content",
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+    select: (data) => ({
+      items: (data?.items ?? []) as MergedContentEntity[],
+    }),
   });
 };
 

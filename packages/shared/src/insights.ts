@@ -26,16 +26,6 @@ export const TimeSeriesPointSchema = z.object({
 
 export type TimeSeriesPoint = z.infer<typeof TimeSeriesPointSchema>;
 
-export const TopContentEntrySchema = z.object({
-  contentId: z.string(),
-  sourceContentId: z.string().optional(),
-  placement: z.string(),
-  metrics: ContentMetricsSummarySchema,
-  lastRefreshedAt: z.coerce.date().optional(),
-});
-
-export type TopContentEntry = z.infer<typeof TopContentEntrySchema>;
-
 export const InboxSummarySchema = z.object({
   totalConversations: z.number(),
   conversationsWithUserMessages: z.number(),
@@ -50,5 +40,4 @@ export type InboxSummary = z.infer<typeof InboxSummarySchema>;
 
 export type WorkspaceInsightsSummaryResponse = WorkspaceSummary;
 export type WorkspaceInsightsTimeSeriesResponse = TimeSeriesPoint[];
-export type WorkspaceInsightsTopContentResponse = TopContentEntry[];
 export { WorkspaceSummarySchema };

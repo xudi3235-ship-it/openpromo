@@ -2,6 +2,8 @@ import { and, db, eq, sql } from "@core/helpers/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
 import {
   contentMetricsSnapshotTable,
+  type UnifiedContentSelect,
+  UnifiedContentSelect as UnifiedContentSelectSchema,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
@@ -15,8 +17,6 @@ import {
   InboxSummarySchema,
   type TimeSeriesPoint,
   TimeSeriesPointSchema,
-  type TopContentEntry,
-  TopContentEntrySchema,
   type WorkspaceSummary,
   WorkspaceSummarySchema,
 } from "@shared/insights";
@@ -125,38 +125,17 @@ export class WorkspaceInsightsAggregator {
     workspaceId: string;
     limit?: number;
     sortBy?: "impressions" | "engagement";
-  }): Promise<TopContentEntry[]> {
+  }): Promise<UnifiedContentSelect[]> {
     const { workspaceId, limit = 5, sortBy = "impressions" } = params;
 
     const rows = await db()
-      .select({
-        id: unifiedContentTable.id,
-        placement: unifiedContentTable.placement,
-        metrics: unifiedContentTable.metrics,
-        metricsRefreshedAt: unifiedContentTable.metricsRefreshedAt,
-        sourceContentId: unifiedContentTable.sourceContentId,
-      })
+      .select()
       .from(unifiedContentTable)
       .where(eq(unifiedContentTable.workspaceId, workspaceId))
       .orderBy(sql`COALESCE((metrics->>${sortBy})::numeric, 0) DESC`)
       .limit(limit);
 
-    return rows
-      .map((row) => {
-        const metrics = ContentMetricsSummarySchema.safeParse(
-          row.metrics ?? {},
-        );
-        if (!metrics.success) return null;
-
-        return TopContentEntrySchema.parse({
-          contentId: row.id,
-          sourceContentId: row.sourceContentId ?? undefined,
-          placement: row.placement,
-          metrics: metrics.data,
-          lastRefreshedAt: row.metricsRefreshedAt ?? undefined,
-        });
-      })
-      .filter((entry): entry is TopContentEntry => entry !== null);
+    return rows.map((row) => UnifiedContentSelectSchema.parse(row));
   }
 
   async getInboxSummary(params: { workspaceId: string }) {

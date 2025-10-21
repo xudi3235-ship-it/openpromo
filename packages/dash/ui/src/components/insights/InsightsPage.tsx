@@ -1,5 +1,6 @@
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@openpromo/ui/components/tabs";
+import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { startOfDay, subDays } from "date-fns";
 import { useMemo, useState } from "react";
 import {
@@ -164,7 +165,9 @@ export function InsightsPage() {
           {topContentLoading ? (
             <InsightsTopContentSkeleton rows={5} />
           ) : (
-            <InsightsTopContent items={topContent?.items ?? []} />
+            <InsightsTopContent
+              items={((topContent?.items ?? []) as MergedContentEntity[]) ?? []}
+            />
           )}
         </div>
       </div>

@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
+import { ContentEntity } from "../content/shared/types";
 
 const aggregator = new WorkspaceInsightsAggregator();
 
@@ -48,11 +49,19 @@ export const insightsRoute = new Hono<ApiEnv>()
     zValidator("query", topContentQuerySchema),
     async (c) => {
       const { limit, sortBy } = c.req.valid("query");
-      const items = await aggregator.getTopContent({
+      const rows = await aggregator.getTopContent({
         workspaceId: Actor.workspaceID(),
         limit,
         sortBy,
       });
+
+      const items = rows.map((row) =>
+        ContentEntity.parse({
+          type: "content",
+          entity: row,
+        }),
+      );
+
       return c.json({ items });
     },
   )
