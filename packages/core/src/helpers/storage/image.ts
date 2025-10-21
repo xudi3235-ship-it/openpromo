@@ -142,8 +142,11 @@ export namespace ImageStorage {
       await deleteImage(img.id);
     });
   }
-  export async function batchDeleteImages(): Promise<void> {
-    await iterateImages({}, async (img) => {
+  export async function batchDeleteImages(
+    params: Partial<ListParams>,
+  ): Promise<void> {
+    await iterateImages(params, async (img) => {
+      console.log("checking image for deletion", { imageId: img.id });
       if (!img.id) return;
       const safe = await isImageSafeToDelete(img.id);
       if (!safe) return;
