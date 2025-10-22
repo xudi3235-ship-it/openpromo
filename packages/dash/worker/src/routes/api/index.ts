@@ -4,6 +4,7 @@ import { onError } from "../../helpers/error";
 import { workOSAuth } from "../../middleware/workos-auth";
 import { connectedAccountsRoute } from "./connected-accounts";
 import { examplesRoute } from "./examples";
+import { hashtagsRoute } from "./hashtags";
 import { internalRoute } from "./internal";
 import { orgsRoute } from "./orgs";
 import { popupRelayRoute } from "./popup-relay";
@@ -16,6 +17,7 @@ export const apiRoutes = new Hono<ApiEnv>()
   .use(workOSAuth())
   .route("/ping", pingRoute)
   .route("/examples", examplesRoute)
+  .route("/hashtags", hashtagsRoute)
   .route("/internal", internalRoute)
   .route("/users", usersRoute)
   .route("/workspaces", workspacesRoute)

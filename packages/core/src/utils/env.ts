@@ -40,6 +40,8 @@ export const env = createEnv({
     MODAL_PROXY_AUTH_TOKEN_ID: z.string().min(1),
     MODAL_PROXY_AUTH_TOKEN_SECRET: z.string().min(1),
     OPENPROMO_SECRET_KEY: z.string().min(32),
+    // tikhub.io provider
+    TIKHUB_API_TOKEN: z.string().min(1),
     // debug flag
     DEBUG: z.string().optional().default("false"),
   },

@@ -9,9 +9,12 @@ import {
   CommandList,
 } from "@openpromo/ui/components/command";
 import { Textarea } from "@openpromo/ui/components/textarea";
-import { useEffect, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useDebounceValue } from "usehooks-ts";
 import { PLACEHOLDER } from "@/lib/caption-limit";
+import { useHashtagSuggestions } from "@/queries/hashtags";
 import {
   getCaretCoordinates,
   getCurrentWord,
@@ -24,10 +27,10 @@ export interface TaggableEntity {
   value: string;
   description?: string;
   type: "user" | "hashtag";
+  meta?: string[];
 }
 
-const dummyTaggableEntities: TaggableEntity[] = [
-  // Users
+const users: TaggableEntity[] = [
   {
     id: "1",
     name: "John Doe",
@@ -63,64 +66,13 @@ const dummyTaggableEntities: TaggableEntity[] = [
     description: "Social Media Manager",
     type: "user",
   },
-  // Hashtags
-  {
-    id: "h1",
-    name: "Marketing",
-    value: "#marketing",
-    description: "Marketing campaigns and content",
-    type: "hashtag",
-  },
-  {
-    id: "h2",
-    name: "Sales",
-    value: "#sales",
-    description: "Sales updates and deals",
-    type: "hashtag",
-  },
-  {
-    id: "h3",
-    name: "Product",
-    value: "#product",
-    description: "Product announcements",
-    type: "hashtag",
-  },
-  {
-    id: "h4",
-    name: "Announcement",
-    value: "#announcement",
-    description: "General announcements",
-    type: "hashtag",
-  },
-  {
-    id: "h5",
-    name: "Update",
-    value: "#update",
-    description: "Updates and news",
-    type: "hashtag",
-  },
-  {
-    id: "h6",
-    name: "Launch",
-    value: "#launch",
-    description: "Product launches",
-    type: "hashtag",
-  },
-  {
-    id: "h7",
-    name: "Promo",
-    value: "#promo",
-    description: "Promotional content",
-    type: "hashtag",
-  },
-  {
-    id: "h8",
-    name: "Discount",
-    value: "#discount",
-    description: "Discount offers",
-    type: "hashtag",
-  },
 ];
+
+const PLATFORM_LABELS: Record<string, string> = {
+  FACEBOOK: "Facebook",
+  INSTAGRAM: "Instagram",
+  TIKTOK: "TikTok",
+};
 
 type ComposerMentionsProps = {
   value: string;
@@ -139,6 +91,67 @@ export default function ComposerMentions({
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [trigger, setTrigger] = useState<"@" | "#" | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery] = useDebounceValue(searchQuery, 250);
+  const minHashtagLength = 2;
+  const trimmedSearch = searchQuery.trim();
+  const shouldShowHashtagResults = trimmedSearch.length >= minHashtagLength;
+
+  const hashtagQuery = useHashtagSuggestions(
+    debouncedQuery,
+    showDropdown && trigger === "#",
+    { minimumLength: minHashtagLength },
+  );
+  const hashtagSuggestions = hashtagQuery.suggestions;
+  const isFetchingHashtags = hashtagQuery.isFetching ?? false;
+  const isLoadingHashtags = hashtagQuery.status === "pending";
+  const isHashtagError = hashtagQuery.isError ?? false;
+  const hashtagErrorMessage =
+    hashtagQuery.error instanceof Error
+      ? hashtagQuery.error.message
+      : "Unable to fetch hashtags.";
+
+  const numberFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat("en", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }),
+    [],
+  );
+
+  const hashtagEntities = useMemo<TaggableEntity[]>(() => {
+    if (!hashtagSuggestions.length) return [];
+
+    return hashtagSuggestions.map((suggestion) => {
+      const normalizedTag = suggestion.normalizedTag;
+      const displayTag = suggestion.displayTag ?? normalizedTag;
+      const statLines = suggestion.stats.map((stat) => {
+        const platform = PLATFORM_LABELS[stat.platform] ?? stat.platform;
+        const parts: string[] = [];
+        if (typeof stat.usageCount === "number") {
+          parts.push(`${numberFormatter.format(stat.usageCount)} posts`);
+        }
+        if (typeof stat.viewCount === "number") {
+          parts.push(`${numberFormatter.format(stat.viewCount)} views`);
+        }
+        if (parts.length === 0) {
+          return `${platform} • data unavailable`;
+        }
+        return `${platform} • ${parts.join(" / ")}`;
+      });
+
+      const [primaryLine, ...rest] = statLines;
+
+      return {
+        id: `hashtag-${normalizedTag}`,
+        name: `#${displayTag}`,
+        value: `#${normalizedTag}`,
+        description: primaryLine,
+        meta: rest.length > 0 ? rest : undefined,
+        type: "hashtag" as const,
+      };
+    });
+  }, [hashtagSuggestions, numberFormatter]);
 
   // Check for mention/hashtag trigger
   useEffect(() => {
@@ -194,20 +207,51 @@ export default function ComposerMentions({
   }, []);
 
   // Filter entities based on trigger and search query
-  const filteredEntities = dummyTaggableEntities.filter((entity) => {
-    if (!trigger) return false;
+  const filteredEntities = useMemo(() => {
+    if (!trigger) return [];
 
-    const matchesType =
-      (trigger === "@" && entity.type === "user") ||
-      (trigger === "#" && entity.type === "hashtag");
+    const normalizedSearch = searchQuery.toLowerCase();
 
-    const matchesSearch =
-      searchQuery === "" ||
-      entity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      entity.value.toLowerCase().includes(searchQuery.toLowerCase());
+    if (trigger === "@") {
+      return users.filter((entity) => {
+        const matchesSearch =
+          normalizedSearch === "" ||
+          entity.name.toLowerCase().includes(normalizedSearch) ||
+          entity.value.toLowerCase().includes(normalizedSearch);
+        return matchesSearch;
+      });
+    }
 
-    return matchesType && matchesSearch;
-  });
+    if (trigger === "#") {
+      if (!shouldShowHashtagResults) {
+        return [];
+      }
+
+      if (normalizedSearch === "") {
+        return hashtagEntities;
+      }
+
+      return hashtagEntities.filter((entity) =>
+        entity.value.toLowerCase().includes(normalizedSearch),
+      );
+    }
+
+    return [];
+  }, [trigger, searchQuery, hashtagEntities, shouldShowHashtagResults]);
+
+  const emptyStateMessage =
+    trigger === "#"
+      ? isHashtagError
+        ? hashtagErrorMessage
+        : !shouldShowHashtagResults
+          ? `Type at least ${minHashtagLength} characters to search hashtags.`
+          : "No hashtags found."
+      : "No users found.";
+
+  const showLoadingRow =
+    trigger === "#" &&
+    shouldShowHashtagResults &&
+    (isLoadingHashtags || isFetchingHashtags);
 
   // Handle entity selection
   const handleSelect = (entity: TaggableEntity) => {
@@ -298,27 +342,47 @@ export default function ComposerMentions({
                 className="hidden"
               />
               <CommandList className="max-h-[200px]">
-                <CommandEmpty>
-                  No {trigger === "@" ? "users" : "hashtags"} found.
-                </CommandEmpty>
+                {!showLoadingRow && (
+                  <CommandEmpty>{emptyStateMessage}</CommandEmpty>
+                )}
                 <CommandGroup>
+                  {showLoadingRow && (
+                    <CommandItem
+                      value="loading"
+                      disabled
+                      className="flex cursor-default items-center gap-2 text-muted-foreground"
+                    >
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Searching hashtags…
+                    </CommandItem>
+                  )}
                   {filteredEntities.map((entity) => (
                     <CommandItem
                       key={entity.id}
-                      value={entity.name}
+                      value={entity.value}
                       onSelect={() => handleSelect(entity)}
                       className="cursor-pointer"
                     >
-                      <div className="flex flex-col">
+                      <div className="flex flex-col gap-0.5">
                         <span className="font-medium">{entity.name}</span>
-                        <span className="text-muted-foreground text-xs">
-                          {entity.value}
-                        </span>
+                        {entity.type === "user" && (
+                          <span className="text-muted-foreground text-xs">
+                            {entity.value}
+                          </span>
+                        )}
                         {entity.description && (
                           <span className="text-muted-foreground text-xs">
                             {entity.description}
                           </span>
                         )}
+                        {entity.meta?.map((line) => (
+                          <span
+                            key={line}
+                            className="text-muted-foreground text-xs"
+                          >
+                            {line}
+                          </span>
+                        ))}
                       </div>
                     </CommandItem>
                   ))}
