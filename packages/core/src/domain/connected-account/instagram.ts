@@ -49,6 +49,8 @@ export interface InstagramAuthTokenDetails {
   picture: string;
   username: string;
   permissions: string[];
+  followersCount?: number;
+  followingCount?: number;
 }
 
 const log = Log.create({ namespace: "InstagramOAuthService" });
@@ -61,6 +63,7 @@ export class InstagramOAuthService {
     "instagram_business_content_publish",
     "instagram_business_manage_messages",
     "instagram_business_manage_comments",
+    "instagram_manage_insights",
   ];
 
   private redirectUri(): string {
@@ -258,6 +261,8 @@ export class InstagramOAuthService {
       picture: profile.profile_picture_url || "",
       username: profile.username,
       permissions: this.scopes,
+      followersCount: profile.followers_count,
+      followingCount: profile.follows_count,
     };
   }
 
@@ -280,6 +285,8 @@ export class InstagramOAuthService {
       picture: profile.profile_picture_url || "",
       username: profile.username,
       permissions: this.scopes,
+      followersCount: profile.followers_count,
+      followingCount: profile.follows_count,
     };
   }
 

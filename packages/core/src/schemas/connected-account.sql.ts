@@ -2,6 +2,7 @@ import { id, timestamp, timestamps, ulid } from "@core/helpers/db";
 import { AllPlatforms } from "@shared/content";
 import {
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -84,6 +85,10 @@ export const connectedAccount = pgTable(
     metadata: jsonb("metadata").$type<ConnectedAccountMetadata>().notNull(),
     // content backfill tracking
     lastBackfillAt: timestamp(),
+    // metrics for the account
+    followersCount: integer("followers_count").notNull().default(0),
+    followingCount: integer("following_count").notNull().default(0),
+    metricsRefreshedAt: timestamp(),
   },
   (table) => [
     index("platform_idx").on(table.platform),
@@ -102,6 +107,9 @@ export const connectedAccountId = {
 const opts = {
   platform: Platform,
   lastBackfillAt: z.date().nullable(),
+  followersCount: z.number().int().nonnegative().optional(),
+  followingCount: z.number().int().nonnegative().optional(),
+  metricsRefreshedAt: z.coerce.date().nullable().optional(),
 };
 
 // select

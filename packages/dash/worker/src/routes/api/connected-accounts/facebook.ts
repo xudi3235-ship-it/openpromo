@@ -98,6 +98,10 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
                     refreshToken: authResult.refreshToken,
                   },
                 },
+                followersCount:
+                  typeof page.fan_count === "number" ? page.fan_count : 0,
+                metricsRefreshedAt:
+                  typeof page.fan_count === "number" ? new Date() : null,
               });
               await facebookOAuthService.setupWebhook(page.access_token);
               return acc;

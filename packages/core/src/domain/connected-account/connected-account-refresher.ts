@@ -289,6 +289,25 @@ export class ConnectedAccountRefresher {
           })
           .execute();
 
+        const resolvedFollowers =
+          typeof result.followersCount === "number"
+            ? Math.max(0, result.followersCount)
+            : (account.followersCount ?? 0);
+
+        const resolvedFollowing =
+          typeof result.followingCount === "number"
+            ? Math.max(0, result.followingCount)
+            : (account.followingCount ?? 0);
+
+        await db()
+          .update(connectedAccount)
+          .set({
+            followersCount: resolvedFollowers,
+            followingCount: resolvedFollowing,
+            metricsRefreshedAt: collectedAt,
+          })
+          .where(eq(connectedAccount.id, account.id));
+
         if (
           typeof result.followersCount === "number" &&
           result.followersCount >= 0

@@ -60,6 +60,7 @@ export const tikTokConnectedAccountRoute = new Hono<ApiEnv>().get(
           ? `https://www.tiktok.com/@${authResult.username}`
           : "https://www.tiktok.com";
 
+        const now = new Date();
         const account = await ConnectedAccount.create({
           platform: Platform.enum.TIKTOK,
           externalAccountId: authResult.id,
@@ -78,6 +79,13 @@ export const tikTokConnectedAccountRoute = new Hono<ApiEnv>().get(
             permissions: authResult.permissions,
             unionId: authResult.unionId,
           },
+          followersCount: authResult.followersCount ?? 0,
+          followingCount: authResult.followingCount ?? 0,
+          metricsRefreshedAt:
+            authResult.followersCount !== undefined ||
+            authResult.followingCount !== undefined
+              ? now
+              : null,
         });
 
         const qp = new URLSearchParams({

@@ -43,6 +43,8 @@ interface TikTokUser {
   display_name?: string;
   profile_deep_link?: string;
   username?: string;
+  follower_count?: number;
+  following_count?: number;
 }
 
 interface TikTokError {
@@ -71,6 +73,8 @@ export interface TikTokAuthTokenDetails {
   picture: string;
   username: string;
   unionId?: string;
+  followersCount?: number;
+  followingCount?: number;
 }
 
 const log = Log.create({ namespace: "TikTokOAuthService" });
@@ -149,6 +153,7 @@ export class TikTokOAuthService {
   private readonly scopes = [
     "user.info.basic",
     "user.info.profile",
+    "user.info.stats",
     "video.list",
     "video.publish",
     "video.upload",
@@ -284,6 +289,8 @@ export class TikTokOAuthService {
       "avatar_url",
       "profile_deep_link",
       "username",
+      "follower_count",
+      "following_count",
     ].join(",");
 
     const response = await fetch(
@@ -355,6 +362,8 @@ export class TikTokOAuthService {
       username,
       unionId: user.union_id,
       permissions,
+      followersCount: user.follower_count,
+      followingCount: user.following_count,
     };
   }
 }

@@ -133,7 +133,7 @@ export namespace ConnectedAccount {
         });
       }
 
-      return duplicate;
+      return ConnectedAccount.fromID(duplicate.id);
     },
   );
 

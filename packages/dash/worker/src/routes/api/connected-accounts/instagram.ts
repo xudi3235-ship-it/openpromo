@@ -60,6 +60,7 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>().get(
           });
           const profilePicUrl = authResult.picture ? authResult.picture : "";
           // 2. Create a connected account for the authenticated Instagram account
+          const now = new Date();
           const account = await ConnectedAccount.create({
             platform: Platform.enum.INSTAGRAM,
             externalAccountId: authResult.id,
@@ -77,6 +78,13 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>().get(
               profilePicUrl,
               permissions: authResult.permissions,
             },
+            followersCount: authResult.followersCount ?? 0,
+            followingCount: authResult.followingCount ?? 0,
+            metricsRefreshedAt:
+              authResult.followersCount !== undefined ||
+              authResult.followingCount !== undefined
+                ? now
+                : null,
           });
           await instagramOAuthService.setupWebhook(authResult.accessToken);
 
