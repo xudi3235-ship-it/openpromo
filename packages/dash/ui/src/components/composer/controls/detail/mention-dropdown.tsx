@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/a11y/noNoninteractiveElementInteractions: ok */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: ok */
 "use client";
 
 import {
@@ -66,29 +68,33 @@ export function MentionDropdown({
           className="hidden"
         />
         <CommandList className="max-h-[200px]">
-          {!showLoadingRow && <CommandEmpty>{emptyStateMessage}</CommandEmpty>}
+          {!showLoadingRow && (
+            <CommandEmpty className="font-geist text-sm p-4">
+              {emptyStateMessage}
+            </CommandEmpty>
+          )}
           <CommandGroup>
-            {showLoadingRow &&
-              SKELETON_KEYS.map((key) => (
-                <CommandItem
-                  key={key}
-                  value={key}
-                  disabled
-                  className="cursor-default"
-                >
-                  <Skeleton className="h-10 w-full" />
-                </CommandItem>
-              ))}
-            {entities.map((entity) => (
-              <CommandItem
-                key={entity.id}
-                value={entity.value}
-                onSelect={() => onSelect(entity)}
-                className="cursor-pointer"
-              >
-                <MentionDropdownItem entity={entity} trigger={trigger} />
-              </CommandItem>
-            ))}
+            {showLoadingRow
+              ? SKELETON_KEYS.map((key) => (
+                  <CommandItem
+                    key={key}
+                    value={key}
+                    disabled
+                    className="cursor-default"
+                  >
+                    <Skeleton className="h-10 w-full" />
+                  </CommandItem>
+                ))
+              : entities.map((entity) => (
+                  <CommandItem
+                    key={entity.id}
+                    value={entity.value}
+                    onSelect={() => onSelect(entity)}
+                    className="cursor-pointer"
+                  >
+                    <MentionDropdownItem entity={entity} trigger={trigger} />
+                  </CommandItem>
+                ))}
           </CommandGroup>
         </CommandList>
       </Command>

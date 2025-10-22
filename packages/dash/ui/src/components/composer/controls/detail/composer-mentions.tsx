@@ -48,12 +48,19 @@ export default function ComposerMentions({
     { minimumLength: minHashtagLength },
   );
   const hashtagSuggestions = hashtagQuery.suggestions;
-  const isFetchingHashtags = hashtagQuery.isFetching;
   const isHashtagError = hashtagQuery.isError;
   const hashtagErrorMessage =
     hashtagQuery.error instanceof Error
       ? hashtagQuery.error.message
       : "Unable to fetch hashtags.";
+
+  // Check if we're waiting for debounce or actively fetching
+  const isPendingHashtagFetch =
+    trigger === "#" &&
+    shouldShowHashtagResults &&
+    (searchQuery !== debouncedQuery ||
+      hashtagQuery.isLoading ||
+      hashtagQuery.isFetching);
 
   const numberFormatter = useMemo(
     () =>
@@ -172,6 +179,11 @@ export default function ComposerMentions({
         return [];
       }
 
+      // When loading or pending, return empty array but showLoadingRow will handle the UI
+      if (isPendingHashtagFetch) {
+        return [];
+      }
+
       if (normalizedSearch === "") {
         return hashtagEntities;
       }
@@ -182,7 +194,13 @@ export default function ComposerMentions({
     }
 
     return [];
-  }, [trigger, searchQuery, hashtagEntities, shouldShowHashtagResults]);
+  }, [
+    trigger,
+    searchQuery,
+    hashtagEntities,
+    shouldShowHashtagResults,
+    isPendingHashtagFetch,
+  ]);
 
   const emptyStateMessage =
     trigger === "#"
@@ -190,11 +208,10 @@ export default function ComposerMentions({
         ? hashtagErrorMessage
         : !shouldShowHashtagResults
           ? `Type at least ${minHashtagLength} characters to search hashtags.`
-          : "No hashtags found."
+          : isPendingHashtagFetch
+            ? ""
+            : "No hashtags found."
       : "No users found.";
-
-  const showLoadingRow =
-    trigger === "#" && shouldShowHashtagResults && isFetchingHashtags;
 
   // Handle entity selection
   const handleSelect = (entity: TaggableEntity) => {
@@ -274,7 +291,7 @@ export default function ComposerMentions({
         entities={filteredEntities}
         onSelect={handleSelect}
         emptyStateMessage={emptyStateMessage}
-        showLoadingRow={showLoadingRow}
+        showLoadingRow={isPendingHashtagFetch}
       />
     </div>
   );
