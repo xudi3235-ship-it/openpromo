@@ -16,6 +16,7 @@ import { productsRoute } from "./products";
 import { storageRoute } from "./storage";
 import { stylesRoute } from "./styles";
 import { workspaceTeamRoute } from "./team";
+import { updateWorkspaceRoute } from "./update-workspace";
 import { workspacePusherRoute } from "./workspace-pusher";
 
 /**
@@ -27,6 +28,7 @@ export const workspacesRoute = new Hono<ApiEnv>()
   // Workspace CRUD operations
   .route("/", listWorkspacesRoute)
   .route("/", getWorkspaceRoute)
+  .route("/", updateWorkspaceRoute)
   .route("/", createWorkspaceRoute)
   .route("/", deleteWorkspaceRoute)
   // WebSocket pusher routes

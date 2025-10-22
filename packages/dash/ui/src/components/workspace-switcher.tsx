@@ -1,6 +1,11 @@
 "use client";
 
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@openpromo/ui/components/avatar";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -113,9 +118,17 @@ export function WorkspaceSwitcher({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               {currentWorkspace && (
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  {currentWorkspace.name.charAt(0).toUpperCase()}
-                </div>
+                <Avatar className="size-8">
+                  {currentWorkspace.profilePictureUrl ? (
+                    <AvatarImage
+                      src={currentWorkspace.profilePictureUrl}
+                      alt={`${currentWorkspace.name} avatar`}
+                    />
+                  ) : null}
+                  <AvatarFallback className="text-sm">
+                    {currentWorkspace.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
               )}
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">
@@ -151,9 +164,17 @@ export function WorkspaceSwitcher({
                     "bg-accent text-accent-foreground",
                 )}
               >
-                <div className="flex size-6 items-center justify-center rounded-md border">
-                  {workspace.name.charAt(0)}
-                </div>
+                <Avatar className="size-6">
+                  {workspace.profilePictureUrl ? (
+                    <AvatarImage
+                      src={workspace.profilePictureUrl}
+                      alt={`${workspace.name} avatar`}
+                    />
+                  ) : null}
+                  <AvatarFallback className="text-xs">
+                    {workspace.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     {workspace.name}

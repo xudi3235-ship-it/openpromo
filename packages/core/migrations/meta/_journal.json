@@ -330,6 +330,13 @@
       "when": 1761163917383,
       "tag": "0046_fearless_dragon_lord",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1761170374881,
+      "tag": "0047_wise_the_santerians",
+      "breakpoints": true
     }
   ]
 }

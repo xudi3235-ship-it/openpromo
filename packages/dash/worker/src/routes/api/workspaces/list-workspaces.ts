@@ -32,6 +32,8 @@ export const listWorkspacesRoute = new Hono<ApiEnv>().get("/", async (ctx) => {
       id: workspacesTable.id,
       name: workspacesTable.name,
       slug: workspacesTable.slug,
+      profilePictureUrl: workspacesTable.profilePictureUrl,
+      profilePictureKey: workspacesTable.profilePictureKey,
     })
     .from(workspacesTable)
     .innerJoin(

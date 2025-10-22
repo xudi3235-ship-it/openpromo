@@ -9,6 +9,8 @@ export const workspacesTable = pgTable(
     organizationId: text().notNull(), // organization id from WorkOS
     name: text().notNull(),
     slug: text().notNull(),
+    profilePictureUrl: text("profile_picture_url"),
+    profilePictureKey: text("profile_picture_key"),
   },
   (t) => [
     index().on(t.slug),

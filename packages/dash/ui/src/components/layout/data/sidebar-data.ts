@@ -85,6 +85,11 @@ export const useSidebarData = (): SidebarData => {
           url: "/workspaces/$workspaceSlug/team",
           icon: Users,
         },
+        {
+          title: "Settings",
+          url: "/workspaces/$workspaceSlug/settings",
+          icon: Settings,
+        },
       ],
     },
     ...(isInternal

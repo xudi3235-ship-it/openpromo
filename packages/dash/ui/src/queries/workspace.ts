@@ -1,6 +1,7 @@
 import type { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 import type {
   WorkspaceTeamInviteResponse,
   WorkspaceTeamInviteRevokeResponse,
@@ -9,6 +10,7 @@ import type {
   WorkspaceTeamResponse,
 } from "@worker/routes/api/workspaces/team";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import type { Workspace } from "@/lib/hono-client";
 import {
   convertHonoQueryOptions,
   useHonoMutation,
@@ -144,6 +146,34 @@ export const useRemoveMember = () => {
       await queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
       });
+    },
+  });
+};
+
+export type UpdateWorkspacePayload = {
+  name?: string;
+  profilePicture?: {
+    key: string;
+    url: string;
+  } | null;
+};
+
+export const useUpdateWorkspace = () => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useHonoMutation<Workspace, UpdateWorkspacePayload>({
+    mutationFn: (api, variables) =>
+      api.workspaces[":workspaceSlug"].$patch({
+        param: { workspaceSlug: workspace.slug },
+        json: variables,
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.WORKSPACES,
+      });
+      await router.invalidate();
     },
   });
 };

@@ -17,6 +17,7 @@ import { Route as AuthenticatedWorkspacesIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedWorkspacesWorkspaceSlugRouteRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/route'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/index'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugTeamRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/team'
+import { Route as AuthenticatedWorkspacesWorkspaceSlugSettingsRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/settings'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugInsightsRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/insights'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugInboxRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/inbox'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugContentRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/content'
@@ -73,6 +74,12 @@ const AuthenticatedWorkspacesWorkspaceSlugTeamRoute =
   AuthenticatedWorkspacesWorkspaceSlugTeamRouteImport.update({
     id: '/team',
     path: '/team',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRouteRoute,
+  } as any)
+const AuthenticatedWorkspacesWorkspaceSlugSettingsRoute =
+  AuthenticatedWorkspacesWorkspaceSlugSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
     getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRouteRoute,
   } as any)
 const AuthenticatedWorkspacesWorkspaceSlugInsightsRoute =
@@ -166,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceSlug/content': typeof AuthenticatedWorkspacesWorkspaceSlugContentRoute
   '/workspaces/$workspaceSlug/inbox': typeof AuthenticatedWorkspacesWorkspaceSlugInboxRoute
   '/workspaces/$workspaceSlug/insights': typeof AuthenticatedWorkspacesWorkspaceSlugInsightsRoute
+  '/workspaces/$workspaceSlug/settings': typeof AuthenticatedWorkspacesWorkspaceSlugSettingsRoute
   '/workspaces/$workspaceSlug/team': typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   '/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
   '/workspaces/$workspaceSlug/labs/api-testing': typeof AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRoute
@@ -186,6 +194,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceSlug/content': typeof AuthenticatedWorkspacesWorkspaceSlugContentRoute
   '/workspaces/$workspaceSlug/inbox': typeof AuthenticatedWorkspacesWorkspaceSlugInboxRoute
   '/workspaces/$workspaceSlug/insights': typeof AuthenticatedWorkspacesWorkspaceSlugInsightsRoute
+  '/workspaces/$workspaceSlug/settings': typeof AuthenticatedWorkspacesWorkspaceSlugSettingsRoute
   '/workspaces/$workspaceSlug/team': typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   '/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
   '/workspaces/$workspaceSlug/labs/api-testing': typeof AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRoute
@@ -210,6 +219,7 @@ export interface FileRoutesById {
   '/_authenticated/workspaces/$workspaceSlug/content': typeof AuthenticatedWorkspacesWorkspaceSlugContentRoute
   '/_authenticated/workspaces/$workspaceSlug/inbox': typeof AuthenticatedWorkspacesWorkspaceSlugInboxRoute
   '/_authenticated/workspaces/$workspaceSlug/insights': typeof AuthenticatedWorkspacesWorkspaceSlugInsightsRoute
+  '/_authenticated/workspaces/$workspaceSlug/settings': typeof AuthenticatedWorkspacesWorkspaceSlugSettingsRoute
   '/_authenticated/workspaces/$workspaceSlug/team': typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   '/_authenticated/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
   '/_authenticated/workspaces/$workspaceSlug/labs/api-testing': typeof AuthenticatedWorkspacesWorkspaceSlugLabsApiTestingRoute
@@ -234,6 +244,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug/content'
     | '/workspaces/$workspaceSlug/inbox'
     | '/workspaces/$workspaceSlug/insights'
+    | '/workspaces/$workspaceSlug/settings'
     | '/workspaces/$workspaceSlug/team'
     | '/workspaces/$workspaceSlug/'
     | '/workspaces/$workspaceSlug/labs/api-testing'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug/content'
     | '/workspaces/$workspaceSlug/inbox'
     | '/workspaces/$workspaceSlug/insights'
+    | '/workspaces/$workspaceSlug/settings'
     | '/workspaces/$workspaceSlug/team'
     | '/workspaces/$workspaceSlug'
     | '/workspaces/$workspaceSlug/labs/api-testing'
@@ -277,6 +289,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/$workspaceSlug/content'
     | '/_authenticated/workspaces/$workspaceSlug/inbox'
     | '/_authenticated/workspaces/$workspaceSlug/insights'
+    | '/_authenticated/workspaces/$workspaceSlug/settings'
     | '/_authenticated/workspaces/$workspaceSlug/team'
     | '/_authenticated/workspaces/$workspaceSlug/'
     | '/_authenticated/workspaces/$workspaceSlug/labs/api-testing'
@@ -350,6 +363,13 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/workspaces/$workspaceSlug/team'
       preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugTeamRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteRoute
+    }
+    '/_authenticated/workspaces/$workspaceSlug/settings': {
+      id: '/_authenticated/workspaces/$workspaceSlug/settings'
+      path: '/settings'
+      fullPath: '/workspaces/$workspaceSlug/settings'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugSettingsRouteImport
       parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteRoute
     }
     '/_authenticated/workspaces/$workspaceSlug/insights': {
@@ -474,6 +494,7 @@ interface AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren {
   AuthenticatedWorkspacesWorkspaceSlugContentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugContentRoute
   AuthenticatedWorkspacesWorkspaceSlugInboxRoute: typeof AuthenticatedWorkspacesWorkspaceSlugInboxRoute
   AuthenticatedWorkspacesWorkspaceSlugInsightsRoute: typeof AuthenticatedWorkspacesWorkspaceSlugInsightsRoute
+  AuthenticatedWorkspacesWorkspaceSlugSettingsRoute: typeof AuthenticatedWorkspacesWorkspaceSlugSettingsRoute
   AuthenticatedWorkspacesWorkspaceSlugTeamRoute: typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   AuthenticatedWorkspacesWorkspaceSlugIndexRoute: typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
   AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute: typeof AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute
@@ -496,6 +517,8 @@ const AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren: AuthenticatedWorks
       AuthenticatedWorkspacesWorkspaceSlugInboxRoute,
     AuthenticatedWorkspacesWorkspaceSlugInsightsRoute:
       AuthenticatedWorkspacesWorkspaceSlugInsightsRoute,
+    AuthenticatedWorkspacesWorkspaceSlugSettingsRoute:
+      AuthenticatedWorkspacesWorkspaceSlugSettingsRoute,
     AuthenticatedWorkspacesWorkspaceSlugTeamRoute:
       AuthenticatedWorkspacesWorkspaceSlugTeamRoute,
     AuthenticatedWorkspacesWorkspaceSlugIndexRoute:
