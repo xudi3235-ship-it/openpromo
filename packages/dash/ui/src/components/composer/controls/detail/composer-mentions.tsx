@@ -20,6 +20,50 @@ type ComposerMentionsProps = {
   placeholder?: string;
 };
 
+// Function to highlight hashtags and mentions in text
+function highlightText(text: string) {
+  if (!text) return null;
+
+  // Regular expression to match hashtags and mentions
+  // Matches # or @ followed by alphanumeric characters and underscores
+  const regex = /(#[a-zA-Z0-9_]+|@[a-zA-Z0-9_]+)/g;
+  const parts = text.split(regex);
+
+  return parts.map((part, i) => {
+    if (part.match(regex)) {
+      const isHashtag = part.startsWith("#");
+      const isMention = part.startsWith("@");
+
+      if (isHashtag) {
+        return (
+          <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: static content split
+            key={i}
+            className="bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded "
+          >
+            {part}
+          </span>
+        );
+      }
+
+      if (isMention) {
+        return (
+          <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: static content split
+            key={i}
+            className="bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded"
+          >
+            {part}
+          </span>
+        );
+      }
+    }
+
+    // biome-ignore lint/suspicious/noArrayIndexKey: static content split
+    return <span key={i}>{part}</span>;
+  });
+}
+
 export default function ComposerMentions({
   value,
   onChange,
@@ -179,7 +223,7 @@ export default function ComposerMentions({
           : isPendingHashtagFetch
             ? ""
             : "No hashtags found."
-      : "No users found.";
+      : "Use @ to tag people with their account handle (e.g., @username). You can customize mentions for each platform in the preview panels.";
 
   // Handle entity selection
   const handleSelect = (entity: TaggableEntity) => {
@@ -240,13 +284,30 @@ export default function ComposerMentions({
 
   return (
     <div className="relative">
+      {/* Highlight overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none whitespace-pre-wrap break-words overflow-hidden"
+        style={{
+          padding: "0.5rem 0.75rem",
+          fontSize: "0.875rem",
+          lineHeight: "1.25rem",
+          color: "transparent",
+          zIndex: 1,
+        }}
+        aria-hidden="true"
+      >
+        {highlightText(value)}
+      </div>
+
+      {/* Textarea */}
       <Textarea
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleTextareaKeyDown}
         placeholder={placeholder}
-        className="min-h-[80px] resize-none border-0"
+        className="min-h-[80px] resize-none border-0 relative bg-transparent"
+        style={{ zIndex: 2 }}
       />
 
       <MentionDropdown
