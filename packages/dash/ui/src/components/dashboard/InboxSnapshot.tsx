@@ -1,8 +1,16 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: ok */
 import { Card } from "@openpromo/ui/components/card";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@openpromo/ui/components/item";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import type { InboxSummary } from "@shared/insights";
-import { MailOpen, MessageCircle } from "lucide-react";
+import { Clock, MailOpen, MessageCircle, MessageSquare } from "lucide-react";
 
 type InboxSnapshotProps = {
   summary?: InboxSummary;
@@ -61,64 +69,67 @@ export function InboxSnapshot({ summary, isLoading }: InboxSnapshotProps) {
         </div>
       </div>
 
-      <div className="mt-3 space-y-2">
-        <div className="flex items-center justify-between rounded-lg border border-border/30 p-2.5">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-foreground">
-              Open conversations
-            </p>
-            <p className="text-[10px] text-muted-foreground/70 leading-tight">
+      <ItemGroup className="mt-3 gap-2">
+        <Item variant="outline" size="sm" className="border-border/30">
+          <ItemMedia>
+            <MailOpen className="h-4 w-4 text-muted-foreground" />
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle className="text-xs">Open conversations</ItemTitle>
+            <ItemDescription className="text-[10px]">
               Messages waiting for a reply
-            </p>
-          </div>
-          <span className="text-lg font-semibold text-foreground tabular-nums ml-2">
+            </ItemDescription>
+          </ItemContent>
+          <span className="text-lg font-semibold text-foreground tabular-nums">
             {formatNumber(summary?.openMessages)}
           </span>
-        </div>
+        </Item>
 
-        <div className="flex items-center justify-between rounded-lg border border-border/30 p-2.5">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-foreground">Response rate</p>
-            <p className="text-[10px] text-muted-foreground/70 leading-tight">
+        <Item variant="outline" size="sm" className="border-border/30">
+          <ItemMedia>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle className="text-xs">Response rate</ItemTitle>
+            <ItemDescription className="text-[10px]">
               Conversations with a reply
-            </p>
-          </div>
-          <span className="text-lg font-semibold text-foreground tabular-nums ml-2">
+            </ItemDescription>
+          </ItemContent>
+          <span className="text-lg font-semibold text-foreground tabular-nums">
             {responseRate}
           </span>
-        </div>
+        </Item>
 
-        <div className="flex items-center justify-between rounded-lg border border-border/30 p-2.5">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-foreground">
-              Avg. first response
-            </p>
-            <p className="text-[10px] text-muted-foreground/70 leading-tight">
+        <Item variant="outline" size="sm" className="border-border/30">
+          <ItemMedia>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle className="text-xs">Avg. first response</ItemTitle>
+            <ItemDescription className="text-[10px]">
               Time to first reply across conversations
-            </p>
-          </div>
-          <span className="text-lg font-semibold text-foreground tabular-nums ml-2">
+            </ItemDescription>
+          </ItemContent>
+          <span className="text-lg font-semibold text-foreground tabular-nums">
             {formatDuration(summary?.averageFirstResponseMinutes)}
           </span>
-        </div>
+        </Item>
 
-        <div className="flex items-center justify-between rounded-lg border border-border/30 p-2.5">
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-foreground">
-                Inbound messages
-              </p>
-              <p className="text-[10px] text-muted-foreground/70 leading-tight">
-                Total messages received
-              </p>
-            </div>
-          </div>
-          <span className="text-lg font-semibold text-foreground tabular-nums ml-2">
+        <Item variant="outline" size="sm" className="border-border/30">
+          <ItemMedia>
+            <MessageCircle className="h-4 w-4 text-muted-foreground" />
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle className="text-xs">Inbound messages</ItemTitle>
+            <ItemDescription className="text-[10px]">
+              Total messages received
+            </ItemDescription>
+          </ItemContent>
+          <span className="text-lg font-semibold text-foreground tabular-nums">
             {formatNumber(summary?.totalInboundMessages)}
           </span>
-        </div>
-      </div>
+        </Item>
+      </ItemGroup>
     </Card>
   );
 }

@@ -156,7 +156,6 @@ function WorkspaceIndex() {
           <InboxSnapshot summary={inboxSummary} isLoading={inboxLoading} />
           <TopContentPreview
             items={topContent?.items as MergedContentEntity[] | undefined}
-            accounts={accounts}
             isLoading={topContentLoading}
             workspaceSlug={workspaceSlug}
           />

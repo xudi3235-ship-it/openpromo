@@ -1,14 +1,22 @@
 import { Card } from "@openpromo/ui/components/card";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@openpromo/ui/components/item";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
+import type { PlacementSpec } from "@shared/content";
 import { Link } from "@tanstack/react-router";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { formatDistanceToNow } from "date-fns";
-import { ArrowUpRight, Clock3 } from "lucide-react";
-import { type ConnectedAccount, matchEntity } from "@/lib/hono-client";
+import { ArrowUpRight } from "lucide-react";
+import { getPlatformIcon } from "@/components/content/utils/platform-icons";
+import { matchEntity, matchPlacementSpec } from "@/lib/hono-client";
 
 type TopContentPreviewProps = {
   items?: MergedContentEntity[];
-  accounts: ConnectedAccount[];
   isLoading?: boolean;
   workspaceSlug: string;
 };
@@ -22,18 +30,26 @@ function formatNumber(value: number | null | undefined) {
   return numberFormatter.format(value);
 }
 
-function resolveAccountName(
-  connectedAccountId: string | null | undefined,
-  accounts: ConnectedAccount[],
-) {
-  if (!connectedAccountId) return "";
-  const account = accounts.find((acc) => acc.id === connectedAccountId);
-  return account?.accountName ?? "";
+function getThumbnailFromPlacement(
+  placementSpec: PlacementSpec,
+): string | undefined {
+  if (placementSpec?.thumbnailUrl) {
+    return placementSpec.thumbnailUrl;
+  }
+
+  const attachments = placementSpec?.attachments;
+  if (attachments && attachments.length > 0) {
+    const fst = attachments.find((att) => att.publicUrl);
+    if (fst?.publicUrl) {
+      return fst.publicUrl;
+    }
+  }
+
+  return undefined;
 }
 
 export function TopContentPreview({
   items,
-  accounts,
   isLoading,
   workspaceSlug,
 }: TopContentPreviewProps) {
@@ -82,86 +98,157 @@ export function TopContentPreview({
           Publish or schedule posts to see performance insights here.
         </div>
       ) : (
-        <div className="mt-3 space-y-2">
+        <ItemGroup className="mt-3 gap-2">
           {visibleItems.map((item) =>
             matchEntity(item, {
               content: ({ entity }) => {
                 const impressions = entity.metrics?.impressions ?? 0;
                 const engagement = entity.metrics?.engagement ?? 0;
-                const accountName = resolveAccountName(
-                  entity.connectedAccountId,
-                  accounts,
+                const platformIcon = getPlatformIcon(entity.placement);
+                const thumbnail = getThumbnailFromPlacement(
+                  entity.placementSpec as PlacementSpec,
                 );
-                const refreshedAt = entity.metricsRefreshedAt
-                  ? formatDistanceToNow(new Date(entity.metricsRefreshedAt), {
-                      addSuffix: true,
-                    })
-                  : "Never";
-                let labelFromLink: string | undefined;
-                if (entity.permalinkUrl) {
-                  try {
-                    labelFromLink = new URL(entity.permalinkUrl).hostname;
-                  } catch {
-                    labelFromLink = entity.permalinkUrl;
-                  }
-                }
-                const title =
-                  accountName || labelFromLink || `Post ${entity.id.slice(-6)}`;
+
+                const message = matchPlacementSpec(
+                  entity.placementSpec as PlacementSpec,
+                  {
+                    FBFeed: (s) => s.postSpec.message,
+                    IGFeed: (s) => s.caption,
+                    TTFeed: (s) => s.caption,
+                  },
+                );
+                const title = message || "Untitled";
 
                 return (
-                  <div
+                  <Item
                     key={entity.id}
-                    className="flex items-start gap-2.5 rounded-lg border border-border/30 p-2.5"
+                    variant="outline"
+                    size="sm"
+                    className="border-border/30"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-xs font-semibold shrink-0">
-                      {entity.placement.slice(0, 2)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {title}
-                        </p>
-                        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                          {entity.placement}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground/70">
-                        Refreshed {refreshedAt}
-                      </p>
-                    </div>
+                    <ItemMedia variant="image" className="relative">
+                      {thumbnail ? (
+                        <img
+                          src={thumbnail}
+                          alt={title}
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+                          <span className="text-[10px] font-semibold">
+                            No image
+                          </span>
+                        </div>
+                      )}
+                      {platformIcon && (
+                        <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-1 shadow-sm border">
+                          {platformIcon}
+                        </div>
+                      )}
+                    </ItemMedia>
+                    <ItemContent>
+                      <ItemTitle className="text-xs truncate line-clamp-1 max-w-[200px]">
+                        {title}
+                      </ItemTitle>
+                      <ItemDescription className="text-[10px]">
+                        {formatNumber(impressions)} impressions •{" "}
+                        {formatNumber(engagement)} engagement
+                      </ItemDescription>
+                    </ItemContent>
                     <div className="flex flex-col items-end gap-0.5 text-right shrink-0">
-                      <p className="text-[10px] text-muted-foreground/70">
-                        Impressions
-                      </p>
                       <p className="text-base font-semibold text-foreground tabular-nums">
                         {formatNumber(impressions)}
                       </p>
-                      <p className="text-[10px] text-muted-foreground/70">
-                        Engagement {formatNumber(engagement)}
+                      <p className="text-[9px] text-muted-foreground/70">
+                        impressions
                       </p>
                     </div>
-                  </div>
+                  </Item>
                 );
               },
-              group: ({ contents, entity }) => (
-                <div
-                  key={entity.id}
-                  className="flex items-center justify-between rounded-lg border border-border/30 p-2.5"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      Campaign group
-                    </p>
-                    <p className="text-[10px] text-muted-foreground/70">
-                      {contents.length} placements
-                    </p>
-                  </div>
-                  <Clock3 className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-              ),
+              group: ({ contents, entity }) => {
+                const platforms = [
+                  ...new Set(contents.map((content) => content.placement)),
+                ];
+                const primaryMessage =
+                  contents.length > 0
+                    ? matchPlacementSpec(
+                        contents[0].placementSpec as PlacementSpec,
+                        {
+                          FBFeed: (s) => s.postSpec.message,
+                          IGFeed: (s) => s.caption,
+                          TTFeed: (s) => s.caption,
+                        },
+                      )
+                    : "Untitled Group";
+                const contentWithThumbnail = contents.find((c) =>
+                  getThumbnailFromPlacement(c.placementSpec as PlacementSpec),
+                );
+                const thumbnailUrl = contentWithThumbnail
+                  ? getThumbnailFromPlacement(
+                      contentWithThumbnail.placementSpec as PlacementSpec,
+                    )
+                  : undefined;
+
+                return (
+                  <Item
+                    key={entity.id}
+                    variant="outline"
+                    size="sm"
+                    className="border-border/30"
+                  >
+                    <ItemMedia variant="image" className="relative">
+                      {thumbnailUrl ? (
+                        <img
+                          src={thumbnailUrl}
+                          alt={primaryMessage || "Group"}
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+                          <span className="text-[10px] font-semibold">
+                            No image
+                          </span>
+                        </div>
+                      )}
+                      <div className="absolute -bottom-1 -right-1 flex">
+                        {platforms.slice(0, 2).map((platform, index) => {
+                          const icon = getPlatformIcon(platform);
+                          return icon ? (
+                            <div
+                              key={platform}
+                              className="bg-background rounded-full p-1 shadow-sm border -ml-1 first:ml-0"
+                              style={{ zIndex: platforms.length - index }}
+                            >
+                              {icon}
+                            </div>
+                          ) : null;
+                        })}
+                        {platforms.length > 2 && (
+                          <div className="bg-muted rounded-full p-1 shadow-sm border -ml-1 flex items-center justify-center min-w-5 h-5">
+                            <span className="text-[10px] font-medium">
+                              +{platforms.length - 2}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </ItemMedia>
+                    <ItemContent>
+                      <ItemTitle className="text-xs truncate line-clamp-1 max-w-[200px]">
+                        {primaryMessage || "Campaign group"}
+                      </ItemTitle>
+                      <ItemDescription className="text-[10px]">
+                        {contents.length} placement
+                        {contents.length !== 1 ? "s" : ""} • {platforms.length}{" "}
+                        platform{platforms.length !== 1 ? "s" : ""}
+                      </ItemDescription>
+                    </ItemContent>
+                  </Item>
+                );
+              },
             }),
           )}
-        </div>
+        </ItemGroup>
       )}
     </Card>
   );
