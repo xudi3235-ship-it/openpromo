@@ -76,7 +76,7 @@ export function MentionDropdown({
                   disabled
                   className="cursor-default"
                 >
-                  <MentionSkeleton />
+                  <Skeleton className="h-10 w-full" />
                 </CommandItem>
               ))}
             {entities.map((entity) => (
@@ -120,18 +120,6 @@ function MentionDropdownItem({
           {line}
         </span>
       ))}
-    </div>
-  );
-}
-
-function MentionSkeleton() {
-  return (
-    <div className="flex w-full flex-col gap-2 rounded-md bg-muted/40 p-3">
-      <Skeleton className="h-4 w-1/3" />
-      <div className="flex flex-col gap-1">
-        <Skeleton className="h-3 w-1/2" />
-        <Skeleton className="h-3 w-2/3" />
-      </div>
     </div>
   );
 }
