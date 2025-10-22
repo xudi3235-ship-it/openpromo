@@ -8,8 +8,36 @@ import {
 import { Input } from "@openpromo/ui/components/input";
 import type { Table } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { ChevronDown, Plus } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  Clock,
+  Eye,
+  FileText,
+  Heart,
+  MessageCircle,
+  Plus,
+  RefreshCw,
+  Share2,
+  Signal,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
+
+const columnIcons: Record<string, React.ReactNode> = {
+  title: <FileText className="h-4 w-4" />,
+  status: <Signal className="h-4 w-4" />,
+  impressions: <Eye className="h-4 w-4" />,
+  reach: <Users className="h-4 w-4" />,
+  engagement: <TrendingUp className="h-4 w-4" />,
+  likes: <Heart className="h-4 w-4" />,
+  comments: <MessageCircle className="h-4 w-4" />,
+  shares: <Share2 className="h-4 w-4" />,
+  metricsRefreshed: <RefreshCw className="h-4 w-4" />,
+  scheduledDate: <Calendar className="h-4 w-4" />,
+  createdAt: <Clock className="h-4 w-4" />,
+};
 
 interface ContentPageHeaderProps {
   searchValue: string;
@@ -70,7 +98,10 @@ export function ContentPageHeader({
                       column.toggleVisibility(!!value)
                     }
                   >
-                    {column.id}
+                    <div className="flex items-center gap-2">
+                      {columnIcons[column.id]}
+                      <span>{column.id}</span>
+                    </div>
                   </DropdownMenuCheckboxItem>
                 );
               })}
