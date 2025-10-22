@@ -55,6 +55,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
           </AlertDialogCancel>
           <Button
             variant={destructive ? "destructive" : "default"}
+            className={cn(destructive && "text-white")}
             onClick={(e) => {
               e.stopPropagation();
               handleConfirm();

@@ -6,6 +6,7 @@ import type {
 import { UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useWorkspacePermissions } from "@/hooks/useWorkspacePermissions";
 import {
   useInviteWorkspaceMember,
@@ -41,6 +42,10 @@ export function TeamManagement() {
     null,
   );
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<WorkspaceMember | null>(
+    null,
+  );
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
 
   const inviteMemberMutation = useInviteWorkspaceMember();
   const revokeInviteMutation = useRevokeWorkspaceInvite();
@@ -127,13 +132,22 @@ export function TeamManagement() {
   };
 
   const handleRemove = (member: WorkspaceMember) => {
+    setMemberToRemove(member);
+    setIsRemoveDialogOpen(true);
+  };
+
+  const confirmRemove = () => {
+    if (!memberToRemove) return;
+
     removeMemberMutation.mutate(
-      { memberId: member.id },
+      { memberId: memberToRemove.id },
       {
         onSuccess: () => {
           toast.success("Member removed", {
-            description: `${getMemberName(member)} has been removed from the workspace.`,
+            description: `${getMemberName(memberToRemove)} has been removed from the workspace.`,
           });
+          setIsRemoveDialogOpen(false);
+          setMemberToRemove(null);
         },
       },
     );
@@ -214,6 +228,21 @@ export function TeamManagement() {
         member={editingMember}
         onConfirm={handleUpdateRole}
         isLoading={updateRoleMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={isRemoveDialogOpen}
+        onOpenChange={setIsRemoveDialogOpen}
+        title="Remove team member"
+        desc={
+          memberToRemove
+            ? `Are you sure you want to remove ${getMemberName(memberToRemove)} from this workspace? They will immediately lose access.`
+            : "Are you sure you want to remove this member?"
+        }
+        confirmText="Remove member"
+        destructive
+        handleConfirm={confirmRemove}
+        isLoading={removeMemberMutation.isPending}
       />
     </div>
   );

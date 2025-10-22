@@ -1,17 +1,8 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@openpromo/ui/components/alert-dialog";
 import { Button } from "@openpromo/ui/components/button";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { matchEntity } from "@/lib/hono-client";
 import { useBatchDeleteMutation } from "@/queries/content";
 
@@ -67,27 +58,16 @@ export function BatchActionsToolbar({
         </div>
       </div>
 
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Selected Items</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete {selectedRows.length} selected
-              item(s)? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBatchDelete}
-              disabled={batchDeleteMutation.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {batchDeleteMutation.isPending ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete Selected Items"
+        desc={`Are you sure you want to delete ${selectedRows.length} selected item(s)? This action cannot be undone.`}
+        confirmText={batchDeleteMutation.isPending ? "Deleting..." : "Delete"}
+        destructive
+        handleConfirm={handleBatchDelete}
+        isLoading={batchDeleteMutation.isPending}
+      />
     </>
   );
 }
