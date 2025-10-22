@@ -8,7 +8,6 @@ import type { MergedContentEntity } from "@worker/routes/api/workspaces/content"
 import { startOfDay, subDays } from "date-fns";
 import { Plus } from "lucide-react";
 import { useMemo } from "react";
-import { FollowersOverview } from "@/components/dashboard/FollowersOverview";
 import { InboxSnapshot } from "@/components/dashboard/InboxSnapshot";
 import { TopContentPreview } from "@/components/dashboard/TopContentPreview";
 import { WorkspaceHighlights } from "@/components/dashboard/WorkspaceHighlights";
@@ -152,8 +151,6 @@ function WorkspaceIndex() {
           totalFollowers={totalFollowers}
           isLoading={isPageLoading}
         />
-
-        <FollowersOverview accounts={accounts} isLoading={accountsLoading} />
 
         <section className="grid gap-3 lg:grid-cols-2">
           <InboxSnapshot summary={inboxSummary} isLoading={inboxLoading} />
