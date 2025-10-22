@@ -17,6 +17,7 @@ export const examplesRoute = new Hono<ApiEnv>()
           featureFlags: ["some", "cool", "features"],
           permissions: ["some", "permissions"],
           workspacePermissions: ["some", "workspace", "permissions"],
+          workspaceRole: "workspace_admin",
         }),
         pendingContentID: "example-content-id",
       },

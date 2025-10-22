@@ -8,7 +8,8 @@ import {
 } from "@tanstack/react-router";
 import { toast } from "sonner";
 import ComposerDialog from "@/components/composer/modal/dialog-composer";
-import { WorkspaceLoading } from "@/components/loading/workspace-loading";
+import { WorkspaceLayout } from "@/components/layout/workspace-layout";
+import { WorkspaceLayoutLoading } from "@/components/loading/workspace-loading";
 import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
 import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
@@ -44,7 +45,7 @@ export const Route = createFileRoute(
   },
   staleTime: 1000 * 60, // 1 minute
   component: WorkspaceComponent,
-  pendingComponent: WorkspaceLoading,
+  pendingComponent: WorkspaceLayoutLoading,
 });
 
 const DISABLED_ACCOUNTS_BAR_PATTERNS: RegExp[] = [
@@ -78,16 +79,18 @@ function WorkspaceComponent() {
 
   if (!isLoading && accounts.length === 0) {
     return (
-      <WorkspaceNullState
-        title={`Welcome to ${workspace.name}`}
-        description="Connect your social media accounts to start creating and scheduling content"
-        footerText="Choose a platform above to get started"
-      />
+      <WorkspaceLayout>
+        <WorkspaceNullState
+          title={`Welcome to ${workspace.name}`}
+          description="Connect your social media accounts to start creating and scheduling content"
+          footerText="Choose a platform above to get started"
+        />
+      </WorkspaceLayout>
     );
   }
 
   return (
-    <>
+    <WorkspaceLayout>
       <div className="flex h-full flex-col gap-4">
         {shouldShowAccountsBar && (
           <div className="px-4 pt-5">
@@ -101,6 +104,6 @@ function WorkspaceComponent() {
 
       {/* Global Composer Dialog - can be opened from anywhere in the workspace */}
       <ComposerDialog />
-    </>
+    </WorkspaceLayout>
   );
 }

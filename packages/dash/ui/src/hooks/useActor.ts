@@ -1,4 +1,5 @@
 import { useRouteContext } from "@tanstack/react-router";
+import { useWorkspace } from "./useWorkspace";
 
 export function useActor() {
   const { user } = useRouteContext({ from: "/_authenticated" });
@@ -11,3 +12,8 @@ export function useInternal() {
 }
 
 export type Actor = ReturnType<typeof useActor>;
+
+export function useWorkspaceActor() {
+  const { workspace } = useWorkspace();
+  return workspace.actor;
+}

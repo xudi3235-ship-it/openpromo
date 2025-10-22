@@ -8,6 +8,7 @@ import { WorkspaceSyncTaskType } from "@shared/workspace";
 import {
   ORGANIZATION_ROLE,
   WORKSPACE_PERMISSION,
+  WORKSPACE_ROLE,
 } from "@shared/workspace/auth";
 
 const log = Log.create({ namespace: "workspace-sync.metrics-runner" });
@@ -45,6 +46,7 @@ export async function runWorkspaceMetricsTask(workspaceId: string) {
     workspaceID: workspace.id,
     workspaceSlug: workspace.slug,
     workspacePermissions: [WORKSPACE_PERMISSION.ALL],
+    workspaceRole: WORKSPACE_ROLE.ADMIN,
   });
 
   await stub.upsertTask(WorkspaceSyncTaskType.ContentMetricsRefresh, {});

@@ -12,7 +12,7 @@ import { useWorkspace } from "./useWorkspace";
  */
 export function useWorkspacePermissions() {
   const { workspace } = useWorkspace();
-  const permissions = workspace.userPermissions ?? [];
+  const permissions = workspace.actor.userPermissions ?? [];
 
   const can = (permission: WorkspacePermission): boolean => {
     return hasWorkspacePermission(permissions, permission);

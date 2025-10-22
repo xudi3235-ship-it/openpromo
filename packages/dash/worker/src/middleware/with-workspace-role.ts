@@ -10,6 +10,7 @@ import {
   ORGANIZATION_ROLE,
   type OrganizationRole,
   WORKSPACE_PERMISSION,
+  WORKSPACE_ROLE,
   type WorkspaceRole,
 } from "@shared/workspace/auth";
 import { and, eq } from "drizzle-orm";
@@ -88,6 +89,7 @@ export const withWorkspaceRole: (
       featureFlags: c.get("featureFlags"),
       permissions: c.get("permissions"),
       workspacePermissions: [WORKSPACE_PERMISSION.ALL], // Org admins get all workspace permissions
+      workspaceRole: WORKSPACE_ROLE.ADMIN,
     };
     return Actor.provide("workspace_user", workspaceCtx, next);
   }
@@ -116,6 +118,8 @@ export const withWorkspaceRole: (
       featureFlags: c.get("featureFlags"),
       permissions: c.get("permissions"),
       workspacePermissions,
+      // biome-ignore lint/style/noNonNullAssertion: ok here
+      workspaceRole: workspaceUserRole!,
     },
     next,
   );

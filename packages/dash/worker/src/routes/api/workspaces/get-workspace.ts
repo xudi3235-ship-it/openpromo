@@ -38,7 +38,10 @@ export const getWorkspaceRoute = new Hono<ApiEnv>().get(
 
     return ctx.json({
       ...workspace,
-      userPermissions: actor.properties.workspacePermissions,
+      actor: {
+        userPermissions: actor.properties.workspacePermissions,
+        workspaceRole: actor.properties.workspaceRole,
+      },
     });
   },
 );

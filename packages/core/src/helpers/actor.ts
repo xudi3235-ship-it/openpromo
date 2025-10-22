@@ -1,4 +1,4 @@
-import type { OrganizationRole } from "@shared/workspace/auth";
+import type { OrganizationRole, WorkspaceRole } from "@shared/workspace/auth";
 import * as z from "zod";
 import { createContext } from "../utils/context";
 import { ErrorCodes, VisibleError } from "../utils/error";
@@ -25,6 +25,7 @@ export namespace Actor {
       workspaceID: z.string(),
       workspaceSlug: z.string(),
       workspacePermissions: z.array(z.string()).default([]),
+      workspaceRole: z.custom<WorkspaceRole>(),
     }),
   });
 

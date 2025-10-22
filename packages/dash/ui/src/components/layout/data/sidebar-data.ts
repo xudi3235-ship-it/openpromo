@@ -13,12 +13,14 @@ import {
   Users,
 } from "lucide-react";
 import { BiNotification } from "react-icons/bi";
-import { useActor } from "@/hooks/useActor";
+import { useActor, useWorkspaceActor } from "@/hooks/useActor";
 import type { SidebarData } from "../types";
 
 export const useSidebarData = (): SidebarData => {
   const user = useActor();
+  const workspaceActor = useWorkspaceActor();
   const isInternal = user.featureFlags.includes("is_internal");
+  const workspaceRole = workspaceActor.workspaceRole;
 
   const allNavGroups = [
     {
@@ -89,6 +91,7 @@ export const useSidebarData = (): SidebarData => {
           title: "Settings",
           url: "/workspaces/$workspaceSlug/settings",
           icon: Settings,
+          shouldHide: workspaceRole !== "workspace_admin",
         },
       ],
     },

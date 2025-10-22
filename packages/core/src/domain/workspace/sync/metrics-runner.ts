@@ -20,6 +20,7 @@ import {
 import {
   ORGANIZATION_ROLE,
   WORKSPACE_PERMISSION,
+  WORKSPACE_ROLE,
 } from "@shared/workspace/auth";
 import { asc } from "drizzle-orm";
 import type {
@@ -95,6 +96,7 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
         workspaceID: workspaceId,
         workspaceSlug: workspaceInfo?.slug ?? workspaceId,
         workspacePermissions: [WORKSPACE_PERMISSION.ALL],
+        workspaceRole: WORKSPACE_ROLE.ADMIN,
       });
 
       const refreshTargets = batch.targets.filter((target) => {
