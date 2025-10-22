@@ -61,7 +61,7 @@ const MAX_SEARCH_RESULTS = 60;
 const MAX_SUGGESTIONS = 20;
 const MIN_QUERY_LENGTH = 2;
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-const CACHE_TTL_SECONDS = 15 * 60; // 15 minutes
+const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 const CACHE_KEY_PREFIX = "hashtag:";
 const CACHE_VERSION = 1;
 
