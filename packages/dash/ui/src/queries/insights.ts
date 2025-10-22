@@ -41,6 +41,15 @@ export const prefetchWorkspaceInsightsSummary = (
   );
 };
 
+export const prefetchWorkspaceInsightsStatus = (
+  queryClient: QueryClient,
+  workspaceSlug: string,
+) => {
+  queryClient.prefetchQuery(
+    convertHonoQueryOptions(workspaceInsightsStatusQueryOpts(workspaceSlug)),
+  );
+};
+
 /**
  * Hook to fetch workspace insights summary
  * Returns aggregated metrics totals and last refresh timestamp

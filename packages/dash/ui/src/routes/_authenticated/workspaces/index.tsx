@@ -11,7 +11,6 @@ export const Route = createFileRoute("/_authenticated/workspaces/")({
     }
   },
   component: () => {
-    // TODO: better UI
     return <div>Select a workspace to continue</div>;
   },
 });
