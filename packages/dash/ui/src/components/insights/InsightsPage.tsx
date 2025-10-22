@@ -1,11 +1,12 @@
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@openpromo/ui/components/tabs";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
-import { startOfDay, subDays } from "date-fns";
+import { formatDistanceToNow, startOfDay, subDays } from "date-fns";
 import { useMemo, useState } from "react";
 import {
   type TimeSeriesQueryParams,
   useWorkspaceInsightsInboxSummary,
+  useWorkspaceInsightsStatus,
   useWorkspaceInsightsSummary,
   useWorkspaceInsightsTimeSeries,
   useWorkspaceInsightsTopContent,
@@ -55,10 +56,22 @@ export function InsightsPage() {
     useWorkspaceInsightsTimeSeries(dateRange);
 
   const { data: topContent, isLoading: topContentLoading } =
-    useWorkspaceInsightsTopContent({ limit: 5, sortBy: "impressions" });
+    useWorkspaceInsightsTopContent({
+      limit: 5,
+      sortBy: "impressions",
+      start: dateRange.start,
+      end: dateRange.end,
+    });
 
   const { data: inboxSummary, isLoading: inboxSummaryLoading } =
     useWorkspaceInsightsInboxSummary();
+
+  const { data: status } = useWorkspaceInsightsStatus();
+
+  const formatRelative = (value: Date | string | null | undefined) => {
+    if (!value) return "Never";
+    return formatDistanceToNow(new Date(value), { addSuffix: true });
+  };
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -72,6 +85,21 @@ export function InsightsPage() {
             <p className="text-sm text-muted-foreground">
               Track your content performance and engagement metrics
             </p>
+            {status && (
+              <div className="text-xs text-muted-foreground flex flex-wrap gap-4 mt-1">
+                <span>
+                  Content refreshed{" "}
+                  {formatRelative(status.contentLastRefreshedAt)}
+                </span>
+                <span>
+                  Followers updated{" "}
+                  {formatRelative(status.followerLastCollectedAt)}
+                </span>
+                <span>
+                  Inbox updated {formatRelative(status.inboxLastUpdatedAt)}
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Tabs

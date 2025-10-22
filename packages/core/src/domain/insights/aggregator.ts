@@ -1,5 +1,6 @@
-import { and, db, eq, sql } from "@core/helpers/db";
+import { and, db, desc, eq, inArray, sql } from "@core/helpers/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
+import { connectedAccountMetricsSnapshotTable } from "@core/schemas/connected-account-metrics.sql";
 import {
   contentMetricsSnapshotTable,
   type UnifiedContentSelect,
@@ -12,14 +13,50 @@ import {
   inboxMessageStatusEnum,
 } from "@core/schemas/inbox-message-state.sql";
 import { inboxMessagesTable } from "@core/schemas/inbox-messages.sql";
+import type { AllPlatforms } from "@shared/content";
 import {
   ContentMetricsSummarySchema,
   InboxSummarySchema,
+  InsightsStatusSchema,
   type TimeSeriesPoint,
   TimeSeriesPointSchema,
   type WorkspaceSummary,
   WorkspaceSummarySchema,
 } from "@shared/insights";
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function truncateToBucket(date: Date, interval: "day" | "week"): Date {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  const day = date.getUTCDate();
+  const truncated = new Date(Date.UTC(year, month, day));
+
+  if (interval === "week") {
+    // Align to Monday to match DATE_TRUNC('week') behaviour
+    const dayOfWeek = truncated.getUTCDay(); // 0 (Sunday) - 6 (Saturday)
+    const daysSinceMonday = (dayOfWeek + 6) % 7;
+    return new Date(truncated.getTime() - daysSinceMonday * MS_PER_DAY);
+  }
+
+  return truncated;
+}
+
+function generateBuckets(
+  range: InsightsTimeRange,
+  interval: "day" | "week",
+): Date[] {
+  const start = truncateToBucket(range.start, interval);
+  const end = truncateToBucket(range.end, interval);
+  const step = interval === "week" ? MS_PER_DAY * 7 : MS_PER_DAY;
+  const buckets: Date[] = [];
+
+  for (let ts = start.getTime(); ts <= end.getTime(); ts += step) {
+    buckets.push(new Date(ts));
+  }
+
+  return buckets;
+}
 
 export type InsightsTimeRange = {
   start: Date;
@@ -41,6 +78,7 @@ export class WorkspaceInsightsAggregator {
     const totals = {
       impressions: 0,
       engagement: 0,
+      reach: 0,
       clicks: 0,
       likes: 0,
       comments: 0,
@@ -60,6 +98,7 @@ export class WorkspaceInsightsAggregator {
       const metrics = parsed.data;
       totals.impressions += metrics.impressions ?? 0;
       totals.engagement += metrics.engagement ?? 0;
+      totals.reach += metrics.reach ?? 0;
       totals.clicks += metrics.clicks ?? 0;
       totals.likes += metrics.likes ?? 0;
       totals.comments += metrics.comments ?? 0;
@@ -83,19 +122,32 @@ export class WorkspaceInsightsAggregator {
       return [];
     }
 
+    const buckets = generateBuckets(range, interval);
+    if (buckets.length === 0) {
+      return [];
+    }
+
     const bucketExpression =
       interval === "week"
         ? sql`DATE_TRUNC('week', ${contentMetricsSnapshotTable.collectedAt})`
         : sql`DATE_TRUNC('day', ${contentMetricsSnapshotTable.collectedAt})`;
 
-    const rows = await db()
+    const contentRows = await db()
       .select({
         bucket: bucketExpression.as("bucket"),
-        impressions: sql<number>`SUM((metrics->>'impressions')::numeric)`.as(
-          "impressions",
+        impressions:
+          sql<number>`SUM(COALESCE((metrics->>'impressions')::numeric, 0))`.as(
+            "impressions",
+          ),
+        engagement:
+          sql<number>`SUM(COALESCE((metrics->>'engagement')::numeric, 0))`.as(
+            "engagement",
+          ),
+        reach: sql<number>`SUM(COALESCE((metrics->>'reach')::numeric, 0))`.as(
+          "reach",
         ),
-        engagement: sql<number>`SUM((metrics->>'engagement')::numeric)`.as(
-          "engagement",
+        clicks: sql<number>`SUM(COALESCE((metrics->>'clicks')::numeric, 0))`.as(
+          "clicks",
         ),
       })
       .from(contentMetricsSnapshotTable)
@@ -109,33 +161,140 @@ export class WorkspaceInsightsAggregator {
       .groupBy(bucketExpression)
       .orderBy(bucketExpression);
 
-    return rows.map((row) => {
+    const contentByBucket = new Map<
+      string,
+      { impressions: number; engagement: number; reach: number; clicks: number }
+    >();
+
+    for (const row of contentRows) {
       const bucketRaw = row.bucket as Date | string;
-      const bucketValue =
+      const bucketDate =
         bucketRaw instanceof Date ? bucketRaw : new Date(bucketRaw);
-      return TimeSeriesPointSchema.parse({
-        bucket: bucketValue,
+      const bucket = truncateToBucket(bucketDate, interval);
+      const key = bucket.toISOString();
+      contentByBucket.set(key, {
         impressions: Number(row.impressions ?? 0),
         engagement: Number(row.engagement ?? 0),
+        reach: Number(row.reach ?? 0),
+        clicks: Number(row.clicks ?? 0),
       });
-    });
+    }
+
+    const followerSnapshots = await db()
+      .select({
+        collectedAt: connectedAccountMetricsSnapshotTable.collectedAt,
+        followersCount: connectedAccountMetricsSnapshotTable.followersCount,
+        connectedAccountId:
+          connectedAccountMetricsSnapshotTable.connectedAccountId,
+      })
+      .from(connectedAccountMetricsSnapshotTable)
+      .where(
+        and(
+          eq(connectedAccountMetricsSnapshotTable.workspaceId, workspaceId),
+          sql`${connectedAccountMetricsSnapshotTable.collectedAt} >= ${range.start.toISOString()}`,
+          sql`${connectedAccountMetricsSnapshotTable.collectedAt} <= ${range.end.toISOString()}`,
+        ),
+      );
+
+    const followerByBucket = new Map<
+      string,
+      Map<string, { count: number; collectedAt: number }>
+    >();
+
+    for (const row of followerSnapshots) {
+      if (row.followersCount === null || row.followersCount === undefined) {
+        continue;
+      }
+
+      const collectedAt =
+        row.collectedAt instanceof Date
+          ? row.collectedAt
+          : new Date(row.collectedAt);
+      const bucket = truncateToBucket(collectedAt, interval);
+      const key = bucket.toISOString();
+      const accountMap = followerByBucket.get(key) ?? new Map();
+      const existing = accountMap.get(row.connectedAccountId);
+      const timestamp = collectedAt.getTime();
+
+      if (!existing || timestamp > existing.collectedAt) {
+        accountMap.set(row.connectedAccountId, {
+          count: row.followersCount ?? 0,
+          collectedAt: timestamp,
+        });
+      }
+
+      followerByBucket.set(key, accountMap);
+    }
+
+    const points: TimeSeriesPoint[] = [];
+    let lastFollowersTotal: number | null = null;
+
+    for (const bucket of buckets) {
+      const key = bucket.toISOString();
+      const content = contentByBucket.get(key);
+      const accountCounts = followerByBucket.get(key);
+
+      let followersTotal: number;
+      if (accountCounts && accountCounts.size > 0) {
+        followersTotal = Array.from(accountCounts.values()).reduce(
+          (sum, entry) => sum + entry.count,
+          0,
+        );
+        lastFollowersTotal = followersTotal;
+      } else {
+        followersTotal = lastFollowersTotal ?? 0;
+      }
+
+      points.push(
+        TimeSeriesPointSchema.parse({
+          bucket,
+          impressions: content?.impressions ?? 0,
+          engagement: content?.engagement ?? 0,
+          reach: content?.reach ?? 0,
+          clicks: content?.clicks ?? 0,
+          followers: followersTotal,
+        }),
+      );
+    }
+
+    return points;
   }
 
   async getTopContent(params: {
     workspaceId: string;
     limit?: number;
     sortBy?: "impressions" | "engagement";
+    range?: InsightsTimeRange;
+    platform?: AllPlatforms;
   }): Promise<UnifiedContentSelect[]> {
-    const { workspaceId, limit = 5, sortBy = "impressions" } = params;
+    const {
+      workspaceId,
+      limit = 5,
+      sortBy = "impressions",
+      range,
+      platform,
+    } = params;
 
-    const rows = await db()
-      .select()
-      .from(unifiedContentTable)
-      .where(eq(unifiedContentTable.workspaceId, workspaceId))
-      .orderBy(sql`COALESCE((metrics->>${sortBy})::numeric, 0) DESC`)
-      .limit(limit);
+    if (range) {
+      const aggregatedRows = await this.getTopContentFromSnapshots({
+        workspaceId,
+        limit,
+        sortBy,
+        range,
+        platform,
+      });
 
-    return rows.map((row) => UnifiedContentSelectSchema.parse(row));
+      if (aggregatedRows.length > 0) {
+        return aggregatedRows;
+      }
+    }
+
+    return this.getTopContentFromLifetime({
+      workspaceId,
+      limit,
+      sortBy,
+      platform,
+    });
   }
 
   async getInboxSummary(params: { workspaceId: string }) {
@@ -239,5 +398,186 @@ export class WorkspaceInsightsAggregator {
       responseRate,
       averageFirstResponseMinutes,
     });
+  }
+
+  async getStatus(params: { workspaceId: string }) {
+    const { workspaceId } = params;
+
+    const [{ contentLastRefreshedAt } = { contentLastRefreshedAt: null }] =
+      await db()
+        .select({
+          contentLastRefreshedAt: sql<Date | null>`MAX(${unifiedContentTable.metricsRefreshedAt})`,
+        })
+        .from(unifiedContentTable)
+        .where(eq(unifiedContentTable.workspaceId, workspaceId));
+
+    const [{ followerLastCollectedAt } = { followerLastCollectedAt: null }] =
+      await db()
+        .select({
+          followerLastCollectedAt: sql<Date | null>`MAX(${connectedAccountMetricsSnapshotTable.collectedAt})`,
+        })
+        .from(connectedAccountMetricsSnapshotTable)
+        .where(
+          eq(connectedAccountMetricsSnapshotTable.workspaceId, workspaceId),
+        );
+
+    const [{ inboxLastUpdatedAt } = { inboxLastUpdatedAt: null }] = await db()
+      .select({
+        inboxLastUpdatedAt: sql<Date | null>`MAX(${inboxMessagesTable.createdAt})`,
+      })
+      .from(inboxMessagesTable)
+      .innerJoin(
+        inboxConversationsTable,
+        eq(inboxMessagesTable.inboxConversationId, inboxConversationsTable.id),
+      )
+      .innerJoin(
+        connectedAccount,
+        eq(inboxConversationsTable.connectedAccountId, connectedAccount.id),
+      )
+      .where(eq(connectedAccount.workspaceId, workspaceId));
+
+    return InsightsStatusSchema.parse({
+      contentLastRefreshedAt,
+      followerLastCollectedAt,
+      inboxLastUpdatedAt,
+    });
+  }
+
+  private async getTopContentFromSnapshots(params: {
+    workspaceId: string;
+    limit: number;
+    sortBy: "impressions" | "engagement";
+    range: InsightsTimeRange;
+    platform?: AllPlatforms;
+  }): Promise<UnifiedContentSelect[]> {
+    const { workspaceId, limit, sortBy, range, platform } = params;
+
+    let whereClause = and(
+      eq(unifiedContentTable.workspaceId, workspaceId),
+      sql`${contentMetricsSnapshotTable.collectedAt} >= ${range.start.toISOString()}`,
+      sql`${contentMetricsSnapshotTable.collectedAt} <= ${range.end.toISOString()}`,
+    );
+
+    if (platform) {
+      whereClause = and(whereClause, eq(connectedAccount.platform, platform));
+    }
+
+    const aggregated = await db()
+      .select({
+        contentId: contentMetricsSnapshotTable.contentId,
+        impressions:
+          sql<number>`SUM(COALESCE((content_metrics_snapshot.metrics->>'impressions')::numeric, 0))`.as(
+            "impressions",
+          ),
+        engagement:
+          sql<number>`SUM(COALESCE((content_metrics_snapshot.metrics->>'engagement')::numeric, 0))`.as(
+            "engagement",
+          ),
+        reach:
+          sql<number>`SUM(COALESCE((content_metrics_snapshot.metrics->>'reach')::numeric, 0))`.as(
+            "reach",
+          ),
+        clicks:
+          sql<number>`SUM(COALESCE((content_metrics_snapshot.metrics->>'clicks')::numeric, 0))`.as(
+            "clicks",
+          ),
+      })
+      .from(contentMetricsSnapshotTable)
+      .innerJoin(
+        unifiedContentTable,
+        eq(contentMetricsSnapshotTable.contentId, unifiedContentTable.id),
+      )
+      .leftJoin(
+        connectedAccount,
+        eq(unifiedContentTable.connectedAccountId, connectedAccount.id),
+      )
+      .where(whereClause)
+      .groupBy(contentMetricsSnapshotTable.contentId)
+      .orderBy(
+        desc(
+          sortBy === "engagement"
+            ? sql`SUM(COALESCE((content_metrics_snapshot.metrics->>'engagement')::numeric, 0))`
+            : sql`SUM(COALESCE((content_metrics_snapshot.metrics->>'impressions')::numeric, 0))`,
+        ),
+      )
+      .limit(limit);
+
+    if (aggregated.length === 0) {
+      return [];
+    }
+
+    const ids = aggregated.map((row) => row.contentId);
+    const idList = ids as [string, ...string[]];
+
+    const contentRows = await db()
+      .select()
+      .from(unifiedContentTable)
+      .where(
+        and(
+          eq(unifiedContentTable.workspaceId, workspaceId),
+          inArray(unifiedContentTable.id, idList),
+        ),
+      );
+
+    const contentById = new Map(contentRows.map((row) => [row.id, row]));
+
+    const results: UnifiedContentSelect[] = [];
+
+    for (const aggregatedRow of aggregated) {
+      const base = contentById.get(aggregatedRow.contentId);
+      if (!base) continue;
+
+      const parsed = UnifiedContentSelectSchema.parse(base);
+      const currentMetrics = parsed.metrics ?? {};
+
+      parsed.metrics = {
+        ...currentMetrics,
+        impressions: Number(aggregatedRow.impressions ?? 0),
+        engagement: Number(aggregatedRow.engagement ?? 0),
+        reach: Number(aggregatedRow.reach ?? 0),
+        clicks: Number(aggregatedRow.clicks ?? 0),
+      };
+
+      results.push(parsed);
+    }
+
+    return results.slice(0, limit);
+  }
+
+  private async getTopContentFromLifetime(params: {
+    workspaceId: string;
+    limit: number;
+    sortBy: "impressions" | "engagement";
+    platform?: AllPlatforms;
+  }): Promise<UnifiedContentSelect[]> {
+    const { workspaceId, limit, sortBy, platform } = params;
+
+    const lifetimeMetricExpression =
+      sortBy === "engagement"
+        ? sql`COALESCE((unified_content.metrics->>'engagement')::numeric, 0)`
+        : sql`COALESCE((unified_content.metrics->>'impressions')::numeric, 0)`;
+
+    const rows = await db()
+      .select({ content: unifiedContentTable })
+      .from(unifiedContentTable)
+      .leftJoin(
+        connectedAccount,
+        eq(unifiedContentTable.connectedAccountId, connectedAccount.id),
+      )
+      .where(
+        platform
+          ? and(
+              eq(unifiedContentTable.workspaceId, workspaceId),
+              eq(connectedAccount.platform, platform),
+            )
+          : eq(unifiedContentTable.workspaceId, workspaceId),
+      )
+      .orderBy(desc(lifetimeMetricExpression))
+      .limit(limit);
+
+    return rows
+      .map((row) => row.content)
+      .filter(Boolean)
+      .map((row) => UnifiedContentSelectSchema.parse(row));
   }
 }

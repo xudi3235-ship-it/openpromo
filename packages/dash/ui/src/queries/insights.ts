@@ -20,6 +20,15 @@ const workspaceInsightsSummaryQueryOpts = (workspaceSlug: string) => ({
     }),
 });
 
+const workspaceInsightsStatusQueryOpts = (workspaceSlug: string) => ({
+  queryKey: QUERY_KEYS.WORKSPACE_INSIGHTS_STATUS(workspaceSlug),
+  queryFn: (api: typeof import("@/lib/hono-client").apiClient) =>
+    api.workspaces[":workspaceSlug"].insights.status.$get({
+      param: { workspaceSlug },
+    }),
+  staleTime: 1000 * 60 * 5,
+});
+
 /**
  * Prefetch workspace insights summary
  */
@@ -43,6 +52,17 @@ export const useWorkspaceInsightsSummary = () => {
     ...workspaceInsightsSummaryQueryOpts(workspace.slug),
     errorMessage: "Failed to load workspace insights summary",
     staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+};
+
+export const useWorkspaceInsightsStatus = () => {
+  const { workspace } = useWorkspace();
+
+  return useHonoQuery({
+    ...workspaceInsightsStatusQueryOpts(workspace.slug),
+    errorMessage: "Failed to load insight refresh status",
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
@@ -128,6 +148,9 @@ export const useWorkspaceInsightsTimeSeries = (
 export type TopContentQueryParams = {
   limit?: number;
   sortBy?: "impressions" | "engagement";
+  start?: Date;
+  end?: Date;
+  platform?: string;
 };
 
 /**
@@ -137,13 +160,16 @@ const workspaceInsightsTopContentQueryOpts = (
   workspaceSlug: string,
   params: TopContentQueryParams = {},
 ) => {
-  const { limit = 5, sortBy = "impressions" } = params;
+  const { limit = 5, sortBy = "impressions", start, end, platform } = params;
 
   return {
     queryKey: QUERY_KEYS.WORKSPACE_INSIGHTS_TOP_CONTENT(
       workspaceSlug,
       limit,
       sortBy,
+      start?.toISOString(),
+      end?.toISOString(),
+      platform ?? null,
     ),
     queryFn: (api: typeof import("@/lib/hono-client").apiClient) =>
       api.workspaces[":workspaceSlug"].insights["top-content"].$get({
@@ -151,6 +177,9 @@ const workspaceInsightsTopContentQueryOpts = (
         query: {
           limit: limit.toString(),
           sortBy,
+          start: start?.toISOString(),
+          end: end?.toISOString(),
+          platform: platform ?? undefined,
         },
       }),
   };

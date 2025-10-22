@@ -11,6 +11,9 @@ type TimeSeriesData = Array<{
   bucket: string;
   impressions: number;
   engagement: number;
+  reach: number;
+  clicks: number;
+  followers: number;
 }>;
 
 type InsightsTimeSeriesChartProps = {
@@ -25,6 +28,10 @@ const chartConfig = {
   engagement: {
     label: "Engagement",
     color: "hsl(var(--chart-2))",
+  },
+  followers: {
+    label: "Followers",
+    color: "hsl(var(--chart-3))",
   },
 } satisfies ChartConfig;
 
@@ -73,6 +80,18 @@ export function InsightsTimeSeriesChart({
               stopOpacity={0.1}
             />
           </linearGradient>
+          <linearGradient id="fillFollowers" x1="0" y1="0" x2="0" y2="1">
+            <stop
+              offset="5%"
+              stopColor="var(--color-followers)"
+              stopOpacity={0.8}
+            />
+            <stop
+              offset="95%"
+              stopColor="var(--color-followers)"
+              stopOpacity={0.1}
+            />
+          </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis
@@ -100,6 +119,14 @@ export function InsightsTimeSeriesChart({
           fill="url(#fillEngagement)"
           fillOpacity={0.4}
           stroke="var(--color-engagement)"
+          strokeWidth={2}
+        />
+        <Area
+          dataKey="followers"
+          type="monotone"
+          fill="url(#fillFollowers)"
+          fillOpacity={0.4}
+          stroke="var(--color-followers)"
           strokeWidth={2}
         />
       </AreaChart>

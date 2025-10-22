@@ -1,4 +1,4 @@
-import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
+import { ConnectedAccount } from "@core/domain/connected-account";
 import { facebookOAuthService } from "@core/domain/connected-account/facebook";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";

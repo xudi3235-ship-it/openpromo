@@ -1,5 +1,7 @@
-import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { instagramOAuthService } from "@core/domain/connected-account/instagram";
+import {
+  ConnectedAccount,
+  instagramOAuthService,
+} from "@core/domain/connected-account";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Platform } from "@core/schemas/connected-account.sql";

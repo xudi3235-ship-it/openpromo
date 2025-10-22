@@ -6,12 +6,14 @@ import {
   MousePointerClick,
   Share2,
   TrendingUp,
+  Users,
 } from "lucide-react";
 
 type SummaryData = {
   totals: {
     impressions?: number;
     engagement?: number;
+    reach?: number;
     clicks?: number;
     likes?: number;
     comments?: number;
@@ -28,6 +30,7 @@ export function InsightsSummaryCards({ summary }: InsightsSummaryCardsProps) {
   const totals = summary?.totals ?? {
     impressions: 0,
     engagement: 0,
+    reach: 0,
     clicks: 0,
     likes: 0,
     comments: 0,
@@ -52,6 +55,12 @@ export function InsightsSummaryCards({ summary }: InsightsSummaryCardsProps) {
       value: totals.engagement ?? 0,
       icon: TrendingUp,
       color: "text-green-500",
+    },
+    {
+      label: "Reach",
+      value: totals.reach ?? 0,
+      icon: Users,
+      color: "text-teal-500",
     },
     {
       label: "Clicks",
@@ -81,7 +90,7 @@ export function InsightsSummaryCards({ summary }: InsightsSummaryCardsProps) {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
         {cards.map((card) => {
           const Icon = card.icon;
           return (

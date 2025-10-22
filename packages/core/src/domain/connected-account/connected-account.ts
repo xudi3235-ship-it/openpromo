@@ -12,6 +12,7 @@ import { Log } from "@core/utils/log";
 import { and, eq, getTableColumns, ne } from "drizzle-orm";
 import z from "zod";
 import { Actor } from "../../helpers/actor";
+import { connectedAccountRefresher } from "./connected-account-refresher";
 import { facebookOAuthService } from "./facebook";
 import { instagramOAuthService } from "./instagram";
 import { tikTokOAuthService } from "./tiktok";
@@ -118,6 +119,19 @@ export namespace ConnectedAccount {
           },
         })
         .returning();
+
+      try {
+        await connectedAccountRefresher.refreshAccount(duplicate);
+      } catch (error) {
+        log.warn("failed to refresh connected account metrics after create", {
+          accountId: duplicate.id,
+          platform: duplicate.platform,
+          error:
+            error instanceof Error
+              ? { message: error.message, stack: error.stack }
+              : String(error),
+        });
+      }
 
       return duplicate;
     },
@@ -352,6 +366,16 @@ export namespace ConnectedAccount {
       profilePicUrl: null,
       lastBackfillAt: null,
     });
+  }
+
+  export async function refreshMetrics(
+    account: string | ConnectedAccountSelect,
+  ) {
+    const target =
+      typeof account === "string"
+        ? await ConnectedAccount.fromID(account)
+        : account;
+    return connectedAccountRefresher.refreshAccount(target);
   }
 }
 

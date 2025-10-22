@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { startOfDay, subDays } from "date-fns";
 import { InsightsPage } from "@/components/insights/InsightsPage";
 import { WorkspaceLoading } from "@/components/loading/workspace-loading";
 import {
@@ -18,9 +19,12 @@ export const Route = createFileRoute(
       context.queryClient,
       params.workspaceSlug,
     );
+    const end = startOfDay(new Date());
+    const start = subDays(end, 30);
     prefetchWorkspaceInsightsTopContent(
       context.queryClient,
       params.workspaceSlug,
+      { start, end },
     );
     prefetchWorkspaceInsightsInboxSummary(
       context.queryClient,

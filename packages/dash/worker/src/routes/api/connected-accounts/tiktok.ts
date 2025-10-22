@@ -1,5 +1,7 @@
-import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { tikTokOAuthService } from "@core/domain/connected-account/tiktok";
+import {
+  ConnectedAccount,
+  tikTokOAuthService,
+} from "@core/domain/connected-account";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Platform } from "@core/schemas/connected-account.sql";

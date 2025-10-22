@@ -32,7 +32,7 @@ interface FacebookPermission {
   status: string;
 }
 
-interface FacebookPage {
+export interface FacebookPage {
   id: string;
   name: string;
   username?: string;

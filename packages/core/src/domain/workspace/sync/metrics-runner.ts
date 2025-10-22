@@ -1,3 +1,4 @@
+import { connectedAccountRefresher } from "@core/domain/connected-account";
 import {
   ContentMetricsRefresher,
   type ContentMetricsTarget,
@@ -57,6 +58,8 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
     });
 
     try {
+      await this.refreshConnectedAccountMetrics(workspaceId);
+
       const batch = await this.loadBatch(workspaceId, nextTask.metadata);
 
       if (batch.targets.length === 0) {
@@ -496,5 +499,27 @@ export class WorkspaceContentMetricsRunner implements WorkspaceSyncTaskRunner {
       return `instagram:${target.connectedAccountId}`;
     }
     return null;
+  }
+
+  private async refreshConnectedAccountMetrics(workspaceId: string) {
+    try {
+      const result =
+        await connectedAccountRefresher.refreshWorkspace(workspaceId);
+
+      log.info("connected account metrics refresh finished", {
+        workspaceId,
+        processed: result.processed,
+        updated: result.updated,
+        failures: result.failures.length,
+      });
+    } catch (error) {
+      log.warn("connected account metrics refresh failed", {
+        workspaceId,
+        error:
+          error instanceof Error
+            ? { message: error.message, stack: error.stack }
+            : String(error),
+      });
+    }
   }
 }
