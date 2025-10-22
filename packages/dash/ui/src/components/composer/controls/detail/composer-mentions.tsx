@@ -48,9 +48,8 @@ export default function ComposerMentions({
     { minimumLength: minHashtagLength },
   );
   const hashtagSuggestions = hashtagQuery.suggestions;
-  const isFetchingHashtags = hashtagQuery.isFetching ?? false;
-  const isLoadingHashtags = hashtagQuery.status === "pending";
-  const isHashtagError = hashtagQuery.isError ?? false;
+  const isFetchingHashtags = hashtagQuery.isFetching;
+  const isHashtagError = hashtagQuery.isError;
   const hashtagErrorMessage =
     hashtagQuery.error instanceof Error
       ? hashtagQuery.error.message
@@ -195,9 +194,7 @@ export default function ComposerMentions({
       : "No users found.";
 
   const showLoadingRow =
-    trigger === "#" &&
-    shouldShowHashtagResults &&
-    (isLoadingHashtags || isFetchingHashtags);
+    trigger === "#" && shouldShowHashtagResults && isFetchingHashtags;
 
   // Handle entity selection
   const handleSelect = (entity: TaggableEntity) => {

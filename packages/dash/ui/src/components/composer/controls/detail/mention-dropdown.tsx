@@ -8,9 +8,11 @@ import {
   CommandItem,
   CommandList,
 } from "@openpromo/ui/components/command";
-import { Loader2 } from "lucide-react";
+import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { createPortal } from "react-dom";
 import type { MentionTrigger, TaggableEntity } from "./taggable-entities";
+
+const SKELETON_KEYS = ["loading-1", "loading-2", "loading-3"];
 
 interface MentionDropdownProps {
   open: boolean;
@@ -66,16 +68,17 @@ export function MentionDropdown({
         <CommandList className="max-h-[200px]">
           {!showLoadingRow && <CommandEmpty>{emptyStateMessage}</CommandEmpty>}
           <CommandGroup>
-            {showLoadingRow && (
-              <CommandItem
-                value="loading"
-                disabled
-                className="flex cursor-default items-center gap-2 text-muted-foreground"
-              >
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Searching hashtags…
-              </CommandItem>
-            )}
+            {showLoadingRow &&
+              SKELETON_KEYS.map((key) => (
+                <CommandItem
+                  key={key}
+                  value={key}
+                  disabled
+                  className="cursor-default"
+                >
+                  <MentionSkeleton />
+                </CommandItem>
+              ))}
             {entities.map((entity) => (
               <CommandItem
                 key={entity.id}
@@ -117,6 +120,18 @@ function MentionDropdownItem({
           {line}
         </span>
       ))}
+    </div>
+  );
+}
+
+function MentionSkeleton() {
+  return (
+    <div className="flex w-full flex-col gap-2 rounded-md bg-muted/40 p-3">
+      <Skeleton className="h-4 w-1/3" />
+      <div className="flex flex-col gap-1">
+        <Skeleton className="h-3 w-1/2" />
+        <Skeleton className="h-3 w-2/3" />
+      </div>
     </div>
   );
 }
