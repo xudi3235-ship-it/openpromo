@@ -1,3 +1,4 @@
+import { Binding } from "@core/helpers/api-env";
 import { db } from "@core/helpers/db";
 import { hashtagSnapshotTable } from "@core/schemas/hashtag.sql";
 import { env } from "@core/utils/env";
@@ -60,122 +61,157 @@ const MAX_SEARCH_RESULTS = 60;
 const MAX_SUGGESTIONS = 20;
 const MIN_QUERY_LENGTH = 2;
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_SECONDS = 15 * 60; // 15 minutes
+const CACHE_KEY_PREFIX = "hashtag:";
+const CACHE_VERSION = 1;
+
+type CachedSuggestionStat = Omit<HashtagSuggestionStat, "lastFetchedAt"> & {
+  lastFetchedAt: string;
+};
+
+type CachedSuggestion = {
+  normalizedTag: string;
+  displayTag?: string;
+  stats: CachedSuggestionStat[];
+};
+
+type CachePayload = {
+  version: number;
+  suggestions: CachedSuggestion[];
+};
+
+export interface HashtagCacheAdapter {
+  get(normalized: string): Promise<HashtagSuggestion[] | null>;
+  set(normalized: string, suggestions: HashtagSuggestion[]): Promise<void>;
+}
+
+class KvHashtagCache implements HashtagCacheAdapter {
+  private getNamespace(): KVNamespace | null {
+    try {
+      return Binding.use().HashtagSearchCache;
+    } catch {
+      return null;
+    }
+  }
+
+  private getKey(normalized: string) {
+    return `${CACHE_KEY_PREFIX}${normalized.slice(0, 120)}`;
+  }
+
+  async get(normalized: string): Promise<HashtagSuggestion[] | null> {
+    const kv = this.getNamespace();
+    if (!kv) return null;
+
+    try {
+      const raw = await kv.get(this.getKey(normalized));
+      if (!raw) return null;
+
+      const payload = JSON.parse(raw) as CachePayload;
+      if (payload.version !== CACHE_VERSION) return null;
+
+      return payload.suggestions.map((suggestion) => ({
+        normalizedTag: suggestion.normalizedTag,
+        displayTag: suggestion.displayTag,
+        stats: suggestion.stats.map((stat) => ({
+          ...stat,
+          lastFetchedAt: new Date(stat.lastFetchedAt),
+        })),
+      }));
+    } catch (error) {
+      console.warn("hashtag cache read failed", error);
+      return null;
+    }
+  }
+
+  async set(normalized: string, suggestions: HashtagSuggestion[]) {
+    const kv = this.getNamespace();
+    if (!kv) return;
+
+    try {
+      const payload: CachePayload = {
+        version: CACHE_VERSION,
+        suggestions: suggestions
+          .slice(0, MAX_SUGGESTIONS)
+          .map((suggestion) => ({
+            normalizedTag: suggestion.normalizedTag,
+            displayTag: suggestion.displayTag,
+            stats: suggestion.stats.map((stat) => ({
+              ...stat,
+              lastFetchedAt: stat.lastFetchedAt.toISOString(),
+            })),
+          })),
+      };
+
+      await kv.put(this.getKey(normalized), JSON.stringify(payload), {
+        expirationTtl: CACHE_TTL_SECONDS,
+      });
+    } catch (error) {
+      console.warn("hashtag cache write failed", error);
+    }
+  }
+}
 
 export class HashtagService {
   private readonly log = Log.create({ namespace: "hashtag.service" });
   private readonly apiKey = env.TIKHUB_API_TOKEN;
   private readonly baseUrl = "https://api.tikhub.io";
+  private readonly cache?: HashtagCacheAdapter;
 
-  async search(query: string): Promise<HashtagSuggestion[]> {
+  constructor(cache?: HashtagCacheAdapter) {
+    this.cache = cache ?? new KvHashtagCache();
+  }
+
+  async search(
+    query: string,
+  ): Promise<{ suggestions: HashtagSuggestion[]; stale: boolean }> {
     const sanitized = this.sanitizeQuery(query);
     const normalized = sanitized.toLowerCase();
 
     if (!normalized || normalized.length < MIN_QUERY_LENGTH) {
-      return [];
+      return { suggestions: [], stale: false };
     }
 
-    try {
-      await this.refreshProviders(sanitized, normalized);
-    } catch (error) {
-      if (error instanceof Error) {
-        this.log.error(error);
-      } else {
-        this.log.warn("failed refreshing providers", { error });
-      }
+    const cached = await this.cache?.get(normalized);
+    if (cached) {
+      console.log("HashtagService.search: cached", {
+        query,
+        cached: cached.length,
+      });
+      return { suggestions: cached, stale: false };
     }
+    console.log("HashtagService.search: no cache found");
 
-    const rows = await db()
-      .select()
-      .from(hashtagSnapshotTable)
-      .where(ilike(hashtagSnapshotTable.normalizedTag, `${normalized}%`))
-      .orderBy(
-        desc(hashtagSnapshotTable.usageCount),
-        desc(hashtagSnapshotTable.viewCount),
-        desc(hashtagSnapshotTable.lastFetchedAt),
-      )
-      .limit(MAX_SEARCH_RESULTS);
+    const refreshed = await this.refreshProviders(sanitized, normalized);
+    const suggestions = await this.getSuggestionsFromDb(normalized);
 
-    const grouped = new Map<
-      string,
-      {
-        normalizedTag: string;
-        displayTag?: string;
-        stats: HashtagSuggestionStat[];
-      }
-    >();
-
-    for (const row of rows) {
-      const key = row.normalizedTag;
-      const existing = grouped.get(key);
-      const stat: HashtagSuggestionStat = {
-        platform: row.platform as AllPlatforms,
-        usageCount: row.usageCount ?? undefined,
-        viewCount: row.viewCount ?? undefined,
-        lastFetchedAt: row.lastFetchedAt,
-        metadata: row.metadata ?? undefined,
-      };
-      if (existing) {
-        existing.stats.push(stat);
-        if (!existing.displayTag && row.displayTag) {
-          existing.displayTag = row.displayTag;
-        }
-      } else {
-        grouped.set(key, {
-          normalizedTag: key,
-          displayTag: row.displayTag ?? row.normalizedTag,
-          stats: [stat],
-        });
-      }
-    }
-
-    const suggestions = Array.from(grouped.values()).map((entry) => {
-      entry.stats.sort(
-        (a, b) =>
-          (b.usageCount ?? b.viewCount ?? 0) -
-          (a.usageCount ?? a.viewCount ?? 0),
-      );
-      return entry;
-    });
-
-    suggestions.sort((a, b) => {
-      const bestScore = (stat: HashtagSuggestionStat) =>
-        stat.usageCount ?? stat.viewCount ?? 0;
-
-      const scoreA = Math.max(...a.stats.map(bestScore));
-      const scoreB = Math.max(...b.stats.map(bestScore));
-      if (scoreA === scoreB) {
-        const lastFetchedA = Math.max(
-          ...a.stats.map((stat) => stat.lastFetchedAt.getTime()),
+    if (this.cache) {
+      await this.cache
+        .set(normalized, suggestions)
+        .catch((error) =>
+          this.log.warn("failed to cache hashtag suggestions", { error }),
         );
-        const lastFetchedB = Math.max(
-          ...b.stats.map((stat) => stat.lastFetchedAt.getTime()),
-        );
-        return lastFetchedB - lastFetchedA;
-      }
-      return scoreB - scoreA;
-    });
+    }
 
-    return suggestions.slice(0, MAX_SUGGESTIONS).map((entry) => ({
-      normalizedTag: entry.normalizedTag,
-      displayTag: entry.displayTag,
-      stats: entry.stats,
-    })) satisfies HashtagSuggestion[];
+    return {
+      suggestions: suggestions.slice(0, MAX_SUGGESTIONS),
+      stale: !refreshed,
+    };
   }
 
   private async refreshProviders(
     rawQuery: string,
     normalizedQuery: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (rawQuery.length < MIN_QUERY_LENGTH || !this.apiKey) {
       if (!this.apiKey) {
-        this.log.warn("tikhub api key missing; skipping provider fetch");
+        this.log.warn("tikhub api token missing; skipping provider fetch");
       }
-      return;
+      return false;
     }
 
     const isFresh = await this.hasFreshSnapshots(normalizedQuery);
     if (isFresh) {
-      return;
+      return true;
     }
 
     const [instagram, tiktok] = await Promise.all([
@@ -184,7 +220,9 @@ export class HashtagService {
     ]);
 
     const snapshots = [...instagram, ...tiktok];
-    if (snapshots.length === 0) return;
+    if (snapshots.length === 0) {
+      return true;
+    }
 
     const now = new Date();
     await db()
@@ -217,6 +255,8 @@ export class HashtagService {
           lastFetchedAt: sql`excluded.last_fetched_at`,
         },
       });
+
+    return true;
   }
 
   private async hasFreshSnapshots(normalizedTag: string) {
@@ -347,10 +387,91 @@ export class HashtagService {
   }
 
   private buildHeaders() {
-    if (!this.apiKey) throw new Error("TikHub API key is not configured");
+    if (!this.apiKey) throw new Error("TikHub API token is not configured");
     return {
       Authorization: `Bearer ${this.apiKey}`,
       Accept: "application/json",
     };
+  }
+
+  private async getSuggestionsFromDb(
+    normalized: string,
+  ): Promise<HashtagSuggestion[]> {
+    const rows = await db()
+      .select()
+      .from(hashtagSnapshotTable)
+      .where(ilike(hashtagSnapshotTable.normalizedTag, `${normalized}%`))
+      .orderBy(
+        desc(hashtagSnapshotTable.usageCount),
+        desc(hashtagSnapshotTable.viewCount),
+        desc(hashtagSnapshotTable.lastFetchedAt),
+      )
+      .limit(MAX_SEARCH_RESULTS);
+
+    const grouped = new Map<
+      string,
+      {
+        normalizedTag: string;
+        displayTag?: string;
+        stats: HashtagSuggestionStat[];
+      }
+    >();
+
+    for (const row of rows) {
+      const key = row.normalizedTag;
+      const existing = grouped.get(key);
+      const stat: HashtagSuggestionStat = {
+        platform: row.platform as AllPlatforms,
+        usageCount: row.usageCount ?? undefined,
+        viewCount: row.viewCount ?? undefined,
+        lastFetchedAt: row.lastFetchedAt,
+        metadata: row.metadata ?? undefined,
+      };
+      if (existing) {
+        existing.stats.push(stat);
+        if (!existing.displayTag && row.displayTag) {
+          existing.displayTag = row.displayTag;
+        }
+      } else {
+        grouped.set(key, {
+          normalizedTag: key,
+          displayTag: row.displayTag ?? row.normalizedTag,
+          stats: [stat],
+        });
+      }
+    }
+
+    const suggestions = Array.from(grouped.values()).map((entry) => {
+      entry.stats.sort(
+        (a, b) =>
+          (b.usageCount ?? b.viewCount ?? 0) -
+          (a.usageCount ?? a.viewCount ?? 0),
+      );
+      return entry;
+    });
+
+    suggestions.sort((a, b) => {
+      const bestScore = (stat: HashtagSuggestionStat) =>
+        stat.usageCount ?? stat.viewCount ?? 0;
+
+      const scoreA = Math.max(...a.stats.map(bestScore));
+      const scoreB = Math.max(...b.stats.map(bestScore));
+      if (scoreA === scoreB) {
+        const lastFetchedA = Math.max(
+          ...a.stats.map((stat) => stat.lastFetchedAt.getTime()),
+        );
+        const lastFetchedB = Math.max(
+          ...b.stats.map((stat) => stat.lastFetchedAt.getTime()),
+        );
+        return lastFetchedB - lastFetchedA;
+      }
+      return scoreB - scoreA;
+    });
+
+    return suggestions.map((entry) => ({
+      normalizedTag: entry.normalizedTag,
+      displayTag: entry.displayTag,
+      stats: entry.stats,
+    }));
   }
 }

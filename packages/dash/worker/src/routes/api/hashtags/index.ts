@@ -17,10 +17,11 @@ export const hashtagsRoute = new Hono<ApiEnv>()
   .get("/search", zValidator("query", searchQuerySchema), async (ctx) => {
     const { q } = ctx.req.valid("query");
 
-    const suggestions = await hashtagService.search(q);
+    const { suggestions, stale } = await hashtagService.search(q);
     const response: HashtagSearchResponse = {
       query: q,
       suggestions,
+      stale,
     };
 
     return ctx.json(response);

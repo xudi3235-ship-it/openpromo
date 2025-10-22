@@ -9,8 +9,13 @@
   // DO NOT bump this date, latest wrangler 4.37.0 +vite plugin has bug
   "compatibility_date": "2025-10-17",
   "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true, "head_sampling_rate": 1 },
-  "placement": { "mode": "smart" },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "placement": {
+    "mode": "smart"
+  },
   "assets": {
     "directory": "./dist/client",
     "not_found_handling": "single-page-application",
@@ -63,6 +68,12 @@
       }
     ]
   },
+  "kv_namespaces": [
+    {
+      "binding": "HashtagSearchCache",
+      "id": "66945099c2b142c0bc7a46cc5664a67d"
+    }
+  ],
   "containers": [
     // {
     //   "max_instances": 2,
@@ -167,6 +178,12 @@
           }
         ]
       },
+      "kv_namespaces": [
+        {
+          "binding": "HashtagSearchCache",
+          "id": "66945099c2b142c0bc7a46cc5664a67d"
+        }
+      ],
       "containers": [
         // {
         //   "max_instances": 2,
@@ -332,6 +349,12 @@
       },
       "containers": [
         // TODO: we can do this later
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "HashtagSearchCache",
+          "id": "66945099c2b142c0bc7a46cc5664a67d"
+        }
       ]
     }
   }
