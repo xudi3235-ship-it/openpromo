@@ -60,7 +60,10 @@ export function MentionDropdown({
         event.preventDefault();
       }}
     >
-      <Command className="border-border bg-popover w-[300px] rounded-lg border shadow-lg">
+      <Command
+        className="border-border bg-popover w-[300px] rounded-lg border shadow-lg"
+        shouldFilter={false}
+      >
         <CommandInput
           ref={inputRef}
           value={searchQuery}
