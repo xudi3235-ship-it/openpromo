@@ -1,72 +1,18 @@
 "use client";
 
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@openpromo/ui/components/command";
 import { Textarea } from "@openpromo/ui/components/textarea";
-import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { useDebounceValue } from "usehooks-ts";
 import { PLACEHOLDER } from "@/lib/caption-limit";
 import { useHashtagSuggestions } from "@/queries/hashtags";
+import { MentionDropdown } from "./mention-dropdown";
 import {
   getCaretCoordinates,
   getCurrentWord,
   replaceWord,
 } from "./mention-utils";
-
-export interface TaggableEntity {
-  id: string;
-  name: string;
-  value: string;
-  description?: string;
-  type: "user" | "hashtag";
-  meta?: string[];
-}
-
-const users: TaggableEntity[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    value: "@johndoe",
-    description: "Product Manager",
-    type: "user",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    value: "@janesmith",
-    description: "Marketing Lead",
-    type: "user",
-  },
-  {
-    id: "3",
-    name: "Bob Johnson",
-    value: "@bobjohnson",
-    description: "Sales Director",
-    type: "user",
-  },
-  {
-    id: "4",
-    name: "Alice Williams",
-    value: "@alicewilliams",
-    description: "Content Creator",
-    type: "user",
-  },
-  {
-    id: "5",
-    name: "Charlie Brown",
-    value: "@charliebrown",
-    description: "Social Media Manager",
-    type: "user",
-  },
-];
+import type { MentionTrigger, TaggableEntity } from "./taggable-entities";
+import { STATIC_USER_ENTITIES } from "./taggable-entities";
 
 const PLATFORM_LABELS: Record<string, string> = {
   FACEBOOK: "Facebook",
@@ -89,7 +35,7 @@ export default function ComposerMentions({
   const inputRef = useRef<HTMLInputElement>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
-  const [trigger, setTrigger] = useState<"@" | "#" | null>(null);
+  const [trigger, setTrigger] = useState<MentionTrigger>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery] = useDebounceValue(searchQuery, 250);
   const minHashtagLength = 2;
@@ -213,7 +159,7 @@ export default function ComposerMentions({
     const normalizedSearch = searchQuery.toLowerCase();
 
     if (trigger === "@") {
-      return users.filter((entity) => {
+      return STATIC_USER_ENTITIES.filter((entity) => {
         const matchesSearch =
           normalizedSearch === "" ||
           entity.name.toLowerCase().includes(normalizedSearch) ||
@@ -321,77 +267,18 @@ export default function ComposerMentions({
         className="min-h-[80px] resize-none border-0"
       />
 
-      {showDropdown &&
-        createPortal(
-          <div
-            className="fixed z-[100]"
-            style={{
-              top: `${getAbsolutePosition().top}px`,
-              left: `${getAbsolutePosition().left}px`,
-            }}
-            onMouseDown={(e) => {
-              // Prevent textarea from losing focus
-              e.preventDefault();
-            }}
-          >
-            <Command className="border-border bg-popover w-[300px] rounded-lg border shadow-lg">
-              <CommandInput
-                ref={inputRef}
-                value={searchQuery}
-                onValueChange={setSearchQuery}
-                className="hidden"
-              />
-              <CommandList className="max-h-[200px]">
-                {!showLoadingRow && (
-                  <CommandEmpty>{emptyStateMessage}</CommandEmpty>
-                )}
-                <CommandGroup>
-                  {showLoadingRow && (
-                    <CommandItem
-                      value="loading"
-                      disabled
-                      className="flex cursor-default items-center gap-2 text-muted-foreground"
-                    >
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Searching hashtags…
-                    </CommandItem>
-                  )}
-                  {filteredEntities.map((entity) => (
-                    <CommandItem
-                      key={entity.id}
-                      value={entity.value}
-                      onSelect={() => handleSelect(entity)}
-                      className="cursor-pointer"
-                    >
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-medium">{entity.name}</span>
-                        {entity.type === "user" && (
-                          <span className="text-muted-foreground text-xs">
-                            {entity.value}
-                          </span>
-                        )}
-                        {entity.description && (
-                          <span className="text-muted-foreground text-xs">
-                            {entity.description}
-                          </span>
-                        )}
-                        {entity.meta?.map((line) => (
-                          <span
-                            key={line}
-                            className="text-muted-foreground text-xs"
-                          >
-                            {line}
-                          </span>
-                        ))}
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </div>,
-          document.body,
-        )}
+      <MentionDropdown
+        open={showDropdown}
+        position={getAbsolutePosition()}
+        trigger={trigger}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        inputRef={inputRef}
+        entities={filteredEntities}
+        onSelect={handleSelect}
+        emptyStateMessage={emptyStateMessage}
+        showLoadingRow={showLoadingRow}
+      />
     </div>
   );
 }
