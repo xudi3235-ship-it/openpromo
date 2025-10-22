@@ -14,24 +14,28 @@ export const testBackfillRoute = new Hono<ApiEnv>().get("/", async (c) => {
   try {
     const actor = Actor.assert("workspace_user");
     const accounts = await ConnectedAccount.list();
-    // find first ig, just for test
-    const ig = accounts.find((acc) => acc.platform === "INSTAGRAM");
+    // filter to only FB
+    const filteredAccounts = accounts.filter(
+      (acc) => acc.platform === "FACEBOOK",
+    );
 
-    const instance = await c.env.ContentBackfillWorkflow.create({
+    const params = filteredAccounts.map((account) => ({
       params: {
         actor,
-        connectedAccountID: ig?.id || "",
+        connectedAccountID: account.id,
         start: new Date(
           new Date().setDate(new Date().getDate() - 30),
         ).toISOString(),
         end: new Date().toISOString(),
       },
-    });
+    })) satisfies Array<
+      Parameters<typeof c.env.ContentBackfillWorkflow.create>[0]
+    >;
+    // backfill all the accounts
+    await c.env.ContentBackfillWorkflow.createBatch(params);
 
     return c.json({
       success: true,
-      id: instance.id,
-      status: await instance.status(),
       message: "Content backfill workflow started for testing",
     });
   } catch (error) {

@@ -61,14 +61,11 @@ export class ContentBackfillWorkflow extends CoreWorkflowEntrypoint<ContentBackf
     if (platform === "INSTAGRAM") {
       return await step.do("instagram backfill", noRetries, async () => {
         const backfiller = new InstagramBackfiller();
-        const result = await backfiller.backfill(
-          {
-            connectedAccountId: payload.connectedAccountID,
-            start: new Date(payload.start),
-            end: new Date(payload.end),
-          },
-          { step },
-        );
+        const result = await backfiller.backfill({
+          connectedAccountId: payload.connectedAccountID,
+          start: new Date(payload.start),
+          end: new Date(payload.end),
+        });
 
         log.info("content backfill completed", {
           connectedAccountId: payload.connectedAccountID,
@@ -84,14 +81,11 @@ export class ContentBackfillWorkflow extends CoreWorkflowEntrypoint<ContentBackf
     if (platform === "FACEBOOK") {
       return await step.do("facebook backfill", noRetries, async () => {
         const backfiller = new FacebookBackfiller();
-        const result = await backfiller.backfill(
-          {
-            connectedAccountId: payload.connectedAccountID,
-            start: new Date(payload.start),
-            end: new Date(payload.end),
-          },
-          { step },
-        );
+        const result = await backfiller.backfill({
+          connectedAccountId: payload.connectedAccountID,
+          start: new Date(payload.start),
+          end: new Date(payload.end),
+        });
 
         log.info("content backfill completed", {
           connectedAccountId: payload.connectedAccountID,
@@ -106,14 +100,11 @@ export class ContentBackfillWorkflow extends CoreWorkflowEntrypoint<ContentBackf
 
     return await step.do("tiktok backfill", noRetries, async () => {
       const backfiller = new TikTokBackfiller();
-      const result = await backfiller.backfill(
-        {
-          connectedAccountId: payload.connectedAccountID,
-          start: new Date(payload.start),
-          end: new Date(payload.end),
-        },
-        { step },
-      );
+      const result = await backfiller.backfill({
+        connectedAccountId: payload.connectedAccountID,
+        start: new Date(payload.start),
+        end: new Date(payload.end),
+      });
 
       log.info("content backfill completed", {
         connectedAccountId: payload.connectedAccountID,

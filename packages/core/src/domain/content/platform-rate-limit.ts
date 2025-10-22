@@ -83,14 +83,18 @@ export async function fetchWithRateLimit(
 
     console.log("// Rate-limited fetch headers", {
       rateLimitKey,
-      headers: Array.from(response.headers.entries()),
+      headers: JSON.stringify(headersToRecord(response.headers)),
     });
+
+    // Only consider 429 (Too Many Requests) as actual rate limiting
+    // 400s, 500s, etc. are other types of errors and shouldn't trigger throttling
+    const isRateLimited = response.status === 429;
 
     await stub.reportHeaders({
       cost,
       timestamp: Date.now(),
       headers: headersToRecord(response.headers),
-      throttled: !response.ok,
+      throttled: isRateLimited,
       platform,
     });
 

@@ -68,73 +68,51 @@ export abstract class BaseBackfiller<
     this.consolePrefix = options.consolePrefix;
   }
 
-  async backfill(
-    params: BackfillParams,
-    options?: {
-      step?: { do: <T>(name: string, fn: () => Promise<T>) => Promise<T> };
-    },
-  ): Promise<BackfillResult> {
-    const runStage = async <T>(name: string, fn: () => Promise<T>) => {
-      if (options?.step) {
-        return options.step.do(name, fn);
-      }
-      return fn();
-    };
-
+  async backfill(params: BackfillParams): Promise<BackfillResult> {
     this.step("1", "Starting backfill");
     this.assertTimeRange(params.start, params.end);
 
     const { connectedAccountId, start, end } = params;
 
-    const baseAccount = await runStage("load-connected-account", async () => {
-      this.step("2", "Loading connected account", { connectedAccountId });
-      const account = await ConnectedAccount.fromID(connectedAccountId);
-      await this.assertPlatform(account);
-      return account;
-    });
+    // Step 1: Load connected account
+    this.step("2", "Loading connected account", { connectedAccountId });
+    const baseAccount = await ConnectedAccount.fromID(connectedAccountId);
+    await this.assertPlatform(baseAccount);
 
-    const { platformAccount, context } = await runStage(
-      "prepare-platform-account",
-      async () => {
-        this.step("3", "Preparing platform account", {
-          externalAccountId: baseAccount.externalAccountId,
-        });
-        return this.prepareAccount(baseAccount);
-      },
-    );
+    // Step 2: Prepare platform account
+    this.step("3", "Preparing platform account", {
+      externalAccountId: baseAccount.externalAccountId,
+    });
+    const { platformAccount, context } = await this.prepareAccount(baseAccount);
 
     const contextLog = this.contextLogData(context);
 
-    const rawItems = await runStage("fetch-platform-items", async () => {
-      this.step("4", "Fetching published items", {
-        ...contextLog,
-        start: start.toISOString(),
-        end: end.toISOString(),
-      });
-      const items = await this.fetchRawItems(context, start, end);
-      this.log.info("backfill fetched raw items", {
-        count: items.length,
-        ...contextLog,
-      });
-      this.step("5", "Fetched items", { count: items.length });
-      return items;
+    // Step 3: Fetch raw items
+    this.step("4", "Fetching published items", {
+      ...contextLog,
+      start: start.toISOString(),
+      end: end.toISOString(),
     });
+    const rawItems = await this.fetchRawItems(context, start, end);
+    this.log.info("backfill fetched raw items", {
+      count: rawItems.length,
+      ...contextLog,
+    });
+    this.step("5", "Fetched items", { count: rawItems.length });
 
     if (rawItems.length === 0) {
       this.step("6", "No items fetched, returning early");
       return { fetched: 0, inserted: 0, skipped: 0 };
     }
 
-    const normalized = await runStage("normalize-items", async () => {
-      this.step("7", "Normalizing items");
-      const items = rawItems
-        .map((item) => this.normalizeItem(item, context))
-        .filter((item): item is TNormalized => Boolean(item));
-      this.step("8", "Normalized items", {
-        count: items.length,
-        skipped: rawItems.length - items.length,
-      });
-      return items;
+    // Step 4: Normalize items
+    this.step("7", "Normalizing items");
+    const normalized = rawItems
+      .map((item) => this.normalizeItem(item, context))
+      .filter((item): item is TNormalized => Boolean(item));
+    this.step("8", "Normalized items", {
+      count: normalized.length,
+      skipped: rawItems.length - normalized.length,
     });
 
     if (normalized.length === 0) {
@@ -146,31 +124,27 @@ export abstract class BaseBackfiller<
       };
     }
 
-    const deduped = await runStage("dedupe-items", async () => {
-      this.step("10", "Filtering existing items");
-      const result = await this.filterExisting(platformAccount.id, normalized);
-      this.step("11", "Deduplication result", {
-        toInsert: result.toInsert.length,
-        existing: result.existing.size,
-      });
-      return result;
+    // Step 5: Deduplicate items
+    this.step("10", "Filtering existing items");
+    const deduped = await this.filterExisting(platformAccount.id, normalized);
+    this.step("11", "Deduplication result", {
+      toInsert: deduped.toInsert.length,
+      existing: deduped.existing.size,
     });
 
+    // Step 6: Fetch metrics
     const metricTargets = this.metricTargets(deduped, normalized);
-    const metricsById = await runStage("fetch-metrics", async () => {
-      if (metricTargets.length === 0) {
-        return new Map<string, UnifiedContentMetrics>();
-      }
+    let metricsById = new Map<string, UnifiedContentMetrics>();
+    if (metricTargets.length > 0) {
       this.step("11.5", "Fetching metrics for candidate items", {
         targetCount: metricTargets.length,
         forInsertion: deduped.toInsert.length,
       });
-      const metrics = await this.fetchMetrics(metricTargets, context);
+      metricsById = await this.fetchMetrics(metricTargets, context);
       this.step("11.6", "Metrics fetch completed", {
-        fetched: metrics.size,
+        fetched: metricsById.size,
       });
-      return metrics;
-    });
+    }
 
     if (deduped.toInsert.length === 0) {
       this.step("12", "All items already exist, returning early");
@@ -181,30 +155,28 @@ export abstract class BaseBackfiller<
       };
     }
 
-    await runStage("mirror-attachments", async () => {
-      this.step("13", "Starting attachment mirroring", {
-        count: deduped.toInsert.length,
-      });
-      await this.mirrorAttachments(
-        deduped.toInsert,
-        platformAccount.workspaceId,
-        this.mirrorConfig(),
-      );
-      this.step("14", "Attachment mirroring completed");
+    // Step 7: Mirror attachments
+    this.step("13", "Starting attachment mirroring", {
+      count: deduped.toInsert.length,
     });
+    await this.mirrorAttachments(
+      deduped.toInsert,
+      platformAccount.workspaceId,
+      this.mirrorConfig(),
+    );
+    this.step("14", "Attachment mirroring completed");
 
-    await runStage("insert-posts", async () => {
-      this.step("15", "Inserting items into database", {
-        count: deduped.toInsert.length,
-      });
-      await this.insertPosts(
-        deduped.toInsert,
-        platformAccount,
-        context,
-        metricsById,
-      );
-      this.step("16", "Database insertion completed");
+    // Step 8: Insert posts
+    this.step("15", "Inserting items into database", {
+      count: deduped.toInsert.length,
     });
+    await this.insertPosts(
+      deduped.toInsert,
+      platformAccount,
+      context,
+      metricsById,
+    );
+    this.step("16", "Database insertion completed");
 
     const result = {
       fetched: rawItems.length,

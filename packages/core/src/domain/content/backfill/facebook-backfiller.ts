@@ -23,26 +23,13 @@ import type {
 } from "./base-backfiller";
 import { BaseBackfiller } from "./base-backfiller";
 
-type FacebookAttachment = {
-  id?: string;
-  type?: string;
-  target?: { id?: string };
-  media?: {
-    image?: { src?: string };
-    source?: string;
-  };
-  subattachments?: { data?: FacebookAttachment[] };
-};
-
 type FacebookFeedPost = {
   id: string;
   created_time: string;
   message?: string;
   permalink_url?: string;
-  type?: string;
-  attachments?: {
-    data?: FacebookAttachment[];
-  };
+  status_type?: string;
+  full_picture?: string;
 };
 
 type NormalizedFacebookPost = NormalizedBackfillItem & {
@@ -216,8 +203,8 @@ export class FacebookBackfiller extends BaseBackfiller<
             "message",
             "created_time",
             "permalink_url",
-            "type",
-            "attachments{media,type,target,id,subattachments}",
+            "status_type",
+            "full_picture",
           ].join(","),
           limit: "50",
           since: Math.floor(start.getTime() / 1000).toString(),
@@ -275,80 +262,40 @@ export class FacebookBackfiller extends BaseBackfiller<
       createdAt,
       message: post.message ?? "",
       permalinkUrl: post.permalink_url,
-      postType: post.type,
+      postType: post.status_type,
       attachments,
     };
   }
 
   private extractAttachments(post: FacebookFeedPost): SharedAttachmentSpec[] {
     const collected: SharedAttachmentSpec[] = [];
-    const attachments = post.attachments?.data ?? [];
 
-    const visit = (attachment: FacebookAttachment, path: string) => {
-      const spec = this.attachmentToSpec(post.id, attachment, path);
-      if (spec) {
-        collected.push(spec);
-      }
+    // Use full_picture field for images (non-deprecated approach)
+    if (post.full_picture) {
+      const attachmentId = `${post.id}:full_picture`;
 
-      const subattachments = attachment.subattachments?.data ?? [];
-      subattachments.forEach((subAttachment, index) => {
-        visit(subAttachment, `${path}.${index}`);
-      });
-    };
+      // Determine type based on post.type
+      const postType = (post.status_type ?? "").toLowerCase();
+      const isVideo = postType.includes("video");
 
-    attachments.forEach((attachment, index) => {
-      visit(attachment, `${index}`);
-    });
+      const spec: SharedAttachmentSpec = {
+        id: attachmentId,
+        type: isVideo ? "video" : "photo",
+        publicUrl: post.full_picture,
+        thumbnailUrl: post.full_picture,
+        metadata: {
+          facebook: {
+            id: attachmentId,
+            type: post.status_type ?? "photo",
+            source: "full_picture",
+          },
+        },
+      };
+
+      collected.push(spec);
+    }
 
     return collected;
-  }
-
-  private attachmentToSpec(
-    postId: string,
-    attachment: FacebookAttachment,
-    path: string,
-  ): SharedAttachmentSpec | null {
-    const rawType = (attachment.type ?? "").toLowerCase();
-    if (!rawType) return null;
-
-    const attachmentId =
-      attachment.target?.id || attachment.id || `${postId}:${path}`;
-
-    if (rawType.includes("video")) {
-      const videoUrl = attachment.media?.source;
-      if (!videoUrl) return null;
-      return {
-        id: attachmentId,
-        type: "video",
-        publicUrl: videoUrl,
-        thumbnailUrl: attachment.media?.image?.src,
-        metadata: {
-          facebook: {
-            id: attachmentId,
-            type: attachment.type,
-          },
-        },
-      };
-    }
-
-    if (rawType.includes("photo") || rawType.includes("album")) {
-      const imageUrl = attachment.media?.image?.src;
-      if (!imageUrl) return null;
-      return {
-        id: attachmentId,
-        type: "photo",
-        publicUrl: imageUrl,
-        thumbnailUrl: imageUrl,
-        metadata: {
-          facebook: {
-            id: attachmentId,
-            type: attachment.type,
-          },
-        },
-      };
-    }
-
-    return null;
   }
 
   private toUnifiedContentInsert(
