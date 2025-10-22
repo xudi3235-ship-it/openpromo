@@ -146,6 +146,23 @@ function AccountAvatar({
 
         <PlatformAvatarBadge platform={account.platform} />
 
+        {/* Tooltip */}
+        {showTooltip && (
+          <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+            <div className="text-center">
+              <div className="font-medium">
+                {account.accountName || account.platform}
+              </div>
+              {account.followersCount !== null &&
+                account.followersCount !== undefined && (
+                  <div className="text-muted-foreground text-[10px]">
+                    {account.followersCount.toLocaleString()} followers
+                  </div>
+                )}
+            </div>
+          </div>
+        )}
+
         {/* Delete Button */}
         <button
           type="button"
@@ -158,19 +175,7 @@ function AccountAvatar({
         >
           <X className="w-2.5 h-2.5" />
         </button>
-
-        {/* Tooltip */}
-        {showTooltip && (
-          <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-            <div className="text-center">
-              <div className="font-medium">
-                {account.accountName || account.platform}
-              </div>
-            </div>
-          </div>
-        )}
-      </motion.div>
-
+      </motion.div>{" "}
       {/* Confirmation Dialog */}
       <ConfirmDialog
         open={showConfirm}
