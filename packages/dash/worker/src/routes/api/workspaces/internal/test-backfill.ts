@@ -16,7 +16,7 @@ export const testBackfillRoute = new Hono<ApiEnv>().get("/", async (c) => {
     const accounts = await ConnectedAccount.list();
     // filter to only FB
     const filteredAccounts = accounts.filter(
-      (acc) => acc.platform === "FACEBOOK",
+      (acc) => acc.platform === "TIKTOK",
     );
 
     const params = filteredAccounts.map((account) => ({

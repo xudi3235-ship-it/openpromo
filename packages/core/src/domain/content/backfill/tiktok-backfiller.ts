@@ -72,6 +72,11 @@ const VIDEO_LIST_FIELDS = [
   "duration",
   "height",
   "width",
+  // metrics
+  "like_count",
+  "comment_count",
+  "share_count",
+  "view_count",
 ] as const;
 
 const BASE_URL = "https://open.tiktokapis.com";
@@ -265,36 +270,87 @@ export class TikTokBackfiller extends BaseBackfiller<
       page += 1;
       this.step(`4.${page}`, "Fetching TikTok videos", { cursor });
 
+      // Build URL with fields as query param
       const url = new URL("/v2/video/list/", BASE_URL);
       url.searchParams.set("fields", VIDEO_LIST_FIELDS.join(","));
-      url.searchParams.set("max_count", "20");
+
+      // Build POST body with pagination params
+      const body: Record<string, unknown> = {
+        max_count: 20,
+      };
       if (cursor) {
-        url.searchParams.set("cursor", cursor);
+        body.cursor = cursor;
       }
 
       const response = await fetch(url.toString(), {
-        method: "GET",
+        method: "POST",
         headers: {
           Authorization: `Bearer ${ctx.accessToken}`,
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify(body),
       });
+
+      console.log("// TikTok API response status", {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+      });
+
+      // Check if response is not ok first
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type") || "";
+        let errorBody: string;
+
+        if (contentType.includes("application/json")) {
+          try {
+            const errorJson =
+              (await response.json()) as TikTokVideoListResponse;
+            errorBody = JSON.stringify(errorJson);
+            this.log.warn("tiktok video list request failed (JSON error)", {
+              status: response.status,
+              statusText: response.statusText,
+              error: errorJson.error,
+            });
+          } catch {
+            errorBody = await response.text();
+            this.log.warn("tiktok video list request failed (invalid JSON)", {
+              status: response.status,
+              statusText: response.statusText,
+              body: errorBody,
+            });
+          }
+        } else {
+          errorBody = await response.text();
+          this.log.warn("tiktok video list request failed (non-JSON)", {
+            status: response.status,
+            statusText: response.statusText,
+            contentType,
+            body: errorBody,
+          });
+        }
+        break;
+      }
 
       let json: TikTokVideoListResponse;
       try {
         json = (await response.json()) as TikTokVideoListResponse;
+        console.log("// TikTok Video List Response", json);
       } catch (error) {
+        const textBody = await response.text();
         this.log.warn("failed to parse tiktok video list response", {
           error: (error as Error).message,
+          status: response.status,
+          body: textBody.substring(0, 500), // First 500 chars
         });
         break;
       }
 
       const apiError = json.error;
       const hasError =
-        !response.ok ||
-        (apiError && apiError.code !== undefined && apiError.code !== "ok");
+        apiError && apiError.code !== undefined && apiError.code !== "ok";
       if (hasError) {
-        this.log.warn("tiktok video list request failed", {
+        this.log.warn("tiktok video list request failed (API error)", {
           status: `${response.status} ${response.statusText}`,
           code: apiError?.code,
           message: apiError?.message,
