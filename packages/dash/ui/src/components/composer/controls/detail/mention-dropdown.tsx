@@ -11,7 +11,9 @@ import {
   CommandList,
 } from "@openpromo/ui/components/command";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
+import { useMemo } from "react";
 import { createPortal } from "react-dom";
+import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import type { MentionTrigger, TaggableEntity } from "./taggable-entities";
 
 const SKELETON_KEYS = ["loading-1", "loading-2", "loading-3"];
@@ -113,22 +115,49 @@ function MentionDropdownItem({
   entity: TaggableEntity;
   trigger: MentionTrigger;
 }) {
+  const numberFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat("en", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }),
+    [],
+  );
+
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1">
       <span className="font-medium">{entity.name}</span>
       {trigger === "@" && (
         <span className="text-muted-foreground text-xs">{entity.value}</span>
       )}
-      {entity.description && (
-        <span className="text-muted-foreground text-xs">
-          {entity.description}
-        </span>
+      {trigger === "#" && entity.platformStats && (
+        <div className="flex flex-col gap-0.5">
+          {entity.platformStats.map((stat) => {
+            const { icon: Icon, accentTextClass } = getPlatformMeta(
+              stat.platform,
+            );
+            const parts: string[] = [];
+            if (typeof stat.usageCount === "number") {
+              parts.push(`${numberFormatter.format(stat.usageCount)} posts`);
+            }
+            if (typeof stat.viewCount === "number") {
+              parts.push(`${numberFormatter.format(stat.viewCount)} views`);
+            }
+            const statsText =
+              parts.length > 0 ? parts.join(" / ") : "data unavailable";
+
+            return (
+              <div
+                key={stat.platform}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground"
+              >
+                {Icon && <Icon className={`h-3 w-3 ${accentTextClass}`} />}
+                <span>{statsText}</span>
+              </div>
+            );
+          })}
+        </div>
       )}
-      {entity.meta?.map((line) => (
-        <span key={line} className="text-muted-foreground text-xs">
-          {line}
-        </span>
-      ))}
     </div>
   );
 }

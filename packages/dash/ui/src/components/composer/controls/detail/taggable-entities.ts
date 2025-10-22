@@ -1,3 +1,5 @@
+import type { HashtagSuggestionStat } from "@shared/hashtags";
+
 export type MentionTrigger = "@" | "#" | null;
 
 export interface TaggableEntity {
@@ -7,6 +9,7 @@ export interface TaggableEntity {
   description?: string;
   type: "user" | "hashtag";
   meta?: string[];
+  platformStats?: HashtagSuggestionStat[];
 }
 
 export const STATIC_USER_ENTITIES: TaggableEntity[] = [

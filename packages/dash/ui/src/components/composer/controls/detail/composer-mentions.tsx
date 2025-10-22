@@ -14,12 +14,6 @@ import {
 import type { MentionTrigger, TaggableEntity } from "./taggable-entities";
 import { STATIC_USER_ENTITIES } from "./taggable-entities";
 
-const PLATFORM_LABELS: Record<string, string> = {
-  FACEBOOK: "Facebook",
-  INSTAGRAM: "Instagram",
-  TIKTOK: "TikTok",
-};
-
 type ComposerMentionsProps = {
   value: string;
   onChange: (value: string) => void;
@@ -62,48 +56,22 @@ export default function ComposerMentions({
       hashtagQuery.isLoading ||
       hashtagQuery.isFetching);
 
-  const numberFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat("en", {
-        notation: "compact",
-        maximumFractionDigits: 1,
-      }),
-    [],
-  );
-
   const hashtagEntities = useMemo<TaggableEntity[]>(() => {
     if (!hashtagSuggestions.length) return [];
 
     return hashtagSuggestions.map((suggestion) => {
       const normalizedTag = suggestion.normalizedTag;
       const displayTag = suggestion.displayTag ?? normalizedTag;
-      const statLines = suggestion.stats.map((stat) => {
-        const platform = PLATFORM_LABELS[stat.platform] ?? stat.platform;
-        const parts: string[] = [];
-        if (typeof stat.usageCount === "number") {
-          parts.push(`${numberFormatter.format(stat.usageCount)} posts`);
-        }
-        if (typeof stat.viewCount === "number") {
-          parts.push(`${numberFormatter.format(stat.viewCount)} views`);
-        }
-        if (parts.length === 0) {
-          return `${platform} • data unavailable`;
-        }
-        return `${platform} • ${parts.join(" / ")}`;
-      });
-
-      const [primaryLine, ...rest] = statLines;
 
       return {
         id: `hashtag-${normalizedTag}`,
         name: `#${displayTag}`,
         value: `#${normalizedTag}`,
-        description: primaryLine,
-        meta: rest.length > 0 ? rest : undefined,
         type: "hashtag" as const,
+        platformStats: suggestion.stats,
       };
     });
-  }, [hashtagSuggestions, numberFormatter]);
+  }, [hashtagSuggestions]);
 
   // Check for mention/hashtag trigger
   useEffect(() => {
