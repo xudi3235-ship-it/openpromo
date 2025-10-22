@@ -169,14 +169,14 @@ export function WorkspaceSettings() {
         <CardContent className="space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <Avatar className="size-16">
+              <Avatar className="size-16 rounded-md">
                 {workspace.profilePictureUrl ? (
                   <AvatarImage
                     src={workspace.profilePictureUrl}
                     alt={`${workspace.name} avatar`}
                   />
                 ) : null}
-                <AvatarFallback className="text-base">
+                <AvatarFallback className="text-base rounded-md">
                   {workspace.name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>

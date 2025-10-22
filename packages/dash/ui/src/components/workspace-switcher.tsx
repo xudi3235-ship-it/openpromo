@@ -118,14 +118,14 @@ export function WorkspaceSwitcher({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               {currentWorkspace && (
-                <Avatar className="size-8">
+                <Avatar className="size-8 rounded-md">
                   {currentWorkspace.profilePictureUrl ? (
                     <AvatarImage
                       src={currentWorkspace.profilePictureUrl}
                       alt={`${currentWorkspace.name} avatar`}
                     />
                   ) : null}
-                  <AvatarFallback className="text-sm">
+                  <AvatarFallback className="text-sm rounded-md">
                     {currentWorkspace.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -164,14 +164,14 @@ export function WorkspaceSwitcher({
                     "bg-accent text-accent-foreground",
                 )}
               >
-                <Avatar className="size-6">
+                <Avatar className="size-6 rounded-md">
                   {workspace.profilePictureUrl ? (
                     <AvatarImage
                       src={workspace.profilePictureUrl}
                       alt={`${workspace.name} avatar`}
                     />
                   ) : null}
-                  <AvatarFallback className="text-xs">
+                  <AvatarFallback className="text-xs rounded-md">
                     {workspace.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
