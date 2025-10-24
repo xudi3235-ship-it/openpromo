@@ -17,5 +17,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "jupyterlab>=4.4.10",
     "ruff>=0.13.1",
 ]

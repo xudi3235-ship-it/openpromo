@@ -1,4 +1,5 @@
 import modal
+
 from src.api import fapi
 from src.infra import image, secret, vols
 from src.video import app as video_backend_app
@@ -26,3 +27,8 @@ def sdk():
 @modal.asgi_app(requires_proxy_auth=not modal.is_local)
 def api():
     return fapi
+
+
+@app.local_entrypoint()
+def dev():
+    pass
