@@ -22,12 +22,19 @@ type WorkspaceNotificationBellProps = {
 };
 
 const MAX_VISIBLE_NOTIFICATIONS = 10;
+const SKELETON_PLACEHOLDERS = ["n1", "n2", "n3"] as const;
 
 export function WorkspaceNotificationBell({
   workspaceSlug,
   renderTrigger,
 }: WorkspaceNotificationBellProps) {
-  const { notifications, clearNotifications } = useWorkspaceWebSocket();
+  const {
+    notifications,
+    clearNotifications,
+    refreshNotifications,
+    isLoading,
+    isFetching,
+  } = useWorkspaceWebSocket();
   const [open, setOpen] = useState(false);
   const [lastSeenAt, setLastSeenAt] = useState(() => Date.now());
 
@@ -47,6 +54,7 @@ export function WorkspaceNotificationBell({
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
     if (nextOpen) {
+      void refreshNotifications();
       setLastSeenAt(Date.now());
     }
   };
@@ -83,7 +91,12 @@ export function WorkspaceNotificationBell({
         sideOffset={8}
       >
         <div className="flex items-center justify-between px-4 py-3">
-          <span className="text-sm font-medium">Notifications</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Notifications</span>
+            {isFetching && (
+              <span className="text-xs text-muted-foreground">Updating…</span>
+            )}
+          </div>
           <Button
             variant="ghost"
             size="sm"
@@ -96,7 +109,19 @@ export function WorkspaceNotificationBell({
         </div>
         <Separator />
         <div className="max-h-72 overflow-y-auto">
-          {recentNotifications.length === 0 ? (
+          {isLoading || isFetching ? (
+            <div className="space-y-4 px-4 py-6">
+              {SKELETON_PLACEHOLDERS.map((placeholder) => (
+                <div key={placeholder} className="flex items-start gap-3">
+                  <span className="mt-1 size-4 rounded-full bg-muted" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-32 rounded bg-muted" />
+                    <div className="h-3 w-48 rounded bg-muted" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : recentNotifications.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-muted-foreground">
               You&apos;re all caught up.
             </div>

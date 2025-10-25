@@ -33,6 +33,27 @@ export const workspacePusherRoute = new Hono<ApiEnv>()
       return pusher.fetch(request);
     },
   )
+  // GET /workspaces/:workspaceSlug/notifications
+  .get(
+    "/:workspaceSlug/notifications",
+    zValidator("param", z.object({ workspaceSlug: z.string() })),
+    async (ctx) => {
+      const { workspaceSlug } = ctx.req.valid("param");
+
+      const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
+      await pusher.init(workspaceSlug);
+
+      const notifications = await pusher.listNotifications();
+      const envelopes = notifications.map((record) => ({
+        type: "notification" as const,
+        workspaceSlug: record.workspaceSlug,
+        timestamp: record.createdAt,
+        notification: record.notification,
+      }));
+
+      return ctx.json({ notifications: envelopes });
+    },
+  )
   // POST /workspaces/:workspaceSlug/pusher/message/:userId
   .post(
     "/:workspaceSlug/pusher/message/:userId",

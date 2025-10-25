@@ -62,4 +62,8 @@ export const QUERY_KEYS = {
     "insights",
     "status",
   ],
+  WORKSPACE_NOTIFICATIONS: (workspaceSlug: string) => [
+    workspaceSlug,
+    "notifications",
+  ],
 } as const;

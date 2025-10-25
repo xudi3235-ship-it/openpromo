@@ -30,6 +30,9 @@ interface WorkspaceWebSocketContextValue {
   subscribe: (listener: EventListener) => () => void;
   notifications: WorkspaceNotificationEnvelope[];
   clearNotifications: () => void;
+  refreshNotifications: () => Promise<void>;
+  isLoading: boolean;
+  isFetching: boolean;
 }
 
 const WorkspaceWebSocketContext =
@@ -74,13 +77,17 @@ export function WorkspaceWebSocketProvider({
   }, []); // Empty deps - listenersRef.current is always up to date
 
   // Single WebSocket connection for the entire workspace
-  const { status, notifications, clearEvents } = useWorkspaceNotifications(
-    workspaceSlug,
-    {
-      autoToast: true, // Show notifications automatically
-      onEvent: handleEvent,
-    },
-  );
+  const {
+    status,
+    notifications,
+    clearEvents,
+    refreshNotifications,
+    isLoading,
+    isFetching,
+  } = useWorkspaceNotifications(workspaceSlug, {
+    autoToast: true, // Show notifications automatically
+    onEvent: handleEvent,
+  });
 
   const subscribe = useCallback((listener: EventListener) => {
     listenersRef.current.add(listener);
@@ -97,8 +104,19 @@ export function WorkspaceWebSocketProvider({
       subscribe,
       notifications,
       clearNotifications: clearEvents,
+      refreshNotifications,
+      isLoading,
+      isFetching,
     }),
-    [status, subscribe, notifications, clearEvents],
+    [
+      status,
+      subscribe,
+      notifications,
+      clearEvents,
+      refreshNotifications,
+      isLoading,
+      isFetching,
+    ],
   );
 
   return (

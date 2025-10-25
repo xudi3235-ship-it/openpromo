@@ -2,6 +2,10 @@ import type { WorkspaceNotificationEnvelope } from "@shared";
 import { WorkspaceNotificationEnvelopeSchema } from "@shared/workspace/notifications";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  useInvalidateWorkspaceNotifications,
+  useWorkspaceNotificationsQuery,
+} from "@/queries/notifications";
 import { useNotificationToast } from "./useNotificationToast";
 
 export type GenericEvent = {
@@ -25,6 +29,9 @@ type UseWorkspaceNotificationsResult = {
   notifications: WorkspaceNotificationEnvelope[];
   sendJson: (payload: unknown) => boolean;
   clearEvents: () => void;
+  refreshNotifications: () => Promise<void>;
+  isLoading: boolean;
+  isFetching: boolean;
 };
 
 export function useWorkspaceNotifications(
@@ -40,6 +47,24 @@ export function useWorkspaceNotifications(
     WorkspaceNotificationEnvelope[]
   >([]);
   const showNotificationToast = useNotificationToast();
+  const notificationsQuery = useWorkspaceNotificationsQuery(workspaceSlug);
+  const {
+    data,
+    refetch,
+    isLoading: queryLoading,
+    isFetching,
+  } = notificationsQuery;
+  const invalidateNotifications =
+    useInvalidateWorkspaceNotifications(workspaceSlug);
+
+  useEffect(() => {
+    if (!workspaceSlug) {
+      setNotifications([]);
+      return;
+    }
+
+    setNotifications(data?.notifications ?? []);
+  }, [workspaceSlug, data]);
 
   const addEvent = useCallback(
     (event: GenericEvent) => {
@@ -82,7 +107,7 @@ export function useWorkspaceNotifications(
             timestamp: notificationResult.data.timestamp ?? receivedAt,
           };
 
-          setNotifications((prev) => [...prev, normalized]);
+          void invalidateNotifications();
 
           if (autoToast) {
             showNotificationToast(normalized.notification);
@@ -144,6 +169,7 @@ export function useWorkspaceNotifications(
     autoToast,
     onNotification,
     showNotificationToast,
+    invalidateNotifications,
   ]);
 
   const sendJson = useCallback((payload: unknown) => {
@@ -167,6 +193,11 @@ export function useWorkspaceNotifications(
     setNotifications([]);
   }, []);
 
+  const refreshNotifications = useCallback(async () => {
+    if (!workspaceSlug) return;
+    await refetch();
+  }, [workspaceSlug, refetch]);
+
   return useMemo(
     () => ({
       status,
@@ -174,7 +205,19 @@ export function useWorkspaceNotifications(
       notifications,
       sendJson,
       clearEvents,
+      refreshNotifications,
+      isLoading: queryLoading,
+      isFetching,
     }),
-    [status, events, notifications, sendJson, clearEvents],
+    [
+      status,
+      events,
+      notifications,
+      sendJson,
+      clearEvents,
+      refreshNotifications,
+      queryLoading,
+      isFetching,
+    ],
   );
 }

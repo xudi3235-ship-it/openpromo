@@ -48,3 +48,15 @@ export const WorkspaceNotificationEnvelopeSchema = z.object({
 export type WorkspaceNotificationEnvelope = z.infer<
   typeof WorkspaceNotificationEnvelopeSchema
 >;
+
+export const WorkspaceNotificationRecordSchema = z.object({
+  id: z.string().uuid(),
+  workspaceSlug: z.string(),
+  createdAt: z.number(),
+  notification: WorkspaceNotificationSchema,
+  targetUrl: z.string().url().optional(),
+});
+
+export type WorkspaceNotificationRecord = z.infer<
+  typeof WorkspaceNotificationRecordSchema
+>;

@@ -1,9 +1,14 @@
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Pusher } from "@core/helpers/pusher";
-import type { WorkspaceNotification } from "./notifications";
+import type {
+  WorkspaceNotification,
+  WorkspaceNotificationRecord,
+} from "./notifications";
 import { WORKSPACE_PUSHER_USER_HEADER } from "./workspace-pusher-headers";
 
 const USER_SESSION_LIMIT = 10;
+const NOTIFICATION_STORAGE_KEY = "notifications";
+const MAX_NOTIFICATION_HISTORY = 100;
 
 export class WorkspacePusher extends Pusher {
   private _workspaceSlug: string = "default";
@@ -120,14 +125,42 @@ export class WorkspacePusher extends Pusher {
   }
 
   async sendNotification(notification: WorkspaceNotification) {
+    const record = this.createNotificationRecord(notification);
+    await this.persistNotification(record);
+
     const payload = {
       type: "notification" as const,
-      workspaceSlug: this.workspaceSlug,
-      timestamp: Date.now(),
-      notification,
+      workspaceSlug: record.workspaceSlug,
+      timestamp: record.createdAt,
+      notification: record.notification,
     };
 
     this.sendMessageToAllUsers(JSON.stringify(payload));
+  }
+
+  async listNotifications(): Promise<WorkspaceNotificationRecord[]> {
+    const records =
+      (await this.storage.get<WorkspaceNotificationRecord[]>(
+        NOTIFICATION_STORAGE_KEY,
+      )) ?? [];
+    return records;
+  }
+
+  private createNotificationRecord(
+    notification: WorkspaceNotification,
+  ): WorkspaceNotificationRecord {
+    return {
+      id: crypto.randomUUID(),
+      workspaceSlug: this.workspaceSlug,
+      createdAt: Date.now(),
+      notification,
+    } satisfies WorkspaceNotificationRecord;
+  }
+
+  private async persistNotification(record: WorkspaceNotificationRecord) {
+    const existing = await this.listNotifications();
+    const updated = [record, ...existing].slice(0, MAX_NOTIFICATION_HISTORY);
+    await this.storage.put(NOTIFICATION_STORAGE_KEY, updated);
   }
 
   protected override async onWebSocketMessage(ws: WebSocket, message: unknown) {

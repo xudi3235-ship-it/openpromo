@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 export type {
   WorkspaceNotification,
   WorkspaceNotificationEnvelope,
+  WorkspaceNotificationRecord,
 } from "@shared/workspace/notifications";
 
 import {
@@ -20,6 +21,7 @@ export {
   ContentFailedNotificationSchema,
   ContentPublishedNotificationSchema,
   WorkspaceNotificationEnvelopeSchema,
+  WorkspaceNotificationRecordSchema,
   WorkspaceNotificationSchema,
 } from "@shared/workspace/notifications";
 
