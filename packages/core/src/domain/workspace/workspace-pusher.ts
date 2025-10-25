@@ -1,11 +1,7 @@
 import type { ApiEnv } from "@core/helpers/api-env";
-import {
-  authenticateWithCookie,
-  WORKOS_SESSION_COOKIE_NAME,
-} from "@core/helpers/auth";
 import { Pusher } from "@core/helpers/pusher";
-import * as cookie from "cookie";
 import type { WorkspaceNotification } from "./notifications";
+import { WORKSPACE_PUSHER_USER_HEADER } from "./workspace-pusher-headers";
 
 const USER_SESSION_LIMIT = 10;
 
@@ -48,30 +44,11 @@ export class WorkspacePusher extends Pusher {
   protected override async onWebSocketConnect(ws: WebSocket, request: Request) {
     const workspaceSlug = this.workspaceSlug;
 
-    const cookieString = request.headers.get("cookie");
+    const userId = request.headers.get(WORKSPACE_PUSHER_USER_HEADER);
 
-    if (!cookieString) {
-      throw new Error("Cookie not found");
+    if (!userId) {
+      throw new Error("Missing workspace user header");
     }
-
-    const cookies = cookie.parse(cookieString);
-
-    const sessionCookie = cookies[WORKOS_SESSION_COOKIE_NAME];
-
-    if (!sessionCookie) {
-      throw new Error("Session cookie not found");
-    }
-
-    const result = await authenticateWithCookie({
-      cookie: sessionCookie,
-      withRefresh: false,
-    });
-
-    if (!result.authenticated) {
-      throw new Error("Failed to authenticate session");
-    }
-
-    const userId = result.user.id;
 
     console.log(`Adding WebSocket for user ${userId}`);
 

@@ -1,3 +1,4 @@
+import { WORKSPACE_PUSHER_USER_HEADER } from "@core/domain/workspace/workspace-pusher-headers";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
 import * as z from "zod";
@@ -13,13 +14,23 @@ export const workspacePusherRoute = new Hono<ApiEnv>()
     zValidator("param", z.object({ workspaceSlug: z.string() })),
     async (ctx) => {
       const { workspaceSlug } = ctx.req.valid("param");
+      const user = ctx.get("user");
+
+      if (!user) return ctx.json({ message: "Unauthorized" }, 401);
+
       console.log(`WebSocket connection for workspace: ${workspaceSlug}`);
 
       const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
       console.log(`WebSocket pusher DO ID: ${pusher.id}`);
       // Always initialize the workspace slug to ensure it's set correctly
       await pusher.init(workspaceSlug);
-      return pusher.fetch(ctx.req.raw);
+
+      const headers = new Headers(ctx.req.raw.headers);
+      headers.set(WORKSPACE_PUSHER_USER_HEADER, user.id);
+
+      const request = new Request(ctx.req.raw, { headers });
+
+      return pusher.fetch(request);
     },
   )
   // POST /workspaces/:workspaceSlug/pusher/message/:userId
