@@ -3,6 +3,10 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "types": ["node", "../dash/worker/worker-configuration.d.ts"]
-  }
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "types": ["node", "vite/client", "../dash/worker/worker-configuration"],
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*"]
 }

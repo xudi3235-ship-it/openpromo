@@ -21,6 +21,14 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*", "/auth/*", "/webhooks/*", "/openapi/*"]
   },
+  // only provide this so that we have consistent type gen
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "JUST_FOR_TESTING_ONLY_DO_NOT_USE_IN_PRODUCTION",
+      "localConnectionString": "postgres://user:password@localhost:5432/databasename"
+    }
+  ],
   "workflows": [
     {
       "class_name": "PendingContentPublishWorkflow",
