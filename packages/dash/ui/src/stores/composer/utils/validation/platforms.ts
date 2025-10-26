@@ -14,6 +14,10 @@ export const validatePlatforms = (state: ComposerState): ValidationError[] => {
     const result = FBFeedValidationSpec.safeParse(placement);
     if (!result.success) {
       for (const issue of result.error.issues) {
+        // Skip "at least one attachment" errors - handled by message validation
+        if (issue.message.includes("At least one attachment is required")) {
+          continue;
+        }
         errors.push({
           type: "platform_limit_exceeded",
           message: `Facebook: ${issue.message}`,
@@ -31,6 +35,10 @@ export const validatePlatforms = (state: ComposerState): ValidationError[] => {
     const result = IGFeedValidationSpec.safeParse(placement);
     if (!result.success) {
       for (const issue of result.error.issues) {
+        // Skip "at least one attachment" errors - handled by message validation
+        if (issue.message.includes("At least one attachment is required")) {
+          continue;
+        }
         errors.push({
           type: "platform_limit_exceeded",
           message: `Instagram: ${issue.message}`,
@@ -47,6 +55,10 @@ export const validatePlatforms = (state: ComposerState): ValidationError[] => {
     const result = TikTokFeedValidationSpec.safeParse(placement);
     if (!result.success) {
       for (const issue of result.error.issues) {
+        // Skip "at least one attachment" errors - handled by message validation
+        if (issue.message.includes("At least one attachment is required")) {
+          continue;
+        }
         errors.push({
           type: "platform_limit_exceeded",
           message: `TikTok: ${issue.message}`,

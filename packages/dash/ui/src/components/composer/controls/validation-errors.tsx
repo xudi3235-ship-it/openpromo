@@ -10,15 +10,26 @@ interface ValidationErrorsProps {
 type IssueRule =
   | "missing_content"
   | "platform_requires_media"
-  | "caption_over_limit";
+  | "caption_over_limit"
+  | "no_accounts"
+  | "platform_limit_exceeded"
+  | "upload_pending"
+  | "upload_failed"
+  | "invalid_scheduling"
+  | "other";
 
 interface IssueDefinition {
   key: IssueRule;
   types: ValidationError["type"][];
-  message: (options: { limit?: number }) => string;
+  message: (options: { limit?: number; customMessage?: string }) => string;
 }
 
 const ISSUE_DEFINITIONS: IssueDefinition[] = [
+  {
+    key: "no_accounts",
+    types: ["no_accounts"],
+    message: () => "Select at least one social media account.",
+  },
   {
     key: "missing_content",
     types: ["no_message"],
@@ -34,6 +45,26 @@ const ISSUE_DEFINITIONS: IssueDefinition[] = [
     types: ["message_too_long"],
     message: ({ limit }) =>
       limit ? `Trim caption to ${limit.toLocaleString()}` : "Trim caption.",
+  },
+  {
+    key: "upload_pending",
+    types: ["upload_pending"],
+    message: () => "Wait for all media uploads to complete.",
+  },
+  {
+    key: "upload_failed",
+    types: ["upload_failed"],
+    message: () => "Some media uploads failed. Remove or retry them.",
+  },
+  {
+    key: "invalid_scheduling",
+    types: ["invalid_scheduling"],
+    message: () => "Scheduled time must be in the future.",
+  },
+  {
+    key: "platform_limit_exceeded",
+    types: ["platform_limit_exceeded"],
+    message: ({ customMessage }) => customMessage || "Platform limit exceeded.",
   },
 ];
 
@@ -71,6 +102,11 @@ function PlatformIcon({ platform }: { platform: Platform }) {
 }
 
 export function ValidationErrors({ errors }: ValidationErrorsProps) {
+  // Debug: Log validation errors to understand duplication issue
+  if (import.meta.env.DEV && errors.length > 0) {
+    console.log("[ValidationErrors] Raw errors:", errors);
+  }
+
   const activeIssues = ISSUE_DEFINITIONS.reduce<
     Array<{
       key: IssueRule;
@@ -88,18 +124,44 @@ export function ValidationErrors({ errors }: ValidationErrorsProps) {
     }
 
     const limit = matches[0]?.limit;
+    const customMessage = matches[0]?.message;
     const platforms = filterKnownPlatforms(
       matches.flatMap((error) => error.platforms ?? []),
     );
 
     acc.push({
       key: definition.key,
-      message: definition.message({ limit }),
+      message: definition.message({ limit, customMessage }),
       platforms,
     });
 
     return acc;
   }, []);
+
+  // Add any unhandled error types
+  const handledTypes = new Set(ISSUE_DEFINITIONS.flatMap((def) => def.types));
+  const unhandledErrors = errors.filter(
+    (error) => error.severity === "error" && !handledTypes.has(error.type),
+  );
+
+  // Group unhandled errors by type to avoid duplicates
+  const unhandledByType = new Map<string, ValidationError[]>();
+  unhandledErrors.forEach((error) => {
+    const existing = unhandledByType.get(error.type) ?? [];
+    existing.push(error);
+    unhandledByType.set(error.type, existing);
+  });
+
+  unhandledByType.forEach((typeErrors) => {
+    const platforms = filterKnownPlatforms(
+      typeErrors.flatMap((error) => error.platforms ?? []),
+    );
+    activeIssues.push({
+      key: "other",
+      message: typeErrors[0]?.message || "Please fix validation errors.",
+      platforms,
+    });
+  });
 
   if (activeIssues.length === 0) {
     return null;
@@ -121,15 +183,15 @@ export function ValidationErrors({ errors }: ValidationErrorsProps) {
       </header>
 
       <ul className="mt-[10px] space-y-1.5 text-xs leading-[1.35] text-[#7B1F1F]">
-        {activeIssues.map((issue) => (
-          <li key={issue.key}>
+        {activeIssues.map((issue, index) => (
+          <li key={`${issue.key}-${index}`}>
             <div>{issue.message}</div>
 
             {issue.platforms.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {issue.platforms.map((platform) => (
                   <PlatformIcon
-                    key={`${issue.key}-${platform}`}
+                    key={`${issue.key}-${index}-${platform}`}
                     platform={platform}
                   />
                 ))}
