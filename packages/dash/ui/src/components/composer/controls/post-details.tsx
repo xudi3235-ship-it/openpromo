@@ -1,15 +1,6 @@
 import { Button } from "@openpromo/ui/components/button";
 import { cn } from "@openpromo/ui/lib/utils";
-import {
-  AlertCircle,
-  ImageIcon,
-  InfoIcon,
-  MapPin,
-  MessageSquare,
-  MoreHorizontal,
-  Phone,
-  Smile,
-} from "lucide-react";
+import { AlertCircle, ImageIcon, InfoIcon } from "lucide-react";
 import { useMemo } from "react";
 import { PLACEHOLDER, TOOLTIP, validateCaption } from "@/lib/caption-limit";
 import {
@@ -19,6 +10,7 @@ import {
 import { useComposerStore } from "@/stores/composer-store";
 import ComposerMentions from "./detail/composer-mentions";
 import { ComposerEmojiPicker } from "./detail/emoji-picker";
+import { PlatformFeaturesSection } from "./platform-features/platform-features-section";
 
 export function PostDetails() {
   const composer = useComposerStore((state) => state);
@@ -148,48 +140,7 @@ export function PostDetails() {
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 w-8 p-0"
-          title="Feeling/activity"
-        >
-          <Smile className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 w-8 p-0"
-          title="Location"
-        >
-          <MapPin className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 w-8 p-0"
-          title="Get messages"
-        >
-          <MessageSquare className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 w-8 p-0"
-          title="Get calls"
-        >
-          <Phone className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 w-8 p-0"
-          title="More features"
-        >
-          <MoreHorizontal className="w-4 h-4" />
-        </Button>
-      </div>
+      <PlatformFeaturesSection />
     </div>
   );
 }

@@ -134,6 +134,24 @@ export const FBFeedPlacementSpec = BaseFBPlacementSpec.extend({
   postSpec: z.object({
     message: z.string(),
     link: z.string().optional(),
+    // Call-to-action button for link posts
+    // ref: https://developers.facebook.com/docs/graph-api/reference/page/feed#page-post-call_to_action
+    callToAction: z
+      .object({
+        type: z.enum([
+          "SHOP_NOW",
+          "LEARN_MORE",
+          "CALL_NOW",
+          "BOOK_NOW",
+          "SIGN_UP",
+          "CONTACT_US",
+          "GET_QUOTE",
+        ]),
+        value: z.object({
+          link: z.string().url(),
+        }),
+      })
+      .optional(),
   }),
 });
 

@@ -104,6 +104,9 @@ export interface ComposerActions {
     schedulingSpec?: ContentCreateData["base"]["schedulingSpec"],
   ) => void;
   hasUnsavedChanges: () => boolean;
+  // Platform-specific features
+  setFacebookCTA: (type: string, link: string) => void;
+  removeFacebookCTA: () => void;
 }
 
 export type ComposerStore = ComposerState & ComposerActions;
