@@ -1,5 +1,5 @@
 import { cn } from "@openpromo/ui/lib/utils";
-import { Upload } from "lucide-react";
+import { ImagePlay } from "lucide-react";
 import { useMemo } from "react";
 import { Dropzone } from "@/components/dropzone";
 import { useComposerMediaUploader } from "@/hooks/useComposerMediaUploader";
@@ -57,7 +57,9 @@ function MediaSectionUpload() {
       )}
     >
       <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-center">
-        <Upload className={cn(uploadIconClass, "text-muted-foreground/70")} />
+        <ImagePlay
+          className={cn(uploadIconClass, "text-muted-foreground/70")}
+        />
         {isCompact ? (
           attachments.length === 0 ? (
             <span className="text-xs font-medium text-foreground/80">
