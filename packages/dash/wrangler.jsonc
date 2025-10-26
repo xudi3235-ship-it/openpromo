@@ -304,27 +304,27 @@
         {
           "class_name": "PendingContentPublishWorkflow",
           "binding": "WORKFLOW",
-          "name": "PendingContentPublishWorkflow"
+          "name": "PendingContentPublishWorkflowProd"
         },
         {
           "class_name": "ContentBackfillWorkflow",
           "binding": "ContentBackfillWorkflow",
-          "name": "ContentBackfillWorkflow"
+          "name": "ContentBackfillWorkflowProd"
         },
         {
           "class_name": "ProductProcessingWorkflow",
           "binding": "ProductProcessingWorkflow",
-          "name": "ProductProcessingWorkflow"
+          "name": "ProductProcessingWorkflowProd"
         },
         {
           "class_name": "ImageGenerationWorkflow",
           "binding": "ImageGenerationWorkflow",
-          "name": "ImageGenerationWorkflow"
+          "name": "ImageGenerationWorkflowProd"
         },
         {
           "class_name": "StyleComponentWorkflow",
           "binding": "StyleComponentWorkflow",
-          "name": "StyleComponentWorkflow"
+          "name": "StyleComponentWorkflowProd"
         }
       ],
       "triggers": {
