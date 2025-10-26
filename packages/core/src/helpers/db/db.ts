@@ -20,8 +20,14 @@ export namespace Database {
     try {
       return Context.use();
     } catch {
-      log.warn("no db ctx, fall back to env db url");
-      // fallback to pooled conn.
+      // fallback to pooled conn
+      if (cfEnv.HYPERDRIVE && cfEnv.HYPERDRIVE_ID) {
+        log.info("**on hyperdrive**");
+        return {
+          connectionString: cfEnv.HYPERDRIVE.connectionString,
+        };
+      }
+      log.warn("fallback to pooled conn");
       const connectionString = env.DATABASE_URL ?? cfEnv.DATABASE_URL;
       if (!connectionString)
         throw new Error("No DATABASE_URL found in environment");

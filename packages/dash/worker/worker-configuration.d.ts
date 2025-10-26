@@ -64,6 +64,7 @@ declare namespace Cloudflare {
 		ApiRateLimitCoordinator: DurableObjectNamespace /* ApiRateLimitCoordinator */;
 		ContainerBackend: DurableObjectNamespace /* ContainerBackend */;
 		Bucket: R2Bucket;
+        HYPERDRIVE: Hyperdrive;
 		WorkspaceInsightsAnalytics: AnalyticsEngineDataset;
 		JobQueue: Queue;
 		WORKFLOW: Workflow /* PendingContentPublishWorkflow */;
