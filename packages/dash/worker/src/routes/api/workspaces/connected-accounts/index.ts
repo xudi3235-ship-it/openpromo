@@ -39,20 +39,27 @@ export const connectedAccountsRoute = new Hono<ApiEnv>()
     async (ctx) => {
       const { accountId } = ctx.req.valid("param");
       const account = await ConnectedAccount.fromID(accountId);
-      switch (account.platform) {
-        case AllPlatforms.FACEBOOK:
-          await facebookOAuthService.teardownWebhook(
-            account.encryptedAccessToken,
-          );
-          break;
-        case AllPlatforms.INSTAGRAM:
-          await instagramOAuthService.teardownWebhook(
-            account.encryptedAccessToken,
-          );
-          break;
-        case AllPlatforms.TIKTOK:
-          // TODO: implement
-          break;
+      try {
+        switch (account.platform) {
+          case AllPlatforms.FACEBOOK:
+            await facebookOAuthService.teardownWebhook(
+              account.encryptedAccessToken,
+            );
+            break;
+          case AllPlatforms.INSTAGRAM:
+            await instagramOAuthService.teardownWebhook(
+              account.encryptedAccessToken,
+            );
+            break;
+          case AllPlatforms.TIKTOK:
+            // TODO: implement
+            break;
+        }
+      } catch (error) {
+        console.error(
+          `Error tearing down webhooks for account ${accountId}:`,
+          error,
+        );
       }
       await ConnectedAccount.deleteById(accountId);
       return ctx.json({
