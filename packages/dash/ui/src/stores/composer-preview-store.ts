@@ -21,6 +21,7 @@ export interface PreviewData {
   platform: Platform;
   attachments: SharedAttachmentSpec[];
   message: string;
+  callToAction?: FBFeedPlacementSpec["postSpec"]["callToAction"];
   // Helper methods for display names
   getDisplayName: (fallbackWorkspaceName?: string) => string;
   getInstagramUsername: (fallbackWorkspaceName?: string) => string;
@@ -216,10 +217,26 @@ export const useComposerPreview = (
       return contentCreateData.base.attachments || [];
     };
 
+    const getCallToActionForAccount = ():
+      | FBFeedPlacementSpec["postSpec"]["callToAction"]
+      | undefined => {
+      if (!targetAccount || targetAccount.platform !== "FACEBOOK") {
+        return undefined;
+      }
+
+      const entry = placementsByAccount?.[targetAccount.id];
+      if (!entry || entry.platform !== "FACEBOOK") {
+        return undefined;
+      }
+
+      return (entry.spec as FBFeedPlacementSpec).postSpec.callToAction;
+    };
+
     return {
       ...displayData,
       attachments: getAttachmentsForAccount(),
       message: getMessageForAccount(),
+      callToAction: getCallToActionForAccount(),
       getDisplayName,
       getInstagramUsername,
     };

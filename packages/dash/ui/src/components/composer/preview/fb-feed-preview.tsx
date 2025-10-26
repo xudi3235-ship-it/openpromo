@@ -1,5 +1,6 @@
 import { Button } from "@openpromo/ui/components/button";
 import {
+  ExternalLink,
   Globe,
   Heart,
   MapPin,
@@ -11,6 +12,7 @@ import {
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerPreview } from "@/stores/composer-preview-store";
+import { CTA_OPTIONS } from "../types/platform-features";
 import { PreviewMediaNullState } from "./null-state";
 
 interface FBFeedPreviewProps {
@@ -27,8 +29,12 @@ export function FBFeedPreview({ accountId }: FBFeedPreviewProps) {
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
     attachments,
   });
-  const { message, profilePicUrl, getDisplayName } = previewData;
+  const { message, profilePicUrl, getDisplayName, callToAction } = previewData;
   const trimmedMessage = (message || "").trim();
+
+  const ctaOption = callToAction
+    ? CTA_OPTIONS.find((opt) => opt.value === callToAction.type)
+    : null;
 
   return (
     <div className="w-full max-w-lg mx-auto border rounded-lg p-3 bg-background">
@@ -157,6 +163,20 @@ export function FBFeedPreview({ accountId }: FBFeedPreviewProps) {
           <PreviewMediaNullState className="w-full h-64 bg-muted rounded-lg flex items-center justify-center" />
         )}
       </div>
+
+      {/* Call to Action Button */}
+      {ctaOption && (
+        <div className="mb-4 -mx-3 px-3 py-2 border-t border-b bg-muted/30">
+          <Button
+            variant="ghost"
+            className="w-full justify-start font-semibold text-foreground hover:bg-muted/50 h-auto py-2"
+            disabled
+          >
+            <ExternalLink className="w-4 h-4 mr-2 flex-shrink-0" />
+            <span className="truncate">{ctaOption.label}</span>
+          </Button>
+        </div>
+      )}
 
       {/* Engagement Stats */}
       <div className="flex items-center justify-between text-xs text-muted-foreground mb-3 min-w-0">
