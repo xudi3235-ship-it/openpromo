@@ -11,6 +11,7 @@ import type {
 } from "@core/durable-objects";
 import type { JobQueueMessage } from "@core/queues/job-queue";
 import { createContext } from "@core/utils/context";
+import type { env as runtimeEnvVars } from "@core/utils/env";
 import type { OrganizationRole } from "@shared/workspace/auth";
 import type { User } from "@workos-inc/node";
 
@@ -22,7 +23,7 @@ export type ApiEnv = {
     featureFlags: string[];
     permissions: string[];
   };
-  Bindings: {
+  Bindings: typeof runtimeEnvVars & {
     HYPERDRIVE: Hyperdrive;
     WORKFLOW: Workflow<PublishWorkflowParams>;
     ContentBackfillWorkflow: Workflow<ContentBackfillWorkflowParams>;

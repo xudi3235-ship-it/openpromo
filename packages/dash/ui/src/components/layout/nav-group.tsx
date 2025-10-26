@@ -32,7 +32,7 @@ import type {
   NavItem,
   NavLink,
 } from "./types";
-import { WorkspaceNotificationBell } from "./workspace-notification-bell";
+import { WorkspaceNotificationBell } from "./workspace-notification-bell/index";
 
 interface NavGroupComponentProps extends NavGroupProps {
   workspaceSlug?: string;

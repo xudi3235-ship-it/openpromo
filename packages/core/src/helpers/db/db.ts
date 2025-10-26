@@ -21,7 +21,11 @@ export namespace Database {
       return Context.use();
     } catch {
       // fallback to pooled conn
-      if (cfEnv.HYPERDRIVE && cfEnv.HYPERDRIVE_ID) {
+      if (
+        cfEnv.HYPERDRIVE &&
+        cfEnv.HYPERDRIVE_ID &&
+        cfEnv.VITE_ENVIRONMENT !== "local"
+      ) {
         log.info("**on hyperdrive**");
         return {
           connectionString: cfEnv.HYPERDRIVE.connectionString,
