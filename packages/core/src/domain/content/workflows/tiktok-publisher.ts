@@ -65,22 +65,16 @@ export class TikTokPublisher extends BasePublisher {
     step: CoreWorkflowStep,
     pendingContentID: string,
   ): Promise<TikTokPublishStatusResult> {
-    // Load content and client once per workflow execution
-    const content = await step.do("load tiktok photo content", async () => {
-      return await EntTikTokFeedPendingContent.fromID(pendingContentID);
-    });
-
-    const client = await step.do("load tiktok photo client", async () => {
-      return await TikTokDirectPostClient.forPlacementSpec(content.spec);
-    });
-
     await step.do("validate tiktok photo context", async () => {
-      content.assertReadyForPhotoPublishing();
+      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+      c.assertReadyForPhotoPublishing();
     });
 
     const identity = await step.do(
       "resolve tiktok photo identity",
       async () => {
+        const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+        const client = await TikTokDirectPostClient.forPlacementSpec(c.spec);
         return client.identity;
       },
     );
@@ -89,7 +83,8 @@ export class TikTokPublisher extends BasePublisher {
     const preparedPhotos = await step.do(
       "ensure photos available on verified domain",
       async () => {
-        return await content.ensurePhotosAvailableOnVerifiedDomain();
+        const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+        return await c.ensurePhotosAvailableOnVerifiedDomain();
       },
     );
 
@@ -103,6 +98,8 @@ export class TikTokPublisher extends BasePublisher {
     }
 
     await step.do("query tiktok photo creator info", async () => {
+      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+      const client = await TikTokDirectPostClient.forPlacementSpec(c.spec);
       const info = await client.queryCreatorInfo();
       console.log("tiktok creator info", info);
       return info as Record<string, string | number | boolean>;
@@ -113,6 +110,11 @@ export class TikTokPublisher extends BasePublisher {
     const { publishId } = await step.do(
       "init tiktok photo publish",
       async () => {
+        const content =
+          await EntTikTokFeedPendingContent.fromID(pendingContentID);
+        const client = await TikTokDirectPostClient.forPlacementSpec(
+          content.spec,
+        );
         console.log("init tiktok photo publish");
         return await content.initDirectPhotoPostFromUrls(client, {
           photoUrls,
@@ -129,7 +131,7 @@ export class TikTokPublisher extends BasePublisher {
 
     const finalStatus = await this.waitForPublishCompletion(
       step,
-      client,
+      pendingContentID,
       publishId,
     );
 
@@ -214,7 +216,7 @@ export class TikTokPublisher extends BasePublisher {
 
     const finalStatus = await this.waitForPublishCompletion(
       step,
-      client,
+      pendingContentID,
       publishId,
     );
 
@@ -226,7 +228,7 @@ export class TikTokPublisher extends BasePublisher {
 
   private async waitForPublishCompletion(
     step: CoreWorkflowStep,
-    client: TikTokDirectPostClient,
+    pendingContentID: string,
     publishId: string,
     maxAttempts = 20,
   ): Promise<TikTokPublishStatusResult> {
@@ -237,6 +239,11 @@ export class TikTokPublisher extends BasePublisher {
       const status = await step.do(
         `fetch tiktok publish status (attempt ${attempt})`,
         async () => {
+          const content =
+            await EntTikTokFeedPendingContent.fromID(pendingContentID);
+          const client = await TikTokDirectPostClient.forPlacementSpec(
+            content.spec,
+          );
           return await client.fetchPublishStatus(publishId);
         },
       );
