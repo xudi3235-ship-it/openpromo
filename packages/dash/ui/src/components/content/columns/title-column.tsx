@@ -181,8 +181,8 @@ function renderTitle(row: Row<MergedContentEntity>) {
 
 export const titleColumn: ColumnDef<MergedContentEntity> = {
   accessorKey: "Title",
-  size: 420,
-  minSize: 320,
+  size: 120,
+  minSize: 40,
   maxSize: 420,
   header: () => (
     <ColumnHeaderWithTooltip
