@@ -102,11 +102,6 @@ function PlatformIcon({ platform }: { platform: Platform }) {
 }
 
 export function ValidationErrors({ errors }: ValidationErrorsProps) {
-  // Debug: Log validation errors to understand duplication issue
-  if (import.meta.env.DEV && errors.length > 0) {
-    console.log("[ValidationErrors] Raw errors:", errors);
-  }
-
   const activeIssues = ISSUE_DEFINITIONS.reduce<
     Array<{
       key: IssueRule;
