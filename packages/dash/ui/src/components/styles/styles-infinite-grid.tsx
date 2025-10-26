@@ -1,9 +1,9 @@
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
-import { Search, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { Fragment, useEffect, useMemo } from "react";
 import { useIntersectionObserver } from "usehooks-ts";
+// icons removed to keep empty states minimal and on-brand
 import {
   type StyleResponse,
   type StylesListParams,
@@ -158,32 +158,24 @@ interface StylesEmptyStateProps {
 }
 
 export function StylesEmptyState({ hasFilters }: StylesEmptyStateProps) {
+  // Minimal, flat empty states without decorative icons to match site aesthetics
   if (hasFilters) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed p-16 text-center">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <Search className="h-7 w-7 text-muted-foreground" />
-        </div>
-        <h2 className="text-xl font-semibold">No matching styles found</h2>
+      <div className="flex flex-1 flex-col items-center justify-center rounded-md border border-border/50 p-8 text-center bg-transparent">
+        <h2 className="text-lg font-medium">No styles match your filters</h2>
         <p className="mt-2 max-w-md text-sm text-muted-foreground">
-          Try adjusting your search terms or explore our full collection of
-          creative styles.
+          Try clearing filters or adjust your search to discover more styles.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed p-16 text-center">
-      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/10 to-purple-500/10">
-        <Sparkles className="h-9 w-9 text-muted-foreground" />
-      </div>
-      <h2 className="text-2xl font-bold">
-        Start Building Your Style Collection
-      </h2>
-      <p className="mt-3 max-w-lg text-base text-muted-foreground leading-relaxed">
-        Drag 3-5 reference images into the glassy composer dock at the bottom of
-        this page to create your first reusable visual style.
+    <div className="flex flex-1 flex-col items-center justify-center rounded-md border border-border/50 p-8 text-center bg-transparent">
+      <h2 className="text-lg font-semibold">Build your first style</h2>
+      <p className="mt-2 max-w-lg text-sm text-muted-foreground leading-relaxed">
+        Drag 3–5 reference images into the composer dock below to create your
+        first reusable visual style.
       </p>
     </div>
   );
