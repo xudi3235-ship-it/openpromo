@@ -1,3 +1,4 @@
+import { env as cfEnv } from "cloudflare:workers";
 import { env } from "@core/utils/env";
 import { Log } from "@core/utils/log";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -19,9 +20,13 @@ export namespace Database {
     try {
       return Context.use();
     } catch {
+      log.warn("no db ctx, fall back to env db url");
       // fallback to pooled conn.
+      const connectionString = env.DATABASE_URL ?? cfEnv.DATABASE_URL;
+      if (!connectionString)
+        throw new Error("No DATABASE_URL found in environment");
       return {
-        connectionString: env.DATABASE_URL,
+        connectionString,
       } as Info;
     }
   }
