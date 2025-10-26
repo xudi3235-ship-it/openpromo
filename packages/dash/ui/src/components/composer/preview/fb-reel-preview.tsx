@@ -1,6 +1,7 @@
 import { Button } from "@openpromo/ui/components/button";
 import {
   Bookmark,
+  ExternalLink,
   Heart,
   MessageCircle,
   MoreHorizontal,
@@ -10,6 +11,8 @@ import {
 } from "lucide-react";
 import { useReelConfig } from "@/hooks/useReelConfig";
 import { useReelControls } from "@/hooks/useReelControls";
+import { useComposerPreview } from "@/stores/composer-preview-store";
+import { CTA_OPTIONS } from "../types/platform-features";
 import { PreviewMediaNullState } from "./null-state";
 
 interface FBReelPreviewProps {
@@ -17,6 +20,11 @@ interface FBReelPreviewProps {
 }
 
 export function FBReelPreview({ accountId }: FBReelPreviewProps) {
+  const previewData = useComposerPreview({
+    platform: "FACEBOOK",
+    accountId,
+  });
+
   const {
     isPlaying,
     isMuted,
@@ -34,6 +42,11 @@ export function FBReelPreview({ accountId }: FBReelPreviewProps) {
     accountId,
   );
   const ShareIcon = config.icons.share;
+
+  const { callToAction } = previewData;
+  const ctaOption = callToAction
+    ? CTA_OPTIONS.find((opt) => opt.value === callToAction.type)
+    : null;
 
   return (
     <div className="max-w-[280px] bg-black rounded-lg overflow-hidden relative">
@@ -171,6 +184,19 @@ export function FBReelPreview({ accountId }: FBReelPreviewProps) {
                     </span>
                   )}
                 </div>
+
+                {/* Call to Action Button */}
+                {ctaOption && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full bg-white/90 hover:bg-white text-black font-semibold h-8 text-xs"
+                    disabled
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                    <span className="truncate">{ctaOption.label}</span>
+                  </Button>
+                )}
 
                 {/* Music/Audio */}
                 <div className="flex items-center space-x-1">
