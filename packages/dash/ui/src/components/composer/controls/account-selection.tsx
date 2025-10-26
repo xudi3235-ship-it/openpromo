@@ -133,15 +133,17 @@ export function AccountSelection() {
         label: "All",
         count: accounts.length,
       },
-      ...PLATFORM_ORDER.map((platform) => {
-        const meta = getPlatformMeta(platform);
-        return {
-          value: platform as PlatformFilter,
-          label: meta.label,
-          count: platformCounts[platform],
-          meta,
-        };
-      }),
+      ...PLATFORM_ORDER.filter((platform) => platformCounts[platform] > 0).map(
+        (platform) => {
+          const meta = getPlatformMeta(platform);
+          return {
+            value: platform as PlatformFilter,
+            label: meta.label,
+            count: platformCounts[platform],
+            meta,
+          };
+        },
+      ),
     ];
   }, [accounts.length, platformCounts]);
 
