@@ -1,8 +1,7 @@
 import { type ApiEnv, Binding } from "./helpers/api-env";
-import { Database, db } from "./helpers/db";
+import { db } from "./helpers/db";
 import type { JobQueueMessage } from "./queues/job-queue";
 import { workspacesTable } from "./schemas/workspaces.sql";
-import { env as runtimeEnv } from "./utils/env";
 import { Log } from "./utils/log";
 
 const log = Log.create({ namespace: "cron" });
@@ -14,12 +13,8 @@ export async function scheduledHandler(
   env: ApiEnv["Bindings"],
   _ctx: ExecutionContext,
 ) {
-  const connectionString =
-    env.HYPERDRIVE?.connectionString ?? runtimeEnv.DATABASE_URL;
   try {
-    await Database.provide(connectionString, () =>
-      Binding.provide(env, async () => handleCron(controller)),
-    );
+    Binding.provide(env, async () => handleCron(controller));
   } catch (error) {
     console.error("scheduled handler failed", {
       cron: controller.cron,

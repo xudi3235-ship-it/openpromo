@@ -1,10 +1,8 @@
 import { runWorkspaceMetricsTask } from "@core/domain/workspace/sync/run-workspace-metrics";
 import { Actor } from "@core/helpers/actor";
 import { type ApiEnv, Binding } from "@core/helpers/api-env";
-import { Database } from "@core/helpers/db";
 import { ImageStorage } from "@core/helpers/storage/image";
 import { VideoStorage } from "@core/helpers/storage/video";
-import { env as runtimeEnv } from "@core/utils/env";
 import { Log } from "@core/utils/log";
 import { z } from "zod";
 
@@ -120,9 +118,6 @@ export async function processJobQueueBatch(
     `processing job queue batch of ${batch.messages.length} messages`,
   );
 
-  const connectionString =
-    env.HYPERDRIVE?.connectionString ?? runtimeEnv.DATABASE_URL;
-
   for (const message of batch.messages) {
     const parsed = JobQueueMessageSchema.safeParse(message.body);
     if (!parsed.success) {
@@ -167,9 +162,7 @@ export async function processJobQueueBatch(
 
     // provide context for each message
     Actor.provide(job.actor.type, job.actor.properties, () => {
-      return Database.provide(connectionString, () => {
-        return Binding.provide(env, fn);
-      });
+      return Binding.provide(env, fn);
     });
   }
 }

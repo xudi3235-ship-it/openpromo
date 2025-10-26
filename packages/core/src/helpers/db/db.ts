@@ -15,12 +15,10 @@ export namespace Database {
   export const Context = createContext<Info>();
 
   export function use() {
-    // for cf workers, they provide a url override through hyperdrive
-    // other services will use the pooled conn from neon.
     try {
       return Context.use();
     } catch {
-      // fallback to pooled conn
+      // use hyperdrive for non-local envs
       if (
         cfEnv.HYPERDRIVE &&
         cfEnv.HYPERDRIVE_ID &&
