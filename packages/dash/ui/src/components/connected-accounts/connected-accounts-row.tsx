@@ -89,20 +89,21 @@ function AccountAvatar({
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
 
-  const { mutateAsync: disconnectAccount } = useHonoMutation({
-    mutationFn: (api, accountId: string) =>
-      api.workspaces[":workspaceSlug"].connected_accounts[":accountId"].$delete(
-        {
+  const { mutateAsync: disconnectAccount, isPending: isDisconnecting } =
+    useHonoMutation({
+      mutationFn: (api, accountId: string) =>
+        api.workspaces[":workspaceSlug"].connected_accounts[
+          ":accountId"
+        ].$delete({
           param: { workspaceSlug: workspace.slug, accountId: accountId },
-        },
-      ),
-    onSuccess: async () => {
-      toast.success("Account disconnected successfully");
-      await queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
-      });
-    },
-  });
+        }),
+      onSuccess: async () => {
+        toast.success("Account disconnected successfully");
+        await queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
+        });
+      },
+    });
 
   const distance = useTransform(mouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
@@ -185,6 +186,7 @@ function AccountAvatar({
         confirmText="Remove"
         destructive={true}
         handleConfirm={handleDelete}
+        isLoading={isDisconnecting}
       />
     </>
   );
