@@ -1,4 +1,5 @@
 import { EntTikTokFeedPendingContent } from "@core/domain/content/entity";
+import { TikTokDirectPostClient } from "@core/domain/content/entity/tiktok/direct-post-client";
 import type { TikTokPublishStatusResult } from "@core/domain/content/entity/tiktok-feed";
 import type {
   CoreWorkflowContext,
@@ -7,14 +8,12 @@ import type {
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 import { BasePublisher } from "./base-publisher";
-import { publishTikTokFeedPhoto } from "./tiktok/photo-publisher";
-import { publishTikTokFeedVideo } from "./tiktok/single-video-publisher";
 
 const log = Log.create({ namespace: "tiktok-publisher" });
 
 export class TikTokPublisher extends BasePublisher {
   async publish(
-    ctx: CoreWorkflowContext,
+    _ctx: CoreWorkflowContext,
     step: CoreWorkflowStep,
     pendingContentID: string,
   ) {
@@ -26,9 +25,9 @@ export class TikTokPublisher extends BasePublisher {
     let publishStatus: TikTokPublishStatusResult;
     if (postType === "video") {
       await this.prepareVideosIfNeeded(step, pendingContentID);
-      publishStatus = await publishTikTokFeedVideo(ctx, step, pendingContentID);
+      publishStatus = await this.publishVideo(step, pendingContentID);
     } else if (postType === "photo") {
-      publishStatus = await publishTikTokFeedPhoto(ctx, step, pendingContentID);
+      publishStatus = await this.publishPhoto(step, pendingContentID);
     } else {
       throw new WorkflowError(
         `Unsupported TikTok post type for content ${pendingContentID}: ${postType}`,
@@ -60,5 +59,215 @@ export class TikTokPublisher extends BasePublisher {
       postType,
       shareUrl: publishStatus.shareUrl,
     });
+  }
+
+  private async publishPhoto(
+    step: CoreWorkflowStep,
+    pendingContentID: string,
+  ): Promise<TikTokPublishStatusResult> {
+    // Load content and client once per workflow execution
+    const content = await step.do("load tiktok photo content", async () => {
+      return await EntTikTokFeedPendingContent.fromID(pendingContentID);
+    });
+
+    const client = await step.do("load tiktok photo client", async () => {
+      return await TikTokDirectPostClient.forPlacementSpec(content.spec);
+    });
+
+    await step.do("validate tiktok photo context", async () => {
+      content.assertReadyForPhotoPublishing();
+    });
+
+    const identity = await step.do(
+      "resolve tiktok photo identity",
+      async () => {
+        return client.identity;
+      },
+    );
+    console.log("resolved tiktok identity", identity);
+
+    const preparedPhotos = await step.do(
+      "ensure photos available on verified domain",
+      async () => {
+        return await content.ensurePhotosAvailableOnVerifiedDomain();
+      },
+    );
+
+    console.log("prepared photos", preparedPhotos);
+
+    const photoUrls = preparedPhotos.map((photo) => photo.url);
+    if (photoUrls.length === 0) {
+      throw new WorkflowError(
+        `No prepared photo URLs found for TikTok content ${pendingContentID}`,
+      );
+    }
+
+    await step.do("query tiktok photo creator info", async () => {
+      const info = await client.queryCreatorInfo();
+      console.log("tiktok creator info", info);
+      return info as Record<string, string | number | boolean>;
+    });
+
+    const photoCoverIndex = 0; // TODO: allow user to select cover photo
+
+    const { publishId } = await step.do(
+      "init tiktok photo publish",
+      async () => {
+        console.log("init tiktok photo publish");
+        return await content.initDirectPhotoPostFromUrls(client, {
+          photoUrls,
+          caption: content.caption(),
+          privacyLevel: "SELF_ONLY",
+          disableComment: false,
+          autoAddMusic: true,
+          allowAdvancedBoost: false,
+          mentionUserIds: undefined,
+          photoCoverIndex,
+        });
+      },
+    );
+
+    const finalStatus = await this.waitForPublishCompletion(
+      step,
+      client,
+      publishId,
+    );
+
+    log.info("TikTok photo publish completed", {
+      publishId: finalStatus.publish_id,
+    });
+    return finalStatus;
+  }
+
+  private async publishVideo(
+    step: CoreWorkflowStep,
+    pendingContentID: string,
+  ): Promise<TikTokPublishStatusResult> {
+    console.log("// publishTikTokFeedVideo");
+
+    // Load content and client once per workflow execution
+    const content = await step.do("load tiktok video content", async () => {
+      return await EntTikTokFeedPendingContent.fromID(pendingContentID);
+    });
+
+    const client = await step.do("load tiktok video client", async () => {
+      return await TikTokDirectPostClient.forPlacementSpec(content.spec);
+    });
+
+    await step.do("validate tiktok video context", async () => {
+      content.assertReadyForVideoPublishing();
+    });
+
+    const identity = await step.do(
+      "resolve tiktok video identity",
+      async () => {
+        return client.identity;
+      },
+    );
+
+    const videoAttachment = await step.do(
+      "prepare video attachment",
+      async () => {
+        const attachment = content.ensureSingleVideoAttachment();
+        return attachment;
+      },
+    );
+
+    if (!videoAttachment.presignedUrl) {
+      throw new WorkflowError(
+        `TikTok video attachment ${videoAttachment.id} missing presignedUrl`,
+      );
+    }
+
+    console.log("resolved tiktok identity", identity);
+
+    const verifiedVideoUrl = await step.do(
+      "ensure video available on verified domain",
+      async () => {
+        const { url } = await content.ensureVideoAvailableOnVerifiedDomain({
+          id: videoAttachment.id,
+          presignedUrl: videoAttachment.presignedUrl as string,
+          mimeType: videoAttachment.mimeType,
+        });
+        return url;
+      },
+    );
+
+    await step.do("query tiktok video creator info", async () => {
+      const info = await client.queryCreatorInfo();
+      console.log("tiktok creator info", info);
+      return info as Record<string, string | number | boolean>;
+    });
+
+    const { publishId } = await step.do(
+      "init tiktok video publish",
+      async () => {
+        console.log("init tiktok video publish");
+        return await content.initDirectVideoPostFromUrl(client, {
+          videoUrl: verifiedVideoUrl,
+          caption: content.caption(),
+          mimeType: videoAttachment.mimeType,
+          privacyLevel: "SELF_ONLY", // TODO: update this once app review is done
+        });
+      },
+    );
+
+    const finalStatus = await this.waitForPublishCompletion(
+      step,
+      client,
+      publishId,
+    );
+
+    log.info("TikTok video publish completed", {
+      publishId: finalStatus.publish_id,
+    });
+    return finalStatus;
+  }
+
+  private async waitForPublishCompletion(
+    step: CoreWorkflowStep,
+    client: TikTokDirectPostClient,
+    publishId: string,
+    maxAttempts = 20,
+  ): Promise<TikTokPublishStatusResult> {
+    let attempt = 0;
+
+    while (attempt < maxAttempts) {
+      attempt += 1;
+      const status = await step.do(
+        `fetch tiktok publish status (attempt ${attempt})`,
+        async () => {
+          return await client.fetchPublishStatus(publishId);
+        },
+      );
+
+      console.log("status:", JSON.stringify(status));
+
+      log.info("tiktok publish status", {
+        publishId,
+        status: status.status,
+        attempt,
+      });
+
+      if (status.status === "PUBLISH_COMPLETE") {
+        return status;
+      }
+
+      if (status.status === "FAILED") {
+        const reason = status.failReason || status.message || "unknown";
+        throw new WorkflowError(
+          `TikTok publish failed for ${publishId}: ${reason}`,
+        );
+      }
+
+      await step.sleep(
+        `wait for tiktok publish status (attempt ${attempt})`,
+        Math.min(30_000, attempt * 2_000),
+      );
+    }
+
+    throw new WorkflowError(
+      `Timed out waiting for TikTok publish status for ${publishId}`,
+    );
   }
 }
