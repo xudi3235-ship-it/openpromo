@@ -107,6 +107,8 @@ export interface ComposerActions {
   // Platform-specific features
   setFacebookCTA: (type: string, link: string) => void;
   removeFacebookCTA: () => void;
+  // Video features
+  setVideoThumbnail: (url: string | undefined) => void;
 }
 
 export type ComposerStore = ComposerState & ComposerActions;

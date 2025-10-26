@@ -11,6 +11,7 @@ import { useComposerStore } from "@/stores/composer-store";
 import ComposerMentions from "./detail/composer-mentions";
 import { ComposerEmojiPicker } from "./detail/emoji-picker";
 import { PlatformFeaturesSection } from "./platform-features/platform-features-section";
+import { VideoThumbnailSection } from "./video-thumbnail/video-thumbnail-section";
 
 export function PostDetails() {
   const composer = useComposerStore((state) => state);
@@ -141,6 +142,7 @@ export function PostDetails() {
       </div>
 
       <PlatformFeaturesSection />
+      <VideoThumbnailSection />
     </div>
   );
 }

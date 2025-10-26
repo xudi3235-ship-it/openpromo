@@ -10,6 +10,7 @@ import { createMessageSlice } from "./composer/slices/message-slice";
 import { createPlatformFeaturesSlice } from "./composer/slices/platform-features-slice";
 import { createPublishingSlice } from "./composer/slices/publishing-slice";
 import { createSelectionSlice } from "./composer/slices/selection-slice";
+import { createVideoThumbnailSlice } from "./composer/slices/video-thumbnail-slice";
 import type { ComposerProps, ComposerStore } from "./composer/types";
 
 export type {
@@ -43,6 +44,7 @@ export const useComposerStore = create<ComposerStore>()(
       ...createAttachmentsSlice(set, get),
       ...createPublishingSlice(set, get),
       ...createPlatformFeaturesSlice(set, get),
+      ...createVideoThumbnailSlice(set, get),
 
       // Add method to reinitialize composer with new props
       initializeComposer: (initProps: Partial<ComposerProps>) => {
