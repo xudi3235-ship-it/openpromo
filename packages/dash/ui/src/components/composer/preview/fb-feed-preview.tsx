@@ -25,11 +25,13 @@ export function FBFeedPreview({ accountId }: FBFeedPreviewProps) {
     platform: "FACEBOOK",
     accountId,
   });
-  const attachments = previewData.attachments;
+
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
-    attachments,
+    attachments: previewData.attachments,
   });
-  const { message, profilePicUrl, getDisplayName, callToAction } = previewData;
+
+  const { message, profilePicUrl, getDisplayName, callToAction, attachments } =
+    previewData;
   const trimmedMessage = (message || "").trim();
 
   const ctaOption = callToAction
