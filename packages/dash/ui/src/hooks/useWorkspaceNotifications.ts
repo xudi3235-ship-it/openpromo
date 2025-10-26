@@ -205,6 +205,11 @@ export function useWorkspaceNotifications(
       return true;
     }
 
+    // Optimistically clear the UI immediately
+    const previousNotifications = notifications;
+    clearLocalState();
+
+    // Call API in the background
     const result = await honoApiCall<{ cleared: boolean }>(
       (api) =>
         api.workspaces[":workspaceSlug"].notifications.$delete({
@@ -214,13 +219,14 @@ export function useWorkspaceNotifications(
     );
 
     if (!result.success) {
+      // Rollback on failure
+      setNotifications(previousNotifications);
       return false;
     }
 
-    clearLocalState();
     await invalidateNotifications();
     return true;
-  }, [workspaceSlug, clearLocalState, invalidateNotifications]);
+  }, [workspaceSlug, clearLocalState, invalidateNotifications, notifications]);
 
   const refreshNotifications = useCallback(async () => {
     if (!workspaceSlug) return;

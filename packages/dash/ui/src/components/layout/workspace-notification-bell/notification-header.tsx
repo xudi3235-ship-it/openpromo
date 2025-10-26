@@ -2,14 +2,12 @@ import { Button } from "@openpromo/ui/components/button";
 
 type NotificationHeaderProps = {
   isFetching: boolean;
-  isClearing: boolean;
   hasNotifications: boolean;
   onClear: () => void;
 };
 
 export function NotificationHeader({
   isFetching,
-  isClearing,
   hasNotifications,
   onClear,
 }: NotificationHeaderProps) {
@@ -26,9 +24,9 @@ export function NotificationHeader({
         size="sm"
         className="h-auto px-2 py-1 text-xs"
         onClick={onClear}
-        disabled={!hasNotifications || isClearing}
+        disabled={!hasNotifications}
       >
-        {isClearing ? "Clearing…" : "Clear"}
+        Clear
       </Button>
     </div>
   );

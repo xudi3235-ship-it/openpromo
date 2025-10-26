@@ -34,7 +34,6 @@ export function WorkspaceNotificationBell({
   } = useWorkspaceWebSocket();
   const [open, setOpen] = useState(false);
   const [lastSeenAt, setLastSeenAt] = useState(() => Date.now());
-  const [isClearing, setIsClearing] = useState(false);
 
   const unreadCount = useMemo(() => {
     return notifications.filter((notification) => {
@@ -52,17 +51,10 @@ export function WorkspaceNotificationBell({
     }
   };
 
-  const handleClear = async () => {
-    if (isClearing) return;
-    setIsClearing(true);
-    try {
-      const success = await clearNotifications();
-      if (success) {
-        setLastSeenAt(Date.now());
-      }
-    } finally {
-      setIsClearing(false);
-    }
+  const handleClear = () => {
+    setLastSeenAt(Date.now());
+    // Optimistic - clears instantly in the UI
+    void clearNotifications();
   };
 
   const triggerElement = renderTrigger ? (
@@ -97,7 +89,6 @@ export function WorkspaceNotificationBell({
       >
         <NotificationHeader
           isFetching={isFetching}
-          isClearing={isClearing}
           hasNotifications={notifications.length > 0}
           onClear={handleClear}
         />
