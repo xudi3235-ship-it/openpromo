@@ -44,9 +44,17 @@ export default function Hero({ dashboardUrl }: { dashboardUrl: string }) {
           <img
             src="/images/homepage/hero.png"
             alt="Hero"
-            className="mx-auto rounded-xl border object-contain p-1 shadow-lg 2xl:max-w-[1092px] dark:invert"
+            className="mx-auto rounded-xl border object-contain p-1 shadow-lg 2xl:max-w-[1092px] bg-muted"
             width={1000}
             height={600}
+            style={{
+              aspectRatio: "1000 / 600",
+              backgroundColor: "#f6f6f7",
+              transition: "opacity 160ms ease",
+            }}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
           />
         </div>
         <BorderedSection className="border-l border-r-0 2xl:flex-1" />
