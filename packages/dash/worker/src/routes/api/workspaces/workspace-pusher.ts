@@ -67,6 +67,20 @@ export const workspacePusherRoute = new Hono<ApiEnv>()
       });
     },
   )
+  // DELETE /workspaces/:workspaceSlug/notifications
+  .delete(
+    "/:workspaceSlug/notifications",
+    zValidator("param", z.object({ workspaceSlug: z.string() })),
+    async (ctx) => {
+      const { workspaceSlug } = ctx.req.valid("param");
+
+      const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
+      await pusher.init(workspaceSlug);
+      await pusher.clearNotifications();
+
+      return ctx.json({ cleared: true });
+    },
+  )
   // GET /workspaces/:workspaceSlug/notifications
   .get(
     "/:workspaceSlug/notifications",

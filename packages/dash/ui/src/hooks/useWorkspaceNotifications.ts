@@ -2,6 +2,7 @@ import type { WorkspaceNotificationEnvelope } from "@shared";
 import { WorkspaceNotificationEnvelopeSchema } from "@shared/workspace/notifications";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { honoApiCall } from "@/lib/hono-client";
 import {
   useInvalidateWorkspaceNotifications,
   useWorkspaceNotificationsQuery,
@@ -29,6 +30,7 @@ type UseWorkspaceNotificationsResult = {
   notifications: WorkspaceNotificationEnvelope[];
   sendJson: (payload: unknown) => boolean;
   clearEvents: () => void;
+  clearNotifications: () => Promise<boolean>;
   refreshNotifications: () => Promise<void>;
   isLoading: boolean;
   isFetching: boolean;
@@ -73,6 +75,11 @@ export function useWorkspaceNotifications(
     },
     [onEvent],
   );
+
+  const clearLocalState = useCallback(() => {
+    setEvents([]);
+    setNotifications([]);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -189,9 +196,31 @@ export function useWorkspaceNotifications(
   }, []);
 
   const clearEvents = useCallback(() => {
-    setEvents([]);
-    setNotifications([]);
-  }, []);
+    clearLocalState();
+  }, [clearLocalState]);
+
+  const clearNotifications = useCallback(async () => {
+    if (!workspaceSlug) {
+      clearLocalState();
+      return true;
+    }
+
+    const result = await honoApiCall<{ cleared: boolean }>(
+      (api) =>
+        api.workspaces[":workspaceSlug"].notifications.$delete({
+          param: { workspaceSlug },
+        }),
+      { errorMessage: "Failed to clear notifications" },
+    );
+
+    if (!result.success) {
+      return false;
+    }
+
+    clearLocalState();
+    await invalidateNotifications();
+    return true;
+  }, [workspaceSlug, clearLocalState, invalidateNotifications]);
 
   const refreshNotifications = useCallback(async () => {
     if (!workspaceSlug) return;
@@ -205,6 +234,7 @@ export function useWorkspaceNotifications(
       notifications,
       sendJson,
       clearEvents,
+      clearNotifications,
       refreshNotifications,
       isLoading: queryLoading,
       isFetching,
@@ -215,6 +245,7 @@ export function useWorkspaceNotifications(
       notifications,
       sendJson,
       clearEvents,
+      clearNotifications,
       refreshNotifications,
       queryLoading,
       isFetching,

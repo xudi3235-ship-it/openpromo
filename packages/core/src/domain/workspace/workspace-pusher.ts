@@ -146,6 +146,10 @@ export class WorkspacePusher extends Pusher {
     return records;
   }
 
+  async clearNotifications(): Promise<void> {
+    await this.storage.delete(NOTIFICATION_STORAGE_KEY);
+  }
+
   private createNotificationRecord(
     notification: WorkspaceNotification,
   ): WorkspaceNotificationRecord {

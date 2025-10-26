@@ -29,7 +29,7 @@ interface WorkspaceWebSocketContextValue {
   status: "connecting" | "open" | "closing" | "closed" | "error";
   subscribe: (listener: EventListener) => () => void;
   notifications: WorkspaceNotificationEnvelope[];
-  clearNotifications: () => void;
+  clearNotifications: () => Promise<boolean>;
   refreshNotifications: () => Promise<void>;
   isLoading: boolean;
   isFetching: boolean;
@@ -80,7 +80,7 @@ export function WorkspaceWebSocketProvider({
   const {
     status,
     notifications,
-    clearEvents,
+    clearNotifications,
     refreshNotifications,
     isLoading,
     isFetching,
@@ -103,7 +103,7 @@ export function WorkspaceWebSocketProvider({
       status,
       subscribe,
       notifications,
-      clearNotifications: clearEvents,
+      clearNotifications,
       refreshNotifications,
       isLoading,
       isFetching,
@@ -112,7 +112,7 @@ export function WorkspaceWebSocketProvider({
       status,
       subscribe,
       notifications,
-      clearEvents,
+      clearNotifications,
       refreshNotifications,
       isLoading,
       isFetching,
