@@ -3,7 +3,7 @@
 
 export const SITE_TITLE = "OpenPromo";
 export const SITE_DESCRIPTION =
-  "A modern, fully featured Astro template built with Shadcn/UI, TailwindCSS and TypeScript, perfect for your next web application.";
+  "Create social-ready content, launch campaigns, and grow with AI-powered workflows for small teams and creators.";
 
 export const SITE_METADATA = {
   title: {
@@ -48,7 +48,7 @@ export const SITE_METADATA = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "charter - Modern Astro Template",
+        alt: "OpenPromo - AI for ads & social",
       },
     ],
   },

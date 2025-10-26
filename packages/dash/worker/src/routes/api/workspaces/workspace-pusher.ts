@@ -1,5 +1,6 @@
 import { WORKSPACE_PUSHER_USER_HEADER } from "@core/domain/workspace/workspace-pusher-headers";
 import type { ApiEnv } from "@core/helpers/api-env";
+import type { WorkspaceNotification } from "@shared/workspace/notifications";
 import { Hono } from "hono";
 import * as z from "zod";
 import { zValidator } from "../../../middleware/zod-validator";
@@ -31,6 +32,39 @@ export const workspacePusherRoute = new Hono<ApiEnv>()
       const request = new Request(ctx.req.raw, { headers });
 
       return pusher.fetch(request);
+    },
+  )
+  // POST /workspaces/:workspaceSlug/notifications/test
+  .post(
+    "/:workspaceSlug/notifications/test",
+    zValidator("param", z.object({ workspaceSlug: z.string() })),
+    async (ctx) => {
+      const { workspaceSlug } = ctx.req.valid("param");
+
+      const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
+      await pusher.init(workspaceSlug);
+
+      const now = Date.now();
+
+      const notification: WorkspaceNotification = {
+        type: "content.published",
+        contentId: `dummy-${now}`,
+        placement: "realtime.playground",
+        publishedAt: new Date(now).toISOString(),
+        sourceContentId: null,
+        shareUrl: "https://openpromo.app",
+      };
+
+      await pusher.sendNotification(notification);
+
+      return ctx.json({
+        notification: {
+          type: "notification" as const,
+          workspaceSlug,
+          timestamp: now,
+          notification,
+        },
+      });
     },
   )
   // GET /workspaces/:workspaceSlug/notifications

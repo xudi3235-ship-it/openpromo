@@ -12,15 +12,15 @@ export default function Hero({ dashboardUrl }: { dashboardUrl: string }) {
         </BorderedSection>
         <div className="container mx-auto pb-12 pt-16 text-center md:pt-20 lg:pt-28">
           <h1 className="mx-auto max-w-[500px] text-balance text-[2.5rem] leading-[1.2] tracking-[-1.6px] md:text-[4rem] md:!leading-[1.15] md:tracking-[-4.32px] lg:text-7xl">
-            AI Agents, for your ads & social
+            Make better ads, faster
           </h1>
           <p className="text-muted-foreground mx-auto mt-5 max-w-[500px] leading-[1.5] tracking-[-0.32px] md:mt-6">
-            Less work, more conversion. Create contents, manage campaigns, and
-            scale up.
+            Create social-ready content, launch campaigns, and grow with
+            AI-powered workflows for small teams and creators.
           </p>
           <Button asChild className="mt-6 gap-1 md:mt-8 lg:mt-10">
             <a href={dashboardUrl}>
-              Get started
+              Try demo
               <ChevronRight className="size-4" />
             </a>
           </Button>

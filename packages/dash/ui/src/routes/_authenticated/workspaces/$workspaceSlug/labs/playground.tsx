@@ -18,12 +18,10 @@ function PlaygroundPage() {
   const { workspaceSlug } = Route.useParams();
   const { data: user } = useAuth();
 
-  const { status, events, sendJson, clearEvents } = useWorkspaceNotifications(
-    workspaceSlug,
-    {
+  const { status, events, sendJson, clearEvents, refreshNotifications } =
+    useWorkspaceNotifications(workspaceSlug, {
       autoToast: true,
-    },
-  );
+    });
 
   const sendMessageMutation = useHonoMutation({
     mutationFn: (api, variables: { userId: string; message: string }) =>
@@ -31,6 +29,16 @@ function PlaygroundPage() {
         param: { workspaceSlug, userId: variables.userId },
         json: { message: variables.message },
       }),
+  });
+
+  const sendTestNotificationMutation = useHonoMutation({
+    mutationFn: (api) =>
+      api.workspaces[":workspaceSlug"].notifications.test.$post({
+        param: { workspaceSlug },
+      }),
+    onSuccess: () => {
+      void refreshNotifications();
+    },
   });
 
   const connectionStatusLabel = useMemo(() => {
@@ -124,6 +132,16 @@ function PlaygroundPage() {
           {sendMessageMutation.isPending
             ? "Sending..."
             : "Test Server Push (All Users)"}
+        </Button>
+        <Button
+          onClick={() => {
+            sendTestNotificationMutation.mutate(undefined);
+          }}
+          disabled={sendTestNotificationMutation.isPending}
+        >
+          {sendTestNotificationMutation.isPending
+            ? "Dispatching..."
+            : "Send Dummy Notification"}
         </Button>
 
         <Button variant="outline" onClick={clearEvents}>

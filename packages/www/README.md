@@ -1,46 +1,37 @@
-# Astro Starter Kit: Basics
+# OpenPromo Website
 
-```sh
-pnpm create astro@latest -- --template basics
+This package contains the marketing website for OpenPromo — a lightweight platform that helps creators and small teams produce social-ready ad creative, launch campaigns, and grow using AI-powered workflows.
+
+This site is built with Astro + React and uses the shared `@openpromo/ui` components from the monorepo.
+
+## Quick start (local)
+
+From the repo root:
+
+```bash
+pnpm install
+pnpm --filter www run dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Open http://localhost:4321 to preview the site.
 
-## 🚀 Project Structure
+## Scripts
 
-Inside of your Astro project, you'll see the following folders and files:
+- `pnpm --filter www run dev` — Run the dev server for the `www` package
+- `pnpm --filter www run build` — Build the site
+- `pnpm --filter www run typecheck` — Run TypeScript typecheck for the site
+- `pnpm --filter www run preview` — Build + preview with wrangler (if configured)
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
-```
+## Where to edit
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+- Content & copy: `src/consts.ts`, `src/pages`, and `src/components/sections`
+- Site metadata & SEO: `src/consts.ts`
+- Public assets (images, favicons): `public/`
 
-## 🧞 Commands
+## Suggested next steps
 
-All commands are run from the root of the project, from a terminal:
+- Replace `public/og-image.jpg` with a branded OG image (1200x630)
+- Update hero and screenshots with product images / dashboard samples
+- Add a short demo video or GIF to the hero to showcase the product
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+If you want me to apply a chosen hero copy, update the OG image, or wire new CTA links (signup/demo), tell me which changes and I will implement them.
