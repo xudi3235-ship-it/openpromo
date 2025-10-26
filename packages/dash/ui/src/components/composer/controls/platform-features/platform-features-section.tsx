@@ -8,18 +8,16 @@ import {
 } from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { FBFeedPlacementSpec } from "@shared/content";
-import { Info, MapPin, MousePointerClick } from "lucide-react";
+import { Info, MousePointerClick } from "lucide-react";
 import { useMemo, useState } from "react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { useComposerStore } from "@/stores/composer-store";
 import { CTA_OPTIONS } from "../../types/platform-features";
 import { CTADialog } from "./cta-dialog";
-import { LocationDialog } from "./location-dialog";
 
 export function PlatformFeaturesSection() {
   const composer = useComposerStore();
   const [ctaDialogOpen, setCtaDialogOpen] = useState(false);
-  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
 
   // Get selected platforms
   const selectedPlatforms = useMemo(() => {
@@ -107,7 +105,6 @@ export function PlatformFeaturesSection() {
           <FacebookFeaturesRow
             cta={facebookCTA ?? undefined}
             onOpenCTADialog={() => setCtaDialogOpen(true)}
-            onOpenLocationDialog={() => setLocationDialogOpen(true)}
           />
         )}
 
@@ -130,11 +127,6 @@ export function PlatformFeaturesSection() {
         onSave={handleSaveCTA}
         onRemove={facebookCTA ? handleRemoveCTA : undefined}
       />
-
-      <LocationDialog
-        open={locationDialogOpen}
-        onOpenChange={setLocationDialogOpen}
-      />
     </TooltipProvider>
   );
 }
@@ -143,11 +135,9 @@ export function PlatformFeaturesSection() {
 function FacebookFeaturesRow({
   cta,
   onOpenCTADialog,
-  onOpenLocationDialog,
 }: {
   cta: FBFeedPlacementSpec["postSpec"]["callToAction"];
   onOpenCTADialog: () => void;
-  onOpenLocationDialog: () => void;
 }) {
   const meta = getPlatformMeta("FACEBOOK");
   const Icon = meta.icon;
@@ -185,23 +175,6 @@ function FacebookFeaturesRow({
             <p className="text-xs">
               {cta ? `CTA: ${ctaOption?.label}` : "Add Call to Action"}
             </p>
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Location Button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={onOpenLocationDialog}
-            >
-              <MapPin className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p className="text-xs">Add Location</p>
           </TooltipContent>
         </Tooltip>
       </div>
