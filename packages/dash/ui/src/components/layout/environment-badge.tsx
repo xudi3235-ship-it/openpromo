@@ -8,7 +8,7 @@ export function EnvironmentBanner() {
   const environment = import.meta.env.VITE_ENVIRONMENT;
 
   // Don't show anything in production
-  if (environment === "production") {
+  if (environment !== "staging" && environment !== "local") {
     return null;
   }
 
