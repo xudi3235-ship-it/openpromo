@@ -9,6 +9,7 @@ import {
 } from "@openpromo/ui/components/select";
 import { Slider } from "@openpromo/ui/components/slider";
 import { Spinner } from "@openpromo/ui/components/spinner";
+import { Textarea } from "@openpromo/ui/components/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Trash2 } from "lucide-react";
@@ -36,6 +37,7 @@ function ImageGenPage() {
     "studio",
   );
   const [batchCount, setBatchCount] = useState<number>(1);
+  const [prompt, setPrompt] = useState<string>("");
   const [selectedGenerations, setSelectedGenerations] = useState<Set<string>>(
     new Set(),
   );
@@ -73,6 +75,7 @@ function ImageGenPage() {
       styleId: generationMode === "style" ? selectedStyleId : undefined,
       mode: generationMode,
       batchCount,
+      prompt: prompt.trim() || undefined,
     });
   };
 
@@ -341,6 +344,24 @@ function ImageGenPage() {
                   max={4}
                   step={1}
                   className="w-full"
+                />
+              </div>
+
+              {/* Custom Prompt */}
+              <div className="space-y-2">
+                <label htmlFor="prompt-input" className="text-sm font-medium">
+                  Custom Prompt
+                  <span className="text-muted-foreground font-normal ml-1">
+                    (optional)
+                  </span>
+                </label>
+                <Textarea
+                  id="prompt-input"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Add custom instructions for the generation..."
+                  rows={3}
+                  className="resize-none"
                 />
               </div>
 

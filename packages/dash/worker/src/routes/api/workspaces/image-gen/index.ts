@@ -11,6 +11,7 @@ const generateImageSchema = z.object({
   styleId: z.string().optional(),
   mode: z.enum(["studio", "style"]).optional().default("studio"),
   batchCount: z.coerce.number().min(1).max(4).optional().default(1),
+  prompt: z.string().optional(),
 });
 
 const listQuerySchema = z.object({
@@ -47,13 +48,14 @@ export const imageGenRoute = new Hono<ApiEnv>()
     return c.json(result);
   })
   .post("/generate", zValidator("json", generateImageSchema), async (c) => {
-    const { productId, styleId, mode, batchCount } = c.req.valid("json");
+    const { productId, styleId, mode, batchCount, prompt } =
+      c.req.valid("json");
 
     if (mode === "studio") {
       // Studio shot: clean background, no style reference
       const generations = await Promise.all(
         Array.from({ length: batchCount }, () =>
-          EntImageGeneration.generateStudioBackgroundImage(productId),
+          EntImageGeneration.generateStudioBackgroundImage(productId, prompt),
         ),
       );
 

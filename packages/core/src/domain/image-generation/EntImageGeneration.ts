@@ -94,13 +94,23 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
   /**
    * generate a studio-grade background image, powered by nano banana
    */
-  static async generateStudioBackgroundImage(productId: string) {
+  static async generateStudioBackgroundImage(
+    productId: string,
+    customPrompt?: string,
+  ) {
     let generation = await EntImageGeneration.create({
       state: "pending",
       productId: productId,
     });
     const product = await EntProduct.fromID(productId);
-    const user_input = `Generate studio-grade product shot image for my attached product for ads creative & social visuals.
+    const user_input = customPrompt
+      ? `Generate studio-grade product shot image for my attached product for ads creative & social visuals.
+
+    here are some additional context about the product:
+    ${JSON.stringify(product.data.metadata, null, 2)}
+    
+    Additional instructions from user: ${customPrompt}`
+      : `Generate studio-grade product shot image for my attached product for ads creative & social visuals.
 
     here are some additional context about the product:
     ${JSON.stringify(product.data.metadata, null, 2)}
