@@ -77,8 +77,9 @@ export function ProductDetailPage() {
   const productId = params.productId;
   const workspaceSlug = params.workspaceSlug;
 
-  const [generatedImage, setGeneratedImage] =
-    React.useState<ProductImageGenerateResponse | null>(null);
+  const [generatedImage, setGeneratedImage] = React.useState<
+    ProductImageGenerateResponse["results"][0] | null
+  >(null);
   const { data, isLoading, error } = useProductQuery(productId);
 
   const generateImage = useProductImageGenerateMutation();
@@ -123,10 +124,13 @@ export function ProductDetailPage() {
   const handleGenerate = () => {
     if (!productId || isGenerating) return;
     generateImage.mutate(
-      { productId },
+      { productId, batchCount: 1 },
       {
         onSuccess: (result) => {
-          setGeneratedImage(result);
+          // Handle new batch response format - take first result
+          if (result.results && result.results.length > 0) {
+            setGeneratedImage(result.results[0]);
+          }
 
           // Don't set the image immediately - wait for the event
         },

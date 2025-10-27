@@ -140,7 +140,12 @@ export const useProductImageGenerateMutation = (
         json: variables,
       }),
     onSuccess: (data, variables, _context) => {
-      toast.success("Image generation started");
+      const count = variables.batchCount || 1;
+      toast.success(
+        count === 1
+          ? "Image generated successfully"
+          : `${count} images generated successfully`,
+      );
       onSuccess?.(data, variables);
     },
   });

@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@openpromo/ui/components/select";
+import { Slider } from "@openpromo/ui/components/slider";
 import { Spinner } from "@openpromo/ui/components/spinner";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -34,6 +35,7 @@ function ImageGenPage() {
   const [generationMode, setGenerationMode] = useState<"studio" | "style">(
     "studio",
   );
+  const [batchCount, setBatchCount] = useState<number>(1);
   const [selectedGenerations, setSelectedGenerations] = useState<Set<string>>(
     new Set(),
   );
@@ -70,6 +72,7 @@ function ImageGenPage() {
       productId: selectedProductId,
       styleId: generationMode === "style" ? selectedStyleId : undefined,
       mode: generationMode,
+      batchCount,
     });
   };
 
@@ -322,6 +325,24 @@ function ImageGenPage() {
                   </Select>
                 </div>
               )}
+
+              {/* Batch Count Slider */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Batch Count</label>
+                  <span className="text-sm text-muted-foreground">
+                    {batchCount}
+                  </span>
+                </div>
+                <Slider
+                  value={[batchCount]}
+                  onValueChange={(value) => setBatchCount(value[0] || 1)}
+                  min={1}
+                  max={4}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
 
               <Button
                 onClick={handleGenerate}

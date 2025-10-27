@@ -10,6 +10,7 @@ const generateImageSchema = z.object({
   productId: z.string(),
   styleId: z.string().optional(),
   mode: z.enum(["studio", "style"]).optional().default("studio"),
+  batchCount: z.coerce.number().min(1).max(4).optional().default(1),
 });
 
 const listQuerySchema = z.object({
@@ -46,16 +47,21 @@ export const imageGenRoute = new Hono<ApiEnv>()
     return c.json(result);
   })
   .post("/generate", zValidator("json", generateImageSchema), async (c) => {
-    const { productId, styleId, mode } = c.req.valid("json");
+    const { productId, styleId, mode, batchCount } = c.req.valid("json");
 
     if (mode === "studio") {
       // Studio shot: clean background, no style reference
-      const generation =
-        await EntImageGeneration.generateStudioBackgroundImage(productId);
+      const generations = await Promise.all(
+        Array.from({ length: batchCount }, () =>
+          EntImageGeneration.generateStudioBackgroundImage(productId),
+        ),
+      );
 
       return c.json({
-        imageUrl: generation.data.outputImages[0],
-        generation: generation.toJSON(),
+        results: generations.map((generation) => ({
+          imageUrl: generation.data.outputImages[0],
+          generation: generation.toJSON(),
+        })),
       });
     }
 
@@ -67,14 +73,19 @@ export const imageGenRoute = new Hono<ApiEnv>()
       });
     }
 
-    const { generation, imageUrl } =
-      await EntImageGeneration.generateProductImage({
-        productId,
-        styleId,
-      });
+    const generations = await Promise.all(
+      Array.from({ length: batchCount }, () =>
+        EntImageGeneration.generateProductImage({
+          productId,
+          styleId,
+        }),
+      ),
+    );
 
     return c.json({
-      imageUrl,
-      generation: generation.toJSON(),
+      results: generations.map(({ generation, imageUrl }) => ({
+        imageUrl,
+        generation: generation.toJSON(),
+      })),
     });
   });
