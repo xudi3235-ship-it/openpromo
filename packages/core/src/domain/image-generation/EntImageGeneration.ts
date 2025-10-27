@@ -1,6 +1,7 @@
 import { Actor } from "@core/helpers/actor";
 import { and, count, db, desc, eq, isNull } from "@core/helpers/db";
 import { Ent } from "@core/helpers/ent";
+import { getOpenAIClient } from "@core/providers/openai";
 import {
   ImageGenerationInsert,
   type ImageGenerationSelectType,
@@ -12,6 +13,7 @@ import { fn } from "@core/utils/fn";
 import { createWorkspaceEvent, WorkspaceEventType } from "@shared/workspace";
 import type z from "zod";
 import { ProductImageGen } from "../genai";
+import { GenAI } from "../genai/helpers";
 import { EntProduct } from "../product";
 import { EntStyleComponent } from "../style-component";
 import { dispatchWorkspaceEvent } from "../workspace/realtime";
@@ -87,6 +89,42 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       generation,
       imageUrl: imageGenResult.imageUrls[0],
     };
+  }
+  /**
+   * generate a studio-grade background image, powered by nano banana
+   */
+  static async generateStudioBackgroundImage(productId: string) {
+    let generation = await EntImageGeneration.create({
+      state: "pending",
+      productId: productId,
+    });
+    // 0. generate image prompt with our
+    const oai = getOpenAIClient();
+    const response = await oai.responses.create({
+      prompt: {
+        id: "pmpt_68fc6f98ca3c819396a49fdfe133bb3d0d83a6a0c5c7ade9",
+      },
+      input: [],
+      reasoning: {
+        summary: "auto",
+      },
+      store: true,
+      include: [
+        "reasoning.encrypted_content",
+        "web_search_call.action.sources",
+      ],
+    });
+    const image_prompt = response.output_text;
+    // 1. generate image using
+    const imageUrl = await GenAI.runNanoBanana({
+      prompt: image_prompt,
+      image_input: [], // TODO: pass product images as reference.
+    });
+    generation = await generation.update({
+      outputImages: [imageUrl],
+      state: "completed",
+    });
+    return generation;
   }
 
   static async fromID(id: string): Promise<EntImageGeneration> {
