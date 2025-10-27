@@ -2,24 +2,79 @@ import { EntImageGeneration } from "@core/domain/image-generation";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
 import * as z from "zod";
+import { AppError } from "../../../../helpers/error";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
 
 const generateImageSchema = z.object({
   productId: z.string(),
   styleId: z.string().optional(),
+  mode: z.enum(["studio", "style"]).optional().default("studio"),
+});
+
+const listQuerySchema = z.object({
+  page: z.coerce.number().default(1),
+  pageSize: z.coerce.number().max(50).default(20),
+  productId: z.string().optional(),
+});
+
+const deleteBatchSchema = z.object({
+  ids: z.array(z.string()).min(1),
 });
 
 export const imageGenRoute = new Hono<ApiEnv>()
   .use(withWorkspaceRole("workspace_editor"))
-  .post("/generate", zValidator("json", generateImageSchema), async (c) => {
-    const { productId } = c.req.valid("json");
+  .get("/", zValidator("query", listQuerySchema), async (c) => {
+    const { page, pageSize, productId } = c.req.valid("query");
 
-    const generation =
-      await EntImageGeneration.generateStudioBackgroundImage(productId);
+    const result = await EntImageGeneration.list({
+      page,
+      pageSize,
+      productId,
+    });
 
     return c.json({
-      imageUrl: generation.data.outputImages[0],
+      generations: result.generations.map((generation) => generation.toJSON()),
+      pagination: result.pagination,
+    });
+  })
+  .post("/delete-batch", zValidator("json", deleteBatchSchema), async (c) => {
+    const { ids } = c.req.valid("json");
+
+    const result = await EntImageGeneration.deleteBatch(ids);
+
+    return c.json(result);
+  })
+  .post("/generate", zValidator("json", generateImageSchema), async (c) => {
+    const { productId, styleId, mode } = c.req.valid("json");
+
+    if (mode === "studio") {
+      // Studio shot: clean background, no style reference
+      const generation =
+        await EntImageGeneration.generateStudioBackgroundImage(productId);
+
+      return c.json({
+        imageUrl: generation.data.outputImages[0],
+        generation: generation.toJSON(),
+      });
+    }
+
+    // Style-based generation: requires a style reference
+    if (!styleId) {
+      throw new AppError(400, {
+        message: "styleId is required for style-based generation",
+        userMessage: "Please select a style reference for styled generation.",
+      });
+    }
+
+    const { generation, imageUrl } =
+      await EntImageGeneration.generateProductImage({
+        productId,
+        styleId,
+      });
+
+    return c.json({
+      imageUrl,
       generation: generation.toJSON(),
     });
   });

@@ -1,5 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
-import { Card, CardContent, CardHeader } from "@openpromo/ui/components/card";
+import { Checkbox } from "@openpromo/ui/components/checkbox";
 import {
   Select,
   SelectContent,
@@ -8,10 +8,15 @@ import {
   SelectValue,
 } from "@openpromo/ui/components/select";
 import { Spinner } from "@openpromo/ui/components/spinner";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
-  type ProductImageGenerateResponse,
+  useImageGenDeleteBatchMutation,
+  useImageGenListQuery,
+} from "@/queries/image-gen";
+import {
   useProductImageGenerateMutation,
   useProductListQuery,
 } from "@/queries/product";
@@ -26,8 +31,14 @@ export const Route = createFileRoute(
 function ImageGenPage() {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedStyleId, setSelectedStyleId] = useState<string>("");
-  const [generatedImage, setGeneratedImage] =
-    useState<ProductImageGenerateResponse | null>(null);
+  const [generationMode, setGenerationMode] = useState<"studio" | "style">(
+    "studio",
+  );
+  const [selectedGenerations, setSelectedGenerations] = useState<Set<string>>(
+    new Set(),
+  );
+
+  const queryClient = useQueryClient();
 
   const { data: productsData, isLoading: isLoadingProducts } =
     useProductListQuery({});
@@ -36,24 +47,60 @@ function ImageGenPage() {
     page: "1",
   });
 
-  const generateMutation = useProductImageGenerateMutation((data) => {
-    setGeneratedImage(data);
+  const { data: generationsData, isLoading: isLoadingGenerations } =
+    useImageGenListQuery({ page: "1", pageSize: "50" });
+
+  const generateMutation = useProductImageGenerateMutation(() => {
+    // Invalidate the generations list to refetch
+    queryClient.invalidateQueries({ queryKey: ["image-gen-list"] });
+  });
+
+  const deleteBatchMutation = useImageGenDeleteBatchMutation(() => {
+    setSelectedGenerations(new Set());
   });
 
   const handleGenerate = () => {
     if (!selectedProductId) return;
 
+    if (generationMode === "style" && !selectedStyleId) {
+      return;
+    }
+
     generateMutation.mutate({
       productId: selectedProductId,
-      styleId:
-        selectedStyleId && selectedStyleId !== "__none__"
-          ? selectedStyleId
-          : undefined,
+      styleId: generationMode === "style" ? selectedStyleId : undefined,
+      mode: generationMode,
     });
+  };
+
+  const handleToggleSelection = (id: string) => {
+    setSelectedGenerations((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedGenerations.size === generations.length) {
+      setSelectedGenerations(new Set());
+    } else {
+      setSelectedGenerations(new Set(generations.map((g) => g.id)));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedGenerations.size === 0) return;
+    deleteBatchMutation.mutate({ ids: Array.from(selectedGenerations) });
   };
 
   const products = productsData?.products || [];
   const styles = stylesData?.styles || [];
+  const generations = generationsData?.generations || [];
 
   const isLoading = isLoadingProducts || isLoadingStyles;
 
@@ -79,48 +126,110 @@ function ImageGenPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-6">Image Generation Lab</h1>
+    <div className="container mx-auto p-6 max-w-7xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold tracking-tight mb-2">
+          Image Generation
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Create studio shots or styled product images
+        </p>
+      </div>
 
-      {isLoading ? (
-        <Card className="mb-6">
-          <CardContent className="flex items-center justify-center py-12">
-            <div className="text-center space-y-4">
-              <Spinner className="h-8 w-8 mx-auto" />
-              <p className="text-muted-foreground">
-                Loading products and styles...
-              </p>
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
+        {/* Left Panel - Inputs & Controls */}
+        <div className="space-y-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 border rounded-lg">
+              <div className="text-center space-y-3">
+                <Spinner className="h-6 w-6 mx-auto" />
+                <p className="text-sm text-muted-foreground">
+                  Loading resources...
+                </p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="mb-6">
-          <CardHeader>
-            <h2 className="text-xl font-semibold">Generate Product Image</h2>
-            <p className="text-sm text-muted-foreground">
-              Select a product and optionally a style to generate an image
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="product-select" className="text-sm font-medium">
-                Product *
-              </label>
-              <Select
-                value={selectedProductId}
-                onValueChange={setSelectedProductId}
-                disabled={isLoadingProducts}
-              >
-                <SelectTrigger id="product-select" className="w-full">
-                  <SelectValue placeholder="Select a product...">
-                    {selectedProductId &&
-                      (() => {
-                        const product = products.find(
-                          (p) => p.id === selectedProductId,
-                        );
-                        if (!product) return null;
-                        const imageUrl = getProductImage(product);
-                        return (
+          ) : (
+            <div className="border rounded-lg p-4 space-y-4">
+              {/* Mode Selection */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Mode</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setGenerationMode("studio")}
+                    className={`p-2.5 rounded-md border text-left transition-colors ${
+                      generationMode === "studio"
+                        ? "border-foreground bg-muted"
+                        : "border-border hover:bg-muted/50"
+                    }`}
+                  >
+                    <div className="text-sm font-medium">Studio</div>
+                    <div className="text-xs text-muted-foreground">
+                      Clean bg
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGenerationMode("style")}
+                    className={`p-2.5 rounded-md border text-left transition-colors ${
+                      generationMode === "style"
+                        ? "border-foreground bg-muted"
+                        : "border-border hover:bg-muted/50"
+                    }`}
+                  >
+                    <div className="text-sm font-medium">Styled</div>
+                    <div className="text-xs text-muted-foreground">
+                      With ref
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Product Selection */}
+              <div className="space-y-2">
+                <label htmlFor="product-select" className="text-sm font-medium">
+                  Product
+                </label>
+                <Select
+                  value={selectedProductId}
+                  onValueChange={setSelectedProductId}
+                  disabled={isLoadingProducts}
+                >
+                  <SelectTrigger id="product-select" className="w-full">
+                    <SelectValue placeholder="Select product...">
+                      {selectedProductId &&
+                        (() => {
+                          const product = products.find(
+                            (p) => p.id === selectedProductId,
+                          );
+                          if (!product) return null;
+                          const imageUrl = getProductImage(product);
+                          return (
+                            <div className="flex items-center gap-2">
+                              {imageUrl ? (
+                                <img
+                                  src={imageUrl}
+                                  alt={product.name || product.id}
+                                  className="w-5 h-5 object-cover rounded"
+                                />
+                              ) : (
+                                <div className="w-5 h-5 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                                  ?
+                                </div>
+                              )}
+                              <span className="text-sm truncate">
+                                {product.name || product.id}
+                              </span>
+                            </div>
+                          );
+                        })()}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map((product) => {
+                      const imageUrl = getProductImage(product);
+                      return (
+                        <SelectItem key={product.id} value={product.id}>
                           <div className="flex items-center gap-2">
                             {imageUrl ? (
                               <img
@@ -133,166 +242,245 @@ function ImageGenPage() {
                                 ?
                               </div>
                             )}
-                            <span>{product.name || product.id}</span>
+                            <span className="text-sm">
+                              {product.name || product.id}
+                            </span>
                           </div>
-                        );
-                      })()}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => {
-                    const imageUrl = getProductImage(product);
-                    return (
-                      <SelectItem key={product.id} value={product.id}>
-                        <div className="flex items-center gap-2">
-                          {imageUrl ? (
-                            <img
-                              src={imageUrl}
-                              alt={product.name || product.id}
-                              className="w-8 h-8 object-cover rounded"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                              ?
-                            </div>
-                          )}
-                          <span>{product.name || product.id}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <label htmlFor="style-select" className="text-sm font-medium">
-                Style (Optional)
-              </label>
-              <Select
-                value={selectedStyleId}
-                onValueChange={setSelectedStyleId}
-                disabled={isLoadingStyles}
-              >
-                <SelectTrigger id="style-select" className="w-full">
-                  <SelectValue placeholder="Select a style (optional)...">
-                    {selectedStyleId &&
-                      selectedStyleId !== "__none__" &&
-                      (() => {
-                        const style = styles.find(
-                          (s) => s.id === selectedStyleId,
-                        );
-                        if (!style) return null;
+              {/* Style Selection - Conditional */}
+              {generationMode === "style" && (
+                <div className="space-y-2">
+                  <label htmlFor="style-select" className="text-sm font-medium">
+                    Style
+                  </label>
+                  <Select
+                    value={selectedStyleId}
+                    onValueChange={setSelectedStyleId}
+                    disabled={isLoadingStyles}
+                  >
+                    <SelectTrigger id="style-select" className="w-full">
+                      <SelectValue placeholder="Select style...">
+                        {selectedStyleId &&
+                          (() => {
+                            const style = styles.find(
+                              (s) => s.id === selectedStyleId,
+                            );
+                            if (!style) return null;
+                            const imageUrl = getStyleImage(style);
+                            return (
+                              <div className="flex items-center gap-2">
+                                {imageUrl ? (
+                                  <img
+                                    src={imageUrl}
+                                    alt={style.name || style.id}
+                                    className="w-5 h-5 object-cover rounded"
+                                  />
+                                ) : (
+                                  <div className="w-5 h-5 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                                    ?
+                                  </div>
+                                )}
+                                <span className="text-sm truncate">
+                                  {style.name || style.id}
+                                </span>
+                              </div>
+                            );
+                          })()}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {styles.map((style) => {
                         const imageUrl = getStyleImage(style);
                         return (
-                          <div className="flex items-center gap-2">
-                            {imageUrl ? (
-                              <img
-                                src={imageUrl}
-                                alt={style.name || style.id}
-                                className="w-6 h-6 object-cover rounded"
-                              />
-                            ) : (
-                              <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                                ?
-                              </div>
-                            )}
-                            <span>{style.name || style.id}</span>
-                          </div>
-                        );
-                      })()}
-                    {selectedStyleId === "__none__" && "None"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">None</SelectItem>
-                  {styles.map((style) => {
-                    const imageUrl = getStyleImage(style);
-                    return (
-                      <SelectItem key={style.id} value={style.id}>
-                        <div className="flex items-center gap-2">
-                          {imageUrl ? (
-                            <img
-                              src={imageUrl}
-                              alt={style.name || style.id}
-                              className="w-8 h-8 object-cover rounded"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                              ?
+                          <SelectItem key={style.id} value={style.id}>
+                            <div className="flex items-center gap-2">
+                              {imageUrl ? (
+                                <img
+                                  src={imageUrl}
+                                  alt={style.name || style.id}
+                                  className="w-6 h-6 object-cover rounded"
+                                />
+                              ) : (
+                                <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                                  ?
+                                </div>
+                              )}
+                              <span className="text-sm">
+                                {style.name || style.id}
+                              </span>
                             </div>
-                          )}
-                          <span>{style.name || style.id}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              onClick={handleGenerate}
-              disabled={!selectedProductId || generateMutation.isPending}
-              className="w-full"
-            >
-              {generateMutation.isPending ? (
-                <>
-                  <Spinner className="mr-2 h-4 w-4" />
-                  Generating...
-                </>
-              ) : (
-                "Generate Image"
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
 
-      {generateMutation.isPending && (
-        <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <div className="text-center space-y-4">
-              <Spinner className="h-8 w-8 mx-auto" />
-              <p className="text-muted-foreground">Generating your image...</p>
+              <Button
+                onClick={handleGenerate}
+                disabled={
+                  !selectedProductId ||
+                  (generationMode === "style" && !selectedStyleId) ||
+                  generateMutation.isPending
+                }
+                className="w-full"
+                size="default"
+              >
+                {generateMutation.isPending ? (
+                  <>
+                    <Spinner className="mr-2 h-4 w-4" />
+                    Generating...
+                  </>
+                ) : (
+                  "Generate"
+                )}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </div>
 
-      {generatedImage && !generateMutation.isPending && (
-        <Card>
-          <CardHeader>
-            <h2 className="text-xl font-semibold">Generated Image</h2>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-lg border overflow-hidden bg-muted">
-              <img
-                src={generatedImage.imageUrl}
-                alt="Generated product"
-                className="w-full h-auto"
-              />
-            </div>
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p>
-                <span className="font-medium">Generation ID:</span>{" "}
-                {generatedImage.generation.id}
-              </p>
-              <p>
-                <span className="font-medium">Image URL:</span>{" "}
-                <a
-                  href={generatedImage.imageUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
+        {/* Right Panel - Grid of Generations */}
+        <div className="space-y-4">
+          {/* Selection Toolbar */}
+          {generations.length > 0 && (
+            <div className="flex items-center justify-between p-3 border rounded-lg bg-background">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={
+                    selectedGenerations.size === generations.length &&
+                    generations.length > 0
+                  }
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Select all"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {selectedGenerations.size > 0
+                    ? `${selectedGenerations.size} selected`
+                    : "Select all"}
+                </span>
+              </div>
+              {selectedGenerations.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDeleteSelected}
+                  disabled={deleteBatchMutation.isPending}
                 >
-                  {generatedImage.imageUrl}
-                </a>
-              </p>
+                  {deleteBatchMutation.isPending ? (
+                    <>
+                      <Spinner className="mr-2 h-3 w-3" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-3 w-3" />
+                      Delete
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+
+          {isLoadingGenerations ? (
+            <div className="flex items-center justify-center py-12">
+              <Spinner className="h-8 w-8" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+              {/* Loading skeleton when generating */}
+              {generateMutation.isPending && (
+                <div className="border rounded-lg overflow-hidden bg-muted/50 animate-pulse">
+                  <div className="aspect-square bg-muted" />
+                  <div className="p-3 space-y-2">
+                    <div className="h-3 bg-muted rounded w-3/4" />
+                    <div className="h-2 bg-muted rounded w-1/2" />
+                  </div>
+                </div>
+              )}
+
+              {generations.length === 0 && !generateMutation.isPending ? (
+                <div className="col-span-full flex items-center justify-center py-16">
+                  <div className="text-center space-y-2">
+                    <div className="text-3xl mb-2">✨</div>
+                    <p className="text-sm text-muted-foreground">
+                      No generations yet
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                generations.map((generation) => (
+                  <div
+                    key={generation.id}
+                    className="border rounded-lg overflow-hidden hover:border-foreground/50 transition-colors group relative"
+                  >
+                    {/* Checkbox overlay */}
+                    <div className="absolute top-2 left-2 z-10">
+                      <Checkbox
+                        checked={selectedGenerations.has(generation.id)}
+                        onCheckedChange={() =>
+                          handleToggleSelection(generation.id)
+                        }
+                        className="bg-background border-2"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+
+                    <a
+                      href={generation.outputImages?.[0] || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <div className="aspect-square bg-muted relative overflow-hidden">
+                        {generation.outputImages?.[0] ? (
+                          <img
+                            src={generation.outputImages[0]}
+                            alt="Generated"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <span className="text-xs text-muted-foreground">
+                              No image
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3 bg-background">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                          <span className="px-1.5 py-0.5 rounded border bg-muted">
+                            {generation.styleComponentId ? "Styled" : "Studio"}
+                          </span>
+                          <span>
+                            {new Date(generation.createdAt).toLocaleDateString(
+                              [],
+                              {
+                                month: "short",
+                                day: "numeric",
+                              },
+                            )}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          ID: {generation.id.slice(0, 8)}
+                        </p>
+                      </div>
+                    </a>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

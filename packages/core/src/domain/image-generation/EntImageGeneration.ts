@@ -1,6 +1,7 @@
 import { Actor } from "@core/helpers/actor";
-import { and, count, db, desc, eq, isNull } from "@core/helpers/db";
+import { and, count, db, desc, eq, inArray, isNull } from "@core/helpers/db";
 import { Ent } from "@core/helpers/ent";
+import { Storage } from "@core/helpers/storage";
 import { getOpenAIClient } from "@core/providers/openai";
 import {
   ImageGenerationInsert,
@@ -161,6 +162,50 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     return new EntImageGeneration(generation);
   }
 
+  static async list(
+    params: { page?: number; pageSize?: number; productId?: string } = {},
+  ) {
+    const { page = 1, pageSize = 20, productId } = params;
+
+    const filters = [eq(imageGenerationTable.workspaceId, Actor.workspaceID())];
+
+    if (productId) {
+      filters.push(eq(imageGenerationTable.productId, productId));
+    }
+
+    const whereClause = and(...filters);
+
+    const totalCountResult = await db()
+      .select({ count: count() })
+      .from(imageGenerationTable)
+      .where(whereClause);
+
+    const totalCount = totalCountResult[0]?.count ?? 0;
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    const generations = await db()
+      .select()
+      .from(imageGenerationTable)
+      .where(whereClause)
+      .orderBy(desc(imageGenerationTable.createdAt))
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
+
+    return {
+      generations: generations.map(
+        (generation) => new EntImageGeneration(generation),
+      ),
+      pagination: {
+        page,
+        pageSize,
+        total: totalCount,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
   static async listForStyle(
     styleComponentId: string,
     params: {
@@ -246,6 +291,32 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
   }
 
   async delete() {
+    // Delete images from storage (if they're in our bucket)
+    if (this.data.outputImages && this.data.outputImages.length > 0) {
+      const deleteImagePromises = this.data.outputImages.map(
+        async (imageUrl) => {
+          try {
+            const url = new URL(imageUrl);
+            if (
+              url.hostname === "bucket.openpromo.app" ||
+              url.hostname.includes("r2.cloudflarestorage.com")
+            ) {
+              const key = url.pathname.slice(1); // Remove leading slash
+              await Storage.deleteFile(key, Storage.PUBLIC_BUCKET);
+            }
+          } catch (error) {
+            console.error("Failed to delete generation image", {
+              imageUrl,
+              error,
+            });
+          }
+        },
+      );
+
+      await Promise.allSettled(deleteImagePromises);
+    }
+
+    // Delete the database record
     const [deleted] = await db()
       .delete(imageGenerationTable)
       .where(eq(imageGenerationTable.id, this.data.id))
@@ -255,6 +326,63 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
 
     return deleted;
   }
+
+  static async deleteBatch(ids: string[]) {
+    if (ids.length === 0) return { deletedCount: 0 };
+
+    // First, fetch the records to get image URLs
+    const generationsToDelete = await db()
+      .select()
+      .from(imageGenerationTable)
+      .where(
+        and(
+          eq(imageGenerationTable.workspaceId, Actor.workspaceID()),
+          inArray(imageGenerationTable.id, ids),
+        ),
+      );
+
+    // Delete images from storage (if they're in our bucket)
+    const deleteImagePromises = generationsToDelete.flatMap((generation) => {
+      const outputImages = generation.outputImages as string[] | null;
+      if (!outputImages || outputImages.length === 0) return [];
+
+      return outputImages.map(async (imageUrl) => {
+        try {
+          // Only delete if it's from our storage
+          const url = new URL(imageUrl);
+          if (
+            url.hostname === "bucket.openpromo.app" ||
+            url.hostname.includes("r2.cloudflarestorage.com")
+          ) {
+            const key = url.pathname.slice(1); // Remove leading slash
+            await Storage.deleteFile(key, Storage.PUBLIC_BUCKET);
+          }
+        } catch (error) {
+          console.error("Failed to delete generation image", {
+            imageUrl,
+            error,
+          });
+        }
+      });
+    });
+
+    // Wait for all image deletions (but don't fail if some fail)
+    await Promise.allSettled(deleteImagePromises);
+
+    // Delete the database records
+    const deleted = await db()
+      .delete(imageGenerationTable)
+      .where(
+        and(
+          eq(imageGenerationTable.workspaceId, Actor.workspaceID()),
+          inArray(imageGenerationTable.id, ids),
+        ),
+      )
+      .returning();
+
+    return { deletedCount: deleted.length };
+  }
+
   // ------------------------------------------------------------------------
   // image generation
   // ------------------------------------------------------------------------
