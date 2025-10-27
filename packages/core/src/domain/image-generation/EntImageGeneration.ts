@@ -98,11 +98,26 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       state: "pending",
       productId: productId,
     });
+    const product = await EntProduct.fromID(productId);
+    const user_input = `Generate studio-grade product shot image for my attached product for ads creative & social visuals.
+
+    here are some additional context about the product:
+    ${JSON.stringify(product.data.metadata, null, 2)}
+    `;
     // 0. generate image prompt with our
     const oai = getOpenAIClient();
     const response = await oai.responses.create({
       prompt: {
         id: "pmpt_68fc6f98ca3c819396a49fdfe133bb3d0d83a6a0c5c7ade9",
+        variables: {
+          user_input,
+          use_creative_template: "true",
+          img1: {
+            type: "input_image",
+            image_url: product.data.imgVariants?.noBg,
+            detail: "high",
+          },
+        },
       },
       input: [],
       reasoning: {
@@ -115,10 +130,12 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       ],
     });
     const image_prompt = response.output_text;
+    console.log("Generated image prompt:", image_prompt);
     // 1. generate image using
     const imageUrl = await GenAI.runNanoBanana({
       prompt: image_prompt,
-      image_input: [], // TODO: pass product images as reference.
+      // biome-ignore lint/style/noNonNullAssertion: fix later
+      image_input: [product.data.imgVariants?.noBg!],
     });
     generation = await generation.update({
       outputImages: [imageUrl],

@@ -13,16 +13,13 @@ const generateImageSchema = z.object({
 export const imageGenRoute = new Hono<ApiEnv>()
   .use(withWorkspaceRole("workspace_editor"))
   .post("/generate", zValidator("json", generateImageSchema), async (c) => {
-    const { productId, styleId } = c.req.valid("json");
+    const { productId } = c.req.valid("json");
 
-    const { generation, imageUrl } =
-      await EntImageGeneration.generateProductImage({
-        productId,
-        styleId,
-      });
+    const generation =
+      await EntImageGeneration.generateStudioBackgroundImage(productId);
 
     return c.json({
-      imageUrl,
+      imageUrl: generation.data.outputImages[0],
       generation: generation.toJSON(),
     });
   });

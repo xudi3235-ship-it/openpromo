@@ -1,6 +1,7 @@
 import { ProductImageGen } from "@core/domain/genai";
 import { GenAI } from "@core/domain/genai/helpers";
 import { Actor } from "@core/helpers/actor";
+import { Storage } from "@core/helpers/storage";
 import {
   type CoreWorkflowContext,
   CoreWorkflowEntrypoint,
@@ -99,15 +100,40 @@ async function processAttachments(step: CoreWorkflowStep, productId: string) {
     }
     const noBgUrl = await GenAI.runNanoBanana({ prompt, image_input: imgs });
 
-    console.log("no background url", noBgUrl);
+    // Copy to our own storage for persistence
+    const response = await fetch(noBgUrl);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch generated image: ${response.statusText}`,
+      );
+    }
+    const imageBuffer = Buffer.from(await response.arrayBuffer());
+
+    const key = Storage.Key.workspace(
+      p.data.workspaceId,
+      "products/images",
+      `${p.data.id}-nobg.png`,
+    );
+
+    const { url: persistedUrl } = await Storage.upload(
+      key,
+      imageBuffer,
+      Storage.PUBLIC_BUCKET,
+      {
+        contentType: "image/png",
+        acl: "public-read",
+      },
+    );
+
+    console.log("no background url (persisted)", persistedUrl);
 
     // save to product
-    await p.setImageVariants({ noBg: noBgUrl });
+    await p.setImageVariants({ noBg: persistedUrl });
     return;
   });
   console.log("pre-generated image variants");
   // 3. save meta to product and mark as ready
-  await step.do("producty-ready", async () => {
+  await step.do("product-ready", async () => {
     const p = await EntProduct.fromID(productId);
     await p.update({
       state: "ready",
