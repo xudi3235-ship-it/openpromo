@@ -437,16 +437,21 @@ function ImageGenPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-              {/* Loading skeleton when generating */}
-              {generateMutation.isPending && (
-                <div className="border rounded-lg overflow-hidden bg-muted/50 animate-pulse">
-                  <div className="aspect-square bg-muted" />
-                  <div className="p-3 space-y-2">
-                    <div className="h-3 bg-muted rounded w-3/4" />
-                    <div className="h-2 bg-muted rounded w-1/2" />
+              {/* Loading skeletons when generating - show based on batch count */}
+              {generateMutation.isPending &&
+                Array.from({ length: batchCount }).map((_, index) => (
+                  <div
+                    // biome-ignore lint/suspicious/noArrayIndexKey: skeleton loaders are temporary UI elements
+                    key={`skeleton-${index}`}
+                    className="border rounded-lg overflow-hidden bg-muted/50 animate-pulse"
+                  >
+                    <div className="aspect-square bg-muted" />
+                    <div className="p-3 space-y-2">
+                      <div className="h-3 bg-muted rounded w-3/4" />
+                      <div className="h-2 bg-muted rounded w-1/2" />
+                    </div>
                   </div>
-                </div>
-              )}
+                ))}
 
               {generations.length === 0 && !generateMutation.isPending ? (
                 <div className="col-span-full flex items-center justify-center py-16">
