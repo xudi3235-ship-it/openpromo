@@ -146,15 +146,26 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     });
     const image_prompt = response.output_text;
     console.log("Generated image prompt:", image_prompt);
+
+    const productImage = product.data.imgVariants?.noBg;
+    if (!productImage) {
+      throw new Error("Product image not found");
+    }
+    const inputImages = [productImage];
+
     // 1. generate image using
     const imageUrl = await GenAI.runNanoBanana({
       prompt: image_prompt,
-      // biome-ignore lint/style/noNonNullAssertion: fix later
-      image_input: [product.data.imgVariants?.noBg!],
+      image_input: inputImages,
     });
     generation = await generation.update({
       outputImages: [imageUrl],
       state: "completed",
+      metadata: {
+        prompt: customPrompt,
+        generatedPrompt: image_prompt,
+        inputImages,
+      },
     });
     return generation;
   }
@@ -261,18 +272,28 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     });
     const image_prompt = response.output_text;
     console.log("Generated image prompt:", image_prompt);
+
+    const inputImages = [
+      ...resolveRefImageUrls(),
+      product.data.imgVariants?.noBg as string,
+    ];
+
     // 2. generate image using
     const imageUrl = await GenAI.runNanoBanana({
       prompt: image_prompt,
-      image_input: [
-        ...resolveRefImageUrls(),
-        product.data.imgVariants?.noBg as string,
-      ],
+      image_input: inputImages,
     });
-    // 3. update generation record
+    // 3. update generation record with output and metadata
     await generation.update({
       outputImages: [imageUrl],
       state: "completed",
+      metadata: {
+        prompt: params.prompt,
+        generatedPrompt: image_prompt,
+        referenceImageUrl: params.referenceImageUrl,
+        styleId: params.styleId,
+        inputImages,
+      },
     });
     return generation;
   }

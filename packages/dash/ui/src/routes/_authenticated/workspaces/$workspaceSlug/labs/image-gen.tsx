@@ -1,6 +1,12 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Checkbox } from "@openpromo/ui/components/checkbox";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@openpromo/ui/components/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -12,7 +18,7 @@ import { Spinner } from "@openpromo/ui/components/spinner";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Trash2 } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { useState } from "react";
 import {
   useImageGenDeleteBatchMutation,
@@ -42,6 +48,9 @@ function ImageGenPage() {
   const [selectedGenerations, setSelectedGenerations] = useState<Set<string>>(
     new Set(),
   );
+  const [viewingGeneration, setViewingGeneration] = useState<
+    (typeof generations)[number] | null
+  >(null);
 
   const queryClient = useQueryClient();
 
@@ -67,7 +76,12 @@ function ImageGenPage() {
   const handleGenerate = () => {
     if (!selectedProductId) return;
 
-    if (generationMode === "style" && !referenceImageUrl.trim()) {
+    // For style mode, require either styleId OR referenceImageUrl (at least one)
+    if (
+      generationMode === "style" &&
+      !selectedStyleId &&
+      !referenceImageUrl.trim()
+    ) {
       return;
     }
 
@@ -272,6 +286,11 @@ function ImageGenPage() {
                 <div className="space-y-2">
                   <label htmlFor="style-select" className="text-sm font-medium">
                     Style
+                    <span className="text-muted-foreground font-normal ml-1">
+                      {referenceImageUrl.trim()
+                        ? "(optional if reference URL provided)"
+                        : "(required)"}
+                    </span>
                   </label>
                   <Select
                     value={selectedStyleId}
@@ -346,7 +365,9 @@ function ImageGenPage() {
                   >
                     Reference Image URL
                     <span className="text-muted-foreground font-normal ml-1">
-                      (required)
+                      {selectedStyleId
+                        ? "(optional if style selected)"
+                        : "(required)"}
                     </span>
                   </label>
                   <Textarea
@@ -400,7 +421,9 @@ function ImageGenPage() {
                 onClick={handleGenerate}
                 disabled={
                   !selectedProductId ||
-                  (generationMode === "style" && !referenceImageUrl.trim()) ||
+                  (generationMode === "style" &&
+                    !selectedStyleId &&
+                    !referenceImageUrl.trim()) ||
                   generateMutation.isPending
                 }
                 className="w-full"
@@ -511,11 +534,10 @@ function ImageGenPage() {
                       />
                     </div>
 
-                    <a
-                      href={generation.outputImages?.[0] || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block"
+                    <button
+                      type="button"
+                      onClick={() => setViewingGeneration(generation)}
+                      className="block w-full text-left cursor-pointer"
                     >
                       <div className="aspect-square bg-muted relative overflow-hidden">
                         {generation.outputImages?.[0] ? (
@@ -551,7 +573,7 @@ function ImageGenPage() {
                           ID: {generation.id.slice(0, 8)}
                         </p>
                       </div>
-                    </a>
+                    </button>
                   </div>
                 ))
               )}
@@ -559,6 +581,212 @@ function ImageGenPage() {
           )}
         </div>
       </div>
+
+      {/* Image Generation Detail Modal */}
+      <Dialog
+        open={viewingGeneration !== null}
+        onOpenChange={(open) => !open && setViewingGeneration(null)}
+      >
+        <DialogContent
+          className="!max-w-[95vw] !w-[95vw] max-h-[95vh] h-[95vh] overflow-y-auto p-6"
+          showCloseButton={false}
+        >
+          {viewingGeneration && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl">
+                  Image Generation Details
+                  <button
+                    type="button"
+                    onClick={() => setViewingGeneration(null)}
+                    className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Close</span>
+                  </button>
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
+                {/* Generated Image */}
+                <div className="space-y-4">
+                  <h3 className="text-base font-medium">Generated Image</h3>
+                  <div
+                    className="relative w-full rounded-lg overflow-hidden bg-muted border"
+                    style={{ height: "calc(95vh - 200px)" }}
+                  >
+                    {viewingGeneration.outputImages?.[0] ? (
+                      <img
+                        src={viewingGeneration.outputImages[0]}
+                        alt="Generated"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-sm text-muted-foreground">
+                          No image available
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {viewingGeneration.outputImages?.[0] && (
+                    <a
+                      href={viewingGeneration.outputImages[0]}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block text-sm text-primary hover:underline"
+                    >
+                      Open in new tab →
+                    </a>
+                  )}
+                </div>
+
+                {/* Generation Details */}
+                <div
+                  className="space-y-6 overflow-y-auto"
+                  style={{ maxHeight: "calc(95vh - 160px)" }}
+                >
+                  <div>
+                    <h3 className="text-base font-medium mb-3">Details</h3>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-muted-foreground">Type</span>
+                        <span className="font-medium">
+                          {viewingGeneration.styleComponentId
+                            ? "Styled"
+                            : "Studio"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-muted-foreground">Created</span>
+                        <span className="font-medium">
+                          {new Date(
+                            viewingGeneration.createdAt,
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="text-muted-foreground">ID</span>
+                        <span className="font-mono text-xs">
+                          {viewingGeneration.id}
+                        </span>
+                      </div>
+                      {viewingGeneration.productId && (
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-muted-foreground">
+                            Product ID
+                          </span>
+                          <span className="font-mono text-xs">
+                            {viewingGeneration.productId}
+                          </span>
+                        </div>
+                      )}
+                      {viewingGeneration.styleComponentId && (
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-muted-foreground">
+                            Style ID
+                          </span>
+                          <span className="font-mono text-xs">
+                            {viewingGeneration.styleComponentId}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Metadata - Prompt and Input Images if available */}
+                  {viewingGeneration.metadata &&
+                    typeof viewingGeneration.metadata === "object" &&
+                    Object.keys(viewingGeneration.metadata).length > 0 && (
+                      <div>
+                        <h3 className="text-base font-medium mb-3">
+                          Generation Parameters
+                        </h3>
+                        <div className="space-y-4">
+                          {"prompt" in viewingGeneration.metadata &&
+                            viewingGeneration.metadata.prompt && (
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  User Prompt
+                                </p>
+                                <div className="p-3 bg-muted rounded text-sm font-mono whitespace-pre-wrap">
+                                  {String(viewingGeneration.metadata.prompt)}
+                                </div>
+                              </div>
+                            )}
+                          {"generatedPrompt" in viewingGeneration.metadata &&
+                            viewingGeneration.metadata.generatedPrompt && (
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  AI Generated Prompt
+                                </p>
+                                <div className="p-3 bg-muted rounded text-sm font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
+                                  {String(
+                                    viewingGeneration.metadata.generatedPrompt,
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          {"referenceImageUrl" in viewingGeneration.metadata &&
+                            viewingGeneration.metadata.referenceImageUrl && (
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  Reference Image
+                                </p>
+                                <div className="aspect-video rounded overflow-hidden bg-muted border">
+                                  <img
+                                    src={String(
+                                      viewingGeneration.metadata
+                                        .referenceImageUrl,
+                                    )}
+                                    alt="Reference"
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          {"inputImages" in viewingGeneration.metadata &&
+                            Array.isArray(
+                              viewingGeneration.metadata.inputImages,
+                            ) &&
+                            viewingGeneration.metadata.inputImages.length >
+                              0 && (
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                  Input Images (
+                                  {
+                                    viewingGeneration.metadata.inputImages
+                                      .length
+                                  }
+                                  )
+                                </p>
+                                <div className="grid grid-cols-2 gap-3">
+                                  {viewingGeneration.metadata.inputImages.map(
+                                    (url: unknown) => (
+                                      <div
+                                        key={String(url)}
+                                        className="aspect-square rounded overflow-hidden bg-muted border"
+                                      >
+                                        <img
+                                          src={String(url)}
+                                          alt="Input"
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    )}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
