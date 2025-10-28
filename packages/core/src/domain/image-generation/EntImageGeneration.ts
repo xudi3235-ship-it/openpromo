@@ -12,6 +12,10 @@ import {
 } from "@core/schemas/image-generation.sql";
 import { fn } from "@core/utils/fn";
 import { createWorkspaceEvent, WorkspaceEventType } from "@shared/workspace";
+import type {
+  ResponseInput,
+  ResponseInputItem,
+} from "openai/resources/responses/responses.mjs";
 import type z from "zod";
 import { ProductImageGen } from "../genai";
 import { GenAI } from "../genai/helpers";
@@ -156,7 +160,9 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
   }
   static async generateProductImageWithReference(params: {
     productId: string;
-    referenceImageUrl: string;
+    referenceImageUrl?: string;
+    prompt: string;
+    styleId?: string;
   }) {
     // 0. create generation record
     const generation = await EntImageGeneration.create({
@@ -164,27 +170,90 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       productId: params.productId,
     });
     const product = await EntProduct.fromID(params.productId);
+
+    // if we have style ID, load them.
+    async function maybeGetStyleImage(): Promise<string[]> {
+      if (!params.styleId) return [];
+      const style = await EntStyleComponent.fromID(params.styleId);
+      return style.data.imageRefs;
+    }
+
+    function toResponseInput(): ResponseInput {
+      const productMsg = {
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: `and here are the product related img/context`,
+          },
+          {
+            type: "input_image",
+            image_url: product.data.imgVariants?.noBg as string,
+            detail: "high",
+          },
+        ],
+      } as ResponseInputItem;
+      // we either use style images or reference img url
+      if (styleImageRefs.length > 0) {
+        return [
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: `here are the refernce images`,
+              },
+              ...styleImageRefs.map((url) => ({
+                type: "input_image",
+                image_url: url,
+                detail: "high",
+              })),
+            ],
+          },
+          productMsg,
+        ] as ResponseInput;
+      }
+      // either style or img ref.
+      return [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: `here are the refernce images`,
+            },
+            {
+              type: "input_image",
+              image_url: params.referenceImageUrl,
+              detail: "high",
+            },
+          ],
+        },
+        productMsg,
+      ] as ResponseInput;
+    }
+
+    const styleImageRefs = await maybeGetStyleImage();
+
+    function resolveRefImageUrls() {
+      if (styleImageRefs.length > 0) {
+        return [...styleImageRefs];
+      } else if (params.referenceImageUrl) {
+        return [params.referenceImageUrl];
+      }
+      throw new Error("No reference image URL or style images provided");
+    }
     // 1. load the prompt & generate image prompt
-    const user_input = `first img is the reference image. and rest imgs are my product.`;
+    const user_input = `first img is the reference image. and rest imgs are my product. ${params.prompt}`;
     const oai = getOpenAIClient();
     const response = await oai.responses.create({
       prompt: {
         id: "pmpt_68ff0d90439c8196be84f928d5f2546b0df830bb02f714b6",
         variables: {
           user_input,
-          ref_image: {
-            type: "input_image",
-            image_url: params.referenceImageUrl,
-            detail: "high",
-          },
-          product_image: {
-            type: "input_image",
-            image_url: product.data.imgVariants?.noBg,
-            detail: "high",
-          },
         },
       },
-      input: [],
+      input: toResponseInput(),
       reasoning: {
         summary: "auto",
       },
@@ -196,7 +265,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     const imageUrl = await GenAI.runNanoBanana({
       prompt: image_prompt,
       image_input: [
-        params.referenceImageUrl,
+        ...resolveRefImageUrls(),
         product.data.imgVariants?.noBg as string,
       ],
     });

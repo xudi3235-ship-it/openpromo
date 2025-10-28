@@ -73,7 +73,10 @@ function ImageGenPage() {
 
     generateMutation.mutate({
       productId: selectedProductId,
-      styleId: generationMode === "style" ? selectedStyleId : undefined,
+      styleId:
+        generationMode === "style" && selectedStyleId
+          ? selectedStyleId
+          : undefined,
       mode: generationMode,
       batchCount,
       prompt: prompt.trim() || undefined,

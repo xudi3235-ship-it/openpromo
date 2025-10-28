@@ -48,7 +48,7 @@ export const imageGenRoute = new Hono<ApiEnv>()
     return c.json(result);
   })
   .post("/generate", zValidator("json", generateImageSchema), async (c) => {
-    const { productId, mode, batchCount, prompt, referenceImageUrl } =
+    const { productId, mode, batchCount, prompt, referenceImageUrl, styleId } =
       c.req.valid("json");
 
     if (mode === "studio") {
@@ -72,6 +72,8 @@ export const imageGenRoute = new Hono<ApiEnv>()
         EntImageGeneration.generateProductImageWithReference({
           productId,
           referenceImageUrl: referenceImageUrl as string,
+          prompt: prompt ?? "",
+          styleId,
         }),
       ),
     );

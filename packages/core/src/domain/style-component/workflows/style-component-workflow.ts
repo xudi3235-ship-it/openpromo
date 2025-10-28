@@ -11,6 +11,7 @@ import { StyleContext } from "@core/schemas/style.sql";
 import { Log } from "@core/utils/log";
 import { createWorkspaceEvent, WorkspaceEventType } from "@shared/workspace";
 import { generateObject, type ImagePart } from "ai";
+import type { ResponseInputImage } from "openai/resources/responses/responses.mjs";
 import { z } from "zod";
 import { dispatchWorkspaceEvent } from "../../workspace/realtime";
 import { EntStyleComponent } from "../EntStyleComponent";
@@ -119,10 +120,22 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
     await step.do("image-to-prompt", async () => {
       const s = await EntStyleComponent.fromID(styleComponentId);
       const oai = getOpenAIClient();
+      const imgs: ResponseInputImage[] = compressedImageUrls.map((url) => ({
+        type: "input_image" as const,
+        image_url: url,
+        detail: "auto",
+      }));
       const response = await oai.responses.create({
         prompt: {
           id: "pmpt_68fc768167248193a63e7ee0a5fe36b9012003b5ef7b1359",
+          variables: {},
         },
+        input: [
+          {
+            role: "user",
+            content: [...imgs],
+          },
+        ],
       });
       const prompt = response.output_text;
       console.log("// Generated image prompt", { prompt });
