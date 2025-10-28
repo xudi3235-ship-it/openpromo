@@ -42,6 +42,8 @@ export const env = createEnv({
     OPENPROMO_SECRET_KEY: z.string().min(32),
     // tikhub.io provider
     TIKHUB_API_TOKEN: z.string().min(1),
+    // firecrawl provider
+    FIRE_CRAWL_API_KEY: z.string().min(1),
     // debug flag
     DEBUG: z.string().optional().default("false"),
   },

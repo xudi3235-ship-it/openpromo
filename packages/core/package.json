@@ -26,6 +26,7 @@
     "@aws-sdk/client-sesv2": "^3.859.0",
     "@aws-sdk/s3-request-presigner": "^3.859.0",
     "@cloudflare/containers": "^0.0.28",
+    "@mendable/firecrawl-js": "^4.4.1",
     "@neondatabase/serverless": "^1.0.1",
     "@openpromo/shared": "workspace:*",
     "@t3-oss/env-core": "^0.13.8",
