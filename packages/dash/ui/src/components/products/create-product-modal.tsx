@@ -2,11 +2,6 @@ import type { ProductSelectType } from "@core/schemas/product.sql";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@openpromo/ui/components/button";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@openpromo/ui/components/collapsible";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -24,14 +19,12 @@ import {
 } from "@openpromo/ui/components/form";
 import { Input } from "@openpromo/ui/components/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@openpromo/ui/components/select";
-import { Textarea } from "@openpromo/ui/components/textarea";
-import { ChevronDown, Plus, X } from "lucide-react";
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@openpromo/ui/components/tabs";
+import { Link2, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -44,12 +37,11 @@ import {
 } from "@/queries/product";
 
 const schema = z.object({
-  name: z.string().min(1, "Name is required").max(200),
-  description: z.string().optional(),
-  category: z.string().optional(),
-  tags: z.array(z.string()),
-  source: z.enum(["MANUAL", "AMAZON", "SHOPIFY", "ETSY", "CUSTOM_URL"]),
-  sourceUrl: z.string().optional(),
+  sourceUrl: z
+    .string()
+    .url("Please enter a valid URL")
+    .optional()
+    .or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -73,12 +65,11 @@ export function CreateProductModal({
   prefilledAttachments,
 }: CreateProductModalProps) {
   const isEditMode = Boolean(product);
-  const [tagInput, setTagInput] = useState("");
+  const [activeTab, setActiveTab] = useState<"upload" | "url">("upload");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [existingAttachments, setExistingAttachments] = useState<
     ProductSelectType["attachments"]
   >([]);
-  const [detailsOpen, setDetailsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   const { uploadFiles, clearUploads } = useStorageUpload();
@@ -87,7 +78,7 @@ export function CreateProductModal({
     form.reset();
     setSelectedFiles([]);
     setExistingAttachments([]);
-    setDetailsOpen(false);
+    setActiveTab("upload");
     clearUploads();
     onOpenChange(false);
   };
@@ -110,11 +101,6 @@ export function CreateProductModal({
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: "",
-      description: "",
-      category: "",
-      tags: [],
-      source: "MANUAL",
       sourceUrl: "",
     },
   });
@@ -123,77 +109,100 @@ export function CreateProductModal({
   useEffect(() => {
     if (product && open) {
       form.reset({
-        name: product.name,
-        description: product.description || "",
-        category: product.category || "",
-        tags: product.tags || [],
-        source: product.source || "MANUAL",
         sourceUrl: product.sourceUrl || "",
       });
       setExistingAttachments(product.attachments || []);
-      setDetailsOpen(true);
+      if (product.sourceUrl) {
+        setActiveTab("url");
+      }
     } else if (prefilledAttachments && open && !product) {
-      // Pre-fill attachments from composer media
       setExistingAttachments(
         prefilledAttachments as ProductSelectType["attachments"],
       );
-      setDetailsOpen(false);
+      setActiveTab("upload");
     } else if (!open) {
       form.reset();
-      setTagInput("");
       setSelectedFiles([]);
       setExistingAttachments([]);
+      setActiveTab("upload");
     }
   }, [product, prefilledAttachments, open, form]);
-
-  const selectedSource = form.watch("source");
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     try {
       setIsUploading(true);
 
-      let attachments: Array<{
-        id: string;
-        type: "photo" | "video";
-        publicUrl: string;
-      }> = [];
-
-      // Upload new files if any
-      if (selectedFiles.length > 0) {
-        toast.info("Uploading files...");
-        const uploadResults = await uploadFiles(selectedFiles);
-
-        // Create attachments from upload results
-        attachments = uploadResults.map((result, index) => ({
-          id: result.key,
-          type: selectedFiles[index].type.startsWith("image/")
-            ? ("photo" as const)
-            : ("video" as const),
-          publicUrl: result.publicUrl,
-          s3Key: result.key,
-        }));
-      }
-
-      // Merge existing attachments with new uploads
-      const allAttachments = [...existingAttachments, ...attachments];
-
-      const data = {
-        ...values,
-        sourceUrl: values.sourceUrl || undefined,
-        description: values.description || undefined,
-        category: values.category || undefined,
-        attachments: allAttachments,
-        primaryAttachmentId:
-          allAttachments[0]?.id || product?.primaryAttachmentId,
+      type ProductData = {
+        name: string;
+        source: "MANUAL" | "CUSTOM_URL";
+        sourceUrl?: string;
+        attachments?: Array<{
+          id: string;
+          type: "photo" | "video";
+          publicUrl: string;
+          s3Key?: string;
+        }>;
+        primaryAttachmentId?: string;
       };
 
-      if (isEditMode && product) {
-        updateProduct.mutate({ id: product.id, data });
+      let productData: ProductData;
+
+      if (activeTab === "url" && values.sourceUrl) {
+        productData = {
+          name: "Product from URL",
+          source: "CUSTOM_URL",
+          sourceUrl: values.sourceUrl,
+        };
       } else {
-        createProduct.mutate(data);
+        let attachments: Array<{
+          id: string;
+          type: "photo" | "video";
+          publicUrl: string;
+          s3Key?: string;
+        }> = [];
+
+        if (selectedFiles.length > 0) {
+          toast.info("Uploading files...");
+          const uploadResults = await uploadFiles(selectedFiles);
+
+          attachments = uploadResults.map((result, index) => ({
+            id: result.key,
+            type: selectedFiles[index].type.startsWith("image/")
+              ? ("photo" as const)
+              : ("video" as const),
+            publicUrl: result.publicUrl,
+            s3Key: result.key,
+          }));
+        }
+
+        const allAttachments = [...existingAttachments, ...attachments];
+
+        if (allAttachments.length === 0) {
+          toast.error("Please upload at least one image or video");
+          setIsUploading(false);
+          return;
+        }
+
+        productData = {
+          name: "Product",
+          source: "MANUAL",
+          attachments: allAttachments as Array<{
+            id: string;
+            type: "photo" | "video";
+            publicUrl: string;
+            s3Key?: string;
+          }>,
+          primaryAttachmentId: allAttachments[0]?.id,
+        };
+      }
+
+      if (isEditMode && product) {
+        updateProduct.mutate({ id: product.id, data: productData });
+      } else {
+        createProduct.mutate(productData);
       }
     } catch (error) {
-      toast.error("Failed to upload files");
+      toast.error("Failed to process product");
       console.error(error);
     } finally {
       setIsUploading(false);
@@ -203,24 +212,8 @@ export function CreateProductModal({
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
       form.reset();
-      setTagInput("");
     }
     onOpenChange(newOpen);
-  };
-
-  const addTag = () => {
-    const trimmed = tagInput.trim();
-    if (trimmed && !form.getValues("tags").includes(trimmed)) {
-      form.setValue("tags", [...form.getValues("tags"), trimmed]);
-      setTagInput("");
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    form.setValue(
-      "tags",
-      form.getValues("tags").filter((tag) => tag !== tagToRemove),
-    );
   };
 
   const isPending = createProduct.isPending || updateProduct.isPending;
@@ -229,7 +222,6 @@ export function CreateProductModal({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Loading Overlay */}
         {isProcessing && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/70 dark:bg-black/70 backdrop-blur-[2px] rounded-lg pointer-events-none">
             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-12 min-w-80">
@@ -247,6 +239,11 @@ export function CreateProductModal({
                         ? "Updating product"
                         : "Creating product"}
                   </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {isUploading
+                      ? "This may take a moment..."
+                      : "Processing your product..."}
+                  </p>
                 </div>
 
                 <div className="flex space-x-1.5">
@@ -270,41 +267,29 @@ export function CreateProductModal({
             {isEditMode ? "Edit Product" : "Add Product"}
           </DialogTitle>
           <DialogDescription>
-            {isEditMode
-              ? "Update product details in your catalog"
-              : "Add a product to your catalog for content generation"}
+            Upload product images or provide a URL. We'll handle the rest with
+            AI.
           </DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="source"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Source</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select source" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="MANUAL">Manual Upload</SelectItem>
-                      <SelectItem value="AMAZON">Amazon</SelectItem>
-                      <SelectItem value="SHOPIFY">Shopify</SelectItem>
-                      <SelectItem value="ETSY">Etsy</SelectItem>
-                      <SelectItem value="CUSTOM_URL">Custom URL</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) => setActiveTab(v as "upload" | "url")}
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="upload" className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload Files
+                </TabsTrigger>
+                <TabsTrigger value="url" className="flex items-center gap-2">
+                  <Link2 className="h-4 w-4" />
+                  From URL
+                </TabsTrigger>
+              </TabsList>
 
-            {selectedSource === "MANUAL" ? (
-              <div className="space-y-3">
-                <FormLabel>Product Assets</FormLabel>
+              <TabsContent value="upload" className="space-y-3 mt-4">
                 <Dropzone
                   accept={{ "image/*": [], "video/*": [] }}
                   maxFiles={10}
@@ -340,7 +325,6 @@ export function CreateProductModal({
                         : "selected"}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
-                      {/* Existing attachments */}
                       {existingAttachments.map((attachment, index) => {
                         const imageUrl =
                           attachment.type === "photo"
@@ -378,7 +362,6 @@ export function CreateProductModal({
                         );
                       })}
 
-                      {/* New files */}
                       {selectedFiles.map((file, index) => (
                         <div
                           key={`${file.name}-${file.size}-${index}`}
@@ -412,144 +395,32 @@ export function CreateProductModal({
                     </div>
                   </div>
                 )}
-              </div>
-            ) : (
-              <FormField
-                control={form.control}
-                name="sourceUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Product URL</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={`Paste your ${selectedSource.toLowerCase()} product URL`}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+              </TabsContent>
 
-            <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
-              <CollapsibleTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full justify-between"
-                >
-                  <span className="text-sm font-medium">
-                    Product Details (Optional)
-                  </span>
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      detailsOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4 pt-4">
+              <TabsContent value="url" className="space-y-3 mt-4">
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="sourceUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Product Name</FormLabel>
+                      <FormLabel>Product URL</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter product name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description (Optional)</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Enter product description"
-                          rows={3}
+                        <Input
+                          placeholder="https://amazon.com/product/... or any product page"
                           {...field}
                         />
                       </FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        Paste any product URL (Amazon, Shopify, Etsy, or your
+                        own site). We'll automatically extract product info and
+                        images.
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Electronics" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="tags"
-                  render={() => (
-                    <FormItem>
-                      <FormLabel>Tags</FormLabel>
-                      <div className="space-y-2">
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Add a tag"
-                            value={tagInput}
-                            onChange={(e) => setTagInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                addTag();
-                              }
-                            }}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={addTag}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        {form.watch("tags").length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {form.watch("tags").map((tag) => (
-                              <div
-                                key={tag}
-                                className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
-                              >
-                                {tag}
-                                <button
-                                  type="button"
-                                  onClick={() => removeTag(tag)}
-                                  className="hover:text-destructive"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CollapsibleContent>
-            </Collapsible>
+              </TabsContent>
+            </Tabs>
 
             <DialogFooter>
               <Button

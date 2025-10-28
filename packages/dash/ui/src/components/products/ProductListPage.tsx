@@ -1,13 +1,6 @@
 import type { ProductSelectType } from "@core/schemas/product.sql";
 import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@openpromo/ui/components/select";
 import { Plus, Search } from "lucide-react";
 import * as React from "react";
 import { useDebounceCallback } from "usehooks-ts";
@@ -24,7 +17,6 @@ import { ProductsLoadingState } from "./products-loading-state";
 export function ProductListPage() {
   const [searchValue, setSearchValue] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
-  const [source, setSource] = React.useState<string | undefined>();
   const [createModalOpen, setCreateModalOpen] = React.useState(false);
 
   const updateDebouncedSearch = useDebounceCallback((value: string) => {
@@ -40,11 +32,10 @@ export function ProductListPage() {
 
   const { data, isLoading, error } = useProductListQuery({
     search: debouncedSearch || undefined,
-    source,
   });
 
   const products = data?.products ?? [];
-  const hasFilters = Boolean(debouncedSearch || source);
+  const hasFilters = Boolean(debouncedSearch);
 
   if (error) {
     return (
@@ -90,24 +81,6 @@ export function ProductListPage() {
             className="pl-9"
           />
         </div>
-        <Select
-          value={source ?? "__all__"}
-          onValueChange={(value) =>
-            setSource(value === "__all__" ? undefined : value)
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All sources" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All sources</SelectItem>
-            <SelectItem value="MANUAL">Manual</SelectItem>
-            <SelectItem value="AMAZON">Amazon</SelectItem>
-            <SelectItem value="SHOPIFY">Shopify</SelectItem>
-            <SelectItem value="ETSY">Etsy</SelectItem>
-            <SelectItem value="CUSTOM_URL">Custom URL</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Content */}
