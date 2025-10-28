@@ -25,11 +25,6 @@ export const styleComponentStateEnum = pgEnum(
 );
 
 export const StyleContext = z.object({
-  imagesPrompt: z
-    .string()
-    .describe(
-      "image prompts of the input images, detailed, effective, concise, can be used to generate similar images to refs",
-    ),
   industry: z.array(z.string()).describe("industries suitable for this style"),
   categories: z
     .array(z.string())
@@ -45,6 +40,10 @@ export const StyleContext = z.object({
 
 export type StyleContext = z.infer<typeof StyleContext>;
 
+/**
+ * stores a reference style, which has image(s) that we wanna copycat the style from. mainly use this to store more context & pre-processing. Alternatively,
+ * we can also attach img direclty.
+ */
 export const styleComponentTable = pgTable(
   "style_component",
   {
@@ -66,7 +65,7 @@ export const styleComponentTable = pgTable(
   (table) => [uniqueIndex().on(table.slug), uniqueIndex().on(table.name)],
 );
 
-const styleComponentRefinements = {
+const opts = {
   imageRefs: z.array(z.string()).default([]),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
@@ -75,15 +74,15 @@ const styleComponentRefinements = {
 
 export const StyleComponentInsert = createInsertSchema(
   styleComponentTable,
-  styleComponentRefinements,
+  opts,
 );
 export const StyleComponentUpdate = createUpdateSchema(
   styleComponentTable,
-  styleComponentRefinements,
+  opts,
 );
 export const StyleComponentSelect = createSelectSchema(
   styleComponentTable,
-  styleComponentRefinements,
+  opts,
 );
 
 export type StyleComponentInsertType = z.infer<typeof StyleComponentInsert>;

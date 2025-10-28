@@ -6,6 +6,7 @@ import {
   type CoreWorkflowEvent,
   type CoreWorkflowStep,
 } from "@core/helpers/workflow";
+import { getOpenAIClient } from "@core/providers/openai";
 import { StyleContext } from "@core/schemas/style.sql";
 import { Log } from "@core/utils/log";
 import { createWorkspaceEvent, WorkspaceEventType } from "@shared/workspace";
@@ -114,8 +115,24 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
         description,
       });
     });
+    // 4. generate image prompt from the img.
+    await step.do("image-to-prompt", async () => {
+      const s = await EntStyleComponent.fromID(styleComponentId);
+      const oai = getOpenAIClient();
+      const response = await oai.responses.create({
+        prompt: {
+          id: "pmpt_68fc768167248193a63e7ee0a5fe36b9012003b5ef7b1359",
+        },
+      });
+      const prompt = response.output_text;
+      console.log("// Generated image prompt", { prompt });
+      await s.update({
+        imageGenPrompt: prompt,
+      });
+    });
+
     console.log("// Marking style as ready", { styleComponentId });
-    // 4. mark style as ready and dispatch event
+    // 5. mark style as ready and dispatch event
     await step.do("mark-style-ready", async () => {
       const s = await EntStyleComponent.fromID(styleComponentId);
       await s.update({
