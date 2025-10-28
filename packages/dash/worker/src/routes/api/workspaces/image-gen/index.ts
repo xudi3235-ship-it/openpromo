@@ -2,13 +2,13 @@ import { EntImageGeneration } from "@core/domain/image-generation";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
 import * as z from "zod";
-import { AppError } from "../../../../helpers/error";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { zValidator } from "../../../../middleware/zod-validator";
 
 const generateImageSchema = z.object({
   productId: z.string(),
   styleId: z.string().optional(),
+  referenceImageUrl: z.string().optional(),
   mode: z.enum(["studio", "style"]).optional().default("studio"),
   batchCount: z.coerce.number().min(1).max(4).optional().default(1),
   prompt: z.string().optional(),
@@ -48,7 +48,7 @@ export const imageGenRoute = new Hono<ApiEnv>()
     return c.json(result);
   })
   .post("/generate", zValidator("json", generateImageSchema), async (c) => {
-    const { productId, styleId, mode, batchCount, prompt } =
+    const { productId, mode, batchCount, prompt, referenceImageUrl } =
       c.req.valid("json");
 
     if (mode === "studio") {
@@ -66,28 +66,20 @@ export const imageGenRoute = new Hono<ApiEnv>()
         })),
       });
     }
-
-    // Style-based generation: requires a style reference
-    if (!styleId) {
-      throw new AppError(400, {
-        message: "styleId is required for style-based generation",
-        userMessage: "Please select a style reference for styled generation.",
-      });
-    }
-
+    // generate style with reference image
     const generations = await Promise.all(
       Array.from({ length: batchCount }, () =>
-        EntImageGeneration.generateProductImage({
+        EntImageGeneration.generateProductImageWithReference({
           productId,
-          styleId,
+          referenceImageUrl: referenceImageUrl as string,
         }),
       ),
     );
 
     return c.json({
-      results: generations.map(({ generation, imageUrl }) => ({
-        imageUrl,
-        generation: generation.toJSON(),
+      results: generations.map((gen) => ({
+        imageUrl: gen.data.outputImages[0],
+        generation: gen.toJSON(),
       })),
     });
   });

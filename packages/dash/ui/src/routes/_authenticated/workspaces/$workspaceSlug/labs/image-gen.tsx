@@ -38,6 +38,7 @@ function ImageGenPage() {
   );
   const [batchCount, setBatchCount] = useState<number>(1);
   const [prompt, setPrompt] = useState<string>("");
+  const [referenceImageUrl, setReferenceImageUrl] = useState<string>("");
   const [selectedGenerations, setSelectedGenerations] = useState<Set<string>>(
     new Set(),
   );
@@ -66,7 +67,7 @@ function ImageGenPage() {
   const handleGenerate = () => {
     if (!selectedProductId) return;
 
-    if (generationMode === "style" && !selectedStyleId) {
+    if (generationMode === "style" && !referenceImageUrl.trim()) {
       return;
     }
 
@@ -76,6 +77,10 @@ function ImageGenPage() {
       mode: generationMode,
       batchCount,
       prompt: prompt.trim() || undefined,
+      referenceImageUrl:
+        generationMode === "style" && referenceImageUrl.trim()
+          ? referenceImageUrl.trim()
+          : undefined,
     });
   };
 
@@ -329,6 +334,29 @@ function ImageGenPage() {
                 </div>
               )}
 
+              {/* Reference Image URL Input - Conditional for style mode */}
+              {generationMode === "style" && (
+                <div className="space-y-2">
+                  <label
+                    htmlFor="reference-url-input"
+                    className="text-sm font-medium"
+                  >
+                    Reference Image URL
+                    <span className="text-muted-foreground font-normal ml-1">
+                      (required)
+                    </span>
+                  </label>
+                  <Textarea
+                    id="reference-url-input"
+                    value={referenceImageUrl}
+                    onChange={(e) => setReferenceImageUrl(e.target.value)}
+                    placeholder="Paste reference image URL here..."
+                    rows={2}
+                    className="resize-none font-mono text-xs"
+                  />
+                </div>
+              )}
+
               {/* Batch Count Slider */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -369,7 +397,7 @@ function ImageGenPage() {
                 onClick={handleGenerate}
                 disabled={
                   !selectedProductId ||
-                  (generationMode === "style" && !selectedStyleId) ||
+                  (generationMode === "style" && !referenceImageUrl.trim()) ||
                   generateMutation.isPending
                 }
                 className="w-full"

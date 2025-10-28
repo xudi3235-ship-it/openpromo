@@ -154,6 +154,59 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     });
     return generation;
   }
+  static async generateProductImageWithReference(params: {
+    productId: string;
+    referenceImageUrl: string;
+  }) {
+    // 0. create generation record
+    const generation = await EntImageGeneration.create({
+      state: "pending",
+      productId: params.productId,
+    });
+    const product = await EntProduct.fromID(params.productId);
+    // 1. load the prompt & generate image prompt
+    const user_input = `first img is the reference image. and rest imgs are my product.`;
+    const oai = getOpenAIClient();
+    const response = await oai.responses.create({
+      prompt: {
+        id: "pmpt_68ff0d90439c8196be84f928d5f2546b0df830bb02f714b6",
+        variables: {
+          user_input,
+          ref_image: {
+            type: "input_image",
+            image_url: params.referenceImageUrl,
+            detail: "high",
+          },
+          product_image: {
+            type: "input_image",
+            image_url: product.data.imgVariants?.noBg,
+            detail: "high",
+          },
+        },
+      },
+      input: [],
+      reasoning: {
+        summary: "auto",
+      },
+      store: true,
+    });
+    const image_prompt = response.output_text;
+    console.log("Generated image prompt:", image_prompt);
+    // 2. generate image using
+    const imageUrl = await GenAI.runNanoBanana({
+      prompt: image_prompt,
+      image_input: [
+        params.referenceImageUrl,
+        product.data.imgVariants?.noBg as string,
+      ],
+    });
+    // 3. update generation record
+    await generation.update({
+      outputImages: [imageUrl],
+      state: "completed",
+    });
+    return generation;
+  }
 
   static async fromID(id: string): Promise<EntImageGeneration> {
     const [generation] = await db()
