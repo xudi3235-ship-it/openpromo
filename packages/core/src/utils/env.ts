@@ -18,6 +18,8 @@ export const env = createEnv({
     INSTAGRAM_WEBHOOK_VERIFY_TOKEN: z.string().min(1),
     TIKTOK_APP_ID: z.string().min(1),
     TIKTOK_APP_SECRET: z.string().min(1),
+    TIKTOK_BIZ_APP_ID: z.string().min(1).optional(),
+    TIKTOK_BIZ_APP_SECRET: z.string().min(1).optional(),
     STRIPE_SECRET_KEY: z.string().min(1),
     WORKOS_CLIENT_ID: z.string().min(1),
     WORKOS_API_KEY: z.string().min(1),

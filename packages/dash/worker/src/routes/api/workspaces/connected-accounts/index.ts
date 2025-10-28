@@ -14,6 +14,7 @@ import { zValidator } from "../../../../middleware/zod-validator";
 import { facebookConnectedAccountRoute } from "./facebook";
 import { instagramConnectedAccountRoute } from "./instagram";
 import { tikTokConnectedAccountRoute } from "./tiktok";
+import { tikTokBusinessConnectedAccountRoute } from "./tiktok-business";
 
 export const connectedAccountsRoute = new Hono<ApiEnv>()
   .use(withAuth())
@@ -27,6 +28,7 @@ export const connectedAccountsRoute = new Hono<ApiEnv>()
   .route("/facebook", facebookConnectedAccountRoute)
   .route("/instagram", instagramConnectedAccountRoute)
   .route("/tiktok", tikTokConnectedAccountRoute)
+  .route("/tiktok-business", tikTokBusinessConnectedAccountRoute)
   // Delete account requires admin access
   .delete(
     "/:accountId",
