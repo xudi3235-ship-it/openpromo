@@ -66,9 +66,7 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
     // 0. set style to processing
     await step.do("mark-style-processing", async () => {
       const s = await EntStyleComponent.fromID(styleComponentId);
-      await s.update({
-        state: "processing",
-      });
+      await s.setState("processing");
     });
 
     console.log("// Style component workflow triggered", { styleComponentId });
@@ -95,10 +93,7 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
           reason,
         });
         const failureReason = reason ?? "Content safety check failed";
-        await s.update({
-          state: "failed",
-          failureReason,
-        });
+        await s.setState("failed", failureReason);
 
         // Dispatch workspace event to notify clients
         await dispatchWorkspaceEvent(

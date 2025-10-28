@@ -221,7 +221,9 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
     this.data = updated;
     return this;
   }
-
+  async setState(state: "processing" | "failed" | "ready", reason?: string) {
+    return await this.update({ state, failureReason: reason });
+  }
   async delete() {
     // Delete associated images from R2 storage first
     const deleteImagePromises = this.data.imageRefs.map(async (imageUrl) => {
