@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { ProductImageGen } from "@core/domain/genai";
 import { GenAI } from "@core/domain/genai/helpers";
 import { Actor } from "@core/helpers/actor";
@@ -9,8 +10,15 @@ import {
   type CoreWorkflowStep,
 } from "@core/helpers/workflow";
 import { Log } from "@core/utils/log";
+import type { SharedAttachmentSpec } from "@shared/content";
+import type { ProductMetadata } from "@shared/product";
 import z from "zod";
 import { EntProduct } from "../EntProduct";
+import {
+  createMarkdownSnippet,
+  type ProductLinkExtraction,
+  processProductLink,
+} from "../product-link-processor";
 
 const ProductProcessingWorkflowParams = z.object({
   actor: Actor.WorkspaceUserSchema,
@@ -40,6 +48,11 @@ export class ProductProcessingWorkflow extends CoreWorkflowEntrypoint<ProductPro
         console.log("marked product as processing");
         return;
       });
+      // 2. hydrate product from source link if needed
+      await step.do("hydrate-product-source", async () => {
+        await hydrateProductFromSource(productId);
+        return;
+      });
       // 2. process attachments
       await processAttachments(step, productId);
     } catch (error) {
@@ -54,6 +67,79 @@ export class ProductProcessingWorkflow extends CoreWorkflowEntrypoint<ProductPro
 
       throw error;
     }
+  }
+}
+
+async function hydrateProductFromSource(productId: string) {
+  const product = await EntProduct.fromID(productId);
+  const { source, sourceUrl } = product.data;
+
+  if (source !== "CUSTOM_URL" || !sourceUrl) {
+    return;
+  }
+
+  try {
+    const { extraction, markdown } = await processProductLink(sourceUrl);
+
+    console.log("extraction result", extraction, { markdown });
+
+    const scrapedAttachments = buildScrapedAttachments(
+      extraction.imageUrls ?? [],
+      sourceUrl,
+    );
+
+    const combinedAttachments = mergeAttachments(
+      product.data.attachments ?? [],
+      scrapedAttachments,
+    );
+
+    const metadata = buildMetadata(
+      product.data.metadata,
+      sourceUrl,
+      extraction,
+      markdown,
+    );
+
+    const tags = mergeTags(product.data.tags ?? [], extraction.tags ?? []);
+
+    const name = chooseName(product.data.name, extraction.title);
+
+    const description =
+      product.data.description && product.data.description.trim().length > 0
+        ? product.data.description
+        : (extraction.description ?? product.data.description ?? undefined);
+
+    const category = product.data.category ?? extraction.category ?? undefined;
+
+    const primaryAttachmentId =
+      product.data.primaryAttachmentId ?? combinedAttachments[0]?.id;
+
+    const updatePayload: Parameters<typeof product.update>[0] = {
+      name,
+      tags,
+      attachments: combinedAttachments,
+      metadata,
+    };
+
+    if (description !== undefined) {
+      updatePayload.description = description;
+    }
+
+    if (category !== undefined) {
+      updatePayload.category = category;
+    }
+
+    if (primaryAttachmentId) {
+      updatePayload.primaryAttachmentId = primaryAttachmentId;
+    }
+
+    await product.update(updatePayload);
+  } catch (error) {
+    console.error("Failed to hydrate product from source", {
+      error,
+      productId,
+      sourceUrl,
+    });
   }
 }
 
@@ -144,4 +230,113 @@ async function processAttachments(step: CoreWorkflowStep, productId: string) {
     });
     return;
   });
+}
+
+function buildScrapedAttachments(
+  urls: string[],
+  sourceUrl: string,
+): SharedAttachmentSpec[] {
+  const seen = new Set<string>();
+  const attachments: SharedAttachmentSpec[] = [];
+
+  for (const rawUrl of urls.slice(0, 10)) {
+    const normalized = normalizeUrl(rawUrl);
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    attachments.push({
+      id: randomUUID(),
+      type: "photo",
+      publicUrl: normalized,
+      metadata: {
+        origin: "scraped",
+        sourceUrl,
+      },
+    });
+  }
+
+  return attachments;
+}
+
+function mergeAttachments(
+  existing: SharedAttachmentSpec[],
+  additions: SharedAttachmentSpec[],
+): SharedAttachmentSpec[] {
+  if (additions.length === 0) return existing;
+
+  const merged: SharedAttachmentSpec[] = [...existing];
+  const existingKeys = new Set(
+    existing.map((att, idx) => att.publicUrl ?? att.id ?? `existing-${idx}`),
+  );
+
+  for (const [idx, att] of additions.entries()) {
+    const key = att.publicUrl ?? att.id ?? `addition-${idx}`;
+    if (existingKeys.has(key)) continue;
+    existingKeys.add(key);
+    merged.push(att);
+  }
+
+  return merged;
+}
+
+function mergeTags(existing: string[], extracted: string[]): string[] {
+  const normalized = [...existing, ...extracted]
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
+
+  return Array.from(new Set(normalized)).slice(0, 25);
+}
+
+function chooseName(currentName: string, extractedName?: string): string {
+  const trimmed = currentName?.trim() ?? "";
+  if (!trimmed || isPlaceholderName(trimmed)) {
+    return extractedName?.trim() || trimmed || "Product";
+  }
+  return trimmed;
+}
+
+function isPlaceholderName(name: string): boolean {
+  const normalized = name.toLowerCase();
+  return (
+    normalized === "product" ||
+    normalized === "product from url" ||
+    normalized === "new product"
+  );
+}
+
+function buildMetadata(
+  existing: ProductMetadata | null | undefined,
+  sourceUrl: string,
+  extraction: ProductLinkExtraction,
+  markdown: string,
+): ProductMetadata {
+  const metadata: ProductMetadata = existing ? { ...existing } : {};
+
+  if (extraction.price) {
+    metadata.price ??= extraction.price;
+  }
+  if (extraction.currency) {
+    metadata.currency ??= extraction.currency;
+  }
+
+  metadata.scrapedAt = new Date().toISOString();
+
+  metadata.crawl = {
+    url: sourceUrl,
+    markdownSnippet: createMarkdownSnippet(markdown),
+    extracted: extraction,
+  };
+
+  return metadata;
+}
+
+function normalizeUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
 }

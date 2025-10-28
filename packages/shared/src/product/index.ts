@@ -59,6 +59,52 @@ export const ProductIdentificationSchema = z.object({
   productContext: ProductContext.describe("identified product details"),
 });
 
+export const ProductLinkExtractionSchema = z.object({
+  title: z
+    .string()
+    .min(1)
+    .max(200)
+    .optional()
+    .describe("Product name or title from the page"),
+  description: z
+    .string()
+    .min(1)
+    .max(2_000)
+    .optional()
+    .describe("Concise marketing-ready description"),
+  category: z
+    .string()
+    .min(1)
+    .max(200)
+    .optional()
+    .describe("Specific category or product type"),
+  tags: z
+    .array(z.string().min(1).max(64))
+    .max(25)
+    .optional()
+    .describe("Relevant hashtags or keywords"),
+  price: z.string().optional().describe("Price text as shown"),
+  currency: z.string().optional().describe("Currency code if obvious"),
+  imageUrls: z
+    .array(z.string().url())
+    .max(20)
+    .optional()
+    .describe("Direct product image URLs"),
+});
+
+export type ProductLinkExtraction = z.infer<typeof ProductLinkExtractionSchema>;
+
+export const ProductCrawlMetadata = z.object({
+  url: z.string().url(),
+  markdownSnippet: z
+    .string()
+    .max(20_000)
+    .describe("Truncated markdown content for reference"),
+  extracted: ProductLinkExtractionSchema,
+});
+
+export type ProductCrawlMetadata = z.infer<typeof ProductCrawlMetadata>;
+
 /**
  * Product metadata - flexible structure for different sources
  */
@@ -73,6 +119,9 @@ export const ProductMetadata = z.object({
 
   // Identified product details
   productContext: ProductContext.optional(),
+
+  // Structured crawl metadata (CUSTOM_URL imports)
+  crawl: ProductCrawlMetadata.optional(),
 
   // Allow additional fields for extensibility
   extra: z.record(z.string(), z.any()).optional(),
