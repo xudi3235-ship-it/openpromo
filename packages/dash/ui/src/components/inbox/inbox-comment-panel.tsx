@@ -1,9 +1,9 @@
 import { Badge } from "@openpromo/ui/components/badge";
 import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 import { format } from "date-fns";
-import { Fragment, useMemo } from "react";
+import { Fragment } from "react";
+import { InboxContentPreview } from "./inbox-content-preview";
 import { InboxMessageInput } from "./inbox-message-input";
-import { InboxPostPreview } from "./inbox-post-preview";
 
 interface InboxCommentPanelProps {
   workspaceSlug: string | undefined;
@@ -20,35 +20,7 @@ export function InboxCommentPanel({
   isLoading,
   isFetching,
 }: InboxCommentPanelProps) {
-  const { postMeta, threadItems } = useMemo(() => {
-    const aggregatedPost: Record<string, unknown> = {};
-    const items = messages.map((message) => {
-      const channelMeta =
-        message.metadata?.byPlatform?.[conversation.platform]?.post_comment;
-      const extra = channelMeta?.extra ?? {};
-      const post = extra.post;
-      if (post && typeof post === "object") {
-        Object.assign(aggregatedPost, post as Record<string, unknown>);
-      }
-      return message;
-    });
-    return { postMeta: aggregatedPost, threadItems: items };
-  }, [conversation.platform, messages]);
-
-  const mediaUrl =
-    typeof postMeta.mediaUrl === "string" ? postMeta.mediaUrl : undefined;
-  const mediaThumbnailUrl =
-    typeof postMeta.mediaThumbnailUrl === "string"
-      ? postMeta.mediaThumbnailUrl
-      : undefined;
-  const postCaption =
-    typeof postMeta.caption === "string" ? postMeta.caption : undefined;
-  const postPermalink =
-    typeof postMeta.permalink === "string" ? postMeta.permalink : undefined;
-  const mediaType =
-    typeof postMeta.mediaType === "string" ? postMeta.mediaType : undefined;
-  const hasPostPreview =
-    mediaUrl || mediaThumbnailUrl || postCaption || postPermalink;
+  const hasPostPreview = Boolean(conversation.postPreview);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -69,16 +41,9 @@ export function InboxCommentPanel({
             {conversation.platform.toLowerCase()}
           </Badge>
         </div>
-        {hasPostPreview ? (
+        {hasPostPreview && conversation.postPreview ? (
           <div className="mt-4">
-            <InboxPostPreview
-              platform={conversation.platform}
-              mediaUrl={mediaUrl}
-              mediaThumbnailUrl={mediaThumbnailUrl}
-              mediaType={mediaType}
-              caption={postCaption}
-              permalink={postPermalink}
-            />
+            <InboxContentPreview preview={conversation.postPreview} />
           </div>
         ) : null}
       </section>
@@ -88,7 +53,7 @@ export function InboxCommentPanel({
           <div className="text-sm text-muted-foreground">Loading comments…</div>
         ) : (
           <ul className="space-y-3">
-            {threadItems.map((message) => {
+            {messages.map((message) => {
               const isDeleted = Boolean(message.metadata?.deleted);
               const actor = message.sender === "self" ? "You" : "Customer";
               return (
