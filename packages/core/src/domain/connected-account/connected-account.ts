@@ -13,8 +13,8 @@ import { and, eq, getTableColumns, ne } from "drizzle-orm";
 import z from "zod";
 import { Actor } from "../../helpers/actor";
 import { connectedAccountRefresher } from "./connected-account-refresher";
-import { facebookOAuthService } from "./facebook";
-import { instagramOAuthService } from "./instagram";
+import { facebookOAuthService } from "./facebook-oauth-service";
+import { instagramOAuthService } from "./instragram-oauth-service";
 import { tikTokOAuthService } from "./tiktok";
 
 const log = Log.create({ namespace: "connected-account" });

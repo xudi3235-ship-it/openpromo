@@ -63,7 +63,7 @@ export class InstagramOAuthService {
     "instagram_business_content_publish",
     "instagram_business_manage_messages",
     "instagram_business_manage_comments",
-    "instagram_manage_insights",
+    "instagram_business_manage_insights",
   ];
 
   private redirectUri(): string {
@@ -79,7 +79,7 @@ export class InstagramOAuthService {
   }
 
   private get baseUrl(): string {
-    const version = "v23.0";
+    const version = "v24.0";
     return `https://graph.instagram.com/${version}`;
   }
 

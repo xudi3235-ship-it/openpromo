@@ -1,6 +1,6 @@
-import { facebookOAuthService } from "@core/domain/connected-account/facebook";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
+import { facebookOAuthService } from "@openpromo/core/domain/connected-account/facebook-oauth-service";
 import { Hono } from "hono";
 import * as z from "zod";
 import { setAuthStateCookie } from "../../../../../helpers/auth";

@@ -1,8 +1,8 @@
 import { ConnectedAccount } from "@core/domain/connected-account";
-import { facebookOAuthService } from "@core/domain/connected-account/facebook";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Platform } from "@core/schemas/connected-account.sql";
+import { facebookOAuthService } from "@openpromo/core/domain/connected-account/facebook-oauth-service";
 import { Hono } from "hono";
 import * as z from "zod";
 import { clearAuthStateCookie, getAuthState } from "../../../helpers/auth";

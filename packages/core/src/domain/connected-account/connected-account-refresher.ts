@@ -7,7 +7,7 @@ import {
 import { connectedAccountMetricsSnapshotTable } from "@core/schemas/connected-account-metrics.sql";
 import { Log } from "@core/utils/log";
 import { AllPlatforms } from "@shared/content";
-import type { FacebookPage } from "./facebook";
+import type { FacebookPage } from "./facebook-oauth-service";
 
 type ProviderResult = {
   followersCount?: number | null;

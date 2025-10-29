@@ -1,5 +1,4 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { facebookOAuthService } from "@core/domain/connected-account/facebook";
 import { UnifiedContent } from "@core/domain/content/unified-content";
 import { InboxService } from "@core/domain/inbox";
 import {
@@ -10,6 +9,7 @@ import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Platform } from "@core/schemas/connected-account.sql";
 import { env } from "@core/utils/env";
+import { facebookOAuthService } from "@openpromo/core/domain/connected-account/facebook-oauth-service";
 import type {
   FBCommentPayload,
   FBMessagePayload,
