@@ -1,10 +1,8 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { UnifiedContent } from "@core/domain/content/unified-content";
 import { InboxService } from "@core/domain/inbox";
-import {
-  appendChannelExtra,
-  setEditMetadata,
-} from "@core/domain/inbox/message-metadata";
+import { appendChannelExtra } from "@core/domain/inbox/message-metadata";
+import { handleFacebookDMEvents } from "@core/domain/inbox/webhooks/facebook-dm";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Platform } from "@core/schemas/connected-account.sql";
@@ -12,7 +10,6 @@ import { env } from "@core/utils/env";
 import { facebookOAuthService } from "@openpromo/core/domain/connected-account/facebook-oauth-service";
 import type {
   FBCommentPayload,
-  FBMessagePayload,
   FBWebhookPayload,
   InboxMessageMetadata,
 } from "@shared/inbox";
@@ -55,7 +52,7 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
 
         // Handle DM messages
         if ("messaging" in entry) {
-          await handleDM(entry.messaging, account);
+          await handleFacebookDMEvents(entry.messaging, account);
         }
 
         // Handle feed comment changes
@@ -74,156 +71,6 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
       return c.status(500);
     }
   });
-
-const handleDM = async (
-  messages: FBMessagePayload[],
-  account: Awaited<ReturnType<typeof ConnectedAccount.fromFBPageID>>,
-) => {
-  for (const messaging of messages) {
-    const { sender, recipient, message, message_edit, timestamp } = messaging;
-    if (!message && !message_edit) continue;
-
-    const contactExternalId = message?.is_echo ? recipient.id : sender.id;
-    // 2. Resolve existing contact or fetch profile; error if neither
-    let contact = await InboxService.findContact({
-      platform: Platform.enum.FACEBOOK,
-      externalId: contactExternalId,
-    });
-    if (!contact) {
-      const profile = await facebookOAuthService.getUserProfile(
-        account.encryptedAccessToken,
-        contactExternalId,
-      );
-
-      contact = await InboxService.createContact({
-        platform: Platform.enum.FACEBOOK,
-        externalId: contactExternalId,
-        name: profile.name,
-        profilePicUrl: profile.picture.data.url,
-      });
-    }
-    // 3. Get or upsert conversation
-    let conversation = message_edit
-      ? await InboxService.getConversation({
-          connectedAccountId: account.id,
-          contactId: contact.id,
-          channel: "dm",
-        })
-      : null;
-
-    if (!conversation) {
-      conversation = await InboxService.upsertConversation({
-        connectedAccountId: account.id,
-        platform: Platform.enum.FACEBOOK,
-        contactId: contact.id,
-        lastMessageAt: new Date(timestamp),
-        channel: "dm",
-        threadKey: contact.id,
-      });
-    }
-
-    // 4. Store or edit message
-    if (message_edit) {
-      const metadata: InboxMessageMetadata = {};
-      const isoTimestamp = new Date(timestamp).toISOString();
-      const editBy = message?.is_echo ? "self" : "other";
-      setEditMetadata(metadata, {
-        at: isoTimestamp,
-        by: editBy,
-        text: message_edit.text ?? undefined,
-      });
-      const editExtra: Record<string, unknown> = {};
-      if (typeof message_edit.num_edit === "number") {
-        editExtra.numEdits = message_edit.num_edit;
-      }
-      if (Object.keys(editExtra).length > 0) {
-        appendChannelExtra(
-          metadata,
-          "FACEBOOK",
-          conversation.channel,
-          editExtra,
-        );
-      }
-
-      await InboxService.upsertMessage({
-        inboxConversationId: conversation.id,
-        externalId: message_edit.mid,
-        text: message_edit.text,
-        payload: messaging,
-        sender: message?.is_echo ? "self" : "user",
-        workspaceId: account.workspaceId,
-        channel: conversation.channel,
-        metadata,
-      });
-      const event = createWorkspaceEvent(
-        InboxRealtimeEventTypes.MessageUpserted,
-        {
-          conversationId: conversation.id,
-          message: {
-            id: "", // will not be used by client for edits
-            externalId: message_edit.mid,
-            sender: message?.is_echo ? "self" : "user",
-            text: message_edit.text,
-            attachments: [],
-            createdAt: new Date(timestamp),
-            channel: conversation.channel,
-            contentId: null,
-            metadata,
-          },
-        },
-      );
-      await dispatchWorkspaceEvent(account.workspaceId, event);
-    } else if (message) {
-      const attachments = (message.attachments || []).map((a) => ({
-        type: a.type,
-        url: a.payload.url,
-      }));
-      await InboxService.upsertMessage({
-        inboxConversationId: conversation.id,
-        externalId: message.mid,
-        text: message.text ?? null,
-        attachments,
-        payload: messaging,
-        sender: message.is_echo ? "self" : "user",
-        workspaceId: account.workspaceId,
-        channel: conversation.channel,
-      });
-      const event = createWorkspaceEvent(
-        InboxRealtimeEventTypes.MessageUpserted,
-        {
-          conversationId: conversation.id,
-          message: {
-            id: "", // not needed for client append correctness
-            externalId: message.mid,
-            sender: message.is_echo ? "self" : "user",
-            text: message.text ?? null,
-            attachments,
-            createdAt: new Date(timestamp),
-            channel: conversation.channel,
-            contentId: null,
-            metadata: {},
-          },
-        },
-      );
-      await dispatchWorkspaceEvent(account.workspaceId, event);
-    }
-    // conversation bump event
-    const conversationEvent = createWorkspaceEvent(
-      InboxRealtimeEventTypes.ConversationUpserted,
-      {
-        conversationId: conversation.id,
-        lastMessageAt: new Date(timestamp),
-        platform: Platform.enum.FACEBOOK,
-        contact: {
-          id: contact.id,
-          name: contact.name,
-          profilePicUrl: contact.profilePicUrl,
-        },
-      },
-    );
-    await dispatchWorkspaceEvent(account.workspaceId, conversationEvent);
-  }
-};
 
 const handleComment = async (
   changes: FBCommentPayload[],
