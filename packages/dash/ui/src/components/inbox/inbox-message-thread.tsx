@@ -64,6 +64,17 @@ function MessageBubble({ message }: MessageBubbleProps) {
     : false;
   const isOptimistic = Boolean(message.metadata?.optimistic);
   const isDeleted = Boolean(message.metadata?.deleted);
+  const isEdited = Boolean(message.metadata?.edit);
+  const reactions = Object.values(message.metadata?.byPlatform ?? {}).flatMap(
+    (platformMeta) => platformMeta?.[message.channel]?.reactions ?? [],
+  );
+  const reactionMap = reactions.reduce((acc, reaction) => {
+    const label = reaction.emoji ?? reaction.key.toLowerCase();
+    const existing = acc.get(label) ?? { label, count: 0 };
+    acc.set(label, { label, count: existing.count + 1 });
+    return acc;
+  }, new Map<string, { label: string; count: number }>());
+  const reactionChips = Array.from(reactionMap.values());
 
   return (
     <div
@@ -102,6 +113,9 @@ function MessageBubble({ message }: MessageBubbleProps) {
             </p>
           )
         )}
+        {isEdited && !isDeleted && (
+          <div className="mt-2 text-xs text-muted-foreground">Edited</div>
+        )}
         {!isDeleted && hasAttachments && (
           <div className="mt-3 flex items-center gap-2 text-xs">
             <Paperclip className="h-3 w-3" />
@@ -109,6 +123,19 @@ function MessageBubble({ message }: MessageBubbleProps) {
               {message.attachments.length} attachment
               {message.attachments.length > 1 ? "s" : ""}
             </span>
+          </div>
+        )}
+        {!isDeleted && reactionChips.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+            {reactionChips.map((chip) => (
+              <span
+                key={`${chip.label}-${message.id}`}
+                className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1"
+              >
+                <span>{chip.label}</span>
+                {chip.count > 1 && <span>{chip.count}</span>}
+              </span>
+            ))}
           </div>
         )}
       </div>

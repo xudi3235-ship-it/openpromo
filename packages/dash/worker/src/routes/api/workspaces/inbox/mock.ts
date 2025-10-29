@@ -78,7 +78,25 @@ export const mockMessages: Record<string, InboxMessage[]> = {
       attachments: [],
       createdAt: new Date(baseNow - 12 * 60 * 1000),
       contentId: null,
-      metadata: {},
+      metadata: {
+        byPlatform: {
+          FACEBOOK: {
+            dm: {
+              reactions: [
+                {
+                  platform: "FACEBOOK",
+                  mid: "msg-002",
+                  key: "like",
+                  action: "added",
+                  actorId: "mock-user-1",
+                  timestamp: new Date(baseNow - 10 * 60 * 1000).toISOString(),
+                  emoji: "👍",
+                },
+              ],
+            },
+          },
+        },
+      },
     },
     {
       id: "conv-1-msg-3",
@@ -103,7 +121,19 @@ export const mockMessages: Record<string, InboxMessage[]> = {
       createdAt: new Date(baseNow - 3 * 60 * 60 * 1000),
       contentId: "content-1",
       metadata: {
-        referencedPost: "Sunny Coffee — Launching Ethiopia Single Origin",
+        extra: {
+          referencedPost: "Sunny Coffee — Launching Ethiopia Single Origin",
+        },
+        byPlatform: {
+          FACEBOOK: {
+            post_comment: {
+              extra: {
+                postId: "mock-post-101",
+                verb: "add",
+              },
+            },
+          },
+        },
       },
     },
     {

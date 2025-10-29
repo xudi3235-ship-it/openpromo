@@ -51,12 +51,6 @@ export const InboxMessageMetadataSchema = z.object({
     .partial()
     .optional(),
   extra: z.record(z.string(), z.unknown()).optional(),
-  // Legacy top-level fields retained temporarily during migration
-  reactions: z.array(z.unknown()).optional(),
-  numEdits: z.number().optional(),
-  lastEditAt: z.string().optional(),
-  referencedPost: z.unknown().optional(),
-  optimisticGeneratedAt: z.string().optional(),
 });
 
 export type InboxMessageMetadata = z.infer<typeof InboxMessageMetadataSchema>;

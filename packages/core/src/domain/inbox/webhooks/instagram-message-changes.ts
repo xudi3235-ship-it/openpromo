@@ -1,4 +1,9 @@
 import { InboxService } from "@core/domain/inbox";
+import {
+  appendChannelExtra,
+  setEditMetadata,
+  upsertReactionMetadata,
+} from "@core/domain/inbox/message-metadata";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import { db } from "@core/helpers/db";
 import {
@@ -81,11 +86,28 @@ async function handleMessageEditChange(
   const metadata: InboxMessageMetadata = {
     ...(record.metadata ?? {}),
   };
+  const timestamp = value.timestamp
+    ? new Date(value.timestamp * 1000).toISOString()
+    : new Date().toISOString();
+
+  const editorId = value.from?.id ?? value.from?.username ?? null;
+  const isSelf = editorId === account.externalAccountId;
+
+  setEditMetadata(metadata, {
+    at: timestamp,
+    by: isSelf ? "self" : "other",
+    text: value.text ?? undefined,
+  });
+
+  const extra: Record<string, unknown> = {};
   if (typeof value.num_edit === "number") {
-    metadata.numEdits = value.num_edit;
+    extra.numEdits = value.num_edit;
   }
-  if (value.timestamp) {
-    metadata.lastEditAt = new Date(value.timestamp * 1000).toISOString();
+  if (editorId) {
+    extra.editorId = editorId;
+  }
+  if (Object.keys(extra).length > 0) {
+    appendChannelExtra(metadata, "INSTAGRAM", record.channel, extra);
   }
 
   await InboxService.upsertMessage({
@@ -157,28 +179,26 @@ async function handleMessageReactionChange(
     ...(record.metadata ?? {}),
   };
 
-  const existingReactions = Array.isArray(metadata.reactions)
-    ? (metadata.reactions as Array<Record<string, unknown>>)
-    : [];
-
   const actorId = value.sender?.id ?? value.sender?.username ?? undefined;
   const reaction = value.reaction;
   const verb = value.verb ?? "add";
 
   if (actorId && reaction) {
-    const filtered = existingReactions.filter(
-      (entry) => entry.actorId !== actorId,
-    );
-    if (verb !== "remove") {
-      filtered.push({
-        actorId,
-        reaction,
-        timestamp: value.timestamp
-          ? new Date(value.timestamp * 1000).toISOString()
-          : new Date().toISOString(),
-      });
-    }
-    metadata.reactions = filtered;
+    const timestamp = value.timestamp
+      ? new Date(value.timestamp * 1000).toISOString()
+      : new Date().toISOString();
+    upsertReactionMetadata(metadata, record.channel, {
+      platform: "INSTAGRAM",
+      mid,
+      key: reaction,
+      action: verb === "remove" ? "removed" : "added",
+      actorId,
+      timestamp,
+      extras: {
+        senderId: value.sender?.id,
+        senderUsername: value.sender?.username,
+      },
+    });
   }
 
   await InboxService.upsertMessage({

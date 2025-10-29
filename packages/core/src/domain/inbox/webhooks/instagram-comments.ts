@@ -1,10 +1,11 @@
 import { instagramOAuthService } from "@core/domain/connected-account";
 import { UnifiedContent } from "@core/domain/content/unified-content";
 import { InboxService } from "@core/domain/inbox";
+import { appendChannelExtra } from "@core/domain/inbox/message-metadata";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import { db } from "@core/helpers/db";
 import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
-import type { IGCommentPayloadType } from "@shared/inbox";
+import type { IGCommentPayloadType, InboxMessageMetadata } from "@shared/inbox";
 import { IGCommentPayload, InboxRealtimeEventTypes } from "@shared/inbox";
 import { createWorkspaceEvent } from "@shared/workspace/events";
 import { eq } from "drizzle-orm";
@@ -102,7 +103,17 @@ async function processCommentChange(
       threadKey: externalThreadId,
       externalThreadId,
       contentId: content?.id ?? null,
-      metadata: mediaId ? { mediaId } : {},
+      metadata: mediaId
+        ? {
+            byPlatform: {
+              INSTAGRAM: {
+                post_comment: {
+                  extra: { mediaId },
+                },
+              },
+            },
+          }
+        : {},
     });
 
     console.info("[IG comments][3] created conversation", {
@@ -141,12 +152,17 @@ async function processCommentChange(
     value.verb === "deleted" ||
     value.verb === "hide";
 
-  const metadata: Record<string, unknown> = {
-    parentId,
+  const metadata: InboxMessageMetadata = {
+    extra: {
+      parentId,
+    },
   };
-  if (value.verb) metadata.verb = value.verb;
-  if (mediaId) metadata.mediaId = mediaId;
   if (isRemove) metadata.deleted = true;
+
+  const channelExtra: Record<string, unknown> = { parentId };
+  if (value.verb) channelExtra.verb = value.verb;
+  if (mediaId) channelExtra.mediaId = mediaId;
+  appendChannelExtra(metadata, "INSTAGRAM", "post_comment", channelExtra);
 
   const messageText = isRemove ? null : (value.text ?? null);
   const contentIdForMessage = content?.id ?? conversation.contentId ?? null;

@@ -1,6 +1,7 @@
 import { facebookGraphRequest } from "@core/domain/content/entity/facebook/api";
 import { instagramGraphRequest } from "@core/domain/content/entity/instagram/api";
 import { UnifiedContent } from "@core/domain/content/unified-content";
+import { getChannelMetadata } from "@core/domain/inbox/message-metadata";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import { Actor } from "@core/helpers/actor";
 import { getDbClient } from "@core/helpers/db";
@@ -13,6 +14,7 @@ import {
 import { env } from "@core/utils/env";
 import { ErrorCodes, VisibleError } from "@core/utils/error";
 import type { AllPlatforms } from "@shared/content";
+import type { InboxMessageMetadata } from "@shared/inbox";
 import { InboxRealtimeEventTypes } from "@shared/inbox";
 import { createWorkspaceEvent } from "@shared/workspace/events";
 import { and, eq } from "drizzle-orm";
@@ -261,12 +263,19 @@ async function sendInstagramCommentReply(params: {
     conversationId,
   } = params;
 
-  const metadata = (conversationMetadata ?? {}) as { mediaId?: string };
+  const conversationMeta = (conversationMetadata ?? {}) as InboxMessageMetadata;
+  const channelMeta = getChannelMetadata(
+    conversationMeta,
+    "INSTAGRAM",
+    "post_comment",
+  );
+  const metadataMediaId = channelMeta?.extra?.mediaId;
+
   let targetId: string | null = externalThreadId ?? null;
   let endpointSuffix: "replies" | "comments" = "replies";
 
-  if (!targetId && metadata.mediaId) {
-    targetId = metadata.mediaId;
+  if (!targetId && typeof metadataMediaId === "string") {
+    targetId = metadataMediaId;
     endpointSuffix = "comments";
   }
 

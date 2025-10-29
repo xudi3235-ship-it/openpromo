@@ -2,6 +2,10 @@ import { ConnectedAccount } from "@core/domain/connected-account/connected-accou
 import { facebookOAuthService } from "@core/domain/connected-account/facebook";
 import { UnifiedContent } from "@core/domain/content/unified-content";
 import { InboxService } from "@core/domain/inbox";
+import {
+  appendChannelExtra,
+  setEditMetadata,
+} from "@core/domain/inbox/message-metadata";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Platform } from "@core/schemas/connected-account.sql";
@@ -10,6 +14,7 @@ import type {
   FBCommentPayload,
   FBMessagePayload,
   FBWebhookPayload,
+  InboxMessageMetadata,
 } from "@shared/inbox";
 import { InboxRealtimeEventTypes } from "@shared/inbox";
 import { createWorkspaceEvent } from "@shared/workspace/events";
@@ -119,6 +124,27 @@ const handleDM = async (
 
     // 4. Store or edit message
     if (message_edit) {
+      const metadata: InboxMessageMetadata = {};
+      const isoTimestamp = new Date(timestamp).toISOString();
+      const editBy = message?.is_echo ? "self" : "other";
+      setEditMetadata(metadata, {
+        at: isoTimestamp,
+        by: editBy,
+        text: message_edit.text ?? undefined,
+      });
+      const editExtra: Record<string, unknown> = {};
+      if (typeof message_edit.num_edit === "number") {
+        editExtra.numEdits = message_edit.num_edit;
+      }
+      if (Object.keys(editExtra).length > 0) {
+        appendChannelExtra(
+          metadata,
+          "FACEBOOK",
+          conversation.channel,
+          editExtra,
+        );
+      }
+
       await InboxService.upsertMessage({
         inboxConversationId: conversation.id,
         externalId: message_edit.mid,
@@ -127,6 +153,7 @@ const handleDM = async (
         sender: message?.is_echo ? "self" : "user",
         workspaceId: account.workspaceId,
         channel: conversation.channel,
+        metadata,
       });
       const event = createWorkspaceEvent(
         InboxRealtimeEventTypes.MessageUpserted,
@@ -141,7 +168,7 @@ const handleDM = async (
             createdAt: new Date(timestamp),
             channel: conversation.channel,
             contentId: null,
-            metadata: {},
+            metadata,
           },
         },
       );
@@ -249,6 +276,22 @@ const handleComment = async (
     });
 
     if (!conversation && (verb === "add" || isTopLevel)) {
+      const conversationMetadata =
+        post_id || parent_id
+          ? {
+              byPlatform: {
+                FACEBOOK: {
+                  post_comment: {
+                    extra: {
+                      postId: post_id,
+                      parentId: parent_id,
+                      isTopLevel,
+                    },
+                  },
+                },
+              },
+            }
+          : {};
       // create conversation for top-level add OR missing on reply (best-effort)
       conversation = await InboxService.upsertConversation({
         connectedAccountId: account.id,
@@ -258,6 +301,7 @@ const handleComment = async (
         channel,
         externalThreadId,
         contentId: content?.id,
+        metadata: conversationMetadata,
       });
     }
 
@@ -265,6 +309,24 @@ const handleComment = async (
       // cannot proceed without a conversation; skip safely
       continue;
     }
+
+    const metadata: InboxMessageMetadata = {
+      extra: {
+        postId: post_id,
+        parentId: parent_id,
+        verb,
+        isTopLevel,
+      },
+    };
+    if (verb === "remove") {
+      metadata.deleted = true;
+    }
+    appendChannelExtra(metadata, "FACEBOOK", channel, {
+      postId: post_id,
+      parentId: parent_id,
+      verb,
+      isTopLevel,
+    });
 
     await InboxService.upsertMessage({
       inboxConversationId: conversation.id,
@@ -275,7 +337,7 @@ const handleComment = async (
       workspaceId: account.workspaceId,
       channel,
       contentId: content?.id,
-      metadata: { ...(verb === "remove" ? { deleted: true } : {}) },
+      metadata,
     });
 
     const messageEvent = createWorkspaceEvent(
@@ -291,7 +353,7 @@ const handleComment = async (
           createdAt,
           channel,
           contentId: content?.id,
-          metadata: { ...(verb === "remove" ? { deleted: true } : {}) },
+          metadata,
         },
       },
     );

@@ -51,7 +51,10 @@ function createOptimisticMessage(
     contentId: null,
     metadata: {
       optimistic: true,
-      optimisticGeneratedAt: createdAt.toISOString(),
+      pendingEcho: true,
+      extra: {
+        generatedAt: createdAt.toISOString(),
+      },
     },
   };
 }
