@@ -1,6 +1,7 @@
 import type { InboxConversationSummary } from "@shared/inbox";
 import { useEffect, useMemo } from "react";
 import { useSharedWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
+import { useInboxConversationQuery } from "@/queries/inbox/conversation";
 import { useInboxConversationsQuery } from "@/queries/inbox/conversations";
 import { useInboxMessagesQuery } from "@/queries/inbox/messages";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
@@ -92,10 +93,22 @@ export function Inbox() {
     },
   );
 
+  // Fetch conversation details including postPreview
+  const conversationQuery = useInboxConversationQuery(
+    workspaceSlug,
+    effectiveConversationId,
+  );
+
   useEffect(() => {
     if (!effectiveConversationId) return;
     setThreadFetching(effectiveConversationId, messagesQuery.isFetching);
   }, [effectiveConversationId, messagesQuery.isFetching, setThreadFetching]);
+
+  // Update conversation with details (including postPreview) when fetched
+  useEffect(() => {
+    if (!conversationQuery.data) return;
+    upsertConversation(conversationQuery.data);
+  }, [conversationQuery.data, upsertConversation]);
 
   useEffect(() => {
     if (!effectiveConversationId) return;

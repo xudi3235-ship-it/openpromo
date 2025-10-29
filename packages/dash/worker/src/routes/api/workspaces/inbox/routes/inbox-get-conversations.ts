@@ -2,12 +2,10 @@ import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { getDbClient } from "@core/helpers/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
-import { unifiedContentTable } from "@core/schemas/content.sql";
 import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
 import { env } from "@core/utils/env";
 import { AllPlatforms } from "@shared/content";
-import { placementSpecToContentPreview } from "@shared/content/content-preview";
 import { InboxConversationSummarySchema } from "@shared/inbox";
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import { Hono } from "hono";
@@ -93,10 +91,6 @@ export const inboxGetConversationsRoute = new Hono<ApiEnv>().get(
         inboxContactsTable,
         eq(inboxConversationsTable.contactId, inboxContactsTable.id),
       )
-      .leftJoin(
-        unifiedContentTable,
-        eq(inboxConversationsTable.contentId, unifiedContentTable.id),
-      )
       .where(and(...where));
     const total = totalRes[0]?.count ?? 0;
 
@@ -113,7 +107,6 @@ export const inboxGetConversationsRoute = new Hono<ApiEnv>().get(
         contactProfilePicUrl: inboxContactsTable.profilePicUrl,
         caId: connectedAccount.id,
         caName: connectedAccount.accountName,
-        contentPlacementSpec: unifiedContentTable.placementSpec,
       })
       .from(inboxConversationsTable)
       .innerJoin(
@@ -124,25 +117,13 @@ export const inboxGetConversationsRoute = new Hono<ApiEnv>().get(
         inboxContactsTable,
         eq(inboxConversationsTable.contactId, inboxContactsTable.id),
       )
-      .leftJoin(
-        unifiedContentTable,
-        eq(inboxConversationsTable.contentId, unifiedContentTable.id),
-      )
       .where(and(...where))
       .orderBy(desc(inboxConversationsTable.lastMessageAt))
       .limit(pageSize)
       .offset((page - 1) * pageSize);
 
-    const items = rows.map((r) => {
-      const postPreview = r.contentPlacementSpec
-        ? placementSpecToContentPreview(
-            r.contentPlacementSpec as Parameters<
-              typeof placementSpecToContentPreview
-            >[0],
-          )
-        : undefined;
-
-      return InboxConversationSummarySchema.parse({
+    const items = rows.map((r) =>
+      InboxConversationSummarySchema.parse({
         id: r.id,
         platform: r.platform,
         channel: r.channel,
@@ -155,9 +136,8 @@ export const inboxGetConversationsRoute = new Hono<ApiEnv>().get(
         connectedAccount: { id: r.caId, accountName: r.caName },
         contentId: r.contentId,
         externalThreadId: r.externalThreadId,
-        postPreview,
-      });
-    });
+      }),
+    );
 
     return c.json({ items, page, pageSize, total });
   },
