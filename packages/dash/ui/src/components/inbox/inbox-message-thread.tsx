@@ -1,4 +1,3 @@
-import { ScrollArea, ScrollBar } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
 import { format } from "date-fns";
@@ -19,36 +18,33 @@ export function InboxMessageThread({
   const showEmptyState = !isLoading && messages.length === 0;
 
   return (
-    <ScrollArea className="flex-1 px-6 py-6">
-      <div className="space-y-4">
-        {isLoading
-          ? [true, false, true].map((isSelf, idx) => (
-              <MessageSkeleton
-                // biome-ignore lint/suspicious/noArrayIndexKey: loading state only
-                key={`skeleton-${idx}`}
-                isSelf={isSelf}
-              />
-            ))
-          : messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
-            ))}
+    <div className="space-y-4">
+      {isLoading
+        ? [true, false, true].map((isSelf, idx) => (
+            <MessageSkeleton
+              // biome-ignore lint/suspicious/noArrayIndexKey: loading state only
+              key={`skeleton-${idx}`}
+              isSelf={isSelf}
+            />
+          ))
+        : messages.map((message) => (
+            <MessageBubble key={message.id} message={message} />
+          ))}
 
-        {showEmptyState && (
-          <div className="rounded-lg border border-dashed border-border/70 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
-            No messages yet. Messages will appear here when fetched from the
-            platform.
-          </div>
-        )}
+      {showEmptyState && (
+        <div className="rounded-lg border border-dashed border-border/70 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
+          No messages yet. Messages will appear here when fetched from the
+          platform.
+        </div>
+      )}
 
-        {!isLoading && isRefreshing && (
-          <div className="flex items-center justify-center gap-2 pt-2 text-xs text-muted-foreground">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            Syncing latest messages…
-          </div>
-        )}
-      </div>
-      <ScrollBar orientation="vertical" />
-    </ScrollArea>
+      {!isLoading && isRefreshing && (
+        <div className="flex items-center justify-center gap-2 pt-2 text-xs text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Syncing latest messages…
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -21,8 +21,8 @@ export function InboxCommentPanel({
   isFetching,
 }: InboxCommentPanelProps) {
   return (
-    <div className="flex flex-1 flex-col">
-      <section className="border-b border-border/60 px-6 py-4">
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <section className="flex-shrink-0 border-b border-border/60 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-foreground">
@@ -79,7 +79,7 @@ export function InboxCommentPanel({
         <ScrollBar orientation="vertical" />
       </ScrollArea>
 
-      <div className="border-t border-border/60 px-6 py-4">
+      <div className="flex-shrink-0 border-t border-border/60 px-6 py-4">
         <InboxMessageInput
           workspaceSlug={workspaceSlug}
           conversation={conversation}
