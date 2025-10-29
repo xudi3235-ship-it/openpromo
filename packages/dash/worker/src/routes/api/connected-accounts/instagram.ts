@@ -63,7 +63,7 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>().get(
           const now = new Date();
           const account = await ConnectedAccount.create({
             platform: Platform.enum.INSTAGRAM,
-            externalAccountId: authResult.id,
+            externalAccountId: authResult.userId, // Instagram user ID, NOT app-scoped ID
             accountName: authResult.name,
             externalUrl: `https://www.instagram.com/${authResult.username}`,
             profilePicUrl,
@@ -73,10 +73,11 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>().get(
             lastBackfillAt: null,
             tokenExpiresAt: new Date(Date.now() + authResult.expiresIn * 1000),
             metadata: {
-              igAccountID: authResult.id,
+              igAccountID: authResult.userId,
               username: authResult.username,
               profilePicUrl,
               permissions: authResult.permissions,
+              appScopedUserID: authResult.id, // app-scoped ID
             },
             followersCount: authResult.followersCount ?? 0,
             followingCount: authResult.followingCount ?? 0,

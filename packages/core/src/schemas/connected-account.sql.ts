@@ -45,6 +45,7 @@ const IGAccountMetadata = z.object({
   username: z.string().optional(),
   profilePicUrl: z.string(),
   permissions: z.string().array(),
+  appScopedUserID: z.string().optional(),
 });
 const TikTokAccountMetadata = z.object({
   tiktokUserId: z.string(),

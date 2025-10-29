@@ -249,11 +249,11 @@ export class InstagramOAuthService {
 
     // Get user profile using the user ID from the token response
     const profile = await this.getBusinessUserProfile(longToken.access_token);
-    log.info("User profile obtained");
+    console.log("Instagram user profile obtained", JSON.stringify(profile));
 
     return {
-      id: profile.id,
-      userId: profile.user_id,
+      id: profile.id, // app-scoped ID
+      userId: profile.user_id, // Instagram user ID. this is critical for downstream api
       name: profile.name || profile.username,
       accessToken: longToken.access_token,
       refreshToken: longToken.access_token, // Instagram doesn't provide separate refresh tokens
