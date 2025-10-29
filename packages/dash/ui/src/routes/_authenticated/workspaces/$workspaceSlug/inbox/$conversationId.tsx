@@ -23,22 +23,20 @@ export const Route = createFileRoute(
   },
   loader: async ({ params, context }) => {
     // Prefetch conversation details and messages
-    await Promise.all([
-      prefetchInboxConversation(
-        context.queryClient,
-        params.workspaceSlug,
-        params.conversationId,
-      ),
-      prefetchInboxMessages(
-        context.queryClient,
-        params.workspaceSlug,
-        params.conversationId,
-        {
-          page: 1,
-          pageSize: 50,
-        },
-      ),
-    ]);
+    prefetchInboxConversation(
+      context.queryClient,
+      params.workspaceSlug,
+      params.conversationId,
+    );
+    prefetchInboxMessages(
+      context.queryClient,
+      params.workspaceSlug,
+      params.conversationId,
+      {
+        page: 1,
+        pageSize: 50,
+      },
+    );
   },
   component: InboxConversationDetail,
   pendingComponent: InboxConversationPending,
