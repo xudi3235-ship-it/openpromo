@@ -57,10 +57,17 @@ export function WorkspaceWebSocketProvider({
   // Stable event handler using useCallback with empty deps
   const handleEvent = useCallback((genericEvent: GenericEvent) => {
     try {
+      const eventRecord = genericEvent as Record<string, unknown>;
+      console.info("[WS] Received event, attempting to parse:", {
+        type: eventRecord?.type,
+        hasMessage: !!eventRecord?.message,
+      });
+
       // Try to parse as WorkspaceEvent
       const parseResult = WorkspaceEventSchema.safeParse(genericEvent);
 
       if (parseResult.success) {
+        console.info("[WS] Event parsed successfully:", parseResult.data.type);
         const event = parseResult.data;
         // Notify all subscribed listeners
         for (const listener of listenersRef.current) {
@@ -70,9 +77,19 @@ export function WorkspaceWebSocketProvider({
             console.error("Error in workspace event listener:", error);
           }
         }
+      } else {
+        console.error("[WS] Event parse FAILED:", {
+          eventType: eventRecord?.type,
+          issues: parseResult.error.issues,
+        });
+        console.error(
+          "[WS] Raw event that failed to parse:",
+          JSON.stringify(genericEvent, null, 2),
+        );
       }
     } catch (error) {
       console.error("Error processing workspace event:", error);
+      console.error("Stack:", error instanceof Error ? error.stack : null);
     }
   }, []); // Empty deps - listenersRef.current is always up to date
 

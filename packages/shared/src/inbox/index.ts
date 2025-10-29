@@ -1,4 +1,4 @@
-import { AllPlatforms, AllPlatformsZod } from "@shared/content";
+import { AllPlatformsZod } from "@shared/content";
 import * as z from "zod";
 import {
   type ContentPreview,
@@ -52,7 +52,14 @@ export const FBMessagePayload = z.object({
       attachments: z
         .array(
           z.object({
-            type: z.enum(FBMessageAttachmentTypes),
+            type: z.enum([
+              "image",
+              "video",
+              "audio",
+              "file",
+              "reel",
+              "ig_reel",
+            ]),
             payload: z.object({ url: z.string() }),
           }),
         )
@@ -156,7 +163,16 @@ export const IGMessagePayload = z.object({
       attachments: z
         .array(
           z.object({
-            type: z.enum(IGMessageAttachmentTypes),
+            type: z.enum([
+              "image",
+              "video",
+              "audio",
+              "file",
+              "reel",
+              "ig_reel",
+              "share",
+              "story_mention",
+            ]),
             payload: z.object({ url: z.string() }),
           }),
         )
@@ -304,7 +320,16 @@ export {
 } from "./metadata";
 
 export const InboxAttachment = z.object({
-  type: z.enum(AllMessageAttachmentTypes),
+  type: z.enum([
+    "image",
+    "video",
+    "audio",
+    "file",
+    "reel",
+    "ig_reel",
+    "share",
+    "story_mention",
+  ]),
   url: z.string(),
 });
 export type InboxAttachment = z.infer<typeof InboxAttachment>;
@@ -374,7 +399,7 @@ export const InboxConversationUpsertedEventSchema = z.object({
   type: z.literal(InboxRealtimeEventTypes.ConversationUpserted),
   conversationId: z.string(),
   lastMessageAt: z.coerce.date(),
-  platform: AllPlatforms,
+  platform: AllPlatformsZod,
   contact: InboxContactSchema,
   timestamp: z.number(),
 });

@@ -1,5 +1,12 @@
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Pusher } from "@core/helpers/pusher";
+import {
+  type ConnectEvent,
+  type EchoEvent,
+  type NotificationEvent,
+  type SessionEvictedEvent,
+  WorkspaceEventType,
+} from "@shared/workspace";
 import type {
   WorkspaceNotification,
   WorkspaceNotificationRecord,
@@ -60,14 +67,13 @@ export class WorkspacePusher extends Pusher {
     this.userWebSocketManager.addWebSocket(userId, ws);
 
     // Send welcome message
-    ws.send(
-      JSON.stringify({
-        type: "connect",
-        message: `Connected to workspace: ${workspaceSlug}`,
-        timestamp: Date.now(),
-        workspaceSlug,
-      }),
-    );
+    const connectEvent: ConnectEvent = {
+      type: WorkspaceEventType.Connect,
+      message: `Connected to workspace: ${workspaceSlug}`,
+      timestamp: Date.now(),
+      workspaceSlug,
+    };
+    ws.send(JSON.stringify(connectEvent));
   }
 
   sendMessageToUser(userId: string, message: string) {
@@ -128,14 +134,14 @@ export class WorkspacePusher extends Pusher {
     const record = this.createNotificationRecord(notification);
     await this.persistNotification(record);
 
-    const payload = {
-      type: "notification" as const,
+    const notificationEvent: NotificationEvent = {
+      type: WorkspaceEventType.Notification,
       workspaceSlug: record.workspaceSlug,
       timestamp: record.createdAt,
       notification: record.notification,
     };
 
-    this.sendMessageToAllUsers(JSON.stringify(payload));
+    this.sendMessageToAllUsers(JSON.stringify(notificationEvent));
   }
 
   async listNotifications(): Promise<WorkspaceNotificationRecord[]> {
@@ -178,14 +184,13 @@ export class WorkspacePusher extends Pusher {
 
     // Echo message back to sender (for now, can be extended for broadcasting)
     try {
-      ws.send(
-        JSON.stringify({
-          type: "echo",
-          message: message,
-          timestamp: Date.now(),
-          workspaceSlug,
-        }),
-      );
+      const echoEvent: EchoEvent = {
+        type: WorkspaceEventType.Echo,
+        message: message,
+        timestamp: Date.now(),
+        workspaceSlug,
+      };
+      ws.send(JSON.stringify(echoEvent));
     } catch (error) {
       console.error("Failed to send echo message:", error);
     }
@@ -237,17 +242,17 @@ class UserWebSocketManager {
       console.log(`Evicting oldest session for user ${userId}`);
 
       // Send graceful closure notification
-      const evictionMessage = JSON.stringify({
-        type: "session_evicted",
+      const sessionEvictedEvent: SessionEvictedEvent = {
+        type: WorkspaceEventType.SessionEvicted,
         message:
           "This session has been closed because you have exceeded the maximum number of concurrent sessions.",
         timestamp: Date.now(),
         reason: "max_sessions_exceeded",
         maxSessions: USER_SESSION_LIMIT,
-      });
+      };
 
       try {
-        ws.send(evictionMessage);
+        ws.send(JSON.stringify(sessionEvictedEvent));
         // Give a brief moment for the message to be sent before closing
         setTimeout(() => {
           ws.close(1000, "Session limit exceeded");

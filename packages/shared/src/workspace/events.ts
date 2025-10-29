@@ -13,6 +13,11 @@ import { StyleStateZod } from "../style";
 export enum WorkspaceEventType {
   ImageGenerationUpdated = "image_generation.updated",
   StyleComponentUpdated = "style_component.updated",
+  // System control events (sent by WorkspacePusher itself)
+  Connect = "connect",
+  Echo = "echo",
+  SessionEvicted = "session_evicted",
+  Notification = "notification",
   // Inbox events are included via their own enum (InboxRealtimeEventTypes)
   // Add more event types as needed
 }
@@ -69,16 +74,78 @@ export type StyleComponentUpdatedEvent = z.infer<
   typeof StyleComponentUpdatedEventSchema
 >;
 
+// ============ System Control Events ============
+
+/**
+ * Event sent when a WebSocket connection is established
+ * This is a system event, not a business event
+ */
+export const ConnectEventSchema = z.object({
+  type: z.literal(WorkspaceEventType.Connect),
+  message: z.string().optional(),
+  timestamp: z.number(),
+  workspaceSlug: z.string().optional(),
+});
+
+export type ConnectEvent = z.infer<typeof ConnectEventSchema>;
+
+/**
+ * Event sent in response to client messages (echo)
+ * This is a system event for testing/debugging
+ */
+export const EchoEventSchema = z.object({
+  type: z.literal(WorkspaceEventType.Echo),
+  message: z.unknown(),
+  timestamp: z.number(),
+  workspaceSlug: z.string().optional(),
+});
+
+export type EchoEvent = z.infer<typeof EchoEventSchema>;
+
+/**
+ * Event sent when a user session is evicted due to exceeding session limit
+ * This is a system event for session management
+ */
+export const SessionEvictedEventSchema = z.object({
+  type: z.literal(WorkspaceEventType.SessionEvicted),
+  message: z.string(),
+  timestamp: z.number(),
+  reason: z.string(),
+  maxSessions: z.number(),
+});
+
+export type SessionEvictedEvent = z.infer<typeof SessionEvictedEventSchema>;
+
+/**
+ * Event sent for workspace notifications
+ * This is a system event for notifications
+ */
+export const NotificationEventSchema = z.object({
+  type: z.literal(WorkspaceEventType.Notification),
+  workspaceSlug: z.string(),
+  timestamp: z.number(),
+  notification: z.unknown(), // WorkspaceNotification type
+});
+
+export type NotificationEvent = z.infer<typeof NotificationEventSchema>;
+
 // ============ Union of All Workspace Events ============
 
 /**
  * Discriminated union of all workspace realtime events
  * Use this for type-safe event handling
- * Includes both workspace-specific events and inbox events
+ * Includes business events, inbox events, and system control events
  */
 export const WorkspaceEventSchema = z.discriminatedUnion("type", [
+  // Business events
   ImageGenerationUpdatedEventSchema,
   StyleComponentUpdatedEventSchema,
+  // System control events
+  ConnectEventSchema,
+  EchoEventSchema,
+  SessionEvictedEventSchema,
+  NotificationEventSchema,
+  // Inbox events
   InboxConversationUpsertedEventSchema,
   InboxMessageUpsertedEventSchema,
   // Add more event schemas here as needed
@@ -93,9 +160,16 @@ export type WorkspaceEvent = z.infer<typeof WorkspaceEventSchema>;
  * Used by the generic createWorkspaceEvent helper
  */
 const eventSchemaMap = {
+  // Business events
   [WorkspaceEventType.ImageGenerationUpdated]:
     ImageGenerationUpdatedEventSchema,
   [WorkspaceEventType.StyleComponentUpdated]: StyleComponentUpdatedEventSchema,
+  // System control events
+  [WorkspaceEventType.Connect]: ConnectEventSchema,
+  [WorkspaceEventType.Echo]: EchoEventSchema,
+  [WorkspaceEventType.SessionEvicted]: SessionEvictedEventSchema,
+  [WorkspaceEventType.Notification]: NotificationEventSchema,
+  // Inbox events
   [InboxRealtimeEventTypes.ConversationUpserted]:
     InboxConversationUpsertedEventSchema,
   [InboxRealtimeEventTypes.MessageUpserted]: InboxMessageUpsertedEventSchema,

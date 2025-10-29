@@ -39,11 +39,20 @@ async function processDMEvent(
   messaging: IGMessagePayload,
   account: ConnectedAccount,
 ) {
+  console.log("[IG DM] processDMEvent START", {
+    senderId: messaging.sender.id,
+    recipientId: messaging.recipient.id,
+    hasMessage: !!messaging.message,
+    hasMessageEdit: !!messaging.message_edit,
+    hasRead: !!messaging.read,
+  });
+
   const { sender, recipient, message, message_edit, read, timestamp } =
     messaging;
 
   // Handle read receipt events
   if (read) {
+    console.log("[IG DM] Processing read receipt");
     await handleMessageRead(read, messaging, account);
     return;
   }
@@ -57,22 +66,35 @@ async function processDMEvent(
 
   // Determine contact external ID
   const contactExternalId = message?.is_echo ? recipient.id : sender.id;
+  console.log("[IG DM] Contact external ID determined", {
+    contactExternalId,
+    isEcho: message?.is_echo,
+  });
 
   // 1. Resolve or create contact
+  console.log("[IG DM] Step 1: Resolving contact...");
   const contact = await resolveContact(contactExternalId, account);
+  console.log("[IG DM] Contact resolved", { contactId: contact.id });
 
   // 2. Get or create conversation
+  console.log("[IG DM] Step 2: Resolving conversation...");
   const conversation = await resolveConversation(
     messaging,
     account,
     contact.id,
     timestamp,
   );
+  console.log("[IG DM] Conversation resolved", {
+    conversationId: conversation.id,
+  });
 
   // 3. Store or update message
+  console.log("[IG DM] Step 3: Storing message...");
   if (message_edit) {
+    console.log("[IG DM] Handling message edit");
     await handleMessageEdit(message_edit, messaging, conversation, account);
   } else if (message) {
+    console.log("[IG DM] Handling new message", { mid: message.mid });
     await handleNewMessage(
       message,
       messaging,
@@ -81,9 +103,12 @@ async function processDMEvent(
       timestamp,
     );
   }
+  console.log("[IG DM] Message stored");
 
   // 4. Dispatch conversation update event
+  console.log("[IG DM] Step 4: Dispatching conversation event...");
   await dispatchConversationEvent(conversation.id, timestamp, contact, account);
+  console.log("[IG DM] processDMEvent COMPLETED");
 }
 
 /**
@@ -318,10 +343,18 @@ async function handleNewMessage(
   account: ConnectedAccount,
   timestamp: number,
 ) {
+  console.log("[IG DM] handleNewMessage START", {
+    messageId: message.mid,
+    isEcho: message.is_echo,
+    hasAttachments: !!message.attachments,
+  });
+
   const attachments = (message.attachments || []).map((a) => ({
     type: a.type,
     url: a.payload.url,
   }));
+
+  console.log("[IG DM] Attachments mapped", { count: attachments.length });
 
   await InboxService.upsertMessage({
     inboxConversationId: conversation.id,
@@ -334,12 +367,14 @@ async function handleNewMessage(
     channel: conversation.channel,
   });
 
-  const event = createWorkspaceEvent(InboxRealtimeEventTypes.MessageUpserted, {
+  console.log("[IG DM] Message upserted to DB");
+
+  const eventPayload = {
     conversationId: conversation.id,
     message: {
       id: "",
       externalId: message.mid,
-      sender: message.is_echo ? "self" : "user",
+      sender: (message.is_echo ? "self" : "user") as "self" | "user",
       text: message.text ?? null,
       attachments,
       createdAt: new Date(timestamp),
@@ -347,9 +382,25 @@ async function handleNewMessage(
       contentId: null,
       metadata: {},
     },
+  };
+
+  console.log("[IG DM] Event payload prepared", {
+    conversationId: eventPayload.conversationId,
+    messageExternalId: eventPayload.message.externalId,
+    channel: eventPayload.message.channel,
+    attachmentsCount: eventPayload.message.attachments.length,
   });
 
+  console.log("[IG DM] Creating workspace event...");
+  const event = createWorkspaceEvent(
+    InboxRealtimeEventTypes.MessageUpserted,
+    eventPayload,
+  );
+  console.log("[IG DM] Workspace event created", { eventType: event.type });
+
+  console.log("[IG DM] Dispatching workspace event...");
   await dispatchWorkspaceEvent(account.workspaceId, event);
+  console.log("[IG DM] Workspace event dispatched");
 
   console.info("[IG DM] New message created", {
     accountId: account.id,
@@ -371,6 +422,11 @@ async function dispatchConversationEvent(
 ) {
   if (!contact) return;
 
+  console.log("[IG DM] Dispatching conversation event START", {
+    conversationId,
+    contactId: contact.id,
+  });
+
   const event = createWorkspaceEvent(
     InboxRealtimeEventTypes.ConversationUpserted,
     {
@@ -385,5 +441,7 @@ async function dispatchConversationEvent(
     },
   );
 
+  console.log("[IG DM] Conversation event created, dispatching...");
   await dispatchWorkspaceEvent(account.workspaceId, event);
+  console.log("[IG DM] Conversation event dispatched");
 }
