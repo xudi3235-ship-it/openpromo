@@ -2,8 +2,10 @@ import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { getDbClient } from "@core/helpers/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
+import { unifiedContentTable } from "@core/schemas/content.sql";
 import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
+import { placementSpecToContentPreview } from "@shared/content/content-preview";
 import { InboxConversationSummarySchema } from "@shared/inbox";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
@@ -28,6 +30,7 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
         contactProfilePicUrl: inboxContactsTable.profilePicUrl,
         caId: connectedAccount.id,
         caName: connectedAccount.accountName,
+        contentPlacementSpec: unifiedContentTable.placementSpec,
       })
       .from(inboxConversationsTable)
       .innerJoin(
@@ -38,6 +41,10 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
         inboxContactsTable,
         eq(inboxConversationsTable.contactId, inboxContactsTable.id),
       )
+      .leftJoin(
+        unifiedContentTable,
+        eq(inboxConversationsTable.contentId, unifiedContentTable.id),
+      )
       .where(
         and(
           eq(inboxConversationsTable.id, conversationId),
@@ -47,6 +54,10 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
       .limit(1);
 
     if (!row) return c.notFound();
+
+    const postPreview = row.contentPlacementSpec
+      ? placementSpecToContentPreview(row.contentPlacementSpec)
+      : undefined;
 
     const data = InboxConversationSummarySchema.parse({
       id: row.id,
@@ -61,6 +72,7 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
       connectedAccount: { id: row.caId, accountName: row.caName },
       contentId: row.contentId,
       externalThreadId: row.externalThreadId,
+      postPreview,
     });
     return c.json(data);
   },

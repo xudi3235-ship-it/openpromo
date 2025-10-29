@@ -1,5 +1,9 @@
-import { AllPlacement, SharedAttachmentSpec } from "@shared/content";
 import { z } from "zod";
+import {
+  AllPlacement,
+  type PlacementSpec,
+  SharedAttachmentSpec,
+} from "./index";
 
 const PreviewMetrics = z
   .object({
@@ -64,3 +68,65 @@ export type InstagramReelPreview = z.infer<typeof InstagramReelPreview>;
 export type FacebookFeedPreview = z.infer<typeof FacebookFeedPreview>;
 export type FacebookReelPreview = z.infer<typeof FacebookReelPreview>;
 export type TikTokFeedPreview = z.infer<typeof TikTokFeedPreview>;
+
+// helpers to map placement spec to content preview
+export function placementSpecToContentPreview(
+  spec: PlacementSpec,
+): ContentPreview {
+  switch (spec.placement) {
+    case "IG_FEED":
+      return igFeedSpecToPreview(spec);
+    case "FB_FEED":
+      return fbFeedSpecToPreview(spec);
+    case "TT_FEED":
+      return tiktokFeedSpecToPreview(spec);
+  }
+}
+
+function igFeedSpecToPreview(
+  spec: Extract<PlacementSpec, { placement: "IG_FEED" }>,
+): InstagramFeedPreview {
+  return {
+    placement: spec.placement,
+    accountName: null,
+    profilePicUrl: null,
+    caption: spec.caption ?? null,
+    attachments: spec.attachments,
+    permalink: null,
+    timestampLabel: null,
+    metrics: undefined,
+    location: null,
+  };
+}
+
+function fbFeedSpecToPreview(
+  spec: Extract<PlacementSpec, { placement: "FB_FEED" }>,
+): FacebookFeedPreview {
+  return {
+    placement: spec.placement,
+    accountName: null,
+    profilePicUrl: null,
+    caption: spec.postSpec?.message ?? null,
+    attachments: spec.attachments,
+    permalink: null,
+    timestampLabel: null,
+    metrics: undefined,
+    callToActionLabel: spec.postSpec?.callToAction?.type ?? null,
+  };
+}
+
+function tiktokFeedSpecToPreview(
+  spec: Extract<PlacementSpec, { placement: "TT_FEED" }>,
+): TikTokFeedPreview {
+  return {
+    placement: spec.placement,
+    accountName: null,
+    profilePicUrl: null,
+    caption: spec.caption ?? null,
+    attachments: spec.attachments,
+    permalink: null,
+    timestampLabel: null,
+    metrics: undefined,
+    musicTitle: null,
+  };
+}
