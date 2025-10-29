@@ -1,3 +1,8 @@
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@openpromo/ui/components/avatar";
 import { Badge } from "@openpromo/ui/components/badge";
 import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 import { format } from "date-fns";
@@ -44,26 +49,52 @@ export function InboxCommentPanelV2({
         {isLoading ? (
           <div className="text-sm text-muted-foreground">Loading comments…</div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-2">
             {messages.map((message) => {
               const isDeleted = Boolean(message.metadata?.deleted);
-              const actor = message.sender === "self" ? "You" : "Customer";
+              const isSelf = message.sender === "self";
+              const extra = message.metadata?.extra as
+                | Record<string, unknown>
+                | undefined;
+              const actorName = isSelf
+                ? (conversation.connectedAccount.accountName ?? "You")
+                : (getStringExtra(extra, "senderName") ??
+                  conversation.contact.name);
+              const avatarUrl = isSelf
+                ? undefined
+                : (getStringExtra(extra, "senderAvatarUrl") ??
+                  conversation.contact.profilePicUrl ??
+                  undefined);
               return (
                 <Fragment key={message.id}>
-                  <li className="rounded-lg border border-border/60 bg-background px-4 py-3">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{actor}</span>
-                      <span>{format(message.createdAt, "MMM d, h:mm a")}</span>
+                  <li className="flex items-start gap-3">
+                    <Avatar className="h-8 w-8 border border-border/70 bg-background shadow-sm">
+                      {avatarUrl ? (
+                        <AvatarImage src={avatarUrl} alt={actorName} />
+                      ) : null}
+                      <AvatarFallback>{getInitials(actorName)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex min-w-0 max-w-[82%] flex-col gap-1">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">
+                          {actorName}
+                        </span>
+                        <span>
+                          {format(message.createdAt, "MMM d, h:mm a")}
+                        </span>
+                      </div>
+                      <div className="w-fit rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm leading-relaxed">
+                        {isDeleted ? (
+                          <span className="italic text-muted-foreground">
+                            Comment removed
+                          </span>
+                        ) : message.text ? (
+                          <span className="whitespace-pre-wrap">
+                            {message.text}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
-                    {isDeleted ? (
-                      <p className="mt-2 text-sm italic text-muted-foreground">
-                        Comment removed
-                      </p>
-                    ) : message.text ? (
-                      <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
-                        {message.text}
-                      </p>
-                    ) : null}
                   </li>
                 </Fragment>
               );
@@ -83,4 +114,20 @@ export function InboxCommentPanelV2({
       />
     </div>
   );
+}
+
+function getInitials(name: string) {
+  const [first = "", second = ""] = name.trim().split(" ");
+  return `${first.charAt(0)}${second.charAt(0)}`.toUpperCase();
+}
+
+function getStringExtra(
+  extra: Record<string, unknown> | undefined,
+  key: string,
+) {
+  if (!extra) return undefined;
+  const value = extra[key];
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }

@@ -19,6 +19,9 @@ export function InboxDMPanel({
   isRefreshing,
 }: InboxDMPanelProps) {
   const hasMessages = messages.length > 0;
+  const contactName = conversation.contact.name;
+  const contactAvatarUrl = conversation.contact.profilePicUrl;
+  const selfName = conversation.connectedAccount.accountName ?? "You";
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -27,6 +30,9 @@ export function InboxDMPanel({
           messages={messages}
           isLoading={isLoading}
           isRefreshing={isRefreshing && hasMessages}
+          contactName={contactName}
+          contactAvatarUrl={contactAvatarUrl}
+          selfName={selfName}
         />
         <ScrollBar orientation="vertical" />
       </ScrollArea>

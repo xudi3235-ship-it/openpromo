@@ -19,9 +19,9 @@ export function InboxConversationHeader({
   const platformMeta = getPlatformMeta(conversation.platform);
 
   return (
-    <header className="flex items-start justify-between gap-4 border-b border-border/60 px-6 py-4">
-      <div className="flex items-start gap-3">
-        <Avatar className="h-12 w-12">
+    <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-3">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-9 w-9 border border-border/60">
           {conversation.contact.profilePicUrl ? (
             <AvatarImage
               src={conversation.contact.profilePicUrl}
@@ -33,35 +33,40 @@ export function InboxConversationHeader({
             </AvatarFallback>
           )}
         </Avatar>
-        <div>
-          <h2 className="font-semibold">{conversation.contact.name}</h2>
-          <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <Badge variant="outline">
-              {conversation.connectedAccount.accountName ?? "Connected account"}
-            </Badge>
-            <Badge variant="secondary" className="capitalize">
-              {conversation.channel === "dm"
-                ? "Direct message"
-                : "Post comment"}
-            </Badge>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <span>{conversation.contact.name}</span>
             <Badge
               variant="outline"
               className={cn(
-                "flex items-center gap-1",
+                "hidden items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium lg:inline-flex",
                 platformMeta.accentTextClass,
               )}
             >
               {platformMeta.icon && <platformMeta.icon className="h-3 w-3" />}
               {platformMeta.label}
             </Badge>
-            <span>
-              Last activity{" "}
-              {formatDistanceToNow(conversation.lastMessageAt, {
-                addSuffix: true,
-              })}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="truncate">
+              {conversation.connectedAccount.accountName ?? "Connected account"}
+            </span>
+            <span className="hidden text-muted-foreground/70 sm:inline">•</span>
+            <span className="capitalize text-muted-foreground/80">
+              {conversation.channel === "dm"
+                ? "Direct message"
+                : "Post comment"}
             </span>
           </div>
         </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+        <span>Last activity</span>
+        <span className="font-medium text-foreground">
+          {formatDistanceToNow(conversation.lastMessageAt, {
+            addSuffix: true,
+          })}
+        </span>
       </div>
     </header>
   );
