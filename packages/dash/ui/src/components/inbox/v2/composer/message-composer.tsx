@@ -20,7 +20,7 @@ export function MessageComposerRoot({
   return (
     <form
       className={cn(
-        "flex w-full flex-col gap-3 overflow-hidden rounded-xl border border-border/60 bg-background shadow-sm",
+        "flex w-full flex-col gap-2 overflow-hidden rounded-xl border border-border/50 bg-background",
         className,
       )}
       {...props}
@@ -37,7 +37,7 @@ export interface MessageComposerTextareaProps
 
 export function MessageComposerTextarea({
   className,
-  minHeight = 72,
+  minHeight = 56,
   maxHeight = 180,
   submitOnEnter = true,
   onKeyDown,
@@ -55,7 +55,7 @@ export function MessageComposerTextarea({
   return (
     <Textarea
       className={cn(
-        "min-h-[72px] w-full resize-none rounded-none border-none px-3 pb-3 pt-4 text-sm shadow-none outline-none ring-0",
+        "min-h-[56px] w-full resize-none rounded-none border-none px-3 pb-2 pt-3 text-sm shadow-none outline-none ring-0",
         "field-sizing-content max-h-[12lh] bg-transparent focus-visible:ring-0",
         className,
       )}
@@ -79,7 +79,7 @@ export function MessageComposerToolbar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-2 border-t border-border/60 bg-muted/30 px-3 py-2",
+        "flex flex-wrap items-center justify-between gap-2 border-t border-border/40 bg-transparent px-3 py-2",
         className,
       )}
       {...props}

@@ -284,7 +284,7 @@ export function InboxMessageInput({
   }, [clearComposerReplyTarget, conversationId]);
 
   return (
-    <footer className="border-t border-border/60 bg-muted/15 px-6 py-4">
+    <footer className="bg-background px-6 py-3">
       <MessageComposer.Root onSubmit={handleSubmit}>
         {replyTargetMessage ? (
           <MessageComposer.ReplyPreview
@@ -302,7 +302,6 @@ export function InboxMessageInput({
               : "Select a conversation to start messaging"
           }
           disabled={!conversation}
-          minHeight={72}
         />
         <MessageComposer.Toolbar>
           <MessageComposer.Tools>
