@@ -149,29 +149,6 @@ export function InboxCommentContext({
             </Button>
           </div>
         </div>
-
-        <Separator />
-
-        {/* Comment Thread Info */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold">Thread Info</h3>
-          <div className="space-y-2 text-xs text-muted-foreground">
-            <div className="flex justify-between">
-              <span>Thread ID:</span>
-              <span className="font-mono text-xs">
-                {conversation.externalThreadId?.slice(0, 12)}...
-              </span>
-            </div>
-            {conversation.contentId && (
-              <div className="flex justify-between">
-                <span>Content ID:</span>
-                <span className="font-mono text-xs">
-                  {conversation.contentId.slice(0, 12)}...
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </ScrollArea>
   );

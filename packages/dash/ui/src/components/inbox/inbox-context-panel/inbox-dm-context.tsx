@@ -3,7 +3,7 @@ import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Separator } from "@openpromo/ui/components/separator";
 import type { InboxConversationSummary } from "@shared/inbox";
-import { Clock, FileText, Plus, Sparkles, Tag, UserCircle } from "lucide-react";
+import { FileText, Plus, Tag, UserCircle } from "lucide-react";
 
 interface InboxDMContextProps {
   conversation: InboxConversationSummary;
@@ -37,27 +37,6 @@ export function InboxDMContext({ conversation }: InboxDMContextProps) {
             </div>
           </div>
         </div>
-
-        <Separator />
-
-        {/* Summary Section */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">AI Summary</h3>
-            <Button variant="ghost" size="sm" disabled>
-              <Sparkles className="mr-1 h-3 w-3" />
-              Generate
-            </Button>
-          </div>
-          <div className="rounded-lg border border-dashed border-border/60 bg-muted/20 p-4">
-            <p className="text-xs text-muted-foreground">
-              AI-powered conversation summaries coming soon. This will help you
-              quickly understand the context and key points of long
-              conversations.
-            </p>
-          </div>
-        </div>
-
         <Separator />
 
         {/* Labels Section */}
@@ -101,19 +80,6 @@ export function InboxDMContext({ conversation }: InboxDMContextProps) {
             <Button variant="ghost" size="sm" className="mt-2" disabled>
               Add note
             </Button>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Activity Timeline - Placeholder */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold">Recent Activity</h3>
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border/60 p-6 text-center">
-            <Clock className="mb-2 h-8 w-8 text-muted-foreground/50" />
-            <p className="text-xs text-muted-foreground">
-              Activity log coming soon
-            </p>
           </div>
         </div>
       </div>
