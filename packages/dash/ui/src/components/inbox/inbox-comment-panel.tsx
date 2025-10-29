@@ -1,4 +1,5 @@
 import { Badge } from "@openpromo/ui/components/badge";
+import { ScrollArea, ScrollBar } from "@openpromo/ui/components/scroll-area";
 import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 import { format } from "date-fns";
 import { Fragment } from "react";
@@ -48,7 +49,7 @@ export function InboxCommentPanel({
         ) : null}
       </section>
 
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <ScrollArea className="flex-1 px-6 py-4">
         {isLoading ? (
           <div className="text-sm text-muted-foreground">Loading comments…</div>
         ) : (
@@ -83,7 +84,8 @@ export function InboxCommentPanel({
             Syncing latest comments…
           </div>
         )}
-      </div>
+        <ScrollBar orientation="vertical" />
+      </ScrollArea>
 
       <div className="border-t border-border/60 px-6 py-4">
         <InboxMessageInput

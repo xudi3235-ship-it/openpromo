@@ -37,7 +37,7 @@ export function InboxConversationPanel({
   const showRefreshing = isFetching || threadIsFetching;
 
   return (
-    <section className="flex flex-1 flex-col rounded-xl border border-border/60 bg-background">
+    <section className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-background">
       {activeConversation ? (
         <>
           <InboxConversationHeader conversation={activeConversation} />

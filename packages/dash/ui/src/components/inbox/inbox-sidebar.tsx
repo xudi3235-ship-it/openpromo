@@ -15,7 +15,7 @@ export function InboxSidebar({
   isFetching,
 }: InboxSidebarProps) {
   return (
-    <aside className="flex  w-full max-w-sm flex-col rounded-xl border border-border/60 bg-background sm:w-72 lg:w-80">
+    <aside className="flex w-full max-w-sm flex-col overflow-hidden rounded-xl border border-border/60 bg-background sm:w-72 lg:w-80">
       <div className="space-y-3 border-b border-border/60 px-3 py-3">
         <InboxFilters />
         <div className="flex items-center justify-between text-xs text-muted-foreground">
