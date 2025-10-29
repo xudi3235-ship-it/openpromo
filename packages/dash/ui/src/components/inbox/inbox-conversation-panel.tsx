@@ -1,9 +1,9 @@
 import type { InboxConversationSummary } from "@shared/inbox";
 import { useInboxStore } from "@/stores/inbox-store";
+import { InboxCommentPanel } from "./inbox-comment-panel";
 import { InboxConversationHeader } from "./inbox-conversation-header";
+import { InboxDMPanel } from "./inbox-dm-panel";
 import { InboxEmptyState } from "./inbox-empty-state";
-import { InboxMessageInput } from "./inbox-message-input";
-import { InboxMessageThread } from "./inbox-message-thread";
 
 interface InboxConversationPanelProps {
   workspaceSlug: string | undefined;
@@ -41,15 +41,23 @@ export function InboxConversationPanel({
       {activeConversation ? (
         <>
           <InboxConversationHeader conversation={activeConversation} />
-          <InboxMessageThread
-            messages={activeMessages}
-            isLoading={showLoading}
-            isRefreshing={showRefreshing && hasMessages}
-          />
-          <InboxMessageInput
-            workspaceSlug={workspaceSlug}
-            conversation={activeConversation}
-          />
+          {activeConversation.channel === "dm" ? (
+            <InboxDMPanel
+              workspaceSlug={workspaceSlug}
+              conversation={activeConversation}
+              messages={activeMessages}
+              isLoading={showLoading}
+              isRefreshing={showRefreshing}
+            />
+          ) : (
+            <InboxCommentPanel
+              workspaceSlug={workspaceSlug}
+              conversation={activeConversation}
+              messages={activeMessages}
+              isLoading={showLoading}
+              isFetching={showRefreshing}
+            />
+          )}
         </>
       ) : (
         <InboxEmptyState />
