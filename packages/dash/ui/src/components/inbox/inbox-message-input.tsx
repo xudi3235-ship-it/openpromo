@@ -1,19 +1,17 @@
-import { Badge } from "@openpromo/ui/components/badge";
-import { Button } from "@openpromo/ui/components/button";
-import { Textarea } from "@openpromo/ui/components/textarea";
 import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 import { useQueryClient } from "@tanstack/react-query";
 import type { InboxMessagesList } from "@worker/routes/api/workspaces/inbox";
-import { Paperclip, Send } from "lucide-react";
+import { Paperclip, Smile } from "lucide-react";
 import {
   type FormEvent,
-  type KeyboardEvent,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
 import { useSendInboxMessageMutation } from "@/queries/inbox/send-message";
 import { useInboxStore } from "@/stores/inbox-store";
+import { MessageComposer, type MessageComposerStatus } from "./v2/composer";
 
 type InboxMessageInputProps = {
   workspaceSlug: string | undefined;
@@ -29,6 +27,7 @@ type SendMessageMutationContext = {
   workspaceSlug: string;
   messagesKey: MessagesQueryKey;
   text: string;
+  replyToMessageId: string | null;
 };
 
 const DEFAULT_PAGE = 1;
@@ -38,8 +37,15 @@ function createOptimisticMessage(
   id: string,
   text: string,
   conversation: InboxConversationSummary,
+  replyToMessageId: string | null,
 ): InboxMessage {
   const createdAt = new Date();
+  const extra: Record<string, unknown> = {
+    generatedAt: createdAt.toISOString(),
+  };
+  if (replyToMessageId) {
+    extra.replyToMessageId = replyToMessageId;
+  }
   return {
     id,
     externalId: id,
@@ -52,9 +58,7 @@ function createOptimisticMessage(
     metadata: {
       optimistic: true,
       pendingEcho: true,
-      extra: {
-        generatedAt: createdAt.toISOString(),
-      },
+      extra,
     },
   };
 }
@@ -65,9 +69,32 @@ export function InboxMessageInput({
 }: InboxMessageInputProps) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const appendMessages = useInboxStore((state) => state.appendMessages);
   const removeMessage = useInboxStore((state) => state.removeMessage);
   const initializeThread = useInboxStore((state) => state.initializeThread);
+  const setComposerDraft = useInboxStore((state) => state.setComposerDraft);
+  const clearComposerDraft = useInboxStore((state) => state.clearComposerDraft);
+  const setComposerReplyTarget = useInboxStore(
+    (state) => state.setComposerReplyTarget,
+  );
+  const clearComposerReplyTarget = useInboxStore(
+    (state) => state.clearComposerReplyTarget,
+  );
+  const conversationId = conversation?.id ?? null;
+  const storedDraft = useInboxStore((state) =>
+    conversationId ? (state.composerDrafts[conversationId] ?? "") : "",
+  );
+  const replyTargetId = useInboxStore((state) =>
+    conversationId
+      ? (state.composerReplyTargets[conversationId] ?? null)
+      : null,
+  );
+  const replyTargetMessage = useInboxStore((state) => {
+    if (!conversationId || !replyTargetId) return null;
+    const thread = state.threads[conversationId];
+    return thread?.itemsById?.[replyTargetId] ?? null;
+  });
 
   const optimisticIdPrefix = useMemo(() => {
     if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -79,14 +106,22 @@ export function InboxMessageInput({
         .slice(2, 8)}`;
   }, []);
 
+  useEffect(() => {
+    setDraft(storedDraft ?? "");
+    setErrorMessage(null);
+  }, [storedDraft]);
+
   const mutation = useSendInboxMessageMutation<SendMessageMutationContext>(
     workspaceSlug,
-    conversation?.id,
+    conversationId ?? undefined,
     {
       onMutate: async (variables) => {
-        if (!workspaceSlug || !conversation) return undefined;
+        if (!workspaceSlug || !conversationId || !conversation) {
+          return undefined;
+        }
 
-        const conversationId = conversation.id;
+        setErrorMessage(null);
+
         const baseQueryKey = [
           "inbox",
           "messages",
@@ -117,6 +152,7 @@ export function InboxMessageInput({
           optimisticId,
           variables.text,
           conversation,
+          variables.replyToMessageId ?? null,
         );
 
         appendMessages({
@@ -147,9 +183,10 @@ export function InboxMessageInput({
           workspaceSlug,
           messagesKey,
           text: variables.text,
+          replyToMessageId: variables.replyToMessageId ?? null,
         } satisfies SendMessageMutationContext;
       },
-      onError: (_error, _variables, context) => {
+      onError: (error, _variables, context) => {
         if (!context) return;
         queryClient.setQueryData<InboxMessagesList | undefined>(
           context.messagesKey,
@@ -160,6 +197,14 @@ export function InboxMessageInput({
           messageId: context.optimisticId,
         });
         setDraft(context.text);
+        setComposerDraft(context.conversationId, context.text);
+        if (context.replyToMessageId) {
+          setComposerReplyTarget(
+            context.conversationId,
+            context.replyToMessageId,
+          );
+        }
+        setErrorMessage(error.message || "Unable to send message");
       },
       onSettled: (_data, _error, _variables, context) => {
         if (!context) return;
@@ -180,6 +225,11 @@ export function InboxMessageInput({
   const trimmedDraft = draft.trim();
   const isSendDisabled =
     !isReady || trimmedDraft.length === 0 || mutation.isPending;
+  const submitStatus: MessageComposerStatus = mutation.isPending
+    ? "submitting"
+    : mutation.isError
+      ? "error"
+      : "idle";
 
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -188,55 +238,96 @@ export function InboxMessageInput({
       const value = trimmedDraft;
       if (!value) return;
 
-      mutation.mutate({ text: value });
+      const targetMessageId = replyTargetId ?? null;
+      const payload = targetMessageId
+        ? { text: value, replyToMessageId: targetMessageId }
+        : { text: value };
+      mutation.mutate(payload);
       setDraft("");
-    },
-    [conversation, isSendDisabled, mutation, trimmedDraft],
-  );
-
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        if (!isSendDisabled && conversation) {
-          const form = event.currentTarget.form;
-          form?.requestSubmit();
-        }
+      if (conversationId) {
+        clearComposerDraft(conversationId);
+        clearComposerReplyTarget(conversationId);
       }
     },
-    [conversation, isSendDisabled],
+    [
+      clearComposerDraft,
+      clearComposerReplyTarget,
+      conversation,
+      conversationId,
+      isSendDisabled,
+      mutation,
+      replyTargetId,
+      trimmedDraft,
+    ],
   );
+
+  const handleDraftChange = useCallback(
+    (value: string) => {
+      setDraft(value);
+      if (conversationId) {
+        if (value) {
+          setComposerDraft(conversationId, value);
+        } else {
+          clearComposerDraft(conversationId);
+        }
+      }
+      if (errorMessage) {
+        setErrorMessage(null);
+      }
+    },
+    [clearComposerDraft, conversationId, errorMessage, setComposerDraft],
+  );
+
+  const handleCancelReply = useCallback(() => {
+    if (!conversationId) return;
+    clearComposerReplyTarget(conversationId);
+  }, [clearComposerReplyTarget, conversationId]);
 
   return (
     <footer className="border-t border-border/60 bg-muted/15 px-6 py-4">
-      <form className="space-y-3" onSubmit={handleSubmit}>
-        <Textarea
-          key={conversation?.id}
+      <MessageComposer.Root onSubmit={handleSubmit}>
+        {replyTargetMessage ? (
+          <MessageComposer.ReplyPreview
+            message={replyTargetMessage}
+            onCancel={handleCancelReply}
+          />
+        ) : null}
+        <MessageComposer.Textarea
+          key={conversation?.id ?? "inactive"}
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={handleKeyDown}
+          onChange={(event) => handleDraftChange(event.target.value)}
           placeholder={
             conversation
-              ? "Type your reply…"
+              ? "Send a quick reply…"
               : "Select a conversation to start messaging"
           }
           disabled={!conversation}
-          className="min-h-[90px] resize-none"
+          minHeight={72}
         />
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">Status: Open</Badge>
-            <div className="flex items-center gap-1">
-              <Paperclip className="h-3 w-3" />
-              Attachments coming soon
-            </div>
-          </div>
-          <Button size="sm" type="submit" disabled={isSendDisabled}>
-            <Send className="mr-2 h-4 w-4" />
-            Send
-          </Button>
-        </div>
-      </form>
+        <MessageComposer.Toolbar>
+          <MessageComposer.Tools>
+            <MessageComposer.Button type="button" disabled>
+              <Paperclip className="h-4 w-4" />
+            </MessageComposer.Button>
+            <MessageComposer.Button type="button" disabled>
+              <Smile className="h-4 w-4" />
+            </MessageComposer.Button>
+          </MessageComposer.Tools>
+          <MessageComposer.Actions>
+            {errorMessage ? (
+              <span className="text-xs text-destructive">{errorMessage}</span>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                Enter to send • Shift+Enter for newline
+              </span>
+            )}
+            <MessageComposer.Submit
+              status={submitStatus}
+              disabled={isSendDisabled}
+            />
+          </MessageComposer.Actions>
+        </MessageComposer.Toolbar>
+      </MessageComposer.Root>
     </footer>
   );
 }

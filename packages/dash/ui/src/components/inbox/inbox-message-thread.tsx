@@ -6,7 +6,7 @@ import {
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
 import { format } from "date-fns";
-import { Loader2, Paperclip } from "lucide-react";
+import { CornerUpLeft, Loader2, Paperclip } from "lucide-react";
 import type { InboxMessage } from "@/stores/inbox/types";
 
 interface InboxMessageThreadProps {
@@ -17,6 +17,7 @@ interface InboxMessageThreadProps {
   contactAvatarUrl?: string | null;
   selfName?: string;
   selfAvatarUrl?: string | null;
+  onReply?: (message: InboxMessage) => void;
 }
 
 export function InboxMessageThread({
@@ -27,6 +28,7 @@ export function InboxMessageThread({
   contactAvatarUrl,
   selfName = "You",
   selfAvatarUrl,
+  onReply,
 }: InboxMessageThreadProps) {
   const showEmptyState = !isLoading && messages.length === 0;
 
@@ -48,6 +50,7 @@ export function InboxMessageThread({
               contactAvatarUrl={contactAvatarUrl ?? undefined}
               selfName={selfName}
               selfAvatarUrl={selfAvatarUrl ?? undefined}
+              onReply={onReply}
             />
           ))}
 
@@ -74,6 +77,7 @@ interface MessageBubbleProps {
   contactAvatarUrl?: string;
   selfName: string;
   selfAvatarUrl?: string;
+  onReply?: (message: InboxMessage) => void;
 }
 
 function MessageBubble({
@@ -82,6 +86,7 @@ function MessageBubble({
   contactAvatarUrl,
   selfName,
   selfAvatarUrl,
+  onReply,
 }: MessageBubbleProps) {
   const isSelf = message.sender === "self";
   const timestamp = format(message.createdAt, "MMM d, h:mm a");
@@ -111,10 +116,12 @@ function MessageBubble({
     return acc;
   }, new Map<string, { label: string; count: number }>());
   const reactionChips = Array.from(reactionMap.values());
+  const showReplyAction = typeof onReply === "function";
+
   return (
     <div
       className={cn(
-        "flex w-full items-end gap-2",
+        "group flex w-full items-end gap-2",
         isSelf ? "justify-end" : "justify-start",
       )}
     >
@@ -175,6 +182,20 @@ function MessageBubble({
             </div>
           )}
         </div>
+        {showReplyAction ? (
+          <button
+            type="button"
+            onClick={() => onReply?.(message)}
+            className={cn(
+              "inline-flex items-center gap-1 text-[11px] text-muted-foreground/80 transition-opacity",
+              isSelf ? "self-end" : "self-start",
+              "opacity-0 group-hover:opacity-100",
+            )}
+          >
+            <CornerUpLeft className="h-3 w-3" />
+            Reply
+          </button>
+        ) : null}
       </div>
       {isSelf && (
         <MessageAvatar src={avatarUrl} fallback={avatarFallback} self />

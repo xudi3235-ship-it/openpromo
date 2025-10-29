@@ -7,6 +7,8 @@ export const uiInitialState: InboxUIState = {
   activeSidebarTab: "details",
   splitPaneSizes: [35, 65],
   hoveredConversationId: null,
+  composerDrafts: {},
+  composerReplyTargets: {},
 };
 
 export const createUISlice: StateCreator<
@@ -40,5 +42,25 @@ export const createUISlice: StateCreator<
   setHoveredConversation: (conversationId) =>
     set((state) => {
       state.hoveredConversationId = conversationId;
+    }),
+
+  setComposerDraft: (conversationId, draft) =>
+    set((state) => {
+      state.composerDrafts[conversationId] = draft;
+    }),
+
+  clearComposerDraft: (conversationId) =>
+    set((state) => {
+      delete state.composerDrafts[conversationId];
+    }),
+
+  setComposerReplyTarget: (conversationId, messageId) =>
+    set((state) => {
+      state.composerReplyTargets[conversationId] = messageId;
+    }),
+
+  clearComposerReplyTarget: (conversationId) =>
+    set((state) => {
+      delete state.composerReplyTargets[conversationId];
     }),
 });

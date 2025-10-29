@@ -5,7 +5,9 @@ import {
 } from "@openpromo/ui/components/avatar";
 import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 import { format } from "date-fns";
-import { Fragment } from "react";
+import { CornerUpLeft } from "lucide-react";
+import { Fragment, useCallback } from "react";
+import { useInboxStore } from "@/stores/inbox-store";
 import { InboxMessageInput } from "../inbox-message-input";
 
 interface InboxCommentPanelV2Props {
@@ -23,6 +25,16 @@ export function InboxCommentPanelV2({
   isLoading,
   isFetching,
 }: InboxCommentPanelV2Props) {
+  const setComposerReplyTarget = useInboxStore(
+    (state) => state.setComposerReplyTarget,
+  );
+  const conversationId = conversation.id;
+  const handleReply = useCallback(
+    (message: InboxMessage) => {
+      setComposerReplyTarget(conversationId, message.id);
+    },
+    [conversationId, setComposerReplyTarget],
+  );
   const connectedAccountAvatar =
     conversation.connectedAccount.profilePicUrl ?? undefined;
   return (
@@ -92,6 +104,15 @@ export function InboxCommentPanelV2({
                           </span>
                         ) : null}
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => handleReply(message)}
+                        disabled={isDeleted}
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 hover:text-foreground disabled:pointer-events-none disabled:opacity-60"
+                      >
+                        <CornerUpLeft className="h-3 w-3" />
+                        Reply
+                      </button>
                     </div>
                   </li>
                 </Fragment>

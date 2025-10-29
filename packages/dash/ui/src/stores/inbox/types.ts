@@ -92,6 +92,8 @@ export type InboxUIState = {
   activeSidebarTab: "details" | "contact" | "activity";
   splitPaneSizes: [number, number];
   hoveredConversationId: string | null;
+  composerDrafts: Record<string, string>;
+  composerReplyTargets: Record<string, string | null>;
 };
 
 export type InboxUIActions = {
@@ -100,6 +102,13 @@ export type InboxUIActions = {
   setActiveSidebarTab(tab: InboxUIState["activeSidebarTab"]): void;
   setSplitPaneSizes(sizes: [number, number]): void;
   setHoveredConversation(conversationId: string | null): void;
+  setComposerDraft(conversationId: string, draft: string): void;
+  clearComposerDraft(conversationId: string): void;
+  setComposerReplyTarget(
+    conversationId: string,
+    messageId: string | null,
+  ): void;
+  clearComposerReplyTarget(conversationId: string): void;
 };
 
 export type InboxRealtimeState = {

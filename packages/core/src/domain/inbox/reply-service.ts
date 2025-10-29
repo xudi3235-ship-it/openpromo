@@ -22,6 +22,7 @@ import { and, eq } from "drizzle-orm";
 type InboxReplyInput = {
   conversationId: string;
   text: string;
+  replyToMessageId?: string | null;
 };
 
 type ConversationRow = {
@@ -37,12 +38,23 @@ type ConversationRow = {
 };
 
 export namespace InboxReplyService {
-  export async function sendReply({ conversationId, text }: InboxReplyInput) {
+  export async function sendReply({
+    conversationId,
+    text,
+    replyToMessageId,
+  }: InboxReplyInput) {
     if (env.VITE_ENVIRONMENT === "local") {
       console.info("[Inbox Reply] local environment, skipping send", {
         conversationId,
       });
       return;
+    }
+
+    if (replyToMessageId) {
+      console.info("[Inbox Reply] replying to message", {
+        conversationId,
+        replyToMessageId,
+      });
     }
 
     const workspaceId = Actor.workspaceID();
