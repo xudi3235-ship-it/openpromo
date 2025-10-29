@@ -10,7 +10,7 @@ export const logRequestBody =
 
       if (contentType.includes("application/json")) {
         const body = await clonedRequest.json();
-        console.log("📝 JSON Request Body:", body);
+        console.log("📝 JSON Request Body:", JSON.stringify(body));
       } else if (contentType.includes("application/x-www-form-urlencoded")) {
         const formData = await clonedRequest.formData();
         const body: Record<string, string> = {};

@@ -24,12 +24,12 @@ export namespace Database {
         cfEnv.HYPERDRIVE_ID &&
         cfEnv.VITE_ENVIRONMENT !== "local"
       ) {
-        log.info("**on hyperdrive**");
+        // log.info("**on hyperdrive**");
         return {
           connectionString: cfEnv.HYPERDRIVE.connectionString,
         };
       }
-      log.warn("fallback to pooled conn");
+      // log.warn("fallback to pooled conn");
       const connectionString = env.DATABASE_URL ?? cfEnv.DATABASE_URL;
       if (!connectionString)
         throw new Error("No DATABASE_URL found in environment");
