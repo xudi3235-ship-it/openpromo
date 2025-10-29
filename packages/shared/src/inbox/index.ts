@@ -2,6 +2,9 @@ import { AllPlatforms, AllPlatformsZod } from "@shared/content";
 import * as z from "zod";
 import { InboxChannel as InboxChannelSchema } from "./channels";
 import { InboxMessageMetadataSchema } from "./metadata";
+import { type PostPreview, PostPreviewSchema } from "./post-preview";
+
+export { PostPreviewSchema } from "./post-preview";
 
 export const FBMessageAttachmentTypes = {
   IMAGE: "image",
@@ -322,10 +325,12 @@ export const InboxConversationSummarySchema = z.object({
   connectedAccount: InboxConnectedAccountSummary,
   contentId: z.string().nullable(),
   externalThreadId: z.string().nullable(),
+  postPreview: PostPreviewSchema.optional(),
 });
 export type InboxConversationSummary = z.infer<
   typeof InboxConversationSummarySchema
 >;
+export type InboxPostPreview = PostPreview;
 
 // ============ Inbox Realtime Events ============
 // Note: Inbox event types, schemas, and helpers have been consolidated

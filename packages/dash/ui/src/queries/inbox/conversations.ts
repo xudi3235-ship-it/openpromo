@@ -1,4 +1,5 @@
 import type { AllPlatforms } from "@shared";
+import { InboxConversationSummarySchema } from "@shared/inbox";
 import type { QueryClient } from "@tanstack/react-query";
 import type { InboxConversationsList } from "@worker/routes/api/workspaces/inbox";
 import { useMemo } from "react";
@@ -58,10 +59,12 @@ export function useInboxConversationsQuery(
     if (!data) return undefined;
     return {
       ...data,
-      items: data.items.map((item) => ({
-        ...item,
-        lastMessageAt: new Date(item.lastMessageAt),
-      })),
+      items: data.items.map((item) =>
+        InboxConversationSummarySchema.parse({
+          ...item,
+          lastMessageAt: new Date(item.lastMessageAt),
+        }),
+      ),
     } satisfies InboxConversationsList;
   }, [data]);
 
@@ -91,10 +94,12 @@ export async function prefetchInboxConversations(
       const payload = await response.json();
       return {
         ...payload,
-        items: payload.items.map((item) => ({
-          ...item,
-          lastMessageAt: new Date(item.lastMessageAt),
-        })),
+        items: payload.items.map((item) =>
+          InboxConversationSummarySchema.parse({
+            ...item,
+            lastMessageAt: new Date(item.lastMessageAt),
+          }),
+        ),
       } satisfies InboxConversationsList;
     },
   });
