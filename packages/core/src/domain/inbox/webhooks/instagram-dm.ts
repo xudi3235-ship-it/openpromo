@@ -28,6 +28,8 @@ export async function handleInstagramDMEvents(
         senderId: messaging.sender?.id,
         error,
       });
+      console.log(JSON.stringify(error));
+      console.log(error instanceof Error ? error.stack : null);
       // Continue processing other events
     }
   }

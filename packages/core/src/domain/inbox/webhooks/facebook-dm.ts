@@ -42,6 +42,7 @@ export async function handleFacebookDMEvents(
         messageId: messaging.message?.mid ?? messaging.message_edit?.mid,
         error,
       });
+      console.log(error instanceof Error ? error.stack : null);
     }
   }
 }
