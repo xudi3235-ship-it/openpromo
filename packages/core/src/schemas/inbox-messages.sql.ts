@@ -1,6 +1,10 @@
 import { id, timestamps, ulid } from "@core/helpers/db";
 import { unifiedContentTable } from "@core/schemas/content.sql";
-import type { AllMessageAttachmentTypes, MessagePayload } from "@shared/inbox";
+import type {
+  AllMessageAttachmentTypes,
+  MessagePayload,
+  InboxMessageMetadata as SharedInboxMessageMetadata,
+} from "@shared/inbox";
 import { jsonb, pgEnum, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 import {
   type InboxChannel,
@@ -17,7 +21,7 @@ export type MessageAttachment = {
   url: string;
 };
 
-export type InboxMessageMetadata = Record<string, unknown>;
+export type InboxMessageMetadata = SharedInboxMessageMetadata;
 
 export const inboxMessagesTable = pgTable(
   "inbox_messages",

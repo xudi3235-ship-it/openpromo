@@ -1,5 +1,7 @@
 import { AllPlatforms, AllPlatformsZod } from "@shared/content";
 import * as z from "zod";
+import { InboxChannel as InboxChannelSchema } from "./channels";
+import { InboxMessageMetadataSchema } from "./metadata";
 
 export const FBMessageAttachmentTypes = {
   IMAGE: "image",
@@ -261,8 +263,7 @@ export type MessagePayload = z.infer<typeof MessagePayload>;
 
 // Keep platform strings aligned with core connected-account Platform
 
-export const InboxChannel = z.enum(["dm", "post_comment"]);
-export type InboxChannel = z.infer<typeof InboxChannel>;
+export * from "./channels";
 
 export const InboxAttachment = z.object({
   type: z.enum(AllMessageAttachmentTypes),
@@ -274,14 +275,28 @@ export const InboxMessageSchema = z.object({
   id: z.string(),
   externalId: z.string(),
   sender: z.enum(["user", "self"]),
-  channel: InboxChannel,
+  channel: InboxChannelSchema,
   text: z.string().nullable(),
   attachments: z.array(InboxAttachment),
   createdAt: z.coerce.date(),
   contentId: z.string().nullable(),
-  metadata: z.record(z.string(), z.unknown()).default({}),
+  metadata: InboxMessageMetadataSchema.optional().default({}),
 });
 export type InboxMessage = z.infer<typeof InboxMessageSchema>;
+export type {
+  InboxChannelMetadata,
+  InboxMessageEdit,
+  InboxMessageMetadata,
+  InboxMessageReaction,
+  InboxPlatformMetadata,
+} from "./metadata";
+export {
+  InboxChannelMetadataSchema,
+  InboxMessageEditSchema,
+  InboxMessageMetadataSchema,
+  InboxMessageReactionSchema,
+  InboxPlatformMetadataSchema,
+} from "./metadata";
 
 export const InboxContactSchema = z.object({
   id: z.string(),
@@ -301,7 +316,7 @@ export type InboxConnectedAccountSummary = z.infer<
 export const InboxConversationSummarySchema = z.object({
   id: z.string(),
   platform: AllPlatformsZod,
-  channel: InboxChannel,
+  channel: InboxChannelSchema,
   lastMessageAt: z.coerce.date(),
   contact: InboxContactSchema,
   connectedAccount: InboxConnectedAccountSummary,
