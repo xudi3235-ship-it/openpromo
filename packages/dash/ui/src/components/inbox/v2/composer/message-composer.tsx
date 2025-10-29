@@ -20,7 +20,7 @@ export function MessageComposerRoot({
   return (
     <form
       className={cn(
-        "flex w-full flex-col gap-2 overflow-hidden rounded-xl border border-border/50 bg-background",
+        "flex w-full flex-col gap-1.5 overflow-hidden rounded-xl border border-border/40 bg-background",
         className,
       )}
       {...props}
@@ -37,8 +37,8 @@ export interface MessageComposerTextareaProps
 
 export function MessageComposerTextarea({
   className,
-  minHeight = 56,
-  maxHeight = 180,
+  minHeight = 48,
+  maxHeight = 160,
   submitOnEnter = true,
   onKeyDown,
   ...props
@@ -55,7 +55,7 @@ export function MessageComposerTextarea({
   return (
     <Textarea
       className={cn(
-        "min-h-[56px] w-full resize-none rounded-none border-none px-3 pb-2 pt-3 text-sm shadow-none outline-none ring-0",
+        "min-h-[48px] w-full resize-none rounded-none border-none px-2.5 pb-1.5 pt-2.5 text-sm shadow-none outline-none ring-0",
         "field-sizing-content max-h-[12lh] bg-transparent focus-visible:ring-0",
         className,
       )}
@@ -79,7 +79,7 @@ export function MessageComposerToolbar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-2 border-t border-border/40 bg-transparent px-3 py-2",
+        "flex flex-wrap items-center justify-between gap-1.5 border-t border-border/30 bg-transparent px-2.5 py-1.5",
         className,
       )}
       {...props}
@@ -104,7 +104,7 @@ export function MessageComposerActions({
   ...props
 }: MessageComposerSectionProps) {
   return (
-    <div className={cn("flex items-center gap-2", className)} {...props} />
+    <div className={cn("flex items-center gap-1.5", className)} {...props} />
   );
 }
 
@@ -121,7 +121,7 @@ export function MessageComposerButton({
   return (
     <Button
       className={cn(
-        "h-8 w-8 shrink-0 rounded-lg text-muted-foreground",
+        "h-7 w-7 shrink-0 rounded-md text-muted-foreground",
         variant === "ghost" && "hover:bg-muted",
         className,
       )}
@@ -161,15 +161,18 @@ export function MessageComposerSubmitButton({
 
   const iconClass = cn("h-4 w-4", status === "submitting" && "animate-spin");
 
+  const content = children ?? <Icon className={iconClass} />;
+
   return (
     <Button
-      className={cn("gap-2 rounded-lg", className)}
-      size="sm"
+      className={cn("h-8 w-8 rounded-md", className)}
+      size="icon"
       type="submit"
       disabled={disabled}
       {...props}
+      aria-label={children ? undefined : "Send message"}
     >
-      {children ?? <Icon className={iconClass} />}
+      {content}
     </Button>
   );
 }
