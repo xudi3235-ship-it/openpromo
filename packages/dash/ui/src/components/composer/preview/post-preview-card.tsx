@@ -1,5 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
-import type { SharedAttachmentSpec } from "@shared/content";
+import type { InstagramFeedPreview } from "@shared/content/content-preview";
 import {
   Bookmark,
   ChevronLeft,
@@ -18,7 +18,7 @@ export interface PostPreviewCardProps {
   accountName?: string | null;
   profilePicUrl?: string | null;
   caption?: string | null;
-  attachments?: SharedAttachmentSpec[];
+  attachments?: InstagramFeedPreview["attachments"];
   location?: string | null;
   likesCount?: number | null;
   timestampLabel?: string | null;

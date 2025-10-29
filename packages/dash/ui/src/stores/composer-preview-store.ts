@@ -10,22 +10,18 @@ import type {
   SharedAttachmentSpec,
   TikTokFeedPlacementSpec,
 } from "@shared/content";
+import { AllPlacement } from "@shared/content";
+import type {
+  ContentPreview,
+  FacebookFeedPreview,
+  FacebookReelPreview,
+  InstagramFeedPreview,
+  InstagramReelPreview,
+  TikTokFeedPreview,
+} from "@shared/content/content-preview";
 import { useMemo } from "react";
 import type { ConnectedAccount } from "@/lib/hono-client";
 import { useComposerStore } from "@/stores/composer-store";
-
-export interface PreviewData {
-  pageName: string;
-  profilePicUrl: string;
-  username?: string;
-  platform: Platform;
-  attachments: SharedAttachmentSpec[];
-  message: string;
-  callToAction?: FBFeedPlacementSpec["postSpec"]["callToAction"];
-  // Helper methods for display names
-  getDisplayName: (fallbackWorkspaceName?: string) => string;
-  getInstagramUsername: (fallbackWorkspaceName?: string) => string;
-}
 
 const getAccountDisplayData = (account: ConnectedAccount) => {
   const metadata = account.metadata;
@@ -71,11 +67,12 @@ const getAccountDisplayData = (account: ConnectedAccount) => {
 interface PreviewOptions {
   platform?: Platform;
   accountId?: string;
+  placement?: "FEED" | "REEL";
 }
 
 export const useComposerPreview = (
   options: PreviewOptions = {},
-): PreviewData => {
+): ContentPreview => {
   const accounts = useComposerStore((state) => state.accounts);
   const activeAccount = useComposerStore((state) => state.activeAccount);
   const selectedPreview = useComposerStore((state) => state.selectedPreview);
@@ -116,29 +113,6 @@ export const useComposerPreview = (
           username: undefined,
           platform: "FACEBOOK" as Platform,
         };
-
-    // Helper functions for display names
-    const getDisplayName = (fallbackWorkspaceName?: string) => {
-      return (
-        displayData.pageName || fallbackWorkspaceName || "No Account Selected"
-      );
-    };
-
-    const getInstagramUsername = (fallbackWorkspaceName?: string) => {
-      const formatAsUsername = (name: string) =>
-        name.toLowerCase().replace(/\s+/g, "_");
-
-      return (
-        displayData.username ||
-        (displayData.pageName
-          ? formatAsUsername(displayData.pageName)
-          : undefined) ||
-        (fallbackWorkspaceName
-          ? formatAsUsername(fallbackWorkspaceName)
-          : undefined) ||
-        "your_business"
-      );
-    };
 
     // Get the message for the target account (preview account)
     const getMessageForAccount = (): string => {
@@ -232,20 +206,138 @@ export const useComposerPreview = (
       return (entry.spec as FBFeedPlacementSpec).postSpec.callToAction;
     };
 
-    return {
-      ...displayData,
-      attachments: getAttachmentsForAccount(),
-      message: getMessageForAccount(),
-      callToAction: getCallToActionForAccount(),
-      getDisplayName,
-      getInstagramUsername,
+    const message = getMessageForAccount();
+    const attachments = getAttachmentsForAccount();
+
+    // Determine if this is a reel based on options or content
+    const isReel =
+      options.placement === "REEL" ||
+      (attachments.length === 1 && attachments[0]?.type === "video");
+
+    // Build ContentPreview based on platform
+    const platform = displayData.platform;
+
+    if (platform === "INSTAGRAM") {
+      if (isReel) {
+        const reelPreview: InstagramReelPreview = {
+          placement: AllPlacement.IG_REEL,
+          accountName: displayData.username || displayData.pageName,
+          profilePicUrl: displayData.profilePicUrl || null,
+          caption: message || null,
+          attachments,
+          permalink: null,
+          timestampLabel: "2 hours ago",
+          metrics: {
+            likes: 1200,
+            comments: 89,
+            shares: 34,
+          },
+          audioTitle: `Original audio • ${displayData.username || displayData.pageName}`,
+        };
+        return reelPreview;
+      }
+
+      const preview: InstagramFeedPreview = {
+        placement: AllPlacement.IG_FEED,
+        accountName: displayData.username || displayData.pageName,
+        profilePicUrl: displayData.profilePicUrl || null,
+        caption: message || null,
+        attachments,
+        permalink: null,
+        timestampLabel: "2 hours ago",
+        metrics: {
+          likes: 1247,
+          comments: 23,
+          shares: 8,
+        },
+        location: "San Francisco, California",
+      };
+      return preview;
+    }
+
+    if (platform === "FACEBOOK") {
+      const callToAction = getCallToActionForAccount();
+      const callToActionLabel = callToAction
+        ? callToAction.type.replace(/_/g, " ").toLowerCase()
+        : null;
+
+      if (isReel) {
+        const reelPreview: FacebookReelPreview = {
+          placement: AllPlacement.FB_REEL,
+          accountName: displayData.pageName,
+          profilePicUrl: displayData.profilePicUrl || null,
+          caption: message || null,
+          attachments,
+          permalink: null,
+          timestampLabel: "2 hours ago",
+          metrics: {
+            likes: 2100,
+            comments: 156,
+            shares: 42,
+          },
+          audioTitle: "Original audio",
+          callToActionLabel,
+        };
+        return reelPreview;
+      }
+
+      const preview: FacebookFeedPreview = {
+        placement: AllPlacement.FB_FEED,
+        accountName: displayData.pageName,
+        profilePicUrl: displayData.profilePicUrl || null,
+        caption: message || null,
+        attachments,
+        permalink: null,
+        timestampLabel: "2 hours ago",
+        metrics: {
+          likes: 142,
+          comments: 23,
+          shares: 8,
+        },
+        callToActionLabel,
+      };
+      return preview;
+    }
+
+    if (platform === "TIKTOK") {
+      const preview: TikTokFeedPreview = {
+        placement: AllPlacement.TT_FEED,
+        accountName: displayData.username || displayData.pageName,
+        profilePicUrl: displayData.profilePicUrl || null,
+        caption: message || null,
+        attachments,
+        permalink: null,
+        timestampLabel: "2 hours ago",
+        metrics: {
+          likes: 1200,
+          comments: 245,
+          shares: 89,
+        },
+        musicTitle: `Original sound • ${displayData.pageName}`,
+      };
+      return preview;
+    }
+
+    // Fallback to Instagram if platform is unknown
+    const fallbackPreview: InstagramFeedPreview = {
+      placement: AllPlacement.IG_FEED,
+      accountName: displayData.pageName,
+      profilePicUrl: displayData.profilePicUrl || null,
+      caption: message || null,
+      attachments,
+      permalink: null,
+      timestampLabel: "2 hours ago",
+      metrics: undefined,
+      location: null,
     };
+    return fallbackPreview;
   }, [
     accounts,
     activeAccount,
     selectedPreview,
     options.accountId,
     options.platform,
+    options.placement,
     contentCreateData.base.attachments,
     contentCreateData.base.message,
     placementsByAccount,

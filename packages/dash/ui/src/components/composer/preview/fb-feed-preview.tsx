@@ -10,9 +10,7 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
-import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerPreview } from "@/stores/composer-preview-store";
-import { CTA_OPTIONS } from "../types/platform-features";
 import { PreviewMediaNullState } from "./null-state";
 
 interface FBFeedPreviewProps {
@@ -20,23 +18,28 @@ interface FBFeedPreviewProps {
 }
 
 export function FBFeedPreview({ accountId }: FBFeedPreviewProps) {
-  const { workspace } = useWorkspace();
   const previewData = useComposerPreview({
     platform: "FACEBOOK",
     accountId,
   });
 
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
-    attachments: previewData.attachments,
+    attachments: previewData.attachments ?? [],
   });
 
-  const { message, profilePicUrl, getDisplayName, callToAction, attachments } =
-    previewData;
-  const trimmedMessage = (message || "").trim();
+  if (previewData.placement !== "FB_FEED") {
+    return null;
+  }
 
-  const ctaOption = callToAction
-    ? CTA_OPTIONS.find((opt) => opt.value === callToAction.type)
-    : null;
+  const {
+    caption,
+    profilePicUrl,
+    accountName,
+    callToActionLabel,
+    attachments,
+    metrics,
+  } = previewData;
+  const trimmedMessage = (caption || "").trim();
 
   return (
     <div className="w-full max-w-lg mx-auto border rounded-lg p-3 bg-background">
@@ -45,7 +48,7 @@ export function FBFeedPreview({ accountId }: FBFeedPreviewProps) {
         {profilePicUrl ? (
           <img
             src={profilePicUrl}
-            alt={getDisplayName(workspace?.name)}
+            alt={accountName ?? "Facebook Page"}
             className="w-10 h-10 flex-shrink-0 rounded-full object-cover"
           />
         ) : (
@@ -56,7 +59,7 @@ export function FBFeedPreview({ accountId }: FBFeedPreviewProps) {
             <div className="min-w-0 flex-1">
               <div className="flex items-center space-x-2">
                 <h4 className="font-semibold text-sm truncate">
-                  {getDisplayName(workspace?.name)}
+                  {accountName ?? "Facebook Page"}
                 </h4>
               </div>
               <div className="flex items-center space-x-1 text-xs text-muted-foreground">
@@ -167,7 +170,7 @@ export function FBFeedPreview({ accountId }: FBFeedPreviewProps) {
       </div>
 
       {/* Call to Action Button */}
-      {ctaOption && (
+      {callToActionLabel && (
         <div className="mb-4 -mx-3 px-3 py-2 border-t border-b bg-muted/30">
           <Button
             variant="ghost"
@@ -175,7 +178,7 @@ export function FBFeedPreview({ accountId }: FBFeedPreviewProps) {
             disabled
           >
             <ExternalLink className="w-4 h-4 mr-2 flex-shrink-0" />
-            <span className="truncate">{ctaOption.label}</span>
+            <span className="truncate capitalize">{callToActionLabel}</span>
           </Button>
         </div>
       )}
@@ -192,12 +195,16 @@ export function FBFeedPreview({ accountId }: FBFeedPreviewProps) {
                 <Heart className="w-2 h-2 text-white" />
               </div>
             </div>
-            <span className="truncate">142 reactions</span>
+            <span className="truncate">{metrics?.likes ?? 142} reactions</span>
           </div>
         </div>
         <div className="flex items-center space-x-2 flex-shrink-0">
-          <span className="whitespace-nowrap">23 comments</span>
-          <span className="whitespace-nowrap">8 shares</span>
+          <span className="whitespace-nowrap">
+            {metrics?.comments ?? 23} comments
+          </span>
+          <span className="whitespace-nowrap">
+            {metrics?.shares ?? 8} shares
+          </span>
         </div>
       </div>
 

@@ -1,4 +1,3 @@
-import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerPreview } from "@/stores/composer-preview-store";
 import { InstagramFeedCard } from "./post-preview-card";
 
@@ -7,21 +6,25 @@ interface IGFeedPreviewProps {
 }
 
 export function IGFeedPreview({ accountId }: IGFeedPreviewProps) {
-  const { workspace } = useWorkspace();
   const previewData = useComposerPreview({
     platform: "INSTAGRAM",
     accountId,
   });
+
+  if (previewData.placement !== "IG_FEED") {
+    return null;
+  }
+
   return (
     <InstagramFeedCard
       platform="INSTAGRAM"
-      accountName={previewData.getInstagramUsername(workspace?.name)}
+      accountName={previewData.accountName}
       profilePicUrl={previewData.profilePicUrl}
-      caption={previewData.message}
+      caption={previewData.caption}
       attachments={previewData.attachments}
-      location="San Francisco, California"
-      likesCount={1247}
-      timestampLabel="2 hours ago"
+      location={previewData.location}
+      likesCount={previewData.metrics?.likes ?? null}
+      timestampLabel={previewData.timestampLabel}
     />
   );
 }

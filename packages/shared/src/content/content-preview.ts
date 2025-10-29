@@ -1,7 +1,4 @@
-import {
-  AllPlacement,
-  SharedAttachmentSpec as SharedAttachmentSpecSchema,
-} from "@shared/content";
+import { AllPlacement, SharedAttachmentSpec } from "@shared/content";
 import { z } from "zod";
 
 const PreviewMetrics = z
@@ -16,7 +13,7 @@ const BasePreviewFields = {
   accountName: z.string().nullable().optional(),
   profilePicUrl: z.string().nullable().optional(),
   caption: z.string().nullable().optional(),
-  attachments: SharedAttachmentSpecSchema.array().optional(),
+  attachments: SharedAttachmentSpec.array().optional(),
   permalink: z.string().nullable().optional(),
   timestampLabel: z.string().nullable().optional(),
   metrics: PreviewMetrics,
@@ -44,6 +41,7 @@ const FacebookReelPreview = z.object({
   placement: z.literal(AllPlacement.FB_REEL),
   ...BasePreviewFields,
   audioTitle: z.string().nullable().optional(),
+  callToActionLabel: z.string().nullable().optional(),
 });
 
 const TikTokFeedPreview = z.object({

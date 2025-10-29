@@ -11,7 +11,6 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useAttachmentRenderer } from "@/hooks/useAttachmentRenderer";
-import { useWorkspace } from "@/hooks/useWorkspace";
 import { useComposerPreview } from "@/stores/composer-preview-store";
 
 const handleFromName = (name?: string) =>
@@ -242,7 +241,6 @@ interface TikTokPreviewProps {
 }
 
 export function TikTokPreview({ accountId }: TikTokPreviewProps) {
-  const { workspace } = useWorkspace();
   const previewData = useComposerPreview({
     platform: "TIKTOK",
     accountId,
@@ -267,6 +265,10 @@ export function TikTokPreview({ accountId }: TikTokPreviewProps) {
     setActivePhotoIndex(0);
   }, []);
 
+  if (previewData.placement !== "TT_FEED") {
+    return null;
+  }
+
   const totalPhotos = photoAttachments.length;
   const isVideoPost = Boolean(videoAttachment);
   const hasPhotoGallery = !isVideoPost && totalPhotos > 0;
@@ -281,16 +283,9 @@ export function TikTokPreview({ accountId }: TikTokPreviewProps) {
     );
   };
 
-  const handle = useMemo(() => {
-    if (previewData.username) {
-      return previewData.username;
-    }
-    const display = previewData.getDisplayName(workspace?.name);
-    return handleFromName(display);
-  }, [previewData, workspace?.name]);
-
-  const displayName = previewData.getDisplayName(workspace?.name);
-  const trimmedCaption = (previewData.message || "").trim();
+  const handle = handleFromName(previewData.accountName ?? undefined);
+  const displayName = previewData.accountName ?? "TikTok Account";
+  const trimmedCaption = (previewData.caption || "").trim();
 
   return (
     <div className="relative max-w-[280px] rounded-xl overflow-hidden border border-white/5 bg-[#070708] text-white shadow-[0_20px_45px_-20px_rgba(8,8,11,0.85)]">
@@ -321,7 +316,7 @@ export function TikTokPreview({ accountId }: TikTokPreviewProps) {
 
         {/* Bottom Info Section */}
         <TikTokBottomInfo
-          profilePicUrl={previewData.profilePicUrl}
+          profilePicUrl={previewData.profilePicUrl ?? undefined}
           displayName={displayName}
           handle={handle}
           caption={trimmedCaption}

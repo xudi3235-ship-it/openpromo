@@ -6,14 +6,16 @@ import { useComposerPreview } from "@/stores/composer-preview-store";
 interface ReelControlOptions {
   platform?: Platform;
   accountId?: string;
+  placement?: "FEED" | "REEL";
 }
 
 export function useReelControls({
   platform,
   accountId,
+  placement,
 }: ReelControlOptions = {}) {
-  const previewData = useComposerPreview({ platform, accountId });
-  const attachments = previewData.attachments;
+  const previewData = useComposerPreview({ platform, accountId, placement });
+  const attachments = previewData.attachments ?? [];
   const { getAttachmentUrl, renderAttachment } = useAttachmentRenderer({
     attachments,
   });
@@ -89,7 +91,7 @@ export function useReelControls({
     isMuted,
     hasStreamIframe,
     videoAttachment,
-    message: previewData.message,
+    message: previewData.caption ?? "",
 
     // Actions
     togglePlay,

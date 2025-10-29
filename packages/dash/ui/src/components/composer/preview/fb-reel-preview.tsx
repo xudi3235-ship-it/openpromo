@@ -23,6 +23,7 @@ export function FBReelPreview({ accountId }: FBReelPreviewProps) {
   const previewData = useComposerPreview({
     platform: "FACEBOOK",
     accountId,
+    placement: "REEL",
   });
 
   const {
@@ -40,12 +41,17 @@ export function FBReelPreview({ accountId }: FBReelPreviewProps) {
   const { config, username, renderAvatar } = useReelConfig(
     "facebook",
     accountId,
+    "REEL",
   );
   const ShareIcon = config.icons.share;
 
-  const { callToAction } = previewData;
-  const ctaOption = callToAction
-    ? CTA_OPTIONS.find((opt) => opt.value === callToAction.type)
+  // FB Reels can have CTA buttons
+  const callToActionLabel =
+    previewData.placement === "FB_REEL" ? previewData.callToActionLabel : null;
+  const ctaOption = callToActionLabel
+    ? CTA_OPTIONS.find(
+        (opt) => opt.label.toLowerCase() === callToActionLabel.toLowerCase(),
+      )
     : null;
 
   return (

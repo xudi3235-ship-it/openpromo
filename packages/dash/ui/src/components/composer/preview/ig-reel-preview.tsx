@@ -27,11 +27,12 @@ export function IGReelPreview({ accountId }: IGReelPreviewProps) {
     toggleMute,
     renderVideo,
     renderLocalVideoControls,
-  } = useReelControls({ platform: "INSTAGRAM", accountId });
+  } = useReelControls({ platform: "INSTAGRAM", accountId, placement: "REEL" });
 
   const { config, username, renderAvatar } = useReelConfig(
     "instagram",
     accountId,
+    "REEL",
   );
   const ShareIcon = config.icons.share;
 

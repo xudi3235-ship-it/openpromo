@@ -95,41 +95,49 @@ const PLATFORM_CONFIGS: Record<string, ReelPlatformConfig> = {
   },
 };
 
-export function useReelConfig(platform: string, accountId?: string) {
+export function useReelConfig(
+  platform: string,
+  accountId?: string,
+  placement?: "FEED" | "REEL",
+) {
   const { workspace } = useWorkspace();
   const previewData = useComposerPreview({
     platform: platform.toUpperCase() as Platform,
     accountId,
+    placement,
   });
 
   const config = PLATFORM_CONFIGS[platform] || PLATFORM_CONFIGS.instagram;
 
   const getUsername = () => {
+    const accountName =
+      previewData.accountName ?? workspace?.name ?? "Your Account";
+
     if (platform === "instagram") {
-      return previewData.getInstagramUsername(workspace?.name);
+      return accountName.toLowerCase().replace(/\s+/g, "_");
     }
     if (platform === "facebook") {
-      return previewData.getDisplayName(workspace?.name);
+      return accountName;
     }
     if (platform === "tiktok") {
-      if (previewData.username) return `@${previewData.username}`;
-      const fallback = previewData.getInstagramUsername(workspace?.name);
-      return `@${fallback.replace(/_/g, "")}`;
+      return `@${accountName.toLowerCase().replace(/[^a-z0-9]+/g, "")}`;
     }
     if (platform === "youtube") {
-      return previewData.getDisplayName(workspace?.name);
+      return accountName;
     }
-    return previewData.getInstagramUsername(workspace?.name);
+    return accountName.toLowerCase().replace(/\s+/g, "_");
   };
 
   const renderAvatar = (className: string = "w-7 h-7") => {
+    const profilePicUrl = previewData.profilePicUrl ?? undefined;
+
     if (platform === "instagram") {
-      return previewData.profilePicUrl ? (
+      return profilePicUrl ? (
         <div
           className={`${className} rounded-full ${config.colors.avatar} p-0.5 flex-shrink-0`}
         >
           <img
-            src={previewData.profilePicUrl}
+            src={profilePicUrl}
             alt={getUsername()}
             className="w-full h-full rounded-full object-cover bg-white"
           />
@@ -148,9 +156,9 @@ export function useReelConfig(platform: string, accountId?: string) {
     }
 
     // Default avatar for other platforms
-    return previewData.profilePicUrl ? (
+    return profilePicUrl ? (
       <img
-        src={previewData.profilePicUrl}
+        src={profilePicUrl}
         alt={getUsername()}
         className={`${className} rounded-full object-cover flex-shrink-0`}
       />
