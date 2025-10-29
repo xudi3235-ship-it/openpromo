@@ -1,13 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Inbox } from "@/components/inbox";
-import { prefetchInboxConversations } from "@/queries/inbox/conversations";
+import { InboxLayout } from "@/components/inbox/inbox-layout";
 
-// Search params schema for inbox filters and state
+// Search params schema for inbox filters
 type InboxSearchParams = {
   channel?: "all" | "dm" | "post_comment";
   platform?: "all" | "FACEBOOK" | "INSTAGRAM" | "TIKTOK";
-  conversationId?: string;
-  highlightMessageId?: string;
   q?: string;
 };
 
@@ -26,31 +23,8 @@ export const Route = createFileRoute(
       )
         ? (search.platform as "FACEBOOK" | "INSTAGRAM" | "TIKTOK")
         : "all",
-      conversationId:
-        typeof search.conversationId === "string"
-          ? search.conversationId
-          : undefined,
-      highlightMessageId:
-        typeof search.highlightMessageId === "string"
-          ? search.highlightMessageId
-          : undefined,
       q: typeof search.q === "string" ? search.q : undefined,
     };
   },
-  loaderDeps: ({ search }) => ({
-    channel: search.channel,
-    platform: search.platform,
-    q: search.q,
-  }),
-  loader: async ({ params, context, deps }) => {
-    // Prefetch conversations with URL params
-    prefetchInboxConversations(context.queryClient, params.workspaceSlug, {
-      page: 1,
-      pageSize: 25,
-      channel: deps.channel !== "all" ? deps.channel : undefined,
-      platform: deps.platform !== "all" ? deps.platform : undefined,
-      q: deps.q,
-    });
-  },
-  component: Inbox,
+  component: InboxLayout,
 });

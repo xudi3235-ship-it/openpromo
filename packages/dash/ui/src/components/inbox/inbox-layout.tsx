@@ -1,38 +1,25 @@
 import type { InboxConversationSummary } from "@shared/inbox";
+import { Outlet } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import { useSharedWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
-import { useInboxConversationQuery } from "@/queries/inbox/conversation";
 import { useInboxConversationsQuery } from "@/queries/inbox/conversations";
-import { useInboxMessagesQuery } from "@/queries/inbox/messages";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import { useInboxStore } from "@/stores/inbox-store";
 import { InboxChannelSwitcher } from "./inbox-channel-switcher";
-import { InboxContextPanel } from "./inbox-context-panel";
-import { InboxConversationPanel } from "./inbox-conversation-panel";
 import { InboxSidebar } from "./inbox-sidebar";
 
-export function Inbox() {
+export function InboxLayout() {
   const { workspaceSlug } = Route.useParams();
   const searchParams = Route.useSearch();
 
-  // URL state is now source of truth for filters and selection
-  const {
-    channel = "all",
-    platform = "all",
-    conversationId,
-    highlightMessageId: _highlightMessageId, // TODO: Phase 5 - implement message highlighting
-    q: searchQuery,
-  } = searchParams;
+  const { channel = "all", platform = "all", q: searchQuery } = searchParams;
 
-  // Zustand now only for caching and optimistic updates
+  // Zustand for caching
   const initialize = useInboxStore((state) => state.initialize);
   const setConversations = useInboxStore((state) => state.setConversations);
   const setConversationLoadingState = useInboxStore(
     (state) => state.setConversationLoadingState,
   );
-  const setMessages = useInboxStore((state) => state.setMessages);
-  const setThreadFetching = useInboxStore((state) => state.setThreadFetching);
-  const setThreadHasMore = useInboxStore((state) => state.setThreadHasMore);
   const upsertConversation = useInboxStore((state) => state.upsertConversation);
   const appendMessages = useInboxStore((state) => state.appendMessages);
   const conversationOrder = useInboxStore((state) => state.order);
@@ -88,57 +75,6 @@ export function Inbox() {
     setConversationLoadingState,
   ]);
 
-  // Fetch messages for current conversation (from URL)
-  const effectiveConversationId = conversationId;
-  const messagesQuery = useInboxMessagesQuery(
-    workspaceSlug,
-    effectiveConversationId,
-    {
-      page: 1,
-      pageSize: 50,
-    },
-  );
-
-  // Fetch conversation details including postPreview
-  const conversationQuery = useInboxConversationQuery(
-    workspaceSlug,
-    effectiveConversationId,
-  );
-
-  useEffect(() => {
-    if (!effectiveConversationId) return;
-    setThreadFetching(effectiveConversationId, messagesQuery.isFetching);
-  }, [effectiveConversationId, messagesQuery.isFetching, setThreadFetching]);
-
-  // Update conversation with details (including postPreview) when fetched
-  useEffect(() => {
-    if (!conversationQuery.data) return;
-    upsertConversation(conversationQuery.data);
-  }, [conversationQuery.data, upsertConversation]);
-
-  useEffect(() => {
-    if (!effectiveConversationId) return;
-    const data = messagesQuery.data;
-    if (!data) return;
-
-    setMessages({
-      conversationId: effectiveConversationId,
-      items: data.items,
-      page: data.page,
-      pageSize: data.pageSize,
-      total: data.total,
-      reset: true,
-    });
-
-    const hasMore = data.page * data.pageSize < data.total;
-    setThreadHasMore(effectiveConversationId, hasMore);
-  }, [
-    effectiveConversationId,
-    messagesQuery.data,
-    setMessages,
-    setThreadHasMore,
-  ]);
-
   const conversations = useMemo(() => {
     const searchTerm = searchQuery?.trim().toLowerCase();
     return conversationOrder
@@ -168,13 +104,6 @@ export function Inbox() {
     conversationsQuery.isFetching && !conversationsQuery.data;
   const conversationsFetching = conversationsQuery.isFetching;
 
-  const messagesInitialLoading =
-    Boolean(effectiveConversationId) &&
-    messagesQuery.isFetching &&
-    !messagesQuery.data;
-  const messagesFetching =
-    Boolean(effectiveConversationId) && messagesQuery.isFetching;
-
   useSharedWorkspaceEvents({
     handlers: {
       "inbox.conversation.upserted": (event) => {
@@ -203,20 +132,13 @@ export function Inbox() {
         totalCount={conversations.length}
         isSyncing={conversationsFetching}
       />
-      <div className="flex flex-1 gap-4">
+      <div className="flex flex-1 gap-4 overflow-hidden">
         <InboxSidebar
           conversations={conversations}
           isLoading={conversationsInitialLoading}
           isFetching={conversationsFetching}
         />
-        <InboxConversationPanel
-          workspaceSlug={workspaceSlug}
-          conversationId={conversationId}
-          conversation={conversationQuery.data ?? null}
-          isLoading={messagesInitialLoading}
-          isFetching={messagesFetching}
-        />
-        <InboxContextPanel conversation={conversationQuery.data ?? null} />
+        <Outlet />
       </div>
     </div>
   );

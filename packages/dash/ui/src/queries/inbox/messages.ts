@@ -1,7 +1,8 @@
+import type { QueryClient } from "@tanstack/react-query";
 import type { InboxMessagesList } from "@worker/routes/api/workspaces/inbox";
 import { useMemo } from "react";
 import {
-  type apiClient,
+  apiClient,
   type UseHonoQueryOptions,
   useHonoQuery,
 } from "@/lib/hono-client";
@@ -61,4 +62,34 @@ export function useInboxMessagesQuery(
   }, [data]);
 
   return { data: parsedData, ...rest };
+}
+
+export async function prefetchInboxMessages(
+  queryClient: QueryClient,
+  workspaceSlug: string,
+  conversationId: string,
+  params: InboxMessagesParams,
+) {
+  await queryClient.prefetchQuery({
+    queryKey: [
+      "inbox",
+      "messages",
+      workspaceSlug,
+      conversationId,
+      params.page,
+      params.pageSize,
+    ],
+    queryFn: async () => {
+      const response = await apiClient.workspaces[
+        ":workspaceSlug"
+      ].inbox.conversations[":conversationId"].messages.$get({
+        param: { workspaceSlug, conversationId },
+        query: {
+          page: params.page.toString(),
+          pageSize: params.pageSize.toString(),
+        },
+      });
+      return response.json();
+    },
+  });
 }

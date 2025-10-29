@@ -8,9 +8,9 @@ import { ScrollArea, ScrollBar } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { InboxConversationSummary } from "@shared/inbox";
+import { Link, useParams } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { PlatformAvatarBadge } from "@/components/shared/platform-avatar-badge";
-import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import { useInboxStore } from "@/stores/inbox-store";
 
 interface InboxConversationListProps {
@@ -22,9 +22,9 @@ export function InboxConversationList({
   conversations,
   isLoading = false,
 }: InboxConversationListProps) {
-  const navigate = Route.useNavigate();
-  const searchParams = Route.useSearch();
-  const selectedConversationId = searchParams.conversationId;
+  const { workspaceSlug, conversationId: selectedConversationId } = useParams({
+    strict: false,
+  });
   const threads = useInboxStore((state) => state.threads);
 
   return (
@@ -71,18 +71,15 @@ export function InboxConversationList({
 
             return (
               <li key={conversation.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigate({
-                      search: (prev) => ({
-                        ...prev,
-                        conversationId: conversation.id,
-                      }),
-                    });
+                <Link
+                  to="/workspaces/$workspaceSlug/inbox/$conversationId"
+                  params={{
+                    workspaceSlug: workspaceSlug ?? "",
+                    conversationId: conversation.id,
                   }}
+                  search={(prev) => prev}
                   className={cn(
-                    "w-full rounded-lg border border-transparent p-3 text-left transition-colors",
+                    "block w-full rounded-lg border border-transparent p-3 text-left transition-colors",
                     isSelected
                       ? "border-primary/10 bg-primary/3"
                       : "hover:border-border/70 hover:bg-muted/20",
@@ -128,7 +125,7 @@ export function InboxConversationList({
                       </p>
                     </div>
                   </div>
-                </button>
+                </Link>
               </li>
             );
           })}
