@@ -90,7 +90,7 @@ export class FacebookOAuthService {
   }
 
   private get baseUrl(): string {
-    const version = "v23.0";
+    const version = "v24.0";
     return `https://graph.facebook.com/${version}`;
   }
 
@@ -111,7 +111,7 @@ export class FacebookOAuthService {
 
     return {
       // not graph api
-      url: `https://www.facebook.com/v23.0/dialog/oauth?${params.toString()}`,
+      url: `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`,
       state: state,
       codeVerifier,
     };

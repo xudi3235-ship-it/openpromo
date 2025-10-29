@@ -80,7 +80,7 @@ export async function facebookGraphRequest<T = unknown>(
     onRateLimit,
   } = options;
 
-  const version = apiVersion ?? "v23.0";
+  const version = apiVersion ?? "v24.0";
   const url = new URL(`https://graph.facebook.com/${version}${path}`);
   url.searchParams.set("access_token", ctx.accessToken);
   for (const [key, value] of Object.entries(searchParams)) {

@@ -45,7 +45,7 @@ export class FacebookUploader {
     }
     this.appId = config.appId;
     this.accessToken = config.accessToken;
-    const apiVersion = "v23.0";
+    const apiVersion = "v24.0";
     this.baseUrl = `https://graph.facebook.com/${apiVersion}`;
   }
 

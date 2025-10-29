@@ -132,7 +132,7 @@ export class InstagramMediaInsightsFetcher {
       Log.create({ namespace: "instagram-media-insights" });
     this.request = dependencies.request ?? instagramGraphRequest;
     this.defaultHost = dependencies.defaultHost ?? "graph.instagram.com";
-    this.defaultApiVersion = dependencies.defaultApiVersion ?? "v23.0";
+    this.defaultApiVersion = dependencies.defaultApiVersion ?? "v24.0";
     this.defaultChunkSize = DEFAULT_MAX_METRICS_PER_REQUEST;
   }
 

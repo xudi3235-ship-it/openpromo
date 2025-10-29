@@ -123,7 +123,7 @@ export class FacebookPostMetricsFetcher {
     this.request = dependencies.graphRequest ?? facebookGraphRequest;
     this.log =
       dependencies.logger ?? Log.create({ namespace: "facebook-post-metrics" });
-    this.defaultApiVersion = dependencies.defaultApiVersion ?? "v23.0";
+    this.defaultApiVersion = dependencies.defaultApiVersion ?? "v24.0";
     this.defaultChunkSize = DEFAULT_MAX_METRICS_PER_REQUEST;
   }
 

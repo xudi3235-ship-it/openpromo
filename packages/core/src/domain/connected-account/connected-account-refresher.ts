@@ -33,7 +33,7 @@ interface ConnectedAccountMetricsProvider {
 }
 
 class FacebookMetricsProvider implements ConnectedAccountMetricsProvider {
-  private readonly baseUrl = "https://graph.facebook.com/v23.0";
+  private readonly baseUrl = "https://graph.facebook.com/v24.0";
   private readonly log = Log.create({
     namespace: "connected-account.metrics.facebook",
   });
@@ -87,7 +87,7 @@ class FacebookMetricsProvider implements ConnectedAccountMetricsProvider {
 }
 
 class InstagramMetricsProvider implements ConnectedAccountMetricsProvider {
-  private readonly baseUrl = "https://graph.facebook.com/v23.0";
+  private readonly baseUrl = "https://graph.facebook.com/v24.0";
   private readonly log = Log.create({
     namespace: "connected-account.metrics.instagram",
   });

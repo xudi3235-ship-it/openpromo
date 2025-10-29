@@ -63,7 +63,7 @@ export async function instagramGraphRequest<T = unknown>(
   } = options;
 
   const baseHost = host ?? "graph.instagram.com";
-  const version = apiVersion ?? "v23.0";
+  const version = apiVersion ?? "v24.0";
 
   const url = new URL(`https://${baseHost}/${version}${path}`);
   url.searchParams.set("access_token", ctx.accessToken);
