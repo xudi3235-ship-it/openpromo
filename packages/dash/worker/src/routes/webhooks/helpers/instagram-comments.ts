@@ -24,6 +24,11 @@ export async function handleInstagramCommentChanges(
   for (const rawChange of rawChanges ?? []) {
     const parsed = IGCommentPayload.safeParse(rawChange);
     if (!parsed.success) {
+      console.warn("[IG comments][0] failed to parse change", {
+        accountId: account.id,
+        rawChange,
+        error: parsed.error.flatten(),
+      });
       continue;
     }
     const change = parsed.data;
@@ -38,7 +43,13 @@ async function processCommentChange(
 ) {
   const value = change.value;
   const actualCommentId = value.comment_id ?? value.id;
-  if (!actualCommentId) return;
+  if (!actualCommentId) {
+    console.warn("[IG comments][1] missing comment id", {
+      accountId: account.id,
+      change,
+    });
+    return;
+  }
 
   const parentId = value.parent_id ?? actualCommentId;
   const mediaId = value.media?.id ?? value.media?.original_media_id ?? null;
@@ -65,6 +76,14 @@ async function processCommentChange(
   if (!conversation) {
     if (senderIsBusiness) {
       // Business replies without an existing conversation cannot be attributed to a user; skip.
+      console.info(
+        "[IG comments][2] business reply without user conversation",
+        {
+          accountId: account.id,
+          commentId: actualCommentId,
+          parentId,
+        },
+      );
       return;
     }
 
@@ -81,6 +100,13 @@ async function processCommentChange(
       externalThreadId,
       contentId: content?.id ?? null,
       metadata: mediaId ? { mediaId } : {},
+    });
+
+    console.info("[IG comments][3] created conversation", {
+      accountId: account.id,
+      conversationId: conversation.id,
+      commentId: actualCommentId,
+      mediaId,
     });
   }
 
@@ -168,6 +194,14 @@ async function processCommentChange(
     },
   );
   await dispatchWorkspaceEvent(account.workspaceId, conversationEvent);
+
+  console.info("[IG comments][4] upserted comment message", {
+    accountId: account.id,
+    conversationId: conversation.id,
+    commentId: actualCommentId,
+    senderIsBusiness,
+    hasMedia: Boolean(mediaId),
+  });
 }
 
 async function ensureContactForComment(

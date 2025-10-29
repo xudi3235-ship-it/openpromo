@@ -13,6 +13,7 @@ import { verifyMetaWebhookSignature } from "../../middleware/verify-meta-webhook
 import { zValidator } from "../../middleware/zod-validator";
 import { metaWebhookGetQuerySchema } from "./common";
 import { handleInstagramCommentChanges } from "./helpers/instagram-comments";
+import { handleInstagramMessageChanges } from "./helpers/instagram-message-changes";
 
 export const instagramWebhooksRoute = new Hono<ApiEnv>()
   // GET /webhooks/instagram - this is used by instagram to verify the webhook endpoint
@@ -171,7 +172,21 @@ export const instagramWebhooksRoute = new Hono<ApiEnv>()
             );
           }
           if ("changes" in entry && Array.isArray(entry.changes)) {
-            await handleInstagramCommentChanges(entry.changes, account);
+            const changes = entry.changes ?? [];
+            const commentChanges = changes.filter(
+              (change) => change.field === "comments",
+            );
+            if (commentChanges.length > 0) {
+              await handleInstagramCommentChanges(commentChanges, account);
+            }
+            const messageChanges = changes.filter(
+              (change) =>
+                change.field === "message_edit" ||
+                change.field === "message_reactions",
+            );
+            if (messageChanges.length > 0) {
+              await handleInstagramMessageChanges(messageChanges, account);
+            }
           }
         }
         return c.status(200);

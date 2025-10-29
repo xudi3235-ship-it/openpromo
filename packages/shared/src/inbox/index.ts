@@ -182,6 +182,47 @@ export const IGCommentPayload = z.object({
   }),
 });
 
+export const IGMessageEditPayload = z.object({
+  field: z.literal("message_edit"),
+  value: z.object({
+    mid: z.string(),
+    text: z.string().optional().nullable(),
+    num_edit: z.number().optional(),
+    timestamp: z.number().optional(),
+    from: z
+      .object({
+        id: z.string().optional(),
+        username: z.string().optional(),
+      })
+      .partial()
+      .optional(),
+  }),
+});
+
+export const IGMessageReactionPayload = z.object({
+  field: z.literal("message_reactions"),
+  value: z.object({
+    mid: z.string(),
+    reaction: z.string().optional(),
+    verb: z.enum(["add", "remove"]).optional(),
+    timestamp: z.number().optional(),
+    sender: z
+      .object({
+        id: z.string().optional(),
+        username: z.string().optional(),
+      })
+      .partial()
+      .optional(),
+  }),
+});
+
+export const IGMessageChangePayload = z.union([
+  IGMessageEditPayload,
+  IGMessageReactionPayload,
+]);
+
+const IGChangePayload = z.union([IGCommentPayload, IGMessageChangePayload]);
+
 const IGWebhookPayload = z.object({
   object: z.literal("instagram"),
   entry: z.array(
@@ -189,13 +230,19 @@ const IGWebhookPayload = z.object({
       /** IGID - ID of the Instagram professional account */
       id: z.string(),
       messaging: z.array(IGMessagePayload).optional(),
-      changes: z.array(IGCommentPayload).optional(),
+      changes: z.array(IGChangePayload).optional(),
     }),
   ),
 });
 
 export type IGMessagePayload = z.infer<typeof IGMessagePayload>;
 export type IGCommentPayloadType = z.infer<typeof IGCommentPayload>;
+export type IGMessageEditPayloadType = z.infer<typeof IGMessageEditPayload>;
+export type IGMessageReactionPayloadType = z.infer<
+  typeof IGMessageReactionPayload
+>;
+export type IGMessageChangePayloadType = z.infer<typeof IGMessageChangePayload>;
+export type IGChangePayloadType = z.infer<typeof IGChangePayload>;
 export type IGWebhookPayload = z.infer<typeof IGWebhookPayload>;
 
 // MessagePayload now includes FB comments as well for unified storage
@@ -204,6 +251,8 @@ export const MessagePayload = z.union([
   IGMessagePayload,
   FBCommentPayload,
   IGCommentPayload,
+  IGMessageEditPayload,
+  IGMessageReactionPayload,
 ]);
 
 export type MessagePayload = z.infer<typeof MessagePayload>;
