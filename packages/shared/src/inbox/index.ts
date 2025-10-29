@@ -1,10 +1,13 @@
 import { AllPlatforms, AllPlatformsZod } from "@shared/content";
 import * as z from "zod";
+import {
+  type ContentPreview,
+  ContentPreviewSchema,
+} from "../content/content-preview";
 import { InboxChannel as InboxChannelSchema } from "./channels";
 import { InboxMessageMetadataSchema } from "./metadata";
-import { type PostPreview, PostPreviewSchema } from "./post-preview";
 
-export { PostPreviewSchema } from "./post-preview";
+export { ContentPreviewSchema as PostPreviewSchema } from "../content/content-preview";
 
 export const FBMessageAttachmentTypes = {
   IMAGE: "image",
@@ -267,6 +270,20 @@ export type MessagePayload = z.infer<typeof MessagePayload>;
 // Keep platform strings aligned with core connected-account Platform
 
 export * from "./channels";
+export type {
+  InboxChannelMetadata,
+  InboxMessageEdit,
+  InboxMessageMetadata,
+  InboxMessageReaction,
+  InboxPlatformMetadata,
+} from "./metadata";
+export {
+  InboxChannelMetadataSchema,
+  InboxMessageEditSchema,
+  InboxMessageMetadataSchema,
+  InboxMessageReactionSchema,
+  InboxPlatformMetadataSchema,
+} from "./metadata";
 
 export const InboxAttachment = z.object({
   type: z.enum(AllMessageAttachmentTypes),
@@ -286,20 +303,6 @@ export const InboxMessageSchema = z.object({
   metadata: InboxMessageMetadataSchema.optional().default({}),
 });
 export type InboxMessage = z.infer<typeof InboxMessageSchema>;
-export type {
-  InboxChannelMetadata,
-  InboxMessageEdit,
-  InboxMessageMetadata,
-  InboxMessageReaction,
-  InboxPlatformMetadata,
-} from "./metadata";
-export {
-  InboxChannelMetadataSchema,
-  InboxMessageEditSchema,
-  InboxMessageMetadataSchema,
-  InboxMessageReactionSchema,
-  InboxPlatformMetadataSchema,
-} from "./metadata";
 
 export const InboxContactSchema = z.object({
   id: z.string(),
@@ -325,12 +328,12 @@ export const InboxConversationSummarySchema = z.object({
   connectedAccount: InboxConnectedAccountSummary,
   contentId: z.string().nullable(),
   externalThreadId: z.string().nullable(),
-  postPreview: PostPreviewSchema.optional(),
+  postPreview: ContentPreviewSchema.optional(),
 });
 export type InboxConversationSummary = z.infer<
   typeof InboxConversationSummarySchema
 >;
-export type InboxPostPreview = PostPreview;
+export type InboxPostPreview = ContentPreview;
 
 // ============ Inbox Realtime Events ============
 // Note: Inbox event types, schemas, and helpers have been consolidated

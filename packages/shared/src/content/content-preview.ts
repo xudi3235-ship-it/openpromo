@@ -4,7 +4,7 @@ import {
 } from "@shared/content";
 import { z } from "zod";
 
-const PostPreviewMetrics = z
+const PreviewMetrics = z
   .object({
     likes: z.number().nullable().optional(),
     comments: z.number().nullable().optional(),
@@ -19,7 +19,7 @@ const BasePreviewFields = {
   attachments: SharedAttachmentSpecSchema.array().optional(),
   permalink: z.string().nullable().optional(),
   timestampLabel: z.string().nullable().optional(),
-  metrics: PostPreviewMetrics,
+  metrics: PreviewMetrics,
 } satisfies Record<string, z.ZodTypeAny>;
 
 const InstagramFeedPreview = z.object({
@@ -52,7 +52,7 @@ const TikTokFeedPreview = z.object({
   musicTitle: z.string().nullable().optional(),
 });
 
-export const PostPreviewSchema = z.discriminatedUnion("placement", [
+export const ContentPreviewSchema = z.discriminatedUnion("placement", [
   InstagramFeedPreview,
   InstagramReelPreview,
   FacebookFeedPreview,
@@ -60,7 +60,7 @@ export const PostPreviewSchema = z.discriminatedUnion("placement", [
   TikTokFeedPreview,
 ]);
 
-export type PostPreview = z.infer<typeof PostPreviewSchema>;
+export type ContentPreview = z.infer<typeof ContentPreviewSchema>;
 export type InstagramFeedPreview = z.infer<typeof InstagramFeedPreview>;
 export type InstagramReelPreview = z.infer<typeof InstagramReelPreview>;
 export type FacebookFeedPreview = z.infer<typeof FacebookFeedPreview>;
