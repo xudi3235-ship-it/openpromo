@@ -151,18 +151,51 @@ export const IGMessagePayload = z.object({
     .optional(),
 });
 
+export const IGCommentPayload = z.object({
+  field: z.literal("comments"),
+  value: z.object({
+    id: z.string().optional(),
+    comment_id: z.string().optional(),
+    parent_id: z.string().optional(),
+    text: z.string().optional(),
+    created_time: z.number().optional(),
+    timestamp: z.number().optional(),
+    verb: z.string().optional(),
+    from: z
+      .object({
+        id: z.string().optional(),
+        username: z.string().optional(),
+        self_ig_scoped_id: z.string().optional(),
+      })
+      .partial()
+      .optional(),
+    media: z
+      .object({
+        id: z.string().optional(),
+        media_product_type: z.string().optional(),
+        ad_id: z.string().optional(),
+        ad_title: z.string().optional(),
+        original_media_id: z.string().optional(),
+      })
+      .partial()
+      .optional(),
+  }),
+});
+
 const IGWebhookPayload = z.object({
   object: z.literal("instagram"),
   entry: z.array(
     z.object({
       /** IGID - ID of the Instagram professional account */
       id: z.string(),
-      messaging: z.array(IGMessagePayload),
+      messaging: z.array(IGMessagePayload).optional(),
+      changes: z.array(IGCommentPayload).optional(),
     }),
   ),
 });
 
 export type IGMessagePayload = z.infer<typeof IGMessagePayload>;
+export type IGCommentPayloadType = z.infer<typeof IGCommentPayload>;
 export type IGWebhookPayload = z.infer<typeof IGWebhookPayload>;
 
 // MessagePayload now includes FB comments as well for unified storage
@@ -170,6 +203,7 @@ export const MessagePayload = z.union([
   FBMessagePayload,
   IGMessagePayload,
   FBCommentPayload,
+  IGCommentPayload,
 ]);
 
 export type MessagePayload = z.infer<typeof MessagePayload>;

@@ -12,6 +12,7 @@ import { AppError } from "../../helpers/error";
 import { verifyMetaWebhookSignature } from "../../middleware/verify-meta-webhook-signature";
 import { zValidator } from "../../middleware/zod-validator";
 import { metaWebhookGetQuerySchema } from "./common";
+import { handleInstagramCommentChanges } from "./helpers/instagram-comments";
 
 export const instagramWebhooksRoute = new Hono<ApiEnv>()
   // GET /webhooks/instagram - this is used by instagram to verify the webhook endpoint
@@ -43,7 +44,7 @@ export const instagramWebhooksRoute = new Hono<ApiEnv>()
           const account = await ConnectedAccount.fromIGAccountID(igAccountId, {
             skipWorkspaceCheck: true,
           });
-          for (const messaging of entry.messaging) {
+          for (const messaging of entry.messaging ?? []) {
             const { sender, recipient, message, message_edit, timestamp } =
               messaging;
             if (!message && !message_edit) continue;
@@ -168,6 +169,9 @@ export const instagramWebhooksRoute = new Hono<ApiEnv>()
               account.workspaceId,
               conversationEvent,
             );
+          }
+          if ("changes" in entry && Array.isArray(entry.changes)) {
+            await handleInstagramCommentChanges(entry.changes, account);
           }
         }
         return c.status(200);
