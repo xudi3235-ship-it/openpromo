@@ -1,15 +1,11 @@
 import { instagramOAuthService } from "@core/domain/connected-account";
-import type { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { UnifiedContent } from "@core/domain/content/unified-content";
 import { InboxService } from "@core/domain/inbox";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
-import { getDbClient } from "@core/helpers/db";
+import { db } from "@core/helpers/db";
 import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
-import {
-  IGCommentPayload,
-  type IGCommentPayloadType,
-  InboxRealtimeEventTypes,
-} from "@shared/inbox";
+import type { IGCommentPayloadType } from "@shared/inbox";
+import { IGCommentPayload, InboxRealtimeEventTypes } from "@shared/inbox";
 import { createWorkspaceEvent } from "@shared/workspace/events";
 import { eq } from "drizzle-orm";
 
@@ -17,9 +13,13 @@ const FALLBACK_USERNAME = "Instagram User";
 
 export async function handleInstagramCommentChanges(
   rawChanges: unknown[],
-  account: Awaited<ReturnType<typeof ConnectedAccount.fromIGAccountID>>,
+  account: Awaited<
+    ReturnType<
+      typeof import("@core/domain/connected-account/connected-account").ConnectedAccount.fromIGAccountID
+    >
+  >,
 ) {
-  const db = getDbClient();
+  const dbClient = db();
 
   for (const rawChange of rawChanges ?? []) {
     const parsed = IGCommentPayload.safeParse(rawChange);
@@ -32,14 +32,18 @@ export async function handleInstagramCommentChanges(
       continue;
     }
     const change = parsed.data;
-    await processCommentChange(change, account, db);
+    await processCommentChange(change, account, dbClient);
   }
 }
 
 async function processCommentChange(
   change: IGCommentPayloadType,
-  account: Awaited<ReturnType<typeof ConnectedAccount.fromIGAccountID>>,
-  db: ReturnType<typeof getDbClient>,
+  account: Awaited<
+    ReturnType<
+      typeof import("@core/domain/connected-account/connected-account").ConnectedAccount.fromIGAccountID
+    >
+  >,
+  dbClient: ReturnType<typeof db>,
 ) {
   const value = change.value;
   const actualCommentId = value.comment_id ?? value.id;
@@ -75,7 +79,6 @@ async function processCommentChange(
 
   if (!conversation) {
     if (senderIsBusiness) {
-      // Business replies without an existing conversation cannot be attributed to a user; skip.
       console.info(
         "[IG comments][2] business reply without user conversation",
         {
@@ -111,14 +114,14 @@ async function processCommentChange(
   }
 
   if (!conversation.contactId) {
-    console.error("instagram comment handler missing conversation contactId", {
+    console.error("[IG comments] conversation missing contactId", {
       conversationId: conversation.id,
       commentId: actualCommentId,
     });
     throw new Error("Conversation missing contactId");
   }
 
-  const contactRecord = await db
+  const contactRecord = await dbClient
     .select()
     .from(inboxContactsTable)
     .where(eq(inboxContactsTable.id, conversation.contactId))
@@ -126,7 +129,7 @@ async function processCommentChange(
     .then((rows) => rows[0]);
 
   if (!contactRecord) {
-    console.warn("instagram comment handler missing contact record", {
+    console.warn("[IG comments] unable to load contact", {
       conversationId: conversation.id,
       commentId: actualCommentId,
     });
@@ -205,7 +208,11 @@ async function processCommentChange(
 }
 
 async function ensureContactForComment(
-  account: Awaited<ReturnType<typeof ConnectedAccount.fromIGAccountID>>,
+  account: Awaited<
+    ReturnType<
+      typeof import("@core/domain/connected-account/connected-account").ConnectedAccount.fromIGAccountID
+    >
+  >,
   value: IGCommentPayloadType["value"],
 ) {
   const from = value.from ?? {};
@@ -228,13 +235,16 @@ async function ensureContactForComment(
 
   if (from.id) {
     try {
-      const profile = await instagramOAuthService.getUserProfile(
+      const profileData = await instagramOAuthService.getUserProfile(
         account.encryptedAccessToken,
         from.id,
       );
       profileName =
-        profile.name ?? profile.username ?? profileName ?? FALLBACK_USERNAME;
-      profilePicUrl = profile.profile_pic ?? "";
+        profileData.name ??
+        profileData.username ??
+        profileName ??
+        FALLBACK_USERNAME;
+      profilePicUrl = profileData.profile_pic ?? "";
     } catch (error) {
       console.warn("Failed to fetch Instagram profile for comment user", {
         userId: from.id,

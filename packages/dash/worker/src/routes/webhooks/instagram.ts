@@ -1,6 +1,8 @@
 import { instagramOAuthService } from "@core/domain/connected-account";
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { InboxService } from "@core/domain/inbox";
+import { handleInstagramCommentChanges } from "@core/domain/inbox/webhooks/instagram-comments";
+import { handleInstagramMessageChanges } from "@core/domain/inbox/webhooks/instagram-message-changes";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Platform } from "@core/schemas/connected-account.sql";
@@ -12,8 +14,6 @@ import { AppError } from "../../helpers/error";
 import { verifyMetaWebhookSignature } from "../../middleware/verify-meta-webhook-signature";
 import { zValidator } from "../../middleware/zod-validator";
 import { metaWebhookGetQuerySchema } from "./common";
-import { handleInstagramCommentChanges } from "./helpers/instagram-comments";
-import { handleInstagramMessageChanges } from "./helpers/instagram-message-changes";
 
 export const instagramWebhooksRoute = new Hono<ApiEnv>()
   // GET /webhooks/instagram - this is used by instagram to verify the webhook endpoint

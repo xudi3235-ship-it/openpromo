@@ -1,7 +1,6 @@
-import type { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { InboxService } from "@core/domain/inbox";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
-import { getDbClient } from "@core/helpers/db";
+import { db } from "@core/helpers/db";
 import {
   type InboxChannel,
   inboxConversationsTable,
@@ -29,9 +28,13 @@ type MessageRecord = {
 
 export async function handleInstagramMessageChanges(
   rawChanges: unknown[],
-  account: Awaited<ReturnType<typeof ConnectedAccount.fromIGAccountID>>,
+  account: Awaited<
+    ReturnType<
+      typeof import("@core/domain/connected-account/connected-account").ConnectedAccount.fromIGAccountID
+    >
+  >,
 ) {
-  const db = getDbClient();
+  const dbClient = db();
 
   for (const rawChange of rawChanges ?? []) {
     const parsed = IGMessageChangePayload.safeParse(rawChange);
@@ -46,23 +49,27 @@ export async function handleInstagramMessageChanges(
     const change = parsed.data;
 
     if (change.field === "message_edit") {
-      await handleMessageEditChange(change, account, db);
+      await handleMessageEditChange(change, account, dbClient);
     } else if (change.field === "message_reactions") {
-      await handleMessageReactionChange(change, account, db);
+      await handleMessageReactionChange(change, account, dbClient);
     }
   }
 }
 
 async function handleMessageEditChange(
   change: IGMessageEditPayloadType,
-  account: Awaited<ReturnType<typeof ConnectedAccount.fromIGAccountID>>,
-  db: ReturnType<typeof getDbClient>,
+  account: Awaited<
+    ReturnType<
+      typeof import("@core/domain/connected-account/connected-account").ConnectedAccount.fromIGAccountID
+    >
+  >,
+  dbClient: ReturnType<typeof db>,
 ) {
   const { value } = change;
   const mid = value.mid;
   if (!mid) return;
 
-  const record = await findMessageRecord(db, account.id, mid);
+  const record = await findMessageRecord(dbClient, account.id, mid);
   if (!record) {
     console.warn("instagram message_edit change without existing message", {
       mid,
@@ -123,14 +130,18 @@ async function handleMessageEditChange(
 
 async function handleMessageReactionChange(
   change: IGMessageReactionPayloadType,
-  account: Awaited<ReturnType<typeof ConnectedAccount.fromIGAccountID>>,
-  db: ReturnType<typeof getDbClient>,
+  account: Awaited<
+    ReturnType<
+      typeof import("@core/domain/connected-account/connected-account").ConnectedAccount.fromIGAccountID
+    >
+  >,
+  dbClient: ReturnType<typeof db>,
 ) {
   const { value } = change;
   const mid = value.mid;
   if (!mid) return;
 
-  const record = await findMessageRecord(db, account.id, mid);
+  const record = await findMessageRecord(dbClient, account.id, mid);
   if (!record) {
     console.warn(
       "instagram message_reactions change without existing message",
@@ -212,11 +223,11 @@ async function handleMessageReactionChange(
 }
 
 async function findMessageRecord(
-  db: ReturnType<typeof getDbClient>,
+  dbClient: ReturnType<typeof db>,
   connectedAccountId: string,
   externalId: string,
 ): Promise<MessageRecord | null> {
-  const [row] = await db
+  const [row] = await dbClient
     .select({
       conversationId: inboxConversationsTable.id,
       channel: inboxMessagesTable.channel,
