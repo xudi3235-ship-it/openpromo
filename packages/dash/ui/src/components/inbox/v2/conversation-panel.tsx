@@ -11,6 +11,7 @@ interface InboxConversationPanelProps {
   conversation: InboxConversationSummary | null;
   isLoading: boolean;
   isFetching: boolean;
+  isConversationLoading: boolean;
 }
 
 export function InboxConversationPanelV2({
@@ -19,6 +20,7 @@ export function InboxConversationPanelV2({
   conversation,
   isLoading,
   isFetching,
+  isConversationLoading,
 }: InboxConversationPanelProps) {
   const threads = useInboxStore((state) => state.threads);
 
@@ -52,6 +54,10 @@ export function InboxConversationPanelV2({
             />
           )}
         </>
+      ) : isConversationLoading ? (
+        <div className="flex flex-1 items-center justify-center px-6 text-sm text-muted-foreground">
+          Loading conversation…
+        </div>
       ) : (
         <InboxEmptyState />
       )}

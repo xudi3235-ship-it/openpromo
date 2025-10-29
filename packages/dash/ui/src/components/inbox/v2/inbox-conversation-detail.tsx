@@ -14,6 +14,10 @@ export function InboxConversationDetailV2() {
   const setThreadFetching = useInboxStore((state) => state.setThreadFetching);
   const setThreadHasMore = useInboxStore((state) => state.setThreadHasMore);
   const upsertConversation = useInboxStore((state) => state.upsertConversation);
+  const conversationFromStore = useInboxStore((state) => {
+    if (!conversationId) return null;
+    return state.byId[conversationId] ?? null;
+  });
   const conversationQuery = useInboxConversationQuery(
     workspaceSlug,
     conversationId,
@@ -55,6 +59,12 @@ export function InboxConversationDetailV2() {
   const messagesInitialLoading =
     messagesQuery.isFetching && !messagesQuery.data;
   const messagesFetching = messagesQuery.isFetching;
+  const activeConversation = conversationQuery.data ?? conversationFromStore;
+  const conversationLoading =
+    Boolean(conversationId) &&
+    conversationQuery.isFetching &&
+    !activeConversation;
+  const hasConversationSelection = Boolean(conversationId);
 
   return (
     <ConversationSplitLayout
@@ -62,13 +72,18 @@ export function InboxConversationDetailV2() {
         <InboxConversationPanelV2
           workspaceSlug={workspaceSlug}
           conversationId={conversationId}
-          conversation={conversationQuery.data ?? null}
+          conversation={activeConversation}
           isLoading={messagesInitialLoading}
           isFetching={messagesFetching}
+          isConversationLoading={conversationLoading}
         />
       }
       contextPanel={
-        <InboxContextPanelV2 conversation={conversationQuery.data ?? null} />
+        <InboxContextPanelV2
+          conversation={activeConversation}
+          isLoading={conversationLoading}
+          hasSelection={hasConversationSelection}
+        />
       }
     />
   );
