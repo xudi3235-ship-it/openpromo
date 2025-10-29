@@ -22,6 +22,8 @@ export function InboxDMPanel({
   const contactName = conversation.contact.name;
   const contactAvatarUrl = conversation.contact.profilePicUrl;
   const selfName = conversation.connectedAccount.accountName ?? "You";
+  const selfAvatarUrl =
+    conversation.connectedAccount.profilePicUrl ?? undefined;
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -33,6 +35,7 @@ export function InboxDMPanel({
           contactName={contactName}
           contactAvatarUrl={contactAvatarUrl}
           selfName={selfName}
+          selfAvatarUrl={selfAvatarUrl}
         />
         <ScrollBar orientation="vertical" />
       </ScrollArea>

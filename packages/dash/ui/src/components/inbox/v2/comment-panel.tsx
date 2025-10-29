@@ -3,7 +3,6 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
-import { Badge } from "@openpromo/ui/components/badge";
 import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 import { format } from "date-fns";
 import { Fragment } from "react";
@@ -24,6 +23,8 @@ export function InboxCommentPanelV2({
   isLoading,
   isFetching,
 }: InboxCommentPanelV2Props) {
+  const connectedAccountAvatar =
+    conversation.connectedAccount.profilePicUrl ?? undefined;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <section className="flex-shrink-0 border-b border-border/60 px-6 py-4">
@@ -39,9 +40,6 @@ export function InboxCommentPanelV2({
               {format(conversation.lastMessageAt, "MMM d, h:mm a")}
             </p>
           </div>
-          <Badge variant="outline" className="capitalize">
-            {conversation.platform.toLowerCase()}
-          </Badge>
         </div>
       </section>
 
@@ -61,7 +59,7 @@ export function InboxCommentPanelV2({
                 : (getStringExtra(extra, "senderName") ??
                   conversation.contact.name);
               const avatarUrl = isSelf
-                ? undefined
+                ? connectedAccountAvatar
                 : (getStringExtra(extra, "senderAvatarUrl") ??
                   conversation.contact.profilePicUrl ??
                   undefined);

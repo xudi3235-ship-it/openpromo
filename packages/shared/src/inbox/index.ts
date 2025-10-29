@@ -357,6 +357,7 @@ export type InboxContact = z.infer<typeof InboxContactSchema>;
 export const InboxConnectedAccountSummary = z.object({
   id: z.string(),
   accountName: z.string().nullable(),
+  profilePicUrl: z.string().nullable().optional(),
 });
 export type InboxConnectedAccountSummary = z.infer<
   typeof InboxConnectedAccountSummary

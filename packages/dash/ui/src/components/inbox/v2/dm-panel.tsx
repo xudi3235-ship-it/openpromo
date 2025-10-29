@@ -21,6 +21,8 @@ export function InboxDMPanelV2({
   const contactName = conversation.contact.name;
   const contactAvatarUrl = conversation.contact.profilePicUrl;
   const selfName = conversation.connectedAccount.accountName ?? "You";
+  const selfAvatarUrl =
+    conversation.connectedAccount.profilePicUrl ?? undefined;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -32,6 +34,7 @@ export function InboxDMPanelV2({
           contactName={contactName}
           contactAvatarUrl={contactAvatarUrl}
           selfName={selfName}
+          selfAvatarUrl={selfAvatarUrl}
         />
       </div>
       <InboxMessageInput
