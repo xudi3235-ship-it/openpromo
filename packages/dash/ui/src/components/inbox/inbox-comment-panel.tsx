@@ -19,18 +19,32 @@ export function InboxCommentPanel({
   isLoading,
   isFetching,
 }: InboxCommentPanelProps) {
-  const { postContext, threadItems } = useMemo(() => {
-    const baseContext: Record<string, unknown> = {};
+  const { postMeta, threadItems } = useMemo(() => {
+    const aggregatedPost: Record<string, unknown> = {};
     const items = messages.map((message) => {
       const channelMeta =
         message.metadata?.byPlatform?.[conversation.platform]?.post_comment;
-      if (channelMeta?.extra) {
-        Object.assign(baseContext, channelMeta.extra);
+      const extra = channelMeta?.extra ?? {};
+      const post = extra.post;
+      if (post && typeof post === "object") {
+        Object.assign(aggregatedPost, post as Record<string, unknown>);
       }
       return message;
     });
-    return { postContext: baseContext, threadItems: items };
+    return { postMeta: aggregatedPost, threadItems: items };
   }, [conversation.platform, messages]);
+
+  const previewUrl =
+    (typeof postMeta.mediaThumbnailUrl === "string"
+      ? postMeta.mediaThumbnailUrl
+      : undefined) ??
+    (typeof postMeta.mediaUrl === "string" ? postMeta.mediaUrl : undefined);
+  const postCaption =
+    typeof postMeta.caption === "string" ? postMeta.caption : undefined;
+  const postPermalink =
+    typeof postMeta.permalink === "string" ? postMeta.permalink : undefined;
+  const mediaType =
+    typeof postMeta.mediaType === "string" ? postMeta.mediaType : undefined;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -51,28 +65,39 @@ export function InboxCommentPanel({
             {conversation.platform.toLowerCase()}
           </Badge>
         </div>
-        {postContext && Object.keys(postContext).length > 0 ? (
-          <div className="mt-4 space-y-1 text-sm text-muted-foreground">
-            {postContext.title ? (
-              <p className="font-medium text-foreground">
-                {String(postContext.title)}
+        {previewUrl || postCaption || postPermalink ? (
+          <div className="mt-4 space-y-3 text-sm text-muted-foreground">
+            {previewUrl ? (
+              <div className="overflow-hidden rounded-md border border-border/60 bg-muted/20">
+                <img
+                  src={previewUrl}
+                  alt="Post preview"
+                  className="h-48 w-full object-cover"
+                />
+              </div>
+            ) : null}
+            {postCaption ? (
+              <p className="text-sm text-foreground line-clamp-4">
+                {postCaption}
               </p>
             ) : null}
-            {postContext.caption ? (
-              <p className="line-clamp-3 text-sm">
-                {String(postContext.caption)}
-              </p>
-            ) : null}
-            {postContext.permalink ? (
-              <a
-                className="text-xs text-primary"
-                href={String(postContext.permalink)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                View post
-              </a>
-            ) : null}
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              {mediaType ? (
+                <Badge variant="outline" className="capitalize">
+                  {mediaType.toLowerCase()}
+                </Badge>
+              ) : null}
+              {postPermalink ? (
+                <a
+                  className="text-primary"
+                  href={postPermalink}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View post
+                </a>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </section>

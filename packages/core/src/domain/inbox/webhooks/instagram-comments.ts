@@ -12,6 +12,69 @@ import { eq } from "drizzle-orm";
 
 const FALLBACK_USERNAME = "Instagram User";
 
+type UnifiedContentRow = Awaited<
+  ReturnType<typeof UnifiedContent.getBySourceContentId>
+>;
+
+function extractPostMetadata(content: UnifiedContentRow | null) {
+  if (!content) return null;
+  const spec = content.placementSpec as
+    | {
+        caption?: string;
+        attachments?: Array<{
+          publicUrl?: string | null;
+          thumbnailUrl?: string | null;
+        }>;
+        identity?: {
+          metadata?: Record<string, unknown> | null;
+        };
+      }
+    | undefined;
+
+  if (!spec) return null;
+
+  const attachment = spec.attachments?.[0];
+  const metadata: Record<string, unknown> = {};
+
+  if (spec.caption) metadata.caption = spec.caption;
+  if (content.permalinkUrl) metadata.permalink = content.permalinkUrl;
+
+  const identityMetadata = spec.identity?.metadata ?? {};
+  if (identityMetadata.mediaType)
+    metadata.mediaType = identityMetadata.mediaType;
+
+  if (attachment?.publicUrl) metadata.mediaUrl = attachment.publicUrl;
+  if (attachment?.thumbnailUrl) {
+    metadata.mediaThumbnailUrl = attachment.thumbnailUrl;
+  } else if (attachment?.publicUrl) {
+    metadata.mediaThumbnailUrl = attachment.publicUrl;
+  }
+
+  metadata.contentId = content.id;
+  metadata.sourceContentId = content.sourceContentId;
+
+  return Object.keys(metadata).length > 0 ? metadata : null;
+}
+
+function buildConversationMetadata(
+  mediaId: string | null,
+  postMetadata: Record<string, unknown> | null,
+) {
+  const extra: Record<string, unknown> = {};
+  if (mediaId) extra.mediaId = mediaId;
+  if (postMetadata) extra.post = postMetadata;
+  if (Object.keys(extra).length === 0) return {};
+  return {
+    byPlatform: {
+      INSTAGRAM: {
+        post_comment: {
+          extra,
+        },
+      },
+    },
+  } satisfies Record<string, unknown>;
+}
+
 export async function handleInstagramCommentChanges(
   rawChanges: unknown[],
   account: Awaited<
@@ -65,12 +128,35 @@ async function processCommentChange(
   const fromId = from.id ?? null;
   const senderIsBusiness = !!fromId && fromId === account.externalAccountId;
   const externalThreadId = parentId;
-  const content =
+  const igAccountId = account.externalAccountId;
+  let content =
     mediaId != null
       ? await UnifiedContent.getBySourceContentId(mediaId, {
           skipWorkspaceCheck: true,
         })
       : null;
+
+  if (!content && mediaId) {
+    console.info("[IG comments][media] backfilling unified content", {
+      accountId: account.id,
+      mediaId,
+    });
+    content = await UnifiedContent.fromInstagramPost(mediaId, {
+      accessToken: account.encryptedAccessToken,
+      connectedAccountId: account.id,
+      workspaceId: account.workspaceId,
+      igAccountId,
+    }).catch((error) => {
+      console.error("[IG comments][media] failed to backfill", {
+        accountId: account.id,
+        mediaId,
+        error,
+      });
+      return null;
+    });
+  }
+
+  const postMetadata = extractPostMetadata(content ?? null);
 
   let conversation = await InboxService.findConversationByExternalThreadId({
     connectedAccountId: account.id,
@@ -94,6 +180,11 @@ async function processCommentChange(
     const contact = await ensureContactForComment(account, value);
     if (!contact) return;
 
+    const conversationMetadata = buildConversationMetadata(
+      mediaId,
+      postMetadata,
+    );
+
     conversation = await InboxService.upsertConversation({
       connectedAccountId: account.id,
       platform: "INSTAGRAM",
@@ -103,17 +194,7 @@ async function processCommentChange(
       threadKey: externalThreadId,
       externalThreadId,
       contentId: content?.id ?? null,
-      metadata: mediaId
-        ? {
-            byPlatform: {
-              INSTAGRAM: {
-                post_comment: {
-                  extra: { mediaId },
-                },
-              },
-            },
-          }
-        : {},
+      metadata: conversationMetadata,
     });
 
     console.info("[IG comments][3] created conversation", {
@@ -155,6 +236,9 @@ async function processCommentChange(
   const metadata: InboxMessageMetadata = {
     extra: {
       parentId,
+      ...(mediaId ? { mediaId } : {}),
+      ...(value.verb ? { verb: value.verb } : {}),
+      ...(postMetadata ? { post: postMetadata } : {}),
     },
   };
   if (isRemove) metadata.deleted = true;
@@ -162,6 +246,7 @@ async function processCommentChange(
   const channelExtra: Record<string, unknown> = { parentId };
   if (value.verb) channelExtra.verb = value.verb;
   if (mediaId) channelExtra.mediaId = mediaId;
+  if (postMetadata) channelExtra.post = postMetadata;
   appendChannelExtra(metadata, "INSTAGRAM", "post_comment", channelExtra);
 
   const messageText = isRemove ? null : (value.text ?? null);
