@@ -3,12 +3,18 @@ import { InboxService } from "@core/domain/inbox";
 import {
   appendChannelExtra,
   setEditMetadata,
+  upsertReactionMetadata,
 } from "@core/domain/inbox/message-metadata";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
+import { db } from "@core/helpers/db";
 import { Platform } from "@core/schemas/connected-account.sql";
+import type { InboxChannel } from "@core/schemas/inbox-conversations.sql";
+import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
+import { inboxMessagesTable } from "@core/schemas/inbox-messages.sql";
 import type { FBMessagePayload, InboxMessageMetadata } from "@shared/inbox";
 import { InboxRealtimeEventTypes } from "@shared/inbox";
 import { createWorkspaceEvent } from "@shared/workspace/events";
+import { and, eq } from "drizzle-orm";
 
 type ConnectedAccount = Awaited<
   ReturnType<
@@ -47,7 +53,14 @@ async function processDMEvent(
   messaging: FBMessagePayload,
   account: ConnectedAccount,
 ): Promise<void> {
-  const { sender, recipient, message, message_edit, timestamp } = messaging;
+  const { sender, recipient, message, message_edit, reaction, timestamp } =
+    messaging;
+
+  // Handle reaction events
+  if (reaction) {
+    await handleMessageReaction(reaction, messaging, account, timestamp);
+    return;
+  }
 
   if (!message && !message_edit) {
     return;
@@ -256,6 +269,139 @@ async function handleNewMessage(
   });
 
   await dispatchWorkspaceEvent(account.workspaceId, event);
+}
+
+/**
+ * Handle message reaction event
+ */
+async function handleMessageReaction(
+  reactionData: NonNullable<FBMessagePayload["reaction"]>,
+  messaging: FBMessagePayload,
+  account: ConnectedAccount,
+  timestamp: number,
+): Promise<void> {
+  const { mid, action, reaction, emoji } = reactionData;
+  const actorId = messaging.sender.id;
+
+  const dbClient = db();
+
+  // Find the message being reacted to
+  const record = await findMessageRecord(dbClient, account.id, mid);
+
+  if (!record) {
+    console.warn("[FB DM] Reaction received for non-existent message", {
+      accountId: account.id,
+      mid,
+      action,
+    });
+    return;
+  }
+
+  const metadata: InboxMessageMetadata = {
+    ...(record.metadata ?? {}),
+  };
+
+  const reactionKey = emoji ?? reaction ?? "👍";
+  const isoTimestamp = new Date(timestamp).toISOString();
+
+  upsertReactionMetadata(metadata, record.channel, {
+    platform: "FACEBOOK",
+    mid,
+    key: reactionKey,
+    action: action === "unreact" ? "removed" : "added",
+    actorId,
+    timestamp: isoTimestamp,
+    extras: {
+      emoji: emoji ?? reaction,
+    },
+  });
+
+  await InboxService.upsertMessage({
+    inboxConversationId: record.conversationId,
+    externalId: mid,
+    text: record.text,
+    payload: messaging,
+    sender: record.sender,
+    workspaceId: account.workspaceId,
+    channel: record.channel,
+    contentId: record.contentId,
+    metadata,
+  });
+
+  const event = createWorkspaceEvent(InboxRealtimeEventTypes.MessageUpserted, {
+    conversationId: record.conversationId,
+    message: {
+      id: "",
+      externalId: mid,
+      sender: record.sender,
+      text: record.text,
+      attachments: [],
+      createdAt: new Date(),
+      channel: record.channel,
+      contentId: record.contentId,
+      metadata,
+    },
+  });
+
+  await dispatchWorkspaceEvent(account.workspaceId, event);
+
+  console.info("[FB DM] Message reaction updated", {
+    accountId: account.id,
+    conversationId: record.conversationId,
+    mid,
+    action,
+    reactionKey,
+    actorId,
+  });
+}
+
+/**
+ * Find message record by external ID
+ */
+async function findMessageRecord(
+  dbClient: ReturnType<typeof db>,
+  connectedAccountId: string,
+  externalId: string,
+): Promise<{
+  conversationId: string;
+  channel: InboxChannel;
+  sender: "user" | "self";
+  text: string | null;
+  metadata: InboxMessageMetadata;
+  contentId: string | null;
+} | null> {
+  const [row] = await dbClient
+    .select({
+      conversationId: inboxConversationsTable.id,
+      channel: inboxMessagesTable.channel,
+      sender: inboxMessagesTable.sender,
+      text: inboxMessagesTable.text,
+      metadata: inboxMessagesTable.metadata,
+      contentId: inboxMessagesTable.contentId,
+    })
+    .from(inboxMessagesTable)
+    .innerJoin(
+      inboxConversationsTable,
+      eq(inboxMessagesTable.inboxConversationId, inboxConversationsTable.id),
+    )
+    .where(
+      and(
+        eq(inboxMessagesTable.externalId, externalId),
+        eq(inboxConversationsTable.connectedAccountId, connectedAccountId),
+      ),
+    )
+    .limit(1);
+
+  if (!row) return null;
+
+  return {
+    conversationId: row.conversationId,
+    channel: row.channel,
+    sender: row.sender,
+    text: row.text,
+    metadata: (row.metadata ?? {}) as InboxMessageMetadata,
+    contentId: row.contentId,
+  };
 }
 
 /**

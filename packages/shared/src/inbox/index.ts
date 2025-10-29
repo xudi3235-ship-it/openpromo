@@ -66,6 +66,14 @@ export const FBMessagePayload = z.object({
       num_edit: z.number(),
     })
     .optional(),
+  reaction: z
+    .object({
+      mid: z.string(),
+      action: z.enum(["react", "unreact"]),
+      emoji: z.string().optional(),
+      reaction: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const FBCommentPayload = z.object({
