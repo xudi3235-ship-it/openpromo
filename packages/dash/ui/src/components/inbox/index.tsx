@@ -12,7 +12,18 @@ import { InboxSidebar } from "./inbox-sidebar";
 
 export function Inbox() {
   const { workspaceSlug } = Route.useParams();
+  const searchParams = Route.useSearch();
 
+  // URL state is now source of truth for filters and selection
+  const {
+    channel = "all",
+    platform = "all",
+    conversationId,
+    highlightMessageId: _highlightMessageId, // TODO: Phase 5 - implement message highlighting
+    q: searchQuery,
+  } = searchParams;
+
+  // Zustand now only for caching and optimistic updates
   const initialize = useInboxStore((state) => state.initialize);
   const setConversations = useInboxStore((state) => state.setConversations);
   const setConversationLoadingState = useInboxStore(
@@ -23,27 +34,21 @@ export function Inbox() {
   const setThreadHasMore = useInboxStore((state) => state.setThreadHasMore);
   const upsertConversation = useInboxStore((state) => state.upsertConversation);
   const appendMessages = useInboxStore((state) => state.appendMessages);
-  const search = useInboxStore((state) => state.search);
-  const selectedPlatform = useInboxStore((state) => state.selectedPlatform);
-  const selectedChannel = useInboxStore((state) => state.selectedChannel);
   const conversationOrder = useInboxStore((state) => state.order);
   const conversationMap = useInboxStore((state) => state.byId);
-  const currentConversationId = useInboxStore(
-    (state) => state.currentConversationId,
-  );
 
   // Initialize store
   useEffect(() => {
     initialize(workspaceSlug);
   }, [workspaceSlug, initialize]);
 
-  // Fetch conversations
+  // Fetch conversations using URL params
   const conversationsQuery = useInboxConversationsQuery(workspaceSlug, {
     page: 1,
     pageSize: 25,
-    ...(search?.trim() && { q: search.trim() }),
-    platform: selectedPlatform ?? undefined,
-    channel: selectedChannel ?? undefined,
+    ...(searchQuery?.trim() && { q: searchQuery.trim() }),
+    platform: platform !== "all" ? platform : undefined,
+    channel: channel !== "all" ? channel : undefined,
   });
 
   useEffect(() => {
@@ -82,8 +87,8 @@ export function Inbox() {
     setConversationLoadingState,
   ]);
 
-  // Fetch messages for current conversation
-  const effectiveConversationId = currentConversationId ?? undefined;
+  // Fetch messages for current conversation (from URL)
+  const effectiveConversationId = conversationId;
   const messagesQuery = useInboxMessagesQuery(
     workspaceSlug,
     effectiveConversationId,
@@ -134,17 +139,17 @@ export function Inbox() {
   ]);
 
   const conversations = useMemo(() => {
-    const searchTerm = search?.trim().toLowerCase();
+    const searchTerm = searchQuery?.trim().toLowerCase();
     return conversationOrder
       .map((id) => conversationMap[id])
       .filter((conversation): conversation is InboxConversationSummary =>
         Boolean(conversation),
       )
       .filter((conversation) => {
-        if (selectedChannel && conversation.channel !== selectedChannel) {
+        if (channel !== "all" && conversation.channel !== channel) {
           return false;
         }
-        if (selectedPlatform && conversation.platform !== selectedPlatform) {
+        if (platform !== "all" && conversation.platform !== platform) {
           return false;
         }
         if (!searchTerm) return true;
@@ -156,13 +161,7 @@ export function Inbox() {
           .toLowerCase();
         return haystacks.includes(searchTerm);
       });
-  }, [
-    conversationOrder,
-    conversationMap,
-    selectedChannel,
-    selectedPlatform,
-    search,
-  ]);
+  }, [conversationOrder, conversationMap, channel, platform, searchQuery]);
 
   const conversationsInitialLoading =
     conversationsQuery.isFetching && !conversationsQuery.data;
