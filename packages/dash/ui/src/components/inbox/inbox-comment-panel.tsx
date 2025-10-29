@@ -3,6 +3,7 @@ import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 import { format } from "date-fns";
 import { Fragment, useMemo } from "react";
 import { InboxMessageInput } from "./inbox-message-input";
+import { InboxPostPreview } from "./inbox-post-preview";
 
 interface InboxCommentPanelProps {
   workspaceSlug: string | undefined;
@@ -34,17 +35,20 @@ export function InboxCommentPanel({
     return { postMeta: aggregatedPost, threadItems: items };
   }, [conversation.platform, messages]);
 
-  const previewUrl =
-    (typeof postMeta.mediaThumbnailUrl === "string"
+  const mediaUrl =
+    typeof postMeta.mediaUrl === "string" ? postMeta.mediaUrl : undefined;
+  const mediaThumbnailUrl =
+    typeof postMeta.mediaThumbnailUrl === "string"
       ? postMeta.mediaThumbnailUrl
-      : undefined) ??
-    (typeof postMeta.mediaUrl === "string" ? postMeta.mediaUrl : undefined);
+      : undefined;
   const postCaption =
     typeof postMeta.caption === "string" ? postMeta.caption : undefined;
   const postPermalink =
     typeof postMeta.permalink === "string" ? postMeta.permalink : undefined;
   const mediaType =
     typeof postMeta.mediaType === "string" ? postMeta.mediaType : undefined;
+  const hasPostPreview =
+    mediaUrl || mediaThumbnailUrl || postCaption || postPermalink;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -65,39 +69,16 @@ export function InboxCommentPanel({
             {conversation.platform.toLowerCase()}
           </Badge>
         </div>
-        {previewUrl || postCaption || postPermalink ? (
-          <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-            {previewUrl ? (
-              <div className="overflow-hidden rounded-md border border-border/60 bg-muted/20">
-                <img
-                  src={previewUrl}
-                  alt="Post preview"
-                  className="h-48 w-full object-cover"
-                />
-              </div>
-            ) : null}
-            {postCaption ? (
-              <p className="text-sm text-foreground line-clamp-4">
-                {postCaption}
-              </p>
-            ) : null}
-            <div className="flex flex-wrap items-center gap-3 text-xs">
-              {mediaType ? (
-                <Badge variant="outline" className="capitalize">
-                  {mediaType.toLowerCase()}
-                </Badge>
-              ) : null}
-              {postPermalink ? (
-                <a
-                  className="text-primary"
-                  href={postPermalink}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  View post
-                </a>
-              ) : null}
-            </div>
+        {hasPostPreview ? (
+          <div className="mt-4">
+            <InboxPostPreview
+              platform={conversation.platform}
+              mediaUrl={mediaUrl}
+              mediaThumbnailUrl={mediaThumbnailUrl}
+              mediaType={mediaType}
+              caption={postCaption}
+              permalink={postPermalink}
+            />
           </div>
         ) : null}
       </section>

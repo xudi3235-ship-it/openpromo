@@ -122,14 +122,35 @@ export const mockMessages: Record<string, InboxMessage[]> = {
       contentId: "content-1",
       metadata: {
         extra: {
-          referencedPost: "Sunny Coffee — Launching Ethiopia Single Origin",
+          parentId: "comment-100",
+          post: {
+            caption:
+              "☕️ Introducing our Ethiopia Guji single-origin roast—bright berries, hints of cocoa, and a smooth finish.",
+            mediaUrl:
+              "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?auto=format&fit=crop&w=800&q=80",
+            mediaThumbnailUrl:
+              "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?auto=format&fit=crop&w=400&q=60",
+            permalink: "https://instagram.com/p/mock-post-101",
+            mediaType: "IMAGE",
+          },
         },
         byPlatform: {
           FACEBOOK: {
             post_comment: {
               extra: {
+                parentId: "comment-100",
                 postId: "mock-post-101",
                 verb: "add",
+                post: {
+                  caption:
+                    "☕️ Introducing our Ethiopia Guji single-origin roast—bright berries, hints of cocoa, and a smooth finish.",
+                  mediaUrl:
+                    "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?auto=format&fit=crop&w=800&q=80",
+                  mediaThumbnailUrl:
+                    "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?auto=format&fit=crop&w=400&q=60",
+                  permalink: "https://instagram.com/p/mock-post-101",
+                  mediaType: "IMAGE",
+                },
               },
             },
           },
@@ -145,7 +166,31 @@ export const mockMessages: Record<string, InboxMessage[]> = {
       attachments: [],
       createdAt: new Date(baseNow - 46 * 60 * 1000),
       contentId: "content-1",
-      metadata: {},
+      metadata: {
+        extra: {
+          parentId: "comment-100",
+        },
+        byPlatform: {
+          FACEBOOK: {
+            post_comment: {
+              extra: {
+                parentId: "comment-100",
+                postId: "mock-post-101",
+                post: {
+                  caption:
+                    "☕️ Introducing our Ethiopia Guji single-origin roast—bright berries, hints of cocoa, and a smooth finish.",
+                  mediaUrl:
+                    "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?auto=format&fit=crop&w=800&q=80",
+                  mediaThumbnailUrl:
+                    "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?auto=format&fit=crop&w=400&q=60",
+                  permalink: "https://instagram.com/p/mock-post-101",
+                  mediaType: "IMAGE",
+                },
+              },
+            },
+          },
+        },
+      },
     },
   ],
   "conv-3": [
