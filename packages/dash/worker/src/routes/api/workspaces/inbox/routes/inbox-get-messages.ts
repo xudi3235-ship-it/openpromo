@@ -4,13 +4,11 @@ import { getDbClient } from "@core/helpers/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
 import { inboxMessagesTable } from "@core/schemas/inbox-messages.sql";
-import { env } from "@core/utils/env";
 import { InboxMessageSchema } from "@shared/inbox";
 import { and, count, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
 import { zValidator } from "../../../../../middleware/zod-validator";
-import { mockMessages } from "../mock";
 
 const listMessagesQuery = z.object({
   page: z.coerce.number().default(1),
@@ -24,22 +22,6 @@ export const inboxGetMessagesRoute = new Hono<ApiEnv>().get(
     const { conversationId } = c.req.param();
     const { page, pageSize } = c.req.valid("query");
     const workspaceId = Actor.workspaceID();
-
-    if (env.VITE_ENVIRONMENT === "local") {
-      const thread = mockMessages[conversationId] ?? [];
-      const sorted = [...thread].sort(
-        (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
-      );
-      const start = (page - 1) * pageSize;
-      const items = sorted.slice(start, start + pageSize);
-
-      return c.json({
-        items,
-        page,
-        pageSize,
-        total: thread.length,
-      });
-    }
 
     const db = getDbClient();
     // Ensure conversation belongs to this workspace

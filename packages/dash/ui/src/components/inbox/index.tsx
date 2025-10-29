@@ -211,6 +211,8 @@ export function Inbox() {
         />
         <InboxConversationPanel
           workspaceSlug={workspaceSlug}
+          conversationId={conversationId}
+          conversation={conversationQuery.data ?? null}
           isLoading={messagesInitialLoading}
           isFetching={messagesFetching}
         />

@@ -7,29 +7,22 @@ import { InboxEmptyState } from "./inbox-empty-state";
 
 interface InboxConversationPanelProps {
   workspaceSlug: string | undefined;
+  conversationId: string | undefined;
+  conversation: InboxConversationSummary | null;
   isLoading: boolean;
   isFetching: boolean;
 }
 
 export function InboxConversationPanel({
   workspaceSlug,
+  conversationId,
+  conversation,
   isLoading,
   isFetching,
 }: InboxConversationPanelProps) {
-  const conversationMap = useInboxStore((state) => state.byId);
   const threads = useInboxStore((state) => state.threads);
-  const currentConversationId = useInboxStore(
-    (state) => state.currentConversationId,
-  );
 
-  const activeConversation = currentConversationId
-    ? (conversationMap[currentConversationId] as
-        | InboxConversationSummary
-        | undefined)
-    : null;
-  const activeThread = currentConversationId
-    ? threads[currentConversationId]
-    : undefined;
+  const activeThread = conversationId ? threads[conversationId] : undefined;
   const activeMessages = activeThread?.items ?? [];
   const threadIsFetching = activeThread?.isFetching ?? false;
   const hasMessages = activeMessages.length > 0;
@@ -38,13 +31,13 @@ export function InboxConversationPanel({
 
   return (
     <section className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-background">
-      {activeConversation ? (
+      {conversation ? (
         <>
-          <InboxConversationHeader conversation={activeConversation} />
-          {activeConversation.channel === "dm" ? (
+          <InboxConversationHeader conversation={conversation} />
+          {conversation.channel === "dm" ? (
             <InboxDMPanel
               workspaceSlug={workspaceSlug}
-              conversation={activeConversation}
+              conversation={conversation}
               messages={activeMessages}
               isLoading={showLoading}
               isRefreshing={showRefreshing}
@@ -52,7 +45,7 @@ export function InboxConversationPanel({
           ) : (
             <InboxCommentPanel
               workspaceSlug={workspaceSlug}
-              conversation={activeConversation}
+              conversation={conversation}
               messages={activeMessages}
               isLoading={showLoading}
               isFetching={showRefreshing}

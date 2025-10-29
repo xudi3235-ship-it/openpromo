@@ -4,14 +4,12 @@ import { getDbClient } from "@core/helpers/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
 import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
-import { env } from "@core/utils/env";
 import { AllPlatforms } from "@shared/content";
 import { InboxConversationSummarySchema } from "@shared/inbox";
 import { and, count, desc, eq, ilike } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
 import { zValidator } from "../../../../../middleware/zod-validator";
-import { mockConversations } from "../mock";
 
 const listConversationsQuery = z.object({
   page: z.coerce.number().default(1),
@@ -31,42 +29,6 @@ export const inboxGetConversationsRoute = new Hono<ApiEnv>().get(
       c.req.valid("query");
 
     const workspaceId = Actor.workspaceID();
-
-    if (env.VITE_ENVIRONMENT === "local") {
-      const filtered = mockConversations.filter((conversation) => {
-        if (platform && conversation.platform !== platform) return false;
-        if (channel && conversation.channel !== channel) return false;
-        if (
-          connectedAccountId &&
-          conversation.connectedAccount.id !== connectedAccountId
-        )
-          return false;
-        if (q) {
-          const needle = q.trim().toLowerCase();
-          const haystack = [
-            conversation.contact.name,
-            conversation.connectedAccount.accountName ?? "",
-          ]
-            .join(" ")
-            .toLowerCase();
-          return haystack.includes(needle);
-        }
-        return true;
-      });
-
-      const sorted = filtered.sort(
-        (a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime(),
-      );
-      const start = (page - 1) * pageSize;
-      const items = sorted.slice(start, start + pageSize);
-
-      return c.json({
-        items,
-        page,
-        pageSize,
-        total: filtered.length,
-      });
-    }
 
     const where = [eq(connectedAccount.workspaceId, workspaceId)];
     if (platform) where.push(eq(inboxConversationsTable.platform, platform));

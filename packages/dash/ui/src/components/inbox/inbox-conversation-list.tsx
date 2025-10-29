@@ -10,6 +10,7 @@ import { cn } from "@openpromo/ui/lib/utils";
 import type { InboxConversationSummary } from "@shared/inbox";
 import { formatDistanceToNow } from "date-fns";
 import { PlatformAvatarBadge } from "@/components/shared/platform-avatar-badge";
+import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import { useInboxStore } from "@/stores/inbox-store";
 
 interface InboxConversationListProps {
@@ -21,10 +22,9 @@ export function InboxConversationList({
   conversations,
   isLoading = false,
 }: InboxConversationListProps) {
-  const selectConversation = useInboxStore((state) => state.selectConversation);
-  const selectedConversationId = useInboxStore(
-    (state) => state.selectedConversationId,
-  );
+  const navigate = Route.useNavigate();
+  const searchParams = Route.useSearch();
+  const selectedConversationId = searchParams.conversationId;
   const threads = useInboxStore((state) => state.threads);
 
   return (
@@ -73,7 +73,14 @@ export function InboxConversationList({
               <li key={conversation.id}>
                 <button
                   type="button"
-                  onClick={() => selectConversation(conversation.id)}
+                  onClick={() => {
+                    navigate({
+                      search: (prev) => ({
+                        ...prev,
+                        conversationId: conversation.id,
+                      }),
+                    });
+                  }}
                   className={cn(
                     "w-full rounded-lg border border-transparent p-3 text-left transition-colors",
                     isSelected
