@@ -43,7 +43,18 @@ function mergeMessages(
   for (const incoming of items) {
     const message = normalizeMessage(incoming);
 
+    // Check if this exact message ID already exists (perfect match)
+    const existsById = thread.itemsById[message.id];
+    if (existsById) {
+      // Update the existing message instead of duplicating
+      thread.itemsById[message.id] = message;
+      continue;
+    }
+
+    // For messages from self, check for optimistic duplicates
     if (message.sender === "self") {
+      const optimisticIds: string[] = [];
+
       for (const [existingId, existingRaw] of Object.entries(
         thread.itemsById,
       )) {
@@ -60,11 +71,17 @@ function mergeMessages(
           existing.createdAt.getTime() - message.createdAt.getTime(),
         );
         if (Number.isFinite(delta) && delta <= OPTIMISTIC_WINDOW_MS) {
-          delete thread.itemsById[existingId];
+          optimisticIds.push(existingId);
         }
+      }
+
+      // Remove all matching optimistic messages
+      for (const id of optimisticIds) {
+        delete thread.itemsById[id];
       }
     }
 
+    // Add the new message
     thread.itemsById[message.id] = message;
   }
 
