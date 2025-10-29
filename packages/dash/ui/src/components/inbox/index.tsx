@@ -7,6 +7,7 @@ import { useInboxMessagesQuery } from "@/queries/inbox/messages";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import { useInboxStore } from "@/stores/inbox-store";
 import { InboxChannelSwitcher } from "./inbox-channel-switcher";
+import { InboxContextPanel } from "./inbox-context-panel";
 import { InboxConversationPanel } from "./inbox-conversation-panel";
 import { InboxSidebar } from "./inbox-sidebar";
 
@@ -213,6 +214,7 @@ export function Inbox() {
           isLoading={messagesInitialLoading}
           isFetching={messagesFetching}
         />
+        <InboxContextPanel conversation={conversationQuery.data ?? null} />
       </div>
     </div>
   );

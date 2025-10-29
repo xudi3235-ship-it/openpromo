@@ -93,12 +93,40 @@ inbox/
 - State persists on page refresh
 - Browser back/forward navigation works
 
-### Phase 2: Layout Restructure
+### Phase 2: Layout Restructure ✅ COMPLETED
 **Timeline:** Week 2
 **Goal:** Implement three-column layout with context panel
 
+**Completed Tasks:**
+1. ✅ Created InboxContextPanel component that switches between DM/Comment contexts
+2. ✅ Created InboxCommentContext with post preview, engagement metrics, and actions
+3. ✅ Created InboxDMContext with placeholders for labels, assignee, notes, activity
+4. ✅ Integrated context panel into main Inbox layout (hidden below lg breakpoint)
+5. ✅ Context panel receives conversation with postPreview from conversationQuery
+
+**Files created:**
+- `/packages/dash/ui/src/components/inbox/inbox-context-panel/inbox-context-panel.tsx` - Main switcher
+- `/packages/dash/ui/src/components/inbox/inbox-context-panel/inbox-comment-context.tsx` - Comment-specific context
+- `/packages/dash/ui/src/components/inbox/inbox-context-panel/inbox-dm-context.tsx` - DM-specific context
+- `/packages/dash/ui/src/components/inbox/inbox-context-panel/index.ts` - Barrel export
+
+**Files modified:**
+- `/packages/dash/ui/src/components/inbox/index.tsx` - Added InboxContextPanel to layout
+
+**Layout dimensions:**
+- Left sidebar: 320px (lg breakpoint)
+- Middle panel: flex-1 (fills space)
+- Right context panel: 320px (lg breakpoint, hidden on mobile/tablet)
+
+**What works now:**
+- Three-column responsive layout
+- Comment conversations show post preview with media, caption, engagement metrics
+- DM conversations show placeholders for future features (labels, assignee, notes)
+- Context panel hidden on mobile/tablet (<lg)
+- Post previews properly display Instagram/Facebook media with refreshed URLs
+
 **Tasks:**
-1. Add right context panel container
+1. ~~Add right context panel container~~
 2. Adjust layout widths and responsive behavior
 3. Create panel switcher based on conversation type
 4. Add placeholder content for DM/Comment contexts
