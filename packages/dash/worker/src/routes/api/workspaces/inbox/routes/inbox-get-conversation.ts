@@ -55,6 +55,8 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
 
     if (!row) return c.notFound();
 
+    console.log("[inbox get conversation]", row.contentPlacementSpec);
+
     const postPreview = row.contentPlacementSpec
       ? placementSpecToContentPreview(row.contentPlacementSpec)
       : undefined;
