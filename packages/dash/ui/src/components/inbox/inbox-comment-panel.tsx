@@ -3,7 +3,6 @@ import { ScrollArea, ScrollBar } from "@openpromo/ui/components/scroll-area";
 import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 import { format } from "date-fns";
 import { Fragment } from "react";
-import { InboxContentPreview } from "./inbox-content-preview";
 import { InboxMessageInput } from "./inbox-message-input";
 
 interface InboxCommentPanelProps {
@@ -21,8 +20,6 @@ export function InboxCommentPanel({
   isLoading,
   isFetching,
 }: InboxCommentPanelProps) {
-  const hasPostPreview = Boolean(conversation.postPreview);
-
   return (
     <div className="flex flex-1 flex-col">
       <section className="border-b border-border/60 px-6 py-4">
@@ -42,11 +39,6 @@ export function InboxCommentPanel({
             {conversation.platform.toLowerCase()}
           </Badge>
         </div>
-        {hasPostPreview && conversation.postPreview ? (
-          <div className="mt-4">
-            <InboxContentPreview preview={conversation.postPreview} />
-          </div>
-        ) : null}
       </section>
 
       <ScrollArea className="flex-1 px-6 py-4">

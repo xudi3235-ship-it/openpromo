@@ -4,11 +4,9 @@ import {
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
 import { Badge } from "@openpromo/ui/components/badge";
-import { Button } from "@openpromo/ui/components/button";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { InboxConversationSummary } from "@shared/inbox";
 import { formatDistanceToNow } from "date-fns";
-import { Sparkles, Tag } from "lucide-react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 
 interface InboxConversationHeaderProps {
@@ -64,16 +62,6 @@ export function InboxConversationHeader({
             </span>
           </div>
         </div>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm">
-          <Tag className="mr-2 h-4 w-4" />
-          Add label
-        </Button>
-        <Button variant="outline" size="sm">
-          <Sparkles className="mr-2 h-4 w-4" />
-          Summarize
-        </Button>
       </div>
     </header>
   );

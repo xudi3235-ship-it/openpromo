@@ -3,7 +3,7 @@ import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Separator } from "@openpromo/ui/components/separator";
 import type { InboxConversationSummary } from "@shared/inbox";
-import { Clock, FileText, Tag, UserCircle } from "lucide-react";
+import { Clock, FileText, Plus, Sparkles, Tag, UserCircle } from "lucide-react";
 
 interface InboxDMContextProps {
   conversation: InboxConversationSummary;
@@ -40,30 +40,52 @@ export function InboxDMContext({ conversation }: InboxDMContextProps) {
 
         <Separator />
 
-        {/* Assignee Section - Placeholder */}
+        {/* Summary Section */}
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold">Assigned To</h3>
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border/60 p-6 text-center">
-            <UserCircle className="mb-2 h-8 w-8 text-muted-foreground/50" />
-            <p className="text-xs text-muted-foreground">
-              Assignee feature coming soon
-            </p>
-            <Button variant="ghost" size="sm" className="mt-2" disabled>
-              Assign to team member
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">AI Summary</h3>
+            <Button variant="ghost" size="sm" disabled>
+              <Sparkles className="mr-1 h-3 w-3" />
+              Generate
             </Button>
+          </div>
+          <div className="rounded-lg border border-dashed border-border/60 bg-muted/20 p-4">
+            <p className="text-xs text-muted-foreground">
+              AI-powered conversation summaries coming soon. This will help you
+              quickly understand the context and key points of long
+              conversations.
+            </p>
           </div>
         </div>
 
         <Separator />
 
-        {/* Labels Section - Placeholder */}
+        {/* Labels Section */}
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold">Labels</h3>
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border/60 p-6 text-center">
-            <Tag className="mb-2 h-8 w-8 text-muted-foreground/50" />
-            <p className="text-xs text-muted-foreground">No labels applied</p>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Labels</h3>
+            <Button variant="ghost" size="sm" disabled>
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
+          <div className="rounded-lg border border-dashed border-border/60 p-4 text-center">
+            <Tag className="mx-auto mb-2 h-6 w-6 text-muted-foreground/50" />
+            <p className="text-xs text-muted-foreground">
+              No labels applied yet
+            </p>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Assignee Section */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold">Assigned To</h3>
+          <div className="rounded-lg border border-dashed border-border/60 p-4 text-center">
+            <UserCircle className="mx-auto mb-2 h-6 w-6 text-muted-foreground/50" />
+            <p className="text-xs text-muted-foreground">Not assigned</p>
             <Button variant="ghost" size="sm" className="mt-2" disabled>
-              Add label
+              Assign
             </Button>
           </div>
         </div>
