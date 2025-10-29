@@ -74,6 +74,11 @@ export const FBMessagePayload = z.object({
       reaction: z.string().optional(),
     })
     .optional(),
+  read: z
+    .object({
+      watermark: z.number(),
+    })
+    .optional(),
 });
 
 export const FBCommentPayload = z.object({
@@ -163,6 +168,11 @@ export const IGMessagePayload = z.object({
       mid: z.string(),
       text: z.string(),
       num_edit: z.number(),
+    })
+    .optional(),
+  read: z
+    .object({
+      watermark: z.number(),
     })
     .optional(),
 });

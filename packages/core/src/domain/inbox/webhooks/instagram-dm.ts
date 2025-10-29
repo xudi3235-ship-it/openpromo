@@ -37,7 +37,14 @@ async function processDMEvent(
   messaging: IGMessagePayload,
   account: ConnectedAccount,
 ) {
-  const { sender, recipient, message, message_edit, timestamp } = messaging;
+  const { sender, recipient, message, message_edit, read, timestamp } =
+    messaging;
+
+  // Handle read receipt events
+  if (read) {
+    await handleMessageRead(read, messaging, account);
+    return;
+  }
 
   if (!message && !message_edit) {
     console.warn("[IG DM] Event missing both message and message_edit", {
@@ -75,6 +82,94 @@ async function processDMEvent(
 
   // 4. Dispatch conversation update event
   await dispatchConversationEvent(conversation.id, timestamp, contact, account);
+}
+
+/**
+ * Handle message read receipt event
+ */
+async function handleMessageRead(
+  readData: NonNullable<IGMessagePayload["read"]>,
+  messaging: IGMessagePayload,
+  account: ConnectedAccount,
+): Promise<void> {
+  const { watermark } = readData;
+  const contactExternalId = messaging.sender.id;
+
+  // Find or create contact
+  const contact = await resolveContact(contactExternalId, account);
+
+  // Find the conversation
+  const conversation = await InboxService.getConversation({
+    connectedAccountId: account.id,
+    contactId: contact.id,
+    channel: "dm",
+  });
+
+  if (!conversation) {
+    console.warn("[IG DM] Read receipt for non-existent conversation", {
+      accountId: account.id,
+      contactId: contact.id,
+      watermark,
+    });
+    return;
+  }
+
+  // Update conversation metadata with read watermark
+  const metadata = (conversation.metadata || {}) as Record<string, unknown>;
+  const readTimestamp = new Date(watermark);
+
+  if (!metadata.byPlatform) {
+    metadata.byPlatform = {};
+  }
+  const byPlatform = metadata.byPlatform as Record<string, unknown>;
+
+  if (!byPlatform.INSTAGRAM) {
+    byPlatform.INSTAGRAM = {};
+  }
+  const igMeta = byPlatform.INSTAGRAM as Record<string, unknown>;
+
+  if (!igMeta.dm) {
+    igMeta.dm = {};
+  }
+  const dmMeta = igMeta.dm as Record<string, unknown>;
+
+  dmMeta.lastReadAt = readTimestamp.toISOString();
+  dmMeta.lastReadWatermark = watermark;
+
+  // Update conversation with new metadata using upsert
+  await InboxService.upsertConversation({
+    connectedAccountId: account.id,
+    platform: Platform.enum.INSTAGRAM,
+    contactId: contact.id,
+    lastMessageAt: conversation.lastMessageAt,
+    channel: "dm",
+    threadKey: contact.id,
+    metadata,
+  });
+
+  // Dispatch conversation updated event to UI (includes updated metadata)
+  const event = createWorkspaceEvent(
+    InboxRealtimeEventTypes.ConversationUpserted,
+    {
+      conversationId: conversation.id,
+      lastMessageAt: conversation.lastMessageAt,
+      platform: Platform.enum.INSTAGRAM,
+      contact: {
+        id: contact.id,
+        name: contact.name,
+        profilePicUrl: contact.profilePicUrl,
+      },
+    },
+  );
+
+  await dispatchWorkspaceEvent(account.workspaceId, event);
+
+  console.info("[IG DM] Read receipt processed", {
+    accountId: account.id,
+    conversationId: conversation.id,
+    watermark,
+    lastReadAt: readTimestamp.toISOString(),
+  });
 }
 
 /**

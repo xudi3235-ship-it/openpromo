@@ -53,8 +53,21 @@ async function processDMEvent(
   messaging: FBMessagePayload,
   account: ConnectedAccount,
 ): Promise<void> {
-  const { sender, recipient, message, message_edit, reaction, timestamp } =
-    messaging;
+  const {
+    sender,
+    recipient,
+    message,
+    message_edit,
+    reaction,
+    read,
+    timestamp,
+  } = messaging;
+
+  // Handle read receipt events
+  if (read) {
+    await handleMessageRead(read, messaging, account);
+    return;
+  }
 
   // Handle reaction events
   if (reaction) {
@@ -269,6 +282,97 @@ async function handleNewMessage(
   });
 
   await dispatchWorkspaceEvent(account.workspaceId, event);
+}
+
+/**
+ * Handle message read receipt event
+ */
+async function handleMessageRead(
+  readData: NonNullable<FBMessagePayload["read"]>,
+  messaging: FBMessagePayload,
+  account: ConnectedAccount,
+): Promise<void> {
+  const { watermark } = readData;
+  const contactExternalId = messaging.sender.id;
+
+  // Find or create contact
+  const contact = await resolveContact(
+    contactExternalId,
+    account.encryptedAccessToken,
+  );
+
+  // Find the conversation
+  const conversation = await InboxService.getConversation({
+    connectedAccountId: account.id,
+    contactId: contact.id,
+    channel: "dm",
+  });
+
+  if (!conversation) {
+    console.warn("[FB DM] Read receipt for non-existent conversation", {
+      accountId: account.id,
+      contactId: contact.id,
+      watermark,
+    });
+    return;
+  }
+
+  // Update conversation metadata with read watermark
+  const metadata = (conversation.metadata || {}) as Record<string, unknown>;
+  const readTimestamp = new Date(watermark);
+
+  if (!metadata.byPlatform) {
+    metadata.byPlatform = {};
+  }
+  const byPlatform = metadata.byPlatform as Record<string, unknown>;
+
+  if (!byPlatform.FACEBOOK) {
+    byPlatform.FACEBOOK = {};
+  }
+  const fbMeta = byPlatform.FACEBOOK as Record<string, unknown>;
+
+  if (!fbMeta.dm) {
+    fbMeta.dm = {};
+  }
+  const dmMeta = fbMeta.dm as Record<string, unknown>;
+
+  dmMeta.lastReadAt = readTimestamp.toISOString();
+  dmMeta.lastReadWatermark = watermark;
+
+  // Update conversation with new metadata using upsert
+  await InboxService.upsertConversation({
+    connectedAccountId: account.id,
+    platform: Platform.enum.FACEBOOK,
+    contactId: contact.id,
+    lastMessageAt: conversation.lastMessageAt,
+    channel: "dm",
+    threadKey: contact.id,
+    metadata,
+  });
+
+  // Dispatch conversation updated event to UI (includes updated metadata)
+  const event = createWorkspaceEvent(
+    InboxRealtimeEventTypes.ConversationUpserted,
+    {
+      conversationId: conversation.id,
+      lastMessageAt: conversation.lastMessageAt,
+      platform: Platform.enum.FACEBOOK,
+      contact: {
+        id: contact.id,
+        name: contact.name,
+        profilePicUrl: contact.profilePicUrl,
+      },
+    },
+  );
+
+  await dispatchWorkspaceEvent(account.workspaceId, event);
+
+  console.info("[FB DM] Read receipt processed", {
+    accountId: account.id,
+    conversationId: conversation.id,
+    watermark,
+    lastReadAt: readTimestamp.toISOString(),
+  });
 }
 
 /**
