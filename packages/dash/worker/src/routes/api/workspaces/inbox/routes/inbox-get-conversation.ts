@@ -1,3 +1,4 @@
+import { computeUnreadStatus } from "@core/domain/inbox/unread-helper";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { getDbClient } from "@core/helpers/db";
@@ -25,6 +26,7 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
         lastMessageAt: inboxConversationsTable.lastMessageAt,
         contentId: inboxConversationsTable.contentId,
         externalThreadId: inboxConversationsTable.externalThreadId,
+        metadata: inboxConversationsTable.metadata,
         contactId: inboxContactsTable.id,
         contactName: inboxContactsTable.name,
         contactProfilePicUrl: inboxContactsTable.profilePicUrl,
@@ -62,6 +64,13 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
       ? placementSpecToContentPreview(row.contentPlacementSpec)
       : undefined;
 
+    const { isUnread, lastReadAt } = computeUnreadStatus({
+      lastMessageAt: row.lastMessageAt,
+      metadata: row.metadata,
+      platform: row.platform,
+      channel: row.channel,
+    });
+
     const data = InboxConversationSummarySchema.parse({
       id: row.id,
       platform: row.platform,
@@ -80,6 +89,8 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
       contentId: row.contentId,
       externalThreadId: row.externalThreadId,
       postPreview,
+      isUnread,
+      lastReadAt,
     });
     return c.json(data);
   },

@@ -1,6 +1,6 @@
 import type { AllPlatforms } from "@shared";
 import { InboxConversationSummarySchema } from "@shared/inbox";
-import type { QueryClient } from "@tanstack/react-query";
+import type { InfiniteData, QueryClient } from "@tanstack/react-query";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import type { InboxConversationsList } from "@worker/routes/api/workspaces/inbox";
 import { useMemo } from "react";
@@ -191,31 +191,45 @@ export function useMarkConversationRead(workspaceSlug: string | undefined) {
         },
       }),
     onSuccess: (data, conversationId) => {
-      // Update the conversation in all relevant queries
-      queryClient.setQueriesData(
+      // Type-safe update for infinite queries
+      queryClient.setQueriesData<InfiniteData<InboxConversationsList>>(
         {
           queryKey: ["inbox", "conversations", workspaceSlug],
           exact: false,
         },
-        (oldData: { pages: InboxConversationsList[] } | undefined) => {
-          if (!oldData) return oldData;
+        (oldData) => {
+          // Guard: ensure oldData exists and has the expected structure
+          if (!oldData?.pages || !Array.isArray(oldData.pages)) {
+            return oldData;
+          }
 
           return {
             ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              items: page.items.map((item) =>
-                item.id === conversationId
-                  ? {
-                      ...item,
-                      isUnread: data.isUnread,
-                      lastReadAt: data.lastReadAt
-                        ? new Date(data.lastReadAt)
-                        : null,
-                    }
-                  : item,
-              ),
-            })),
+            pages: oldData.pages.map((page) => {
+              // Guard: ensure page exists and has items array
+              if (!page?.items || !Array.isArray(page.items)) {
+                return page;
+              }
+
+              return {
+                ...page,
+                items: page.items.map((item) => {
+                  // Guard: ensure item exists and has id
+                  if (!item?.id || item.id !== conversationId) {
+                    return item;
+                  }
+
+                  // Safely update the matched conversation
+                  return {
+                    ...item,
+                    isUnread: data.isUnread ?? item.isUnread,
+                    lastReadAt: data.lastReadAt
+                      ? new Date(data.lastReadAt)
+                      : null,
+                  };
+                }),
+              };
+            }),
           };
         },
       );
@@ -237,31 +251,45 @@ export function useMarkConversationUnread(workspaceSlug: string | undefined) {
         },
       }),
     onSuccess: (data, conversationId) => {
-      // Update the conversation in all relevant queries
-      queryClient.setQueriesData(
+      // Type-safe update for infinite queries
+      queryClient.setQueriesData<InfiniteData<InboxConversationsList>>(
         {
           queryKey: ["inbox", "conversations", workspaceSlug],
           exact: false,
         },
-        (oldData: { pages: InboxConversationsList[] } | undefined) => {
-          if (!oldData) return oldData;
+        (oldData) => {
+          // Guard: ensure oldData exists and has the expected structure
+          if (!oldData?.pages || !Array.isArray(oldData.pages)) {
+            return oldData;
+          }
 
           return {
             ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              items: page.items.map((item) =>
-                item.id === conversationId
-                  ? {
-                      ...item,
-                      isUnread: data.isUnread,
-                      lastReadAt: data.lastReadAt
-                        ? new Date(data.lastReadAt)
-                        : null,
-                    }
-                  : item,
-              ),
-            })),
+            pages: oldData.pages.map((page) => {
+              // Guard: ensure page exists and has items array
+              if (!page?.items || !Array.isArray(page.items)) {
+                return page;
+              }
+
+              return {
+                ...page,
+                items: page.items.map((item) => {
+                  // Guard: ensure item exists and has id
+                  if (!item?.id || item.id !== conversationId) {
+                    return item;
+                  }
+
+                  // Safely update the matched conversation
+                  return {
+                    ...item,
+                    isUnread: data.isUnread ?? item.isUnread,
+                    lastReadAt: data.lastReadAt
+                      ? new Date(data.lastReadAt)
+                      : null,
+                  };
+                }),
+              };
+            }),
           };
         },
       );

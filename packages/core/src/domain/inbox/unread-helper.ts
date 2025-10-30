@@ -36,6 +36,12 @@ export function computeUnreadStatus(conversation: {
   }
 
   const lastReadAt = new Date(lastReadAtStr);
+
+  // Validate that the date is valid
+  if (Number.isNaN(lastReadAt.getTime())) {
+    return { isUnread: true, lastReadAt: null };
+  }
+
   const isUnread = conversation.lastMessageAt > lastReadAt;
 
   return { isUnread, lastReadAt };
