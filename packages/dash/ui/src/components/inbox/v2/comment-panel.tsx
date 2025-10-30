@@ -39,13 +39,13 @@ export function InboxCommentPanelV2({
     conversation.connectedAccount.profilePicUrl ?? undefined;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <section className="flex-shrink-0 border-b border-border/60 px-6 py-4">
+      <section className="flex-shrink-0 border-b border-border/60 px-4 py-2.5">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-foreground">
+            <h3 className="text-xs font-semibold text-foreground">
               Post comment thread
             </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
               {conversation.connectedAccount.accountName ??
                 "Facebook/Instagram"}
               {" • "}
@@ -55,9 +55,9 @@ export function InboxCommentPanelV2({
         </div>
       </section>
 
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-3">
         {isLoading ? (
-          <div className="text-sm text-muted-foreground">Loading comments…</div>
+          <div className="text-xs text-muted-foreground">Loading comments…</div>
         ) : (
           <ul className="space-y-2">
             {messages.map((message) => {
@@ -77,15 +77,15 @@ export function InboxCommentPanelV2({
                   undefined);
               return (
                 <Fragment key={message.id}>
-                  <li className="flex items-start gap-3">
-                    <Avatar className="h-8 w-8 border border-border/70 bg-background shadow-sm">
+                  <li className="flex items-start gap-2">
+                    <Avatar className="h-7 w-7 border border-border/70 bg-background shadow-sm">
                       {avatarUrl ? (
                         <AvatarImage src={avatarUrl} alt={actorName} />
                       ) : null}
                       <AvatarFallback>{getInitials(actorName)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex min-w-0 max-w-[82%] flex-col gap-1">
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex min-w-0 max-w-[82%] flex-col gap-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                         <span className="font-medium text-foreground">
                           {actorName}
                         </span>
@@ -93,7 +93,7 @@ export function InboxCommentPanelV2({
                           {format(message.createdAt, "MMM d, h:mm a")}
                         </span>
                       </div>
-                      <div className="w-fit rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm leading-relaxed">
+                      <div className="w-fit rounded-2xl border border-border/60 bg-background px-2.5 py-1.5 text-xs leading-relaxed">
                         {isDeleted ? (
                           <span className="italic text-muted-foreground">
                             Comment removed
@@ -108,9 +108,9 @@ export function InboxCommentPanelV2({
                         type="button"
                         onClick={() => handleReply(message)}
                         disabled={isDeleted}
-                        className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 hover:text-foreground disabled:pointer-events-none disabled:opacity-60"
+                        className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/80 hover:text-foreground disabled:pointer-events-none disabled:opacity-60"
                       >
-                        <CornerUpLeft className="h-3 w-3" />
+                        <CornerUpLeft className="h-2.5 w-2.5" />
                         Reply
                       </button>
                     </div>
@@ -121,7 +121,7 @@ export function InboxCommentPanelV2({
           </ul>
         )}
         {isFetching && !isLoading && (
-          <div className="mt-4 text-xs text-muted-foreground">
+          <div className="mt-3 text-[10px] text-muted-foreground">
             Syncing latest comments…
           </div>
         )}

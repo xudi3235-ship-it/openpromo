@@ -127,12 +127,12 @@ export function InboxLayout() {
   });
 
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex h-full flex-col gap-2.5">
       <InboxChannelSwitcher
         totalCount={conversations.length}
         isSyncing={conversationsFetching}
       />
-      <div className="flex flex-1 gap-4 overflow-hidden">
+      <div className="flex flex-1 gap-3 overflow-hidden">
         <InboxSidebar
           conversations={conversations}
           isLoading={conversationsInitialLoading}

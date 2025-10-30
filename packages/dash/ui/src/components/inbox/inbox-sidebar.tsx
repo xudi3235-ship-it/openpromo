@@ -16,13 +16,16 @@ export function InboxSidebar({
 }: InboxSidebarProps) {
   return (
     <aside className="flex w-full max-w-sm flex-col overflow-hidden rounded-xl border border-border/60 bg-background sm:w-72 lg:w-80">
-      <div className="space-y-3 border-b border-border/60 px-3 py-3">
+      <div className="space-y-2 border-b border-border/60 px-2.5 py-2.5">
         <InboxFilters />
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>{conversations.length} conversations</span>
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+          <span>
+            {conversations.length} conversation
+            {conversations.length !== 1 ? "s" : ""}
+          </span>
           {isFetching && (
             <span className="inline-flex items-center gap-1 text-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" /> Syncing…
+              <Loader2 className="h-2.5 w-2.5 animate-spin" /> Syncing…
             </span>
           )}
         </div>

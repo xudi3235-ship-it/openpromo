@@ -10,6 +10,7 @@ export type InboxFiltersState = {
   selectedChannel: InboxChannel | null;
   connectedAccountId: string | null;
   search: string | null;
+  showUnreadOnly: boolean;
 };
 
 export type InboxFiltersActions = {
@@ -18,6 +19,7 @@ export type InboxFiltersActions = {
   setChannel(channel: InboxChannel | null): void;
   setConnectedAccount(connectedAccountId: string | null): void;
   setSearch(search: string): void;
+  setShowUnreadOnly(showUnreadOnly: boolean): void;
   clearFilters(): void;
 };
 

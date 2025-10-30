@@ -48,34 +48,9 @@ export function InboxChannelSwitcher({
   }, [selectedPlatform]);
 
   return (
-    <section className="flex flex-col gap-2">
-      <header className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-        <span className="font-semibold text-foreground">Inbox</span>
-        <span className="flex items-center gap-2">
-          {platformMeta ? (
-            <span className="inline-flex items-center gap-1 text-xs">
-              <span className="text-muted-foreground">Platform:</span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-muted/15 px-2 py-0.5 text-[11px] font-medium">
-                {platformMeta.icon && <platformMeta.icon className="h-3 w-3" />}
-                {platformMeta.label}
-              </span>
-            </span>
-          ) : (
-            <span className="text-xs">All platforms</span>
-          )}
-          <span className="text-xs">
-            {isSyncing ? (
-              <span className="inline-flex items-center gap-1 text-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" /> Syncing…
-              </span>
-            ) : (
-              `${totalCount} conversations`
-            )}
-          </span>
-        </span>
-      </header>
-
-      <div className="flex flex-wrap items-center gap-2">
+    <section className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-foreground">Inbox</span>
         {CHANNEL_OPTIONS.map((option) => {
           const isActive = selectedChannel === option.value;
           return (
@@ -84,13 +59,31 @@ export function InboxChannelSwitcher({
               type="button"
               size="sm"
               variant={isActive ? "secondary" : "ghost"}
-              className="px-3"
+              className="h-7 px-2.5 text-xs"
               onClick={() => setChannel(isActive ? null : option.value)}
             >
               {option.label}
             </Button>
           );
         })}
+      </div>
+
+      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+        {platformMeta && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-muted/10 px-2 py-0.5 font-medium">
+            {platformMeta.icon && <platformMeta.icon className="h-2.5 w-2.5" />}
+            {platformMeta.label}
+          </span>
+        )}
+        <span>
+          {isSyncing ? (
+            <span className="inline-flex items-center gap-1 text-foreground">
+              <Loader2 className="h-2.5 w-2.5 animate-spin" /> Syncing…
+            </span>
+          ) : (
+            `${totalCount} conversations`
+          )}
+        </span>
       </div>
     </section>
   );

@@ -284,7 +284,7 @@ export function InboxMessageInput({
   }, [clearComposerReplyTarget, conversationId]);
 
   return (
-    <footer className="bg-background px-6 py-3">
+    <footer className="bg-background px-4 py-2.5">
       <MessageComposer.Root onSubmit={handleSubmit}>
         {replyTargetMessage ? (
           <MessageComposer.ReplyPreview

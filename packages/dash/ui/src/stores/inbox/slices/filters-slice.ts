@@ -11,6 +11,7 @@ export const filtersInitialState: InboxFiltersState = {
   selectedChannel: null,
   connectedAccountId: null,
   search: "",
+  showUnreadOnly: false,
 };
 
 export const createFiltersSlice: StateCreator<
@@ -28,6 +29,7 @@ export const createFiltersSlice: StateCreator<
       state.selectedChannel = null;
       state.connectedAccountId = null;
       state.search = "";
+      state.showUnreadOnly = false;
     }),
 
   setPlatform: (platform) =>
@@ -50,11 +52,17 @@ export const createFiltersSlice: StateCreator<
       state.search = search;
     }),
 
+  setShowUnreadOnly: (showUnreadOnly) =>
+    set((state) => {
+      state.showUnreadOnly = showUnreadOnly;
+    }),
+
   clearFilters: () =>
     set((state) => {
       state.selectedPlatform = null;
       state.selectedChannel = null;
       state.connectedAccountId = null;
       state.search = "";
+      state.showUnreadOnly = false;
     }),
 });

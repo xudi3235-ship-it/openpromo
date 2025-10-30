@@ -3,13 +3,15 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
-import { Badge } from "@openpromo/ui/components/badge";
+import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea, ScrollBar } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { InboxConversationSummary } from "@shared/inbox";
 import { Link, useParams } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
+import { CornerDownRight } from "lucide-react";
+import { useState } from "react";
 import { PlatformAvatarBadge } from "@/components/shared/platform-avatar-badge";
 import { useInboxStore } from "@/stores/inbox-store";
 
@@ -29,25 +31,21 @@ export function InboxConversationList({
 
   return (
     <ScrollArea className="flex-1">
-      <ul className="space-y-1 p-3">
+      <ul className="space-y-1 p-2">
         {isLoading &&
-          Array.from({ length: 6 }).map((_, idx) => (
+          Array.from({ length: 8 }).map((_, idx) => (
             <li
               key={`skeleton-${
                 // biome-ignore lint/suspicious/noArrayIndexKey: ok
                 idx
               }`}
             >
-              <div className="w-full rounded-lg border border-transparent p-3">
-                <div className="flex items-start gap-3">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-3 w-1/2" />
-                    <div className="flex gap-2">
-                      <Skeleton className="h-3 w-16" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                    <Skeleton className="h-3 w-3/4" />
+              <div className="w-full rounded-md border border-transparent p-2">
+                <div className="flex items-start gap-2">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-2.5 w-1/2" />
+                    <Skeleton className="h-2 w-3/4" />
                   </div>
                 </div>
               </div>
@@ -71,61 +69,13 @@ export function InboxConversationList({
 
             return (
               <li key={conversation.id}>
-                <Link
-                  to="/workspaces/$workspaceSlug/inbox/$conversationId"
-                  params={{
-                    workspaceSlug: workspaceSlug ?? "",
-                    conversationId: conversation.id,
-                  }}
-                  search={(prev) => prev}
-                  className={cn(
-                    "block w-full rounded-lg border border-transparent p-3 text-left transition-colors",
-                    isSelected
-                      ? "border-primary/10 bg-primary/3"
-                      : "hover:border-border/70 hover:bg-muted/20",
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="relative">
-                      <Avatar className="h-10 w-10">
-                        {conversation.contact.profilePicUrl ? (
-                          <AvatarImage
-                            src={conversation.contact.profilePicUrl}
-                            alt={conversation.contact.name}
-                          />
-                        ) : (
-                          <AvatarFallback>
-                            {getInitials(conversation.contact.name)}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <PlatformAvatarBadge platform={conversation.platform} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="truncate text-sm font-medium">
-                          {conversation.contact.name}
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(previewTime, {
-                            addSuffix: true,
-                          })}
-                        </span>
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                        <Badge variant="outline" className="capitalize">
-                          {conversation.channel === "dm"
-                            ? "Direct message"
-                            : "Post comment"}
-                        </Badge>
-                        <span>{conversation.connectedAccount.accountName}</span>
-                      </div>
-                      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                        {previewText}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
+                <ConversationListItem
+                  conversation={conversation}
+                  previewText={previewText}
+                  previewTime={previewTime}
+                  isSelected={isSelected}
+                  workspaceSlug={workspaceSlug}
+                />
               </li>
             );
           })}
@@ -137,6 +87,127 @@ export function InboxConversationList({
       </ul>
       <ScrollBar orientation="vertical" />
     </ScrollArea>
+  );
+}
+
+function ConversationListItem({
+  conversation,
+  previewText,
+  previewTime,
+  isSelected,
+  workspaceSlug,
+}: {
+  conversation: InboxConversationSummary;
+  previewText: string;
+  previewTime: Date;
+  isSelected: boolean;
+  workspaceSlug: string | undefined;
+}) {
+  const [showQuickReply, setShowQuickReply] = useState(false);
+  const [quickReplyText, setQuickReplyText] = useState("");
+
+  const handleQuickReply = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowQuickReply(!showQuickReply);
+  };
+
+  const handleSendQuickReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!quickReplyText.trim()) return;
+
+    // TODO: Implement quick reply API call
+    // Will send message without opening the conversation
+    setQuickReplyText("");
+    setShowQuickReply(false);
+  };
+
+  return (
+    <div className="group relative">
+      <Link
+        to="/workspaces/$workspaceSlug/inbox/$conversationId"
+        params={{
+          workspaceSlug: workspaceSlug ?? "",
+          conversationId: conversation.id,
+        }}
+        search={(prev) => prev}
+        className={cn(
+          "block w-full rounded-md border border-transparent p-2 text-left transition-colors",
+          isSelected
+            ? "border-primary/10 bg-primary/5"
+            : "hover:border-border/60 hover:bg-muted/15",
+        )}
+      >
+        <div className="flex items-start gap-2">
+          <div className="relative flex-shrink-0">
+            <Avatar className="h-8 w-8">
+              {conversation.contact.profilePicUrl ? (
+                <AvatarImage
+                  src={conversation.contact.profilePicUrl}
+                  alt={conversation.contact.name}
+                />
+              ) : (
+                <AvatarFallback>
+                  {getInitials(conversation.contact.name)}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            <PlatformAvatarBadge
+              platform={conversation.platform}
+              className="h-3.5 w-3.5"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-1.5">
+              <span className="truncate text-xs font-medium">
+                {conversation.contact.name}
+              </span>
+              <span className="flex-shrink-0 text-[10px] text-muted-foreground">
+                {formatDistanceToNow(previewTime, {
+                  addSuffix: false,
+                })}
+              </span>
+            </div>
+            <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
+              {previewText}
+            </p>
+          </div>
+        </div>
+      </Link>
+
+      {/* Quick reply button - shows on hover */}
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onClick={handleQuickReply}
+        className={cn(
+          "absolute right-1 top-1 h-6 w-6 rounded-md p-0 opacity-0 transition-opacity group-hover:opacity-100",
+          showQuickReply && "opacity-100",
+        )}
+      >
+        <CornerDownRight className="h-3 w-3" />
+      </Button>
+
+      {/* Quick reply input */}
+      {showQuickReply && (
+        <form
+          onSubmit={handleSendQuickReply}
+          className="border-t border-border/60 px-2 pb-2 pt-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <input
+            type="text"
+            value={quickReplyText}
+            onChange={(e) => setQuickReplyText(e.target.value)}
+            placeholder="Quick reply..."
+            className="h-7 w-full rounded-md border border-border/60 bg-background px-2 text-xs focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
+            autoFocus
+          />
+        </form>
+      )}
+    </div>
   );
 }
 
