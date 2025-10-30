@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useInboxConversationQuery } from "@/queries/inbox/conversation";
-import { useInboxMessagesQuery } from "@/queries/inbox/messages";
+import { useInboxMessagesInfiniteQuery } from "@/queries/inbox/messages";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox/$conversationId";
 import { useInboxStore } from "@/stores/inbox-store";
 import { InboxContextPanelV2 } from "./context-panel";
@@ -23,10 +23,14 @@ export function InboxConversationDetailV2() {
     conversationId,
   );
 
-  const messagesQuery = useInboxMessagesQuery(workspaceSlug, conversationId, {
-    page: 1,
-    pageSize: 50,
-  });
+  const messagesQuery = useInboxMessagesInfiniteQuery(
+    workspaceSlug,
+    conversationId,
+    50,
+  );
+
+  const allMessages =
+    messagesQuery.data?.pages.flatMap((page) => page.items) ?? [];
 
   useEffect(() => {
     if (!conversationId) return;
@@ -40,21 +44,29 @@ export function InboxConversationDetailV2() {
 
   useEffect(() => {
     if (!conversationId) return;
-    const data = messagesQuery.data;
-    if (!data) return;
+    if (!messagesQuery.data) return;
+
+    const firstPage = messagesQuery.data.pages[0];
+    if (!firstPage) return;
 
     setMessages({
       conversationId,
-      items: data.items,
-      page: data.page,
-      pageSize: data.pageSize,
-      total: data.total,
+      items: allMessages,
+      page: firstPage.page,
+      pageSize: firstPage.pageSize,
+      total: firstPage.total,
       reset: true,
     });
 
-    const hasMore = data.page * data.pageSize < data.total;
-    setThreadHasMore(conversationId, hasMore);
-  }, [conversationId, messagesQuery.data, setMessages, setThreadHasMore]);
+    setThreadHasMore(conversationId, Boolean(messagesQuery.hasNextPage));
+  }, [
+    conversationId,
+    messagesQuery.data,
+    messagesQuery.hasNextPage,
+    allMessages,
+    setMessages,
+    setThreadHasMore,
+  ]);
 
   const messagesInitialLoading =
     messagesQuery.isFetching && !messagesQuery.data;
@@ -76,6 +88,9 @@ export function InboxConversationDetailV2() {
           isLoading={messagesInitialLoading}
           isFetching={messagesFetching}
           isConversationLoading={conversationLoading}
+          hasNextPage={messagesQuery.hasNextPage}
+          fetchNextPage={messagesQuery.fetchNextPage}
+          isFetchingNextPage={messagesQuery.isFetchingNextPage}
         />
       }
       contextPanel={

@@ -12,6 +12,9 @@ interface InboxConversationPanelProps {
   isLoading: boolean;
   isFetching: boolean;
   isConversationLoading: boolean;
+  hasNextPage?: boolean;
+  fetchNextPage?: () => void;
+  isFetchingNextPage?: boolean;
 }
 
 export function InboxConversationPanelV2({
@@ -21,6 +24,9 @@ export function InboxConversationPanelV2({
   isLoading,
   isFetching,
   isConversationLoading,
+  hasNextPage,
+  fetchNextPage,
+  isFetchingNextPage,
 }: InboxConversationPanelProps) {
   const threads = useInboxStore((state) => state.threads);
 
@@ -43,6 +49,9 @@ export function InboxConversationPanelV2({
               messages={activeMessages}
               isLoading={showLoading}
               isRefreshing={showRefreshing}
+              hasNextPage={hasNextPage}
+              fetchNextPage={fetchNextPage}
+              isFetchingNextPage={isFetchingNextPage}
             />
           ) : (
             <InboxCommentPanelV2
@@ -51,6 +60,9 @@ export function InboxConversationPanelV2({
               messages={activeMessages}
               isLoading={showLoading}
               isFetching={showRefreshing}
+              hasNextPage={hasNextPage}
+              fetchNextPage={fetchNextPage}
+              isFetchingNextPage={isFetchingNextPage}
             />
           )}
         </>

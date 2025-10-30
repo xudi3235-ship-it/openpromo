@@ -1,4 +1,6 @@
+import { Button } from "@openpromo/ui/components/button";
 import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
+import { Loader2 } from "lucide-react";
 import { useCallback } from "react";
 import { useInboxStore } from "@/stores/inbox-store";
 import { InboxMessageInput } from "../inbox-message-input";
@@ -10,6 +12,9 @@ interface InboxDMPanelV2Props {
   messages: InboxMessage[];
   isLoading: boolean;
   isRefreshing: boolean;
+  hasNextPage?: boolean;
+  fetchNextPage?: () => void;
+  isFetchingNextPage?: boolean;
 }
 
 export function InboxDMPanelV2({
@@ -18,6 +23,9 @@ export function InboxDMPanelV2({
   messages,
   isLoading,
   isRefreshing,
+  hasNextPage,
+  fetchNextPage,
+  isFetchingNextPage,
 }: InboxDMPanelV2Props) {
   const setComposerReplyTarget = useInboxStore(
     (state) => state.setComposerReplyTarget,
@@ -39,6 +47,29 @@ export function InboxDMPanelV2({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex-1 overflow-y-auto px-4 py-4">
+        {/* Load Earlier Messages */}
+        {!isLoading && hasNextPage && (
+          <div className="mb-4 flex justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={fetchNextPage}
+              disabled={isFetchingNextPage}
+              className="h-8 text-xs"
+            >
+              {isFetchingNextPage ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                "Load earlier messages"
+              )}
+            </Button>
+          </div>
+        )}
+
         <InboxMessageThread
           messages={messages}
           isLoading={isLoading}

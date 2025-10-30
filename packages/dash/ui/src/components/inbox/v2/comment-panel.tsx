@@ -3,9 +3,10 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
+import { Button } from "@openpromo/ui/components/button";
 import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 import { format } from "date-fns";
-import { CornerUpLeft } from "lucide-react";
+import { CornerUpLeft, Loader2 } from "lucide-react";
 import { Fragment, useCallback } from "react";
 import { useInboxStore } from "@/stores/inbox-store";
 import { InboxMessageInput } from "../inbox-message-input";
@@ -16,6 +17,9 @@ interface InboxCommentPanelV2Props {
   messages: InboxMessage[];
   isLoading: boolean;
   isFetching: boolean;
+  hasNextPage?: boolean;
+  fetchNextPage?: () => void;
+  isFetchingNextPage?: boolean;
 }
 
 export function InboxCommentPanelV2({
@@ -24,6 +28,9 @@ export function InboxCommentPanelV2({
   messages,
   isLoading,
   isFetching,
+  hasNextPage,
+  fetchNextPage,
+  isFetchingNextPage,
 }: InboxCommentPanelV2Props) {
   const setComposerReplyTarget = useInboxStore(
     (state) => state.setComposerReplyTarget,
@@ -59,66 +66,93 @@ export function InboxCommentPanelV2({
         {isLoading ? (
           <div className="text-xs text-muted-foreground">Loading comments…</div>
         ) : (
-          <ul className="space-y-2">
-            {messages.map((message) => {
-              const isDeleted = Boolean(message.metadata?.deleted);
-              const isSelf = message.sender === "self";
-              const extra = message.metadata?.extra as
-                | Record<string, unknown>
-                | undefined;
-              const actorName = isSelf
-                ? (conversation.connectedAccount.accountName ?? "You")
-                : (getStringExtra(extra, "senderName") ??
-                  conversation.contact.name);
-              const avatarUrl = isSelf
-                ? connectedAccountAvatar
-                : (getStringExtra(extra, "senderAvatarUrl") ??
-                  conversation.contact.profilePicUrl ??
-                  undefined);
-              return (
-                <Fragment key={message.id}>
-                  <li className="flex items-start gap-2">
-                    <Avatar className="h-7 w-7 border border-border/70 bg-background shadow-sm">
-                      {avatarUrl ? (
-                        <AvatarImage src={avatarUrl} alt={actorName} />
-                      ) : null}
-                      <AvatarFallback>{getInitials(actorName)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex min-w-0 max-w-[82%] flex-col gap-0.5">
-                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                        <span className="font-medium text-foreground">
-                          {actorName}
-                        </span>
-                        <span>
-                          {format(message.createdAt, "MMM d, h:mm a")}
-                        </span>
-                      </div>
-                      <div className="w-fit rounded-2xl border border-border/60 bg-background px-2.5 py-1.5 text-xs leading-relaxed">
-                        {isDeleted ? (
-                          <span className="italic text-muted-foreground">
-                            Comment removed
-                          </span>
-                        ) : message.text ? (
-                          <span className="whitespace-pre-wrap">
-                            {message.text}
-                          </span>
+          <>
+            {/* Load Earlier Messages */}
+            {hasNextPage && (
+              <div className="mb-4 flex justify-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchNextPage}
+                  disabled={isFetchingNextPage}
+                  className="h-8 text-xs"
+                >
+                  {isFetchingNextPage ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Load earlier messages"
+                  )}
+                </Button>
+              </div>
+            )}
+
+            <ul className="space-y-2">
+              {messages.map((message) => {
+                const isDeleted = Boolean(message.metadata?.deleted);
+                const isSelf = message.sender === "self";
+                const extra = message.metadata?.extra as
+                  | Record<string, unknown>
+                  | undefined;
+                const actorName = isSelf
+                  ? (conversation.connectedAccount.accountName ?? "You")
+                  : (getStringExtra(extra, "senderName") ??
+                    conversation.contact.name);
+                const avatarUrl = isSelf
+                  ? connectedAccountAvatar
+                  : (getStringExtra(extra, "senderAvatarUrl") ??
+                    conversation.contact.profilePicUrl ??
+                    undefined);
+                return (
+                  <Fragment key={message.id}>
+                    <li className="flex items-start gap-2">
+                      <Avatar className="h-7 w-7 border border-border/70 bg-background shadow-sm">
+                        {avatarUrl ? (
+                          <AvatarImage src={avatarUrl} alt={actorName} />
                         ) : null}
+                        <AvatarFallback>
+                          {getInitials(actorName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex min-w-0 max-w-[82%] flex-col gap-0.5">
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            {actorName}
+                          </span>
+                          <span>
+                            {format(message.createdAt, "MMM d, h:mm a")}
+                          </span>
+                        </div>
+                        <div className="w-fit rounded-2xl border border-border/60 bg-background px-2.5 py-1.5 text-xs leading-relaxed">
+                          {isDeleted ? (
+                            <span className="italic text-muted-foreground">
+                              Comment removed
+                            </span>
+                          ) : message.text ? (
+                            <span className="whitespace-pre-wrap">
+                              {message.text}
+                            </span>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleReply(message)}
+                          disabled={isDeleted}
+                          className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/80 hover:text-foreground disabled:pointer-events-none disabled:opacity-60"
+                        >
+                          <CornerUpLeft className="h-2.5 w-2.5" />
+                          Reply
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleReply(message)}
-                        disabled={isDeleted}
-                        className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/80 hover:text-foreground disabled:pointer-events-none disabled:opacity-60"
-                      >
-                        <CornerUpLeft className="h-2.5 w-2.5" />
-                        Reply
-                      </button>
-                    </div>
-                  </li>
-                </Fragment>
-              );
-            })}
-          </ul>
+                    </li>
+                  </Fragment>
+                );
+              })}
+            </ul>
+          </>
         )}
         {isFetching && !isLoading && (
           <div className="mt-3 text-[10px] text-muted-foreground">
