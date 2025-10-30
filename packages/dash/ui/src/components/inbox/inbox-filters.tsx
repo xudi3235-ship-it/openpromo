@@ -9,7 +9,6 @@ import {
 import { cn } from "@openpromo/ui/lib/utils";
 import type { AllPlatforms } from "@shared";
 import { Eye, Search, X } from "lucide-react";
-import { useState } from "react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { useInboxFilters } from "@/hooks/useInboxFilters";
 
@@ -19,14 +18,13 @@ export function InboxFilters() {
   const {
     search,
     selectedPlatform,
+    showUnreadOnly,
     setPlatform,
     setSearch,
+    setShowUnreadOnly,
     clearFilters,
     hasActiveFilters,
   } = useInboxFilters();
-
-  // Local-only filter state (not synced to URL)
-  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
 
   return (
     <div className="space-y-2">

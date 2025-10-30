@@ -19,6 +19,7 @@ export type InboxConversationsParams = {
   platform?: AllPlatforms;
   channel?: "dm" | "post_comment";
   connectedAccountId?: string;
+  unread?: boolean;
 };
 
 export type InboxConversationsFilters = Omit<
@@ -35,6 +36,7 @@ function getConversationsQueryOpts(
   params: InboxConversationsParams,
   options: InboxConversationsQueryOptions,
 ): UseHonoQueryOptions<InboxConversationsList> {
+  const { unread, ...restParams } = params;
   return {
     enabled: Boolean(workspaceSlug),
     queryKey: ["inbox", "conversations", workspaceSlug, params],
@@ -42,9 +44,10 @@ function getConversationsQueryOpts(
       api.workspaces[":workspaceSlug"].inbox.conversations.$get({
         param: { workspaceSlug: String(workspaceSlug) },
         query: {
-          ...params,
+          ...restParams,
           page: params.page.toString(),
           pageSize: params.pageSize.toString(),
+          ...(unread !== undefined && { unread: unread.toString() }),
         },
       }),
     onError: options.onError,
@@ -85,6 +88,7 @@ export async function prefetchInboxConversations(
   params: InboxConversationsParams = { page: 1, pageSize: 25 },
 ) {
   const queryOpts = getConversationsQueryOpts(workspaceSlug, params, {});
+  const { unread, ...restParams } = params;
   // prefetch, no await
   queryClient.prefetchQuery({
     ...queryOpts,
@@ -94,9 +98,10 @@ export async function prefetchInboxConversations(
       ].inbox.conversations.$get({
         param: { workspaceSlug },
         query: {
-          ...params,
+          ...restParams,
           page: params.page.toString(),
           pageSize: params.pageSize.toString(),
+          ...(unread !== undefined && { unread: unread.toString() }),
         },
       });
       const payload = await response.json();
@@ -118,6 +123,7 @@ export function useInboxConversationsInfiniteQuery(
   filters: InboxConversationsFilters,
   pageSize = 25,
 ) {
+  const { unread, ...restFilters } = filters;
   const query = useInfiniteQuery({
     queryKey: ["inbox", "conversations", workspaceSlug, filters, pageSize],
     queryFn: async ({ pageParam = 1 }) => {
@@ -126,9 +132,10 @@ export function useInboxConversationsInfiniteQuery(
           api.workspaces[":workspaceSlug"].inbox.conversations.$get({
             param: { workspaceSlug: String(workspaceSlug) },
             query: {
-              ...filters,
+              ...restFilters,
               page: pageParam.toString(),
               pageSize: pageSize.toString(),
+              ...(unread !== undefined && { unread: unread.toString() }),
             },
           }),
         { disableErrorToast: false },

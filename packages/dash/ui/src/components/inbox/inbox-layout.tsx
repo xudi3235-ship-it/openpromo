@@ -12,7 +12,12 @@ export function InboxLayout() {
   const { workspaceSlug } = Route.useParams();
   const searchParams = Route.useSearch();
 
-  const { channel = "all", platform = "all", q: searchQuery } = searchParams;
+  const {
+    channel = "all",
+    platform = "all",
+    q: searchQuery,
+    unread,
+  } = searchParams;
 
   // Zustand for caching
   const initialize = useInboxStore((state) => state.initialize);
@@ -37,6 +42,7 @@ export function InboxLayout() {
       ...(searchQuery?.trim() && { q: searchQuery.trim() }),
       platform: platform !== "all" ? platform : undefined,
       channel: channel !== "all" ? channel : undefined,
+      ...(unread !== undefined && { unread }),
     },
     25, // pageSize
   );

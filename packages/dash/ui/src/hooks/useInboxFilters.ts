@@ -35,6 +35,10 @@ export function useInboxFilters() {
     return searchParams.q || "";
   }, [searchParams.q]);
 
+  const showUnreadOnly = useMemo(() => {
+    return searchParams.unread === true;
+  }, [searchParams.unread]);
+
   const setPlatform = useCallback(
     (platform: AllPlatforms | null) => {
       navigate({
@@ -71,27 +75,44 @@ export function useInboxFilters() {
     [navigate, searchParams],
   );
 
+  const setShowUnreadOnly = useCallback(
+    (unread: boolean) => {
+      navigate({
+        search: {
+          ...searchParams,
+          unread: unread || undefined,
+        },
+      });
+    },
+    [navigate, searchParams],
+  );
+
   const clearFilters = useCallback(() => {
     navigate({
       search: {
         channel: "all",
         platform: "all",
         q: undefined,
+        unread: undefined,
       },
     });
   }, [navigate]);
 
   const hasActiveFilters = useMemo(() => {
-    return Boolean(search.trim() || selectedChannel || selectedPlatform);
-  }, [search, selectedChannel, selectedPlatform]);
+    return Boolean(
+      search.trim() || selectedChannel || selectedPlatform || showUnreadOnly,
+    );
+  }, [search, selectedChannel, selectedPlatform, showUnreadOnly]);
 
   return {
     selectedPlatform,
     selectedChannel,
     search,
+    showUnreadOnly,
     setPlatform,
     setChannel,
     setSearch,
+    setShowUnreadOnly,
     clearFilters,
     hasActiveFilters,
   };

@@ -6,6 +6,7 @@ type InboxSearchParams = {
   channel?: "all" | "dm" | "post_comment";
   platform?: "all" | "FACEBOOK" | "INSTAGRAM" | "TIKTOK";
   q?: string;
+  unread?: boolean;
 };
 
 export const Route = createFileRoute(
@@ -24,6 +25,8 @@ export const Route = createFileRoute(
         ? (search.platform as "FACEBOOK" | "INSTAGRAM" | "TIKTOK")
         : "all",
       q: typeof search.q === "string" ? search.q : undefined,
+      unread:
+        search.unread === true || search.unread === "true" ? true : undefined,
     };
   },
   component: InboxLayout,
