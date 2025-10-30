@@ -9,7 +9,7 @@ import { cn } from "@openpromo/ui/lib/utils";
 import type { InboxConversationSummary } from "@shared/inbox";
 import { Link, useParams } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageCircle, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useIntersectionObserver } from "usehooks-ts";
 import { PlatformAvatarBadge } from "@/components/shared/platform-avatar-badge";
@@ -193,14 +193,23 @@ function ConversationListItem({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
-              <span
-                className={cn(
-                  "truncate text-xs",
-                  conversation.isUnread ? "font-semibold" : "font-medium",
-                )}
-              >
-                {conversation.contact.name}
-              </span>
+              <div className="flex min-w-0 items-baseline gap-1.5">
+                <span
+                  className={cn(
+                    "truncate text-xs",
+                    conversation.isUnread ? "font-semibold" : "font-medium",
+                  )}
+                >
+                  {conversation.contact.name}
+                </span>
+                <div className="flex-shrink-0 text-muted-foreground">
+                  {conversation.channel === "post_comment" ? (
+                    <MessageSquare className="h-3 w-3" />
+                  ) : (
+                    <MessageCircle className="h-3 w-3" />
+                  )}
+                </div>
+              </div>
               <span className="flex-shrink-0 text-[10px] text-muted-foreground transition-opacity group-hover:opacity-0">
                 {formatDistanceToNow(previewTime, {
                   addSuffix: false,
