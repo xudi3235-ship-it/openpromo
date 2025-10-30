@@ -40,9 +40,8 @@ export namespace Database {
         cfEnv.VITE_ENVIRONMENT !== "local"
       ) {
         // log.info("**on hyperdrive**");
-        const hyperdrive = cfEnv.HYPERDRIVE as { connectionString: string };
         return {
-          connectionString: hyperdrive.connectionString,
+          connectionString: cfEnv.HYPERDRIVE.connectionString,
         };
       }
       // log.warn("fallback to pooled conn");
