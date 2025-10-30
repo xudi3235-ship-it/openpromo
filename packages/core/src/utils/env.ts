@@ -46,6 +46,7 @@ export const env = createEnv({
     TIKHUB_API_TOKEN: z.string().min(1),
     // firecrawl provider
     FIRE_CRAWL_API_KEY: z.string().min(1),
+
     // debug flag
     DEBUG: z.string().optional().default("false"),
   },
@@ -58,6 +59,9 @@ export const env = createEnv({
   client: {
     VITE_DASHBOARD_URL: z.string().min(1),
     VITE_ENVIRONMENT: z.string().default("local"),
+    // posthog
+    VITE_PUBLIC_POSTHOG_HOST: z.string().min(1),
+    VITE_PUBLIC_POSTHOG_KEY: z.string().min(1),
   },
   /*
    * Specify what values should be validated by your schemas above.

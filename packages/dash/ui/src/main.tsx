@@ -3,6 +3,7 @@ import "./main.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { PostHogProvider } from "posthog-js/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "@/context/theme-provider";
@@ -41,11 +42,19 @@ if (rootElement && !rootElement.innerHTML) {
   const root = createRoot(rootElement);
   root.render(
     <StrictMode>
-      <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
-          <RouteProviderWithContext />
-        </QueryClientProvider>
-      </ThemeProvider>
+      <PostHogProvider
+        apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_KEY}
+        options={{
+          api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
+          defaults: "2025-05-24",
+        }}
+      >
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <RouteProviderWithContext />
+          </QueryClientProvider>
+        </ThemeProvider>
+      </PostHogProvider>
     </StrictMode>,
   );
 }
