@@ -5,6 +5,7 @@ import {
 import type { ApiEnv } from "@core/helpers/api-env";
 import { getDbClient } from "@core/helpers/db";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
+import { ErrorCodes, VisibleError } from "@core/utils/error";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 
@@ -20,9 +21,12 @@ export const inboxMarkReadRoute = new Hono<ApiEnv>()
       .where(eq(inboxConversationsTable.id, conversationId))
       .limit(1);
 
-    if (!conversation) {
-      return c.json({ error: "Conversation not found" }, 404);
-    }
+    if (!conversation)
+      throw new VisibleError(
+        "not_found",
+        ErrorCodes.NotFound.RESOURCE_NOT_FOUND,
+        "Conversation not found.",
+      );
 
     // Update metadata with current timestamp
     const updatedMetadata = updateReadTimestamp(
@@ -61,9 +65,12 @@ export const inboxMarkReadRoute = new Hono<ApiEnv>()
       .where(eq(inboxConversationsTable.id, conversationId))
       .limit(1);
 
-    if (!conversation) {
-      return c.json({ error: "Conversation not found" }, 404);
-    }
+    if (!conversation)
+      throw new VisibleError(
+        "not_found",
+        ErrorCodes.NotFound.RESOURCE_NOT_FOUND,
+        "Conversation not found.",
+      );
 
     // Update metadata with a very old timestamp to ensure it's unread
     const veryOldTimestamp = new Date(0); // Unix epoch

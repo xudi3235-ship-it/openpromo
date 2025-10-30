@@ -1,13 +1,14 @@
 import type { AllPlatforms } from "@shared";
 import { InboxConversationSummarySchema } from "@shared/inbox";
 import type { QueryClient } from "@tanstack/react-query";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import type { InboxConversationsList } from "@worker/routes/api/workspaces/inbox";
 import { useMemo } from "react";
 import {
   apiClient,
   honoApiCall,
   type UseHonoQueryOptions,
+  useHonoMutation,
   useHonoQuery,
 } from "@/lib/hono-client";
 
@@ -167,4 +168,96 @@ export function useInboxConversationsInfiniteQuery(
     conversations: allConversations,
     totalCount: query.data?.pages[0]?.total ?? 0,
   };
+}
+
+export function useMarkConversationRead(workspaceSlug: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useHonoMutation({
+    mutationFn: (api, conversationId: string) =>
+      api.workspaces[":workspaceSlug"].inbox.conversations[":id"][
+        "mark-read"
+      ].$post({
+        param: {
+          workspaceSlug: String(workspaceSlug),
+          id: conversationId,
+        },
+      }),
+    onSuccess: (data, conversationId) => {
+      // Update the conversation in all relevant queries
+      queryClient.setQueriesData(
+        {
+          queryKey: ["inbox", "conversations", workspaceSlug],
+          exact: false,
+        },
+        (oldData: { pages: InboxConversationsList[] } | undefined) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              items: page.items.map((item) =>
+                item.id === conversationId
+                  ? {
+                      ...item,
+                      isUnread: data.isUnread,
+                      lastReadAt: data.lastReadAt
+                        ? new Date(data.lastReadAt)
+                        : null,
+                    }
+                  : item,
+              ),
+            })),
+          };
+        },
+      );
+    },
+  });
+}
+
+export function useMarkConversationUnread(workspaceSlug: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useHonoMutation({
+    mutationFn: (api, conversationId: string) =>
+      api.workspaces[":workspaceSlug"].inbox.conversations[":id"][
+        "mark-unread"
+      ].$post({
+        param: {
+          workspaceSlug: String(workspaceSlug),
+          id: conversationId,
+        },
+      }),
+    onSuccess: (data, conversationId) => {
+      // Update the conversation in all relevant queries
+      queryClient.setQueriesData(
+        {
+          queryKey: ["inbox", "conversations", workspaceSlug],
+          exact: false,
+        },
+        (oldData: { pages: InboxConversationsList[] } | undefined) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              items: page.items.map((item) =>
+                item.id === conversationId
+                  ? {
+                      ...item,
+                      isUnread: data.isUnread,
+                      lastReadAt: data.lastReadAt
+                        ? new Date(data.lastReadAt)
+                        : null,
+                    }
+                  : item,
+              ),
+            })),
+          };
+        },
+      );
+    },
+  });
 }

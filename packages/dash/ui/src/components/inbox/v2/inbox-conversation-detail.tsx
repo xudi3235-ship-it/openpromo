@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useInboxConversationQuery } from "@/queries/inbox/conversation";
+import { useMarkConversationRead } from "@/queries/inbox/conversations";
 import { useInboxMessagesInfiniteQuery } from "@/queries/inbox/messages";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox/$conversationId";
 import { useInboxStore } from "@/stores/inbox-store";
@@ -9,6 +10,7 @@ import { ConversationSplitLayout } from "./conversation-split-layout";
 
 export function InboxConversationDetailV2() {
   const { workspaceSlug, conversationId } = Route.useParams();
+  const markAsRead = useMarkConversationRead(workspaceSlug);
 
   const setMessages = useInboxStore((state) => state.setMessages);
   const setThreadFetching = useInboxStore((state) => state.setThreadFetching);
@@ -72,6 +74,16 @@ export function InboxConversationDetailV2() {
     messagesQuery.isFetching && !messagesQuery.data;
   const messagesFetching = messagesQuery.isFetching;
   const activeConversation = conversationQuery.data ?? conversationFromStore;
+
+  // Auto mark-as-read when conversation is opened
+  useEffect(() => {
+    if (!conversationId) return;
+    if (!activeConversation) return;
+    if (!activeConversation.isUnread) return;
+
+    // Mark as read
+    markAsRead.mutate(conversationId);
+  }, [conversationId, activeConversation, markAsRead]);
   const conversationLoading =
     Boolean(conversationId) &&
     conversationQuery.isFetching &&
