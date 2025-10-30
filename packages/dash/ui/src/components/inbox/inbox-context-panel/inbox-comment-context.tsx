@@ -3,13 +3,8 @@ import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Separator } from "@openpromo/ui/components/separator";
 import type { InboxConversationSummary } from "@shared/inbox";
-import {
-  ExternalLink,
-  Eye,
-  MessageSquare,
-  Share2,
-  ThumbsUp,
-} from "lucide-react";
+import { ExternalLink, Eye } from "lucide-react";
+import { InboxContentPreview } from "@/components/inbox/inbox-content-preview";
 
 interface InboxCommentContextProps {
   conversation: InboxConversationSummary;
@@ -34,75 +29,8 @@ export function InboxCommentContext({
 
           {postPreview ? (
             <div className="space-y-3">
-              {/* Post Image/Video */}
-              {postPreview.attachments &&
-                postPreview.attachments.length > 0 && (
-                  <div className="overflow-hidden rounded-lg border border-border/60">
-                    {postPreview.attachments[0].type === "photo" ? (
-                      <img
-                        src={postPreview.attachments[0].publicUrl}
-                        alt="Post content"
-                        className="h-auto w-full object-cover"
-                      />
-                    ) : postPreview.attachments[0].type === "video" ? (
-                      <video
-                        src={postPreview.attachments[0].publicUrl}
-                        poster={
-                          postPreview.attachments[0].thumbnailUrl ?? undefined
-                        }
-                        controls
-                        className="h-auto w-full"
-                      />
-                    ) : null}
-                  </div>
-                )}
+              <InboxContentPreview preview={postPreview} />
 
-              {/* Caption */}
-              {postPreview.caption && (
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Caption
-                  </p>
-                  <p className="text-sm leading-relaxed line-clamp-4">
-                    {postPreview.caption}
-                  </p>
-                </div>
-              )}
-
-              {/* Engagement Metrics */}
-              {postPreview.metrics && (
-                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  {postPreview.metrics.likes !== null &&
-                    postPreview.metrics.likes !== undefined && (
-                      <div className="flex items-center gap-1">
-                        <ThumbsUp className="h-3 w-3" />
-                        <span>
-                          {postPreview.metrics.likes.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-                  {postPreview.metrics.comments !== null &&
-                    postPreview.metrics.comments !== undefined && (
-                      <div className="flex items-center gap-1">
-                        <MessageSquare className="h-3 w-3" />
-                        <span>
-                          {postPreview.metrics.comments.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-                  {postPreview.metrics.shares !== null &&
-                    postPreview.metrics.shares !== undefined && (
-                      <div className="flex items-center gap-1">
-                        <Share2 className="h-3 w-3" />
-                        <span>
-                          {postPreview.metrics.shares.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-                </div>
-              )}
-
-              {/* Permalink */}
               {postPreview.permalink && (
                 <Button variant="outline" size="sm" className="w-full" asChild>
                   <a
