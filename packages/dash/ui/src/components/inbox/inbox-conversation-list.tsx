@@ -187,10 +187,18 @@ function ConversationListItem({
               platform={conversation.platform}
               className="h-3.5 w-3.5"
             />
+            {conversation.isUnread && (
+              <div className="absolute -left-1.5 top-0 h-2.5 w-2.5 rounded-full bg-blue-500" />
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-1.5">
-              <span className="truncate text-xs font-medium">
+              <span
+                className={cn(
+                  "truncate text-xs",
+                  conversation.isUnread ? "font-semibold" : "font-medium",
+                )}
+              >
                 {conversation.contact.name}
               </span>
               <span className="flex-shrink-0 text-[10px] text-muted-foreground">
@@ -199,7 +207,14 @@ function ConversationListItem({
                 })}
               </span>
             </div>
-            <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
+            <p
+              className={cn(
+                "mt-0.5 line-clamp-2 text-[11px] leading-snug",
+                conversation.isUnread
+                  ? "font-medium text-foreground"
+                  : "text-muted-foreground",
+              )}
+            >
               {previewText}
             </p>
           </div>
