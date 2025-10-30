@@ -121,7 +121,7 @@ function MessageBubble({
   return (
     <div
       className={cn(
-        "group flex w-full items-end gap-2",
+        "group flex w-full items-start gap-2",
         isSelf ? "justify-end" : "justify-start",
       )}
     >
@@ -208,7 +208,7 @@ function MessageSkeleton({ isSelf }: { isSelf: boolean }) {
   return (
     <div
       className={cn(
-        "flex w-full items-end gap-2",
+        "flex w-full items-start gap-2",
         isSelf ? "justify-end" : "justify-start",
       )}
     >
