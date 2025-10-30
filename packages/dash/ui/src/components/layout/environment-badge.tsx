@@ -5,15 +5,14 @@ import { AlertTriangle, Monitor } from "lucide-react";
  * Floats at the top center like iPhone's Dynamic Island for non-production environments.
  */
 export function EnvironmentBanner() {
-  const environment = import.meta.env.VITE_ENVIRONMENT;
+  const isDev = import.meta.env.DEV;
 
   // Don't show anything in production
-  if (environment !== "staging" && environment !== "local") {
+  if (!isDev) {
     return null;
   }
 
-  const isLocal = environment === "local";
-  const bgColor = isLocal
+  const bgColor = isDev
     ? "bg-yellow-500/90 dark:bg-yellow-600/90"
     : "bg-orange-500/90 dark:bg-orange-600/90";
   const textColor = "text-white";
@@ -23,13 +22,13 @@ export function EnvironmentBanner() {
       <div
         className={`${bgColor} ${textColor} backdrop-blur-md rounded-full shadow-sm px-3 py-0.5 flex items-center gap-1.5 text-[10px] font-medium animate-in fade-in slide-in-from-top-2 duration-300`}
       >
-        {isLocal ? (
+        {isDev ? (
           <Monitor className="h-3 w-3" />
         ) : (
           <AlertTriangle className="h-3 w-3" />
         )}
         <span className="uppercase tracking-wider leading-tight">
-          {isLocal ? "Local Development" : "Staging Environment"}
+          {isDev ? "Local Development" : "Staging Environment"}
         </span>
       </div>
     </div>
