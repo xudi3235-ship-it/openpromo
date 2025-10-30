@@ -8,7 +8,7 @@ import {
 } from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { AllPlatforms } from "@shared";
-import { Circle, Search, X } from "lucide-react";
+import { Eye, Search, X } from "lucide-react";
 import { useState } from "react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { useInboxFilters } from "@/hooks/useInboxFilters";
@@ -55,31 +55,17 @@ export function InboxFilters() {
 
       <div className="flex items-center justify-between gap-1.5">
         <TooltipProvider delayDuration={300}>
-          <div className="flex items-center gap-1">
-            {/* Unread filter */}
+          <div className="flex items-center gap-2">
+            {/* Unread filter - standalone toggle */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setShowUnreadOnly(!showUnreadOnly);
-                    // Note: Unread filtering is local, doesn't affect API query
-                  }}
-                  className={cn(
-                    "h-7 w-7 rounded-md border p-0 transition-colors",
-                    showUnreadOnly
-                      ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
-                      : "border-border/40 bg-muted/15 text-muted-foreground hover:text-foreground",
-                  )}
+                  onClick={() => setShowUnreadOnly(!showUnreadOnly)}
+                  variant={showUnreadOnly ? "default" : "outline"}
+                  size="icon"
+                  className="h-7 w-7"
                 >
-                  <Circle
-                    className={cn(
-                      "h-3 w-3",
-                      showUnreadOnly ? "fill-current" : "",
-                    )}
-                  />
+                  <Eye className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
@@ -87,40 +73,45 @@ export function InboxFilters() {
               </TooltipContent>
             </Tooltip>
 
+            {/* Divider */}
+            <div className="h-5 w-px bg-border/50" />
+
             {/* Platform filters - icon only */}
-            {PLATFORM_ORDER.map((platform) => {
-              const meta = getPlatformMeta(platform);
-              const isActive = selectedPlatform === platform;
-              const Icon = meta.icon;
-              return (
-                <Tooltip key={platform}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setPlatform(isActive ? null : platform);
-                      }}
-                      className={cn(
-                        "h-7 w-7 rounded-md border p-0 transition-colors",
-                        isActive
-                          ? cn(
-                              "border-border/60 bg-muted/20 shadow-sm ring-1 ring-border/30",
-                              meta.accentTextClass,
-                            )
-                          : "border-border/40 bg-muted/15 text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {Icon && <Icon className="h-3.5 w-3.5" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs">
-                    {meta.label}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
+            <div className="flex items-center gap-1">
+              {PLATFORM_ORDER.map((platform) => {
+                const meta = getPlatformMeta(platform);
+                const isActive = selectedPlatform === platform;
+                const Icon = meta.icon;
+                return (
+                  <Tooltip key={platform}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setPlatform(isActive ? null : platform);
+                        }}
+                        className={cn(
+                          "h-7 w-7 rounded-md border p-0 transition-colors",
+                          isActive
+                            ? cn(
+                                "border-border/60 bg-muted/20 shadow-sm ring-1 ring-border/30",
+                                meta.accentTextClass,
+                              )
+                            : "border-border/40 bg-muted/15 text-muted-foreground hover:border-border/60 hover:bg-muted/25 hover:text-foreground",
+                        )}
+                      >
+                        {Icon && <Icon className="h-3.5 w-3.5" />}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs">
+                      {meta.label}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
           </div>
         </TooltipProvider>
 
