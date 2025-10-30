@@ -1,7 +1,9 @@
 import { Button } from "@openpromo/ui/components/button";
+import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useMemo } from "react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
+import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import type { InboxChannel } from "@/stores/inbox/types";
 import { useInboxStore } from "@/stores/inbox-store";
 
@@ -38,6 +40,9 @@ export function InboxChannelSwitcher({
   totalCount,
   isSyncing,
 }: InboxChannelSwitcherProps) {
+  const navigate = useNavigate({ from: Route.fullPath });
+  const searchParams = Route.useSearch();
+
   const selectedChannel = useInboxStore((state) => state.selectedChannel);
   const setChannel = useInboxStore((state) => state.setChannel);
   const selectedPlatform = useInboxStore((state) => state.selectedPlatform);
@@ -60,7 +65,16 @@ export function InboxChannelSwitcher({
               size="sm"
               variant={isActive ? "secondary" : "ghost"}
               className="h-7 px-2.5 text-xs"
-              onClick={() => setChannel(isActive ? null : option.value)}
+              onClick={() => {
+                const newChannel = isActive ? null : option.value;
+                setChannel(newChannel);
+                navigate({
+                  search: {
+                    ...searchParams,
+                    channel: newChannel || "all",
+                  },
+                });
+              }}
             >
               {option.label}
             </Button>

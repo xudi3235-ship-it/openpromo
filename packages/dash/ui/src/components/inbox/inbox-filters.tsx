@@ -8,13 +8,18 @@ import {
 } from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { AllPlatforms } from "@shared";
+import { useNavigate } from "@tanstack/react-router";
 import { Circle, Search, X } from "lucide-react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
+import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import { useInboxStore } from "@/stores/inbox-store";
 
 const PLATFORM_ORDER: AllPlatforms[] = ["FACEBOOK", "INSTAGRAM", "TIKTOK"];
 
 export function InboxFilters() {
+  const navigate = useNavigate({ from: Route.fullPath });
+  const searchParams = Route.useSearch();
+
   const search = useInboxStore((state) => state.search) ?? "";
   const selectedPlatform = useInboxStore((state) => state.selectedPlatform);
   const selectedChannel = useInboxStore((state) => state.selectedChannel);
@@ -34,14 +39,31 @@ export function InboxFilters() {
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => {
+            const newSearch = event.target.value;
+            setSearch(newSearch);
+            navigate({
+              search: {
+                ...searchParams,
+                q: newSearch || undefined,
+              },
+            });
+          }}
           placeholder="Search conversations..."
           className="h-8 rounded-md pl-8 pr-8 text-xs"
         />
         {search && (
           <button
             type="button"
-            onClick={() => setSearch("")}
+            onClick={() => {
+              setSearch("");
+              navigate({
+                search: {
+                  ...searchParams,
+                  q: undefined,
+                },
+              });
+            }}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
@@ -59,7 +81,11 @@ export function InboxFilters() {
                   type="button"
                   size="sm"
                   variant="ghost"
-                  onClick={() => setShowUnreadOnly(!showUnreadOnly)}
+                  onClick={() => {
+                    const newShowUnreadOnly = !showUnreadOnly;
+                    setShowUnreadOnly(newShowUnreadOnly);
+                    // Note: Unread filtering is local, doesn't affect API query
+                  }}
                   className={cn(
                     "h-7 w-7 rounded-md border p-0 transition-colors",
                     showUnreadOnly
@@ -92,7 +118,16 @@ export function InboxFilters() {
                       type="button"
                       size="sm"
                       variant="ghost"
-                      onClick={() => setPlatform(isActive ? null : platform)}
+                      onClick={() => {
+                        const newPlatform = isActive ? null : platform;
+                        setPlatform(newPlatform);
+                        navigate({
+                          search: {
+                            ...searchParams,
+                            platform: newPlatform || "all",
+                          },
+                        });
+                      }}
                       className={cn(
                         "h-7 w-7 rounded-md border p-0 transition-colors",
                         isActive
@@ -120,7 +155,16 @@ export function InboxFilters() {
             type="button"
             size="sm"
             variant="ghost"
-            onClick={clearFilters}
+            onClick={() => {
+              clearFilters();
+              navigate({
+                search: {
+                  channel: "all",
+                  platform: "all",
+                  q: undefined,
+                },
+              });
+            }}
             className="h-7 rounded-md px-2 text-[10px] font-medium text-muted-foreground hover:text-foreground"
           >
             Clear
