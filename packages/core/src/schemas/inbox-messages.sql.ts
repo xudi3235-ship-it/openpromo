@@ -5,7 +5,14 @@ import type {
   MessagePayload,
   InboxMessageMetadata as SharedInboxMessageMetadata,
 } from "@shared/inbox";
-import { jsonb, pgEnum, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  index,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import {
   type InboxChannel,
   inboxChannelEnum,
@@ -42,5 +49,11 @@ export const inboxMessagesTable = pgTable(
     payload: jsonb().$type<MessagePayload>().notNull(), // raw payload from the platform
     metadata: jsonb().$type<InboxMessageMetadata>().notNull().default({}),
   },
-  (t) => [uniqueIndex().on(t.inboxConversationId, t.externalId)],
+  (t) => [
+    uniqueIndex().on(t.inboxConversationId, t.externalId),
+    // Query optimization indices
+    index().on(t.inboxConversationId, t.createdAt.desc()),
+    index().on(t.inboxConversationId, t.sender),
+    index().on(t.contentId),
+  ],
 );

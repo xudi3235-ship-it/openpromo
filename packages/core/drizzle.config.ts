@@ -9,6 +9,5 @@ export default defineConfig({
   casing: "snake_case",
   dbCredentials: {
     url: env.DATABASE_URL,
-    // url: `postgresql://${Resource.Database.username}:${Resource.Database.password}@${Resource.Database.host}/${Resource.Database.database}?sslmode=require`,
   },
 });

@@ -1,5 +1,5 @@
 import { id, timestamps } from "@core/helpers/db";
-import { pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { index, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 import { platformPgEnum } from "./connected-account.sql";
 
 export const inboxContactsTable = pgTable(
@@ -12,5 +12,9 @@ export const inboxContactsTable = pgTable(
     name: text().notNull(),
     profilePicUrl: text().notNull(),
   },
-  (t) => [uniqueIndex().on(t.platform, t.externalId)],
+  (t) => [
+    uniqueIndex().on(t.platform, t.externalId),
+    // Query optimization index for name search
+    index().on(t.name),
+  ],
 );

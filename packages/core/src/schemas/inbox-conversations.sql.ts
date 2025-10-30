@@ -45,6 +45,10 @@ export const inboxConversationsTable = pgTable(
       .on(t.connectedAccountId, t.contactId)
       .where(sql`${t.channel} = 'dm'::inbox_channel`),
     uniqueIndex().on(t.connectedAccountId, t.channel, t.threadKey),
+    // Query optimization indices
+    index().on(t.connectedAccountId, t.lastMessageAt.desc()),
+    index().on(t.connectedAccountId, t.channel, t.lastMessageAt.desc()),
+    index().on(t.platform, t.connectedAccountId, t.lastMessageAt.desc()),
     index().on(t.contentId),
   ],
 );
