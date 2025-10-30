@@ -20,6 +20,7 @@ export default defineConfig({
   },
   build: {
     minify: "esbuild",
+    sourcemap: true,
     rollupOptions: {
       output: {
         // https://github.com/vitejs/vite/discussions/9440#discussioncomment-11430454
