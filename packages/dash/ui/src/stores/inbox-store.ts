@@ -6,10 +6,6 @@ import {
   createConversationsSlice,
 } from "./inbox/slices/conversation-slice";
 import {
-  createFiltersSlice,
-  filtersInitialState,
-} from "./inbox/slices/filters-slice";
-import {
   createMessagesSlice,
   messagesInitialState,
 } from "./inbox/slices/message-slice";
@@ -21,18 +17,15 @@ import { createUISlice, uiInitialState } from "./inbox/slices/ui-slice";
 import type { InboxStore } from "./inbox/types";
 
 export const useInboxStore = create<InboxStore>()(
-  immer((set, get, store) => ({
-    ...createFiltersSlice(set, get, store),
-    ...createConversationsSlice(set, get, store),
-    ...createMessagesSlice(set, get, store),
-    ...createUISlice(set, get, store),
-    ...createRealtimeSlice(set, get, store),
+  immer((set, get, _store) => ({
+    ...createConversationsSlice(set, get, _store),
+    ...createMessagesSlice(set, get, _store),
+    ...createUISlice(set, get, _store),
+    ...createRealtimeSlice(set, get, _store),
 
-    initialize: (workspaceSlug: string) => {
+    initialize: (_workspaceSlug: string) => {
       set((state) => {
         Object.assign(state, {
-          ...filtersInitialState,
-          workspaceSlug,
           ...conversationsInitialState,
           pagination: { ...conversationsInitialPagination },
           ...messagesInitialState,
@@ -43,11 +36,8 @@ export const useInboxStore = create<InboxStore>()(
     },
 
     reset: () => {
-      const currentWorkspace = get().workspaceSlug;
       set((state) => {
         Object.assign(state, {
-          ...filtersInitialState,
-          workspaceSlug: currentWorkspace,
           ...conversationsInitialState,
           pagination: { ...conversationsInitialPagination },
           ...messagesInitialState,

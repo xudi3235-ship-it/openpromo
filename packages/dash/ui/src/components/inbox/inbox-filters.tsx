@@ -8,30 +8,25 @@ import {
 } from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { AllPlatforms } from "@shared";
-import { useNavigate } from "@tanstack/react-router";
 import { Circle, Search, X } from "lucide-react";
+import { useState } from "react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
-import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
-import { useInboxStore } from "@/stores/inbox-store";
+import { useInboxFilters } from "@/hooks/useInboxFilters";
 
 const PLATFORM_ORDER: AllPlatforms[] = ["FACEBOOK", "INSTAGRAM", "TIKTOK"];
 
 export function InboxFilters() {
-  const navigate = useNavigate({ from: Route.fullPath });
-  const searchParams = Route.useSearch();
+  const {
+    search,
+    selectedPlatform,
+    setPlatform,
+    setSearch,
+    clearFilters,
+    hasActiveFilters,
+  } = useInboxFilters();
 
-  const search = useInboxStore((state) => state.search) ?? "";
-  const selectedPlatform = useInboxStore((state) => state.selectedPlatform);
-  const selectedChannel = useInboxStore((state) => state.selectedChannel);
-  const showUnreadOnly = useInboxStore((state) => state.showUnreadOnly);
-  const setSearch = useInboxStore((state) => state.setSearch);
-  const setPlatform = useInboxStore((state) => state.setPlatform);
-  const setShowUnreadOnly = useInboxStore((state) => state.setShowUnreadOnly);
-  const clearFilters = useInboxStore((state) => state.clearFilters);
-
-  const hasActiveFilters = Boolean(
-    search.trim() || selectedChannel || selectedPlatform || showUnreadOnly,
-  );
+  // Local-only filter state (not synced to URL)
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
 
   return (
     <div className="space-y-2">
@@ -40,14 +35,7 @@ export function InboxFilters() {
         <Input
           value={search}
           onChange={(event) => {
-            const newSearch = event.target.value;
-            setSearch(newSearch);
-            navigate({
-              search: {
-                ...searchParams,
-                q: newSearch || undefined,
-              },
-            });
+            setSearch(event.target.value);
           }}
           placeholder="Search conversations..."
           className="h-8 rounded-md pl-8 pr-8 text-xs"
@@ -57,12 +45,6 @@ export function InboxFilters() {
             type="button"
             onClick={() => {
               setSearch("");
-              navigate({
-                search: {
-                  ...searchParams,
-                  q: undefined,
-                },
-              });
             }}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
@@ -82,8 +64,7 @@ export function InboxFilters() {
                   size="sm"
                   variant="ghost"
                   onClick={() => {
-                    const newShowUnreadOnly = !showUnreadOnly;
-                    setShowUnreadOnly(newShowUnreadOnly);
+                    setShowUnreadOnly(!showUnreadOnly);
                     // Note: Unread filtering is local, doesn't affect API query
                   }}
                   className={cn(
@@ -119,14 +100,7 @@ export function InboxFilters() {
                       size="sm"
                       variant="ghost"
                       onClick={() => {
-                        const newPlatform = isActive ? null : platform;
-                        setPlatform(newPlatform);
-                        navigate({
-                          search: {
-                            ...searchParams,
-                            platform: newPlatform || "all",
-                          },
-                        });
+                        setPlatform(isActive ? null : platform);
                       }}
                       className={cn(
                         "h-7 w-7 rounded-md border p-0 transition-colors",
@@ -155,16 +129,7 @@ export function InboxFilters() {
             type="button"
             size="sm"
             variant="ghost"
-            onClick={() => {
-              clearFilters();
-              navigate({
-                search: {
-                  channel: "all",
-                  platform: "all",
-                  q: undefined,
-                },
-              });
-            }}
+            onClick={clearFilters}
             className="h-7 rounded-md px-2 text-[10px] font-medium text-muted-foreground hover:text-foreground"
           >
             Clear

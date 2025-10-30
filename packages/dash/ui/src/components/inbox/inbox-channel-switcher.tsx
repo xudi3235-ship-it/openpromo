@@ -1,14 +1,11 @@
 import { Button } from "@openpromo/ui/components/button";
-import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useMemo } from "react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
-import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
-import type { InboxChannel } from "@/stores/inbox/types";
-import { useInboxStore } from "@/stores/inbox-store";
+import { type InboxChannel, useInboxFilters } from "@/hooks/useInboxFilters";
 
 interface ChannelOption {
-  value: InboxChannel | null;
+  value: InboxChannel;
   label: string;
   description: string;
 }
@@ -40,12 +37,7 @@ export function InboxChannelSwitcher({
   totalCount,
   isSyncing,
 }: InboxChannelSwitcherProps) {
-  const navigate = useNavigate({ from: Route.fullPath });
-  const searchParams = Route.useSearch();
-
-  const selectedChannel = useInboxStore((state) => state.selectedChannel);
-  const setChannel = useInboxStore((state) => state.setChannel);
-  const selectedPlatform = useInboxStore((state) => state.selectedPlatform);
+  const { selectedChannel, selectedPlatform, setChannel } = useInboxFilters();
 
   const platformMeta = useMemo(() => {
     if (!selectedPlatform) return null;
@@ -66,14 +58,7 @@ export function InboxChannelSwitcher({
               variant={isActive ? "secondary" : "ghost"}
               className="h-7 px-2.5 text-xs"
               onClick={() => {
-                const newChannel = isActive ? null : option.value;
-                setChannel(newChannel);
-                navigate({
-                  search: {
-                    ...searchParams,
-                    channel: newChannel || "all",
-                  },
-                });
+                setChannel(isActive ? null : option.value);
               }}
             >
               {option.label}

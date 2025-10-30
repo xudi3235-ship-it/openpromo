@@ -1,27 +1,8 @@
-import type { AllPlatforms } from "@shared";
 import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 
 export type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 
 export type InboxChannel = InboxMessage["channel"];
-export type InboxFiltersState = {
-  workspaceSlug: string | null;
-  selectedPlatform: AllPlatforms | null;
-  selectedChannel: InboxChannel | null;
-  connectedAccountId: string | null;
-  search: string | null;
-  showUnreadOnly: boolean;
-};
-
-export type InboxFiltersActions = {
-  initializeFilters(workspaceSlug: string): void;
-  setPlatform(platform: AllPlatforms | null): void;
-  setChannel(channel: InboxChannel | null): void;
-  setConnectedAccount(connectedAccountId: string | null): void;
-  setSearch(search: string): void;
-  setShowUnreadOnly(showUnreadOnly: boolean): void;
-  clearFilters(): void;
-};
 
 export type InboxConversationPagination = {
   page: number;
@@ -126,9 +107,7 @@ export type InboxRealtimeActions = {
   }): void;
 };
 
-export type InboxStore = InboxFiltersState &
-  InboxFiltersActions &
-  InboxConversationsState &
+export type InboxStore = InboxConversationsState &
   InboxConversationsActions &
   InboxMessagesState &
   InboxMessagesActions &
