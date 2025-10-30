@@ -3,18 +3,18 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
-import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea, ScrollBar } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { InboxConversationSummary } from "@shared/inbox";
 import { Link, useParams } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
-import { CornerDownRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useIntersectionObserver } from "usehooks-ts";
 import { PlatformAvatarBadge } from "@/components/shared/platform-avatar-badge";
 import { useInboxStore } from "@/stores/inbox-store";
+import { ConversationActionsMenu } from "./conversation-actions-menu";
 
 interface InboxConversationListProps {
   conversations: InboxConversationSummary[];
@@ -192,7 +192,7 @@ function ConversationListItem({
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-1.5">
+            <div className="flex items-baseline justify-between gap-2">
               <span
                 className={cn(
                   "truncate text-xs",
@@ -201,7 +201,7 @@ function ConversationListItem({
               >
                 {conversation.contact.name}
               </span>
-              <span className="flex-shrink-0 text-[10px] text-muted-foreground">
+              <span className="flex-shrink-0 text-[10px] text-muted-foreground transition-opacity group-hover:opacity-0">
                 {formatDistanceToNow(previewTime, {
                   addSuffix: false,
                 })}
@@ -221,25 +221,16 @@ function ConversationListItem({
         </div>
       </Link>
 
-      {/* Quick reply button - shows on hover */}
-      <Button
-        type="button"
-        size="sm"
-        variant="ghost"
-        onClick={handleQuickReply}
-        className={cn(
-          "absolute right-1 top-1 h-6 w-6 rounded-md p-0 opacity-0 transition-opacity group-hover:opacity-100",
-          showQuickReply && "opacity-100",
-        )}
-      >
-        <CornerDownRight className="h-3 w-3" />
-      </Button>
+      {/* Action buttons - shows on hover */}
+      <div className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <ConversationActionsMenu onQuickReply={handleQuickReply} />
+      </div>
 
       {/* Quick reply input */}
       {showQuickReply && (
         <form
           onSubmit={handleSendQuickReply}
-          className="border-t border-border/60 px-2 pb-2 pt-1"
+          className="border-t border-border/60 px-2 pb-2 pt-2"
           onClick={(e) => e.stopPropagation()}
         >
           <input
