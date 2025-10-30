@@ -32,6 +32,7 @@ import type {
   NavItem,
   NavLink,
 } from "./types";
+import { WorkspaceInboxUnread } from "./workspace-inbox-unread/index";
 import { WorkspaceNotificationBell } from "./workspace-notification-bell/index";
 
 interface NavGroupComponentProps extends NavGroupProps {
@@ -69,6 +70,39 @@ export function NavGroup({
                   {hasUnread && (
                     <NavBadge>{unreadCount > 9 ? "9+" : unreadCount}</NavBadge>
                   )}
+                </SidebarMenuButton>
+              )}
+            />
+          </SidebarMenuItem>
+        );
+      }
+
+      if (item.kind === "inbox") {
+        if (!workspaceSlug) {
+          return null;
+        }
+        return (
+          <SidebarMenuItem key={`${item.title}-inbox`}>
+            <WorkspaceInboxUnread
+              workspaceSlug={workspaceSlug}
+              title={item.title}
+              url={item.url}
+              icon={item.icon}
+              renderTrigger={({ unreadCount }) => (
+                <SidebarMenuButton
+                  asChild
+                  tooltip={item.title}
+                  className="justify-start"
+                >
+                  <Link to={item.url}>
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                    {unreadCount > 0 && (
+                      <NavBadge>
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </NavBadge>
+                    )}
+                  </Link>
                 </SidebarMenuButton>
               )}
             />

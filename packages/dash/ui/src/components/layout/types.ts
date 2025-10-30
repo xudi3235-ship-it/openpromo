@@ -25,7 +25,13 @@ type NavNotification = BaseNavItem & {
   items?: never;
 };
 
-type NavItem = NavCollapsible | NavLink | NavNotification;
+type NavInbox = BaseNavItem & {
+  kind: "inbox";
+  url: LinkProps["to"] | (string & {});
+  items?: never;
+};
+
+type NavItem = NavCollapsible | NavLink | NavNotification | NavInbox;
 
 type NavGroup = {
   title: string;

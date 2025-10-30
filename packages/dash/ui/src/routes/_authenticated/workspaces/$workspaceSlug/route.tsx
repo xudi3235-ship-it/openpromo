@@ -18,6 +18,7 @@ import {
   prefetchConnectedAccounts,
   useConnectedAccounts,
 } from "@/queries/connected-account";
+import { prefetchInboxUnreadCount } from "@/queries/inbox/conversations";
 import { prefetchStylesInfiniteQuery } from "@/queries/styles";
 
 export const Route = createFileRoute(
@@ -28,6 +29,7 @@ export const Route = createFileRoute(
     // prefetching all the queries for the known routes
     prefetchConnectedAccounts(context.queryClient, params.workspaceSlug);
     prefetchStylesInfiniteQuery(context.queryClient, params.workspaceSlug);
+    prefetchInboxUnreadCount(context.queryClient, params.workspaceSlug);
     const workspace = await honoApiCall((api) =>
       api.workspaces[":workspaceSlug"].$get({
         param: {

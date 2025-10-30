@@ -296,3 +296,35 @@ export function useMarkConversationUnread(workspaceSlug: string | undefined) {
     },
   });
 }
+
+// ===== Unread Count Queries =====
+
+export function useInboxUnreadCount(workspaceSlug: string | undefined) {
+  return useHonoQuery<{ unreadCount: number }>({
+    enabled: Boolean(workspaceSlug),
+    queryKey: ["inbox", "unread-count", workspaceSlug],
+    queryFn: (api: typeof apiClient) =>
+      api.workspaces[":workspaceSlug"].inbox["unread-count"].$get({
+        param: { workspaceSlug: String(workspaceSlug) },
+      }),
+  });
+}
+
+export async function prefetchInboxUnreadCount(
+  queryClient: QueryClient,
+  workspaceSlug: string,
+) {
+  // Prefetch without await - non-blocking
+  queryClient.prefetchQuery({
+    queryKey: ["inbox", "unread-count", workspaceSlug],
+    queryFn: async () => {
+      const response = await apiClient.workspaces[":workspaceSlug"].inbox[
+        "unread-count"
+      ].$get({
+        param: { workspaceSlug },
+      });
+      const data = await response.json();
+      return data as { unreadCount: number };
+    },
+  });
+}

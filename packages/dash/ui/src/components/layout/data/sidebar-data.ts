@@ -34,6 +34,7 @@ export const useSidebarData = (): SidebarData => {
         {
           title: "Inbox",
           url: "/workspaces/$workspaceSlug/inbox",
+          kind: "inbox" as const,
           icon: Inbox,
         },
         {
