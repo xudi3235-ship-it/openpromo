@@ -148,6 +148,9 @@ importers:
       postgres:
         specifier: ^3.4.7
         version: 3.4.7
+      posthog-node:
+        specifier: ^5.10.4
+        version: 5.10.4
       replicate:
         specifier: ^1.3.0
         version: 1.3.0
@@ -272,6 +275,9 @@ importers:
       posthog-js:
         specifier: ^1.282.0
         version: 1.282.0
+      posthog-node:
+        specifier: ^5.10.4
+        version: 5.10.4
       react:
         specifier: 'catalog:'
         version: 19.1.1
@@ -7115,6 +7121,10 @@ packages:
 
   posthog-js@1.282.0:
     resolution: {integrity: sha512-kx7GyVILxR+Ty4SDA5yRpiIZ73yBZht7ZecnvqqOspqiMnzyoTgdBPn2NELMR0OrhjnfU2KhLkXwooUHmD0MAA==}
+
+  posthog-node@5.10.4:
+    resolution: {integrity: sha512-sy020/Q4mt18eCkVo/cGEJD+wgdxeg5DTgNUaA85awBCbuEP43BOdCTOOw/K2Tvgw2oZfag3PFyhkVuQ6nJfBg==}
+    engines: {node: '>=20'}
 
   preact@10.27.1:
     resolution: {integrity: sha512-V79raXEWch/rbqoNc7nT9E4ep7lu+mI3+sBmfRD4i1M73R3WLYcCtdI0ibxGVf4eQL8ZIz2nFacqEC+rmnOORQ==}
@@ -16125,6 +16135,10 @@ snapshots:
       fflate: 0.4.8
       preact: 10.27.1
       web-vitals: 4.2.4
+
+  posthog-node@5.10.4:
+    dependencies:
+      '@posthog/core': 1.4.0
 
   preact@10.27.1: {}
 

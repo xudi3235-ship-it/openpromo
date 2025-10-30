@@ -1,3 +1,4 @@
+import { getPostHogClient } from "@core/providers/posthog";
 import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -31,9 +32,18 @@ export class AppError extends HTTPException {
 /**
  * Logs the error and returns a JSON response with user error message if specified
  */
-export const onError = (error: Error, c: Context<ApiEnv>) => {
+export const onError = async (error: Error, c: Context<ApiEnv>) => {
   const user = c.get("user");
   const orgId = c.get("organizationId");
+
+  const posthog = getPostHogClient();
+  posthog.captureException(error, user?.id, {
+    path: c.req.path,
+    method: c.req.method,
+    url: c.req.url,
+    headers: c.req.header(),
+  });
+  await posthog.flush();
 
   // Log the error if it has a message
   if (error.message) {
