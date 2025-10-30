@@ -9,6 +9,7 @@ import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { inboxGetConversationRoute } from "./routes/inbox-get-conversation";
 import { inboxGetConversationsRoute } from "./routes/inbox-get-conversations";
 import { inboxGetMessagesRoute } from "./routes/inbox-get-messages";
+import { inboxMarkReadRoute } from "./routes/inbox-mark-read";
 import { inboxPostMessageRoute } from "./routes/inbox-post-message";
 
 export const inboxRoute = new Hono<ApiEnv>()
@@ -17,6 +18,7 @@ export const inboxRoute = new Hono<ApiEnv>()
   .route("/conversations", inboxGetConversationRoute)
   .route("/conversations", inboxGetMessagesRoute)
   .use(withWorkspaceRole("workspace_editor"))
+  .route("/conversations", inboxMarkReadRoute)
   .route("/conversations", inboxPostMessageRoute);
 
 export type InboxConversationsList = {

@@ -373,6 +373,9 @@ export const InboxConversationSummarySchema = z.object({
   contentId: z.string().nullable(),
   externalThreadId: z.string().nullable(),
   postPreview: ContentPreviewSchema.optional(),
+  // Unread status
+  isUnread: z.boolean(),
+  lastReadAt: z.coerce.date().nullable(),
 });
 export type InboxConversationSummary = z.infer<
   typeof InboxConversationSummarySchema
@@ -402,6 +405,8 @@ export const InboxConversationUpsertedEventSchema = z.object({
   lastMessageAt: z.coerce.date(),
   platform: AllPlatformsZod,
   contact: InboxContactSchema,
+  isUnread: z.boolean().optional(),
+  lastReadAt: z.coerce.date().nullable().optional(),
   timestamp: z.number(),
 });
 

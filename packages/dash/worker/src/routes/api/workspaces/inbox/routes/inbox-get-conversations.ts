@@ -1,3 +1,4 @@
+import { computeUnreadStatus } from "@core/domain/inbox/unread-helper";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { getDbClient } from "@core/helpers/db";
@@ -18,6 +19,7 @@ const listConversationsQuery = z.object({
   platform: z.enum([...Object.values(AllPlatforms)]).optional(),
   connectedAccountId: z.string().optional(),
   channel: z.enum(["dm", "post_comment"]).optional(),
+  unread: z.coerce.boolean().optional(),
 });
 
 export const inboxGetConversationsRoute = new Hono<ApiEnv>().get(
@@ -25,7 +27,7 @@ export const inboxGetConversationsRoute = new Hono<ApiEnv>().get(
   zValidator("query", listConversationsQuery),
   async (c) => {
     const db = getDbClient();
-    const { page, pageSize, q, platform, connectedAccountId, channel } =
+    const { page, pageSize, q, platform, connectedAccountId, channel, unread } =
       c.req.valid("query");
 
     const workspaceId = Actor.workspaceID();
@@ -64,6 +66,7 @@ export const inboxGetConversationsRoute = new Hono<ApiEnv>().get(
         lastMessageAt: inboxConversationsTable.lastMessageAt,
         contentId: inboxConversationsTable.contentId,
         externalThreadId: inboxConversationsTable.externalThreadId,
+        metadata: inboxConversationsTable.metadata,
         contactId: inboxContactsTable.id,
         contactName: inboxContactsTable.name,
         contactProfilePicUrl: inboxContactsTable.profilePicUrl,
@@ -84,22 +87,46 @@ export const inboxGetConversationsRoute = new Hono<ApiEnv>().get(
       .limit(pageSize)
       .offset((page - 1) * pageSize);
 
-    const items = rows.map((r) =>
-      InboxConversationSummarySchema.parse({
-        id: r.id,
-        platform: r.platform,
-        channel: r.channel,
-        lastMessageAt: r.lastMessageAt,
-        contact: {
-          id: r.contactId,
-          name: r.contactName,
-          profilePicUrl: r.contactProfilePicUrl,
-        },
-        connectedAccount: { id: r.caId, accountName: r.caName },
-        contentId: r.contentId,
-        externalThreadId: r.externalThreadId,
-      }),
-    );
+    const items = rows
+      .map((r) => {
+        const { isUnread, lastReadAt } = computeUnreadStatus({
+          lastMessageAt: r.lastMessageAt,
+          metadata: r.metadata,
+          platform: r.platform,
+          channel: r.channel,
+        });
+
+        return {
+          ...r,
+          isUnread,
+          lastReadAt,
+        };
+      })
+      .filter((item) => {
+        // Apply unread filter if specified
+        if (unread !== undefined) {
+          return item.isUnread === unread;
+        }
+        return true;
+      })
+      .map((r) =>
+        InboxConversationSummarySchema.parse({
+          id: r.id,
+          platform: r.platform,
+          channel: r.channel,
+          lastMessageAt: r.lastMessageAt,
+          contact: {
+            id: r.contactId,
+            name: r.contactName,
+            profilePicUrl: r.contactProfilePicUrl,
+          },
+          connectedAccount: { id: r.caId, accountName: r.caName },
+          contentId: r.contentId,
+          externalThreadId: r.externalThreadId,
+          isUnread: r.isUnread,
+          lastReadAt: r.lastReadAt,
+        }),
+      );
 
     return c.json({ items, page, pageSize, total });
   },
