@@ -30,6 +30,7 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
         contactProfilePicUrl: inboxContactsTable.profilePicUrl,
         caId: connectedAccount.id,
         caName: connectedAccount.accountName,
+        caProfilePicUrl: connectedAccount.profilePicUrl,
         contentPlacementSpec: unifiedContentTable.placementSpec,
       })
       .from(inboxConversationsTable)
@@ -71,7 +72,11 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
         name: row.contactName,
         profilePicUrl: row.contactProfilePicUrl,
       },
-      connectedAccount: { id: row.caId, accountName: row.caName },
+      connectedAccount: {
+        id: row.caId,
+        accountName: row.caName,
+        profilePicUrl: row.caProfilePicUrl,
+      },
       contentId: row.contentId,
       externalThreadId: row.externalThreadId,
       postPreview,
