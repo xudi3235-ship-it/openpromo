@@ -1,10 +1,12 @@
 import type { AllPlatforms } from "@shared";
 import { InboxConversationSummarySchema } from "@shared/inbox";
 import type { QueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import type { InboxConversationsList } from "@worker/routes/api/workspaces/inbox";
 import { useMemo } from "react";
 import {
   apiClient,
+  honoApiCall,
   type UseHonoQueryOptions,
   useHonoQuery,
 } from "@/lib/hono-client";
@@ -17,6 +19,11 @@ export type InboxConversationsParams = {
   channel?: "dm" | "post_comment";
   connectedAccountId?: string;
 };
+
+export type InboxConversationsFilters = Omit<
+  InboxConversationsParams,
+  "page" | "pageSize"
+>;
 
 type InboxConversationsQueryOptions = {
   onError?: (error: unknown) => void;
@@ -103,4 +110,61 @@ export async function prefetchInboxConversations(
       } satisfies InboxConversationsList;
     },
   });
+}
+
+export function useInboxConversationsInfiniteQuery(
+  workspaceSlug: string | undefined,
+  filters: InboxConversationsFilters,
+  pageSize = 25,
+) {
+  const query = useInfiniteQuery({
+    queryKey: ["inbox", "conversations", workspaceSlug, filters, pageSize],
+    queryFn: async ({ pageParam = 1 }) => {
+      const res = await honoApiCall(
+        (api) =>
+          api.workspaces[":workspaceSlug"].inbox.conversations.$get({
+            param: { workspaceSlug: String(workspaceSlug) },
+            query: {
+              ...filters,
+              page: pageParam.toString(),
+              pageSize: pageSize.toString(),
+            },
+          }),
+        { disableErrorToast: false },
+      );
+
+      if (!res.success) {
+        throw new Error(res.error.message);
+      }
+
+      // Parse dates
+      return {
+        ...res.data,
+        items: res.data.items.map((item) =>
+          InboxConversationSummarySchema.parse({
+            ...item,
+            lastMessageAt: new Date(item.lastMessageAt),
+          }),
+        ),
+      } satisfies InboxConversationsList;
+    },
+    getNextPageParam: (lastPage) => {
+      const currentPage = lastPage.page;
+      const totalPages = Math.ceil(lastPage.total / lastPage.pageSize);
+      return currentPage < totalPages ? currentPage + 1 : undefined;
+    },
+    initialPageParam: 1,
+    enabled: Boolean(workspaceSlug),
+  });
+
+  const allConversations = useMemo(() => {
+    if (!query.data) return [];
+    return query.data.pages.flatMap((page) => page.items);
+  }, [query.data]);
+
+  return {
+    ...query,
+    conversations: allConversations,
+    totalCount: query.data?.pages[0]?.total ?? 0,
+  };
 }

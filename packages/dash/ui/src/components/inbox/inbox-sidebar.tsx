@@ -7,12 +7,18 @@ interface InboxSidebarProps {
   conversations: InboxConversationSummary[];
   isLoading: boolean;
   isFetching: boolean;
+  hasNextPage?: boolean;
+  fetchNextPage?: () => void;
+  isFetchingNextPage?: boolean;
 }
 
 export function InboxSidebar({
   conversations,
   isLoading,
   isFetching,
+  hasNextPage,
+  fetchNextPage,
+  isFetchingNextPage,
 }: InboxSidebarProps) {
   return (
     <aside className="flex w-full max-w-sm flex-col overflow-hidden rounded-xl border border-border/60 bg-background sm:w-72 lg:w-80">
@@ -33,6 +39,9 @@ export function InboxSidebar({
       <InboxConversationList
         conversations={conversations}
         isLoading={isLoading}
+        hasNextPage={hasNextPage}
+        fetchNextPage={fetchNextPage}
+        isFetchingNextPage={isFetchingNextPage}
       />
     </aside>
   );

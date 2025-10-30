@@ -10,24 +10,43 @@ import { cn } from "@openpromo/ui/lib/utils";
 import type { InboxConversationSummary } from "@shared/inbox";
 import { Link, useParams } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
-import { CornerDownRight } from "lucide-react";
-import { useState } from "react";
+import { CornerDownRight, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useIntersectionObserver } from "usehooks-ts";
 import { PlatformAvatarBadge } from "@/components/shared/platform-avatar-badge";
 import { useInboxStore } from "@/stores/inbox-store";
 
 interface InboxConversationListProps {
   conversations: InboxConversationSummary[];
   isLoading?: boolean;
+  hasNextPage?: boolean;
+  fetchNextPage?: () => void;
+  isFetchingNextPage?: boolean;
 }
 
 export function InboxConversationList({
   conversations,
   isLoading = false,
+  hasNextPage,
+  fetchNextPage,
+  isFetchingNextPage,
 }: InboxConversationListProps) {
   const { workspaceSlug, conversationId: selectedConversationId } = useParams({
     strict: false,
   });
   const threads = useInboxStore((state) => state.threads);
+
+  const { ref: loadMoreRef, isIntersecting } = useIntersectionObserver({
+    threshold: 0.1,
+    rootMargin: "100px",
+  });
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetchNextPage is stable
+  useEffect(() => {
+    if (isIntersecting && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage?.();
+    }
+  }, [isIntersecting, hasNextPage, isFetchingNextPage]);
 
   return (
     <ScrollArea className="flex-1">
@@ -82,6 +101,17 @@ export function InboxConversationList({
         {!isLoading && conversations.length === 0 && (
           <li className="rounded-md border border-dashed border-border/60 bg-muted/10 p-6 text-center text-sm text-muted-foreground">
             No conversations match the current filters.
+          </li>
+        )}
+
+        {/* Load More Trigger */}
+        {hasNextPage && (
+          <li ref={loadMoreRef} className="py-2">
+            {isFetchingNextPage && (
+              <div className="flex justify-center">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
           </li>
         )}
       </ul>
