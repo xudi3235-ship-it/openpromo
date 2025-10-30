@@ -61,7 +61,12 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
     console.log("[inbox get conversation]", row.contentPlacementSpec);
 
     const postPreview = row.contentPlacementSpec
-      ? placementSpecToContentPreview(row.contentPlacementSpec)
+      ? placementSpecToContentPreview(row.contentPlacementSpec, {
+          accountName: row.caName,
+          profilePicUrl: row.caProfilePicUrl,
+          permalink: null, // TODO: construct permalink from metadata if available
+          timestampLabel: null,
+        })
       : undefined;
 
     const { isUnread, lastReadAt } = computeUnreadStatus({

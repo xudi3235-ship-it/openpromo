@@ -70,30 +70,40 @@ export type FacebookReelPreview = z.infer<typeof FacebookReelPreview>;
 export type TikTokFeedPreview = z.infer<typeof TikTokFeedPreview>;
 
 // helpers to map placement spec to content preview
+export interface ContentPreviewOptions {
+  accountName?: string | null;
+  profilePicUrl?: string | null;
+  permalink?: string | null;
+  timestampLabel?: string | null;
+}
+
 export function placementSpecToContentPreview(
   spec: PlacementSpec,
+  options?: ContentPreviewOptions,
 ): ContentPreview {
+  const opts = options ?? {};
   switch (spec.placement) {
     case "IG_FEED":
-      return igFeedSpecToPreview(spec);
+      return igFeedSpecToPreview(spec, opts);
     case "FB_FEED":
-      return fbFeedSpecToPreview(spec);
+      return fbFeedSpecToPreview(spec, opts);
     case "TT_FEED":
-      return tiktokFeedSpecToPreview(spec);
+      return tiktokFeedSpecToPreview(spec, opts);
   }
 }
 
 function igFeedSpecToPreview(
   spec: Extract<PlacementSpec, { placement: "IG_FEED" }>,
+  options: ContentPreviewOptions,
 ): InstagramFeedPreview {
   return {
     placement: spec.placement,
-    accountName: null,
-    profilePicUrl: null,
+    accountName: options.accountName ?? null,
+    profilePicUrl: options.profilePicUrl ?? null,
     caption: spec.caption ?? null,
     attachments: spec.attachments,
-    permalink: null,
-    timestampLabel: null,
+    permalink: options.permalink ?? null,
+    timestampLabel: options.timestampLabel ?? null,
     metrics: undefined,
     location: null,
   };
@@ -101,15 +111,16 @@ function igFeedSpecToPreview(
 
 function fbFeedSpecToPreview(
   spec: Extract<PlacementSpec, { placement: "FB_FEED" }>,
+  options: ContentPreviewOptions,
 ): FacebookFeedPreview {
   return {
     placement: spec.placement,
-    accountName: null,
-    profilePicUrl: null,
+    accountName: options.accountName ?? null,
+    profilePicUrl: options.profilePicUrl ?? null,
     caption: spec.postSpec?.message ?? null,
     attachments: spec.attachments,
-    permalink: null,
-    timestampLabel: null,
+    permalink: options.permalink ?? null,
+    timestampLabel: options.timestampLabel ?? null,
     metrics: undefined,
     callToActionLabel: spec.postSpec?.callToAction?.type ?? null,
   };
@@ -117,15 +128,16 @@ function fbFeedSpecToPreview(
 
 function tiktokFeedSpecToPreview(
   spec: Extract<PlacementSpec, { placement: "TT_FEED" }>,
+  options: ContentPreviewOptions,
 ): TikTokFeedPreview {
   return {
     placement: spec.placement,
-    accountName: null,
-    profilePicUrl: null,
+    accountName: options.accountName ?? null,
+    profilePicUrl: options.profilePicUrl ?? null,
     caption: spec.caption ?? null,
     attachments: spec.attachments,
-    permalink: null,
-    timestampLabel: null,
+    permalink: options.permalink ?? null,
+    timestampLabel: options.timestampLabel ?? null,
     metrics: undefined,
     musicTitle: null,
   };
