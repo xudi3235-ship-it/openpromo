@@ -310,10 +310,9 @@ export function ContentCalendar({
         </header>
 
         {/* Controls and Filters Row */}
-        <div className="px-4 py-3 flex flex-col gap-3 border-b border-border/50 flex-shrink-0">
-          {/* View Toggle and Navigation */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-0.5 sm:gap-2">
+        <div className="px-4 py-3 border-b border-border/50 flex-shrink-0">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-0.5 sm:gap-2 flex-wrap">
               {/* View Toggle - Week/Month */}
               <ToggleGroup
                 type="single"
@@ -372,9 +371,24 @@ export function ContentCalendar({
                   <ChevronRightIcon size={14} aria-hidden="true" />
                 </Button>
               </div>
-              <h2 className="text-xs font-semibold sm:text-sm md:text-base truncate">
+              <h2 className="text-sm font-semibold sm:text-base md:text-lg truncate">
                 {viewTitle}
               </h2>
+
+              {/* Separator */}
+              <div className="h-6 w-px bg-border/50 mx-1 hidden sm:block" />
+
+              {/* Filters - inline */}
+              <ContentFilters
+                filters={{
+                  platform: filters?.platform,
+                  publishingStatus: filters?.publishingStatus,
+                }}
+                onFiltersChange={(newFilters) => {
+                  onFiltersChange?.(newFilters);
+                }}
+                showDateFilter={false}
+              />
             </div>
             <div className="flex items-center gap-1">
               <Button
@@ -394,18 +408,6 @@ export function ContentCalendar({
               </Button>
             </div>
           </div>
-
-          {/* Filters */}
-          <ContentFilters
-            filters={{
-              platform: filters?.platform,
-              publishingStatus: filters?.publishingStatus,
-            }}
-            onFiltersChange={(newFilters) => {
-              onFiltersChange?.(newFilters);
-            }}
-            showDateFilter={false}
-          />
         </div>
 
         <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
