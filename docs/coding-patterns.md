@@ -238,3 +238,8 @@ When creating new features with routing and filters:
 - [ ] Keep other filters in URL params for shareability
 - [ ] Include all query-affecting params in route `loaderDeps`
 - [ ] Pass all relevant params to prefetch functions
+
+
+
+## General patterns
+1. when a state mgmt is getting complex, > 5 states, create a zustand store. refer to composer store for example.

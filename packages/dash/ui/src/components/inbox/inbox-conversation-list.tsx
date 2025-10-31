@@ -35,6 +35,10 @@ export function InboxConversationList({
     strict: false,
   });
   const threads = useInboxStore((state) => state.threads);
+  const activeQuickReplyId = useInboxStore((state) => state.activeQuickReplyId);
+  const setActiveQuickReply = useInboxStore(
+    (state) => state.setActiveQuickReply,
+  );
 
   const { ref: loadMoreRef, isIntersecting } = useIntersectionObserver({
     threshold: 0.1,
@@ -94,6 +98,10 @@ export function InboxConversationList({
                   previewTime={previewTime}
                   isSelected={isSelected}
                   workspaceSlug={workspaceSlug}
+                  showQuickReply={activeQuickReplyId === conversation.id}
+                  onToggleQuickReply={(show) =>
+                    setActiveQuickReply(show ? conversation.id : null)
+                  }
                 />
               </li>
             );
@@ -126,20 +134,23 @@ function ConversationListItem({
   previewTime,
   isSelected,
   workspaceSlug,
+  showQuickReply,
+  onToggleQuickReply,
 }: {
   conversation: InboxConversationSummary;
   previewText: string;
   previewTime: Date;
   isSelected: boolean;
   workspaceSlug: string | undefined;
+  showQuickReply: boolean;
+  onToggleQuickReply: (show: boolean) => void;
 }) {
-  const [showQuickReply, setShowQuickReply] = useState(false);
   const [quickReplyText, setQuickReplyText] = useState("");
 
   const handleQuickReply = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setShowQuickReply(!showQuickReply);
+    onToggleQuickReply(!showQuickReply);
   };
 
   const handleSendQuickReply = async (e: React.FormEvent) => {
@@ -150,7 +161,7 @@ function ConversationListItem({
     // TODO: Implement quick reply API call
     // Will send message without opening the conversation
     setQuickReplyText("");
-    setShowQuickReply(false);
+    onToggleQuickReply(false);
   };
 
   return (

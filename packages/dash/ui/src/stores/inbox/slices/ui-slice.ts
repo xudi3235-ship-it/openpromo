@@ -9,6 +9,7 @@ export const uiInitialState: InboxUIState = {
   hoveredConversationId: null,
   composerDrafts: {},
   composerReplyTargets: {},
+  activeQuickReplyId: null,
 };
 
 export const createUISlice: StateCreator<
@@ -62,5 +63,10 @@ export const createUISlice: StateCreator<
   clearComposerReplyTarget: (conversationId) =>
     set((state) => {
       delete state.composerReplyTargets[conversationId];
+    }),
+
+  setActiveQuickReply: (conversationId) =>
+    set((state) => {
+      state.activeQuickReplyId = conversationId;
     }),
 });

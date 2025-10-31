@@ -77,6 +77,7 @@ export type InboxUIState = {
   hoveredConversationId: string | null;
   composerDrafts: Record<string, string>;
   composerReplyTargets: Record<string, string | null>;
+  activeQuickReplyId: string | null;
 };
 
 export type InboxUIActions = {
@@ -92,6 +93,7 @@ export type InboxUIActions = {
     messageId: string | null,
   ): void;
   clearComposerReplyTarget(conversationId: string): void;
+  setActiveQuickReply(conversationId: string | null): void;
 };
 
 export type InboxRealtimeState = {
