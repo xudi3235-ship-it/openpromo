@@ -4,7 +4,7 @@ import type { CalendarEvent } from "@/components/calendar";
 import { getEventData } from "@/components/calendar";
 import { getPlatformIcon } from "@/components/content/utils/platform-icons";
 import { useCalendarActions } from "@/hooks/content";
-import { matchEntity } from "@/lib/hono-client";
+import { matchEntity, matchPlacementSpec } from "@/lib/hono-client";
 import { CalendarEventCardActionsMenu } from "./calendar-event-card-actions-menu";
 
 // Helper to get thumbnail URL from placement spec
@@ -91,6 +91,18 @@ export function CalendarEventCardCompact({
         content.placementSpec as PlacementSpec,
       );
 
+      // Extract caption/message from placement spec
+      const message = matchPlacementSpec(
+        content.placementSpec as PlacementSpec,
+        {
+          FBFeed: (s) => s.postSpec.message,
+          IGFeed: (s) => s.caption,
+          TTFeed: (s) => s.caption,
+        },
+      );
+
+      const displayText = message || eventData.title;
+
       return (
         <button
           type="button"
@@ -116,7 +128,7 @@ export function CalendarEventCardCompact({
           {/* Title - truncated */}
           <div className="flex-1 min-w-0">
             <div className="font-medium text-foreground truncate text-[10px] leading-tight">
-              {eventData.title}
+              {displayText}
             </div>
           </div>
 

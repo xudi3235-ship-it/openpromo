@@ -211,7 +211,7 @@ export function MonthView({
               return (
                 <div
                   key={day.toString()}
-                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 border-r border-b last:border-r-0 overflow-hidden flex flex-col min-h-[140px]"
+                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 border-r border-b last:border-r-0 overflow-hidden flex flex-col min-h-[140px] relative"
                   data-today={isToday(day) || undefined}
                   data-outside-cell={!isCurrentMonth || undefined}
                 >
@@ -224,29 +224,32 @@ export function MonthView({
                       onEventCreate(startTime);
                     }}
                   >
-                    <div className="relative h-8 mb-2">
-                      {/* Default state - show date */}
-                      <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 items-center justify-center rounded-full text-sm font-medium shrink-0 group-hover:opacity-0 transition-opacity">
-                        {format(day, "d")}
-                      </div>
+                    {/* Day number - sticky at top, overlays events on scroll */}
+                    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
+                      <div className="relative h-6">
+                        {/* Default state - show date */}
+                        <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-0.5 inline-flex size-5 items-center justify-center rounded-full text-xs font-medium shrink-0 group-hover:opacity-0 transition-opacity">
+                          {format(day, "d")}
+                        </div>
 
-                      {/* Hover state - show CTA button (only for current/future days) */}
-                      {(isToday(day) ||
-                        isAfter(startOfDay(day), startOfDay(new Date()))) && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const startTime = new Date(day);
-                            startTime.setHours(DefaultStartHour, 0, 0);
-                            onEventCreate(startTime);
-                          }}
-                          className="absolute inset-0 opacity-0 group-hover:opacity-100 w-full h-7 border border-dashed border-primary/30 bg-primary/5 rounded flex items-center justify-center text-primary/80 text-xs hover:border-primary/50 hover:bg-primary/10 transition-all font-medium"
-                        >
-                          <span className="truncate">
-                            {isToday(day) ? "Create Post" : "Schedule Post"}
-                          </span>
-                        </button>
-                      )}
+                        {/* Hover state - show CTA button (only for current/future days) */}
+                        {(isToday(day) ||
+                          isAfter(startOfDay(day), startOfDay(new Date()))) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const startTime = new Date(day);
+                              startTime.setHours(DefaultStartHour, 0, 0);
+                              onEventCreate(startTime);
+                            }}
+                            className="absolute inset-0 opacity-0 group-hover:opacity-100 w-full h-6 border border-dashed border-primary/30 bg-primary/5 rounded flex items-center justify-center text-primary/80 text-xs hover:border-primary/50 hover:bg-primary/10 transition-all font-medium"
+                          >
+                            <span className="truncate text-[10px]">
+                              {isToday(day) ? "Create Post" : "Schedule Post"}
+                            </span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="flex-1 min-h-0 space-y-0.5 overflow-y-auto">
                       {/* Render day events with limit and more button */}
