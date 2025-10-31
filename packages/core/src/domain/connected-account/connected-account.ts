@@ -15,7 +15,7 @@ import { Actor } from "../../helpers/actor";
 import { connectedAccountRefresher } from "./connected-account-refresher";
 import { facebookOAuthService } from "./facebook-oauth-service";
 import { instagramOAuthService } from "./instragram-oauth-service";
-import { tikTokOAuthService } from "./tiktok";
+import { tikTokOAuthService } from "./tiktok-oauth-service";
 
 const log = Log.create({ namespace: "connected-account" });
 

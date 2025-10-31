@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
-import { tikTokOAuthService } from "@core/domain/connected-account/tiktok";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
+import { tikTokOAuthService } from "@openpromo/core/domain/connected-account/tiktok-oauth-service";
 import { Hono } from "hono";
 import * as z from "zod";
 import { setAuthStateCookie } from "../../../../../helpers/auth";
