@@ -232,9 +232,9 @@ export function DynamicWeekView({
   };
 
   return (
-    <div data-slot="dynamic-week-view" className="flex w-full flex-col">
+    <div data-slot="dynamic-week-view" className="flex w-full h-full flex-col">
       {/* Header with day names */}
-      <div className="bg-background/80 border-border/70 sticky top-0 z-30 grid grid-cols-7 border-b backdrop-blur-md">
+      <div className="bg-background/80 border-border/70 sticky top-0 z-30 grid grid-cols-7 border-b backdrop-blur-md flex-shrink-0">
         {days.map((day) => (
           <div
             key={day.toString()}
@@ -263,12 +263,12 @@ export function DynamicWeekView({
       </div>
 
       {/* Dynamic day columns */}
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-7 min-h-full">
         {dayEvents.map(({ day, events: eventsForDay }) => (
           <div
             key={day.toString()}
             className={cn(
-              "border-r border-border/70 last:border-r-0 flex flex-col",
+              "border-r border-border/70 last:border-r-0 flex flex-col min-h-full",
               "bg-background hover:bg-accent/20 transition-colors",
             )}
           >
