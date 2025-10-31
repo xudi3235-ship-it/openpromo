@@ -97,7 +97,8 @@
     "editor.formatOnSave": true,
     "typescript.experimental.useTsgo": false,
     "chatgpt.commentCodeLensEnabled": false,
-    "chatgpt.openOnStartup": true
+    "chatgpt.openOnStartup": true,
+    "python.languageServer": "None"
   },
   "extensions": {
     "recommendations": [

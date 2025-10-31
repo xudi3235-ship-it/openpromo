@@ -6,6 +6,8 @@ python_deps = [
     "scalar-fastapi",
     "requests",
     "boto3",
+    "openai",
+    "replicate",
 ]
 image = (
     modal.Image.debian_slim(python_version="3.11")

@@ -1,14 +1,15 @@
+import tempfile
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-import tempfile
 
 import requests
 
 
 def s3_client():
-    import boto3
     import os
+
+    import boto3
 
     return boto3.client(
         "s3",

@@ -1,6 +1,7 @@
 import modal
 
 from src.api import fapi
+from src.core.image_genai import test_product_shot_gen
 from src.infra import image, secret, vols
 from src.video import app as video_backend_app
 
@@ -8,7 +9,7 @@ app = modal.App(
     "openpromo-backend",
     image=image,
     secrets=[secret],
-    volumes=vols,
+    volumes=vols,  # pyright: ignore[reportArgumentType]
 )
 app.include(video_backend_app)
 
@@ -31,4 +32,8 @@ def api():
 
 @app.local_entrypoint()
 def dev():
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    test_product_shot_gen()
     pass
