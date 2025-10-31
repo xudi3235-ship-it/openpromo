@@ -7,6 +7,7 @@ import {
 } from "@openpromo/ui/components/dialog";
 import { useComposerDialogLifecycle } from "@/hooks/composer/useComposerHooks";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
+import { ComposerErrorState } from "../layout/composer-error-state";
 import { ComposerLeft } from "../layout/composer-left";
 import { ComposerRight } from "../layout/composer-right";
 import { ComposerSkeleton } from "../layout/composer-skeleton";
@@ -20,11 +21,22 @@ export default function ComposerDialog() {
     initialContentCreateData,
   } = useDialogComposerStore();
   const isOpen = mode === "dialog";
-  const { isLoading } = useComposerDialogLifecycle({
+  const { isLoading, contentGroupError } = useComposerDialogLifecycle({
     mode,
     pendingContentGroupID,
     initialContentCreateData,
   });
+
+  const handleRetry = () => {
+    // Refetch can be handled via query client invalidation
+    // For now, we'll close and reopen, but you could also add refetch callback
+    closeComposer();
+    if (pendingContentGroupID) {
+      useDialogComposerStore.getState().openDialog(pendingContentGroupID);
+    }
+  };
+
+  const hasError = contentGroupError && pendingContentGroupID;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeComposer()}>
@@ -36,7 +48,9 @@ export default function ComposerDialog() {
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 flex overflow-hidden">
-          {isLoading ? (
+          {hasError ? (
+            <ComposerErrorState onRetry={handleRetry} onClose={closeComposer} />
+          ) : isLoading ? (
             <ComposerSkeleton />
           ) : (
             <TwoColumnLayout

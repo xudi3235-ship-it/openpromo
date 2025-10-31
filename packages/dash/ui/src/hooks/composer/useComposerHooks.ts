@@ -27,8 +27,13 @@ export function useComposerDialogLifecycle({
   const isOpen = mode !== "closed";
   const shouldFetchGroup = isOpen && !!pendingContentGroupID;
 
-  const { data: contentGroupData, isLoading: contentGroupLoading } =
-    useContentGroupQuery(shouldFetchGroup ? pendingContentGroupID : undefined);
+  const {
+    data: contentGroupData,
+    isLoading: contentGroupLoading,
+    error: contentGroupError,
+  } = useContentGroupQuery(
+    shouldFetchGroup ? pendingContentGroupID : undefined,
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -68,6 +73,7 @@ export function useComposerDialogLifecycle({
     accounts,
     contentGroupData,
     isLoading,
+    contentGroupError,
   };
 }
 
