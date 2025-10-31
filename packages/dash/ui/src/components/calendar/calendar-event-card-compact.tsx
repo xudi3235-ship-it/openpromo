@@ -1,0 +1,191 @@
+import { cn } from "@openpromo/ui/lib/utils";
+import type { PlacementSpec } from "@shared/content";
+import type { CalendarEvent } from "@/components/calendar";
+import { getEventData } from "@/components/calendar";
+import { getPlatformIcon } from "@/components/content/utils/platform-icons";
+import { useCalendarActions } from "@/hooks/content";
+import { matchEntity } from "@/lib/hono-client";
+import { CalendarEventCardActionsMenu } from "./calendar-event-card-actions-menu";
+
+// Helper to get thumbnail URL from placement spec
+function getThumbnailFromPlacement(
+  placementSpec: PlacementSpec,
+): string | undefined {
+  if (placementSpec?.thumbnailUrl) {
+    return placementSpec.thumbnailUrl;
+  }
+
+  const attachments = placementSpec?.attachments;
+  if (attachments && attachments.length > 0) {
+    // biome-ignore lint/suspicious/noExplicitAny: legacy code
+    const firstAttachment = attachments.find((att: any) => att.publicUrl);
+    if (firstAttachment?.publicUrl) {
+      return firstAttachment.publicUrl;
+    }
+  }
+
+  return undefined;
+}
+
+interface CalendarEventCardCompactProps {
+  event: CalendarEvent;
+  onClick?: (e: React.MouseEvent) => void;
+  onDelete?: (eventId: string) => void;
+  className?: string;
+}
+
+/**
+ * Compact event card for month view - minimal layout to save vertical space
+ */
+export function CalendarEventCardCompact({
+  event,
+  onClick,
+  onDelete,
+  className,
+}: CalendarEventCardCompactProps) {
+  const eventData = getEventData(event);
+  const {
+    handleDelete,
+    handleEdit,
+    handlePublish,
+    handleView,
+    handleReschedule,
+    getPermalink,
+    isEditable: isEntityEditable,
+    canPublish: canEntityPublish,
+    canReschedule,
+    editLabel: getEditLabel,
+    deleteLabel: getDeleteLabel,
+    isPublishing,
+  } = useCalendarActions(onDelete);
+
+  const contentPermalink = getPermalink(event);
+  const isEditable = isEntityEditable(event);
+  const canPublish = canEntityPublish(event);
+  const editLabel = getEditLabel(event);
+  const deleteLabel = getDeleteLabel(event);
+
+  const renderActionsMenu = () => (
+    <CalendarEventCardActionsMenu
+      event={event}
+      contentPermalink={contentPermalink ?? undefined}
+      isEditable={isEditable}
+      canPublish={canPublish}
+      canReschedule={canReschedule(event)}
+      isPublishing={isPublishing}
+      editLabel={editLabel}
+      deleteLabel={deleteLabel}
+      onView={handleView}
+      onEdit={handleEdit}
+      onReschedule={handleReschedule}
+      onPublish={handlePublish}
+      onDelete={handleDelete}
+    />
+  );
+
+  return matchEntity(event, {
+    content: (entity) => {
+      const { entity: content } = entity;
+      const platformIcon = getPlatformIcon(content.placement);
+      const thumbnailSrc = getThumbnailFromPlacement(
+        content.placementSpec as PlacementSpec,
+      );
+
+      return (
+        <button
+          type="button"
+          className={cn(
+            "w-full bg-background border border-border rounded-md p-1 text-xs",
+            "cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden text-left",
+            "flex items-center gap-1 group relative",
+            className,
+          )}
+          onClick={onClick}
+        >
+          {/* Thumbnail - small square */}
+          {thumbnailSrc && (
+            <div className="w-8 h-8 flex-shrink-0 rounded overflow-hidden">
+              <img
+                src={thumbnailSrc}
+                alt="thumbnail"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          {/* Title - truncated */}
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-foreground truncate text-[11px] leading-tight">
+              {eventData.title}
+            </div>
+          </div>
+
+          {/* Platform icon - small */}
+          {platformIcon && (
+            <div className="w-3 h-3 flex-shrink-0 opacity-70">
+              {platformIcon}
+            </div>
+          )}
+
+          {/* Actions menu - hidden until hover */}
+          <div className="absolute right-0 top-0 bottom-0 pr-0.5 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {renderActionsMenu()}
+          </div>
+        </button>
+      );
+    },
+    group: (entity) => {
+      const { contents } = entity;
+      const platforms = [
+        ...new Set(contents.map((content) => content.placement)),
+      ];
+
+      return (
+        <button
+          type="button"
+          className={cn(
+            "w-full h-full bg-background border border-border rounded-md p-1 text-xs",
+            "cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden text-left",
+            "flex items-center gap-2 group relative",
+            className,
+          )}
+          onClick={onClick}
+        >
+          {/* Platform icons - stacked */}
+          <div className="flex gap-0.5 flex-shrink-0">
+            {platforms.slice(0, 2).map((platform) => {
+              const platformIcon = getPlatformIcon(platform);
+              return platformIcon ? (
+                <div key={platform} className="w-3 h-3 opacity-70">
+                  {platformIcon}
+                </div>
+              ) : null;
+            })}
+            {platforms.length > 2 && (
+              <div className="w-3 h-3 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-[8px] font-semibold text-muted-foreground leading-none">
+                  +{platforms.length - 2}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Title with post count - truncated */}
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-foreground truncate text-[11px] leading-tight">
+              {eventData.title}
+            </div>
+            <div className="text-muted-foreground text-[9px] truncate">
+              {contents.length}x
+            </div>
+          </div>
+
+          {/* Actions menu - hidden until hover */}
+          <div className="absolute right-0 top-0 bottom-0 pr-0.5 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {renderActionsMenu()}
+          </div>
+        </button>
+      );
+    },
+  });
+}

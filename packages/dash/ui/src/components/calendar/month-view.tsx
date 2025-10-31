@@ -5,8 +5,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@openpromo/ui/components/popover";
-import type { PlacementSpec } from "@shared/content";
-import type { ContentEntity } from "@worker/routes/api/workspaces/content";
 import {
   addDays,
   eachDayOfInterval,
@@ -14,25 +12,26 @@ import {
   endOfWeek,
   format,
   isAfter,
+  isBefore,
   isSameMonth,
   isToday,
   startOfDay,
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { Image } from "lucide-react";
 import type React from "react";
 import { useMemo } from "react";
+import { toast } from "sonner";
 import {
   type CalendarEvent,
+  CalendarEventCardCompact,
   DroppableCell,
   getEventData,
   getEventsForDay,
   getSpanningEventsForDay,
 } from "@/components/calendar";
 import { DefaultStartHour } from "@/components/calendar/constants";
-import { getPlatformIcon } from "@/components/content/utils/platform-icons";
-import { matchEntity, matchPlacementSpec } from "@/lib/hono-client";
+import { matchEntity } from "@/lib/hono-client";
 
 interface MonthViewProps {
   currentDate: Date;
@@ -78,175 +77,32 @@ export function MonthView({
     return result;
   }, [days]);
 
+  const getPublishingStatus = (event: CalendarEvent) =>
+    matchEntity(event, {
+      content: (entity) => entity.entity.publishingStatus,
+      group: (entity) => entity.entity.publishingStatus,
+    });
+
+  const isPastEvent = (event: CalendarEvent) => {
+    const { start } = getEventData(event);
+    return isBefore(new Date(start), new Date());
+  };
+
   const handleEventClick = (event: CalendarEvent, e: React.MouseEvent) => {
     e.stopPropagation();
+    const status = getPublishingStatus(event);
+
+    if (status !== "DRAFT" && isPastEvent(event)) {
+      toast.warning("Past events can't be edited.");
+      return;
+    }
+
+    if (status === "PUBLISHED") {
+      toast.warning("Published events can't be edited.");
+      return;
+    }
+
     onEventSelect(event);
-  };
-
-  // Helper to get thumbnail URL from placement spec
-  const getThumbnailFromPlacement = (
-    placementSpec: PlacementSpec,
-  ): string | undefined => {
-    if (placementSpec?.thumbnailUrl) {
-      return placementSpec.thumbnailUrl;
-    }
-
-    const attachments = placementSpec?.attachments;
-    if (attachments && attachments.length > 0) {
-      // biome-ignore lint/suspicious/noExplicitAny: legacy code
-      const firstAttachment = attachments.find((att: any) => att.publicUrl);
-      if (firstAttachment?.publicUrl) {
-        return firstAttachment.publicUrl;
-      }
-    }
-
-    return undefined;
-  };
-
-  // Render event with thumbnail and platform icon
-  const renderEventWithThumbnail = (
-    event: CalendarEvent,
-    onClick: (e: React.MouseEvent) => void,
-  ) => {
-    return matchEntity(event, {
-      content: (entity) => {
-        const {
-          entity: { placementSpec, placement },
-        } = entity as ContentEntity;
-
-        const thumbnailSrc = getThumbnailFromPlacement(
-          placementSpec as PlacementSpec,
-        );
-        const platformIcon = getPlatformIcon(placement);
-        const eventData = getEventData(event);
-
-        const message = matchPlacementSpec(placementSpec as PlacementSpec, {
-          FBFeed: (s) => s.postSpec.message,
-          IGFeed: (s) => s.caption,
-          TTFeed: (s) => s.caption,
-        });
-
-        return (
-          <button
-            type="button"
-            className="h-full w-full bg-background border border-border rounded-md p-1 text-xs cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden text-left flex items-center gap-2"
-            onClick={onClick}
-          >
-            {/* Thumbnail */}
-            <div className="w-8 h-8 flex-shrink-0 rounded overflow-hidden bg-muted">
-              {thumbnailSrc ? (
-                <img
-                  src={thumbnailSrc}
-                  alt="Content thumbnail"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-muted flex items-center justify-center">
-                  <Image className="w-4 h-4 text-muted-foreground" />
-                </div>
-              )}
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-foreground truncate text-[11px] leading-tight">
-                {message || eventData.title}
-              </div>
-            </div>
-
-            {/* Platform icon */}
-            {platformIcon && (
-              <div className="w-4 h-4 flex-shrink-0 opacity-70">
-                {platformIcon}
-              </div>
-            )}
-          </button>
-        );
-      },
-      group: (entity) => {
-        const { contents } = entity;
-        const eventData = getEventData(event);
-
-        // Get unique platforms from the contents
-        const platforms = [
-          ...new Set(contents.map((content) => content.placement)),
-        ];
-
-        // Get first thumbnail or default
-        const contentWithThumbnail = contents.find(
-          (c) =>
-            c.placementSpec != null &&
-            getThumbnailFromPlacement(c.placementSpec),
-        );
-        const thumbnailUrl = contentWithThumbnail
-          ? getThumbnailFromPlacement(
-              contentWithThumbnail.placementSpec as PlacementSpec,
-            )
-          : undefined;
-
-        // Get the primary message
-        const primaryMessage =
-          contents.length > 0
-            ? matchPlacementSpec(contents[0].placementSpec as PlacementSpec, {
-                FBFeed: (s) => s.postSpec.message,
-                IGFeed: (s) => s.caption,
-                TTFeed: (s) => s.caption,
-              })
-            : "Untitled Group";
-
-        return (
-          <button
-            type="button"
-            className="h-full w-full bg-background border border-border rounded-md p-1 text-xs cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden text-left flex items-center gap-2"
-            onClick={onClick}
-          >
-            {/* Thumbnail */}
-            <div className="w-8 h-8 flex-shrink-0 rounded overflow-hidden bg-muted">
-              {thumbnailUrl ? (
-                <img
-                  src={thumbnailUrl}
-                  alt="Content thumbnail"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-muted flex items-center justify-center">
-                  <Image className="w-4 h-4 text-muted-foreground" />
-                </div>
-              )}
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-foreground truncate text-[11px] leading-tight">
-                {primaryMessage || eventData.title}
-              </div>
-              <div className="text-muted-foreground text-[10px] truncate">
-                {contents.length} post{contents.length !== 1 ? "s" : ""}
-              </div>
-            </div>
-
-            {/* Platform icons stack */}
-            <div className="flex gap-0.5 flex-shrink-0">
-              {platforms.slice(0, 2).map((platform) => {
-                const platformIcon = getPlatformIcon(platform);
-                return platformIcon ? (
-                  <div key={platform} className="w-3 h-3 opacity-70">
-                    {platformIcon}
-                  </div>
-                ) : null;
-              })}
-              {platforms.length > 2 && (
-                <div className="w-3 h-3 bg-muted rounded-full flex items-center justify-center">
-                  <span className="text-[8px] font-semibold text-muted-foreground">
-                    +{platforms.length - 2}
-                  </span>
-                </div>
-              )}
-            </div>
-          </button>
-        );
-      },
-    });
   };
 
   // Render individual events up to limit, then more button
@@ -261,10 +117,11 @@ export function MonthView({
         {visibleEvents.map((event) => {
           const eventData = getEventData(event);
           return (
-            <div key={eventData.id} className="w-full h-10 mb-1">
-              {renderEventWithThumbnail(event, (e) =>
-                handleEventClick(event, e),
-              )}
+            <div key={eventData.id} className="w-full mb-1">
+              <CalendarEventCardCompact
+                event={event}
+                onClick={(e: React.MouseEvent) => handleEventClick(event, e)}
+              />
             </div>
           );
         })}
@@ -295,10 +152,13 @@ export function MonthView({
                   {dayEvents.slice(maxVisible).map((event) => {
                     const eventData = getEventData(event);
                     return (
-                      <div key={eventData.id} className="h-12">
-                        {renderEventWithThumbnail(event, (e) =>
-                          handleEventClick(event, e),
-                        )}
+                      <div key={eventData.id} className="mb-2">
+                        <CalendarEventCardCompact
+                          event={event}
+                          onClick={(e: React.MouseEvent) =>
+                            handleEventClick(event, e)
+                          }
+                        />
                       </div>
                     );
                   })}
