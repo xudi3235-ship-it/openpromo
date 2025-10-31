@@ -5,6 +5,11 @@ import { ProductListPage } from "@/components/products/ProductListPage";
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/products/",
 )({
-  validateSearch: ProductListFiltersSchema,
+  validateSearch: (search) => ProductListFiltersSchema.parse(search),
+  loaderDeps: ({ search }) => ({
+    search: search.search,
+    category: search.category,
+    state: search.state,
+  }),
   component: ProductListPage,
 });

@@ -6,7 +6,7 @@ import {
 } from "@openpromo/ui/components/toggle-group";
 import { LayoutGrid, Plus, Search, Table } from "lucide-react";
 import type * as React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { CreateProductModal } from "./create-product-modal";
 import { ProductGridView } from "./grid-view/ProductGridView";
@@ -19,24 +19,11 @@ import { useProductFilters } from "./use-product-filters";
  */
 export function ProductListPage() {
   const { filters, setSearch, setView } = useProductFilters();
-  const [searchValue, setSearchValue] = useState(filters.search || "");
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const updateDebouncedSearch = useDebounceCallback((value: string) => {
     setSearch(value.trim() || undefined);
   }, 400);
-
-  useEffect(() => {
-    updateDebouncedSearch(searchValue);
-    return () => {
-      updateDebouncedSearch.cancel();
-    };
-  }, [searchValue, updateDebouncedSearch]);
-
-  // Sync URL search param to local input value on mount/navigation
-  useEffect(() => {
-    setSearchValue(filters.search || "");
-  }, [filters.search]);
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -60,9 +47,9 @@ export function ProductListPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search products..."
-            value={searchValue}
+            value={filters.search || ""}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setSearchValue(e.target.value)
+              updateDebouncedSearch(e.target.value)
             }
             className="pl-9"
           />

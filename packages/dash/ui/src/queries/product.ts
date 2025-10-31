@@ -3,11 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { InferRequestType, InferResponseType } from "hono/client";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import {
-  type apiClient,
-  useHonoMutation,
-  useHonoQuery,
-} from "@/lib/hono-client";
+import { apiClient, useHonoMutation, useHonoQuery } from "@/lib/hono-client";
 
 type ProductCreateInput = InferRequestType<
   (typeof apiClient)["workspaces"][":workspaceSlug"]["products"]["$post"]
@@ -35,6 +31,23 @@ export const invalidateProductListQueries = async (queryClient: QueryClient) =>
       Array.isArray(query.queryKey) && query.queryKey[0] === "product-list",
     type: "all",
   });
+
+export const prefetchProductList = async (
+  queryClient: QueryClient,
+  workspaceSlug: string,
+  params: ProductListParams = {},
+) => {
+  return queryClient.prefetchQuery({
+    queryKey: ["product-list", params],
+    queryFn: () =>
+      apiClient.workspaces[":workspaceSlug"].products
+        .$get({
+          query: params,
+          param: { workspaceSlug },
+        })
+        .then((res) => res.json()),
+  });
+};
 
 export const useProductListQuery = (params: ProductListParams = {}) => {
   const { workspace } = useWorkspace();
