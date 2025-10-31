@@ -8,11 +8,10 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { useProductListQuery } from "@/queries/product";
 import { CreateProductModal } from "../create-product-modal";
-import { useProductFilters } from "../use-product-filters";
 import { columns } from "./columns";
 import { ProductTableBody } from "./product-table-body";
 import { ProductTableFooter } from "./product-table-footer";
@@ -23,7 +22,6 @@ import { ProductTableLayout } from "./product-table-layout";
  * Alternative view to the card-based ProductListPage
  */
 export function ProductTablePage() {
-  const { filters, setSearch } = useProductFilters();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -32,27 +30,18 @@ export function ProductTablePage() {
     pageIndex: 0,
     pageSize: 10,
   });
-  const [searchValue, setSearchValue] = useState(filters.search || "");
+  const [searchValue, setSearchValue] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
+  // Debounced search query for API calls (local state only, not in URL)
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const updateDebouncedSearch = useDebounceCallback((value: string) => {
-    setSearch(value.trim() || undefined);
+    setDebouncedSearch(value.trim());
   }, 400);
 
-  useEffect(() => {
-    updateDebouncedSearch(searchValue);
-    return () => {
-      updateDebouncedSearch.cancel();
-    };
-  }, [searchValue, updateDebouncedSearch]);
-
-  // Sync URL search param to local input value on mount/navigation
-  useEffect(() => {
-    setSearchValue(filters.search || "");
-  }, [filters.search]);
-
   const { data, isLoading, error } = useProductListQuery({
-    search: filters.search || undefined,
+    search: debouncedSearch || undefined,
   });
 
   const products = (data?.products ?? []) as unknown as ProductSelectType[];
@@ -105,14 +94,17 @@ export function ProductTablePage() {
   return (
     <ProductTableLayout
       searchValue={searchValue}
-      onSearchChange={setSearchValue}
+      onSearchChange={(value) => {
+        setSearchValue(value);
+        updateDebouncedSearch(value);
+      }}
       table={table}
       onAddProduct={() => setCreateModalOpen(true)}
     >
       <ProductTableBody
         table={table}
         isLoading={isLoading}
-        hasFilters={Boolean(filters.search)}
+        hasFilters={Boolean(debouncedSearch)}
         onAddProduct={() => setCreateModalOpen(true)}
       />
 

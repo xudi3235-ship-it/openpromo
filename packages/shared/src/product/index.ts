@@ -138,10 +138,9 @@ export type ProductImageVariants = z.infer<typeof ProductImageVariants>;
 
 /**
  * Product list filter schema for URL search params (frontend)
- * Shared between frontend routes and backend API
+ * Note: search is handled as local state, not in URL params
  */
 export const ProductListFiltersSchema = z.object({
-  search: z.string().optional(),
   view: z.enum(["grid", "table"]).optional(),
   category: z.string().optional(),
   state: ProductStateZod.optional(),
@@ -150,12 +149,15 @@ export const ProductListFiltersSchema = z.object({
 export type ProductListFilters = z.infer<typeof ProductListFiltersSchema>;
 
 /**
- * Product list query schema for API (extends filters with pagination)
+ * Product list query schema for API (includes search and pagination)
  */
-export const ProductListQuerySchema = ProductListFiltersSchema.extend({
+export const ProductListQuerySchema = z.object({
+  search: z.string().optional(),
+  category: z.string().optional(),
+  state: ProductStateZod.optional(),
   page: z.coerce.number().default(1),
   pageSize: z.coerce.number().max(100).default(20),
   source: ProductSourceZod.optional(),
-}).omit({ view: true }); // view is frontend-only
+});
 
 export type ProductListQuery = z.infer<typeof ProductListQuerySchema>;

@@ -3,20 +3,21 @@ import { useProductListQuery } from "@/queries/product";
 import { ProductCard } from "../product-card";
 import { ProductsEmptyState } from "../products-empty-state";
 import { ProductsLoadingState } from "../products-loading-state";
-import { useProductFilters } from "../use-product-filters";
 
 interface ProductGridViewProps {
+  searchQuery: string;
   onAddProduct: () => void;
 }
 
 /**
  * ProductGridView - Grid/card view for products
  */
-export function ProductGridView({ onAddProduct }: ProductGridViewProps) {
-  const { filters } = useProductFilters();
-
+export function ProductGridView({
+  searchQuery,
+  onAddProduct,
+}: ProductGridViewProps) {
   const { data, isLoading, error } = useProductListQuery({
-    search: filters.search || undefined,
+    search: searchQuery || undefined,
   });
 
   const products = data?.products ?? [];
@@ -43,7 +44,7 @@ export function ProductGridView({ onAddProduct }: ProductGridViewProps) {
   if (products.length === 0) {
     return (
       <ProductsEmptyState
-        hasFilters={Boolean(filters.search)}
+        hasFilters={Boolean(searchQuery)}
         onAddProduct={onAddProduct}
       />
     );

@@ -1,6 +1,6 @@
 import type { ProductListFilters } from "@shared/product";
-import { useRouter } from "@tanstack/react-router";
 import { useCallback, useMemo } from "react";
+import { Route as ProductsRoute } from "@/routes/_authenticated/workspaces/$workspaceSlug/products/index";
 
 export type ViewMode = "grid" | "table";
 export type ProductFilters = ProductListFilters;
@@ -10,12 +10,11 @@ export type ProductFilters = ProductListFilters;
  * Provides a consistent interface for both grid and table views
  */
 export function useProductFilters() {
-  const router = useRouter();
-  const searchParams = router.latestLocation.search as ProductFilters;
+  const navigate = ProductsRoute.useNavigate();
+  const searchParams = ProductsRoute.useSearch();
 
   const filters: ProductFilters = useMemo(
     () => ({
-      search: searchParams.search,
       view: (searchParams.view as ViewMode) || "grid",
       category: searchParams.category,
       state: searchParams.state,
@@ -37,20 +36,12 @@ export function useProductFilters() {
         }
       });
 
-      router.navigate({
-        to: ".",
+      navigate({
         search: newSearch,
         replace: true,
       });
     },
-    [router, searchParams],
-  );
-
-  const setSearch = useCallback(
-    (search: string | undefined) => {
-      updateFilters({ search: search || undefined });
-    },
-    [updateFilters],
+    [navigate, searchParams],
   );
 
   const setView = useCallback(
@@ -75,21 +66,19 @@ export function useProductFilters() {
   );
 
   const clearFilters = useCallback(() => {
-    router.navigate({
-      to: ".",
+    navigate({
       search: { view: filters.view },
       replace: true,
     });
-  }, [router, filters.view]);
+  }, [navigate, filters.view]);
 
   const hasActiveFilters = useMemo(() => {
-    return Boolean(filters.search || filters.category || filters.state);
+    return Boolean(filters.category || filters.state);
   }, [filters]);
 
   return {
     filters,
     updateFilters,
-    setSearch,
     setView,
     setCategory,
     setState,

@@ -7,7 +7,6 @@ export const Route = createFileRoute(
 )({
   validateSearch: (search) => ProductListFiltersSchema.parse(search),
   loaderDeps: ({ search }) => ({
-    search: search.search,
     category: search.category,
     state: search.state,
   }),

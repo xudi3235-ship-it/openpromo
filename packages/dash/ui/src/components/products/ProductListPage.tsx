@@ -18,11 +18,15 @@ import { useProductFilters } from "./use-product-filters";
  * Route: /workspaces/:workspaceSlug/products
  */
 export function ProductListPage() {
-  const { filters, setSearch, setView } = useProductFilters();
+  const { filters, setView } = useProductFilters();
+  const [searchValue, setSearchValue] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
+  // Debounced search query for API calls (local state only, not in URL)
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const updateDebouncedSearch = useDebounceCallback((value: string) => {
-    setSearch(value.trim() || undefined);
+    setDebouncedSearch(value.trim());
   }, 400);
 
   return (
@@ -47,10 +51,11 @@ export function ProductListPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search products..."
-            value={filters.search || ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              updateDebouncedSearch(e.target.value)
-            }
+            value={searchValue}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setSearchValue(e.target.value);
+              updateDebouncedSearch(e.target.value);
+            }}
             className="pl-9"
           />
         </div>
@@ -72,9 +77,15 @@ export function ProductListPage() {
 
       {/* Content */}
       {filters.view === "table" ? (
-        <ProductTableView onAddProduct={() => setCreateModalOpen(true)} />
+        <ProductTableView
+          searchQuery={debouncedSearch}
+          onAddProduct={() => setCreateModalOpen(true)}
+        />
       ) : (
-        <ProductGridView onAddProduct={() => setCreateModalOpen(true)} />
+        <ProductGridView
+          searchQuery={debouncedSearch}
+          onAddProduct={() => setCreateModalOpen(true)}
+        />
       )}
 
       <CreateProductModal

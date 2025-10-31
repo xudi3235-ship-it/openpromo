@@ -10,20 +10,22 @@ import {
 } from "@tanstack/react-table";
 import { useState } from "react";
 import { useProductListQuery } from "@/queries/product";
-import { useProductFilters } from "../use-product-filters";
 import { columns } from "./columns";
 import { ProductTableBody } from "./product-table-body";
 import { ProductTableFooter } from "./product-table-footer";
 
 interface ProductTableViewProps {
+  searchQuery: string;
   onAddProduct: () => void;
 }
 
 /**
  * ProductTableView - Table view component for products (without header/search)
  */
-export function ProductTableView({ onAddProduct }: ProductTableViewProps) {
-  const { filters } = useProductFilters();
+export function ProductTableView({
+  searchQuery,
+  onAddProduct,
+}: ProductTableViewProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -34,7 +36,7 @@ export function ProductTableView({ onAddProduct }: ProductTableViewProps) {
   });
 
   const { data, isLoading, error } = useProductListQuery({
-    search: filters.search || undefined,
+    search: searchQuery || undefined,
   });
 
   const products = (data?.products ?? []) as unknown as ProductSelectType[];
@@ -82,7 +84,7 @@ export function ProductTableView({ onAddProduct }: ProductTableViewProps) {
       <ProductTableBody
         table={table}
         isLoading={isLoading}
-        hasFilters={Boolean(filters.search)}
+        hasFilters={Boolean(searchQuery)}
         onAddProduct={onAddProduct}
       />
 
