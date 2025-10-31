@@ -41,17 +41,17 @@ const PLATFORM_OPTIONS: Array<{
   icon: any;
 }> = [
   {
-    value: "facebook",
+    value: "FACEBOOK",
     label: "Facebook",
     icon: <FaFacebook className="h-4 w-4 text-blue-600" />,
   },
   {
-    value: "instagram",
+    value: "INSTAGRAM",
     label: "Instagram",
     icon: <FaInstagram className="h-4 w-4 text-pink-600" />,
   },
   {
-    value: "tiktok",
+    value: "TIKTOK",
     label: "TikTok",
     icon: <FaTiktok className="h-3 w-3 text-black" />,
   },
@@ -92,17 +92,14 @@ export function ContentFilters({
   };
 
   return (
-    <div className="flex items-center gap-4 mb-4 flex-wrap">
+    <div className="flex items-center gap-2 mb-2">
       {/* Publishing Status Filter */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-muted-foreground">
-          Status:
-        </span>
+      <div className="flex items-center gap-1.5">
         <Select
           value={filters.publishingStatus || "all"}
           onValueChange={updatePublishingStatus}
         >
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-32 h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -110,7 +107,7 @@ export function ContentFilters({
             {PUBLISHING_STATUS_OPTIONS.map(({ value, label, icon: Icon }) => (
               <SelectItem key={value} value={value}>
                 <span className="flex items-center gap-2">
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3 w-3" />
                   {label}
                 </span>
               </SelectItem>
@@ -120,15 +117,12 @@ export function ContentFilters({
       </div>
 
       {/* Platform Filter */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-muted-foreground">
-          Platform:
-        </span>
+      <div className="flex items-center gap-1.5">
         <Select
           value={filters.platform || "all"}
           onValueChange={updatePlatform}
         >
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-32 h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -147,15 +141,12 @@ export function ContentFilters({
 
       {/* Date Range Filter */}
       {showDateFilter && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">
-            Date:
-          </span>
+        <div className="flex items-center gap-1.5">
           <DateRangePicker
             date={filters.dateRange}
             onDateChange={updateDateRange}
             placeholder="Select date range..."
-            className="w-64"
+            className="w-56"
           />
         </div>
       )}
@@ -166,10 +157,10 @@ export function ContentFilters({
           variant="ghost"
           size="sm"
           onClick={clearFilters}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground h-8 px-2"
         >
-          <X className="h-4 w-4 mr-2" />
-          Clear Filters
+          <X className="h-3 w-3 mr-1" />
+          Clear
         </Button>
       )}
     </div>
