@@ -1,7 +1,11 @@
 import type { ProductSelectType } from "@core/schemas/product.sql";
 import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
-import { Plus, Search } from "lucide-react";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@openpromo/ui/components/toggle-group";
+import { LayoutGrid, Plus, Search, Table } from "lucide-react";
 import * as React from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { useProductListQuery } from "@/queries/product";
@@ -9,6 +13,9 @@ import { CreateProductModal } from "./create-product-modal";
 import { ProductCard } from "./product-card";
 import { ProductsEmptyState } from "./products-empty-state";
 import { ProductsLoadingState } from "./products-loading-state";
+import { ProductTablePage } from "./table-view/ProductTablePage";
+
+type ViewMode = "grid" | "table";
 
 /**
  * ProductListPage - Displays grid of products with search and filters
@@ -18,6 +25,7 @@ export function ProductListPage() {
   const [searchValue, setSearchValue] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [createModalOpen, setCreateModalOpen] = React.useState(false);
+  const [viewMode, setViewMode] = React.useState<ViewMode>("grid");
 
   const updateDebouncedSearch = useDebounceCallback((value: string) => {
     setDebouncedSearch(value.trim());
@@ -36,6 +44,11 @@ export function ProductListPage() {
 
   const products = data?.products ?? [];
   const hasFilters = Boolean(debouncedSearch);
+
+  // If table view is selected, render the table view component
+  if (viewMode === "table") {
+    return <ProductTablePage />;
+  }
 
   if (error) {
     return (
@@ -81,6 +94,20 @@ export function ProductListPage() {
             className="pl-9"
           />
         </div>
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(value) => {
+            if (value) setViewMode(value as ViewMode);
+          }}
+        >
+          <ToggleGroupItem value="grid" aria-label="Grid view">
+            <LayoutGrid className="h-4 w-4" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="table" aria-label="Table view">
+            <Table className="h-4 w-4" />
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {/* Content */}
