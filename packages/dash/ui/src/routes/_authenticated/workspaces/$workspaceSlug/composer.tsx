@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ComposerRoot } from "@/components/composer/layout/composer-root";
 import { ComposerSkeleton } from "@/components/composer/layout/composer-skeleton";
-import { ResizableComposer } from "@/components/composer/layout/resizable-composer";
 import { useConnectedAccounts } from "@/queries/connected-account";
 
 export const Route = createFileRoute(
@@ -26,7 +26,7 @@ function ComposerComponent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <ResizableComposer accounts={accounts} className="min-h-screen" />
+      <ComposerRoot accounts={accounts} className="min-h-screen" />
     </div>
   );
 }

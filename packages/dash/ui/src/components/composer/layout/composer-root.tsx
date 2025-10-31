@@ -5,7 +5,7 @@ import { ComposerLeft } from "./composer-left";
 import { ComposerRight } from "./composer-right";
 import { TwoColumnLayout } from "./two-column-layout";
 
-interface ResizableComposerProps {
+interface ComposerRootProps {
   accounts: ConnectedAccount[];
   className?: string;
   initComposerProps?: Partial<ComposerProps>;
@@ -17,11 +17,11 @@ interface ResizableComposerProps {
  * Initializes the composer state when mounted with the provided accounts and props.
  * Since we only have one composer active at a time, we use a global store for simplicity.
  */
-export function ResizableComposer({
+export function ComposerRoot({
   accounts,
   className = "",
   initComposerProps,
-}: ResizableComposerProps) {
+}: ComposerRootProps) {
   const initializeComposer = useComposerStore(
     (state) => state.initializeComposer,
   );
