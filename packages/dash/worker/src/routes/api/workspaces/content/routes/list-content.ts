@@ -13,7 +13,7 @@ import type { MergedContentContainer } from "../shared/types";
 
 const listContentQuerySchema = z.object({
   page: z.coerce.number().default(1),
-  pageSize: z.coerce.number().max(100).default(20),
+  pageSize: z.coerce.number().max(500).default(20),
   publishingStatus: z
     .enum([
       "DRAFT",
