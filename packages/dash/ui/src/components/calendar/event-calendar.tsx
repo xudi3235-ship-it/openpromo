@@ -292,16 +292,16 @@ export function ContentCalendar({
       }
     >
       <CalendarDndProvider onEventUpdate={handleEventUpdate}>
-        <header className="px-4 pt-4 pb-2">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-xl font-semibold text-foreground">Calendar</h1>
-            <p className="text-sm text-muted-foreground">
+        <header className="px-4 pt-4 pb-1">
+          <div className="flex flex-col gap-0.5">
+            <h1 className="text-lg font-semibold text-foreground">Calendar</h1>
+            <p className="text-xs text-muted-foreground">
               Plan upcoming content across your social accounts.
             </p>
           </div>
         </header>
-        <div className="flex items-center justify-between px-4 pb-4">
-          <div className="flex items-center gap-1 sm:gap-4">
+        <div className="flex items-center justify-between px-4 pb-3 gap-2">
+          <div className="flex items-center gap-0.5 sm:gap-2">
             {/* View Toggle - Week/Month */}
             <ToggleGroup
               type="single"
@@ -316,52 +316,55 @@ export function ContentCalendar({
               <ToggleGroupItem
                 value="week"
                 aria-label="Week view"
-                className="px-3 py-1 text-xs"
+                className="px-2 py-1 text-xs"
               >
-                <Calendar className="w-4 h-4 mr-1" />
+                <Calendar className="w-3.5 h-3.5 mr-1" />
                 Week
               </ToggleGroupItem>
               <ToggleGroupItem
                 value="month"
                 aria-label="Month view"
-                className="px-3 py-1 text-xs"
+                className="px-2 py-1 text-xs"
               >
-                <CalendarCheck className="w-4 h-4 mr-1" />
+                <CalendarCheck className="w-3.5 h-3.5 mr-1" />
                 Month
               </ToggleGroupItem>
             </ToggleGroup>
 
             <Button
               variant="outline"
+              size="sm"
               className="max-[479px]:aspect-square max-[479px]:p-0!"
               onClick={handleToday}
             >
-              <CalendarCheck className="min-[480px]:hidden" size={16} />
-              <span className="max-[479px]:sr-only">Today</span>
+              <CalendarCheck className="min-[480px]:hidden" size={14} />
+              <span className="max-[479px]:sr-only text-xs">Today</span>
             </Button>
-            <div className="flex items-center sm:gap-2">
+            <div className="flex items-center gap-0.5">
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-8 w-8"
                 onClick={handlePrevious}
                 aria-label="Previous"
               >
-                <ChevronLeftIcon size={16} aria-hidden="true" />
+                <ChevronLeftIcon size={14} aria-hidden="true" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-8 w-8"
                 onClick={handleNext}
                 aria-label="Next"
               >
-                <ChevronRightIcon size={16} aria-hidden="true" />
+                <ChevronRightIcon size={14} aria-hidden="true" />
               </Button>
             </div>
-            <h2 className="text-sm font-semibold sm:text-lg md:text-xl">
+            <h2 className="text-xs font-semibold sm:text-sm md:text-base truncate">
               {viewTitle}
             </h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button
               className="max-[479px]:aspect-square max-[479px]:p-0!"
               size="sm"
@@ -371,16 +374,16 @@ export function ContentCalendar({
               }}
             >
               <PlusIcon
-                className="opacity-60 sm:-ms-1"
-                size={16}
+                className="opacity-60 sm:-ms-0.5"
+                size={14}
                 aria-hidden="true"
               />
-              <span className="max-sm:sr-only">Create Post</span>
+              <span className="max-sm:sr-only text-xs">Create Post</span>
             </Button>
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col min-h-0 p-4 pt-0!">
+        <div className="flex flex-1 flex-col min-h-0 p-3 pt-0!">
           {view === "month" && (
             <MonthView
               currentDate={currentDate}

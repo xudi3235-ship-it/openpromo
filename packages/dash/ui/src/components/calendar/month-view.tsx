@@ -107,7 +107,7 @@ export function MonthView({
 
   // Render individual events up to limit, then more button
   const renderDayEvents = (dayEvents: CalendarEvent[], day: Date) => {
-    const maxVisible = 5;
+    const maxVisible = 3;
     const visibleEvents = dayEvents.slice(0, maxVisible);
     const remainingCount = dayEvents.length - maxVisible;
 
@@ -117,7 +117,7 @@ export function MonthView({
         {visibleEvents.map((event) => {
           const eventData = getEventData(event);
           return (
-            <div key={eventData.id} className="w-full mb-1">
+            <div key={eventData.id} className="w-full">
               <CalendarEventCardCompact
                 event={event}
                 onClick={(e: React.MouseEvent) => handleEventClick(event, e)}
@@ -132,10 +132,12 @@ export function MonthView({
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="w-full h-8 mb-1 bg-muted/50 hover:bg-muted border border-dashed border-muted-foreground/30 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
+                className="w-full h-6 bg-muted/50 hover:bg-muted border border-dashed border-muted-foreground/30 rounded-md text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
                 onClick={(e) => e.stopPropagation()}
               >
-                <span className="font-medium">+{remainingCount} more</span>
+                <span className="font-medium text-[10px]">
+                  +{remainingCount}
+                </span>
               </button>
             </PopoverTrigger>
             <PopoverContent className="max-w-80 p-3">
@@ -186,7 +188,7 @@ export function MonthView({
       <div
         className="grid flex-1 auto-rows-fr min-h-0"
         style={{
-          gridTemplateRows: "repeat(auto-fit, minmax(180px, 1fr))",
+          gridTemplateRows: "repeat(auto-fit, minmax(140px, 1fr))",
         }}
       >
         {weeks.map((week, weekIndex) => (
@@ -209,7 +211,7 @@ export function MonthView({
               return (
                 <div
                   key={day.toString()}
-                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 border-r border-b last:border-r-0 overflow-hidden flex flex-col min-h-[180px]"
+                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 border-r border-b last:border-r-0 overflow-hidden flex flex-col min-h-[140px]"
                   data-today={isToday(day) || undefined}
                   data-outside-cell={!isCurrentMonth || undefined}
                 >
@@ -246,7 +248,7 @@ export function MonthView({
                         </button>
                       )}
                     </div>
-                    <div className="flex-1 min-h-0 space-y-1 overflow-y-auto">
+                    <div className="flex-1 min-h-0 space-y-0.5 overflow-y-auto">
                       {/* Render day events with limit and more button */}
                       {renderDayEvents(allDayEvents, day)}
                     </div>
