@@ -10,9 +10,10 @@ import type { InboxConversationSummary } from "@shared/inbox";
 import { Link, useParams } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2, MessageCircle, MessageSquare } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useIntersectionObserver } from "usehooks-ts";
 import { PlatformAvatarBadge } from "@/components/shared/platform-avatar-badge";
+import { useQuickReply } from "@/hooks/inbox/use-quick-reply";
 import { useInboxStore } from "@/stores/inbox-store";
 import { ConversationActionsMenu } from "./conversation-actions-menu";
 
@@ -145,7 +146,10 @@ function ConversationListItem({
   showQuickReply: boolean;
   onToggleQuickReply: (show: boolean) => void;
 }) {
-  const [quickReplyText, setQuickReplyText] = useState("");
+  const { text, setText, sendQuickReply, isSubmitting } = useQuickReply(
+    workspaceSlug,
+    conversation,
+  );
 
   const handleQuickReply = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -156,12 +160,9 @@ function ConversationListItem({
   const handleSendQuickReply = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!quickReplyText.trim()) return;
+    if (!text.trim() || isSubmitting) return;
 
-    // TODO: Implement quick reply API call
-    // Will send message without opening the conversation
-    setQuickReplyText("");
-    onToggleQuickReply(false);
+    await sendQuickReply(text);
   };
 
   return (
@@ -265,10 +266,11 @@ function ConversationListItem({
         >
           <input
             type="text"
-            value={quickReplyText}
-            onChange={(e) => setQuickReplyText(e.target.value)}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
             placeholder="Quick reply..."
-            className="h-7 w-full rounded-md border border-border/60 bg-background px-2 text-xs focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
+            disabled={isSubmitting}
+            className="h-7 w-full rounded-md border border-border/60 bg-background px-2 text-xs focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
             autoFocus
           />
         </form>
