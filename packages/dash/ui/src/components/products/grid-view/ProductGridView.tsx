@@ -1,5 +1,6 @@
 import type { ProductSelectType } from "@core/schemas/product.sql";
 import { useProductListQuery } from "@/queries/product";
+import { AddProductCard } from "../add-product-card";
 import { ProductCard } from "../product-card";
 import { ProductsEmptyState } from "../products-empty-state";
 import { ProductsLoadingState } from "../products-loading-state";
@@ -53,20 +54,7 @@ export function ProductGridView({
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
       {/* Add Product Card */}
-      <button
-        type="button"
-        onClick={onAddProduct}
-        className="group relative aspect-square overflow-hidden rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/5 transition-all hover:border-muted-foreground/50 hover:bg-muted/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-          <div className="flex size-12 items-center justify-center rounded-full bg-muted transition-colors group-hover:bg-muted-foreground/20">
-            <Plus className="size-6 text-muted-foreground" />
-          </div>
-          <span className="text-sm font-medium text-muted-foreground">
-            Add Product
-          </span>
-        </div>
-      </button>
+      <AddProductCard onAddProduct={onAddProduct} />
 
       {/* Product Cards */}
       {products.map((product) => (
