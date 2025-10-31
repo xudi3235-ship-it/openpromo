@@ -88,7 +88,17 @@ hosted on `openpromo.app`, landing page, pricing, etc, built with astro and `pac
 1. start with `pnpm dev` under `packages/dash` which spins up the hono api as well as dashboard UI, on `https://localhost:3000`, it's https since we need to make Oauth work.
 2. ALWAYS plan first, use pseudo code to confirm with user about the high level technical design, patterns, and NEEDS verbal approval before implementation.
 
-## docs/refs
+## Internal Documentation
+
+**Always check `docs/` directory for coding patterns and best practices:**
+
+- `docs/coding-patterns.md` - Router hooks, shared schemas, search state management, prefetching patterns
+- `docs/development.md` - Development workflow and setup
+- `docs/design-principles.md` - UI/UX design guidelines
+
+When implementing new features, refer to these docs first to follow established patterns.
+
+## External References
 
 1. <https://workos.com/docs/reference/organization>
 2.
