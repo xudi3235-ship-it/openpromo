@@ -1,4 +1,9 @@
 import { instagramGraphRequest } from "@core/domain/content/entity/instagram/api";
+import {
+  INSTAGRAM_MEDIA_DEFAULT_METRICS,
+  InstagramMediaInsightsFetcher,
+  instagramMediaMetricsToUnifiedContentMetrics,
+} from "@core/domain/content/entity/instagram/mediaInsights";
 import { defineEvent } from "@core/experimental/event";
 import { and, db, eq, gt, lt, withPagination } from "@core/helpers/db";
 import {
@@ -234,6 +239,44 @@ export namespace UnifiedContent {
       createdAt,
     };
 
+    // Fetch insights metrics for the media
+    const insightsFetcher = new InstagramMediaInsightsFetcher();
+    let metrics = {};
+    let metricsRefreshedAt: Date | null = null;
+
+    try {
+      console.info("[UnifiedContent] backfilling insights for media", {
+        mediaId,
+      });
+      const insightsResult = await insightsFetcher.fetch(
+        {
+          accessToken: params.accessToken,
+          rateLimitKey: `instagram:${params.connectedAccountId}`,
+        },
+        {
+          mediaId,
+          metrics: Array.from(INSTAGRAM_MEDIA_DEFAULT_METRICS.FEED),
+          metricBreakdowns: {
+            profile_activity: "action_type",
+          },
+        },
+      );
+      metrics = instagramMediaMetricsToUnifiedContentMetrics(
+        insightsResult.metrics,
+      );
+      metricsRefreshedAt = new Date();
+      console.info("[UnifiedContent] successfully fetched insights", {
+        mediaId,
+        metrics,
+      });
+    } catch (error) {
+      console.warn("[UnifiedContent] failed to fetch insights for media", {
+        mediaId,
+        error,
+      });
+      // Continue without metrics if insights fetch fails
+    }
+
     const row = {
       placement: IGPlacement.IG_FEED,
       placementSpec,
@@ -244,8 +287,8 @@ export namespace UnifiedContent {
       workspaceId: params.workspaceId,
       createdAt,
       updatedAt: createdAt,
-      metrics: {},
-      metricsRefreshedAt: null,
+      metrics,
+      metricsRefreshedAt,
     } satisfies typeof unifiedContentTable.$inferInsert;
 
     const [upserted] = await db()
@@ -260,6 +303,8 @@ export namespace UnifiedContent {
           workspaceId: sql`excluded.workspace_id`,
           permalinkUrl: sql`excluded.permalink_url`,
           publishingStatus: sql`excluded.publishing_status`,
+          metrics: sql`excluded.metrics`,
+          metricsRefreshedAt: sql`excluded.metrics_refreshed_at`,
           updatedAt: sql`excluded.updated_at`,
         },
       })
