@@ -5,7 +5,8 @@ import {
   ToggleGroupItem,
 } from "@openpromo/ui/components/toggle-group";
 import { LayoutGrid, Plus, Search, Table } from "lucide-react";
-import * as React from "react";
+import type * as React from "react";
+import { useEffect, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { CreateProductModal } from "./create-product-modal";
 import { ProductGridView } from "./grid-view/ProductGridView";
@@ -18,14 +19,14 @@ import { useProductFilters } from "./use-product-filters";
  */
 export function ProductListPage() {
   const { filters, setSearch, setView } = useProductFilters();
-  const [searchValue, setSearchValue] = React.useState(filters.search || "");
-  const [createModalOpen, setCreateModalOpen] = React.useState(false);
+  const [searchValue, setSearchValue] = useState(filters.search || "");
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const updateDebouncedSearch = useDebounceCallback((value: string) => {
     setSearch(value.trim() || undefined);
   }, 400);
 
-  React.useEffect(() => {
+  useEffect(() => {
     updateDebouncedSearch(searchValue);
     return () => {
       updateDebouncedSearch.cancel();
@@ -33,7 +34,7 @@ export function ProductListPage() {
   }, [searchValue, updateDebouncedSearch]);
 
   // Sync URL search param to local input value on mount/navigation
-  React.useEffect(() => {
+  useEffect(() => {
     setSearchValue(filters.search || "");
   }, [filters.search]);
 
