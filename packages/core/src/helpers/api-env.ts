@@ -35,7 +35,7 @@ export type ApiEnv = {
     ApiRateLimitCoordinator: DurableObjectNamespace<ApiRateLimitCoordinator>;
     ContainerBackend: DurableObjectNamespace<ContainerBackend>;
     Bucket: R2Bucket;
-    HashtagSearchCache: KVNamespace;
+    KV: KVNamespace;
     JobQueue: Queue<JobQueueMessage>;
     WorkspaceInsightsAnalytics: AnalyticsEngineDataset;
   };

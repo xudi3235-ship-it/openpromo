@@ -61,7 +61,7 @@ const MAX_SEARCH_RESULTS = 60;
 const MAX_SUGGESTIONS = 20;
 const MIN_QUERY_LENGTH = 2;
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
+const CACHE_TTL_SECONDS = 365 * 24 * 60 * 60; // 1 year
 const CACHE_KEY_PREFIX = "hashtag:";
 const CACHE_VERSION = 1;
 
@@ -88,7 +88,7 @@ export interface HashtagCacheAdapter {
 class KvHashtagCache implements HashtagCacheAdapter {
   private getNamespace(): KVNamespace | null {
     try {
-      return Binding.use().HashtagSearchCache;
+      return Binding.use().KV;
     } catch {
       return null;
     }
