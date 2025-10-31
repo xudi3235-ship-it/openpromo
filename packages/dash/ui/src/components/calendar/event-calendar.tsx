@@ -40,6 +40,7 @@ import {
   MonthView,
   WeekCellsHeight,
 } from "@/components/calendar";
+import { ContentFilters } from "@/components/content/content-filters";
 import { useCalendarDragUpdate } from "@/hooks/calendar/useCalendarDragUpdate";
 import { Route as CalendarRoute } from "@/routes/_authenticated/workspaces/$workspaceSlug/calendar";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
@@ -58,6 +59,11 @@ export interface EventCalendarProps {
   currentDate?: Date;
   onDateChange?: (date: Date) => void;
   onViewChange?: (view: CalendarView) => void;
+  filters?: { platform?: string; publishingStatus?: string };
+  onFiltersChange?: (filters: {
+    platform?: string;
+    publishingStatus?: string;
+  }) => void;
 }
 
 export function ContentCalendar({
@@ -69,6 +75,8 @@ export function ContentCalendar({
   currentDate: externalCurrentDate,
   onDateChange,
   onViewChange,
+  filters = {},
+  onFiltersChange,
 }: EventCalendarProps) {
   const [internalCurrentDate, setInternalCurrentDate] = useState(new Date());
   const currentDate = externalCurrentDate ?? internalCurrentDate;
@@ -292,7 +300,7 @@ export function ContentCalendar({
       }
     >
       <CalendarDndProvider onEventUpdate={handleEventUpdate}>
-        <header className="px-4 pt-4 pb-1">
+        <header className="px-4 pt-4 pb-3">
           <div className="flex flex-col gap-0.5">
             <h1 className="text-lg font-semibold text-foreground">Calendar</h1>
             <p className="text-xs text-muted-foreground">
@@ -300,87 +308,104 @@ export function ContentCalendar({
             </p>
           </div>
         </header>
-        <div className="flex items-center justify-between px-4 pb-3 gap-2">
-          <div className="flex items-center gap-0.5 sm:gap-2">
-            {/* View Toggle - Week/Month */}
-            <ToggleGroup
-              type="single"
-              value={view}
-              onValueChange={(value) => {
-                if (value && (value === "week" || value === "month")) {
-                  setView(value);
-                }
-              }}
-              className="border rounded-md"
-            >
-              <ToggleGroupItem
-                value="week"
-                aria-label="Week view"
-                className="px-2 py-1 text-xs"
-              >
-                <Calendar className="w-3.5 h-3.5 mr-1" />
-                Week
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="month"
-                aria-label="Month view"
-                className="px-2 py-1 text-xs"
-              >
-                <CalendarCheck className="w-3.5 h-3.5 mr-1" />
-                Month
-              </ToggleGroupItem>
-            </ToggleGroup>
 
-            <Button
-              variant="outline"
-              size="sm"
-              className="max-[479px]:aspect-square max-[479px]:p-0!"
-              onClick={handleToday}
-            >
-              <CalendarCheck className="min-[480px]:hidden" size={14} />
-              <span className="max-[479px]:sr-only text-xs">Today</span>
-            </Button>
-            <div className="flex items-center gap-0.5">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handlePrevious}
-                aria-label="Previous"
+        {/* Controls and Filters Row */}
+        <div className="px-4 py-3 flex flex-col gap-3 border-b border-border/50">
+          {/* View Toggle and Navigation */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-0.5 sm:gap-2">
+              {/* View Toggle - Week/Month */}
+              <ToggleGroup
+                type="single"
+                value={view}
+                onValueChange={(value) => {
+                  if (value && (value === "week" || value === "month")) {
+                    setView(value);
+                  }
+                }}
+                className="border rounded-md"
               >
-                <ChevronLeftIcon size={14} aria-hidden="true" />
+                <ToggleGroupItem
+                  value="week"
+                  aria-label="Week view"
+                  className="px-2 py-1 text-xs"
+                >
+                  <Calendar className="w-3.5 h-3.5 mr-1" />
+                  Week
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="month"
+                  aria-label="Month view"
+                  className="px-2 py-1 text-xs"
+                >
+                  <CalendarCheck className="w-3.5 h-3.5 mr-1" />
+                  Month
+                </ToggleGroupItem>
+              </ToggleGroup>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="max-[479px]:aspect-square max-[479px]:p-0!"
+                onClick={handleToday}
+              >
+                <CalendarCheck className="min-[480px]:hidden" size={14} />
+                <span className="max-[479px]:sr-only text-xs">Today</span>
               </Button>
+              <div className="flex items-center gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handlePrevious}
+                  aria-label="Previous"
+                >
+                  <ChevronLeftIcon size={14} aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleNext}
+                  aria-label="Next"
+                >
+                  <ChevronRightIcon size={14} aria-hidden="true" />
+                </Button>
+              </div>
+              <h2 className="text-xs font-semibold sm:text-sm md:text-base truncate">
+                {viewTitle}
+              </h2>
+            </div>
+            <div className="flex items-center gap-1">
               <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleNext}
-                aria-label="Next"
+                className="max-[479px]:aspect-square max-[479px]:p-0!"
+                size="sm"
+                onClick={() => {
+                  setSelectedEvent(null); // Ensure we're creating a new event
+                  openDialog();
+                }}
               >
-                <ChevronRightIcon size={14} aria-hidden="true" />
+                <PlusIcon
+                  className="opacity-60 sm:-ms-0.5"
+                  size={14}
+                  aria-hidden="true"
+                />
+                <span className="max-sm:sr-only text-xs">Create Post</span>
               </Button>
             </div>
-            <h2 className="text-xs font-semibold sm:text-sm md:text-base truncate">
-              {viewTitle}
-            </h2>
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              className="max-[479px]:aspect-square max-[479px]:p-0!"
-              size="sm"
-              onClick={() => {
-                setSelectedEvent(null); // Ensure we're creating a new event
-                openDialog();
-              }}
-            >
-              <PlusIcon
-                className="opacity-60 sm:-ms-0.5"
-                size={14}
-                aria-hidden="true"
-              />
-              <span className="max-sm:sr-only text-xs">Create Post</span>
-            </Button>
-          </div>
+
+          {/* Filters */}
+          <ContentFilters
+            filters={{
+              platform: filters?.platform,
+              publishingStatus: filters?.publishingStatus,
+            }}
+            onFiltersChange={(newFilters) => {
+              onFiltersChange?.(newFilters);
+            }}
+            showDateFilter={false}
+          />
         </div>
 
         <div className="flex flex-1 flex-col min-h-0 p-3 pt-0!">

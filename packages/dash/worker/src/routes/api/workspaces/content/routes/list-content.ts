@@ -38,7 +38,7 @@ const listContentQuerySchema = z.object({
     .optional()
     .default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
-  platform: z.enum(["facebook", "instagram", "tiktok"]).optional(),
+  platform: z.enum(["FACEBOOK", "INSTAGRAM", "TIKTOK"]).optional(),
 });
 
 export type ListContentQueryParams = z.infer<typeof listContentQuerySchema>;
@@ -73,9 +73,9 @@ export const listContentRoute = new Hono<ApiEnv>().get(
     // Filter by platform
     if (platform) {
       const placementPrefix: Record<string, string> = {
-        facebook: "FB_",
-        instagram: "IG_",
-        tiktok: "TT_",
+        FACEBOOK: "FB_",
+        INSTAGRAM: "IG_",
+        TIKTOK: "TT_",
       };
       const prefix = placementPrefix[platform];
       if (prefix) {

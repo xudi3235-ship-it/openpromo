@@ -161,7 +161,17 @@ function ConversationListItem({
           workspaceSlug: workspaceSlug ?? "",
           conversationId: conversation.id,
         }}
-        search={(prev) => prev}
+        search={(prev) => ({
+          channel: prev.channel as "dm" | "post_comment" | "all" | undefined,
+          platform: prev.platform as
+            | "FACEBOOK"
+            | "INSTAGRAM"
+            | "TIKTOK"
+            | "all"
+            | undefined,
+          q: prev.q,
+          unread: prev.unread,
+        })}
         className={cn(
           "block w-full rounded-md border border-transparent p-2 text-left transition-colors",
           isSelected

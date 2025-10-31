@@ -21,6 +21,7 @@ export interface ContentFilters {
 interface ContentFiltersProps {
   filters: ContentFilters;
   onFiltersChange: (filters: ContentFilters) => void;
+  showDateFilter?: boolean;
 }
 
 const PUBLISHING_STATUS_OPTIONS: Array<{
@@ -59,6 +60,7 @@ const PLATFORM_OPTIONS: Array<{
 export function ContentFilters({
   filters,
   onFiltersChange,
+  showDateFilter = true,
 }: ContentFiltersProps) {
   const hasActiveFilters = Boolean(
     filters.publishingStatus || filters.dateRange?.from || filters.platform,
@@ -144,15 +146,19 @@ export function ContentFilters({
       </div>
 
       {/* Date Range Filter */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-muted-foreground">Date:</span>
-        <DateRangePicker
-          date={filters.dateRange}
-          onDateChange={updateDateRange}
-          placeholder="Select date range..."
-          className="w-64"
-        />
-      </div>
+      {showDateFilter && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">
+            Date:
+          </span>
+          <DateRangePicker
+            date={filters.dateRange}
+            onDateChange={updateDateRange}
+            placeholder="Select date range..."
+            className="w-64"
+          />
+        </div>
+      )}
 
       {/* Clear Filters */}
       {hasActiveFilters && (

@@ -14,6 +14,8 @@ import { prefetchContentList, useContentListQuery } from "@/queries/content";
 const calendarSearchSchema = z.object({
   view: z.enum(CalendarViews).catch("week"),
   date: z.string().optional(), // YYYY-MM-DD format
+  platform: z.enum(["FACEBOOK", "INSTAGRAM", "TIKTOK"]).optional(),
+  publishingStatus: z.string().optional(), // DRAFT, SCHEDULED, PUBLISHED
 });
 
 export const Route = createFileRoute(
@@ -23,6 +25,8 @@ export const Route = createFileRoute(
   loaderDeps: ({ search }) => ({
     view: search.view,
     date: search.date,
+    platform: search.platform,
+    publishingStatus: search.publishingStatus,
   }),
   loader: async ({ params, context, deps }) => {
     // Parse the date from URL or use today
@@ -41,13 +45,30 @@ export const Route = createFileRoute(
       sortOrder: "desc",
       fromDate,
       toDate,
+      platform: deps.platform as
+        | "FACEBOOK"
+        | "INSTAGRAM"
+        | "TIKTOK"
+        | undefined,
+      publishingStatus: deps.publishingStatus as
+        | "DRAFT"
+        | "SCHEDULED"
+        | "PUBLISHED"
+        | "FAILED_TO_PUBLISH"
+        | "PUBLISH_NOW"
+        | undefined,
     });
   },
   component: CalendarPage,
 });
 
 export default function CalendarPage() {
-  const { view, date: dateParam } = Route.useSearch();
+  const {
+    view,
+    date: dateParam,
+    platform,
+    publishingStatus,
+  } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -64,6 +85,14 @@ export default function CalendarPage() {
     sortOrder: "desc",
     fromDate,
     toDate,
+    platform: platform as "FACEBOOK" | "INSTAGRAM" | "TIKTOK" | undefined,
+    publishingStatus: publishingStatus as
+      | "DRAFT"
+      | "SCHEDULED"
+      | "PUBLISHED"
+      | "FAILED_TO_PUBLISH"
+      | "PUBLISH_NOW"
+      | undefined,
   });
 
   const [events, setEvents] = useState<MergedContentEntity[]>([]);
@@ -95,6 +124,26 @@ export default function CalendarPage() {
       search: {
         view,
         date: formattedDate,
+        platform,
+        publishingStatus,
+      },
+    });
+  };
+
+  const handleFiltersChange = (filters: {
+    platform?: string;
+    publishingStatus?: string;
+  }) => {
+    navigate({
+      search: {
+        view,
+        date: dateParam,
+        platform: filters.platform as
+          | "FACEBOOK"
+          | "INSTAGRAM"
+          | "TIKTOK"
+          | undefined,
+        publishingStatus: filters.publishingStatus,
       },
     });
   };
@@ -111,6 +160,8 @@ export default function CalendarPage() {
       onEventDelete={handleEventDelete}
       currentDate={pageDate}
       onDateChange={handleDateChange}
+      filters={{ platform, publishingStatus }}
+      onFiltersChange={handleFiltersChange}
     />
   );
 }
