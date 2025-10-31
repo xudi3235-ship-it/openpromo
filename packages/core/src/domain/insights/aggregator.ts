@@ -1,3 +1,4 @@
+import { computeUnreadStatus } from "@core/domain/inbox/unread-helper";
 import { and, db, desc, eq, inArray, sql } from "@core/helpers/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
 import { connectedAccountMetricsSnapshotTable } from "@core/schemas/connected-account-metrics.sql";
@@ -8,10 +9,6 @@ import {
   unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
-import {
-  inboxMessageStateTable,
-  inboxMessageStatusEnum,
-} from "@core/schemas/inbox-message-state.sql";
 import { inboxMessagesTable } from "@core/schemas/inbox-messages.sql";
 import type { AllPlatforms } from "@shared/content";
 import {
@@ -321,6 +318,10 @@ export class WorkspaceInsightsAggregator {
     const responseRows = await db()
       .select({
         conversationId: inboxConversationsTable.id,
+        lastMessageAt: inboxConversationsTable.lastMessageAt,
+        metadata: inboxConversationsTable.metadata,
+        platform: inboxConversationsTable.platform,
+        channel: inboxConversationsTable.channel,
         firstUserMessageAt: sql<Date | null>`
           MIN(CASE WHEN ${inboxMessagesTable.sender} = 'user'::sender THEN ${inboxMessagesTable.createdAt} END)
         `,
@@ -338,7 +339,13 @@ export class WorkspaceInsightsAggregator {
         eq(inboxMessagesTable.inboxConversationId, inboxConversationsTable.id),
       )
       .where(eq(connectedAccount.workspaceId, workspaceId))
-      .groupBy(inboxConversationsTable.id);
+      .groupBy(
+        inboxConversationsTable.id,
+        inboxConversationsTable.lastMessageAt,
+        inboxConversationsTable.metadata,
+        inboxConversationsTable.platform,
+        inboxConversationsTable.channel,
+      );
 
     const conversationsWithUserMessages = responseRows.filter(
       (row) => row.firstUserMessageAt instanceof Date,
@@ -374,27 +381,25 @@ export class WorkspaceInsightsAggregator {
 
     const inboundTotal = Number(totalInboundMessages ?? 0);
 
-    const [{ count: openMessages } = { count: 0 }] = await db()
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(inboxMessageStateTable)
-      .where(
-        and(
-          eq(inboxMessageStateTable.workspaceId, workspaceId),
-          eq(
-            inboxMessageStateTable.status,
-            inboxMessageStatusEnum.enumValues[0] ?? "open",
-          ),
-        ),
-      );
+    // Calculate unread conversations using computeUnreadStatus
+    const unreadConversations = responseRows.filter((row) => {
+      const { isUnread } = computeUnreadStatus({
+        lastMessageAt: row.lastMessageAt,
+        metadata: row.metadata,
+        platform: row.platform,
+        channel: row.channel,
+      });
+      return isUnread;
+    });
 
-    const openTotal = Number(openMessages ?? 0);
+    const unreadTotal = unreadConversations.length;
 
     return InboxSummarySchema.parse({
       totalConversations: responseRows.length,
       conversationsWithUserMessages: conversationsWithUserMessages.length,
       conversationsWithResponses: conversationsWithResponses.length,
       totalInboundMessages: inboundTotal,
-      openMessages: openTotal,
+      openMessages: unreadTotal,
       responseRate,
       averageFirstResponseMinutes,
     });

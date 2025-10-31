@@ -54,11 +54,11 @@ export const Route = createFileRoute(
       },
     );
   },
-  component: WorkspaceIndex,
+  component: WorkspaceHomePage,
   pendingComponent: WorkspaceLoading,
 });
 
-function WorkspaceIndex() {
+function WorkspaceHomePage() {
   const { workspaceSlug } = Route.useParams();
   const { accounts, isLoading: accountsLoading } = useConnectedAccounts();
   const { data: summary, isLoading: summaryLoading } =
