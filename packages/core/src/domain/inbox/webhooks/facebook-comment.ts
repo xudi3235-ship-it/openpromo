@@ -59,9 +59,33 @@ async function processCommentEvent(
   const externalThreadId = isTopLevel ? comment_id : parent_id;
 
   // Resolve or create conversation
-  const content = await UnifiedContent.getBySourceContentId(post_id, {
+  let content = await UnifiedContent.getBySourceContentId(post_id, {
     skipWorkspaceCheck: true,
   });
+
+  // Backfill content if not found
+  if (!content && post_id) {
+    console.info("[FB comments][media] backfilling unified content", {
+      accountId: account.id,
+      postId: post_id,
+    });
+    const backfilledContent = await UnifiedContent.fromFacebookPost(post_id, {
+      accessToken: account.encryptedAccessToken,
+      connectedAccountId: account.id,
+      workspaceId: account.workspaceId,
+      pageId: account.externalAccountId,
+    }).catch((error) => {
+      console.error("[FB comments][media] failed to backfill", {
+        accountId: account.id,
+        postId: post_id,
+        error,
+      });
+      return null;
+    });
+    if (backfilledContent) {
+      content = backfilledContent;
+    }
+  }
 
   const conversation = await resolveConversation(
     externalThreadId,

@@ -1,3 +1,9 @@
+import { facebookGraphRequest } from "@core/domain/content/entity/facebook/api";
+import {
+  FACEBOOK_POST_DEFAULT_METRICS,
+  FacebookPostMetricsFetcher,
+  facebookPostMetricsToUnifiedContentMetrics,
+} from "@core/domain/content/entity/facebook/postMetrics";
 import { instagramGraphRequest } from "@core/domain/content/entity/instagram/api";
 import {
   INSTAGRAM_MEDIA_DEFAULT_METRICS,
@@ -7,13 +13,14 @@ import {
 import { defineEvent } from "@core/experimental/event";
 import { and, db, eq, gt, lt, withPagination } from "@core/helpers/db";
 import {
+  type FBFeedPlacementSpec,
+  FBPlacement,
   type IGFeedPlacementSpec,
   IGPlacement,
   type SharedAttachmentSpec,
   type UnifiedContentUpdate,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
-import { NotImplementedError } from "@core/utils/error";
 import { sql } from "drizzle-orm";
 import * as z from "zod";
 import { Actor } from "../../helpers/actor";
@@ -138,11 +145,175 @@ export namespace UnifiedContent {
 
   // --------------- backfilling apis ---------------
   // for a newly connected account, we do lazy rehydration. this is primarily for some on-demand backfill use cases.
-  export async function fromFacebookPost() {
-    throw new NotImplementedError(
-      "from a published FB post, backfill a unified content record",
-    );
+  type FacebookPostResponse = {
+    id: string;
+    message?: string;
+    created_time?: string;
+    permalink_url?: string;
+    full_picture?: string;
+    status_type?: string;
+  };
+
+  export async function fromFacebookPost(
+    postId: string,
+    params: {
+      accessToken: string;
+      connectedAccountId: string;
+      workspaceId: string;
+      pageId: string;
+    },
+  ) {
+    const post = await facebookGraphRequest<FacebookPostResponse>(
+      {
+        accessToken: params.accessToken,
+        rateLimitKey: `facebook:${params.connectedAccountId}`,
+      },
+      `/${postId}`,
+      {
+        searchParams: {
+          fields: [
+            "id",
+            "message",
+            "created_time",
+            "permalink_url",
+            "full_picture",
+            "status_type",
+          ].join(","),
+        },
+      },
+    ).catch((error) => {
+      console.error("[UnifiedContent] failed to fetch facebook post", {
+        postId,
+        error,
+      });
+      return null;
+    });
+
+    if (!post?.id) {
+      return null;
+    }
+
+    const createdAt = post.created_time
+      ? new Date(post.created_time)
+      : new Date();
+    if (Number.isNaN(createdAt.getTime())) {
+      createdAt.setTime(Date.now());
+    }
+
+    let attachment: SharedAttachmentSpec | undefined;
+    if (post.full_picture) {
+      const isVideo = (post.status_type ?? "").toLowerCase().includes("video");
+      attachment = {
+        id: `${post.id}:full_picture`,
+        type: isVideo ? "video" : "photo",
+        publicUrl: post.full_picture,
+        thumbnailUrl: post.full_picture,
+        metadata: {
+          facebook: {
+            id: `${post.id}:full_picture`,
+            type: post.status_type ?? "photo",
+            source: "full_picture",
+          },
+        },
+      } satisfies SharedAttachmentSpec;
+    }
+
+    const identityMetadata: Record<string, unknown> = {};
+    if (post.permalink_url) identityMetadata.permalinkUrl = post.permalink_url;
+    if (post.status_type) identityMetadata.postType = post.status_type;
+
+    const placementSpec: FBFeedPlacementSpec = {
+      placement: FBPlacement.FB_FEED,
+      postSpec: {
+        message: post.message ?? "",
+      },
+      identity: {
+        connectedAccountID: params.connectedAccountId,
+        fbPageID: params.pageId,
+        metadata:
+          Object.keys(identityMetadata).length > 0
+            ? identityMetadata
+            : undefined,
+      },
+      attachments: attachment ? [attachment] : undefined,
+      createdAt,
+    };
+
+    // Fetch insights metrics for the post
+    const metricsFetcher = new FacebookPostMetricsFetcher();
+    let metrics = {};
+    let metricsRefreshedAt: Date | null = null;
+
+    try {
+      console.info("[UnifiedContent] backfilling insights for facebook post", {
+        postId,
+      });
+      const insightsResult = await metricsFetcher.fetch(
+        {
+          accessToken: params.accessToken,
+          rateLimitKey: `facebook:${params.connectedAccountId}`,
+        },
+        {
+          postId,
+          metrics: Array.from(FACEBOOK_POST_DEFAULT_METRICS),
+          period: "lifetime",
+        },
+      );
+      metrics = facebookPostMetricsToUnifiedContentMetrics(
+        insightsResult.metrics,
+      );
+      metricsRefreshedAt = new Date();
+      console.info("[UnifiedContent] successfully fetched facebook insights", {
+        postId,
+        metrics,
+      });
+    } catch (error) {
+      console.warn(
+        "[UnifiedContent] failed to fetch insights for facebook post",
+        {
+          postId,
+          error,
+        },
+      );
+      // Continue without metrics if insights fetch fails
+    }
+
+    const row = {
+      placement: FBPlacement.FB_FEED,
+      placementSpec,
+      publishingStatus: "PUBLISHED" as const,
+      connectedAccountId: params.connectedAccountId,
+      sourceContentId: post.id,
+      permalinkUrl: post.permalink_url ?? null,
+      workspaceId: params.workspaceId,
+      createdAt,
+      updatedAt: createdAt,
+      metrics,
+      metricsRefreshedAt,
+    } satisfies typeof unifiedContentTable.$inferInsert;
+
+    const [upserted] = await db()
+      .insert(unifiedContentTable)
+      .values(row)
+      .onConflictDoUpdate({
+        target: unifiedContentTable.sourceContentId,
+        set: {
+          placementSpec: sql`excluded.placement_spec`,
+          placement: sql`excluded.placement`,
+          connectedAccountId: sql`excluded.connected_account_id`,
+          workspaceId: sql`excluded.workspace_id`,
+          permalinkUrl: sql`excluded.permalink_url`,
+          publishingStatus: sql`excluded.publishing_status`,
+          metrics: sql`excluded.metrics`,
+          metricsRefreshedAt: sql`excluded.metrics_refreshed_at`,
+          updatedAt: sql`excluded.updated_at`,
+        },
+      })
+      .returning();
+
+    return upserted ?? null;
   }
+
   type InstagramMediaResponse = {
     id: string;
     caption?: string;
