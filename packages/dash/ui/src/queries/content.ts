@@ -170,6 +170,7 @@ export const useContentGroupQuery = (contentGroupID: string | undefined) => {
         param: { workspaceSlug: workspace.slug, id: contentGroupID! },
       }),
     enabled: !!contentGroupID,
+    disableErrorToast: true,
   });
 };
 

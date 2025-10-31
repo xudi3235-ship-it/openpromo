@@ -21,7 +21,7 @@ export default function ComposerDialog() {
     initialContentCreateData,
   } = useDialogComposerStore();
   const isOpen = mode === "dialog";
-  const { isLoading, contentGroupError } = useComposerDialogLifecycle({
+  const { isLoading, contentGroupIsError } = useComposerDialogLifecycle({
     mode,
     pendingContentGroupID,
     initialContentCreateData,
@@ -36,8 +36,6 @@ export default function ComposerDialog() {
     }
   };
 
-  const hasError = contentGroupError && pendingContentGroupID;
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeComposer()}>
       <DialogContent className="!max-w-none w-full h-[90vh] p-0 flex flex-col overflow-hidden sm:w-[95vw] md:w-[90vw] lg:w-[85vw] xl:w-[80vw] 2xl:w-[1200px]">
@@ -48,7 +46,7 @@ export default function ComposerDialog() {
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 flex overflow-hidden">
-          {hasError ? (
+          {contentGroupIsError ? (
             <ComposerErrorState onRetry={handleRetry} onClose={closeComposer} />
           ) : isLoading ? (
             <ComposerSkeleton />

@@ -31,6 +31,7 @@ export function useComposerDialogLifecycle({
     data: contentGroupData,
     isLoading: contentGroupLoading,
     error: contentGroupError,
+    isError: contentGroupIsError,
   } = useContentGroupQuery(
     shouldFetchGroup ? pendingContentGroupID : undefined,
   );
@@ -74,6 +75,7 @@ export function useComposerDialogLifecycle({
     contentGroupData,
     isLoading,
     contentGroupError,
+    contentGroupIsError,
   };
 }
 
