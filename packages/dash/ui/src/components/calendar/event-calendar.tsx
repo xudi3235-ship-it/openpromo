@@ -393,7 +393,6 @@ export function ContentCalendar({
             <div className="flex items-center gap-1">
               <Button
                 className="max-[479px]:aspect-square max-[479px]:p-0!"
-                size="sm"
                 onClick={() => {
                   setSelectedEvent(null); // Ensure we're creating a new event
                   openDialog();
@@ -401,10 +400,10 @@ export function ContentCalendar({
               >
                 <PlusIcon
                   className="opacity-60 sm:-ms-0.5"
-                  size={14}
+                  size={16}
                   aria-hidden="true"
                 />
-                <span className="max-sm:sr-only text-xs">Create Post</span>
+                <span className="max-sm:sr-only">Create Post</span>
               </Button>
             </div>
           </div>
