@@ -232,7 +232,7 @@ export function DynamicWeekView({
   };
 
   return (
-    <div data-slot="dynamic-week-view" className="flex h-full flex-col">
+    <div data-slot="dynamic-week-view" className="flex w-full flex-col">
       {/* Header with day names */}
       <div className="bg-background/80 border-border/70 sticky top-0 z-30 grid grid-cols-7 border-b backdrop-blur-md">
         {days.map((day) => (
@@ -263,7 +263,7 @@ export function DynamicWeekView({
       </div>
 
       {/* Dynamic day columns */}
-      <div className="flex-1 grid grid-cols-7 overflow-hidden">
+      <div className="grid grid-cols-7">
         {dayEvents.map(({ day, events: eventsForDay }) => (
           <div
             key={day.toString()}
@@ -277,14 +277,14 @@ export function DynamicWeekView({
               id={`day-${day.toISOString()}`}
               date={day}
               className={cn(
-                "relative flex-1 p-2 min-h-0 transition-colors",
+                "relative p-2 transition-colors",
                 isCreatableDay(day)
                   ? "cursor-pointer hover:bg-accent/10"
                   : "cursor-not-allowed opacity-80",
               )}
               onClick={(event) => handleCreateEvent(day, event)}
             >
-              <div className="space-y-2 h-full">
+              <div className="space-y-2">
                 {/* Events list */}
                 {eventsForDay.map((event) => {
                   const eventData = getEventData(event);

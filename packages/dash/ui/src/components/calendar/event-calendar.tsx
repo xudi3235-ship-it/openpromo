@@ -300,7 +300,7 @@ export function ContentCalendar({
       }
     >
       <CalendarDndProvider onEventUpdate={handleEventUpdate}>
-        <header className="px-4 pt-4 pb-3">
+        <header className="px-4 pt-4 pb-3 flex-shrink-0">
           <div className="flex flex-col gap-0.5">
             <h1 className="text-lg font-semibold text-foreground">Calendar</h1>
             <p className="text-xs text-muted-foreground">
@@ -310,7 +310,7 @@ export function ContentCalendar({
         </header>
 
         {/* Controls and Filters Row */}
-        <div className="px-4 py-3 flex flex-col gap-3 border-b border-border/50">
+        <div className="px-4 py-3 flex flex-col gap-3 border-b border-border/50 flex-shrink-0">
           {/* View Toggle and Navigation */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-0.5 sm:gap-2">
@@ -408,24 +408,26 @@ export function ContentCalendar({
           />
         </div>
 
-        <div className="flex flex-1 flex-col min-h-0 p-3 pt-0!">
-          {view === "month" && (
-            <MonthView
-              currentDate={currentDate}
-              events={events}
-              onEventSelect={handleEventSelect}
-              onEventCreate={handleEventCreate}
-            />
-          )}
-          {view === "week" && (
-            <DynamicWeekView
-              currentDate={currentDate}
-              events={events}
-              onEventSelect={handleEventSelect}
-              onEventCreate={handleEventCreate}
-              onEventDelete={handleEventDelete}
-            />
-          )}
+        <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 p-3 pt-0! overflow-auto">
+            {view === "month" && (
+              <MonthView
+                currentDate={currentDate}
+                events={events}
+                onEventSelect={handleEventSelect}
+                onEventCreate={handleEventCreate}
+              />
+            )}
+            {view === "week" && (
+              <DynamicWeekView
+                currentDate={currentDate}
+                events={events}
+                onEventSelect={handleEventSelect}
+                onEventCreate={handleEventCreate}
+                onEventDelete={handleEventDelete}
+              />
+            )}
+          </div>
         </div>
 
         <EventDialog

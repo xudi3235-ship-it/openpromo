@@ -174,8 +174,8 @@ export function MonthView({
   };
 
   return (
-    <div data-slot="month-view" className="contents">
-      <div className="border-border/70 grid grid-cols-7 border-b sticky top-0 z-40 bg-background backdrop-blur-sm">
+    <div data-slot="month-view" className="flex flex-col h-full w-full">
+      <div className="border-border/70 grid grid-cols-7 border-b sticky top-0 z-40 bg-background backdrop-blur-sm flex-shrink-0">
         {weekdays.map((day) => (
           <div
             key={day}
@@ -185,12 +185,7 @@ export function MonthView({
           </div>
         ))}
       </div>
-      <div
-        className="grid flex-1 auto-rows-fr min-h-0"
-        style={{
-          gridTemplateRows: "repeat(auto-fit, minmax(140px, 1fr))",
-        }}
-      >
+      <div className="grid flex-1 min-h-0 auto-rows-fr">
         {weeks.map((week, weekIndex) => (
           <div
             key={`week-${
@@ -211,13 +206,14 @@ export function MonthView({
               return (
                 <div
                   key={day.toString()}
-                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 border-r border-b last:border-r-0 overflow-hidden flex flex-col min-h-[140px] relative"
+                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 border-r border-b last:border-r-0 overflow-hidden flex flex-col relative"
                   data-today={isToday(day) || undefined}
                   data-outside-cell={!isCurrentMonth || undefined}
                 >
                   <DroppableCell
                     id={cellId}
                     date={day}
+                    className="flex flex-col h-full"
                     onClick={() => {
                       const startTime = new Date(day);
                       startTime.setHours(DefaultStartHour, 0, 0);
@@ -225,10 +221,10 @@ export function MonthView({
                     }}
                   >
                     {/* Day number - sticky at top, overlays events on scroll */}
-                    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
-                      <div className="relative h-6">
+                    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm flex-shrink-0">
+                      <div className="relative h-7">
                         {/* Default state - show date */}
-                        <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-0.5 inline-flex size-5 items-center justify-center rounded-full text-xs font-medium shrink-0 group-hover:opacity-0 transition-opacity">
+                        <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 items-center justify-center rounded-full text-sm font-medium shrink-0 group-hover:opacity-0 transition-opacity">
                           {format(day, "d")}
                         </div>
 
@@ -242,16 +238,16 @@ export function MonthView({
                               startTime.setHours(DefaultStartHour, 0, 0);
                               onEventCreate(startTime);
                             }}
-                            className="absolute inset-0 opacity-0 group-hover:opacity-100 w-full h-6 border border-dashed border-primary/30 bg-primary/5 rounded flex items-center justify-center text-primary/80 text-xs hover:border-primary/50 hover:bg-primary/10 transition-all font-medium"
+                            className="absolute inset-0 opacity-0 group-hover:opacity-100 w-full h-7 border border-dashed border-primary/30 bg-primary/5 rounded flex items-center justify-center text-primary/80 text-xs hover:border-primary/50 hover:bg-primary/10 transition-all font-medium"
                           >
-                            <span className="truncate text-[10px]">
+                            <span className="truncate text-[11px]">
                               {isToday(day) ? "Create Post" : "Schedule Post"}
                             </span>
                           </button>
                         )}
                       </div>
                     </div>
-                    <div className="flex-1 min-h-0 space-y-0.5 overflow-y-auto">
+                    <div className="flex-1 min-h-0 space-y-1 overflow-y-auto py-1">
                       {/* Render day events with limit and more button */}
                       {renderDayEvents(allDayEvents, day)}
                     </div>

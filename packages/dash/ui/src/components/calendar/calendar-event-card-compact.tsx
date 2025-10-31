@@ -107,16 +107,16 @@ export function CalendarEventCardCompact({
         <button
           type="button"
           className={cn(
-            "w-full bg-background border border-border rounded-md px-0.5 py-0.5 text-xs",
+            "w-full bg-background border border-border rounded-md px-1 py-1 text-xs",
             "cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden text-left",
-            "flex items-center gap-0.5 group relative h-6",
+            "flex items-center gap-1 group relative h-8",
             className,
           )}
           onClick={onClick}
         >
           {/* Thumbnail - small square */}
           {thumbnailSrc && (
-            <div className="w-6 h-6 flex-shrink-0 rounded overflow-hidden">
+            <div className="w-7 h-7 flex-shrink-0 rounded overflow-hidden">
               <img
                 src={thumbnailSrc}
                 alt="thumbnail"
@@ -127,14 +127,14 @@ export function CalendarEventCardCompact({
 
           {/* Title - truncated */}
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-foreground truncate text-[10px] leading-tight">
+            <div className="font-medium text-foreground truncate text-[11px] leading-tight">
               {displayText}
             </div>
           </div>
 
           {/* Platform icon - small */}
           {platformIcon && (
-            <div className="w-2.5 h-2.5 flex-shrink-0 opacity-70">
+            <div className="w-3 h-3 flex-shrink-0 opacity-70">
               {platformIcon}
             </div>
           )}
@@ -156,9 +156,9 @@ export function CalendarEventCardCompact({
         <button
           type="button"
           className={cn(
-            "w-full bg-background border border-border rounded-md px-0.5 py-0.5 text-xs",
+            "w-full bg-background border border-border rounded-md px-1 py-1 text-xs",
             "cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden text-left",
-            "flex items-center gap-0.5 group relative h-6",
+            "flex items-center gap-1 group relative h-8",
             className,
           )}
           onClick={onClick}
@@ -168,14 +168,14 @@ export function CalendarEventCardCompact({
             {platforms.slice(0, 2).map((platform) => {
               const platformIcon = getPlatformIcon(platform);
               return platformIcon ? (
-                <div key={platform} className="w-2.5 h-2.5 opacity-70">
+                <div key={platform} className="w-3 h-3 opacity-70">
                   {platformIcon}
                 </div>
               ) : null;
             })}
             {platforms.length > 2 && (
-              <div className="w-2 h-2 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-[6px] font-semibold text-muted-foreground leading-none">
+              <div className="w-2.5 h-2.5 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-[7px] font-semibold text-muted-foreground leading-none">
                   +
                 </span>
               </div>
@@ -184,7 +184,7 @@ export function CalendarEventCardCompact({
 
           {/* Title with post count - truncated */}
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-foreground truncate text-[10px] leading-tight">
+            <div className="font-medium text-foreground truncate text-[11px] leading-tight">
               {eventData.title}
             </div>
           </div>
