@@ -1,4 +1,3 @@
-import type { ProductSelectType } from "@core/schemas/product.sql";
 import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
 import {
@@ -8,27 +7,22 @@ import {
 import { LayoutGrid, Plus, Search, Table } from "lucide-react";
 import * as React from "react";
 import { useDebounceCallback } from "usehooks-ts";
-import { useProductListQuery } from "@/queries/product";
 import { CreateProductModal } from "./create-product-modal";
-import { ProductCard } from "./product-card";
-import { ProductsEmptyState } from "./products-empty-state";
-import { ProductsLoadingState } from "./products-loading-state";
-import { ProductTablePage } from "./table-view/ProductTablePage";
-
-type ViewMode = "grid" | "table";
+import { ProductGridView } from "./grid-view/ProductGridView";
+import { ProductTableView } from "./table-view/ProductTableView";
+import { useProductFilters } from "./use-product-filters";
 
 /**
- * ProductListPage - Displays grid of products with search and filters
+ * ProductListPage - Main products page with view switching
  * Route: /workspaces/:workspaceSlug/products
  */
 export function ProductListPage() {
-  const [searchValue, setSearchValue] = React.useState("");
-  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const { filters, setSearch, setView } = useProductFilters();
+  const [searchValue, setSearchValue] = React.useState(filters.search || "");
   const [createModalOpen, setCreateModalOpen] = React.useState(false);
-  const [viewMode, setViewMode] = React.useState<ViewMode>("grid");
 
   const updateDebouncedSearch = useDebounceCallback((value: string) => {
-    setDebouncedSearch(value.trim());
+    setSearch(value.trim() || undefined);
   }, 400);
 
   React.useEffect(() => {
@@ -38,32 +32,10 @@ export function ProductListPage() {
     };
   }, [searchValue, updateDebouncedSearch]);
 
-  const { data, isLoading, error } = useProductListQuery({
-    search: debouncedSearch || undefined,
-  });
-
-  const products = data?.products ?? [];
-  const hasFilters = Boolean(debouncedSearch);
-
-  // If table view is selected, render the table view component
-  if (viewMode === "table") {
-    return <ProductTablePage />;
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Failed to load products
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {error instanceof Error ? error.message : "Unknown error"}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Sync URL search param to local input value on mount/navigation
+  React.useEffect(() => {
+    setSearchValue(filters.search || "");
+  }, [filters.search]);
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -96,9 +68,9 @@ export function ProductListPage() {
         </div>
         <ToggleGroup
           type="single"
-          value={viewMode}
+          value={filters.view}
           onValueChange={(value) => {
-            if (value) setViewMode(value as ViewMode);
+            if (value) setView(value as "grid" | "table");
           }}
         >
           <ToggleGroupItem value="grid" aria-label="Grid view">
@@ -111,23 +83,10 @@ export function ProductListPage() {
       </div>
 
       {/* Content */}
-      {isLoading ? (
-        <ProductsLoadingState />
-      ) : products.length === 0 ? (
-        <ProductsEmptyState
-          hasFilters={hasFilters}
-          onAddProduct={() => setCreateModalOpen(true)}
-        />
+      {filters.view === "table" ? (
+        <ProductTableView onAddProduct={() => setCreateModalOpen(true)} />
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              // TODO: bad idea, need to fix the types here
-              product={product as unknown as ProductSelectType}
-            />
-          ))}
-        </div>
+        <ProductGridView onAddProduct={() => setCreateModalOpen(true)} />
       )}
 
       <CreateProductModal

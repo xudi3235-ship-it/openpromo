@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { useProductListQuery } from "@/queries/product";
 import { CreateProductModal } from "../create-product-modal";
+import { useProductFilters } from "../use-product-filters";
 import { columns } from "./columns";
 import { ProductTableBody } from "./product-table-body";
 import { ProductTableFooter } from "./product-table-footer";
@@ -22,6 +23,7 @@ import { ProductTableLayout } from "./product-table-layout";
  * Alternative view to the card-based ProductListPage
  */
 export function ProductTablePage() {
+  const { filters, setSearch } = useProductFilters();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -30,12 +32,11 @@ export function ProductTablePage() {
     pageIndex: 0,
     pageSize: 10,
   });
-  const [searchValue, setSearchValue] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchValue, setSearchValue] = useState(filters.search || "");
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const updateDebouncedSearch = useDebounceCallback((value: string) => {
-    setDebouncedSearch(value.trim());
+    setSearch(value.trim() || undefined);
   }, 400);
 
   useEffect(() => {
@@ -45,12 +46,16 @@ export function ProductTablePage() {
     };
   }, [searchValue, updateDebouncedSearch]);
 
+  // Sync URL search param to local input value on mount/navigation
+  useEffect(() => {
+    setSearchValue(filters.search || "");
+  }, [filters.search]);
+
   const { data, isLoading, error } = useProductListQuery({
-    search: debouncedSearch || undefined,
+    search: filters.search || undefined,
   });
 
   const products = (data?.products ?? []) as unknown as ProductSelectType[];
-  const hasFilters = Boolean(debouncedSearch);
 
   const table = useReactTable({
     data: products,
@@ -107,7 +112,7 @@ export function ProductTablePage() {
       <ProductTableBody
         table={table}
         isLoading={isLoading}
-        hasFilters={hasFilters}
+        hasFilters={Boolean(filters.search)}
         onAddProduct={() => setCreateModalOpen(true)}
       />
 
