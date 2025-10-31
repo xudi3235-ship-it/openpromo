@@ -1,31 +1,65 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import { format, parse } from "date-fns";
 import { useState } from "react";
 import * as z from "zod";
 import { CalendarSkeleton, EventCalendar } from "@/components/calendar";
 import { CalendarViews } from "@/components/calendar/types";
-import { useCalendarDateRange } from "@/hooks/calendar/useCalendarDateRange";
-import { useContentListQuery } from "@/queries/content";
+import {
+  getCalendarDateRange,
+  useCalendarDateRange,
+} from "@/hooks/calendar/useCalendarDateRange";
+import { prefetchContentList, useContentListQuery } from "@/queries/content";
 
 const calendarSearchSchema = z.object({
   view: z.enum(CalendarViews).catch("week"),
+  date: z.string().optional(), // YYYY-MM-DD format
 });
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/calendar",
 )({
   validateSearch: calendarSearchSchema,
+  loaderDeps: ({ search }) => ({
+    view: search.view,
+    date: search.date,
+  }),
+  loader: async ({ params, context, deps }) => {
+    // Parse the date from URL or use today
+    const currentDate = deps.date
+      ? parse(deps.date, "yyyy-MM-dd", new Date())
+      : new Date();
+
+    // Calculate date range from current date and view
+    const { fromDate, toDate } = getCalendarDateRange(currentDate, deps.view);
+
+    // Prefetch content list for calendar
+    prefetchContentList(context.queryClient, params.workspaceSlug, {
+      page: 1,
+      pageSize: 100,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+      fromDate,
+      toDate,
+    });
+  },
   component: CalendarPage,
 });
 
 export default function CalendarPage() {
-  const { view } = Route.useSearch();
+  const { view, date: dateParam } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { fromDate, toDate } = useCalendarDateRange(currentDate, view);
+
+  // Use date from URL if provided, otherwise use internal state
+  const pageDate = dateParam
+    ? parse(dateParam, "yyyy-MM-dd", new Date())
+    : currentDate;
+  const { fromDate, toDate } = useCalendarDateRange(pageDate, view);
 
   const { data, isLoading } = useContentListQuery({
     page: 1,
-    pageSize: 100,
+    pageSize: 500,
     sortBy: "createdAt",
     sortOrder: "desc",
     fromDate,
@@ -53,6 +87,18 @@ export default function CalendarPage() {
     setEvents(events.filter((event) => String(event.entity.id) !== eventId));
   };
 
+  const handleDateChange = (newDate: Date) => {
+    setCurrentDate(newDate);
+    // Format date as YYYY-MM-DD for URL
+    const formattedDate = format(newDate, "yyyy-MM-dd");
+    navigate({
+      search: {
+        view,
+        date: formattedDate,
+      },
+    });
+  };
+
   if (isLoading) {
     return <CalendarSkeleton />;
   }
@@ -63,8 +109,8 @@ export default function CalendarPage() {
       onEventAdd={handleEventAdd}
       onEventUpdate={handleEventUpdate}
       onEventDelete={handleEventDelete}
-      currentDate={currentDate}
-      onDateChange={setCurrentDate}
+      currentDate={pageDate}
+      onDateChange={handleDateChange}
     />
   );
 }

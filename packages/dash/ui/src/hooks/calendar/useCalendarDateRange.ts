@@ -8,6 +8,29 @@ export interface CalendarDateRange {
 }
 
 /**
+ * Calculate the date range for calendar views without hooks
+ * - Week view: fetches only the current week (7 days)
+ * - Month view: fetches only the current month (~30 days)
+ */
+export function getCalendarDateRange(
+  currentDate: Date,
+  view: CalendarView,
+): CalendarDateRange {
+  if (view === "week") {
+    return {
+      fromDate: startOfWeek(currentDate, { weekStartsOn: 0 }),
+      toDate: endOfWeek(currentDate, { weekStartsOn: 0 }),
+    };
+  } else {
+    // month view
+    return {
+      fromDate: startOfMonth(currentDate),
+      toDate: endOfMonth(currentDate),
+    };
+  }
+}
+
+/**
  * Calculate the date range for calendar views to optimize data fetching
  * - Week view: fetches only the current week (7 days)
  * - Month view: fetches only the current month (~30 days)
@@ -16,18 +39,8 @@ export function useCalendarDateRange(
   currentDate: Date,
   view: CalendarView,
 ): CalendarDateRange {
-  return useMemo(() => {
-    if (view === "week") {
-      return {
-        fromDate: startOfWeek(currentDate, { weekStartsOn: 0 }),
-        toDate: endOfWeek(currentDate, { weekStartsOn: 0 }),
-      };
-    } else {
-      // month view
-      return {
-        fromDate: startOfMonth(currentDate),
-        toDate: endOfMonth(currentDate),
-      };
-    }
-  }, [currentDate, view]);
+  return useMemo(
+    () => getCalendarDateRange(currentDate, view),
+    [currentDate, view],
+  );
 }
