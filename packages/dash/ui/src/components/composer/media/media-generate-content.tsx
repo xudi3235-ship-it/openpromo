@@ -16,7 +16,7 @@ import { Spinner } from "@openpromo/ui/components/spinner";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { cn } from "@openpromo/ui/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
-import { Camera, ChevronDown, Palette } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { RiAiGenerate } from "react-icons/ri";
 import { toast } from "sonner";
@@ -29,41 +29,12 @@ import { useComposerStore } from "@/stores/composer-store";
 import { MEDIA_CONFIG } from "./media-section-config";
 import { MediaSectionGallery } from "./media-section-gallery";
 
-type GenerationMode = "studio" | "style";
-
-interface ModeButtonProps {
-  active: boolean;
-  onClick: () => void;
-  icon: typeof Camera;
-  label: string;
-}
-
-function ModeButton({ active, onClick, icon: Icon, label }: ModeButtonProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-        active
-          ? "bg-muted text-foreground"
-          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-      )}
-    >
-      <Icon className="h-4 w-4" />
-      {label}
-    </button>
-  );
-}
-
 /**
  * MediaGenerateContent - Minimal, flat UI for generating product images
- * Optimized for one-click usage with smart defaults
+ * Optimized for one-click usage - just pick a product and optionally a style
  */
 export function MediaGenerateContent() {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
-  const [generationMode, setGenerationMode] =
-    useState<GenerationMode>("studio");
   const [selectedStyleId, setSelectedStyleId] = useState<string>("");
   const [batchCount, setBatchCount] = useState<number>(1);
   const [prompt, setPrompt] = useState<string>("");
@@ -124,28 +95,22 @@ export function MediaGenerateContent() {
     0,
   );
 
-  const canGenerate =
-    selectedProductId &&
-    (generationMode === "studio" ||
-      (generationMode === "style" &&
-        (selectedStyleId || referenceImageUrl.trim())));
+  // Automatically determine mode based on whether style is provided
+  const hasStyle = selectedStyleId || referenceImageUrl.trim();
+  const mode = hasStyle ? "style" : "studio";
+
+  const canGenerate = !!selectedProductId;
 
   const handleGenerate = () => {
     if (!canGenerate) return;
 
     generateMutation.mutate({
       productId: selectedProductId,
-      styleId:
-        generationMode === "style" && selectedStyleId
-          ? selectedStyleId
-          : undefined,
-      mode: generationMode,
+      styleId: selectedStyleId || undefined,
+      mode,
       batchCount,
       prompt: prompt.trim() || undefined,
-      referenceImageUrl:
-        generationMode === "style" && referenceImageUrl.trim()
-          ? referenceImageUrl.trim()
-          : undefined,
+      referenceImageUrl: referenceImageUrl.trim() || undefined,
     });
   };
 
@@ -253,104 +218,75 @@ export function MediaGenerateContent() {
           </Select>
         </div>
 
-        {/* Mode Toggle */}
+        {/* Style Selection - Optional, generates studio shots if empty */}
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">
-            Mode
+          <label
+            htmlFor="style-select"
+            className="text-xs font-medium text-muted-foreground"
+          >
+            Style
+            <span className="font-normal ml-1 text-muted-foreground/70">
+              (optional - leave empty for clean studio shots)
+            </span>
           </label>
-          <div className="flex gap-2">
-            <ModeButton
-              active={generationMode === "studio"}
-              onClick={() => setGenerationMode("studio")}
-              icon={Camera}
-              label="Studio"
-            />
-            <ModeButton
-              active={generationMode === "style"}
-              onClick={() => setGenerationMode("style")}
-              icon={Palette}
-              label="Styled"
-            />
-          </div>
-        </div>
-
-        {/* Style Selection - Only visible in style mode */}
-        {generationMode === "style" && (
-          <div className="space-y-1.5">
-            <label
-              htmlFor="style-select"
-              className="text-xs font-medium text-muted-foreground"
-            >
-              Style
-              <span className="font-normal ml-1">
-                {referenceImageUrl.trim()
-                  ? "(optional if reference URL provided)"
-                  : "(required)"}
-              </span>
-            </label>
-            <Select
-              value={selectedStyleId}
-              onValueChange={setSelectedStyleId}
-              disabled={isLoadingStyles}
-            >
-              <SelectTrigger id="style-select" className="w-full">
-                <SelectValue placeholder="Select a style...">
-                  {selectedStyleId &&
-                    (() => {
-                      const style = styles.find(
-                        (s) => s.id === selectedStyleId,
-                      );
-                      if (!style) return null;
-                      const imageUrl = getStyleImage(style);
-                      return (
-                        <div className="flex items-center gap-2">
-                          {imageUrl ? (
-                            <img
-                              src={imageUrl}
-                              alt={style.name || style.id}
-                              className="w-5 h-5 object-cover rounded"
-                            />
-                          ) : (
-                            <div className="w-5 h-5 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                              ?
-                            </div>
-                          )}
-                          <span className="text-sm truncate">
-                            {style.name || style.id}
-                          </span>
-                        </div>
-                      );
-                    })()}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {styles.map((style) => {
-                  const imageUrl = getStyleImage(style);
-                  return (
-                    <SelectItem key={style.id} value={style.id}>
+          <Select
+            value={selectedStyleId}
+            onValueChange={setSelectedStyleId}
+            disabled={isLoadingStyles}
+          >
+            <SelectTrigger id="style-select" className="w-full">
+              <SelectValue placeholder="Select a style...">
+                {selectedStyleId &&
+                  (() => {
+                    const style = styles.find((s) => s.id === selectedStyleId);
+                    if (!style) return null;
+                    const imageUrl = getStyleImage(style);
+                    return (
                       <div className="flex items-center gap-2">
                         {imageUrl ? (
                           <img
                             src={imageUrl}
                             alt={style.name || style.id}
-                            className="w-6 h-6 object-cover rounded"
+                            className="w-5 h-5 object-cover rounded"
                           />
                         ) : (
-                          <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                          <div className="w-5 h-5 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
                             ?
                           </div>
                         )}
-                        <span className="text-sm">
+                        <span className="text-sm truncate">
                           {style.name || style.id}
                         </span>
                       </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+                    );
+                  })()}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {styles.map((style) => {
+                const imageUrl = getStyleImage(style);
+                return (
+                  <SelectItem key={style.id} value={style.id}>
+                    <div className="flex items-center gap-2">
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={style.name || style.id}
+                          className="w-6 h-6 object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                          ?
+                        </div>
+                      )}
+                      <span className="text-sm">{style.name || style.id}</span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Generate Button */}
         <Button
@@ -391,30 +327,26 @@ export function MediaGenerateContent() {
             Advanced options
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-3 space-y-3">
-            {/* Reference Image URL - Only in style mode */}
-            {generationMode === "style" && (
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="reference-url-input"
-                  className="text-xs font-medium text-muted-foreground"
-                >
-                  Reference Image URL
-                  <span className="font-normal ml-1">
-                    {selectedStyleId
-                      ? "(optional if style selected)"
-                      : "(required)"}
-                  </span>
-                </label>
-                <Textarea
-                  id="reference-url-input"
-                  value={referenceImageUrl}
-                  onChange={(e) => setReferenceImageUrl(e.target.value)}
-                  placeholder="Paste reference image URL..."
-                  rows={2}
-                  className="resize-none font-mono text-xs"
-                />
-              </div>
-            )}
+            {/* Reference Image URL */}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="reference-url-input"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Reference Image URL
+                <span className="font-normal ml-1 text-muted-foreground/70">
+                  (optional)
+                </span>
+              </label>
+              <Textarea
+                id="reference-url-input"
+                value={referenceImageUrl}
+                onChange={(e) => setReferenceImageUrl(e.target.value)}
+                placeholder="Paste reference image URL..."
+                rows={2}
+                className="resize-none font-mono text-xs"
+              />
+            </div>
 
             {/* Batch Count */}
             <div className="space-y-2">

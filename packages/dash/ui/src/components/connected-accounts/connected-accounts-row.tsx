@@ -263,7 +263,7 @@ function AddButton({
         <PlatformAvatarBadge platform={platform} isBusiness={isBusiness} />
       </motion.button>
 
-      <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
         {isConnecting ? "Connecting..." : `Add ${displayLabel}`}
       </div>
     </motion.div>
