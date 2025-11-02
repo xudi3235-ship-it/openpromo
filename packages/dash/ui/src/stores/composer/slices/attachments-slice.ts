@@ -26,6 +26,7 @@ const cloneAttachments = (attachments: SharedAttachmentSpec[]) =>
 
 export const createAttachmentsSlice: ComposerSlice<{
   addAttachments: (files: File[]) => void;
+  addAttachmentSpecs: (specs: SharedAttachmentSpec[]) => void;
   removeAttachment: (index: number) => void;
   updateAttachment: (
     index: number,
@@ -53,6 +54,30 @@ export const createAttachmentsSlice: ComposerSlice<{
       }));
 
       state.contentCreateData.base.attachments?.push(...newAttachments);
+
+      const baseAttachments = [
+        ...(state.contentCreateData.base.attachments ?? []),
+      ];
+
+      syncToNonCustomizedPlacements(state, {
+        facebook: (spec) => {
+          spec.attachments = baseAttachments;
+        },
+        instagram: (spec) => {
+          spec.attachments = baseAttachments;
+        },
+        tiktok: (spec) => {
+          spec.attachments = baseAttachments;
+        },
+      });
+
+      recalculateValidation(state);
+      rebuildPlacementsFromRegistry(state);
+    }),
+  addAttachmentSpecs: (specs) =>
+    set((state) => {
+      // Directly add pre-built attachment specs (e.g., from generated images)
+      state.contentCreateData.base.attachments?.push(...specs);
 
       const baseAttachments = [
         ...(state.contentCreateData.base.attachments ?? []),

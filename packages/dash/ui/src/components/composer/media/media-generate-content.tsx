@@ -80,10 +80,35 @@ export function MediaGenerateContent() {
     page: "1",
   });
 
-  const generateMutation = useProductImageGenerateMutation(() => {
+  const generateMutation = useProductImageGenerateMutation((response) => {
     queryClient.invalidateQueries({ queryKey: ["image-gen-list"] });
-    toast.success("Image generated and added to composer");
-    // TODO: Add generated images to composer attachments
+
+    // Extract image URLs and generation IDs from response
+    const generatedImages = response.results
+      .filter((result) => result.imageUrl)
+      .map((result) => ({
+        url: result.imageUrl,
+        id: result.generation.id,
+      }));
+
+    if (generatedImages.length > 0) {
+      // Create attachment specs directly from the generated image URLs
+      const newAttachmentSpecs = generatedImages.map((img) => ({
+        id: img.id,
+        type: "photo" as const,
+        publicUrl: img.url,
+        thumbnailUrl: img.url,
+        mimeType: "image/jpeg",
+        s3Key: img.id,
+      }));
+
+      // Use the store's addAttachmentSpecs method to properly sync
+      useComposerStore.getState().addAttachmentSpecs(newAttachmentSpecs);
+
+      toast.success(
+        `${generatedImages.length} image${generatedImages.length === 1 ? "" : "s"} generated and added`,
+      );
+    }
   });
 
   const products = productsData?.products || [];

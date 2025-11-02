@@ -83,6 +83,7 @@ export interface ComposerActions {
   toggleAccountSelection: (accountId: string) => void;
   setActiveAccount: (accountId: string | null) => void;
   addAttachments: (files: File[]) => void;
+  addAttachmentSpecs: (specs: SharedAttachmentSpec[]) => void;
   removeAttachment: (index: number) => void;
   updateAttachment: (
     index: number,
