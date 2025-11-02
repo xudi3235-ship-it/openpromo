@@ -335,14 +335,17 @@ export function ConnectedAccountsRow({
               label="TikTok"
               isBusiness={false}
             />
-            <AddButton
-              platform="TIKTOK"
-              onClick={handleConnectTikTokBusiness}
-              isConnecting={isConnecting}
-              mouseX={mouseX}
-              label="TikTok Business"
-              isBusiness={true}
-            />
+            {/* TikTok Business - Feature in development */}
+            {false && (
+              <AddButton
+                platform="TIKTOK"
+                onClick={handleConnectTikTokBusiness}
+                isConnecting={isConnecting}
+                mouseX={mouseX}
+                label="TikTok Business"
+                isBusiness={true}
+              />
+            )}
           </>
         )}
       </motion.div>
@@ -624,14 +627,17 @@ export function ComposerAccountsRow({
               label="TikTok"
               isBusiness={false}
             />
-            <AddButton
-              platform="TIKTOK"
-              onClick={handleConnectTikTokBusiness}
-              isConnecting={isConnectingTikTokBusiness}
-              mouseX={staticMouseX}
-              label="TikTok Business"
-              isBusiness={true}
-            />
+            {/* TikTok Business - Feature in development */}
+            {false && (
+              <AddButton
+                platform="TIKTOK"
+                onClick={handleConnectTikTokBusiness}
+                isConnecting={isConnectingTikTokBusiness}
+                mouseX={staticMouseX}
+                label="TikTok Business"
+                isBusiness={true}
+              />
+            )}
           </>
         )}
       </div>
