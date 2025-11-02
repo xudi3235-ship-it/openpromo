@@ -1,6 +1,6 @@
+import { db, eq } from "@core/database/db";
 import { Actor } from "@core/helpers/actor";
 import { Binding } from "@core/helpers/api-env";
-import { db, eq } from "@core/helpers/db";
 import type { JobQueueMessage } from "@core/queues/job-queue";
 import { workspacesTable } from "@core/schemas/workspaces.sql";
 import { Log } from "@core/utils/log";

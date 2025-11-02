@@ -1,4 +1,4 @@
-import { id, timestamps } from "@core/helpers/db";
+import { id, timestamps } from "@core/database/types";
 import type { SharedAttachmentSpec } from "@shared/content";
 import {
   type ProductImageVariants,

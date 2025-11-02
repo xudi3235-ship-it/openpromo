@@ -1,6 +1,6 @@
+import { getDbClient } from "@core/database/db";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import { Actor } from "@core/helpers/actor";
-import { getDbClient } from "@core/helpers/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
 import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
 import {

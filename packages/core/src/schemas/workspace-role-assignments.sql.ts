@@ -1,4 +1,4 @@
-import { id, timestamps, ulid } from "@core/helpers/db";
+import { id, timestamps, ulid } from "@core/database/types";
 import { index, pgEnum, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 import { workspaceRolesTable } from "./workspace-roles.sql";
 import { workspaceID } from "./workspaces.sql";

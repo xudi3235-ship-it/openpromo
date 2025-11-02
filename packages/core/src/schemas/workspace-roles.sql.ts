@@ -1,4 +1,4 @@
-import { id, timestamps } from "@core/helpers/db";
+import { id, timestamps } from "@core/database/types";
 import { pgEnum, pgTable, text } from "drizzle-orm/pg-core";
 
 export const workspaceRoleTypes = pgEnum("workspace_role_types", [

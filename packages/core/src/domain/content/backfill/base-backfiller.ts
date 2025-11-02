@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { and, db, eq, inArray } from "@core/database/db";
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
-import { and, db, eq, inArray } from "@core/helpers/db";
 import { Storage } from "@core/helpers/storage";
 import type { ConnectedAccountSelect } from "@core/schemas/connected-account.sql";
 import {

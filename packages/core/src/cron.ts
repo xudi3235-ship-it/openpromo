@@ -1,5 +1,5 @@
+import { db } from "./database/db";
 import { type ApiEnv, Binding } from "./helpers/api-env";
-import { db } from "./helpers/db";
 import type { JobQueueMessage } from "./queues/job-queue";
 import { workspacesTable } from "./schemas/workspaces.sql";
 import { Log } from "./utils/log";

@@ -1,4 +1,4 @@
-import { id, timestamp } from "@core/helpers/db";
+import { id, timestamp } from "@core/database/types";
 import {
   bigint,
   index,

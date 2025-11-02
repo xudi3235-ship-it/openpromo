@@ -1,3 +1,4 @@
+import { and, db, eq, gt, inArray } from "@core/database/db";
 import { connectedAccountRefresher } from "@core/domain/connected-account";
 import {
   ContentMetricsRefresher,
@@ -6,7 +7,6 @@ import {
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Binding } from "@core/helpers/api-env";
-import { and, db, eq, gt, inArray } from "@core/helpers/db";
 import { unifiedContentTable } from "@core/schemas/content.sql";
 import { workspacesTable } from "@core/schemas/workspaces.sql";
 import { Log } from "@core/utils/log";

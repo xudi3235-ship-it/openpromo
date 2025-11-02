@@ -1,9 +1,9 @@
+import { db } from "@core/database/db";
 import { instagramOAuthService } from "@core/domain/connected-account";
 import { UnifiedContent } from "@core/domain/content/unified-content";
 import { InboxService } from "@core/domain/inbox";
 import { appendChannelExtra } from "@core/domain/inbox/message-metadata";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
-import { db } from "@core/helpers/db";
 import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
 import type { IGCommentPayloadType, InboxMessageMetadata } from "@shared/inbox";
 import { IGCommentPayload, InboxRealtimeEventTypes } from "@shared/inbox";

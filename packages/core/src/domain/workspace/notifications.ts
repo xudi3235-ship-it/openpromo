@@ -1,6 +1,6 @@
+import { db } from "@core/database/db";
 import { Event } from "@core/experimental/bus/def";
 import { Binding } from "@core/helpers/api-env";
-import { db } from "@core/helpers/db";
 import { workspacesTable } from "@core/schemas/workspaces.sql";
 import { Log } from "@core/utils/log";
 import type { WorkspaceNotification } from "@shared/workspace/notifications";

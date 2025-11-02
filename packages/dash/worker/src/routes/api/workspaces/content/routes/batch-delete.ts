@@ -2,11 +2,11 @@ import { EntUnifiedContent } from "@core/domain/content/entity/EntUnifiedContent
 import { EntPendingContentGroup } from "@core/domain/content/entity/index";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
-import { db } from "@core/helpers/db/db";
 import {
   pendingContentGroupTable,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
+import { db } from "@openpromo/core/database/db";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";

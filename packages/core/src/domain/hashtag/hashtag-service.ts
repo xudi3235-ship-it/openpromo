@@ -1,5 +1,5 @@
+import { db } from "@core/database/db";
 import { Binding } from "@core/helpers/api-env";
-import { db } from "@core/helpers/db";
 import { hashtagSnapshotTable } from "@core/schemas/hashtag.sql";
 import { env } from "@core/utils/env";
 import { Log } from "@core/utils/log";

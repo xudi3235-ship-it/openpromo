@@ -3,7 +3,9 @@ import { env } from "@core/utils/env";
 import { Log } from "@core/utils/log";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { createContext } from "../../utils/context";
+import { createContext } from "../utils/context";
+
+export * from "drizzle-orm";
 
 const log = Log.create({ namespace: "drizzle" });
 

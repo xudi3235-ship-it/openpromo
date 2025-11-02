@@ -1,3 +1,4 @@
+import { db } from "@core/database/db";
 import { InboxService } from "@core/domain/inbox";
 import {
   appendChannelExtra,
@@ -5,7 +6,6 @@ import {
   upsertReactionMetadata,
 } from "@core/domain/inbox/message-metadata";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
-import { db } from "@core/helpers/db";
 import {
   type InboxChannel,
   inboxConversationsTable,

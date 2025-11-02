@@ -1,5 +1,5 @@
-import type { DbClient } from "@core/helpers/db";
-import { getDbClient } from "@core/helpers/db";
+import type { DbClient } from "@core/database/db";
+import { getDbClient } from "@core/database/db";
 import { workspaceInvitesTable } from "@openpromo/core/schemas/workspace-invites.sql";
 import { workspaceRoleAssignmentsTable } from "@openpromo/core/schemas/workspace-role-assignments.sql";
 import { workspaceRolesTable } from "@openpromo/core/schemas/workspace-roles.sql";

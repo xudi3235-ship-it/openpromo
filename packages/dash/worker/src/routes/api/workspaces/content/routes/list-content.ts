@@ -1,10 +1,10 @@
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
-import { db } from "@core/helpers/db/db";
 import {
   pendingContentGroupTable,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
+import { db } from "@openpromo/core/database/db";
 import { and, asc, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";

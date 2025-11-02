@@ -1,4 +1,4 @@
-import { id, timestamps } from "@core/helpers/db";
+import { id, timestamps } from "@core/database/types";
 import { pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable(

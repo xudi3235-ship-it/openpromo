@@ -1,4 +1,4 @@
-import { and, db, eq } from "@core/helpers/db";
+import { and, db, eq } from "@core/database/db";
 import type { Platform } from "@core/schemas/connected-account.sql";
 import { inboxContactsTable } from "@core/schemas/inbox-contacts.sql";
 import {

@@ -1,6 +1,6 @@
+import { db } from "@core/database/db";
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import { TikTokContentMetricsProvider } from "@core/domain/content/metrics/providers";
-import { db } from "@core/helpers/db";
 import type { ConnectedAccountSelect } from "@core/schemas/connected-account.sql";
 import {
   type SharedAttachmentSpec,

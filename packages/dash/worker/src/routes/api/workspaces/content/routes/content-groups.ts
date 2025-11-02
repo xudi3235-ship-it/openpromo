@@ -1,12 +1,12 @@
 import { EntPendingContentGroup } from "@core/domain/content/entity/index";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
-import { db } from "@core/helpers/db/db";
 import type { ContentPublishingStatus } from "@core/schemas/content.sql";
 import {
   pendingContentGroupTable,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
+import { db } from "@openpromo/core/database/db";
 import type {
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,

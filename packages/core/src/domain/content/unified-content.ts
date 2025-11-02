@@ -1,3 +1,5 @@
+import { and, db, eq, gt, lt } from "@core/database/db";
+import { withPagination } from "@core/database/query";
 import { facebookGraphRequest } from "@core/domain/content/entity/facebook/api";
 import {
   FACEBOOK_POST_DEFAULT_METRICS,
@@ -11,7 +13,6 @@ import {
   instagramMediaMetricsToUnifiedContentMetrics,
 } from "@core/domain/content/entity/instagram/mediaInsights";
 import { defineEvent } from "@core/experimental/event";
-import { and, db, eq, gt, lt, withPagination } from "@core/helpers/db";
 import {
   type FBFeedPlacementSpec,
   FBPlacement,

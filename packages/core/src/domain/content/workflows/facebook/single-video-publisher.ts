@@ -1,6 +1,6 @@
+import { and, db, eq } from "@core/database/db";
 import { EntFBFeedPendingContent } from "@core/domain/content/entity";
 import { Actor } from "@core/helpers/actor";
-import { and, db, eq } from "@core/helpers/db";
 import type {
   CoreWorkflowContext,
   CoreWorkflowStep,

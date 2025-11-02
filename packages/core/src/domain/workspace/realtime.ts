@@ -1,5 +1,5 @@
+import { db } from "@core/database/db";
 import { Binding } from "@core/helpers/api-env";
-import { db } from "@core/helpers/db";
 import { workspacesTable } from "@core/schemas/workspaces.sql";
 import { Log } from "@core/utils/log";
 import type { WorkspaceEvent } from "@shared/workspace";

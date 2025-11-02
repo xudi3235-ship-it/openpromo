@@ -1,8 +1,8 @@
+import { and, db, eq } from "@core/database/db";
 import {
   type ContentMetricsAnalyticsPoint,
   writeContentMetricsAnalytics,
 } from "@core/domain/insights/analytics-engine";
-import { and, db, eq } from "@core/helpers/db";
 import {
   ContentMetricsGranularity,
   contentMetricsSnapshotTable,

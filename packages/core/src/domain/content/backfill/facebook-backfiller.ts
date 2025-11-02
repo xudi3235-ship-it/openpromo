@@ -1,10 +1,10 @@
+import { db } from "@core/database/db";
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import {
   type FacebookIdentityContext,
   facebookGraphRequest,
 } from "@core/domain/content/entity/facebook/api";
 import { FacebookContentMetricsProvider } from "@core/domain/content/metrics/providers";
-import { db } from "@core/helpers/db";
 import type { ConnectedAccountSelect } from "@core/schemas/connected-account.sql";
 import {
   type FBFeedPlacementSpec as FBFeedPlacementSpecType,

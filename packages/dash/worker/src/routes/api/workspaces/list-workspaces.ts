@@ -1,5 +1,5 @@
+import { getDbClient } from "@core/database/db";
 import type { ApiEnv } from "@core/helpers/api-env";
-import { getDbClient } from "@core/helpers/db";
 import { workspaceRoleAssignmentsTable } from "@core/schemas/workspace-role-assignments.sql";
 import { workspacesTable } from "@core/schemas/workspaces.sql";
 import { ORGANIZATION_ROLE } from "@shared/workspace/auth";

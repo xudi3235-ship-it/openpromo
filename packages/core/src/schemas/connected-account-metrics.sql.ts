@@ -1,4 +1,4 @@
-import { id, timestamp, timestamps } from "@core/helpers/db";
+import { id, timestamp, timestamps } from "@core/database/types";
 import { AllPlatformsZod } from "@shared/content";
 import { index, integer, jsonb, pgTable } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";

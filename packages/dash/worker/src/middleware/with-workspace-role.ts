@@ -1,6 +1,6 @@
+import { getDbClient } from "@core/database/db";
 import { Actor } from "@openpromo/core/helpers/actor";
 import type { ApiEnv } from "@openpromo/core/helpers/api-env";
-import { getDbClient } from "@openpromo/core/helpers/db/index";
 import {
   type Workspace,
   workspacesTable,

@@ -2,7 +2,7 @@
 // Style components
 // ---------------------------------------------------------------------------
 
-import { id, timestamps } from "@core/helpers/db";
+import { id, timestamps } from "@core/database/types";
 import { StyleState } from "@shared/style";
 import {
   boolean,

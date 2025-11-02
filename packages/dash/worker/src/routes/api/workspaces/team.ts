@@ -1,6 +1,6 @@
+import { getDbClient } from "@core/database/db";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
-import { getDbClient } from "@core/helpers/db";
 import { getWorkOS } from "@core/providers/workos";
 import { workspaceInvitesTable } from "@core/schemas/workspace-invites.sql";
 import { workspaceRoleAssignmentsTable } from "@core/schemas/workspace-role-assignments.sql";

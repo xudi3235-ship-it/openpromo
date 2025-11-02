@@ -1,4 +1,4 @@
-import type { DbClient } from "@core/helpers/db";
+import type { DbClient } from "@core/database/db";
 import { usersTable } from "@core/schemas/users.sql";
 import { env } from "@core/utils/env";
 import { eq } from "drizzle-orm";

@@ -1,4 +1,4 @@
-import { id, timestamps, ulid } from "@core/helpers/db";
+import { id, timestamps, ulid } from "@core/database/types";
 import { unifiedContentTable } from "@core/schemas/content.sql";
 import type {
   AllMessageAttachmentTypes,

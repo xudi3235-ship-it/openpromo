@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { db } from "@core/helpers/db";
+import { db } from "@core/database/db";
 import { Storage } from "@core/helpers/storage";
 import {
   type ConnectedAccountSelect,

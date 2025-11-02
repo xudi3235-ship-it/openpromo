@@ -1,5 +1,5 @@
+import { eq, getDbClient } from "@core/database/db";
 import type { ApiEnv } from "@core/helpers/api-env";
-import { eq, getDbClient } from "@core/helpers/db";
 import { usersTable } from "@core/schemas/users.sql";
 import { Hono } from "hono";
 import * as z from "zod";

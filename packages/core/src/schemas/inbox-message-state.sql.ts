@@ -1,4 +1,4 @@
-import { id, timestamps, ulid } from "@core/helpers/db";
+import { id, timestamps, ulid } from "@core/database/types";
 import { workspaceID } from "@core/schemas/workspaces.sql";
 import { jsonb, pgEnum, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 import { inboxMessagesTable } from "./inbox-messages.sql";

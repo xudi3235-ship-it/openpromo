@@ -1,6 +1,6 @@
+import { getDbClient } from "@core/database/db";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
-import { getDbClient } from "@core/helpers/db";
 import { workspacesTable } from "@core/schemas/workspaces.sql";
 import { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import { eq } from "drizzle-orm";

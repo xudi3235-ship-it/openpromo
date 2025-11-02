@@ -1,5 +1,5 @@
+import { and, db, desc, eq, inArray, sql } from "@core/database/db";
 import { computeUnreadStatus } from "@core/domain/inbox/unread-helper";
-import { and, db, desc, eq, inArray, sql } from "@core/helpers/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
 import { connectedAccountMetricsSnapshotTable } from "@core/schemas/connected-account-metrics.sql";
 import {

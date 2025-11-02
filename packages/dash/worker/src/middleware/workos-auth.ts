@@ -1,4 +1,4 @@
-import { getDbClient } from "@core/helpers/db";
+import { getDbClient } from "@core/database/db";
 import { ensureUserInEnvironment } from "@core/helpers/user-sync";
 import { Actor } from "@openpromo/core/helpers/actor";
 import type { ApiEnv } from "@openpromo/core/helpers/api-env";

@@ -1,3 +1,4 @@
+import { db } from "@core/database/db";
 import { facebookOAuthService } from "@core/domain/connected-account/facebook-oauth-service";
 import { InboxService } from "@core/domain/inbox";
 import {
@@ -6,7 +7,6 @@ import {
   upsertReactionMetadata,
 } from "@core/domain/inbox/message-metadata";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
-import { db } from "@core/helpers/db";
 import { Platform } from "@core/schemas/connected-account.sql";
 import type { InboxChannel } from "@core/schemas/inbox-conversations.sql";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";

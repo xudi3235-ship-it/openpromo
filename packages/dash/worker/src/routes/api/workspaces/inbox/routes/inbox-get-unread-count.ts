@@ -1,7 +1,7 @@
+import { getDbClient } from "@core/database/db";
 import { computeUnreadStatus } from "@core/domain/inbox/unread-helper";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
-import { getDbClient } from "@core/helpers/db";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
 import { eq } from "drizzle-orm";

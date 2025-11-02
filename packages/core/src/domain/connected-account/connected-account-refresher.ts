@@ -1,5 +1,5 @@
+import { db, eq } from "@core/database/db";
 import { writeInsightAnalytics } from "@core/domain/insights/analytics-engine";
-import { db, eq } from "@core/helpers/db";
 import {
   type ConnectedAccountSelect,
   connectedAccount,

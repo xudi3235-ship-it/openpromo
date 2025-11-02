@@ -1,5 +1,5 @@
+import { eq, getDbClient } from "@core/database/db";
 import type { ApiEnv } from "@core/helpers/api-env";
-import { eq, getDbClient } from "@core/helpers/db";
 import { ensureUserInEnvironment } from "@core/helpers/user-sync";
 import { getWorkOS } from "@core/providers/workos";
 import { usersTable } from "@core/schemas/users.sql";

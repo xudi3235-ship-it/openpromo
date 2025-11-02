@@ -1,4 +1,4 @@
-import { id, timestamp, timestamps, ulid } from "@core/helpers/db";
+import { id, timestamp, timestamps, ulid } from "@core/database/types";
 import { AllPlatforms } from "@shared/content";
 import {
   index,

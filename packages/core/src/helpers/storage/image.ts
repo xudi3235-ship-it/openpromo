@@ -1,5 +1,5 @@
+import { db, eq } from "@core/database/db";
 import { extractAttachmentMetadata } from "@core/domain/content/attachments/metadata";
-import { db, eq } from "@core/helpers/db";
 import { getCloudflareClient } from "@core/providers";
 import { unifiedContentTable } from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
