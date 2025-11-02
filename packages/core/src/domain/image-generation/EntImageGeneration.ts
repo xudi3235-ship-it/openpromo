@@ -200,7 +200,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
           {
             type: "input_image",
             image_url: product.data.imgVariants?.noBg as string,
-            detail: "high",
+            detail: "auto",
           },
         ],
       } as ResponseInputItem;
@@ -212,12 +212,12 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
             content: [
               {
                 type: "input_text",
-                text: `here are the refernce images`,
+                text: `here are the style refernce images`,
               },
               ...styleImageRefs.map((url) => ({
                 type: "input_image",
                 image_url: url,
-                detail: "high",
+                detail: "auto",
               })),
             ],
           },
@@ -236,7 +236,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
             {
               type: "input_image",
               image_url: params.referenceImageUrl,
-              detail: "high",
+              detail: "auto",
             },
           ],
         },
