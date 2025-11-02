@@ -1,14 +1,14 @@
 import { MediaSection } from "./media-section";
+import { MediaTabs } from "./media-tabs";
 
 /**
- * MediaUpload - Legacy component that uses the new MediaSection composition
- * Kept for backward compatibility
+ * MediaUpload - Now includes tabbed interface for Upload and Generate
  */
 export function MediaUpload() {
   return (
     <MediaSection>
       <MediaSection.Header />
-      <MediaSection.Content />
+      <MediaTabs />
       <MediaSection.Dialogs />
     </MediaSection>
   );
