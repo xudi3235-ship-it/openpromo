@@ -47,7 +47,8 @@ const IGAccountMetadata = z.object({
   permissions: z.string().array(),
   appScopedUserID: z.string().optional(),
 });
-const TikTokAccountMetadata = z.object({
+const TikTokDeveloperOAuthMetadata = z.object({
+  type: z.literal("DEVELOPER_OAUTH"),
   tiktokUserId: z.string(),
   username: z.string().optional(),
   displayName: z.string().optional(),
@@ -55,13 +56,43 @@ const TikTokAccountMetadata = z.object({
   permissions: z.string().array(),
   unionId: z.string().optional(),
 });
+
+const TikTokBusinessLoginMetadata = z.object({
+  type: z.literal("BUSINESS_LOGIN"),
+  businessAccountId: z.string(),
+  businessName: z.string().optional(),
+  profilePicUrl: z.string(),
+  permissions: z.string().array(),
+  businessType: z.string().optional(),
+  industryCategory: z.string().optional(),
+});
+
+const TikTokAccountMetadata = z.discriminatedUnion("type", [
+  TikTokDeveloperOAuthMetadata,
+  TikTokBusinessLoginMetadata,
+]);
+
 export type FBPageMetadata = z.infer<typeof FBPageMetadata>;
 export type IGAccountMetadata = z.infer<typeof IGAccountMetadata>;
+export type TikTokDeveloperOAuthMetadata = z.infer<
+  typeof TikTokDeveloperOAuthMetadata
+>;
+export type TikTokBusinessLoginMetadata = z.infer<
+  typeof TikTokBusinessLoginMetadata
+>;
 export type TikTokAccountMetadata = z.infer<typeof TikTokAccountMetadata>;
 export type ConnectedAccountMetadata =
   | FBPageMetadata
   | IGAccountMetadata
   | TikTokAccountMetadata;
+
+// TikTok auth type enum - only used when platform is TIKTOK, otherwise N/A
+export const tiktokAuthTypePgEnum = pgEnum("tiktok_auth_type", [
+  "DEVELOPER_OAUTH",
+  "BUSINESS_LOGIN",
+  "N/A", // for non-TikTok platforms
+]);
+export const TikTokAuthType = z.enum(tiktokAuthTypePgEnum.enumValues);
 
 export const connectedAccount = pgTable(
   "connected_account",
@@ -70,6 +101,7 @@ export const connectedAccount = pgTable(
     ...workspaceID,
     ...timestamps,
     platform: platformPgEnum().notNull(),
+    tiktokAuthType: tiktokAuthTypePgEnum().default("N/A").notNull(),
     externalAccountId: varchar("external_account_id", {
       length: 255,
     })
@@ -94,6 +126,7 @@ export const connectedAccount = pgTable(
   (table) => [
     index("platform_idx").on(table.platform),
     index("workspace_platform_idx").on(table.workspaceId, table.platform),
+    index("tiktok_auth_type_idx").on(table.tiktokAuthType),
     unique().on(table.workspaceId, table.externalAccountId),
     unique().on(table.platform, table.externalAccountId),
   ],
@@ -107,6 +140,7 @@ export const connectedAccountId = {
 
 const opts = {
   platform: Platform,
+  tiktokAuthType: TikTokAuthType.optional(),
   lastBackfillAt: z.date().nullable(),
   followersCount: z.number().int().nonnegative().optional(),
   followingCount: z.number().int().nonnegative().optional(),

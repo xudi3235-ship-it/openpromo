@@ -108,6 +108,30 @@ export const useTikTokOauthMutation = () => {
   });
 };
 
+export const useTikTokBusinessOauthMutation = () => {
+  const { workspace } = useWorkspace();
+  return useHonoMutation({
+    mutationFn: (api, variables: { state?: string }) =>
+      api.workspaces[":workspaceSlug"].connected_accounts[
+        "tiktok-business"
+      ].auth.$get({
+        query: { state: variables.state },
+        param: { workspaceSlug: workspace.slug },
+      }),
+    onError: (error) => {
+      toast.error(`Failed to initiate TikTok Business OAuth: ${error.message}`);
+    },
+    onSuccess({ data: { url } }) {
+      openPopup({
+        url,
+        target: "tiktok-business-oauth",
+        width: 600,
+        height: 800,
+      });
+    },
+  });
+};
+
 const useDeleteConnectedAccountMutation = () => {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
@@ -161,6 +185,7 @@ export const useOAuthWithListener = () => {
   const facebookMutation = useFacebookOauthMutation();
   const instagramMutation = useInstagramOauthMutation();
   const tikTokMutation = useTikTokOauthMutation();
+  const tikTokBusinessMutation = useTikTokBusinessOauthMutation();
   const deleteConnectedAccountMutation = useDeleteConnectedAccountMutation();
 
   const handleConnectFacebook = () => {
@@ -175,20 +200,27 @@ export const useOAuthWithListener = () => {
     tikTokMutation.mutate({});
   };
 
+  const handleConnectTikTokBusiness = () => {
+    tikTokBusinessMutation.mutate({});
+  };
+
   const isConnecting =
     facebookMutation.isPending ||
     instagramMutation.isPending ||
     tikTokMutation.isPending ||
+    tikTokBusinessMutation.isPending ||
     deleteConnectedAccountMutation.isPending;
 
   return {
     handleConnectFacebook,
     handleConnectInstagram,
     handleConnectTikTok,
+    handleConnectTikTokBusiness,
     isConnecting,
     isConnectingFacebook: facebookMutation.isPending,
     isConnectingInstagram: instagramMutation.isPending,
     isConnectingTikTok: tikTokMutation.isPending,
+    isConnectingTikTokBusiness: tikTokBusinessMutation.isPending,
     deleteConnectedAccount: deleteConnectedAccountMutation.mutate,
   };
 };

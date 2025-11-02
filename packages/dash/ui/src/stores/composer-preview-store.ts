@@ -47,6 +47,14 @@ const getAccountDisplayData = (account: ConnectedAccount) => {
     }
     case "TIKTOK": {
       const ttMeta = metadata as TikTokAccountMetadata;
+      if (ttMeta.type === "BUSINESS_LOGIN") {
+        return {
+          pageName: ttMeta?.businessName,
+          profilePicUrl: ttMeta.profilePicUrl || "",
+          username: ttMeta?.businessName,
+          platform: account.platform as Platform,
+        };
+      }
       return {
         pageName: ttMeta.username || "TikTok Account",
         profilePicUrl: ttMeta.profilePicUrl || "",

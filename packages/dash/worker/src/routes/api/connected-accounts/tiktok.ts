@@ -63,6 +63,7 @@ export const tikTokConnectedAccountRoute = new Hono<ApiEnv>().get(
         const now = new Date();
         const account = await ConnectedAccount.create({
           platform: Platform.enum.TIKTOK,
+          tiktokAuthType: "DEVELOPER_OAUTH",
           externalAccountId: authResult.id,
           accountName: authResult.name,
           externalUrl,
@@ -72,6 +73,7 @@ export const tikTokConnectedAccountRoute = new Hono<ApiEnv>().get(
           lastBackfillAt: null,
           tokenExpiresAt: new Date(Date.now() + authResult.expiresIn * 1000),
           metadata: {
+            type: "DEVELOPER_OAUTH",
             tiktokUserId: authResult.id,
             username,
             displayName: authResult.name,

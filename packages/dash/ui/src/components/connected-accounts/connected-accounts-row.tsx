@@ -197,6 +197,7 @@ interface AddButtonProps {
   onClick: () => void;
   isConnecting: boolean;
   mouseX: MotionValue<number>;
+  label?: string;
 }
 
 function AddButton({
@@ -204,9 +205,11 @@ function AddButton({
   onClick,
   isConnecting,
   mouseX,
+  label,
 }: AddButtonProps) {
   const ref = useRef<HTMLDivElement>(null);
   const meta = getPlatformMeta(platform);
+  const displayLabel = label || meta.label;
 
   const distance = useTransform(mouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
@@ -250,7 +253,7 @@ function AddButton({
       </motion.button>
 
       <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-        {isConnecting ? "Connecting..." : `Add ${meta.label}`}
+        {isConnecting ? "Connecting..." : `Add ${displayLabel}`}
       </div>
     </motion.div>
   );
@@ -268,6 +271,7 @@ export function ConnectedAccountsRow({
     handleConnectFacebook,
     handleConnectInstagram,
     handleConnectTikTok,
+    handleConnectTikTokBusiness,
     isConnecting,
   } = useOAuthWithListener();
 
@@ -317,6 +321,14 @@ export function ConnectedAccountsRow({
               onClick={handleConnectTikTok}
               isConnecting={isConnecting}
               mouseX={mouseX}
+              label="TikTok"
+            />
+            <AddButton
+              platform="TIKTOK"
+              onClick={handleConnectTikTokBusiness}
+              isConnecting={isConnecting}
+              mouseX={mouseX}
+              label="TikTok Business"
             />
           </>
         )}
@@ -533,9 +545,11 @@ export function ComposerAccountsRow({
     handleConnectFacebook,
     handleConnectInstagram,
     handleConnectTikTok,
+    handleConnectTikTokBusiness,
     isConnectingFacebook,
     isConnectingInstagram,
     isConnectingTikTok,
+    isConnectingTikTokBusiness,
   } = useOAuthWithListener();
   const canCustomize = accounts.length > 1;
   const hasActiveCustomization = canCustomize && Boolean(activeAccount);
@@ -588,6 +602,14 @@ export function ComposerAccountsRow({
               onClick={handleConnectTikTok}
               isConnecting={isConnectingTikTok}
               mouseX={staticMouseX}
+              label="TikTok"
+            />
+            <AddButton
+              platform="TIKTOK"
+              onClick={handleConnectTikTokBusiness}
+              isConnecting={isConnectingTikTokBusiness}
+              mouseX={staticMouseX}
+              label="TikTok Business"
             />
           </>
         )}
