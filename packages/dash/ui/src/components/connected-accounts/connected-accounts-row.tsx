@@ -88,6 +88,9 @@ function AccountAvatar({
   const meta = getPlatformMeta(account.platform);
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
+  const isTikTokBusiness =
+    account.platform === "TIKTOK" &&
+    account.tiktokAuthType === "BUSINESS_LOGIN";
 
   const { mutateAsync: disconnectAccount, isPending: isDisconnecting } =
     useHonoMutation({
@@ -145,7 +148,10 @@ function AccountAvatar({
           </div>
         </motion.div>
 
-        <PlatformAvatarBadge platform={account.platform} />
+        <PlatformAvatarBadge
+          platform={account.platform}
+          isBusiness={isTikTokBusiness}
+        />
 
         {/* Tooltip */}
         {showTooltip && (
@@ -153,6 +159,9 @@ function AccountAvatar({
             <div className="text-center">
               <div className="font-medium">
                 {account.accountName || account.platform}
+                {isTikTokBusiness && (
+                  <span className="ml-1 text-blue-500">(Business)</span>
+                )}
               </div>
               {account.followersCount !== null &&
                 account.followersCount !== undefined && (
@@ -198,6 +207,7 @@ interface AddButtonProps {
   isConnecting: boolean;
   mouseX: MotionValue<number>;
   label?: string;
+  isBusiness?: boolean;
 }
 
 function AddButton({
@@ -206,6 +216,7 @@ function AddButton({
   isConnecting,
   mouseX,
   label,
+  isBusiness = false,
 }: AddButtonProps) {
   const ref = useRef<HTMLDivElement>(null);
   const meta = getPlatformMeta(platform);
@@ -249,7 +260,7 @@ function AddButton({
           </div>
         </div>
 
-        <PlatformAvatarBadge platform={platform} />
+        <PlatformAvatarBadge platform={platform} isBusiness={isBusiness} />
       </motion.button>
 
       <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
@@ -322,6 +333,7 @@ export function ConnectedAccountsRow({
               isConnecting={isConnecting}
               mouseX={mouseX}
               label="TikTok"
+              isBusiness={false}
             />
             <AddButton
               platform="TIKTOK"
@@ -329,6 +341,7 @@ export function ConnectedAccountsRow({
               isConnecting={isConnecting}
               mouseX={mouseX}
               label="TikTok Business"
+              isBusiness={true}
             />
           </>
         )}
@@ -406,6 +419,9 @@ function ComposerAccountAvatar({
   const accountLabel = account.accountName || meta.label;
   const Icon = meta.icon;
   const isActive = canCustomize && active;
+  const isTikTokBusiness =
+    account.platform === "TIKTOK" &&
+    account.tiktokAuthType === "BUSINESS_LOGIN";
 
   return (
     <div
@@ -451,7 +467,10 @@ function ComposerAccountAvatar({
           </div>
         </div>
 
-        <PlatformAvatarBadge platform={account.platform} />
+        <PlatformAvatarBadge
+          platform={account.platform}
+          isBusiness={isTikTokBusiness}
+        />
 
         {selected && (
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border border-background rounded-full flex items-center justify-center">
@@ -603,6 +622,7 @@ export function ComposerAccountsRow({
               isConnecting={isConnectingTikTok}
               mouseX={staticMouseX}
               label="TikTok"
+              isBusiness={false}
             />
             <AddButton
               platform="TIKTOK"
@@ -610,6 +630,7 @@ export function ComposerAccountsRow({
               isConnecting={isConnectingTikTokBusiness}
               mouseX={staticMouseX}
               label="TikTok Business"
+              isBusiness={true}
             />
           </>
         )}

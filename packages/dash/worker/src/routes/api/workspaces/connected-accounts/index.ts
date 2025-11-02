@@ -28,7 +28,7 @@ export const connectedAccountsRoute = new Hono<ApiEnv>()
   .route("/facebook", facebookConnectedAccountRoute)
   .route("/instagram", instagramConnectedAccountRoute)
   .route("/tiktok", tikTokConnectedAccountRoute)
-  .route("/tiktok-business", tikTokBusinessConnectedAccountRoute)
+  .route("/tiktok_business", tikTokBusinessConnectedAccountRoute)
   // Delete account requires admin access
   .delete(
     "/:accountId",
