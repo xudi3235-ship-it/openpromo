@@ -60,7 +60,6 @@ export const useSidebarData = (): SidebarData => {
         {
           title: "Insights",
           url: "/workspaces/$workspaceSlug/insights",
-          badge: "3",
           icon: TrendingUp,
         },
       ],
