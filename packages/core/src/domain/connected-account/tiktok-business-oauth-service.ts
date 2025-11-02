@@ -91,7 +91,12 @@ function parseScopes(scope?: string | string[]): string[] {
     .map((value) => value.trim())
     .filter((value) => value.length > 0);
 }
-
+/**
+ * WARNING: NOT READY YET. Tiktok business messaging api requires application
+ * and we're still early in the process.
+ *
+ * i dont think we're gonna have this for MVP scope yet.
+ */
 export class TikTokBusinessOAuthService {
   private businessRedirectUri(): string {
     // TikTok for Business OAuth redirect URI
