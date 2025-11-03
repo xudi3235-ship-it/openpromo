@@ -9,7 +9,7 @@ import type { UseMutationResult } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useSharedWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
+import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import {
   type ImageGenListResponse,
   useImageGenDeleteBatchMutation,
@@ -51,7 +51,7 @@ export function GeneratedImagesGallery({
   const generations = data?.generations ?? [];
 
   // Listen for image generation updates via WebSocket
-  useSharedWorkspaceEvents({
+  useWorkspaceEvents({
     handlers: {
       "image_generation.updated": (_event) => {
         // TODO: debug this

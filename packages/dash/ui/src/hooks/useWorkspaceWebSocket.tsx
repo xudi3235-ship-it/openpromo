@@ -162,23 +162,26 @@ export function useWorkspaceWebSocket() {
 }
 
 /**
- * Type-safe hook for handling workspace events using the shared connection
+ * Type-safe hook for handling workspace events
  *
- * This is a replacement for useWorkspaceEvents that uses the context
- * instead of creating a new connection.
+ * Subscribes to real-time workspace events via WebSocket. Uses a shared connection
+ * managed by WorkspaceWebSocketProvider to avoid duplicate connections.
  *
  * @example
  * ```tsx
- * useSharedWorkspaceEvents({
+ * useWorkspaceEvents({
  *   handlers: {
  *     "style_component.updated": (event) => {
  *       console.log("Style updated:", event.styleId);
+ *     },
+ *     "image_generation.updated": (event) => {
+ *       console.log("Image generation:", event.state);
  *     }
  *   }
  * });
  * ```
  */
-export function useSharedWorkspaceEvents(options: {
+export function useWorkspaceEvents(options: {
   handlers?: {
     [K in WorkspaceEvent["type"]]?: (
       event: Extract<WorkspaceEvent, { type: K }>,

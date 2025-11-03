@@ -1,7 +1,7 @@
 import type { InboxConversationSummary } from "@shared/inbox";
 import { Outlet } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
-import { useSharedWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
+import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import { useInboxConversationsInfiniteQuery } from "@/queries/inbox/conversations";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import { useInboxStore } from "@/stores/inbox-store";
@@ -114,7 +114,7 @@ export function InboxLayout() {
     conversationsQuery.isFetching && !conversationsQuery.data;
   const conversationsFetching = conversationsQuery.isFetching;
 
-  useSharedWorkspaceEvents({
+  useWorkspaceEvents({
     handlers: {
       "inbox.conversation.upserted": (event) => {
         const existing = useInboxStore.getState().byId[event.conversationId];

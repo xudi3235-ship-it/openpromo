@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
 import { StylesInfiniteGrid } from "@/components/styles/styles-infinite-grid";
-import { useSharedWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
+import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import type { StylesListParams } from "@/queries/styles";
 import { invalidateStylesListQueries } from "@/queries/styles";
 import { StyleComposer } from "./composer";
@@ -32,9 +32,8 @@ export function StyleListPage() {
     setDebouncedSearch(value.trim() || undefined);
   }, 400);
 
-  // Listen for style component updates via the shared WebSocket connection
-  // This reuses the connection from WorkspaceWebSocketProvider (no duplicate connections)
-  useSharedWorkspaceEvents({
+  // Listen for style component updates via WebSocket
+  useWorkspaceEvents({
     handlers: {
       "style_component.updated": (event) => {
         // Invalidate styles list to refetch with updated style

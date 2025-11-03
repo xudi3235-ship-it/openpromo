@@ -31,7 +31,7 @@ const log = Log.create({ namespace: "image-generation-workflow" });
  * Behavior:
  * - Workflow is triggered via ImageGenerationWorkflow.create()
  * - Updates generation state and dispatches events at each step
- * - Clients receive real-time updates via useSharedWorkspaceEvents hook
+ * - Clients receive real-time updates via useWorkspaceEvents hook
  * - Falls back to sync generation in local development (VITE_ENVIRONMENT=local)
  */
 export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerationWorkflowParams> {

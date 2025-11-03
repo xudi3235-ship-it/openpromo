@@ -133,13 +133,13 @@ export const ImageGenerationUpdatedEventSchema = z.object({
 Add WebSocket event listener to receive real-time updates:
 
 ```tsx
-import { useSharedWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
+import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 
 export function GeneratedImagesGallery({ generateMutation, remainingSlots }: Props) {
   const { data, refetch } = useImageGenListQuery({ page: "1", pageSize: "12" });
   
   // Listen for image generation updates via WebSocket
-  useSharedWorkspaceEvents({
+  useWorkspaceEvents({
     handlers: {
       "image_generation.updated": (event) => {
         console.log("Image generation update:", event);
@@ -247,7 +247,7 @@ The card already handles different states. Ensure it shows:
 We already have all the pieces:
 
 - ✅ `WorkspaceWebSocketProvider` - Single WebSocket per workspace
-- ✅ `useSharedWorkspaceEvents` - Type-safe event handling hook
+- ✅ `useWorkspaceEvents` - Type-safe event handling hook
 - ✅ `ImageGenerationUpdatedEvent` - Event schema defined
 - ✅ `EntImageGeneration.dispatchUpdateEvent()` - Backend dispatch method
 - ✅ `dispatchWorkspaceEvent()` - Pusher integration
@@ -288,7 +288,7 @@ useEffect(() => {
 - [ ] Verify Pusher events reach clients
 
 ### Frontend
-- [x] Add `useSharedWorkspaceEvents` to `GeneratedImagesGallery`
+- [x] Add `useWorkspaceEvents` to `GeneratedImagesGallery`
 - [x] Update generate mutation to handle async response
 - [x] Add success messages for both sync/async modes
 - [ ] Test WebSocket event handling
@@ -322,7 +322,7 @@ useEffect(() => {
 - Updated workflow comments to reflect WebSocket integration
 
 **Frontend (`packages/dash/ui/src/components/composer/media/generator-dialog/progress-panel.tsx`):**
-- Added `useSharedWorkspaceEvents` hook
+- Added `useWorkspaceEvents` hook
 - Listens for `"image_generation.updated"` events
 - Refetches generation list when events received
 
