@@ -148,153 +148,159 @@ export function InputsPanel({
         className,
       )}
     >
-      <div className="space-y-1 px-4 pt-4 flex-shrink-0">
+      {/* Fixed Header */}
+      <div className="space-y-1 px-4 pt-4 pb-3 flex-shrink-0 border-b">
         <h3 className="text-sm font-medium">Configuration</h3>
         <p className="text-xs text-muted-foreground">
           Choose a product, optional style, and customize the generation run.
         </p>
       </div>
 
-      <div className="px-4 pt-4 flex-shrink-0 space-y-3">
-        {/* Product Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            id="product-search-input"
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="Search products..."
-            className="pl-9 pr-9"
-          />
-          {localSearch && (
-            <button
-              onClick={() => setLocalSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              type="button"
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="px-4 py-4 space-y-4">
+            {/* Product Search */}
+            <div className="space-y-1.5">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="product-search-input"
+                  value={localSearch}
+                  onChange={(e) => setLocalSearch(e.target.value)}
+                  placeholder="Search products..."
+                  className="pl-9 pr-9"
+                />
+                {localSearch && (
+                  <button
+                    onClick={() => setLocalSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    type="button"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Product Dropdown */}
+            <ProductSelect
+              products={products}
+              selectedProductId={selectedProductId}
+              onProductChange={setSelectedProductId}
+              isLoading={isLoadingProducts}
+            />
+
+            {/* Style Gallery with horizontal scroll */}
+            <StyleGallery
+              styles={styles}
+              selectedStyleId={selectedStyleId}
+              onStyleSelect={(styleId) =>
+                setSelectedStyleId(styleId === selectedStyleId ? "" : styleId)
+              }
+              isLoading={isLoadingStyles}
+            />
+
+            {/* Advanced Options Collapsible */}
+            <Collapsible
+              open={isAdvancedOpen}
+              onOpenChange={setIsAdvancedOpen}
+              className="space-y-2"
             >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-
-        {/* Product Dropdown */}
-        <ProductSelect
-          products={products}
-          selectedProductId={selectedProductId}
-          onProductChange={setSelectedProductId}
-          isLoading={isLoadingProducts}
-        />
-      </div>
-
-      {/* Style Gallery - Outside ScrollArea for horizontal scroll */}
-      <div className="px-4 flex-shrink-0">
-        <StyleGallery
-          styles={styles}
-          selectedStyleId={selectedStyleId}
-          onStyleSelect={(styleId) =>
-            setSelectedStyleId(styleId === selectedStyleId ? "" : styleId)
-          }
-          isLoading={isLoadingStyles}
-        />
-      </div>
-
-      <ScrollArea className="flex-1">
-        <div className="px-4 pb-4 pt-4 space-y-4">
-          {/* Advanced Options Collapsible */}
-          <Collapsible
-            open={isAdvancedOpen}
-            onOpenChange={setIsAdvancedOpen}
-            className="space-y-2"
-          >
-            <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <span>Advanced options</span>
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 transition-transform",
-                  isAdvancedOpen && "rotate-180",
-                )}
-              />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4">
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="reference-url-input"
-                  className="text-xs font-medium text-muted-foreground"
-                >
-                  Reference image URL
-                  <span className="ml-1 font-normal text-muted-foreground/70">
-                    (optional)
-                  </span>
-                </label>
-                <Textarea
-                  id="reference-url-input"
-                  value={referenceImageUrl}
-                  onChange={(event) => setReferenceImageUrl(event.target.value)}
-                  placeholder="Paste a reference image URL..."
-                  rows={2}
-                  className="resize-none font-mono text-xs"
+              <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                <span>Advanced options</span>
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 transition-transform",
+                    isAdvancedOpen && "rotate-180",
+                  )}
                 />
-              </div>
-
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="prompt-input"
-                  className="text-xs font-medium text-muted-foreground"
-                >
-                  Custom prompt
-                  <span className="ml-1 font-normal text-muted-foreground/70">
-                    (optional)
-                  </span>
-                </label>
-                <Textarea
-                  id="prompt-input"
-                  value={prompt}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  placeholder="Add additional instructions..."
-                  rows={3}
-                  className="resize-none"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Batch size
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {resolvedBatchCount}
-                  </span>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="reference-url-input"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Reference image URL
+                    <span className="ml-1 font-normal text-muted-foreground/70">
+                      (optional)
+                    </span>
+                  </label>
+                  <Textarea
+                    id="reference-url-input"
+                    value={referenceImageUrl}
+                    onChange={(event) =>
+                      setReferenceImageUrl(event.target.value)
+                    }
+                    placeholder="Paste a reference image URL..."
+                    rows={2}
+                    className="resize-none font-mono text-xs"
+                  />
                 </div>
-                <Slider
-                  value={[resolvedBatchCount]}
-                  onValueChange={(value) => setBatchCount(value[0] || 1)}
-                  min={1}
-                  max={sliderMax}
-                  step={1}
-                  disabled={availableSlots <= 0}
-                  className="w-full"
-                />
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Slots remaining: {availableSlots}</span>
-                  <span>{mode === "style" ? "Styled run" : "Studio run"}</span>
-                </div>
-                {availableSlots <= 0 && (
-                  <p className="text-xs text-destructive">
-                    Remove existing attachments to free up slots before
-                    generating more images.
-                  </p>
-                )}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
 
-          <GenerateButton
-            onClick={handleGenerate}
-            disabled={!canGenerate}
-            isGenerating={generateMutation.isPending}
-          />
-        </div>
-      </ScrollArea>
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="prompt-input"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Custom prompt
+                    <span className="ml-1 font-normal text-muted-foreground/70">
+                      (optional)
+                    </span>
+                  </label>
+                  <Textarea
+                    id="prompt-input"
+                    value={prompt}
+                    onChange={(event) => setPrompt(event.target.value)}
+                    placeholder="Add additional instructions..."
+                    rows={3}
+                    className="resize-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Batch size
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {resolvedBatchCount}
+                    </span>
+                  </div>
+                  <Slider
+                    value={[resolvedBatchCount]}
+                    onValueChange={(value) => setBatchCount(value[0] || 1)}
+                    min={1}
+                    max={sliderMax}
+                    step={1}
+                    disabled={availableSlots <= 0}
+                    className="w-full"
+                  />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Slots remaining: {availableSlots}</span>
+                    <span>
+                      {mode === "style" ? "Styled run" : "Studio run"}
+                    </span>
+                  </div>
+                  {availableSlots <= 0 && (
+                    <p className="text-xs text-destructive">
+                      Remove existing attachments to free up slots before
+                      generating more images.
+                    </p>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            <GenerateButton
+              onClick={handleGenerate}
+              disabled={!canGenerate}
+              isGenerating={generateMutation.isPending}
+            />
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 }

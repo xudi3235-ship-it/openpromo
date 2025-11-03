@@ -57,7 +57,7 @@ export function MediaGeneratorDialog({
           <DialogTitle>Create Product Image</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden px-6 pb-6">
+        <div className="flex-1 min-h-0 px-6 pb-6">
           <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-[380px_1fr]">
             <InputsPanel
               products={products}

@@ -50,108 +50,110 @@ export function StyleGallery({
   const selectedStyle = styles.find((s) => s.id === selectedStyleId);
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground">
-          Choose a style
-        </label>
+    <div className="space-y-3 flex-shrink-0">
+      <label className="text-xs font-medium text-muted-foreground block">
+        Choose a style
+      </label>
 
-        {/* Large preview of selected style */}
-        {selectedStyle && (
-          <div className="relative rounded-lg border-2 border-primary overflow-hidden bg-muted">
-            <div className="aspect-video w-full">
-              {selectedStyle.imageRefs?.[0] ? (
-                <img
-                  src={selectedStyle.imageRefs[0]}
-                  alt={selectedStyle.name || selectedStyle.id}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-sm text-muted-foreground">
-                    No preview available
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-              <p className="text-white font-medium text-sm">
-                {selectedStyle.name || selectedStyle.id}
-              </p>
-              {selectedStyle.description && (
-                <p className="text-white/80 text-xs mt-0.5 line-clamp-2">
-                  {selectedStyle.description}
-                </p>
-              )}
-            </div>
+      {/* Large preview of selected style */}
+      {selectedStyle && (
+        <div className="relative rounded-lg border-2 border-primary overflow-hidden bg-muted">
+          <div className="aspect-video w-full">
+            {selectedStyle.imageRefs?.[0] ? (
+              <img
+                src={selectedStyle.imageRefs[0]}
+                alt={selectedStyle.name || selectedStyle.id}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-sm text-muted-foreground">
+                  No preview available
+                </span>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+            <p className="text-white font-medium text-sm">
+              {selectedStyle.name || selectedStyle.id}
+            </p>
+            {selectedStyle.description && (
+              <p className="text-white/80 text-xs mt-0.5 line-clamp-2">
+                {selectedStyle.description}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       <TooltipProvider>
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-          {styles.map((style) => {
-            const imageUrl = getStyleImage(style);
-            const isSelected = selectedStyleId === style.id;
+        <div className="overflow-x-auto overflow-y-visible">
+          <div className="flex gap-2 pb-2 min-w-max">
+            {styles.map((style) => {
+              const imageUrl = getStyleImage(style);
+              const isSelected = selectedStyleId === style.id;
 
-            return (
-              <Tooltip key={style.id} delayDuration={300}>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => onStyleSelect(style.id)}
-                    className={cn(
-                      "relative flex-shrink-0 w-16 h-16 rounded-md border-2 overflow-hidden transition-all group",
-                      "hover:border-primary/50",
-                      isSelected
-                        ? "border-primary ring-2 ring-primary/20"
-                        : "border-border",
-                    )}
-                  >
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={style.name || style.id}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-muted flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">?</span>
-                      </div>
-                    )}
-                    {/* Selected indicator */}
-                    {isSelected && (
-                      <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">
-                        <svg
-                          className="w-2.5 h-2.5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  <div className="space-y-1">
-                    <p className="font-medium text-sm">
-                      {style.name || style.id}
-                    </p>
-                    {style.description && (
-                      <p className="text-xs text-muted-foreground">
-                        {style.description}
+              return (
+                <Tooltip key={style.id} delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => onStyleSelect(style.id)}
+                      className={cn(
+                        "relative flex-shrink-0 w-16 h-16 rounded-md border-2 overflow-hidden transition-all group",
+                        "hover:border-primary/50",
+                        isSelected
+                          ? "border-primary ring-2 ring-primary/20"
+                          : "border-border",
+                      )}
+                    >
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={style.name || style.id}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                          <span className="text-xs text-muted-foreground">
+                            ?
+                          </span>
+                        </div>
+                      )}
+                      {/* Selected indicator */}
+                      {isSelected && (
+                        <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">
+                          <svg
+                            className="w-2.5 h-2.5"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <div className="space-y-1">
+                      <p className="font-medium text-sm">
+                        {style.name || style.id}
                       </p>
-                    )}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
+                      {style.description && (
+                        <p className="text-xs text-muted-foreground">
+                          {style.description}
+                        </p>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
         </div>
       </TooltipProvider>
     </div>

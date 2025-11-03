@@ -241,5 +241,97 @@ When creating new features with routing and filters:
 
 
 
+## ScrollArea Layout Pattern
+
+### Proper Flex + ScrollArea Hierarchy for Dialogs and Panels
+
+When using Radix UI's `ScrollArea` component within flex containers (dialogs, side panels), follow this specific structure to ensure proper scrolling behavior.
+
+❌ **Don't do this:**
+```typescript
+// This won't scroll properly - ScrollArea needs explicit height
+<div className="flex flex-col h-full">
+  <div>Fixed Header</div>
+  <ScrollArea className="flex-1">
+    <div>Long content...</div>
+  </ScrollArea>
+</div>
+```
+
+✅ **Do this:**
+```typescript
+// Proper structure with overflow wrapper
+<div className="flex flex-col h-full overflow-hidden">
+  {/* Fixed Header */}
+  <div className="flex-shrink-0 border-b">
+    <h3>Header</h3>
+  </div>
+
+  {/* Scrollable Content Wrapper */}
+  <div className="flex-1 overflow-hidden">
+    <ScrollArea className="h-full">
+      <div className="p-4 space-y-4">
+        {/* All scrollable content */}
+        <Component1 />
+        <Component2 />
+        <Component3 />
+      </div>
+    </ScrollArea>
+  </div>
+</div>
+```
+
+**Key Requirements:**
+
+1. **Parent container**: Must have `overflow-hidden` to constrain ScrollArea
+2. **Wrapper div**: Use `flex-1 overflow-hidden` to give ScrollArea proper height constraint
+3. **ScrollArea**: Use `h-full` to fill the wrapper completely
+4. **Content div**: Place all scrollable content inside ScrollArea's viewport
+
+**For horizontal scroll within vertical ScrollArea:**
+
+```typescript
+// Component with horizontal scroll (e.g., image gallery)
+export function StyleGallery() {
+  return (
+    <div className="space-y-3 flex-shrink-0">
+      <label>Choose a style</label>
+      
+      {/* Horizontal scroll container */}
+      <div className="overflow-x-auto overflow-y-visible">
+        <div className="flex gap-2 pb-2 min-w-max">
+          {items.map(item => (
+            <button key={item.id} className="flex-shrink-0 w-16 h-16">
+              {/* Item content */}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+**Why this works:**
+
+- `flex-1` makes the wrapper take all available vertical space
+- `overflow-hidden` on both parent and wrapper ensures proper height calculation
+- `min-h-0` is implicitly applied by `flex-1`, preventing flex items from growing beyond container
+- ScrollArea's Radix Viewport component can now properly calculate scrollable height
+- Horizontal scroll uses `overflow-x-auto` on outer div with `min-w-max` on inner flex
+
+**Common mistakes:**
+
+- ❌ Missing `overflow-hidden` on parent - ScrollArea won't constrain properly
+- ❌ Applying `flex-1` directly to ScrollArea without wrapper - viewport sizing issues
+- ❌ Not using `h-full` on ScrollArea - won't fill available space
+- ❌ Using negative margins (`-mx-4`) for horizontal scroll in vertical ScrollArea - breaks layout
+
+**Example from codebase:**
+- `packages/dash/ui/src/components/composer/media/generator-dialog/inputs-panel.tsx` - Dialog panel with vertical scroll
+- `packages/dash/ui/src/components/composer/media/style-gallery.tsx` - Horizontal scroll within vertical layout
+
 ## General patterns
 1. when a state mgmt is getting complex, > 5 states, create a zustand store. refer to composer store for example.
+
+````
