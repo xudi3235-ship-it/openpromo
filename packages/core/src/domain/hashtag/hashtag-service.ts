@@ -60,8 +60,8 @@ type TikHubTikTokResponse = {
 const MAX_SEARCH_RESULTS = 60;
 const MAX_SUGGESTIONS = 20;
 const MIN_QUERY_LENGTH = 2;
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-const CACHE_TTL_SECONDS = 365 * 24 * 60 * 60; // 1 year
+const REFRESH_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days - when to refresh from providers
+const CACHE_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days - KV cache duration
 const CACHE_KEY_PREFIX = "hashtag:";
 const CACHE_VERSION = 1;
 
@@ -171,20 +171,36 @@ export class HashtagService {
       return { suggestions: [], stale: false };
     }
 
+    // Step 1: Check KV cache first for fast response
     const cached = await this.cache?.get(normalized);
     if (cached) {
-      console.log("HashtagService.search: cached", {
+      console.log("HashtagService.search: KV cache hit", {
         query,
         cached: cached.length,
       });
       return { suggestions: cached, stale: false };
     }
-    console.log("HashtagService.search: no cache found");
 
-    const refreshed = await this.refreshProviders(sanitized, normalized);
+    console.log("HashtagService.search: KV cache miss, checking DB");
+
+    // Step 2: Check if DB has fresh data (within last 7 days)
+    const isFresh = await this.hasFreshSnapshots(normalized);
+
+    // Step 3: If DB data is stale, refresh from providers
+    if (!isFresh) {
+      console.log(
+        "HashtagService.search: DB data stale, refreshing from providers",
+      );
+      await this.refreshProviders(sanitized, normalized);
+    } else {
+      console.log("HashtagService.search: DB has fresh data");
+    }
+
+    // Step 4: Get suggestions from DB (source of truth)
     const suggestions = await this.getSuggestionsFromDb(normalized);
 
-    if (this.cache) {
+    // Step 5: Store in KV cache for fast subsequent reads (30 days)
+    if (this.cache && suggestions.length > 0) {
       await this.cache
         .set(normalized, suggestions)
         .catch((error) =>
@@ -194,7 +210,7 @@ export class HashtagService {
 
     return {
       suggestions: suggestions.slice(0, MAX_SUGGESTIONS),
-      stale: !refreshed,
+      stale: !isFresh,
     };
   }
 
