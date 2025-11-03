@@ -4,15 +4,18 @@ import { immer } from "zustand/middleware/immer";
 export interface ImagePreview {
   id: string;
   url: string;
-  file: File;
+  file?: File;
+  isUrl?: boolean;
 }
 
 export interface StyleComposerState {
   images: File[];
+  imageUrls: string[];
   imagePreviews: ImagePreview[];
   isDragging: boolean;
   isUploading: boolean;
   addImages: (files: File[]) => void;
+  addImageUrls: (urls: string[]) => void;
   removeImage: (id: string) => void;
   setIsDragging: (isDragging: boolean) => void;
   setIsUploading: (isUploading: boolean) => void;
@@ -21,6 +24,7 @@ export interface StyleComposerState {
 
 const initialState = {
   images: [] as File[],
+  imageUrls: [] as string[],
   imagePreviews: [] as ImagePreview[],
   isDragging: false,
   isUploading: false,
@@ -44,6 +48,24 @@ export const useStyleComposerStore = create<StyleComposerState>()(
             id,
             url: objectUrl,
             file,
+            isUrl: false,
+          });
+        });
+      }),
+
+    addImageUrls: (urls) =>
+      set((state) => {
+        urls.forEach((url) => {
+          const id =
+            typeof crypto !== "undefined" && "randomUUID" in crypto
+              ? crypto.randomUUID()
+              : `${Date.now()}-${Math.random()}`;
+
+          state.imageUrls.push(url);
+          state.imagePreviews.push({
+            id,
+            url,
+            isUrl: true,
           });
         });
       }),
@@ -59,10 +81,20 @@ export const useStyleComposerStore = create<StyleComposerState>()(
 
         const [removedPreview] = state.imagePreviews.splice(index, 1);
         if (removedPreview) {
-          URL.revokeObjectURL(removedPreview.url);
+          if (!removedPreview.isUrl) {
+            URL.revokeObjectURL(removedPreview.url);
+          }
         }
 
-        state.images.splice(index, 1);
+        // Remove from either images or imageUrls
+        if (removedPreview?.isUrl) {
+          const urlIndex = state.imageUrls.indexOf(removedPreview.url);
+          if (urlIndex !== -1) {
+            state.imageUrls.splice(urlIndex, 1);
+          }
+        } else {
+          state.images.splice(index, 1);
+        }
       }),
 
     setIsDragging: (isDragging) =>
@@ -78,9 +110,12 @@ export const useStyleComposerStore = create<StyleComposerState>()(
     resetComposer: () =>
       set((state) => {
         state.imagePreviews.forEach((preview) => {
-          URL.revokeObjectURL(preview.url);
+          if (!preview.isUrl) {
+            URL.revokeObjectURL(preview.url);
+          }
         });
         state.images = [];
+        state.imageUrls = [];
         state.imagePreviews = [];
         state.isDragging = false;
         state.isUploading = false;

@@ -1,6 +1,14 @@
 import { Button } from "@openpromo/ui/components/button";
+import { Input } from "@openpromo/ui/components/input";
 import { cn } from "@openpromo/ui/lib/utils";
-import { ImagePlus, Loader2, Minimize2, UploadCloud, X } from "lucide-react";
+import {
+  ImagePlus,
+  Link,
+  Loader2,
+  Minimize2,
+  UploadCloud,
+  X,
+} from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useStorageUpload } from "@/hooks/useStorageUpload";
@@ -13,6 +21,7 @@ interface StyleComposerProps {
 
 export function StyleComposer({ onSuccess }: StyleComposerProps) {
   const images = useStyleComposerStore((state) => state.images);
+  const imageUrls = useStyleComposerStore((state) => state.imageUrls);
   const previews = useStyleComposerStore((state) => state.imagePreviews);
   const isDragging = useStyleComposerStore((state) => state.isDragging);
   const isUploading = useStyleComposerStore((state) => state.isUploading);
@@ -20,8 +29,10 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
   const setIsDragging = useStyleComposerStore((state) => state.setIsDragging);
   const resetComposer = useStyleComposerStore((state) => state.resetComposer);
   const addImages = useStyleComposerStore((state) => state.addImages);
+  const addImageUrls = useStyleComposerStore((state) => state.addImageUrls);
   const removeImage = useStyleComposerStore((state) => state.removeImage);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
 
   const { uploadFiles } = useStorageUpload();
   const createStyleMutation = useStyleCreateMutation(() => {
@@ -104,18 +115,71 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
     [previews.length, setIsDragging],
   );
 
+  const handlePaste = useCallback(
+    (event: React.ClipboardEvent<HTMLDivElement>) => {
+      const items = event.clipboardData?.items;
+      if (!items) return;
+
+      const imageFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item?.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) {
+            imageFiles.push(file);
+          }
+        }
+      }
+
+      if (imageFiles.length > 0) {
+        event.preventDefault();
+        handleFiles(imageFiles);
+        toast.success(
+          `${imageFiles.length} image${imageFiles.length > 1 ? "s" : ""} pasted`,
+        );
+      }
+    },
+    [handleFiles],
+  );
+
+  const handleAddUrl = useCallback(() => {
+    const trimmedUrl = urlInput.trim();
+    if (!trimmedUrl) return;
+
+    try {
+      new URL(trimmedUrl);
+      const availableSlots = Math.max(0, maxImages - previews.length);
+      if (availableSlots <= 0) {
+        toast.error(`You can add up to ${maxImages} images per style.`);
+        return;
+      }
+      addImageUrls([trimmedUrl]);
+      setUrlInput("");
+      toast.success("Image URL added");
+    } catch {
+      toast.error("Please enter a valid URL");
+    }
+  }, [urlInput, addImageUrls, previews.length]);
+
   const handleSubmit = useCallback(async () => {
-    if (images.length < minImages) {
+    const totalImages = images.length + imageUrls.length;
+    if (totalImages < minImages) {
       toast.error(`Add at least ${minImages} images to create a style.`);
       return;
     }
 
     try {
       setIsUploading(true);
-      toast.info(`Uploading ${images.length} reference image(s)...`);
 
-      const uploadResults = await uploadFiles(images);
-      const imageRefs = uploadResults.map((result) => result.publicUrl);
+      // Upload files and combine with URLs
+      let uploadedRefs: string[] = [];
+      if (images.length > 0) {
+        toast.info(`Uploading ${images.length} reference image(s)...`);
+        const uploadResults = await uploadFiles(images);
+        uploadedRefs = uploadResults.map((result) => result.publicUrl);
+      }
+
+      const imageRefs = [...uploadedRefs, ...imageUrls];
 
       const timestamp = new Date();
       const name = `Untitled Style ${timestamp.toLocaleTimeString([], {
@@ -123,8 +187,8 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
         minute: "2-digit",
       })}`;
       const slug = `style-${timestamp.getTime()}`;
-      const description = `Auto-generated from ${images.length} reference image${
-        images.length > 1 ? "s" : ""
+      const description = `Auto-generated from ${totalImages} reference image${
+        totalImages > 1 ? "s" : ""
       } on ${timestamp.toLocaleDateString()}.`;
       const imageGenPrompt =
         "Use the uploaded references as inspiration for visual direction.";
@@ -144,12 +208,12 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
     } finally {
       setIsUploading(false);
     }
-  }, [createStyleMutation, images, setIsUploading, uploadFiles]);
+  }, [createStyleMutation, images, imageUrls, setIsUploading, uploadFiles]);
 
   const isProcessing = isUploading || createStyleMutation.isPending;
   const selectionCopy = useMemo(
-    () => `${images.length}/${maxImages} selected`,
-    [images.length],
+    () => `${previews.length}/${maxImages} selected`,
+    [previews.length],
   );
   const showExpanded = isExpanded || previews.length > 0 || isDragging;
 
@@ -193,7 +257,9 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          onPaste={handlePaste}
           role="region"
+          tabIndex={0}
         >
           <div className="flex flex-col gap-3 px-4 py-4 sm:px-5">
             <div className="flex items-center justify-between">
@@ -278,10 +344,41 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
               </div>
             </div>
 
+            {/* URL Input Section */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Link className="h-3 w-3" />
+                <span>Or add from URL</span>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddUrl();
+                    }
+                  }}
+                  className="flex-1 text-sm"
+                  disabled={isProcessing}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleAddUrl}
+                  disabled={!urlInput.trim() || isProcessing}
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
+
             <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground sm:text-xs">
-              <span>
-                We’ll auto-create the style details from your references.
-              </span>
+              <span>Tip: Paste images directly (Ctrl/Cmd+V)</span>
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -303,8 +400,8 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
                   onClick={handleSubmit}
                   disabled={
                     isProcessing ||
-                    images.length < minImages ||
-                    images.length > maxImages
+                    previews.length < minImages ||
+                    previews.length > maxImages
                   }
                 >
                   {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}

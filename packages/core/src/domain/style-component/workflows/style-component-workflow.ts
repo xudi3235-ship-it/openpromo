@@ -116,7 +116,7 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
         description,
       });
     });
-    // 4. generate image prompt from the img.
+    // 4. generate image prompt from the img. this prompt should mostly reproduce the style from the inputs.
     await step.do("image-to-prompt", async () => {
       const s = await EntStyleComponent.fromID(styleComponentId);
       const oai = getOpenAIClient();
@@ -125,6 +125,7 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
         image_url: url,
         detail: "auto",
       }));
+      // image to description prompt
       const response = await oai.responses.create({
         prompt: {
           id: "pmpt_68fc768167248193a63e7ee0a5fe36b9012003b5ef7b1359",
