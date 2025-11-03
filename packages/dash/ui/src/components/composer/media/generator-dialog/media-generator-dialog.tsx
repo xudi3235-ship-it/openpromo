@@ -14,7 +14,7 @@ import { useProductListQuery } from "@/queries/product";
 import { useImageGenComposerStore } from "@/stores/image-gen-composer-store";
 import type { StyleGalleryItem } from "../style-gallery";
 import { InputsPanel } from "./inputs-panel";
-import { ProgressPanel } from "./progress-panel";
+import { GeneratedImagesGallery } from "./progress-panel";
 
 interface MediaGeneratorDialogProps {
   styles: StyleGalleryItem[];
@@ -69,7 +69,7 @@ export function MediaGeneratorDialog({
               productSearch={productSearch}
               onProductSearchChange={setProductSearch}
             />
-            <ProgressPanel
+            <GeneratedImagesGallery
               generateMutation={generateMutation}
               remainingSlots={remainingSlots}
             />

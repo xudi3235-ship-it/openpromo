@@ -21,7 +21,7 @@ import type {
 import { useComposerStore } from "@/stores/composer-store";
 import { useImageGenComposerStore } from "@/stores/image-gen-composer-store";
 
-interface ProgressPanelProps {
+interface GeneratedImagesGalleryProps {
   generateMutation: UseMutationResult<
     ProductImageGenerateResponse,
     Error,
@@ -32,11 +32,11 @@ interface ProgressPanelProps {
   className?: string;
 }
 
-export function ProgressPanel({
+export function GeneratedImagesGallery({
   generateMutation,
   remainingSlots,
   className,
-}: ProgressPanelProps) {
+}: GeneratedImagesGalleryProps) {
   const batchCount = useImageGenComposerStore((state) => state.batchCount);
   const [gridCols, setGridCols] = useState(4);
   const [selectedGenerations, setSelectedGenerations] = useState<Set<string>>(
@@ -158,9 +158,9 @@ export function ProgressPanel({
       <div className="px-4 pt-4 pb-2 flex-shrink-0 space-y-3">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1 flex-1">
-            <h3 className="text-sm font-medium">Progress</h3>
+            <h3 className="text-sm font-medium">Generated Images</h3>
             <p className="text-xs text-muted-foreground">
-              Track your generation history
+              Your product image generations
             </p>
           </div>
           <div className="flex items-center gap-3 pt-0.5">
@@ -261,7 +261,7 @@ export function ProgressPanel({
                 {generations.length === 0 && !generateMutation.isPending ? (
                   <div className="col-span-full flex flex-col items-center justify-center py-12 text-center text-sm text-muted-foreground gap-2">
                     <span className="text-2xl">✨</span>
-                    <span>No generations yet</span>
+                    <span>No product images generated yet</span>
                   </div>
                 ) : (
                   generations.map((generation) => (
