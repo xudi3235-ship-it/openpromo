@@ -1,11 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ComposerRoot } from "@/components/composer/layout/composer-root";
 import { ComposerSkeleton } from "@/components/composer/layout/composer-skeleton";
-import { useConnectedAccounts } from "@/queries/connected-account";
+import {
+  prefetchConnectedAccounts,
+  useConnectedAccounts,
+} from "@/queries/connected-account";
+import { prefetchProductList } from "@/queries/product";
+import { prefetchStylesList } from "@/queries/styles";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/composer",
 )({
+  loader: ({ params, context }) => {
+    // Prefetch queries used in composer (do not await)
+    prefetchConnectedAccounts(context.queryClient, params.workspaceSlug);
+    prefetchProductList(context.queryClient, params.workspaceSlug, {});
+    prefetchStylesList(context.queryClient, params.workspaceSlug, {
+      page: "1",
+      officialOnly: "true",
+    });
+  },
   component: ComposerComponent,
 });
 
