@@ -1,6 +1,6 @@
 import { Spinner } from "@openpromo/ui/components/spinner";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import {
   useProductImageGenerateMutation,
@@ -8,6 +8,7 @@ import {
 } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles";
 import { useComposerStore } from "@/stores/composer-store";
+import { useImageGenComposerStore } from "@/stores/image-gen-composer-store";
 import { AdvancedOptions } from "./advanced-options";
 import { GenerateButton } from "./generate-button";
 import { MEDIA_CONFIG } from "./media-section-config";
@@ -21,12 +22,37 @@ import { StyleGallery } from "./style-gallery";
  * Style selection automatically determines mode (studio vs styled)
  */
 export function MediaGenerateContent() {
-  const [selectedProductId, setSelectedProductId] = useState<string>("");
-  const [selectedStyleId, setSelectedStyleId] = useState<string>("");
-  const [batchCount, setBatchCount] = useState<number>(1);
-  const [prompt, setPrompt] = useState<string>("");
-  const [referenceImageUrl, setReferenceImageUrl] = useState<string>("");
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  // Store state
+  const selectedProductId = useImageGenComposerStore(
+    (state) => state.selectedProductId,
+  );
+  const selectedStyleId = useImageGenComposerStore(
+    (state) => state.selectedStyleId,
+  );
+  const batchCount = useImageGenComposerStore((state) => state.batchCount);
+  const prompt = useImageGenComposerStore((state) => state.prompt);
+  const referenceImageUrl = useImageGenComposerStore(
+    (state) => state.referenceImageUrl,
+  );
+  const showAdvanced = useImageGenComposerStore((state) => state.showAdvanced);
+
+  // Store actions
+  const setSelectedProductId = useImageGenComposerStore(
+    (state) => state.setSelectedProductId,
+  );
+  const setSelectedStyleId = useImageGenComposerStore(
+    (state) => state.setSelectedStyleId,
+  );
+  const setBatchCount = useImageGenComposerStore(
+    (state) => state.setBatchCount,
+  );
+  const setPrompt = useImageGenComposerStore((state) => state.setPrompt);
+  const setReferenceImageUrl = useImageGenComposerStore(
+    (state) => state.setReferenceImageUrl,
+  );
+  const setShowAdvanced = useImageGenComposerStore(
+    (state) => state.setShowAdvanced,
+  );
 
   const queryClient = useQueryClient();
   const { contentCreateData } = useComposerStore();
