@@ -7,21 +7,21 @@ import {
 } from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
 
-interface Style {
+export interface StyleGalleryItem {
   id: string;
   name: string | null;
   description: string | null;
   imageRefs: string[];
 }
 
-interface StyleGalleryProps {
-  styles: Style[];
+export interface StyleGalleryProps {
+  styles: StyleGalleryItem[];
   selectedStyleId: string;
   onStyleSelect: (styleId: string) => void;
   isLoading?: boolean;
 }
 
-const getStyleImage = (style: Style) => {
+const getStyleImage = (style: StyleGalleryItem) => {
   return style.imageRefs?.[0] || null;
 };
 

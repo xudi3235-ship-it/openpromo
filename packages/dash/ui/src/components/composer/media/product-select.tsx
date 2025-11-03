@@ -6,7 +6,7 @@ import {
   SelectValue,
 } from "@openpromo/ui/components/select";
 
-interface Product {
+export interface ProductSelectItem {
   id: string;
   name: string | null;
   primaryAttachmentId: string | null;
@@ -19,13 +19,13 @@ interface Product {
   }> | null;
 }
 
-interface ProductSelectProps {
-  products: Product[];
+export interface ProductSelectProps {
+  products: ProductSelectItem[];
   selectedProductId: string;
   onProductChange: (productId: string) => void;
 }
 
-const getProductImage = (product: Product) => {
+const getProductImage = (product: ProductSelectItem) => {
   if (!product.attachments?.length) return null;
   const primaryAttachment = product.attachments.find(
     (a) => a.id === product.primaryAttachmentId,

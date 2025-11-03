@@ -7,7 +7,7 @@ export interface ImageGenComposerState {
   batchCount: number;
   prompt: string;
   referenceImageUrl: string;
-  showAdvanced: boolean;
+  isGeneratorDialogOpen: boolean;
 
   // Actions
   setSelectedProductId: (productId: string) => void;
@@ -15,7 +15,7 @@ export interface ImageGenComposerState {
   setBatchCount: (count: number) => void;
   setPrompt: (prompt: string) => void;
   setReferenceImageUrl: (url: string) => void;
-  setShowAdvanced: (show: boolean) => void;
+  setGeneratorDialogOpen: (open: boolean) => void;
   resetForm: () => void;
 }
 
@@ -25,7 +25,7 @@ const initialState = {
   batchCount: 1,
   prompt: "",
   referenceImageUrl: "",
-  showAdvanced: false,
+  isGeneratorDialogOpen: false,
 };
 
 export const useImageGenComposerStore = create<ImageGenComposerState>()(
@@ -57,9 +57,9 @@ export const useImageGenComposerStore = create<ImageGenComposerState>()(
         state.referenceImageUrl = url;
       }),
 
-    setShowAdvanced: (show) =>
+    setGeneratorDialogOpen: (open) =>
       set((state) => {
-        state.showAdvanced = show;
+        state.isGeneratorDialogOpen = open;
       }),
 
     resetForm: () =>
@@ -69,7 +69,7 @@ export const useImageGenComposerStore = create<ImageGenComposerState>()(
         state.batchCount = initialState.batchCount;
         state.prompt = initialState.prompt;
         state.referenceImageUrl = initialState.referenceImageUrl;
-        state.showAdvanced = initialState.showAdvanced;
+        state.isGeneratorDialogOpen = initialState.isGeneratorDialogOpen;
       }),
   })),
 );

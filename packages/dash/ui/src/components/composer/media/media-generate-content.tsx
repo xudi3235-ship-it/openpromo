@@ -1,3 +1,4 @@
+import { Button } from "@openpromo/ui/components/button";
 import { Spinner } from "@openpromo/ui/components/spinner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -9,8 +10,8 @@ import {
 import { useStylesListQuery } from "@/queries/styles";
 import { useComposerStore } from "@/stores/composer-store";
 import { useImageGenComposerStore } from "@/stores/image-gen-composer-store";
-import { AdvancedOptions } from "./advanced-options";
 import { GenerateButton } from "./generate-button";
+import { MediaGeneratorDialog } from "./generator-dialog/media-generator-dialog";
 import { MEDIA_CONFIG } from "./media-section-config";
 import { MediaSectionGallery } from "./media-section-gallery";
 import { ProductSelect } from "./product-select";
@@ -34,7 +35,9 @@ export function MediaGenerateContent() {
   const referenceImageUrl = useImageGenComposerStore(
     (state) => state.referenceImageUrl,
   );
-  const showAdvanced = useImageGenComposerStore((state) => state.showAdvanced);
+  const setGeneratorDialogOpen = useImageGenComposerStore(
+    (state) => state.setGeneratorDialogOpen,
+  );
 
   // Store actions
   const setSelectedProductId = useImageGenComposerStore(
@@ -42,16 +45,6 @@ export function MediaGenerateContent() {
   );
   const setSelectedStyleId = useImageGenComposerStore(
     (state) => state.setSelectedStyleId,
-  );
-  const setBatchCount = useImageGenComposerStore(
-    (state) => state.setBatchCount,
-  );
-  const setPrompt = useImageGenComposerStore((state) => state.setPrompt);
-  const setReferenceImageUrl = useImageGenComposerStore(
-    (state) => state.setReferenceImageUrl,
-  );
-  const setShowAdvanced = useImageGenComposerStore(
-    (state) => state.setShowAdvanced,
   );
 
   const queryClient = useQueryClient();
@@ -109,22 +102,32 @@ export function MediaGenerateContent() {
     0,
   );
 
-  // Automatically determine mode based on whether style is provided
-  const hasStyle = selectedStyleId || referenceImageUrl.trim();
+  const hasStyle = selectedStyleId || referenceImageUrl.trim().length > 0;
   const mode = hasStyle ? "style" : "studio";
 
-  const canGenerate = !!selectedProductId;
+  const canGenerate =
+    Boolean(selectedProductId) &&
+    remainingSlots > 0 &&
+    !generateMutation.isPending;
 
-  const handleGenerate = () => {
-    if (!canGenerate) return;
+  const handleQuickGenerate = () => {
+    if (!selectedProductId || remainingSlots <= 0) return;
+
+    const safeBatchCount = Math.max(
+      1,
+      Math.min(batchCount || 1, Math.min(remainingSlots, 4)),
+    );
+
+    const trimmedPrompt = prompt.trim();
+    const trimmedReference = referenceImageUrl.trim();
 
     generateMutation.mutate({
       productId: selectedProductId,
       styleId: selectedStyleId || undefined,
       mode,
-      batchCount,
-      prompt: prompt.trim() || undefined,
-      referenceImageUrl: referenceImageUrl.trim() || undefined,
+      batchCount: safeBatchCount,
+      prompt: trimmedPrompt || undefined,
+      referenceImageUrl: trimmedReference || undefined,
     });
   };
 
@@ -158,12 +161,21 @@ export function MediaGenerateContent() {
           isLoading={isLoadingStyles}
         />
 
-        {/* Generate Button */}
-        <GenerateButton
-          onClick={handleGenerate}
-          disabled={!canGenerate || generateMutation.isPending}
-          isGenerating={generateMutation.isPending}
-        />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+          <GenerateButton
+            onClick={handleQuickGenerate}
+            disabled={!canGenerate}
+            isGenerating={generateMutation.isPending}
+            className="sm:flex-1"
+          />
+          <Button
+            onClick={() => setGeneratorDialogOpen(true)}
+            className="w-full sm:flex-none sm:w-[160px]"
+            variant="outline"
+          >
+            More options
+          </Button>
+        </div>
 
         {/* Remaining Slots Info */}
         {remainingSlots > 0 && (
@@ -171,23 +183,23 @@ export function MediaGenerateContent() {
             {remainingSlots} slot{remainingSlots === 1 ? "" : "s"} remaining
           </p>
         )}
-
-        {/* Advanced Options */}
-        <AdvancedOptions
-          isOpen={showAdvanced}
-          onOpenChange={setShowAdvanced}
-          referenceImageUrl={referenceImageUrl}
-          onReferenceImageUrlChange={setReferenceImageUrl}
-          batchCount={batchCount}
-          onBatchCountChange={setBatchCount}
-          maxBatchCount={Math.min(4, remainingSlots)}
-          prompt={prompt}
-          onPromptChange={setPrompt}
-        />
+        <p className="text-xs text-center text-muted-foreground">
+          Use quick generate for a fast run or open more options to customize
+          prompts, batches, and monitor progress.
+        </p>
       </div>
 
       {/* Gallery - Shows all attachments (uploaded + generated) */}
       <MediaSectionGallery />
+
+      <MediaGeneratorDialog
+        products={products}
+        styles={styles}
+        isLoadingProducts={isLoadingProducts}
+        isLoadingStyles={isLoadingStyles}
+        remainingSlots={remainingSlots}
+        generateMutation={generateMutation}
+      />
     </div>
   );
 }
