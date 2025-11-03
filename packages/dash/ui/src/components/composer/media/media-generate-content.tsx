@@ -1,30 +1,6 @@
-import { Button } from "@openpromo/ui/components/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@openpromo/ui/components/collapsible";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@openpromo/ui/components/select";
-import { Slider } from "@openpromo/ui/components/slider";
 import { Spinner } from "@openpromo/ui/components/spinner";
-import { Textarea } from "@openpromo/ui/components/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@openpromo/ui/components/tooltip";
-import { cn } from "@openpromo/ui/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronDown } from "lucide-react";
 import { useMemo, useState } from "react";
-import { RiAiGenerate } from "react-icons/ri";
 import { toast } from "sonner";
 import {
   useProductImageGenerateMutation,
@@ -32,8 +8,12 @@ import {
 } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles";
 import { useComposerStore } from "@/stores/composer-store";
+import { AdvancedOptions } from "./advanced-options";
+import { GenerateButton } from "./generate-button";
 import { MEDIA_CONFIG } from "./media-section-config";
 import { MediaSectionGallery } from "./media-section-gallery";
+import { ProductSelect } from "./product-select";
+import { StyleGallery } from "./style-gallery";
 
 /**
  * MediaGenerateContent - Progressive UX for generating product images
@@ -122,25 +102,6 @@ export function MediaGenerateContent() {
     });
   };
 
-  const getProductImage = (product: (typeof products)[number]) => {
-    if (!product.attachments?.length) return null;
-    const primaryAttachment = product.attachments.find(
-      (a) => a.id === product.primaryAttachmentId,
-    );
-    const attachment = primaryAttachment || product.attachments[0];
-    if (attachment?.type !== "photo") return null;
-    return (
-      attachment.thumbnailUrl ||
-      attachment.publicUrl ||
-      attachment.presignedUrl ||
-      null
-    );
-  };
-
-  const getStyleImage = (style: (typeof styles)[number]) => {
-    return style.imageRefs?.[0] || null;
-  };
-
   if (isLoadingProducts) {
     return (
       <div className="flex items-center justify-center py-12 border rounded-lg">
@@ -157,180 +118,26 @@ export function MediaGenerateContent() {
       {/* Generation Form Card */}
       <div className="space-y-4 p-4 border rounded-lg bg-background">
         {/* Product Selection */}
-        <div className="space-y-1.5">
-          <label
-            htmlFor="product-select"
-            className="text-xs font-medium text-muted-foreground"
-          >
-            Product
-          </label>
-          <Select
-            value={selectedProductId}
-            onValueChange={setSelectedProductId}
-          >
-            <SelectTrigger id="product-select" className="w-full">
-              <SelectValue placeholder="Select a product...">
-                {selectedProductId &&
-                  (() => {
-                    const product = products.find(
-                      (p) => p.id === selectedProductId,
-                    );
-                    if (!product) return null;
-                    const imageUrl = getProductImage(product);
-                    return (
-                      <div className="flex items-center gap-2">
-                        {imageUrl ? (
-                          <img
-                            src={imageUrl}
-                            alt={product.name || product.id}
-                            className="w-5 h-5 object-cover rounded"
-                          />
-                        ) : (
-                          <div className="w-5 h-5 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                            ?
-                          </div>
-                        )}
-                        <span className="text-sm truncate">
-                          {product.name || product.id}
-                        </span>
-                      </div>
-                    );
-                  })()}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {products.map((product) => {
-                const imageUrl = getProductImage(product);
-                return (
-                  <SelectItem key={product.id} value={product.id}>
-                    <div className="flex items-center gap-2">
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={product.name || product.id}
-                          className="w-6 h-6 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                          ?
-                        </div>
-                      )}
-                      <span className="text-sm">
-                        {product.name || product.id}
-                      </span>
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
+        <ProductSelect
+          products={products}
+          selectedProductId={selectedProductId}
+          onProductChange={setSelectedProductId}
+        />
 
-        {/* Style Selection - Horizontal Gallery */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">
-            Choose a style
-          </label>
-
-          {isLoadingStyles ? (
-            <div className="flex items-center justify-center py-4 border rounded-lg">
-              <div className="text-center space-y-1">
-                <Spinner className="h-4 w-4 mx-auto" />
-                <p className="text-xs text-muted-foreground">Loading...</p>
-              </div>
-            </div>
-          ) : (
-            <TooltipProvider>
-              <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-                {/* Official style options */}
-                {styles.map((style) => {
-                  const imageUrl = getStyleImage(style);
-                  const isSelected = selectedStyleId === style.id;
-
-                  return (
-                    <Tooltip key={style.id} delayDuration={300}>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedStyleId(style.id)}
-                          className={cn(
-                            "relative flex-shrink-0 w-16 h-16 rounded-md border-2 overflow-hidden transition-all group",
-                            "hover:border-primary/50",
-                            isSelected
-                              ? "border-primary ring-2 ring-primary/20"
-                              : "border-border",
-                          )}
-                        >
-                          {imageUrl ? (
-                            <img
-                              src={imageUrl}
-                              alt={style.name || style.id}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-muted flex items-center justify-center">
-                              <span className="text-xs text-muted-foreground">
-                                ?
-                              </span>
-                            </div>
-                          )}
-                          {/* Selected indicator */}
-                          {isSelected && (
-                            <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">
-                              <svg
-                                className="w-2.5 h-2.5"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            </div>
-                          )}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="max-w-xs">
-                        <div className="space-y-1">
-                          <p className="font-medium text-sm">
-                            {style.name || style.id}
-                          </p>
-                          {style.description && (
-                            <p className="text-xs text-muted-foreground">
-                              {style.description}
-                            </p>
-                          )}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
-              </div>
-            </TooltipProvider>
-          )}
-        </div>
+        {/* Style Selection */}
+        <StyleGallery
+          styles={styles}
+          selectedStyleId={selectedStyleId}
+          onStyleSelect={setSelectedStyleId}
+          isLoading={isLoadingStyles}
+        />
 
         {/* Generate Button */}
-        <Button
+        <GenerateButton
           onClick={handleGenerate}
           disabled={!canGenerate || generateMutation.isPending}
-          className="w-full"
-          size="default"
-        >
-          {generateMutation.isPending ? (
-            <>
-              <Spinner className="mr-2 h-3.5 w-3.5" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <RiAiGenerate className="mr-2 h-3.5 w-3.5" />
-              Generate Image
-            </>
-          )}
-        </Button>
+          isGenerating={generateMutation.isPending}
+        />
 
         {/* Remaining Slots Info */}
         {remainingSlots > 0 && (
@@ -339,79 +146,18 @@ export function MediaGenerateContent() {
           </p>
         )}
 
-        {/* Advanced Options - Collapsed by default */}
-        <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
-          <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-            <ChevronDown
-              className={cn(
-                "h-3 w-3 transition-transform",
-                showAdvanced && "transform rotate-180",
-              )}
-            />
-            Advanced options
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-3 space-y-3">
-            {/* Reference Image URL */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="reference-url-input"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Reference Image URL
-                <span className="font-normal ml-1 text-muted-foreground/70">
-                  (optional)
-                </span>
-              </label>
-              <Textarea
-                id="reference-url-input"
-                value={referenceImageUrl}
-                onChange={(e) => setReferenceImageUrl(e.target.value)}
-                placeholder="Paste reference image URL..."
-                rows={2}
-                className="resize-none font-mono text-xs"
-              />
-            </div>
-
-            {/* Batch Count */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Batch Count
-                </label>
-                <span className="text-xs text-muted-foreground">
-                  {batchCount}
-                </span>
-              </div>
-              <Slider
-                value={[batchCount]}
-                onValueChange={(value) => setBatchCount(value[0] || 1)}
-                min={1}
-                max={Math.min(4, remainingSlots)}
-                step={1}
-                className="w-full"
-              />
-            </div>
-
-            {/* Custom Prompt */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="prompt-input"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Custom Prompt
-                <span className="font-normal ml-1">(optional)</span>
-              </label>
-              <Textarea
-                id="prompt-input"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Add custom instructions..."
-                rows={3}
-                className="resize-none"
-              />
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        {/* Advanced Options */}
+        <AdvancedOptions
+          isOpen={showAdvanced}
+          onOpenChange={setShowAdvanced}
+          referenceImageUrl={referenceImageUrl}
+          onReferenceImageUrlChange={setReferenceImageUrl}
+          batchCount={batchCount}
+          onBatchCountChange={setBatchCount}
+          maxBatchCount={Math.min(4, remainingSlots)}
+          prompt={prompt}
+          onPromptChange={setPrompt}
+        />
       </div>
 
       {/* Gallery - Shows all attachments (uploaded + generated) */}
