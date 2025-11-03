@@ -23,17 +23,16 @@ export type ImageGenerationWorkflowParams = z.infer<
 const log = Log.create({ namespace: "image-generation-workflow" });
 
 /**
- * TODO: WIP - Image Generation Workflow
+ * Image Generation Workflow
  *
- * This workflow runs asynchronously in the background and dispatches WebSocket events.
- * However, the WebSocket event handling infrastructure is NOT stable yet:
- * - Client-side event listeners create duplicate connections
- * - Event dispatching needs refactoring
+ * This workflow runs asynchronously in the background and dispatches WebSocket events
+ * at each state transition (pending → generating → completed/failed).
  *
- * Current behavior:
- * - Workflow runs successfully and updates generation records
- * - dispatchUpdateEvent() calls work but client-side handling is disabled
- * - Clients should poll generation records or wait for stable WebSocket infrastructure
+ * Behavior:
+ * - Workflow is triggered via ImageGenerationWorkflow.create()
+ * - Updates generation state and dispatches events at each step
+ * - Clients receive real-time updates via useSharedWorkspaceEvents hook
+ * - Falls back to sync generation in local development (VITE_ENVIRONMENT=local)
  */
 export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerationWorkflowParams> {
   async runWithContext(
@@ -63,10 +62,11 @@ export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerat
           // styleId: gen.styleComponentId,
         });
       });
-      // 2. mark as generating
+      // 2. mark as generating and dispatch event
       await step.do("mark-generating", async () => {
         const ent = await EntImageGeneration.fromID(generationId);
         await ent.setState("generating");
+        await ent.dispatchUpdateEvent();
       });
 
       // 3. generate image
@@ -89,6 +89,7 @@ export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerat
           state: "completed",
           outputImages: imageUrls,
         });
+        await ent.dispatchUpdateEvent();
       });
     } catch (err) {
       console.error("// Image generation workflow failed", {
@@ -96,8 +97,11 @@ export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerat
         error: err,
       });
       // mark as failed and dispatch event
-      const ent = await EntImageGeneration.fromID(generationId);
-      await ent.setState("failed", (err as Error).message);
+      await step.do("mark-failed", async () => {
+        const ent = await EntImageGeneration.fromID(generationId);
+        await ent.setState("failed", (err as Error).message);
+        await ent.dispatchUpdateEvent();
+      });
       return;
     }
   }

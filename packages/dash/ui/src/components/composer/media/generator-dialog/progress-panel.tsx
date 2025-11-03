@@ -9,6 +9,7 @@ import type { UseMutationResult } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useSharedWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import {
   type ImageGenListResponse,
   useImageGenDeleteBatchMutation,
@@ -42,12 +43,22 @@ export function GeneratedImagesGallery({
   const [selectedGenerations, setSelectedGenerations] = useState<Set<string>>(
     new Set(),
   );
-  const { data, isLoading } = useImageGenListQuery({
+  const { data, isLoading, refetch } = useImageGenListQuery({
     page: "1",
     pageSize: "12",
   });
 
   const generations = data?.generations ?? [];
+
+  // Listen for image generation updates via WebSocket
+  useSharedWorkspaceEvents({
+    handlers: {
+      "image_generation.updated": (_event) => {
+        // TODO: debug this
+        refetch();
+      },
+    },
+  });
 
   // Get current attachments from composer to check what's already added
   const attachments = useComposerStore(

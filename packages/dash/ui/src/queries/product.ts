@@ -154,11 +154,26 @@ export const useProductImageGenerateMutation = (
       }),
     onSuccess: (data, variables, _context) => {
       const count = variables.batchCount || 1;
-      toast.success(
-        count === 1
-          ? "Image generated successfully"
-          : `${count} images generated successfully`,
-      );
+
+      // Check if response is async (production) or sync (local)
+      const isAsync = "async" in data && data.async === true;
+
+      if (isAsync) {
+        // Async mode - generation started, will get updates via WebSocket
+        toast.success(
+          count === 1
+            ? "Image generation started"
+            : `${count} image generations started`,
+        );
+      } else {
+        // Sync mode - generation completed immediately
+        toast.success(
+          count === 1
+            ? "Image generated successfully"
+            : `${count} images generated successfully`,
+        );
+      }
+
       onSuccess?.(data, variables);
     },
   });

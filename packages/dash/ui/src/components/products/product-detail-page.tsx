@@ -359,7 +359,7 @@ export function ProductDetailPage() {
                 <div className="aspect-square w-full">
                   {generatedImage ? (
                     <img
-                      src={generatedImage.imageUrl}
+                      src={generatedImage?.generation?.outputImages?.[0]}
                       alt={`Generated preview for ${product.name}`}
                       className="h-full w-full object-cover"
                     />
