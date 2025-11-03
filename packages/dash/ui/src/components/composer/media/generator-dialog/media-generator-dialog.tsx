@@ -61,7 +61,10 @@ export function MediaGeneratorDialog({
               remainingSlots={remainingSlots}
               generateMutation={generateMutation}
             />
-            <ProgressPanel generateMutation={generateMutation} />
+            <ProgressPanel
+              generateMutation={generateMutation}
+              remainingSlots={remainingSlots}
+            />
           </div>
         </div>
       </DialogContent>

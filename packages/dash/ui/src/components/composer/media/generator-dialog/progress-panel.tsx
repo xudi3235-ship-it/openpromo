@@ -6,8 +6,9 @@ import { Slider } from "@openpromo/ui/components/slider";
 import { Spinner } from "@openpromo/ui/components/spinner";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { UseMutationResult } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   type ImageGenListResponse,
   useImageGenDeleteBatchMutation,
@@ -17,6 +18,7 @@ import type {
   ProductImageGenerateInput,
   ProductImageGenerateResponse,
 } from "@/queries/product";
+import { useComposerStore } from "@/stores/composer-store";
 import { useImageGenComposerStore } from "@/stores/image-gen-composer-store";
 
 interface ProgressPanelProps {
@@ -26,11 +28,13 @@ interface ProgressPanelProps {
     ProductImageGenerateInput,
     unknown
   >;
+  remainingSlots: number;
   className?: string;
 }
 
 export function ProgressPanel({
   generateMutation,
+  remainingSlots,
   className,
 }: ProgressPanelProps) {
   const batchCount = useImageGenComposerStore((state) => state.batchCount);
@@ -44,6 +48,15 @@ export function ProgressPanel({
   });
 
   const generations = data?.generations ?? [];
+
+  // Get current attachments from composer to check what's already added
+  const attachments = useComposerStore(
+    (state) => state.contentCreateData.base.attachments ?? [],
+  );
+  const addedGenerationIds = useMemo(
+    () => new Set(attachments.map((att) => att.s3Key || att.id)),
+    [attachments],
+  );
 
   const deleteBatchMutation = useImageGenDeleteBatchMutation(() => {
     setSelectedGenerations(new Set());
@@ -90,6 +103,49 @@ export function ProgressPanel({
   const handleDeleteSelected = () => {
     if (selectedGenerations.size === 0) return;
     deleteBatchMutation.mutate({ ids: Array.from(selectedGenerations) });
+  };
+
+  const handleAddToPost = () => {
+    if (selectedGenerations.size === 0) return;
+
+    // Check if adding would exceed remaining slots
+    if (selectedGenerations.size > remainingSlots) {
+      toast.error(
+        `Can only add ${remainingSlots} more image${remainingSlots === 1 ? "" : "s"}`,
+      );
+      return;
+    }
+
+    // Get selected generations and extract image URLs
+    const selectedItems = generations.filter((gen) =>
+      selectedGenerations.has(gen.id),
+    );
+
+    const imagesToAdd = selectedItems
+      .filter((gen) => gen.outputImages?.[0] && gen.state === "completed")
+      .map((gen) => ({
+        id: gen.id,
+        type: "photo" as const,
+        publicUrl: gen.outputImages[0],
+        thumbnailUrl: gen.outputImages[0],
+        mimeType: "image/jpeg",
+        s3Key: gen.id,
+      }));
+
+    if (imagesToAdd.length === 0) {
+      toast.error("No completed images to add");
+      return;
+    }
+
+    // Add to composer store
+    useComposerStore.getState().addAttachmentSpecs(imagesToAdd);
+
+    toast.success(
+      `Added ${imagesToAdd.length} image${imagesToAdd.length === 1 ? "" : "s"} to post`,
+    );
+
+    // Clear selection after adding
+    setSelectedGenerations(new Set());
   };
 
   return (
@@ -141,24 +197,35 @@ export function ProgressPanel({
               </span>
             </div>
             {selectedGenerations.size > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDeleteSelected}
-                disabled={deleteBatchMutation.isPending}
-              >
-                {deleteBatchMutation.isPending ? (
-                  <>
-                    <Spinner className="mr-1.5 h-3 w-3" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="mr-1.5 h-3 w-3" />
-                    Delete
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddToPost}
+                  disabled={remainingSlots === 0}
+                >
+                  <Plus className="mr-1.5 h-3 w-3" />
+                  Add to post
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDeleteSelected}
+                  disabled={deleteBatchMutation.isPending}
+                >
+                  {deleteBatchMutation.isPending ? (
+                    <>
+                      <Spinner className="mr-1.5 h-3 w-3" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-1.5 h-3 w-3" />
+                      Delete
+                    </>
+                  )}
+                </Button>
+              </div>
             )}
           </div>
         )}
@@ -203,6 +270,7 @@ export function ProgressPanel({
                       generation={generation}
                       isSelected={selectedGenerations.has(generation.id)}
                       onToggleSelection={handleToggleSelection}
+                      isAddedToPost={addedGenerationIds.has(generation.id)}
                     />
                   ))
                 )}
@@ -221,12 +289,14 @@ interface GenerationCardProps {
   generation: Generation;
   isSelected: boolean;
   onToggleSelection: (id: string) => void;
+  isAddedToPost: boolean;
 }
 
 function GenerationCard({
   generation,
   isSelected,
   onToggleSelection,
+  isAddedToPost,
 }: GenerationCardProps) {
   const previewImage = generation.outputImages?.[0];
 
@@ -242,7 +312,12 @@ function GenerationCard({
   );
 
   return (
-    <div className="border rounded-lg overflow-hidden hover:border-foreground/50 transition-colors group relative">
+    <div
+      className={cn(
+        "border rounded-lg overflow-hidden hover:border-foreground/50 transition-colors group relative",
+        isAddedToPost && "ring-2 ring-primary/50 border-primary/50",
+      )}
+    >
       {/* Checkbox overlay */}
       <div className="absolute top-2 left-2 z-10">
         <Checkbox
@@ -253,12 +328,24 @@ function GenerationCard({
         />
       </div>
 
+      {/* "In Post" badge overlay */}
+      {isAddedToPost && (
+        <div className="absolute top-2 right-2 z-10">
+          <div className="px-1.5 py-0.5 text-[10px] rounded bg-background/90 backdrop-blur-sm border text-muted-foreground font-medium">
+            In Post
+          </div>
+        </div>
+      )}
+
       <div className="aspect-square bg-muted relative overflow-hidden">
         {previewImage ? (
           <img
             src={previewImage}
             alt="Generated"
-            className="w-full h-full object-cover"
+            className={cn(
+              "w-full h-full object-cover transition-opacity",
+              isAddedToPost && "opacity-75",
+            )}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
