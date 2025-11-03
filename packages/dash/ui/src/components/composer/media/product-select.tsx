@@ -5,6 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@openpromo/ui/components/select";
+import { Skeleton } from "@openpromo/ui/components/skeleton";
 
 export interface ProductSelectItem {
   id: string;
@@ -23,6 +24,7 @@ export interface ProductSelectProps {
   products: ProductSelectItem[];
   selectedProductId: string;
   onProductChange: (productId: string) => void;
+  isLoading?: boolean;
 }
 
 const getProductImage = (product: ProductSelectItem) => {
@@ -44,7 +46,27 @@ export function ProductSelect({
   products,
   selectedProductId,
   onProductChange,
+  isLoading = false,
 }: ProductSelectProps) {
+  const hasNoResults = !isLoading && products.length === 0;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-1.5">
+        <label
+          htmlFor="product-select"
+          className="text-xs font-medium text-muted-foreground"
+        >
+          Product
+        </label>
+        <div className="flex items-center gap-2 h-10 px-3 py-2 border rounded-md">
+          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-4 flex-1" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-1.5">
       <label
@@ -85,27 +107,35 @@ export function ProductSelect({
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {products.map((product) => {
-            const imageUrl = getProductImage(product);
-            return (
-              <SelectItem key={product.id} value={product.id}>
-                <div className="flex items-center gap-2">
-                  {imageUrl ? (
-                    <img
-                      src={imageUrl}
-                      alt={product.name || product.id}
-                      className="w-6 h-6 object-cover rounded"
-                    />
-                  ) : (
-                    <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                      ?
-                    </div>
-                  )}
-                  <span className="text-sm">{product.name || product.id}</span>
-                </div>
-              </SelectItem>
-            );
-          })}
+          {hasNoResults ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              No products found
+            </div>
+          ) : (
+            products.map((product) => {
+              const imageUrl = getProductImage(product);
+              return (
+                <SelectItem key={product.id} value={product.id}>
+                  <div className="flex items-center gap-2">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={product.name || product.id}
+                        className="w-6 h-6 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                        ?
+                      </div>
+                    )}
+                    <span className="text-sm">
+                      {product.name || product.id}
+                    </span>
+                  </div>
+                </SelectItem>
+              );
+            })
+          )}
         </SelectContent>
       </Select>
     </div>

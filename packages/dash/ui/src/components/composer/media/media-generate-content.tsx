@@ -50,6 +50,7 @@ export function MediaGenerateContent() {
   const queryClient = useQueryClient();
   const { contentCreateData } = useComposerStore();
 
+  // Main section product list - no search filter
   const { data: productsData, isLoading: isLoadingProducts } =
     useProductListQuery({});
 
@@ -169,9 +170,7 @@ export function MediaGenerateContent() {
       <MediaSectionGallery />
 
       <MediaGeneratorDialog
-        products={products}
         styles={styles}
-        isLoadingProducts={isLoadingProducts}
         isLoadingStyles={isLoadingStyles}
         remainingSlots={remainingSlots}
         generateMutation={generateMutation}
