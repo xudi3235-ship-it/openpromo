@@ -155,48 +155,51 @@ export function InputsPanel({
         </p>
       </div>
 
+      <div className="px-4 pt-4 flex-shrink-0 space-y-3">
+        {/* Product Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="product-search-input"
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            placeholder="Search products..."
+            className="pl-9 pr-9"
+          />
+          {localSearch && (
+            <button
+              onClick={() => setLocalSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              type="button"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Product Dropdown */}
+        <ProductSelect
+          products={products}
+          selectedProductId={selectedProductId}
+          onProductChange={setSelectedProductId}
+          isLoading={isLoadingProducts}
+        />
+      </div>
+
+      {/* Style Gallery - Outside ScrollArea for horizontal scroll */}
+      <div className="px-4 flex-shrink-0">
+        <StyleGallery
+          styles={styles}
+          selectedStyleId={selectedStyleId}
+          onStyleSelect={(styleId) =>
+            setSelectedStyleId(styleId === selectedStyleId ? "" : styleId)
+          }
+          isLoading={isLoadingStyles}
+        />
+      </div>
+
       <ScrollArea className="flex-1">
         <div className="px-4 pb-4 pt-4 space-y-4">
-          <div className="space-y-3">
-            {/* Product Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="product-search-input"
-                value={localSearch}
-                onChange={(e) => setLocalSearch(e.target.value)}
-                placeholder="Search products..."
-                className="pl-9 pr-9"
-              />
-              {localSearch && (
-                <button
-                  onClick={() => setLocalSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  type="button"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Product Dropdown */}
-            <ProductSelect
-              products={products}
-              selectedProductId={selectedProductId}
-              onProductChange={setSelectedProductId}
-              isLoading={isLoadingProducts}
-            />
-          </div>
-
-          <StyleGallery
-            styles={styles}
-            selectedStyleId={selectedStyleId}
-            onStyleSelect={(styleId) =>
-              setSelectedStyleId(styleId === selectedStyleId ? "" : styleId)
-            }
-            isLoading={isLoadingStyles}
-          />
-
           {/* Advanced Options Collapsible */}
           <Collapsible
             open={isAdvancedOpen}
