@@ -14,6 +14,12 @@ import {
 import { Slider } from "@openpromo/ui/components/slider";
 import { Spinner } from "@openpromo/ui/components/spinner";
 import { Textarea } from "@openpromo/ui/components/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
@@ -30,8 +36,9 @@ import { MEDIA_CONFIG } from "./media-section-config";
 import { MediaSectionGallery } from "./media-section-gallery";
 
 /**
- * MediaGenerateContent - Minimal, flat UI for generating product images
- * Optimized for one-click usage - just pick a product and optionally a style
+ * MediaGenerateContent - Progressive UX for generating product images
+ * Start simple: pick product → pick style → generate
+ * Style selection automatically determines mode (studio vs styled)
  */
 export function MediaGenerateContent() {
   const [selectedProductId, setSelectedProductId] = useState<string>("");
@@ -49,6 +56,7 @@ export function MediaGenerateContent() {
 
   const { data: stylesData, isLoading: isLoadingStyles } = useStylesListQuery({
     page: "1",
+    officialOnly: "true",
   });
 
   const generateMutation = useProductImageGenerateMutation((response) => {
@@ -218,74 +226,90 @@ export function MediaGenerateContent() {
           </Select>
         </div>
 
-        {/* Style Selection - Optional, generates studio shots if empty */}
+        {/* Style Selection - Horizontal Gallery */}
         <div className="space-y-1.5">
-          <label
-            htmlFor="style-select"
-            className="text-xs font-medium text-muted-foreground"
-          >
-            Style
-            <span className="font-normal ml-1 text-muted-foreground/70">
-              (optional - leave empty for clean studio shots)
-            </span>
+          <label className="text-xs font-medium text-muted-foreground">
+            Choose a style
           </label>
-          <Select
-            value={selectedStyleId}
-            onValueChange={setSelectedStyleId}
-            disabled={isLoadingStyles}
-          >
-            <SelectTrigger id="style-select" className="w-full">
-              <SelectValue placeholder="Select a style...">
-                {selectedStyleId &&
-                  (() => {
-                    const style = styles.find((s) => s.id === selectedStyleId);
-                    if (!style) return null;
-                    const imageUrl = getStyleImage(style);
-                    return (
-                      <div className="flex items-center gap-2">
-                        {imageUrl ? (
-                          <img
-                            src={imageUrl}
-                            alt={style.name || style.id}
-                            className="w-5 h-5 object-cover rounded"
-                          />
-                        ) : (
-                          <div className="w-5 h-5 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                            ?
-                          </div>
-                        )}
-                        <span className="text-sm truncate">
-                          {style.name || style.id}
-                        </span>
-                      </div>
-                    );
-                  })()}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {styles.map((style) => {
-                const imageUrl = getStyleImage(style);
-                return (
-                  <SelectItem key={style.id} value={style.id}>
-                    <div className="flex items-center gap-2">
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={style.name || style.id}
-                          className="w-6 h-6 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
-                          ?
+
+          {isLoadingStyles ? (
+            <div className="flex items-center justify-center py-4 border rounded-lg">
+              <div className="text-center space-y-1">
+                <Spinner className="h-4 w-4 mx-auto" />
+                <p className="text-xs text-muted-foreground">Loading...</p>
+              </div>
+            </div>
+          ) : (
+            <TooltipProvider>
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
+                {/* Official style options */}
+                {styles.map((style) => {
+                  const imageUrl = getStyleImage(style);
+                  const isSelected = selectedStyleId === style.id;
+
+                  return (
+                    <Tooltip key={style.id} delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedStyleId(style.id)}
+                          className={cn(
+                            "relative flex-shrink-0 w-16 h-16 rounded-md border-2 overflow-hidden transition-all group",
+                            "hover:border-primary/50",
+                            isSelected
+                              ? "border-primary ring-2 ring-primary/20"
+                              : "border-border",
+                          )}
+                        >
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={style.name || style.id}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">
+                                ?
+                              </span>
+                            </div>
+                          )}
+                          {/* Selected indicator */}
+                          {isSelected && (
+                            <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">
+                              <svg
+                                className="w-2.5 h-2.5"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </div>
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-xs">
+                        <div className="space-y-1">
+                          <p className="font-medium text-sm">
+                            {style.name || style.id}
+                          </p>
+                          {style.description && (
+                            <p className="text-xs text-muted-foreground">
+                              {style.description}
+                            </p>
+                          )}
                         </div>
-                      )}
-                      <span className="text-sm">{style.name || style.id}</span>
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
+          )}
         </div>
 
         {/* Generate Button */}
@@ -297,12 +321,12 @@ export function MediaGenerateContent() {
         >
           {generateMutation.isPending ? (
             <>
-              <Spinner className="mr-2 h-4 w-4" />
+              <Spinner className="mr-2 h-3.5 w-3.5" />
               Generating...
             </>
           ) : (
             <>
-              <RiAiGenerate className="mr-2 h-4 w-4" />
+              <RiAiGenerate className="mr-2 h-3.5 w-3.5" />
               Generate Image
             </>
           )}
