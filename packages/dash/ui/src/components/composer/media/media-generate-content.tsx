@@ -59,11 +59,37 @@ export function MediaGenerateContent() {
     officialOnly: "true",
   });
 
-  const generateMutation = useProductImageGenerateMutation(() => {
-    // Only invalidate the query to refresh the list
-    // Do NOT auto-add to composer - let users select from dialog
+  const generateMutation = useProductImageGenerateMutation((data) => {
+    // Invalidate the query to refresh the list
     queryClient.invalidateQueries({ queryKey: ["image-gen-list"] });
-    toast.success("Images generated! Select and add them to your post.");
+
+    // Check if response is async or sync
+    const isAsync = "async" in data && data.async === true;
+
+    if (isAsync) {
+      // Async mode - images will come via WebSocket
+      // Don't auto-add, let users select from dialog when ready
+      toast.success("Generating images... Check the gallery for results.");
+    } else {
+      // Sync mode - images are ready immediately, auto-add to composer
+      const imagesToAdd = data.results
+        .filter((result) => result.imageUrl && result.generation)
+        .map((result) => ({
+          id: result.generation.id,
+          type: "photo" as const,
+          publicUrl: result.imageUrl!,
+          thumbnailUrl: result.imageUrl!,
+          mimeType: "image/jpeg",
+          s3Key: result.generation.id,
+        }));
+
+      if (imagesToAdd.length > 0) {
+        useComposerStore.getState().addAttachmentSpecs(imagesToAdd);
+        toast.success(
+          `Added ${imagesToAdd.length} image${imagesToAdd.length === 1 ? "" : "s"} to your post!`,
+        );
+      }
+    }
   });
 
   const products = productsData?.products || [];
