@@ -77,8 +77,8 @@ export function MediaGenerateContent() {
         .map((result) => ({
           id: result.generation.id,
           type: "photo" as const,
-          publicUrl: result.imageUrl!,
-          thumbnailUrl: result.imageUrl!,
+          publicUrl: result.imageUrl,
+          thumbnailUrl: result.imageUrl,
           mimeType: "image/jpeg",
           s3Key: result.generation.id,
         }));

@@ -1,7 +1,8 @@
 import type { WorkspaceNotificationEnvelope } from "@shared";
+import type { WorkspaceEvent } from "@shared/workspace";
+import { WorkspaceEventSchema } from "@shared/workspace";
 import { WorkspaceNotificationEnvelopeSchema } from "@shared/workspace/notifications";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import { honoApiCall } from "@/lib/hono-client";
 import {
   useInvalidateWorkspaceNotifications,
@@ -9,27 +10,22 @@ import {
 } from "@/queries/notifications";
 import { useNotificationToast } from "./useNotificationToast";
 
-export type GenericEvent = {
-  type: string;
-  message?: unknown;
-  timestamp: number;
-  [key: string]: unknown;
-};
-
 type ConnectionStatus = "connecting" | "open" | "closing" | "closed" | "error";
+
+type MessageListener = (data: unknown) => void;
 
 type UseWorkspaceNotificationsOptions = {
   autoToast?: boolean;
   onNotification?: (notification: WorkspaceNotificationEnvelope) => void;
-  onEvent?: (event: GenericEvent) => void;
+  onEvent?: (event: WorkspaceEvent) => void;
+  onUnparsedMessage?: (data: unknown) => void;
 };
 
 type UseWorkspaceNotificationsResult = {
   status: ConnectionStatus;
-  events: GenericEvent[];
   notifications: WorkspaceNotificationEnvelope[];
+  subscribe: (listener: MessageListener) => () => void;
   sendJson: (payload: unknown) => boolean;
-  clearEvents: () => void;
   clearNotifications: () => Promise<boolean>;
   refreshNotifications: () => Promise<void>;
   isLoading: boolean;
@@ -40,11 +36,16 @@ export function useWorkspaceNotifications(
   workspaceSlug: string | undefined,
   options: UseWorkspaceNotificationsOptions = {},
 ): UseWorkspaceNotificationsResult {
-  const { autoToast = true, onNotification, onEvent } = options;
+  const {
+    autoToast = true,
+    onNotification,
+    onEvent,
+    onUnparsedMessage,
+  } = options;
 
   const socketRef = useRef<WebSocket | null>(null);
+  const listenersRef = useRef<Set<MessageListener>>(new Set());
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
-  const [events, setEvents] = useState<GenericEvent[]>([]);
   const [notifications, setNotifications] = useState<
     WorkspaceNotificationEnvelope[]
   >([]);
@@ -68,16 +69,7 @@ export function useWorkspaceNotifications(
     setNotifications(data?.notifications ?? []);
   }, [workspaceSlug, data]);
 
-  const addEvent = useCallback(
-    (event: GenericEvent) => {
-      setEvents((prev) => [...prev, event]);
-      onEvent?.(event);
-    },
-    [onEvent],
-  );
-
   const clearLocalState = useCallback(() => {
-    setEvents([]);
     setNotifications([]);
   }, []);
 
@@ -103,66 +95,54 @@ export function useWorkspaceNotifications(
 
     socket.onmessage = (event) => {
       const receivedAt = Date.now();
+      let parsed: unknown;
+
       try {
-        const parsed = JSON.parse(event.data) as unknown;
-        const notificationResult =
-          WorkspaceNotificationEnvelopeSchema.safeParse(parsed);
-
-        if (notificationResult.success) {
-          const normalized: WorkspaceNotificationEnvelope = {
-            ...notificationResult.data,
-            timestamp: notificationResult.data.timestamp ?? receivedAt,
-          };
-
-          void invalidateNotifications();
-
-          if (autoToast) {
-            showNotificationToast(normalized.notification);
-          }
-
-          onNotification?.(normalized);
-
-          addEvent({
-            ...normalized,
-            timestamp: normalized.timestamp,
-          });
-          return;
-        }
-
-        if (parsed && typeof parsed === "object") {
-          const record = parsed as Record<string, unknown>;
-          const genericEvent: GenericEvent = {
-            ...record,
-            type: typeof record.type === "string" ? record.type : "unknown",
-            message: record.message,
-            timestamp:
-              typeof record.timestamp === "number"
-                ? record.timestamp
-                : receivedAt,
-          };
-          addEvent(genericEvent);
-          if (autoToast && typeof genericEvent.message === "string") {
-            toast(genericEvent.type, {
-              description: genericEvent.message,
-            });
-          }
-          return;
-        }
+        parsed = JSON.parse(event.data) as unknown;
       } catch (_error) {
-        // fall through to text event
+        // Not JSON, treat as raw message
+        for (const listener of listenersRef.current) {
+          listener(event.data);
+        }
+        onUnparsedMessage?.(event.data);
+        return;
       }
 
-      const textEvent: GenericEvent = {
-        type: "text",
-        message: event.data,
-        timestamp: receivedAt,
-      };
-      addEvent(textEvent);
-      if (autoToast && typeof textEvent.message === "string") {
-        toast(textEvent.type, {
-          description: textEvent.message,
-        });
+      // Notify all raw listeners first
+      for (const listener of listenersRef.current) {
+        listener(parsed);
       }
+
+      // Try to parse as WorkspaceNotificationEnvelope
+      const notificationResult =
+        WorkspaceNotificationEnvelopeSchema.safeParse(parsed);
+
+      if (notificationResult.success) {
+        const normalized: WorkspaceNotificationEnvelope = {
+          ...notificationResult.data,
+          timestamp: notificationResult.data.timestamp ?? receivedAt,
+        };
+
+        void invalidateNotifications();
+
+        if (autoToast) {
+          showNotificationToast(normalized.notification);
+        }
+
+        onNotification?.(normalized);
+        return;
+      }
+
+      // Try to parse as WorkspaceEvent
+      const eventResult = WorkspaceEventSchema.safeParse(parsed);
+
+      if (eventResult.success) {
+        onEvent?.(eventResult.data);
+        return;
+      }
+
+      // Unparsed message
+      onUnparsedMessage?.(parsed);
     };
 
     return () => {
@@ -172,12 +152,22 @@ export function useWorkspaceNotifications(
     };
   }, [
     workspaceSlug,
-    addEvent,
     autoToast,
     onNotification,
+    onEvent,
+    onUnparsedMessage,
     showNotificationToast,
     invalidateNotifications,
   ]);
+
+  const subscribe = useCallback((listener: MessageListener) => {
+    listenersRef.current.add(listener);
+
+    // Return unsubscribe function
+    return () => {
+      listenersRef.current.delete(listener);
+    };
+  }, []);
 
   const sendJson = useCallback((payload: unknown) => {
     const socket = socketRef.current;
@@ -194,10 +184,6 @@ export function useWorkspaceNotifications(
       return false;
     }
   }, []);
-
-  const clearEvents = useCallback(() => {
-    clearLocalState();
-  }, [clearLocalState]);
 
   const clearNotifications = useCallback(async () => {
     if (!workspaceSlug) {
@@ -236,10 +222,9 @@ export function useWorkspaceNotifications(
   return useMemo(
     () => ({
       status,
-      events,
       notifications,
+      subscribe,
       sendJson,
-      clearEvents,
       clearNotifications,
       refreshNotifications,
       isLoading: queryLoading,
@@ -247,10 +232,9 @@ export function useWorkspaceNotifications(
     }),
     [
       status,
-      events,
       notifications,
+      subscribe,
       sendJson,
-      clearEvents,
       clearNotifications,
       refreshNotifications,
       queryLoading,

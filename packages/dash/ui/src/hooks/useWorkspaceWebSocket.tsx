@@ -10,7 +10,6 @@ import type {
   WorkspaceEvent,
   WorkspaceNotificationEnvelope,
 } from "@shared/workspace";
-import { WorkspaceEventSchema } from "@shared/workspace";
 import type React from "react";
 import {
   createContext,
@@ -20,7 +19,6 @@ import {
   useMemo,
   useRef,
 } from "react";
-import type { GenericEvent } from "./useWorkspaceNotifications";
 import { useWorkspaceNotifications } from "./useWorkspaceNotifications";
 
 type EventListener = (event: WorkspaceEvent) => void;
@@ -55,43 +53,22 @@ export function WorkspaceWebSocketProvider({
   const listenersRef = useRef<Set<EventListener>>(new Set());
 
   // Stable event handler using useCallback with empty deps
-  const handleEvent = useCallback((genericEvent: GenericEvent) => {
-    try {
-      const eventRecord = genericEvent as Record<string, unknown>;
-      console.info("[WS] Received event, attempting to parse:", {
-        type: eventRecord?.type,
-        hasMessage: !!eventRecord?.message,
-      });
+  const handleEvent = useCallback((event: WorkspaceEvent) => {
+    console.info("[WS] Event received:", event.type);
 
-      // Try to parse as WorkspaceEvent
-      const parseResult = WorkspaceEventSchema.safeParse(genericEvent);
-
-      if (parseResult.success) {
-        console.info("[WS] Event parsed successfully:", parseResult.data.type);
-        const event = parseResult.data;
-        // Notify all subscribed listeners
-        for (const listener of listenersRef.current) {
-          try {
-            listener(event);
-          } catch (error) {
-            console.error("Error in workspace event listener:", error);
-          }
-        }
-      } else {
-        console.error("[WS] Event parse FAILED:", {
-          eventType: eventRecord?.type,
-          issues: parseResult.error.issues,
-        });
-        console.error(
-          "[WS] Raw event that failed to parse:",
-          JSON.stringify(genericEvent, null, 2),
-        );
+    // Notify all subscribed listeners
+    for (const listener of listenersRef.current) {
+      try {
+        listener(event);
+      } catch (error) {
+        console.error("Error in workspace event listener:", error);
       }
-    } catch (error) {
-      console.error("Error processing workspace event:", error);
-      console.error("Stack:", error instanceof Error ? error.stack : null);
     }
   }, []); // Empty deps - listenersRef.current is always up to date
+
+  const handleUnparsedMessage = useCallback((data: unknown) => {
+    console.warn("[WS] Received unparsed message:", data);
+  }, []);
 
   // Single WebSocket connection for the entire workspace
   const {
@@ -104,6 +81,7 @@ export function WorkspaceWebSocketProvider({
   } = useWorkspaceNotifications(workspaceSlug, {
     autoToast: true, // Show notifications automatically
     onEvent: handleEvent,
+    onUnparsedMessage: handleUnparsedMessage,
   });
 
   const subscribe = useCallback((listener: EventListener) => {

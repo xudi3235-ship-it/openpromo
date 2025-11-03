@@ -1,6 +1,6 @@
 import { Button } from "@openpromo/ui/components/button";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaceNotifications } from "@/hooks/useWorkspaceNotifications";
 import { useHonoMutation } from "@/lib/hono-client";
@@ -17,11 +17,52 @@ type WebSocketEvent = {
 function PlaygroundPage() {
   const { workspaceSlug } = Route.useParams();
   const { data: user } = useAuth();
+  const [events, setEvents] = useState<WebSocketEvent[]>([]);
 
-  const { status, events, sendJson, clearEvents, refreshNotifications } =
+  const { status, subscribe, sendJson, refreshNotifications } =
     useWorkspaceNotifications(workspaceSlug, {
       autoToast: true,
     });
+
+  // Subscribe to raw WebSocket messages for debugging
+  useEffect(() => {
+    const unsubscribe = subscribe((data) => {
+      // Store all messages for debugging
+      const event: WebSocketEvent = {
+        type:
+          typeof data === "object" &&
+          data !== null &&
+          "type" in data &&
+          typeof data.type === "string"
+            ? data.type
+            : "unknown",
+        message:
+          typeof data === "object" &&
+          data !== null &&
+          "message" in data &&
+          typeof data.message === "string"
+            ? data.message
+            : undefined,
+        timestamp:
+          typeof data === "object" &&
+          data !== null &&
+          "timestamp" in data &&
+          typeof data.timestamp === "number"
+            ? data.timestamp
+            : Date.now(),
+        ...(typeof data === "object" && data !== null
+          ? (data as Record<string, unknown>)
+          : {}),
+      };
+      setEvents((prev) => [...prev, event]);
+    });
+
+    return unsubscribe;
+  }, [subscribe]);
+
+  const clearEvents = useCallback(() => {
+    setEvents([]);
+  }, []);
 
   const sendMessageMutation = useHonoMutation({
     mutationFn: (api, variables: { userId: string; message: string }) =>
@@ -156,64 +197,47 @@ function PlaygroundPage() {
         ) : (
           <div className="space-y-2">
             {events.map((event, index) => {
-              const normalized: WebSocketEvent = {
-                // @ts-expect-error
-                type: event.type,
-                // @ts-expect-error
-                message:
-                  typeof event.message === "string" ? event.message : undefined,
-                // @ts-expect-error
-                timestamp: event.timestamp,
-                eventId:
-                  typeof event.eventId === "string" ? event.eventId : undefined,
-                doId: typeof event.doId === "string" ? event.doId : undefined,
-                ...event,
-              };
-
               return (
                 <div
-                  key={normalized.eventId || `${normalized.timestamp}-${index}`}
+                  key={event.eventId || `${event.timestamp}-${index}`}
                   className="p-2 bg-white rounded border text-sm"
                 >
                   <div className="flex justify-between items-start mb-1">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        normalized.type === "connection" ||
-                        normalized.type === "connect"
+                        event.type === "connection" || event.type === "connect"
                           ? "bg-blue-100 text-blue-800"
-                          : normalized.type === "periodic"
+                          : event.type === "periodic"
                             ? "bg-green-100 text-green-800"
-                            : normalized.type === "dummy"
+                            : event.type === "dummy"
                               ? "bg-purple-100 text-purple-800"
-                              : normalized.type === "server_to_user"
+                              : event.type === "server_to_user"
                                 ? "bg-orange-100 text-orange-800"
-                                : normalized.type === "server_to_all"
+                                : event.type === "server_to_all"
                                   ? "bg-red-100 text-red-800"
-                                  : normalized.type === "session_evicted"
+                                  : event.type === "session_evicted"
                                     ? "bg-yellow-100 text-yellow-800"
-                                    : normalized.type === "notification"
+                                    : event.type === "notification"
                                       ? "bg-indigo-100 text-indigo-800"
                                       : "bg-gray-100 text-gray-800"
                       }`}
                     >
-                      {normalized.type}
+                      {event.type}
                     </span>
                     <span className="text-xs text-gray-500">
-                      {new Date(normalized.timestamp).toLocaleTimeString()}
+                      {new Date(event.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
-                  {normalized.message && (
-                    <p className="text-gray-700">{normalized.message}</p>
+                  {event.message && (
+                    <p className="text-gray-700">{event.message}</p>
                   )}
-                  {normalized.eventId && (
+                  {event.eventId && (
                     <p className="text-xs text-gray-500 mt-1">
-                      ID: {normalized.eventId}
+                      ID: {event.eventId}
                     </p>
                   )}
-                  {normalized.doId && (
-                    <p className="text-xs text-gray-500">
-                      DO: {normalized.doId}
-                    </p>
+                  {event.doId && (
+                    <p className="text-xs text-gray-500">DO: {event.doId}</p>
                   )}
                   <pre className="bg-gray-100 rounded p-2 overflow-x-auto text-xs mt-2">
                     {JSON.stringify(event, null, 2)}
