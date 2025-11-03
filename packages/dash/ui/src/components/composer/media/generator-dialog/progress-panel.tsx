@@ -1,12 +1,16 @@
 import { Badge } from "@openpromo/ui/components/badge";
+import { Button } from "@openpromo/ui/components/button";
+import { Checkbox } from "@openpromo/ui/components/checkbox";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Slider } from "@openpromo/ui/components/slider";
 import { Spinner } from "@openpromo/ui/components/spinner";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { UseMutationResult } from "@tanstack/react-query";
+import { Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   type ImageGenListResponse,
+  useImageGenDeleteBatchMutation,
   useImageGenListQuery,
 } from "@/queries/image-gen";
 import type {
@@ -30,13 +34,20 @@ export function ProgressPanel({
   className,
 }: ProgressPanelProps) {
   const batchCount = useImageGenComposerStore((state) => state.batchCount);
-  const [gridCols, setGridCols] = useState(2);
+  const [gridCols, setGridCols] = useState(4);
+  const [selectedGenerations, setSelectedGenerations] = useState<Set<string>>(
+    new Set(),
+  );
   const { data, isLoading } = useImageGenListQuery({
     page: "1",
     pageSize: "12",
   });
 
   const generations = data?.generations ?? [];
+
+  const deleteBatchMutation = useImageGenDeleteBatchMutation(() => {
+    setSelectedGenerations(new Set());
+  });
 
   const loadingSkeletonCount = useMemo(() => {
     if (!generateMutation.isPending) return 0;
@@ -56,6 +67,31 @@ export function ProgressPanel({
     }
   }, [gridCols]);
 
+  const handleToggleSelection = (id: string) => {
+    setSelectedGenerations((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedGenerations.size === generations.length) {
+      setSelectedGenerations(new Set());
+    } else {
+      setSelectedGenerations(new Set(generations.map((g) => g.id)));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedGenerations.size === 0) return;
+    deleteBatchMutation.mutate({ ids: Array.from(selectedGenerations) });
+  };
+
   return (
     <div
       className={cn(
@@ -63,8 +99,8 @@ export function ProgressPanel({
         className,
       )}
     >
-      <div className="px-4 pt-4 pb-2 flex-shrink-0">
-        <div className="flex items-start justify-between gap-4 mb-1">
+      <div className="px-4 pt-4 pb-2 flex-shrink-0 space-y-3">
+        <div className="flex items-start justify-between gap-4">
           <div className="space-y-1 flex-1">
             <h3 className="text-sm font-medium">Progress</h3>
             <p className="text-xs text-muted-foreground">
@@ -85,6 +121,47 @@ export function ProgressPanel({
             />
           </div>
         </div>
+
+        {/* Selection Toolbar */}
+        {generations.length > 0 && (
+          <div className="flex items-center justify-between p-2 border rounded-md bg-background">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={
+                  selectedGenerations.size === generations.length &&
+                  generations.length > 0
+                }
+                onCheckedChange={handleSelectAll}
+                aria-label="Select all"
+              />
+              <span className="text-xs text-muted-foreground">
+                {selectedGenerations.size > 0
+                  ? `${selectedGenerations.size} selected`
+                  : "Select all"}
+              </span>
+            </div>
+            {selectedGenerations.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteSelected}
+                disabled={deleteBatchMutation.isPending}
+              >
+                {deleteBatchMutation.isPending ? (
+                  <>
+                    <Spinner className="mr-1.5 h-3 w-3" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-1.5 h-3 w-3" />
+                    Delete
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 min-h-0">
@@ -124,6 +201,8 @@ export function ProgressPanel({
                     <GenerationCard
                       key={generation.id}
                       generation={generation}
+                      isSelected={selectedGenerations.has(generation.id)}
+                      onToggleSelection={handleToggleSelection}
                     />
                   ))
                 )}
@@ -138,7 +217,17 @@ export function ProgressPanel({
 
 type Generation = NonNullable<ImageGenListResponse["generations"]>[number];
 
-function GenerationCard({ generation }: { generation: Generation }) {
+interface GenerationCardProps {
+  generation: Generation;
+  isSelected: boolean;
+  onToggleSelection: (id: string) => void;
+}
+
+function GenerationCard({
+  generation,
+  isSelected,
+  onToggleSelection,
+}: GenerationCardProps) {
   const previewImage = generation.outputImages?.[0];
 
   const createdLabel = generation.createdAt
@@ -154,6 +243,16 @@ function GenerationCard({ generation }: { generation: Generation }) {
 
   return (
     <div className="border rounded-lg overflow-hidden hover:border-foreground/50 transition-colors group relative">
+      {/* Checkbox overlay */}
+      <div className="absolute top-2 left-2 z-10">
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => onToggleSelection(generation.id)}
+          className="bg-background border-2"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+
       <div className="aspect-square bg-muted relative overflow-hidden">
         {previewImage ? (
           <img
