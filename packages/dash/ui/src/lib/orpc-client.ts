@@ -5,7 +5,7 @@ import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { orpcRouter } from "@worker/orpc";
 
 const link = new RPCLink({
-  url: `${import.meta.env.VITE_DASHBOARD_URL}/api/rpc`,
+  url: `${window.location.origin}/api/rpc`, // FIXME: should prob use env var
   headers: () => ({}),
   fetch: (input, init) =>
     fetch(input, {
