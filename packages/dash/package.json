@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "predev": "pnpm secrets:sync && pnpm -w --filter @openpromo/core run db:migrate",
-    "dev": "vite --port 3000",
+    "dev": "vite --port 3000 --host",
     "typecheck": "tsc -b --noEmit",
     "build": "vite build",
     "build:staging": "CLOUDFLARE_ENV=staging vite build",
