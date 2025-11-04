@@ -1,25 +1,24 @@
 import { getDbClient } from "@core/database/db";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
 import { ErrorCodes, VisibleError } from "@core/utils/error";
-import { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import { eq } from "drizzle-orm";
 import * as z from "zod";
 import { loadConversationForWorkspace } from "../../routes/api/workspaces/inbox/routes/utils/conversation-loader";
 import { orpcBuilder, withWorkspaceRole } from "../context";
+import {
+  createWorkspaceInputSchema,
+  workspaceRoleMappers,
+} from "../shared/workspace-helpers";
 
-const DeleteConversationInputSchema = z.object({
-  workspaceId: z.string().min(1).optional(),
-  workspaceSlug: z.string().min(1).optional(),
-  conversationId: z.string().min(1),
-});
+const DeleteConversationInputSchema = createWorkspaceInputSchema(
+  z.object({
+    conversationId: z.string().min(1),
+  }),
+);
 
 export const deleteConversation = orpcBuilder
   .input(DeleteConversationInputSchema)
-  .use(withWorkspaceRole, (input) => ({
-    requiredRole: WORKSPACE_ROLE.EDITOR,
-    workspaceId: input.workspaceId,
-    workspaceSlug: input.workspaceSlug,
-  }))
+  .use(withWorkspaceRole, workspaceRoleMappers.editor)
   .handler(async ({ input, context }) => {
     const { conversationId } = input;
     const workspaceId = context.workspace.workspaceID;
