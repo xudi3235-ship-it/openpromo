@@ -1,2 +1,3 @@
 export * from "./facebook";
-// Instagram and TikTok will be added in next phases
+export * from "./instagram";
+export * from "./tiktok";
