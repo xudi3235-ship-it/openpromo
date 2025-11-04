@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
 import { assertUser } from "../../../helpers/auth";
-import { AppError } from "../../../helpers/error";
+import { createVisibleError } from "../../../helpers/error";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
 import { zValidator } from "../../../middleware/zod-validator";
 
@@ -34,8 +34,9 @@ export const deleteWorkspaceRoute = new Hono<ApiEnv>().delete(
       .limit(1);
 
     if (dbUser.defaultWorkspaceSlug === workspaceSlug) {
-      throw new AppError(400, {
+      throw createVisibleError(400, {
         userMessage: "Default workspace cannot be deleted",
+        message: "Attempted to delete default workspace",
       });
     }
 

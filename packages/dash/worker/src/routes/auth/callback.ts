@@ -12,7 +12,7 @@ import {
   getAuthState,
   setSessionCookie,
 } from "../../helpers/auth";
-import { AppError } from "../../helpers/error";
+import { createVisibleError } from "../../helpers/error";
 import {
   applyWorkspaceInvitesForUser,
   createWorkspace,
@@ -48,12 +48,12 @@ const bootstrapNewUser = async (
     organizationId: organization.id,
   });
   if (!refreshResult.authenticated) {
-    throw new AppError(500, {
-      message: `Failed to refresh session: ${refreshResult.reason}`,
+    throw createVisibleError(500, {
+      message: `Failed to refresh session: ${refreshResult.reason ?? "unknown reason"}`,
     });
   }
   if (!refreshResult.sealedSession) {
-    throw new AppError(500, { message: "No sealed session" });
+    throw createVisibleError(500, { message: "No sealed session" });
   }
   setSessionCookie(ctx, refreshResult.sealedSession);
 
@@ -105,7 +105,7 @@ export const callbackRoute = new Hono<ApiEnv>().get("/", async (c) => {
 
     const { sealedSession, user } = authenticatedUser;
     if (!sealedSession) {
-      throw new AppError(500, { message: "No sealed session" });
+      throw createVisibleError(500, { message: "No sealed session" });
     }
 
     // bootstrap new user if they don't have an organization

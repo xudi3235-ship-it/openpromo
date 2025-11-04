@@ -106,7 +106,11 @@ export async function instagramGraphRequest<T = unknown>(
       statusText: response.statusText,
       body: JSON.stringify(error),
     });
-    throw new FacebookGraphError(error.error.message ?? response.statusText);
+    throw new FacebookGraphError(
+      error.error.message ?? response.statusText,
+      error.error.code,
+      error.error.type,
+    );
   }
 
   return (await response.json()) as T;

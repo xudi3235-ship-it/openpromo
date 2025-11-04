@@ -7,7 +7,7 @@ import { workspacesTable } from "@openpromo/core/schemas/workspaces.sql";
 import { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import { and, eq } from "drizzle-orm";
 import { generateSlug } from "./db";
-import { AppError } from "./error";
+import { createVisibleError } from "./error";
 
 /**
  * Creates a new workspace for a user and assigns the admin role to the user.
@@ -18,11 +18,11 @@ export const createWorkspace = async (
   organizationId: string,
   userId: string,
 ) => {
-  const slug = await generateSlug(workspaceName, (slug) =>
+  const slug = await generateSlug(workspaceName, (candidate) =>
     db
       .select()
       .from(workspacesTable)
-      .where(eq(workspacesTable.slug, slug))
+      .where(eq(workspacesTable.slug, candidate))
       .limit(1),
   );
 
@@ -32,7 +32,7 @@ export const createWorkspace = async (
       .values({
         name: workspaceName,
         organizationId,
-        slug: slug,
+        slug,
       })
       .returning();
 
@@ -42,7 +42,7 @@ export const createWorkspace = async (
       .where(eq(workspaceRolesTable.slug, WORKSPACE_ROLE.ADMIN));
 
     if (!adminRole) {
-      throw new AppError(500, {
+      throw createVisibleError(500, {
         message: `${WORKSPACE_ROLE.ADMIN} role not found in the database`,
       });
     }
@@ -88,50 +88,46 @@ export async function applyWorkspaceInvitesForUser(params: {
     return;
   }
 
-  // Accept all invites and create workspace role assignments
   await Promise.all(
-    pendingInvites.map(
-      async (invite: { id: string; workspaceId: string; roleId: string }) => {
-        const [existingAssignment] = await db
-          .select({
-            id: workspaceRoleAssignmentsTable.id,
-            roleId: workspaceRoleAssignmentsTable.roleId,
-          })
-          .from(workspaceRoleAssignmentsTable)
-          .where(
-            and(
-              eq(workspaceRoleAssignmentsTable.workspaceId, invite.workspaceId),
-              eq(workspaceRoleAssignmentsTable.assigneeId, userId),
-            ),
-          )
-          .limit(1);
+    pendingInvites.map(async ({ id, workspaceId, roleId }) => {
+      const [existingAssignment] = await db
+        .select({
+          id: workspaceRoleAssignmentsTable.id,
+          roleId: workspaceRoleAssignmentsTable.roleId,
+        })
+        .from(workspaceRoleAssignmentsTable)
+        .where(
+          and(
+            eq(workspaceRoleAssignmentsTable.workspaceId, workspaceId),
+            eq(workspaceRoleAssignmentsTable.assigneeId, userId),
+          ),
+        )
+        .limit(1);
 
-        if (!existingAssignment) {
-          await db.insert(workspaceRoleAssignmentsTable).values({
-            workspaceId: invite.workspaceId,
-            roleId: invite.roleId,
-            assigneeType: "user",
-            assigneeId: userId,
-          });
-        } else if (existingAssignment.roleId !== invite.roleId) {
-          await db
-            .update(workspaceRoleAssignmentsTable)
-            .set({
-              roleId: invite.roleId,
-              updatedAt: new Date(),
-            })
-            .where(eq(workspaceRoleAssignmentsTable.id, existingAssignment.id));
-        }
-
+      if (!existingAssignment) {
+        await db.insert(workspaceRoleAssignmentsTable).values({
+          workspaceId,
+          roleId,
+          assigneeType: "user",
+          assigneeId: userId,
+        });
+      } else if (existingAssignment.roleId !== roleId) {
         await db
-          .update(workspaceInvitesTable)
-          .set({ status: "accepted", updatedAt: new Date() })
-          .where(eq(workspaceInvitesTable.id, invite.id));
-      },
-    ),
+          .update(workspaceRoleAssignmentsTable)
+          .set({
+            roleId,
+            updatedAt: new Date(),
+          })
+          .where(eq(workspaceRoleAssignmentsTable.id, existingAssignment.id));
+      }
+
+      await db
+        .update(workspaceInvitesTable)
+        .set({ status: "accepted", updatedAt: new Date() })
+        .where(eq(workspaceInvitesTable.id, id));
+    }),
   );
 
-  // Get the first workspace slug to set as default
   const [firstWorkspace] = await db
     .select({ slug: workspacesTable.slug })
     .from(workspacesTable)

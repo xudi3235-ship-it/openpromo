@@ -17,7 +17,7 @@ import { and, eq } from "drizzle-orm";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";
 import { assertOrg, assertUser } from "../helpers/auth";
-import { AppError } from "../helpers/error";
+import { createVisibleError } from "../helpers/error";
 import { getWorkspaceRole, hasWorkspaceRole } from "../helpers/role";
 
 /**
@@ -68,7 +68,7 @@ export const withWorkspaceRole: (
   }
 
   if (!workspace) {
-    throw new AppError(404, {
+    throw createVisibleError(404, {
       message: `Workspace ${workspaceSlug ?? workspaceId} not found`,
     });
   }
@@ -97,7 +97,7 @@ export const withWorkspaceRole: (
   const workspaceUserRole = await getWorkspaceRole(db, workspace.id, user.id);
 
   if (!hasWorkspaceRole(workspaceUserRole, requiredRole)) {
-    throw new AppError(403, {
+    throw createVisibleError(403, {
       message: `Insufficient workspace permissions. User role: ${workspaceUserRole}, Required role: ${requiredRole}.`,
     });
   }

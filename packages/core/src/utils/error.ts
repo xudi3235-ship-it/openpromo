@@ -1,3 +1,4 @@
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import * as z from "zod";
 
 /**
@@ -115,7 +116,7 @@ export class VisibleError extends Error {
   /**
    * Convert this error to an HTTP status code
    */
-  public statusCode(): number {
+  public statusCode(): ContentfulStatusCode {
     switch (this.type) {
       case "validation":
         return 400;

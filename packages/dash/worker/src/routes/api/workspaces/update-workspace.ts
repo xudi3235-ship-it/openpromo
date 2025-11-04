@@ -7,7 +7,7 @@ import { WORKSPACE_PERMISSION, WORKSPACE_ROLE } from "@shared/workspace/auth";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
-import { AppError } from "../../../helpers/error";
+import { createVisibleError } from "../../../helpers/error";
 import { withWorkspacePermission } from "../../../middleware/with-workspace-permission";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
 import { zValidator } from "../../../middleware/zod-validator";
@@ -60,7 +60,7 @@ export const updateWorkspaceRoute = new Hono<ApiEnv>().patch(
       .limit(1);
 
     if (!existingWorkspace) {
-      throw new AppError(404, {
+      throw createVisibleError(404, {
         message: `Workspace ${workspaceSlug} not found`,
       });
     }

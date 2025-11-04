@@ -15,7 +15,7 @@ import type {
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import type * as z from "zod";
-import { AppError } from "../../../../../helpers/error";
+import { createVisibleError } from "../../../../../helpers/error";
 import { zValidator } from "../../../../../middleware/zod-validator";
 import { buildContentItems, createWorkflowsForContents } from "../helpers";
 import { ContentCreateData } from "./create-content";
@@ -43,11 +43,11 @@ export const contentGroupsRoute = new Hono<ApiEnv>()
       );
 
     if (!results || results.length === 0) {
-      throw new AppError(404, { message: "Group not found" });
+      throw createVisibleError(404, { message: "Group not found" });
     }
 
     const group = results[0].pending_content_group;
-    if (!group) throw new AppError(404, { message: "Group not found" });
+    if (!group) throw createVisibleError(404, { message: "Group not found" });
 
     // Extract all contents from the results, filtering out null values
     const contents = results
@@ -103,13 +103,15 @@ export const contentGroupsRoute = new Hono<ApiEnv>()
       Array.isArray(base.attachments) && base.attachments.length > 0;
 
     if (!hasMessage && !hasAttachments) {
-      throw new AppError(400, {
+      throw createVisibleError(400, {
         message: "Add text or attach media to publish.",
       });
     }
 
     if (!publishingStatus)
-      throw new AppError(400, { message: "publishingStatus is required" });
+      throw createVisibleError(400, {
+        message: "publishingStatus is required",
+      });
 
     // Build content items from placements
     const contentItems = buildContentItems(placements);
@@ -143,7 +145,7 @@ export const contentGroupsRoute = new Hono<ApiEnv>()
     const { id } = c.req.param();
     const g = await EntPendingContentGroup.fromID(id);
     if (!g.isDraft() || !g.isScheduled()) {
-      throw new AppError(400, {
+      throw createVisibleError(400, {
         message: "Only draft or scheduled group can be published",
       });
     }

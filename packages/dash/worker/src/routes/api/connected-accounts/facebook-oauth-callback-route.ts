@@ -6,7 +6,7 @@ import { facebookOAuthService } from "@openpromo/core/domain/connected-account/f
 import { Hono } from "hono";
 import * as z from "zod";
 import { clearAuthStateCookie, getAuthState } from "../../../helpers/auth";
-import { AppError } from "../../../helpers/error";
+import { createVisibleError } from "../../../helpers/error";
 import { zValidator } from "../../../middleware/zod-validator";
 import type { PopupRelayQuery } from "../popup-relay/constants";
 
@@ -24,14 +24,14 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
       // This endpoint is hit when user successfully logged in via FB OAuth dialog
       const { code, state } = ctx.req.valid("query");
       if (!code || !state) {
-        throw new AppError(400, { message: "Missing code or state" });
+        throw createVisibleError(400, { message: "Missing code or state" });
       }
 
       const storedAuthState = getAuthState(ctx);
       if (!storedAuthState || storedAuthState.nonce !== state) {
         // Clear any stored state since verification failed
         clearAuthStateCookie(ctx);
-        throw new AppError(400, {
+        throw createVisibleError(400, {
           message: "Invalid state parameter - possible CSRF attack",
         });
       }
@@ -40,7 +40,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
       const actor = storedAuthState.actor;
       if (!actor || actor.type !== "workspace_user") {
         clearAuthStateCookie(ctx);
-        throw new AppError(400, {
+        throw createVisibleError(400, {
           message: "Invalid actor information in auth state",
         });
       }
@@ -68,7 +68,7 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
             userPages.map(async (page) => {
               console.log({ page: JSON.stringify(page) });
               if (!page.access_token) {
-                throw new AppError(500, {
+                throw createVisibleError(500, {
                   message: `No access token for page: ${page.id}`,
                 });
               }
@@ -112,8 +112,10 @@ export const facebookConnectedAccountRoute = new Hono<ApiEnv>().get(
             .filter((a) => a.status === "rejected")
             .map((a) => a.reason);
           if (failed.length > 0) {
-            throw new AppError(400, {
-              message: `Failed to create ${failed.length} connected accounts. Reasons:\n${failed.join("\n")}`,
+            throw createVisibleError(400, {
+              message: `Failed to create ${failed.length} connected accounts. Reasons:\n${failed
+                .map((reason) => String(reason))
+                .join("\n")}`,
             });
           }
 

@@ -1,14 +1,14 @@
 import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { env } from "@openpromo/core/utils/env";
 import type { Context, MiddlewareHandler } from "hono";
-import { AppError } from "../helpers/error";
+import { createVisibleError } from "../helpers/error";
 
 export const withAuth: () => MiddlewareHandler =
   () => async (c: Context<ApiEnv>, next) => {
     const user = c.get("user");
     const hasAdminApiToken = checkAdminApiToken(c);
     if (!user && !hasAdminApiToken) {
-      throw new AppError(401);
+      throw createVisibleError(401);
     }
 
     return next();

@@ -8,7 +8,7 @@ import { Platform } from "@core/schemas/connected-account.sql";
 import { Hono } from "hono";
 import * as z from "zod";
 import { clearAuthStateCookie, getAuthState } from "../../../helpers/auth";
-import { AppError } from "../../../helpers/error";
+import { createVisibleError } from "../../../helpers/error";
 import { zValidator } from "../../../middleware/zod-validator";
 import type { PopupRelayQuery } from "../popup-relay/constants";
 
@@ -26,15 +26,20 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>().get(
       // This endpoint is hit when user successfully logged in via Instagram OAuth dialog
       const { code, state } = ctx.req.valid("query");
       if (!code || !state) {
-        throw new AppError(400, { message: "Missing code or state" });
+        throw createVisibleError(400, {
+          message: "Missing code or state",
+          userMessage:
+            "Instagram did not return the required authorization data.",
+        });
       }
 
       const storedAuthState = getAuthState(ctx);
       if (!storedAuthState || storedAuthState.nonce !== state) {
         // Clear any stored state since verification failed
         clearAuthStateCookie(ctx);
-        throw new AppError(400, {
+        throw createVisibleError(400, {
           message: "Invalid state parameter - possible CSRF attack",
+          userMessage: "The login session expired. Please try again.",
         });
       }
 
@@ -42,7 +47,7 @@ export const instagramConnectedAccountRoute = new Hono<ApiEnv>().get(
       const actor = storedAuthState.actor;
       if (!actor || actor.type !== "workspace_user") {
         clearAuthStateCookie(ctx);
-        throw new AppError(400, {
+        throw createVisibleError(400, {
           message: "Invalid actor information in auth state",
         });
       }

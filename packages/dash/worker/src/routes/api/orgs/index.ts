@@ -10,7 +10,7 @@ import {
   setSessionCookie,
   WORKOS_SESSION_COOKIE_NAME,
 } from "../../../helpers/auth";
-import { AppError } from "../../../helpers/error";
+import { createVisibleError } from "../../../helpers/error";
 import { withAuth } from "../../../middleware/with-auth";
 import { zValidator } from "../../../middleware/zod-validator";
 
@@ -41,7 +41,7 @@ export const orgsRoute = new Hono<ApiEnv>()
       const { organizationId } = ctx.req.valid("json");
 
       if (!sessionCookie) {
-        throw new AppError(500, {
+        throw createVisibleError(500, {
           message: "Assertion failed: session cookie is not present",
         });
       }
@@ -55,10 +55,10 @@ export const orgsRoute = new Hono<ApiEnv>()
       if (refreshResult.authenticated && refreshResult.sealedSession) {
         setSessionCookie(ctx, refreshResult.sealedSession);
         return ctx.json({ organizationId });
-      } else {
-        throw new AppError(500, {
-          message: "Failed to switch organization",
-        });
       }
+
+      throw createVisibleError(500, {
+        message: "Failed to switch organization",
+      });
     },
   );

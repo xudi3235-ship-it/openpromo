@@ -3,7 +3,7 @@ import { EntStyleComponent } from "@core/domain/style-component";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
 import * as z from "zod";
-import { AppError } from "../../../../../helpers/error";
+import { createVisibleError } from "../../../../../helpers/error";
 import { zValidator } from "../../../../../middleware/zod-validator";
 
 const paramsSchema = z.object({
@@ -35,7 +35,7 @@ export const listStyleGenerationsRoute = new Hono<ApiEnv>().get(
     const style = await EntStyleComponent.fromID(styleId).catch(() => null);
 
     if (!style) {
-      throw new AppError(404, {
+      throw createVisibleError(404, {
         message: `Style component ${styleId} not found`,
         userMessage: "Style not found.",
       });

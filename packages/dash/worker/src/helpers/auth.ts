@@ -3,7 +3,7 @@ import type { ApiEnv } from "@openpromo/core/helpers/api-env";
 import { WORKOS_SESSION_COOKIE_NAME } from "@openpromo/core/helpers/auth";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import { AppError } from "./error";
+import { createVisibleError } from "./error";
 
 export { WORKOS_SESSION_COOKIE_NAME };
 export const AUTH_STATE_COOKIE_NAME = "wos-auth-state";
@@ -99,7 +99,7 @@ export function clearAuthStateCookie(c: Context) {
 export function assertUser(ctx: Context<ApiEnv>) {
   const user = ctx.get("user");
   if (!user) {
-    throw new AppError(500, {
+    throw createVisibleError(500, {
       message: "Assertion failed: user is not present in context",
     });
   }
@@ -115,7 +115,7 @@ export function assertUser(ctx: Context<ApiEnv>) {
 export function assertOrg(ctx: Context<ApiEnv>) {
   const organizationId = ctx.get("organizationId");
   if (!organizationId) {
-    throw new AppError(500, {
+    throw createVisibleError(500, {
       message: "Assertion failed: organizationId is not present in context",
     });
   }

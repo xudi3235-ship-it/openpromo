@@ -16,7 +16,7 @@ import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as z from "zod";
 import { assertUser } from "../../../helpers/auth";
-import { AppError } from "../../../helpers/error";
+import { createVisibleError } from "../../../helpers/error";
 import { withAuth } from "../../../middleware/with-auth";
 import { withWorkspacePermission } from "../../../middleware/with-workspace-permission";
 import { withWorkspaceRole } from "../../../middleware/with-workspace-role";
@@ -90,7 +90,9 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
     async (ctx) => {
       const workspaceSlug = ctx.req.param("workspaceSlug");
       if (!workspaceSlug)
-        throw new AppError(400, { message: "Workspace slug is required" });
+        throw createVisibleError(400, {
+          message: "Workspace slug is required",
+        });
       const db = getDbClient();
       const workOS = getWorkOS();
       const actor = Actor.assert("workspace_user");
@@ -223,7 +225,7 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
         .limit(1);
 
       if (!roleRecord) {
-        throw new AppError(400, {
+        throw createVisibleError(400, {
           message: `Workspace role ${role} not found`,
         });
       }
@@ -311,7 +313,7 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
           }
 
           if (!assignmentId) {
-            throw new AppError(500, {
+            throw createVisibleError(500, {
               message: "Failed to create or update workspace role assignment",
             });
           }
@@ -533,7 +535,7 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
         .limit(1);
 
       if (!roleRecord) {
-        throw new AppError(400, {
+        throw createVisibleError(400, {
           message: `Workspace role ${role} not found`,
         });
       }
@@ -555,14 +557,14 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
         .limit(1);
 
       if (!assignment) {
-        throw new AppError(404, {
+        throw createVisibleError(404, {
           message: `Member ${memberId} not found`,
         });
       }
 
       // Don't allow users to change their own role
       if (assignment.assigneeId === actor.properties.userID) {
-        throw new AppError(400, {
+        throw createVisibleError(400, {
           message: "You cannot change your own role",
         });
       }
@@ -627,14 +629,14 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
         .limit(1);
 
       if (!assignment) {
-        throw new AppError(404, {
+        throw createVisibleError(404, {
           message: `Member ${memberId} not found`,
         });
       }
 
       // Don't allow users to remove themselves
       if (assignment.assigneeId === actor.properties.userID) {
-        throw new AppError(400, {
+        throw createVisibleError(400, {
           message: "You cannot remove yourself from the workspace",
         });
       }
@@ -677,13 +679,13 @@ export const workspaceTeamRoute = new Hono<ApiEnv>()
         .limit(1);
 
       if (!invite) {
-        throw new AppError(404, {
+        throw createVisibleError(404, {
           message: `Invite ${inviteId} not found`,
         });
       }
 
       if (invite.status !== "pending") {
-        throw new AppError(400, {
+        throw createVisibleError(400, {
           message: "Only pending invites can be revoked",
         });
       }

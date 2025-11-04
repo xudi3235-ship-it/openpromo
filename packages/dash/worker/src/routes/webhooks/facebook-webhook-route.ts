@@ -5,7 +5,7 @@ import type { ApiEnv } from "@core/helpers/api-env";
 import { env } from "@core/utils/env";
 import type { FBWebhookPayload } from "@shared/inbox";
 import { Hono } from "hono";
-import { AppError } from "../../helpers/error";
+import { createVisibleError } from "../../helpers/error";
 import { verifyMetaWebhookSignature } from "../../middleware/verify-meta-webhook-signature";
 import { zValidator } from "../../middleware/zod-validator";
 import { metaWebhookGetQuerySchema } from "./common";
@@ -17,8 +17,9 @@ export const facebookWebhooksRoute = new Hono<ApiEnv>()
       c.req.valid("query");
 
     if (verifyToken !== env.FACEBOOK_WEBHOOK_VERIFY_TOKEN) {
-      throw new AppError(400, {
+      throw createVisibleError(400, {
         message: "Invalid facebook webhook verify token",
+        userMessage: "Webhook verification failed.",
       });
     }
 

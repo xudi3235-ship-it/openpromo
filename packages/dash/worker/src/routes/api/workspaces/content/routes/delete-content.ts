@@ -1,7 +1,7 @@
 import { EntUnifiedContent } from "@core/domain/content/entity/EntUnifiedContent";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
-import { AppError } from "../../../../../helpers/error";
+import { createVisibleError } from "../../../../../helpers/error";
 
 export const deleteContentRoute = new Hono<ApiEnv>().delete(
   "/:id",
@@ -9,7 +9,7 @@ export const deleteContentRoute = new Hono<ApiEnv>().delete(
     const { id } = c.req.param();
     const content = await EntUnifiedContent.fromID(id);
     if (!content)
-      throw new AppError(404, { message: `Content ${id} not found` });
+      throw createVisibleError(404, { message: `Content ${id} not found` });
     const deleted = await content.delete();
     return c.json({ success: !!deleted });
   },

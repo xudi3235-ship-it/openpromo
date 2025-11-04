@@ -13,7 +13,7 @@ import {
 } from "@shared/content";
 import { Hono } from "hono";
 import * as z from "zod";
-import { AppError } from "../../../../../helpers/error";
+import { createVisibleError } from "../../../../../helpers/error";
 import { zValidator } from "../../../../../middleware/zod-validator";
 import { buildContentItems, createWorkflowsForContents } from "../helpers";
 
@@ -45,7 +45,7 @@ export const createContentRoute = new Hono<ApiEnv>().post(
       Array.isArray(base.attachments) && base.attachments.length > 0;
 
     if (!hasMessage && !hasAttachments) {
-      throw new AppError(400, {
+      throw createVisibleError(400, {
         message: "Add text or attach media to publish.",
       });
     }

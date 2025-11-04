@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import slugify from "slugify";
-import { AppError } from "./error";
+import { createVisibleError } from "./error";
 
 export const generateSlug = async <T>(
   name: string,
@@ -17,7 +17,7 @@ export const generateSlug = async <T>(
     }
   }
 
-  throw new AppError(500, {
+  throw createVisibleError(500, {
     message: "Failed to generate unique slug",
   });
 };

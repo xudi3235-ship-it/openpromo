@@ -8,7 +8,7 @@ import { Platform } from "@core/schemas/connected-account.sql";
 import { Hono } from "hono";
 import * as z from "zod";
 import { clearAuthStateCookie, getAuthState } from "../../../helpers/auth";
-import { AppError } from "../../../helpers/error";
+import { createVisibleError } from "../../../helpers/error";
 import { zValidator } from "../../../middleware/zod-validator";
 import type { PopupRelayQuery } from "../popup-relay/constants";
 
@@ -24,13 +24,13 @@ export const tikTokConnectedAccountRoute = new Hono<ApiEnv>().get(
     try {
       const { code, state } = ctx.req.valid("query");
       if (!code || !state) {
-        throw new AppError(400, { message: "Missing code or state" });
+        throw createVisibleError(400, { message: "Missing code or state" });
       }
 
       const storedAuthState = getAuthState(ctx);
       if (!storedAuthState || storedAuthState.nonce !== state) {
         clearAuthStateCookie(ctx);
-        throw new AppError(400, {
+        throw createVisibleError(400, {
           message: "Invalid state parameter - possible CSRF attack",
         });
       }
@@ -38,7 +38,7 @@ export const tikTokConnectedAccountRoute = new Hono<ApiEnv>().get(
       const actor = storedAuthState.actor;
       if (!actor || actor.type !== "workspace_user") {
         clearAuthStateCookie(ctx);
-        throw new AppError(400, {
+        throw createVisibleError(400, {
           message: "Invalid actor information in auth state",
         });
       }
