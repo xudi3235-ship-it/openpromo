@@ -1,5 +1,6 @@
 export type { OrpcContext, OrpcWorkspaceContext } from "./context";
-export { orpcBuilder, withWorkspaceRole } from "./context";
+export { orpcBuilder } from "./context";
+export { withWorkspaceRole } from "./middleware";
 export { deleteConversation, inboxRouter } from "./routes/inbox";
 export {
   createPlanet,

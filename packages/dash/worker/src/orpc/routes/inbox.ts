@@ -4,7 +4,8 @@ import { ErrorCodes, VisibleError } from "@core/utils/error";
 import { eq } from "drizzle-orm";
 import * as z from "zod";
 import { loadConversationForWorkspace } from "../../routes/api/workspaces/inbox/routes/utils/conversation-loader";
-import { orpcBuilder, withWorkspaceRole } from "../context";
+import { orpcBuilder } from "../context";
+import { withWorkspaceRole } from "../middleware";
 import {
   createWorkspaceInputSchema,
   workspaceRoleMappers,
@@ -16,8 +17,14 @@ const DeleteConversationInputSchema = createWorkspaceInputSchema(
   }),
 );
 
+const DeleteConversationOutputSchema = z.object({
+  success: z.boolean(),
+  conversationId: z.string(),
+});
+
 export const deleteConversation = orpcBuilder
   .input(DeleteConversationInputSchema)
+  .output(DeleteConversationOutputSchema)
   .use(withWorkspaceRole, workspaceRoleMappers.editor)
   .handler(async ({ input, context }) => {
     const { conversationId } = input;
