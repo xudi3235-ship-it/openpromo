@@ -268,6 +268,7 @@ export const useComposerPreview = (
       const callToActionLabel = callToAction
         ? callToAction.type.replace(/_/g, " ").toLowerCase()
         : null;
+      const callToActionLink = callToAction?.value?.link || null;
 
       if (isReel) {
         const reelPreview: FacebookReelPreview = {
@@ -285,6 +286,7 @@ export const useComposerPreview = (
           },
           audioTitle: "Original audio",
           callToActionLabel,
+          callToActionLink,
         };
         return reelPreview;
       }
@@ -303,6 +305,7 @@ export const useComposerPreview = (
           shares: 8,
         },
         callToActionLabel,
+        callToActionLink,
       };
       return preview;
     }
