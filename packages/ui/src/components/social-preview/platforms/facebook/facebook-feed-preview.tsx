@@ -78,7 +78,12 @@ export function FacebookFeedPreview({
         )}
 
         {/* Media */}
-        <div className="overflow-hidden">
+        <div
+          className={cn(
+            "overflow-hidden",
+            size === "compact" || size === "thumbnail" ? "px-2" : "px-3",
+          )}
+        >
           <PreviewMedia
             media={media}
             aspectRatio="3/4"
