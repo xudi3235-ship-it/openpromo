@@ -14,6 +14,7 @@ import { QUERY_KEYS } from "@/lib/query";
 import { useSidebarData } from "./layout/data/sidebar-data";
 import { NavGroup } from "./layout/nav-group";
 import { NavUser } from "./layout/nav-user";
+import { WebSocketStatusIndicator } from "./layout/websocket-status-indicator";
 import { WorkspaceSwitcher } from "./workspace-switcher";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -58,6 +59,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </div>
             )
           )}
+          {currentWorkspaceSlug && <WebSocketStatusIndicator />}
           <SidebarTrigger
             variant="outline"
             className="max-md:scale-125 shrink-0"
