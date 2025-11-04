@@ -7,7 +7,7 @@ type SendMessageRoute =
 
 type SendMessageResponse = InferResponseType<SendMessageRoute>;
 type SendMessageRequest = InferRequestType<SendMessageRoute>;
-type SendMessageVariables = SendMessageRequest["json"];
+export type SendMessageVariables = SendMessageRequest["json"];
 
 export function useSendInboxMessageMutation<TContext = unknown>(
   workspaceSlug: string | undefined,

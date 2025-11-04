@@ -1,20 +1,20 @@
 import { ErrorCodes, VisibleError } from "@core/utils/error";
 import { FacebookReply } from "./facebook-reply";
 import { InstagramReply } from "./instagram-reply";
-import type { DMReplyContext } from "./types";
+import type { DMReplyContext, DMReplyPayload } from "./types";
 
 /**
  * Handles sending DM replies across platforms
  */
 export namespace DMReplyHandler {
-  export async function send(context: DMReplyContext, text: string) {
+  export async function send(context: DMReplyContext, payload: DMReplyPayload) {
     switch (context.platform) {
       case "FACEBOOK":
-        await FacebookReply.sendDM(context, text);
+        await FacebookReply.sendDM(context, payload);
         break;
 
       case "INSTAGRAM":
-        await InstagramReply.sendDM(context, text);
+        await InstagramReply.sendDM(context, payload);
         break;
 
       default:

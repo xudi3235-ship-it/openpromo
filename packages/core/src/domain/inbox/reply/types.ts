@@ -1,6 +1,6 @@
 import type { InboxChannel } from "@core/schemas/inbox-conversations.sql";
 import type { AllPlatforms } from "@shared/content";
-import type { InboxMessageMetadata } from "@shared/inbox";
+import type { InboxAttachment, InboxMessageMetadata } from "@shared/inbox";
 
 /**
  * Common data needed for any reply operation
@@ -20,6 +20,12 @@ export type ReplyContext = {
  */
 export type DMReplyContext = ReplyContext & {
   channel: "dm";
+};
+
+export type DMReplyPayload = {
+  text: string | null;
+  attachments: InboxAttachment[];
+  replyToMessageId?: string | null;
 };
 
 /**
@@ -46,5 +52,6 @@ export type CommentReplyTarget = {
 export type SendReplyInput = {
   conversationId: string;
   text: string;
+  attachments?: InboxAttachment[] | null;
   replyToMessageId?: string | null;
 };

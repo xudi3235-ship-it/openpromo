@@ -3,7 +3,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { InboxMessagesList } from "@worker/routes/api/workspaces/inbox";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useSendInboxMessageMutation } from "@/queries/inbox/send-message";
+import {
+  type SendMessageVariables,
+  useSendInboxMessageMutation,
+} from "@/queries/inbox/send-message";
 import { useInboxStore } from "@/stores/inbox-store";
 
 type MessagesQueryKey = ["inbox", "messages", string, string, number, number];
@@ -113,7 +116,7 @@ export function useQuickReply(
         const optimisticId = optimisticIdGenerator();
         const optimisticMessage = createOptimisticMessage(
           optimisticId,
-          variables.text,
+          variables.text ?? "",
           conversation,
         );
 
@@ -144,7 +147,7 @@ export function useQuickReply(
           conversationId,
           workspaceSlug,
           messagesKey,
-          text: variables.text,
+          text: variables.text ?? "",
         } satisfies QuickReplyMutationContext;
       },
       onError: (error, _variables, context) => {
@@ -186,9 +189,10 @@ export function useQuickReply(
 
       setIsSubmitting(true);
 
-      mutation.mutate({
+      const payload: SendMessageVariables = {
         text: message.trim(),
-      });
+      };
+      mutation.mutate(payload);
     },
     [conversationId, workspaceSlug, mutation],
   );

@@ -9,7 +9,7 @@ import {
 } from "@core/schemas/inbox-conversations.sql";
 import { ErrorCodes, VisibleError } from "@core/utils/error";
 import type { AllPlatforms } from "@shared/content";
-import type { InboxMessageMetadata } from "@shared/inbox";
+import type { InboxAttachment, InboxMessageMetadata } from "@shared/inbox";
 import { InboxRealtimeEventTypes } from "@shared/inbox";
 import { createWorkspaceEvent } from "@shared/workspace/events";
 import { and, eq } from "drizzle-orm";
@@ -38,6 +38,7 @@ export namespace InboxReplyService {
   export async function sendReply({
     conversationId,
     text,
+    attachments,
     replyToMessageId,
   }: SendReplyInput) {
     if (replyToMessageId) {
@@ -46,6 +47,13 @@ export namespace InboxReplyService {
         replyToMessageId,
       });
     }
+
+    const trimmedText = text.trim();
+    const normalizedAttachments = Array.isArray(attachments)
+      ? attachments.filter((attachment): attachment is InboxAttachment =>
+          Boolean(attachment?.url && attachment.type),
+        )
+      : [];
 
     const workspaceId = Actor.workspaceID();
     const db = getDbClient();
@@ -76,9 +84,26 @@ export namespace InboxReplyService {
         ...baseContext,
         channel: "dm",
       };
-      await DMReplyHandler.send(dmContext, text);
-      await emitPendingReplyEvent(row.id, row.channel, workspaceId);
+      await DMReplyHandler.send(dmContext, {
+        text: trimmedText.length > 0 ? trimmedText : null,
+        attachments: normalizedAttachments,
+        replyToMessageId,
+      });
+      await emitPendingReplyEvent(
+        row.id,
+        row.channel,
+        workspaceId,
+        trimmedText,
+        normalizedAttachments,
+      );
     } else if (row.channel === "post_comment") {
+      if (normalizedAttachments.length > 0) {
+        throw new VisibleError(
+          "validation",
+          ErrorCodes.Validation.INVALID_STATE,
+          "Attachments are not supported for comment replies yet.",
+        );
+      }
       const commentContext: CommentReplyContext = {
         ...baseContext,
         channel: "post_comment",
@@ -88,7 +113,13 @@ export namespace InboxReplyService {
           {}) as InboxMessageMetadata,
       };
       await CommentReplyHandler.send(commentContext, text);
-      await emitPendingReplyEvent(row.id, row.channel, workspaceId);
+      await emitPendingReplyEvent(
+        row.id,
+        row.channel,
+        workspaceId,
+        trimmedText,
+        normalizedAttachments,
+      );
     } else {
       throw new VisibleError(
         "validation",
@@ -140,6 +171,8 @@ async function emitPendingReplyEvent(
   conversationId: string,
   channel: InboxChannel,
   workspaceId: string,
+  text: string,
+  attachments: InboxAttachment[],
 ) {
   const pendingEvent = createWorkspaceEvent(
     InboxRealtimeEventTypes.MessageUpserted,
@@ -149,8 +182,8 @@ async function emitPendingReplyEvent(
         id: "",
         externalId: "",
         sender: "self",
-        text: null,
-        attachments: [],
+        text: text.trim().length > 0 ? text : null,
+        attachments: attachments.map((attachment) => ({ ...attachment })),
         createdAt: new Date(),
         channel,
         contentId: null,

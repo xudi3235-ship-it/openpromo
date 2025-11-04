@@ -1,7 +1,11 @@
-import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
+import type {
+  InboxAttachment,
+  InboxConversationSummary,
+  InboxMessage,
+} from "@shared/inbox";
 import { useQueryClient } from "@tanstack/react-query";
 import type { InboxMessagesList } from "@worker/routes/api/workspaces/inbox";
-import { Paperclip, Smile } from "lucide-react";
+import { Image as ImageIcon, Loader2, Smile, X } from "lucide-react";
 import {
   type FormEvent,
   useCallback,
@@ -9,7 +13,11 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useSendInboxMessageMutation } from "@/queries/inbox/send-message";
+import { useAttachmentComposer } from "@/hooks/inbox/useAttachmentComposer";
+import {
+  type SendMessageVariables,
+  useSendInboxMessageMutation,
+} from "@/queries/inbox/send-message";
 import { useInboxStore } from "@/stores/inbox-store";
 import { MessageComposer, type MessageComposerStatus } from "./v2/composer";
 
@@ -28,6 +36,7 @@ type SendMessageMutationContext = {
   messagesKey: MessagesQueryKey;
   text: string;
   replyToMessageId: string | null;
+  attachments: InboxAttachment[];
 };
 
 const DEFAULT_PAGE = 1;
@@ -36,10 +45,12 @@ const DEFAULT_PAGE_SIZE = 50;
 function createOptimisticMessage(
   id: string,
   text: string,
+  attachments: InboxAttachment[],
   conversation: InboxConversationSummary,
   replyToMessageId: string | null,
 ): InboxMessage {
   const createdAt = new Date();
+  const normalizedText = text.trim().length > 0 ? text : null;
   const extra: Record<string, unknown> = {
     generatedAt: createdAt.toISOString(),
   };
@@ -51,8 +62,8 @@ function createOptimisticMessage(
     externalId: id,
     sender: "self",
     channel: conversation.channel,
-    text,
-    attachments: [],
+    text: normalizedText,
+    attachments,
     createdAt,
     contentId: null,
     metadata: {
@@ -70,6 +81,17 @@ export function InboxMessageInput({
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const {
+    attachments: composerAttachments,
+    hasAttachments: composerHasAttachments,
+    isUploading: isUploadingAttachment,
+    fileInputRef,
+    handleFileChange,
+    handleAttachmentButtonClick,
+    removeAttachment,
+    clearAttachments,
+    restoreAttachments,
+  } = useAttachmentComposer(conversation);
   const appendMessages = useInboxStore((state) => state.appendMessages);
   const removeMessage = useInboxStore((state) => state.removeMessage);
   const initializeThread = useInboxStore((state) => state.initializeThread);
@@ -148,9 +170,12 @@ export function InboxMessageInput({
         initializeThread(conversationId);
 
         const optimisticId = optimisticIdPrefix();
+        const textValue = variables.text ?? "";
+        const attachmentsValue = variables.attachments ?? [];
         const optimisticMessage = createOptimisticMessage(
           optimisticId,
-          variables.text,
+          textValue,
+          attachmentsValue,
           conversation,
           variables.replyToMessageId ?? null,
         );
@@ -182,8 +207,9 @@ export function InboxMessageInput({
           conversationId,
           workspaceSlug,
           messagesKey,
-          text: variables.text,
+          text: textValue,
           replyToMessageId: variables.replyToMessageId ?? null,
+          attachments: attachmentsValue,
         } satisfies SendMessageMutationContext;
       },
       onError: (error, _variables, context) => {
@@ -204,6 +230,9 @@ export function InboxMessageInput({
             context.replyToMessageId,
           );
         }
+        if (context.attachments.length > 0) {
+          restoreAttachments(context.attachments);
+        }
         setErrorMessage(error.message || "Unable to send message");
       },
       onSettled: (_data, _error, _variables, context) => {
@@ -223,8 +252,13 @@ export function InboxMessageInput({
 
   const isReady = Boolean(workspaceSlug && conversation?.id);
   const trimmedDraft = draft.trim();
+  const hasText = trimmedDraft.length > 0;
+  const hasAttachments = composerHasAttachments;
   const isSendDisabled =
-    !isReady || trimmedDraft.length === 0 || mutation.isPending;
+    !isReady ||
+    (!hasText && !hasAttachments) ||
+    mutation.isPending ||
+    isUploadingAttachment;
   const submitStatus: MessageComposerStatus = mutation.isPending
     ? "submitting"
     : mutation.isError
@@ -236,14 +270,26 @@ export function InboxMessageInput({
       event.preventDefault();
       if (isSendDisabled || !conversation) return;
       const value = trimmedDraft;
-      if (!value) return;
+      const hasMessageText = value.length > 0;
+      if (!hasMessageText && !hasAttachments) return;
 
       const targetMessageId = replyTargetId ?? null;
-      const payload = targetMessageId
-        ? { text: value, replyToMessageId: targetMessageId }
-        : { text: value };
+      const attachmentsPayload = composerAttachments.map(
+        (attachment) => attachment.data,
+      );
+      const payload: SendMessageVariables = {};
+      if (hasMessageText) {
+        payload.text = value;
+      }
+      if (attachmentsPayload.length > 0) {
+        payload.attachments = attachmentsPayload;
+      }
+      if (targetMessageId) {
+        payload.replyToMessageId = targetMessageId;
+      }
       mutation.mutate(payload);
       setDraft("");
+      clearAttachments();
       if (conversationId) {
         clearComposerDraft(conversationId);
         clearComposerReplyTarget(conversationId);
@@ -252,10 +298,13 @@ export function InboxMessageInput({
     [
       clearComposerDraft,
       clearComposerReplyTarget,
+      clearAttachments,
       conversation,
       conversationId,
       isSendDisabled,
       mutation,
+      composerAttachments,
+      hasAttachments,
       replyTargetId,
       trimmedDraft,
     ],
@@ -283,6 +332,10 @@ export function InboxMessageInput({
     clearComposerReplyTarget(conversationId);
   }, [clearComposerReplyTarget, conversationId]);
 
+  const handleRemoveAttachment = useCallback(() => {
+    removeAttachment();
+  }, [removeAttachment]);
+
   return (
     <footer className="bg-background px-4 py-2.5">
       <MessageComposer.Root onSubmit={handleSubmit}>
@@ -303,11 +356,61 @@ export function InboxMessageInput({
           }
           disabled={!conversation}
         />
+        {(composerAttachments.length > 0 || isUploadingAttachment) && (
+          <div className="flex items-center gap-3 px-2.5 pb-2">
+            {composerAttachments.map((attachment) => (
+              <div
+                key={attachment.id}
+                className="group relative h-16 w-16 overflow-hidden rounded-md border border-border/60 bg-muted/20"
+              >
+                <img
+                  src={attachment.data.url}
+                  alt={attachment.name ?? "Attached image"}
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveAttachment}
+                  className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-background/80 text-muted-foreground shadow-sm transition hover:text-foreground"
+                  aria-label="Remove attachment"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {isUploadingAttachment && (
+              <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed border-border/60 bg-muted/20">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+          </div>
+        )}
         <MessageComposer.Toolbar>
           <MessageComposer.Tools>
-            <MessageComposer.Button type="button" disabled>
-              <Paperclip className="h-4 w-4" />
+            <MessageComposer.Button
+              type="button"
+              onClick={handleAttachmentButtonClick}
+              disabled={
+                !conversation ||
+                isUploadingAttachment ||
+                mutation.isPending ||
+                hasAttachments
+              }
+              aria-label="Attach image"
+            >
+              {isUploadingAttachment ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ImageIcon className="h-4 w-4" />
+              )}
             </MessageComposer.Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(event) => handleFileChange(event.target.files)}
+            />
             <MessageComposer.Button type="button" disabled>
               <Smile className="h-4 w-4" />
             </MessageComposer.Button>
