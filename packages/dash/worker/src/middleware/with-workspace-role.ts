@@ -1,24 +1,10 @@
-import { getDbClient } from "@core/database/db";
 import { Actor } from "@openpromo/core/helpers/actor";
 import type { ApiEnv } from "@openpromo/core/helpers/api-env";
-import {
-  type Workspace,
-  workspacesTable,
-} from "@openpromo/core/schemas/workspaces.sql";
-import {
-  getWorkspacePermissions,
-  ORGANIZATION_ROLE,
-  type OrganizationRole,
-  WORKSPACE_PERMISSION,
-  WORKSPACE_ROLE,
-  type WorkspaceRole,
-} from "@shared/workspace/auth";
-import { and, eq } from "drizzle-orm";
+import type { WorkspaceRole } from "@shared/workspace/auth";
 import type { Context } from "hono";
 import type { MiddlewareHandler } from "hono/types";
 import { assertOrg, assertUser } from "../helpers/auth";
-import { createVisibleError } from "../helpers/error";
-import { getWorkspaceRole, hasWorkspaceRole } from "../helpers/role";
+import { checkWorkspaceRole } from "../helpers/workspace-role-checker";
 
 /**
  * Middleware to check if the user has the required workspace role
@@ -29,98 +15,33 @@ import { getWorkspaceRole, hasWorkspaceRole } from "../helpers/role";
 export const withWorkspaceRole: (
   requiredRole: WorkspaceRole,
 ) => MiddlewareHandler = (requiredRole) => async (c: Context<ApiEnv>, next) => {
-  const orgRole = c.get("role");
-  const db = getDbClient();
-  const workspaceId = c.req.param("workspaceId");
-  const workspaceSlug = c.req.param("workspaceSlug");
-
   // 1. assert user and org
   const user = assertUser(c);
   const organizationId = assertOrg(c);
+  const orgRole = c.get("role");
 
-  // 2. resolve workspace and ensure it belongs to the user's org
-  let workspace: Workspace | undefined;
-
-  if (workspaceId) {
-    const [ws] = await db
-      .select()
-      .from(workspacesTable)
-      .where(
-        and(
-          eq(workspacesTable.id, workspaceId),
-          eq(workspacesTable.organizationId, organizationId),
-        ),
-      )
-      .limit(1);
-    workspace = ws;
-  } else if (workspaceSlug) {
-    const [ws] = await db
-      .select()
-      .from(workspacesTable)
-      .where(
-        and(
-          eq(workspacesTable.slug, workspaceSlug),
-          eq(workspacesTable.organizationId, organizationId),
-        ),
-      )
-      .limit(1);
-    workspace = ws;
+  if (!orgRole) {
+    throw new Error("Organization role is not set in context");
   }
 
-  if (!workspace) {
-    throw createVisibleError(404, {
-      message: `Workspace ${workspaceSlug ?? workspaceId} not found`,
-    });
-  }
+  // 2. Extract workspace identifiers from params
+  const workspaceId = c.req.param("workspaceId");
+  const workspaceSlug = c.req.param("workspaceSlug");
 
-  // 3. check if user has the required role
-  if (
-    orgRole === ORGANIZATION_ROLE.OWNER ||
-    orgRole === ORGANIZATION_ROLE.ADMIN
-  ) {
-    // org owner or admin has unrestricted access to all workspaces
-    const workspaceCtx = {
-      userID: user.id,
-      workspaceID: workspace.id,
-      organizationID: organizationId,
-      role: orgRole as OrganizationRole,
-      email: user.email,
-      workspaceSlug: workspace.slug,
-      featureFlags: c.get("featureFlags"),
-      permissions: c.get("permissions"),
-      workspacePermissions: [WORKSPACE_PERMISSION.ALL], // Org admins get all workspace permissions
-      workspaceRole: WORKSPACE_ROLE.ADMIN,
-    };
-    return Actor.provide("workspace_user", workspaceCtx, next);
-  }
-
-  const workspaceUserRole = await getWorkspaceRole(db, workspace.id, user.id);
-
-  if (!hasWorkspaceRole(workspaceUserRole, requiredRole)) {
-    throw createVisibleError(403, {
-      message: `Insufficient workspace permissions. User role: ${workspaceUserRole}, Required role: ${requiredRole}.`,
-    });
-  }
-
-  // Compute workspace permissions based on role
-  const workspacePermissions = getWorkspacePermissions(workspaceUserRole);
-
-  // scoped selector
-  return Actor.provide(
-    "workspace_user",
+  // 3. Check workspace role using shared logic
+  const workspaceCtx = await checkWorkspaceRole(
     {
-      userID: user.id,
-      workspaceID: workspace.id,
-      organizationID: organizationId,
-      role: workspaceUserRole as OrganizationRole,
-      email: user.email,
-      workspaceSlug: workspace.slug,
+      user,
+      organizationId,
+      orgRole,
+      workspaceId,
+      workspaceSlug,
       featureFlags: c.get("featureFlags"),
       permissions: c.get("permissions"),
-      workspacePermissions,
-      // biome-ignore lint/style/noNonNullAssertion: ok here
-      workspaceRole: workspaceUserRole!,
     },
-    next,
+    requiredRole,
   );
+
+  // 4. Provide workspace context to Actor
+  return Actor.provide("workspace_user", workspaceCtx, next);
 };
