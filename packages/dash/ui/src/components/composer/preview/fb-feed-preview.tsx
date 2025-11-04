@@ -28,6 +28,10 @@ export function FBFeedPreview({
     return null;
   }
 
+  // FB Feed can have CTA buttons
+  const callToActionLabel = previewData.callToActionLabel;
+  const callToActionLink = previewData.callToActionLink;
+
   // Transform composer preview data to the new format
   // Use index-based matching to support blob previews (files without URLs yet)
   const transformedData: PreviewData = {
@@ -54,6 +58,8 @@ export function FBFeedPreview({
     <FacebookFeedPreview
       data={transformedData}
       size={size}
+      callToActionLabel={callToActionLabel}
+      callToActionLink={callToActionLink}
       renderMedia={(media: PreviewMediaItem, className: string) => {
         // Match by index to support uploading files (blobs) without URLs
         const mediaIndex = transformedData.media?.findIndex(

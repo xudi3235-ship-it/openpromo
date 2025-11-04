@@ -61,8 +61,8 @@ export function IGReelPreview({
     const attachment = previewData.attachments?.[mediaIndex];
     if (!attachment) return null;
 
-    // Render using the attachment renderer
-    return renderAttachment(attachment, className);
+    // Render using the attachment renderer with autoplay for videos
+    return renderAttachment(attachment, className, true);
   };
 
   return (

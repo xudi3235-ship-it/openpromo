@@ -31,6 +31,7 @@ export function FBReelPreview({
 
   // FB Reels can have CTA buttons
   const callToActionLabel = previewData.callToActionLabel;
+  const callToActionLink = previewData.callToActionLink;
   const ctaOption = callToActionLabel
     ? CTA_OPTIONS.find(
         (opt) => opt.label.toLowerCase() === callToActionLabel.toLowerCase(),
@@ -70,8 +71,8 @@ export function FBReelPreview({
     const attachment = previewData.attachments?.[mediaIndex];
     if (!attachment) return null;
 
-    // Render using the attachment renderer
-    return renderAttachment(attachment, className);
+    // Render using the attachment renderer with autoplay for videos
+    return renderAttachment(attachment, className, true);
   };
 
   return (
@@ -80,6 +81,7 @@ export function FBReelPreview({
       size={size}
       renderMedia={renderMedia}
       callToActionLabel={ctaOption?.label}
+      callToActionLink={callToActionLink ?? undefined}
     />
   );
 }

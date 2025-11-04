@@ -17,6 +17,8 @@ export interface FacebookReelPreviewProps extends BasePreviewProps {
   ShareIcon?: React.ComponentType<{ className?: string }>;
   /** Call-to-action button label */
   callToActionLabel?: string | null;
+  /** Call-to-action button link URL */
+  callToActionLink?: string | null;
 }
 
 export function FacebookReelPreview({
@@ -25,6 +27,7 @@ export function FacebookReelPreview({
   renderMedia,
   ShareIcon,
   callToActionLabel,
+  callToActionLink,
   className,
 }: FacebookReelPreviewProps) {
   const { accountName, profilePicUrl, caption, media = [], metrics } = data;
@@ -157,15 +160,61 @@ export function FacebookReelPreview({
                     "w-full bg-white/90 hover:bg-white text-black font-semibold",
                     isCompact ? "h-7 text-[10px]" : "h-8 text-xs",
                   )}
-                  disabled
+                  asChild={!!callToActionLink}
+                  disabled={!callToActionLink}
                 >
-                  <ExternalLink
-                    className={cn(
-                      "mr-1.5 flex-shrink-0",
-                      isCompact ? "w-3 h-3" : "w-3.5 h-3.5",
-                    )}
-                  />
-                  <span className="truncate">{callToActionLabel}</span>
+                  {callToActionLink ? (
+                    <a
+                      href={callToActionLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center"
+                    >
+                      {/* Try to load favicon from the domain */}
+                      {(() => {
+                        try {
+                          const url = new URL(callToActionLink);
+                          return (
+                            <img
+                              src={`https://www.google.com/s2/favicons?domain=${url.hostname}&sz=32`}
+                              alt=""
+                              className={cn(
+                                "mr-1.5 flex-shrink-0 rounded",
+                                isCompact ? "w-3 h-3" : "w-3.5 h-3.5",
+                              )}
+                              onError={(e) => {
+                                // Fallback to ExternalLink icon if favicon fails
+                                e.currentTarget.style.display = "none";
+                                const icon = e.currentTarget.nextElementSibling;
+                                if (icon) {
+                                  (icon as HTMLElement).style.display = "block";
+                                }
+                              }}
+                            />
+                          );
+                        } catch {
+                          return null;
+                        }
+                      })()}
+                      <ExternalLink
+                        className={cn(
+                          "mr-1.5 flex-shrink-0 hidden",
+                          isCompact ? "w-3 h-3" : "w-3.5 h-3.5",
+                        )}
+                      />
+                      <span className="truncate">{callToActionLabel}</span>
+                    </a>
+                  ) : (
+                    <>
+                      <ExternalLink
+                        className={cn(
+                          "mr-1.5 flex-shrink-0",
+                          isCompact ? "w-3 h-3" : "w-3.5 h-3.5",
+                        )}
+                      />
+                      <span className="truncate">{callToActionLabel}</span>
+                    </>
+                  )}
                 </Button>
               )}
 

@@ -39,6 +39,7 @@ const FacebookFeedPreview = z.object({
   placement: z.literal(AllPlacement.FB_FEED),
   ...BasePreviewFields,
   callToActionLabel: z.string().nullable().optional(),
+  callToActionLink: z.string().nullable().optional(),
 });
 
 const FacebookReelPreview = z.object({
@@ -46,6 +47,7 @@ const FacebookReelPreview = z.object({
   ...BasePreviewFields,
   audioTitle: z.string().nullable().optional(),
   callToActionLabel: z.string().nullable().optional(),
+  callToActionLink: z.string().nullable().optional(),
 });
 
 const TikTokFeedPreview = z.object({
@@ -123,6 +125,7 @@ function fbFeedSpecToPreview(
     timestampLabel: options.timestampLabel ?? null,
     metrics: undefined,
     callToActionLabel: spec.postSpec?.callToAction?.type ?? null,
+    callToActionLink: spec.postSpec?.callToAction?.value?.link ?? null,
   };
 }
 
