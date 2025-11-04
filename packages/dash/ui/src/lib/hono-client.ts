@@ -38,6 +38,14 @@ function getDefaultErrorMessage(status: number) {
   return "Unknown error";
 }
 
+type ApiErrorPayload = {
+  type: string;
+  code: string;
+  message: string;
+  param?: string;
+  details?: unknown;
+};
+
 type ApiResponse<T> =
   | {
       success: true;
@@ -48,8 +56,20 @@ type ApiResponse<T> =
       error: {
         status: number;
         message: string;
+        code?: string;
+        type?: string;
       };
     };
+
+function isApiErrorPayload(value: unknown): value is ApiErrorPayload {
+  if (!value || typeof value !== "object") return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.message === "string" &&
+    typeof record.code === "string" &&
+    typeof record.type === "string"
+  );
+}
 
 export const honoApiCall = async <T extends object>(
   request: (
@@ -76,11 +96,12 @@ export const honoApiCall = async <T extends object>(
     };
   }
 
+  const apiErrorPayload = isApiErrorPayload(json) ? json : null;
+
   const errorMessage =
     options?.errorMessage ??
-    (json && "message" in json
-      ? (json.message as string)
-      : getDefaultErrorMessage(response.status));
+    apiErrorPayload?.message ??
+    getDefaultErrorMessage(response.status);
 
   if (!options?.disableErrorToast) {
     toast.error(errorMessage, { duration: Infinity });
@@ -91,6 +112,8 @@ export const honoApiCall = async <T extends object>(
     error: {
       status: response.status,
       message: errorMessage,
+      code: apiErrorPayload?.code,
+      type: apiErrorPayload?.type,
     },
   };
 };
