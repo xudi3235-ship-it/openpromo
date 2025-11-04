@@ -16,10 +16,10 @@ import { useIntersectionObserver } from "usehooks-ts";
 import { PlatformAvatarBadge } from "@/components/shared/platform-avatar-badge";
 import { useQuickReply } from "@/hooks/inbox/use-quick-reply";
 import {
-  useDeleteConversation,
   useMarkConversationRead,
   useMarkConversationUnread,
 } from "@/queries/inbox/conversations";
+import { useDeleteConversationOrpc } from "@/queries/inbox/delete-conversation";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import { useInboxStore } from "@/stores/inbox-store";
 import { ConversationActionsMenu } from "./conversation-actions-menu";
@@ -175,7 +175,7 @@ function ConversationListItem({
   );
   const markConversationRead = useMarkConversationRead(workspaceSlug);
   const markConversationUnread = useMarkConversationUnread(workspaceSlug);
-  const deleteConversation = useDeleteConversation(workspaceSlug);
+  const deleteConversation = useDeleteConversationOrpc(workspaceSlug);
   const upsertConversation = useInboxStore((state) => state.upsertConversation);
   const removeConversation = useInboxStore((state) => state.removeConversation);
   const selectConversation = useInboxStore((state) => state.selectConversation);
@@ -234,7 +234,10 @@ function ConversationListItem({
     if (!workspaceSlug || deletePending) return;
 
     try {
-      await deleteConversation.mutateAsync(conversation.id);
+      await deleteConversation.mutateAsync({
+        conversationId: conversation.id,
+        workspaceSlug,
+      });
       removeConversation(conversation.id);
       onToggleQuickReply(false);
 

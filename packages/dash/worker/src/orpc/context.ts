@@ -16,57 +16,61 @@ export interface OrpcWorkspaceContext extends OrpcContext {
 
 export const orpcBuilder = os.$context<OrpcContext>();
 
-export const withWorkspaceRoleMiddleware = orpcBuilder.middleware(
-  async ({ context, next }, requiredRole: WorkspaceRole) => {
-    const { honoContext } = context;
+type WorkspaceRoleInput = {
+  requiredRole: WorkspaceRole;
+  workspaceId?: string;
+  workspaceSlug?: string;
+};
 
-    // 1. Get user and org from hono context
-    const user = honoContext.get("user");
-    const organizationId = honoContext.get("organizationId");
-    const orgRole = honoContext.get("role");
+export const withWorkspaceRole = orpcBuilder.middleware<
+  OrpcWorkspaceContext,
+  WorkspaceRoleInput
+>(async ({ context, next }, input: WorkspaceRoleInput) => {
+  const { honoContext } = context;
+  const { requiredRole, workspaceId, workspaceSlug } = input;
 
-    if (!user) {
-      throw new Error("User is not authenticated");
-    }
+  // 1. Get user and org from hono context
+  const user = honoContext.get("user");
+  const organizationId = honoContext.get("organizationId");
+  const orgRole = honoContext.get("role");
 
-    if (!organizationId) {
-      throw new Error("Organization ID is not set in context");
-    }
+  if (!user) {
+    throw new Error("User is not authenticated");
+  }
 
-    if (!orgRole) {
-      throw new Error("Organization role is not set in context");
-    }
+  if (!organizationId) {
+    throw new Error("Organization ID is not set in context");
+  }
 
-    // 2. Extract workspace identifiers from params
-    const workspaceId = honoContext.req.param("workspaceId");
-    const workspaceSlug = honoContext.req.param("workspaceSlug");
+  if (!orgRole) {
+    throw new Error("Organization role is not set in context");
+  }
 
-    // 3. Check workspace role using shared logic
-    const { checkWorkspaceRole } = await import(
-      "../helpers/workspace-role-checker"
-    );
-    const workspaceCtx = await checkWorkspaceRole(
-      {
-        user,
-        organizationId,
-        orgRole,
-        workspaceId,
-        workspaceSlug,
-        featureFlags: honoContext.get("featureFlags"),
-        permissions: honoContext.get("permissions"),
-      },
-      requiredRole,
-    );
+  // 2. Check workspace role using shared logic
+  const { checkWorkspaceRole } = await import(
+    "../helpers/workspace-role-checker"
+  );
+  const workspaceCtx = await checkWorkspaceRole(
+    {
+      user,
+      organizationId,
+      orgRole,
+      workspaceId,
+      workspaceSlug,
+      featureFlags: honoContext.get("featureFlags"),
+      permissions: honoContext.get("permissions"),
+    },
+    requiredRole,
+  );
 
-    // 4. Provide workspace context to Actor (Node.js async local storage)
-    return Actor.provide("workspace_user", workspaceCtx, async () => {
-      // 5. Pass workspace context to next handler
-      return next({
-        context: {
-          ...context,
-          workspace: workspaceCtx,
-        },
-      });
+  // 3. Provide workspace context to Actor (Node.js async local storage)
+  return Actor.provide("workspace_user", workspaceCtx, async () => {
+    // 4. Pass workspace context to next handler
+    return next({
+      context: {
+        ...context,
+        workspace: workspaceCtx,
+      } as OrpcWorkspaceContext,
     });
-  },
-);
+  });
+});
