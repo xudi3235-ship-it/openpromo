@@ -41,6 +41,7 @@
     "./hooks/*": "./src/hooks/*.ts",
     "./lib/*": "./src/lib/*.ts",
     "./components/*": "./src/components/*.tsx",
+    "./components/social-preview": "./src/components/social-preview/index.ts",
     "./layout": "./src/layout/index.ts",
     "./styles/fonts": "./src/styles/fonts.ts"
   }
