@@ -10,10 +10,20 @@ import { EllipsisVertical, MessageSquarePlus } from "lucide-react";
 
 interface ConversationActionsMenuProps {
   onQuickReply: (e: React.MouseEvent) => void;
+  onToggleUnread: () => void;
+  isUnread: boolean;
+  unreadActionPending?: boolean;
+  onDelete: () => void;
+  deletePending?: boolean;
 }
 
 export function ConversationActionsMenu({
   onQuickReply,
+  onToggleUnread,
+  isUnread,
+  unreadActionPending = false,
+  onDelete,
+  deletePending = false,
 }: ConversationActionsMenuProps) {
   return (
     <div className="flex gap-1.5">
@@ -44,11 +54,28 @@ export function ConversationActionsMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem>Pin conversation</DropdownMenuItem>
-          <DropdownMenuItem>Mark as unread</DropdownMenuItem>
+          <DropdownMenuItem disabled>Pin conversation</DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault();
+              if (unreadActionPending) return;
+              onToggleUnread();
+            }}
+            disabled={unreadActionPending}
+          >
+            {isUnread ? "Mark as read" : "Mark as unread"}
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Archive</DropdownMenuItem>
-          <DropdownMenuItem className="text-destructive">
+          <DropdownMenuItem disabled>Archive</DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-destructive"
+            onSelect={(event) => {
+              event.preventDefault();
+              if (deletePending) return;
+              onDelete();
+            }}
+            disabled={deletePending}
+          >
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>

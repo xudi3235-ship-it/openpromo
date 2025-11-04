@@ -73,6 +73,18 @@ export const createConversationsSlice: StateCreator<
       }),
     ),
 
+  removeConversation: (conversationId) =>
+    set(
+      produce((state: InboxConversationsState) => {
+        if (!state.byId[conversationId]) return;
+        delete state.byId[conversationId];
+        state.order = state.order.filter((id) => id !== conversationId);
+        if (state.selectedConversationId === conversationId) {
+          state.selectedConversationId = null;
+        }
+      }),
+    ),
+
   selectConversation: (conversationId) => {
     set((state) => {
       state.selectedConversationId = conversationId;

@@ -26,6 +26,7 @@ export type InboxConversationsActions = {
     replace?: boolean;
   }): void;
   upsertConversation(conversation: InboxConversationSummary): void;
+  removeConversation(conversationId: string): void;
   selectConversation(conversationId: string | null): void;
   setConversationLoadingState(state: "idle" | "loading" | "error"): void;
 };

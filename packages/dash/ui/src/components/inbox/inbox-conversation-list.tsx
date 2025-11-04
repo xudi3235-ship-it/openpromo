@@ -11,11 +11,26 @@ import { Link, useParams } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2, MessageCircle, MessageSquare } from "lucide-react";
 import { useEffect } from "react";
+import { toast } from "sonner";
 import { useIntersectionObserver } from "usehooks-ts";
 import { PlatformAvatarBadge } from "@/components/shared/platform-avatar-badge";
 import { useQuickReply } from "@/hooks/inbox/use-quick-reply";
+import {
+  useDeleteConversation,
+  useMarkConversationRead,
+  useMarkConversationUnread,
+} from "@/queries/inbox/conversations";
+import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
 import { useInboxStore } from "@/stores/inbox-store";
 import { ConversationActionsMenu } from "./conversation-actions-menu";
+
+type InboxNavigate = ReturnType<typeof Route.useNavigate>;
+type InboxSearchParams = ReturnType<typeof Route.useSearch>;
+type MarkConversationMutationResult = {
+  success: boolean;
+  isUnread?: boolean;
+  lastReadAt?: string | null;
+};
 
 interface InboxConversationListProps {
   conversations: InboxConversationSummary[];
@@ -35,6 +50,8 @@ export function InboxConversationList({
   const { workspaceSlug, conversationId: selectedConversationId } = useParams({
     strict: false,
   });
+  const navigate = Route.useNavigate();
+  const searchParams = Route.useSearch();
   const threads = useInboxStore((state) => state.threads);
   const activeQuickReplyId = useInboxStore((state) => state.activeQuickReplyId);
   const setActiveQuickReply = useInboxStore(
@@ -99,6 +116,8 @@ export function InboxConversationList({
                   previewTime={previewTime}
                   isSelected={isSelected}
                   workspaceSlug={workspaceSlug}
+                  navigate={navigate}
+                  searchParams={searchParams}
                   showQuickReply={activeQuickReplyId === conversation.id}
                   onToggleQuickReply={(show) =>
                     setActiveQuickReply(show ? conversation.id : null)
@@ -135,6 +154,8 @@ function ConversationListItem({
   previewTime,
   isSelected,
   workspaceSlug,
+  navigate,
+  searchParams,
   showQuickReply,
   onToggleQuickReply,
 }: {
@@ -143,6 +164,8 @@ function ConversationListItem({
   previewTime: Date;
   isSelected: boolean;
   workspaceSlug: string | undefined;
+  navigate: InboxNavigate;
+  searchParams: InboxSearchParams;
   showQuickReply: boolean;
   onToggleQuickReply: (show: boolean) => void;
 }) {
@@ -150,6 +173,16 @@ function ConversationListItem({
     workspaceSlug,
     conversation,
   );
+  const markConversationRead = useMarkConversationRead(workspaceSlug);
+  const markConversationUnread = useMarkConversationUnread(workspaceSlug);
+  const deleteConversation = useDeleteConversation(workspaceSlug);
+  const upsertConversation = useInboxStore((state) => state.upsertConversation);
+  const removeConversation = useInboxStore((state) => state.removeConversation);
+  const selectConversation = useInboxStore((state) => state.selectConversation);
+
+  const unreadActionPending =
+    markConversationRead.isPending || markConversationUnread.isPending;
+  const deletePending = deleteConversation.isPending;
 
   const handleQuickReply = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -163,6 +196,68 @@ function ConversationListItem({
     if (!text.trim() || isSubmitting) return;
 
     await sendQuickReply(text);
+  };
+
+  const handleToggleUnread = async () => {
+    if (!workspaceSlug || unreadActionPending) return;
+
+    try {
+      const mutation = conversation.isUnread
+        ? markConversationRead
+        : markConversationUnread;
+      const data = (await mutation.mutateAsync(conversation.id)) as
+        | MarkConversationMutationResult
+        | undefined;
+
+      const nextConversation = {
+        ...(useInboxStore.getState().byId[conversation.id] ?? conversation),
+        isUnread: data?.isUnread ?? !conversation.isUnread,
+        lastReadAt: data?.lastReadAt ? new Date(data.lastReadAt) : null,
+      } satisfies InboxConversationSummary;
+
+      upsertConversation(nextConversation);
+
+      toast.success(
+        data?.isUnread
+          ? "Conversation marked as unread"
+          : "Conversation marked as read",
+      );
+    } catch (error) {
+      toast.error("Failed to update conversation", {
+        description:
+          error instanceof Error ? error.message : "Please try again",
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!workspaceSlug || deletePending) return;
+
+    try {
+      await deleteConversation.mutateAsync(conversation.id);
+      removeConversation(conversation.id);
+      onToggleQuickReply(false);
+
+      if (isSelected) {
+        selectConversation(null);
+        void navigate({
+          to: "/workspaces/$workspaceSlug/inbox",
+          params: { workspaceSlug },
+          search: {
+            ...searchParams,
+            conversationId: undefined,
+            highlightMessageId: undefined,
+          },
+        });
+      }
+
+      toast.success("Conversation deleted");
+    } catch (error) {
+      toast.error("Failed to delete conversation", {
+        description:
+          error instanceof Error ? error.message : "Please try again",
+      });
+    }
   };
 
   return (
@@ -254,7 +349,14 @@ function ConversationListItem({
 
       {/* Action buttons - shows on hover */}
       <div className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <ConversationActionsMenu onQuickReply={handleQuickReply} />
+        <ConversationActionsMenu
+          onQuickReply={handleQuickReply}
+          onToggleUnread={handleToggleUnread}
+          isUnread={conversation.isUnread}
+          unreadActionPending={unreadActionPending}
+          onDelete={handleDelete}
+          deletePending={deletePending}
+        />
       </div>
 
       {/* Quick reply input */}

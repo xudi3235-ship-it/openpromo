@@ -6,6 +6,7 @@ import type {
 import { Hono } from "hono";
 import type * as z from "zod";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
+import { inboxDeleteConversationRoute } from "./routes/inbox-delete-conversation";
 import { inboxGetConversationRoute } from "./routes/inbox-get-conversation";
 import { inboxGetConversationsRoute } from "./routes/inbox-get-conversations";
 import { inboxGetMessagesRoute } from "./routes/inbox-get-messages";
@@ -21,6 +22,7 @@ export const inboxRoute = new Hono<ApiEnv>()
   .route("/", inboxGetUnreadCountRoute)
   .use(withWorkspaceRole("workspace_editor"))
   .route("/conversations", inboxMarkReadRoute)
+  .route("/conversations", inboxDeleteConversationRoute)
   .route("/conversations", inboxPostMessageRoute);
 
 export type InboxConversationsList = {
