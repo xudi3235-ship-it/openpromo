@@ -24,17 +24,25 @@ export function TwoColumnLayout({
   className = "",
 }: TwoColumnLayoutProps) {
   return (
-    <div className={cn("relative h-full w-full", className)}>
-      <ResizablePanelGroup direction="horizontal" className="h-full w-full">
+    <div className={cn("relative h-full w-full min-h-0", className)}>
+      <ResizablePanelGroup
+        direction="horizontal"
+        className="flex h-full w-full min-h-0"
+      >
         <ResizablePanel
           defaultSize={leftDefaultSize}
           minSize={leftMinSize}
           maxSize={leftMaxSize}
+          className="min-h-0"
         >
           {left}
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={100 - leftDefaultSize} minSize={40}>
+        <ResizablePanel
+          defaultSize={100 - leftDefaultSize}
+          minSize={40}
+          className="min-h-0"
+        >
           {right}
         </ResizablePanel>
       </ResizablePanelGroup>

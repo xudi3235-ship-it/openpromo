@@ -305,7 +305,7 @@ export function ComposerFooter() {
 
   return (
     <>
-      <div className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-4">
+      <div className="space-y-3">
         <FooterActions
           showMoreTools={showMoreToolsButton}
           isDialog={isDialog}

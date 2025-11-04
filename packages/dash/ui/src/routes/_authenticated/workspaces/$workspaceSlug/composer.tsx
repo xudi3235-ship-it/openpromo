@@ -28,8 +28,8 @@ function ComposerComponent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="flex max-w-7xl mx-auto">
+      <div className="flex h-screen w-full overflow-hidden bg-background">
+        <div className="mx-auto flex h-full w-full max-w-7xl px-4">
           <ComposerSkeleton />
         </div>
       </div>
@@ -39,8 +39,11 @@ function ComposerComponent() {
   // Layout handles null state now, so we can assume we have accounts here
 
   return (
-    <div className="min-h-screen bg-background">
-      <ComposerRoot accounts={accounts} className="min-h-screen" />
+    <div className="flex h-screen w-full overflow-hidden bg-background">
+      <ComposerRoot
+        accounts={accounts}
+        className="mx-auto flex h-full w-full max-w-7xl px-4"
+      />
     </div>
   );
 }

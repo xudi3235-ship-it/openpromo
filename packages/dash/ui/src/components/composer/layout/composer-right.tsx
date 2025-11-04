@@ -1,4 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
+import { Stack } from "@openpromo/ui/components/stack";
 import {
   Tooltip,
   TooltipContent,
@@ -140,15 +141,12 @@ export function ComposerRight() {
   };
 
   return (
-    <div className="h-full p-4 bg-background overflow-y-auto">
-      <div className="space-y-4">
-        {/* Preview Header */}
+    <div className="h-full min-h-0 overflow-y-auto bg-background p-4">
+      <Stack gap="lg">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">Preview</h3>
+          <h3 className="text-sm font-medium text-foreground">Preview</h3>
           <ViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
         </div>
-
-        {/* Platform Previews */}
         {viewMode === "collage" ? (
           <CollageView
             accounts={previewAccounts}
@@ -164,7 +162,7 @@ export function ComposerRight() {
             isReel={isReelContent()}
           />
         )}
-      </div>
+      </Stack>
     </div>
   );
 }
