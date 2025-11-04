@@ -1,4 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
+import { ListState } from "@openpromo/ui/components/list-state";
 import { Package, Plus } from "lucide-react";
 
 interface ProductsEmptyStateProps {
@@ -12,33 +13,28 @@ export function ProductsEmptyState({
 }: ProductsEmptyStateProps) {
   if (hasFilters) {
     return (
-      <div className="flex h-full items-center justify-center py-12">
-        <div className="text-center">
-          <Package className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-semibold">No products found</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Try adjusting your search or filters
-          </p>
-        </div>
-      </div>
+      <ListState
+        size="sm"
+        className="mx-auto max-w-sm"
+        icon={<Package className="h-10 w-10" />}
+        title="No products found"
+        description="Try adjusting your search or filters."
+      />
     );
   }
 
   return (
-    <div className="flex h-full items-center justify-center py-12">
-      <div className="text-center max-w-md">
-        <Package className="mx-auto h-12 w-12 text-muted-foreground" />
-        <h3 className="mt-4 text-lg font-semibold">No products yet</h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Add products to your catalog to use them in content generation. Upload
-          images, connect to platforms like Amazon or Shopify, or add custom
-          product links.
-        </p>
-        <Button className="mt-6" onClick={onAddProduct}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Your First Product
-        </Button>
-      </div>
-    </div>
+    <ListState
+      size="md"
+      className="mx-auto max-w-md"
+      icon={<Package className="h-12 w-12" />}
+      title="No products yet"
+      description="Add products to your catalog to use them in content generation. Upload images, connect e-commerce platforms, or add custom links."
+    >
+      <Button className="mt-4" onClick={onAddProduct}>
+        <Plus className="mr-2 h-4 w-4" />
+        Add Your First Product
+      </Button>
+    </ListState>
   );
 }

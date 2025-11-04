@@ -3,36 +3,39 @@ import type { ComponentPropsWithoutRef, ElementRef } from "react";
 import { forwardRef } from "react";
 import { cn } from "../lib/utils";
 
-const toolbarVariants = cva(
-  "flex flex-wrap items-center justify-between gap-x-3 gap-y-2",
-  {
-    variants: {
-      size: {
-        sm: "min-h-9",
-        md: "min-h-11",
-      },
-      tone: {
-        default: "",
-        subtle: "border border-border/60 bg-muted/10 px-3 py-2 rounded-md",
-      },
+const toolbarVariants = cva("flex flex-wrap items-center gap-x-3 gap-y-2", {
+  variants: {
+    size: {
+      sm: "min-h-9",
+      md: "min-h-11",
     },
-    defaultVariants: {
-      size: "md",
-      tone: "default",
+    tone: {
+      default: "",
+      subtle: "border border-border/60 bg-muted/10 px-3 py-2 rounded-md",
+    },
+    justify: {
+      start: "justify-start",
+      between: "justify-between",
+      end: "justify-end",
     },
   },
-);
+  defaultVariants: {
+    size: "md",
+    tone: "default",
+    justify: "between",
+  },
+});
 
 type ToolbarProps = ComponentPropsWithoutRef<"div"> &
   VariantProps<typeof toolbarVariants>;
 
 const Toolbar = forwardRef<ElementRef<"div">, ToolbarProps>(
-  ({ className, size, tone, ...props }, ref) => {
+  ({ className, size, tone, justify, ...props }, ref) => {
     return (
       <div
         ref={ref}
         data-slot="toolbar"
-        className={cn(toolbarVariants({ size, tone }), className)}
+        className={cn(toolbarVariants({ size, tone, justify }), className)}
         {...props}
       />
     );

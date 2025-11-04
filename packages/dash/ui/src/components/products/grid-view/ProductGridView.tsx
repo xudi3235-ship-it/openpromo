@@ -1,4 +1,5 @@
 import type { ProductSelectType } from "@core/schemas/product.sql";
+import { ListState } from "@openpromo/ui/components/list-state";
 import { useProductListQuery } from "@/queries/product";
 import { AddProductCard } from "../add-product-card";
 import { ProductCard } from "../product-card";
@@ -26,14 +27,14 @@ export function ProductGridView({
   if (error) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground">
-            Failed to load products
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {error instanceof Error ? error.message : "Unknown error"}
-          </p>
-        </div>
+        <ListState
+          size="sm"
+          className="max-w-sm"
+          title="Failed to load products."
+          description={
+            error instanceof Error ? error.message : "Please try again."
+          }
+        />
       </div>
     );
   }

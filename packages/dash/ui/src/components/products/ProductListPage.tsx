@@ -1,9 +1,12 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
+import { Page, PageContent, PageHeader } from "@openpromo/ui/components/page";
+import { Stack } from "@openpromo/ui/components/stack";
 import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@openpromo/ui/components/toggle-group";
+import { Toolbar, ToolbarSection } from "@openpromo/ui/components/toolbar";
 import { LayoutGrid, Plus, Search, Table } from "lucide-react";
 import type * as React from "react";
 import { useState } from "react";
@@ -30,68 +33,71 @@ export function ProductListPage() {
   }, 400);
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+    <Page gap="md" className="h-full">
+      <PageHeader>
+        <Stack gap="xs">
           <h1 className="text-2xl font-semibold">Products</h1>
           <p className="text-sm text-muted-foreground">
             Manage your product catalog for content generation
           </p>
-        </div>
+        </Stack>
         <Button onClick={() => setCreateModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Add Product
         </Button>
-      </div>
+      </PageHeader>
 
-      {/* Filters */}
-      <div className="flex gap-2">
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search products..."
-            value={searchValue}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setSearchValue(e.target.value);
-              updateDebouncedSearch(e.target.value);
+      <Toolbar size="sm" justify="start" className="flex-wrap gap-y-2">
+        <ToolbarSection>
+          <div className="relative w-64 sm:w-72">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search products..."
+              value={searchValue}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setSearchValue(e.target.value);
+                updateDebouncedSearch(e.target.value);
+              }}
+              className="pl-9"
+            />
+          </div>
+        </ToolbarSection>
+        <ToolbarSection>
+          <ToggleGroup
+            type="single"
+            value={filters.view}
+            onValueChange={(value) => {
+              if (value) setView(value as "grid" | "table");
             }}
-            className="pl-9"
-          />
-        </div>
-        <ToggleGroup
-          type="single"
-          value={filters.view}
-          onValueChange={(value) => {
-            if (value) setView(value as "grid" | "table");
-          }}
-        >
-          <ToggleGroupItem value="grid" aria-label="Grid view">
-            <LayoutGrid className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="table" aria-label="Table view">
-            <Table className="h-4 w-4" />
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
+          >
+            <ToggleGroupItem value="grid" aria-label="Grid view">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="table" aria-label="Table view">
+              <Table className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </ToolbarSection>
+      </Toolbar>
 
-      {/* Content */}
-      {filters.view === "table" ? (
-        <ProductTableView
-          searchQuery={debouncedSearch}
-          onAddProduct={() => setCreateModalOpen(true)}
-        />
-      ) : (
-        <ProductGridView
-          searchQuery={debouncedSearch}
-          onAddProduct={() => setCreateModalOpen(true)}
-        />
-      )}
+      <PageContent>
+        {filters.view === "table" ? (
+          <ProductTableView
+            searchQuery={debouncedSearch}
+            onAddProduct={() => setCreateModalOpen(true)}
+          />
+        ) : (
+          <ProductGridView
+            searchQuery={debouncedSearch}
+            onAddProduct={() => setCreateModalOpen(true)}
+          />
+        )}
+      </PageContent>
 
       <CreateProductModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
       />
-    </div>
+    </Page>
   );
 }

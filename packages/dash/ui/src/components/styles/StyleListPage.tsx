@@ -1,9 +1,13 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
+import { Page, PageContent, PageHeader } from "@openpromo/ui/components/page";
+import { Stack } from "@openpromo/ui/components/stack";
 import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@openpromo/ui/components/toggle-group";
+import { Toolbar, ToolbarSection } from "@openpromo/ui/components/toolbar";
+import { cn } from "@openpromo/ui/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Clock3, History, Search, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -91,28 +95,22 @@ export function StyleListPage() {
   };
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      {/* Header Section */}
-      <div className="space-y-4">
-        {/* Title and Actions */}
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 space-y-2">
-            {/* Main Heading */}
-            <div className="space-y-1">
-              <h1 className="text-xl font-bold tracking-tight">
-                Creative Style Marketplace
-              </h1>
-              <p className="text-sm text-muted-foreground max-w-2xl">
-                Explore curated visual systems and drop 1-3 reference images
-                into the composer dock below to spin up a new style instantly.
-              </p>
-            </div>
-          </div>
-        </div>
+    <Page gap="lg" className="h-full">
+      <PageHeader align="start" className="flex-col gap-3 text-left">
+        <Stack gap="xs">
+          <h1 className="text-xl font-bold tracking-tight">
+            Creative Style Marketplace
+          </h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Explore curated visual systems and drop 1–3 reference images into
+            the composer dock below to spin up a new style instantly.
+          </p>
+        </Stack>
+      </PageHeader>
 
-        {/* Search + Filters */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[220px] max-w-lg">
+      <Toolbar size="sm" justify="start" className="flex-wrap gap-y-3">
+        <ToolbarSection>
+          <div className="relative w-64 min-w-[220px] sm:w-80">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by name, description, or aesthetic..."
@@ -123,66 +121,67 @@ export function StyleListPage() {
               className="pl-9"
             />
           </div>
+        </ToolbarSection>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <ToggleGroup
-              type="single"
-              value={sort}
-              onValueChange={(value) => handleSortChange(value ?? "")}
-              className="rounded-md border bg-background"
+        <ToolbarSection gap="sm">
+          <ToggleGroup
+            type="single"
+            value={sort}
+            onValueChange={(value) => handleSortChange(value ?? "")}
+            className="rounded-md border bg-background"
+          >
+            <ToggleGroupItem
+              value="latest"
+              aria-label="Sort by latest"
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
             >
-              <ToggleGroupItem
-                value="latest"
-                aria-label="Sort by latest"
-                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
-              >
-                <Clock3 className="h-4 w-4" />
-                Latest
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="oldest"
-                aria-label="Sort by oldest"
-                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
-              >
-                <History className="h-4 w-4" />
-                Oldest
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="most_used"
-                aria-label="Sort by most used"
-                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
-              >
-                <TrendingUp className="h-4 w-4" />
-                Most used
-              </ToggleGroupItem>
-            </ToggleGroup>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className={`gap-2 ${
-                officialOnly
-                  ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
-                  : ""
-              }`}
-              onClick={() => setOfficialOnly((prev) => !prev)}
+              <Clock3 className="h-4 w-4" />
+              Latest
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="oldest"
+              aria-label="Sort by oldest"
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
             >
-              <BadgeCheck className="h-4 w-4" />
-              Official only
-            </Button>
-          </div>
-        </div>
-      </div>
+              <History className="h-4 w-4" />
+              Oldest
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="most_used"
+              aria-label="Sort by most used"
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
+            >
+              <TrendingUp className="h-4 w-4" />
+              Most used
+            </ToggleGroupItem>
+          </ToggleGroup>
 
-      <StylesInfiniteGrid params={gridParams} />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={cn(
+              "gap-2",
+              officialOnly &&
+                "border-emerald-500/60 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20",
+            )}
+            onClick={() => setOfficialOnly((prev) => !prev)}
+          >
+            <BadgeCheck className="h-4 w-4" />
+            Official only
+          </Button>
+        </ToolbarSection>
+      </Toolbar>
 
-      {/* Style Composer Modal */}
+      <PageContent>
+        <StylesInfiniteGrid params={gridParams} />
+      </PageContent>
+
       <StyleComposer
         onSuccess={() => {
-          // Refresh will happen automatically via mutation invalidation
+          // Refresh via websocket + invalidation
         }}
       />
-    </div>
+    </Page>
   );
 }
