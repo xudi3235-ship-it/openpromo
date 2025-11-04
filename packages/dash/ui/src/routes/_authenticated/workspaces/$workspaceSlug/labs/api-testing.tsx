@@ -1,5 +1,7 @@
 import { Button } from "@openpromo/ui/components/button";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { orpc } from "@/lib/orpc-client";
 import {
   useTestAnalyticsWriteMutation,
   useTestBackfillMutation,
@@ -10,6 +12,9 @@ function ApiTestingPage() {
   const backfillMutation = useTestBackfillMutation();
   const metricsMutation = useTestMetricsRefreshMutation();
   const analyticsMutation = useTestAnalyticsWriteMutation();
+  const planetListQuery = useQuery(
+    orpc.planet.list.queryOptions({ input: {} }),
+  );
 
   return (
     <div className="p-6 space-y-6 max-w-2xl">
@@ -43,6 +48,14 @@ function ApiTestingPage() {
           disabled={analyticsMutation.isPending}
         >
           {analyticsMutation.isPending ? "Testing..." : "Test Analytics Write"}
+        </Button>
+
+        <Button
+          onClick={() => planetListQuery.refetch()}
+          disabled={planetListQuery.isFetching}
+        >
+          {planetListQuery.isFetching ? "Fetching..." : "test ORPC Planet List"}
+          {planetListQuery.data && ` (${planetListQuery.data.length} planets)`}
         </Button>
       </div>
     </div>

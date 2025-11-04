@@ -12,6 +12,8 @@ catalog:
   react-dom: 19.1.1
   wrangler: 4.45.3
   zod: 4.1.0
+  "@orpc/server": "^1.10.3"
+  "@orpc/client": "^1.10.3"
 
 onlyBuiltDependencies:
   - '@parcel/watcher'

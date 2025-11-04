@@ -1,7 +1,10 @@
 import type { ApiEnv } from "@core/helpers/api-env";
+import { RPCHandler } from "@orpc/server/fetch";
+import { CORSPlugin } from "@orpc/server/plugins";
 import { Hono } from "hono";
 import { onError } from "../../helpers/error";
 import { workOSAuth } from "../../middleware/workos-auth";
+import { type OrpcContext, orpcRouter } from "../../orpc";
 import { connectedAccountsRoute } from "./connected-accounts";
 import { examplesRoute } from "./examples";
 import { hashtagsRoute } from "./hashtags";
@@ -13,8 +16,24 @@ import { websocketsRoute } from "./websockets";
 import { workspacesRoute } from "./workspaces";
 import { pingRoute } from "./workspaces/ping";
 
+const handler = new RPCHandler<OrpcContext>(orpcRouter, {
+  plugins: [new CORSPlugin()],
+});
+
 export const apiRoutes = new Hono<ApiEnv>()
   .use(workOSAuth())
+  .use("/rpc/*", async (c, next) => {
+    const { matched, response } = await handler.handle(c.req.raw, {
+      prefix: "/api/rpc",
+      context: {
+        honoContext: c,
+      },
+    });
+
+    if (matched) return c.newResponse(response.body, response);
+
+    await next();
+  })
   .route("/ping", pingRoute)
   .route("/examples", examplesRoute)
   .route("/hashtags", hashtagsRoute)

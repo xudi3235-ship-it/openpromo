@@ -29,6 +29,8 @@
     "@mendable/firecrawl-js": "^4.4.1",
     "@neondatabase/serverless": "^1.0.1",
     "@openpromo/shared": "workspace:*",
+    "@orpc/client": "catalog:",
+    "@orpc/server": "catalog:",
     "@t3-oss/env-core": "^0.13.8",
     "@workos-inc/node": "catalog:",
     "agents": "^0.0.113",
