@@ -1,9 +1,18 @@
+import { Surface, SurfaceBody } from "@openpromo/ui/components/surface";
 import { InboxEmptyState } from "./inbox-empty-state";
 
 export function InboxList() {
   return (
-    <section className="flex flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-background">
-      <InboxEmptyState />
-    </section>
+    <Surface
+      asChild
+      padded="none"
+      className="flex flex-1 flex-col overflow-hidden"
+    >
+      <section>
+        <SurfaceBody padded="lg" className="items-center justify-center">
+          <InboxEmptyState />
+        </SurfaceBody>
+      </section>
+    </Surface>
   );
 }

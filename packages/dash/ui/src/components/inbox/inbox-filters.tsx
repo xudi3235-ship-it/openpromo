@@ -1,5 +1,7 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
+import { Stack } from "@openpromo/ui/components/stack";
+import { Toolbar, ToolbarSection } from "@openpromo/ui/components/toolbar";
 import {
   Tooltip,
   TooltipContent,
@@ -27,7 +29,7 @@ export function InboxFilters() {
   } = useInboxFilters();
 
   return (
-    <div className="space-y-2">
+    <Stack gap="xs">
       <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -51,10 +53,9 @@ export function InboxFilters() {
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-1.5">
-        <TooltipProvider delayDuration={300}>
-          <div className="flex items-center gap-2">
-            {/* Unread filter - standalone toggle */}
+      <TooltipProvider delayDuration={300}>
+        <Toolbar size="sm" className="justify-between px-0">
+          <ToolbarSection gap="sm">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -71,11 +72,9 @@ export function InboxFilters() {
               </TooltipContent>
             </Tooltip>
 
-            {/* Divider */}
             <div className="h-5 w-px bg-border/50" />
 
-            {/* Platform filters - icon only */}
-            <div className="flex items-center gap-1">
+            <ToolbarSection gap="sm">
               {PLATFORM_ORDER.map((platform) => {
                 const meta = getPlatformMeta(platform);
                 const isActive = selectedPlatform === platform;
@@ -109,22 +108,24 @@ export function InboxFilters() {
                   </Tooltip>
                 );
               })}
-            </div>
-          </div>
-        </TooltipProvider>
+            </ToolbarSection>
+          </ToolbarSection>
 
-        {hasActiveFilters && (
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={clearFilters}
-            className="h-7 rounded-md px-2 text-[10px] font-medium text-muted-foreground hover:text-foreground"
-          >
-            Clear
-          </Button>
-        )}
-      </div>
-    </div>
+          {hasActiveFilters && (
+            <ToolbarSection align="end">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={clearFilters}
+                className="h-7 rounded-md px-2 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+              >
+                Clear
+              </Button>
+            </ToolbarSection>
+          )}
+        </Toolbar>
+      </TooltipProvider>
+    </Stack>
   );
 }

@@ -1,3 +1,4 @@
+import { Surface, SurfaceBody } from "@openpromo/ui/components/surface";
 import type { InboxConversationSummary } from "@shared/inbox";
 import { InboxCommentContext } from "./inbox-comment-context";
 import { InboxDMContext } from "./inbox-dm-context";
@@ -9,21 +10,40 @@ interface InboxContextPanelProps {
 export function InboxContextPanel({ conversation }: InboxContextPanelProps) {
   if (!conversation) {
     return (
-      <aside className="hidden w-80 flex-col rounded-xl border border-border/60 bg-background lg:flex">
-        <div className="flex h-full items-center justify-center p-8 text-center text-sm text-muted-foreground">
-          Select a conversation to view details
-        </div>
-      </aside>
+      <Surface
+        asChild
+        padded="none"
+        className="hidden w-80 flex-col overflow-hidden lg:flex"
+      >
+        <aside>
+          <SurfaceBody
+            padded="lg"
+            className="items-center justify-center text-center"
+          >
+            <div className="text-sm text-muted-foreground">
+              Select a conversation to view details
+            </div>
+          </SurfaceBody>
+        </aside>
+      </Surface>
     );
   }
 
   return (
-    <aside className="hidden w-80 flex-col rounded-xl border border-border/60 bg-background lg:flex">
-      {conversation.channel === "post_comment" ? (
-        <InboxCommentContext conversation={conversation} />
-      ) : (
-        <InboxDMContext conversation={conversation} />
-      )}
-    </aside>
+    <Surface
+      asChild
+      padded="none"
+      className="hidden w-80 flex-col overflow-hidden lg:flex"
+    >
+      <aside>
+        <SurfaceBody padded="none" className="flex-1 overflow-y-auto">
+          {conversation.channel === "post_comment" ? (
+            <InboxCommentContext conversation={conversation} />
+          ) : (
+            <InboxDMContext conversation={conversation} />
+          )}
+        </SurfaceBody>
+      </aside>
+    </Surface>
   );
 }

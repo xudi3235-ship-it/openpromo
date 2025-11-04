@@ -1,3 +1,4 @@
+import { Page, PageContent } from "@openpromo/ui/components/page";
 import type { InboxConversationSummary } from "@shared/inbox";
 import { Outlet } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
@@ -137,12 +138,12 @@ export function InboxLayout() {
   });
 
   return (
-    <div className="flex h-full flex-col gap-2.5">
+    <Page gap="sm" className="h-full">
       <InboxChannelSwitcher
         totalCount={conversationsQuery.totalCount}
         isSyncing={conversationsFetching}
       />
-      <div className="flex flex-1 gap-3 overflow-hidden">
+      <PageContent direction="row" gap="sm" className="flex-1 overflow-hidden">
         <InboxSidebar
           conversations={conversations}
           isLoading={conversationsInitialLoading}
@@ -152,7 +153,7 @@ export function InboxLayout() {
           isFetchingNextPage={conversationsQuery.isFetchingNextPage}
         />
         <Outlet />
-      </div>
-    </div>
+      </PageContent>
+    </Page>
   );
 }

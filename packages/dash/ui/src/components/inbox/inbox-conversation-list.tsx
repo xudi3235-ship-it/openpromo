@@ -3,8 +3,8 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@openpromo/ui/components/avatar";
+import { ListSkeleton, ListState } from "@openpromo/ui/components/list-state";
 import { ScrollArea, ScrollBar } from "@openpromo/ui/components/scroll-area";
-import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { InboxConversationSummary } from "@shared/inbox";
 import { Link, useParams } from "@tanstack/react-router";
@@ -73,27 +73,11 @@ export function InboxConversationList({
   return (
     <ScrollArea className="flex-1">
       <ul className="space-y-1 p-2">
-        {isLoading &&
-          Array.from({ length: 8 }).map((_, idx) => (
-            <li
-              key={`skeleton-${
-                // biome-ignore lint/suspicious/noArrayIndexKey: ok
-                idx
-              }`}
-            >
-              <div className="w-full rounded-md border border-transparent p-2">
-                <div className="flex items-start gap-2">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <div className="flex-1 space-y-1.5">
-                    <Skeleton className="h-2.5 w-1/2" />
-                    <Skeleton className="h-2 w-3/4" />
-                  </div>
-                </div>
-              </div>
-            </li>
-          ))}
-
-        {!isLoading &&
+        {isLoading ? (
+          <li>
+            <ListSkeleton count={8} />
+          </li>
+        ) : (
           conversations.map((conversation) => {
             const thread = threads[conversation.id];
             const lastMessage = thread?.items[thread.items.length - 1] ?? null;
@@ -125,10 +109,15 @@ export function InboxConversationList({
                 />
               </li>
             );
-          })}
+          })
+        )}
         {!isLoading && conversations.length === 0 && (
-          <li className="rounded-md border border-dashed border-border/60 bg-muted/10 p-6 text-center text-sm text-muted-foreground">
-            No conversations match the current filters.
+          <li>
+            <ListState
+              size="sm"
+              title="No conversations match the current filters."
+              description="Adjust your filters or search to see more conversations."
+            />
           </li>
         )}
 
