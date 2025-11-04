@@ -5,7 +5,7 @@ import {
   AccordionTrigger,
 } from "@openpromo/ui/components/accordion";
 import { Button } from "@openpromo/ui/components/button";
-import { Typography } from "@openpromo/ui/components/typography";
+import { Text } from "@openpromo/ui/components/typography";
 import { ChevronRight, HelpCircle } from "lucide-react";
 import { Container, Section, Stack } from "../_layout";
 
@@ -57,14 +57,20 @@ export function FaqSection() {
               </div>
 
               {/* Main Heading */}
-              <Typography.Hero className="max-w-[385px]">
+              <Text
+                as="h2"
+                variant="heading"
+                size="3xl"
+                weight="semibold"
+                className="max-w-[385px]"
+              >
                 In case you missed anything
-              </Typography.Hero>
+              </Text>
 
               {/* Subtitle */}
-              <Typography.BodyLg className="leading-6">
+              <Text as="p" size="lg" tone="muted" className="leading-6">
                 We're here to answer all your questions.
-              </Typography.BodyLg>
+              </Text>
             </Stack>
 
             {/* Contact Support Button */}

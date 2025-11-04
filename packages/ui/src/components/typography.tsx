@@ -1,297 +1,558 @@
-import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import type * as React from "react";
+import { forwardRef } from "react";
 import { cn } from "../lib/utils";
 
-// Base styles for different typography variants
-const typographyStyles = {
-  h1: "text-2xl md:text-3xl font-semibold leading-tight",
-  h2: "text-xl md:text-2xl font-semibold leading-tight",
-  h3: "text-lg font-semibold",
-  h4: "text-base font-semibold",
-  h5: "text-sm font-semibold",
-  h6: "text-xs font-semibold uppercase tracking-wide",
-  display: "text-4xl md:text-5xl lg:text-6xl font-bold leading-tight",
-  hero: "text-3xl md:text-4xl font-bold leading-tight",
-  p: "leading-7 [&:not(:first-child)]:mt-6",
-  bodyLg: "text-lg leading-relaxed",
-  bodyBase: "text-base font-medium",
-  bodySm: "text-sm leading-relaxed",
-  caption: "text-xs leading-normal",
-  overline: "text-xs font-semibold uppercase tracking-wide",
-  label: "text-sm font-medium leading-none",
-  featureTag: "text-[13px] font-semibold",
-  announcement: "text-sm font-medium",
-  announcementBadge: "text-[10px] font-bold leading-none",
-  large: "text-lg font-semibold",
-  lead: "text-xl text-muted-foreground",
-  muted: "text-sm text-muted-foreground",
-  small: "text-sm font-medium leading-none",
-  inlineCode:
-    "relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold",
-  blockquote: "mt-6 border-l-2 pl-6 italic",
-  list: "my-6 ml-6 list-disc [&>li]:mt-2",
-};
+const textVariants = cva("font-sans antialiased text-foreground", {
+  variants: {
+    variant: {
+      heading: "tracking-tight",
+      body: "",
+      label: "tracking-[0.08em]",
+      mono: "font-mono",
+    },
+    size: {
+      xs: "text-xs leading-5",
+      sm: "text-sm leading-6",
+      md: "text-base leading-7",
+      lg: "text-lg leading-7",
+      xl: "text-xl leading-8",
+      "2xl": "text-2xl leading-8 md:text-3xl",
+      "3xl": "text-3xl leading-tight md:text-4xl",
+      "4xl": "text-4xl leading-tight md:text-5xl",
+    },
+    tone: {
+      default: "text-foreground",
+      muted: "text-muted-foreground",
+      subtle: "text-muted-foreground/70",
+      primary: "text-primary",
+      success: "text-emerald-600 dark:text-emerald-400",
+      warning: "text-amber-600 dark:text-amber-400",
+      destructive: "text-destructive",
+    },
+    weight: {
+      regular: "font-normal",
+      medium: "font-medium",
+      semibold: "font-semibold",
+      bold: "font-bold",
+    },
+    align: {
+      left: "text-left",
+      center: "text-center",
+      right: "text-right",
+      justify: "text-justify",
+    },
+    transform: {
+      none: "",
+      uppercase: "uppercase",
+      capitalize: "capitalize",
+    },
+  },
+  defaultVariants: {
+    variant: "body",
+    size: "md",
+    tone: "default",
+    weight: "regular",
+    align: "left",
+    transform: "none",
+  },
+});
 
-interface BaseTypographyProps extends React.HTMLAttributes<HTMLElement> {
-  color?:
-    | "default"
-    | "primary"
-    | "secondary"
-    | "blue"
-    | "orange"
-    | "purple"
-    | "green";
+type VariantName = VariantProps<typeof textVariants>["variant"];
+
+type AllowedTone = VariantProps<typeof textVariants>["tone"];
+
+const FEATURE_ACCENTS = {
+  blue: "text-sky-600 dark:text-sky-400",
+  orange: "text-orange-500 dark:text-orange-400",
+  purple: "text-purple-500 dark:text-purple-400",
+  green: "text-emerald-600 dark:text-emerald-400",
+} as const;
+
+type FeatureAccent = keyof typeof FEATURE_ACCENTS;
+
+type TextProps<T extends React.ElementType = "p"> = {
+  as?: T;
+  variant?: VariantName;
+  size?: VariantProps<typeof textVariants>["size"];
+  tone?: AllowedTone;
+  weight?: VariantProps<typeof textVariants>["weight"];
+  align?: VariantProps<typeof textVariants>["align"];
+  transform?: VariantProps<typeof textVariants>["transform"];
+  truncate?: boolean;
+  noWrap?: boolean;
+} & Omit<React.ComponentPropsWithoutRef<T>, "as" | "color">;
+
+type TextComponent = <T extends React.ElementType = "p">(
+  props: TextProps<T> & { ref?: React.Ref<HTMLElement> },
+) => React.ReactElement | null;
+
+function TextInternal<T extends React.ElementType = "p">(
+  {
+    as,
+    className,
+    variant,
+    size,
+    tone,
+    weight,
+    align,
+    transform,
+    truncate = false,
+    noWrap = false,
+    ...props
+  }: TextProps<T>,
+  ref: React.Ref<HTMLElement>,
+) {
+  const Component = (as ?? "p") as React.ElementType;
+  return (
+    <Component
+      ref={ref}
+      className={cn(
+        textVariants({ variant, size, tone, weight, align, transform }),
+        truncate && "truncate",
+        noWrap && "whitespace-nowrap",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
-// H1 Component
-const H1 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <h1 ref={ref} className={cn(typographyStyles.h1, className)} {...props} />
+const Text = forwardRef(TextInternal) as TextComponent;
+
+const H1 = forwardRef<HTMLHeadingElement, TextProps<"h1">>(
+  (
+    { variant = "heading", size = "4xl", weight = "semibold", ...props },
+    ref,
+  ) => (
+    <Text
+      ref={ref}
+      as="h1"
+      variant={variant}
+      size={size}
+      weight={weight}
+      {...props}
+    />
   ),
 );
 H1.displayName = "Typography.H1";
 
-// H2 Component
-const H2 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <h2 ref={ref} className={cn(typographyStyles.h2, className)} {...props} />
+const H2 = forwardRef<HTMLHeadingElement, TextProps<"h2">>(
+  (
+    { variant = "heading", size = "3xl", weight = "semibold", ...props },
+    ref,
+  ) => (
+    <Text
+      ref={ref}
+      as="h2"
+      variant={variant}
+      size={size}
+      weight={weight}
+      {...props}
+    />
   ),
 );
 H2.displayName = "Typography.H2";
 
-// H3 Component
-const H3 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <h3 ref={ref} className={cn(typographyStyles.h3, className)} {...props} />
+const H3 = forwardRef<HTMLHeadingElement, TextProps<"h3">>(
+  (
+    { variant = "heading", size = "2xl", weight = "semibold", ...props },
+    ref,
+  ) => (
+    <Text
+      ref={ref}
+      as="h3"
+      variant={variant}
+      size={size}
+      weight={weight}
+      {...props}
+    />
   ),
 );
 H3.displayName = "Typography.H3";
 
-// H4 Component
-const H4 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <h4 ref={ref} className={cn(typographyStyles.h4, className)} {...props} />
+const H4 = forwardRef<HTMLHeadingElement, TextProps<"h4">>(
+  (
+    { variant = "heading", size = "xl", weight = "semibold", ...props },
+    ref,
+  ) => (
+    <Text
+      ref={ref}
+      as="h4"
+      variant={variant}
+      size={size}
+      weight={weight}
+      {...props}
+    />
   ),
 );
 H4.displayName = "Typography.H4";
 
-// H5 Component
-const H5 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <h5 ref={ref} className={cn(typographyStyles.h5, className)} {...props} />
+const H5 = forwardRef<HTMLHeadingElement, TextProps<"h5">>(
+  (
+    { variant = "heading", size = "lg", weight = "semibold", ...props },
+    ref,
+  ) => (
+    <Text
+      ref={ref}
+      as="h5"
+      variant={variant}
+      size={size}
+      weight={weight}
+      {...props}
+    />
   ),
 );
 H5.displayName = "Typography.H5";
 
-// H6 Component
-const H6 = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <h6 ref={ref} className={cn(typographyStyles.h6, className)} {...props} />
+const H6 = forwardRef<HTMLHeadingElement, TextProps<"h6">>(
+  (
+    {
+      variant = "label",
+      size = "sm",
+      weight = "semibold",
+      transform = "uppercase",
+      ...props
+    },
+    ref,
+  ) => (
+    <Text
+      ref={ref}
+      as="h6"
+      variant={variant}
+      size={size}
+      weight={weight}
+      transform={transform}
+      {...props}
+    />
   ),
 );
 H6.displayName = "Typography.H6";
 
-// Display Component (for very large titles)
-const Display = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <h1
+const Display = forwardRef<HTMLHeadingElement, TextProps<"h1">>(
+  ({ variant = "heading", size = "4xl", weight = "bold", ...props }, ref) => (
+    <Text
       ref={ref}
-      className={cn(typographyStyles.display, className)}
+      as="h1"
+      variant={variant}
+      size={size}
+      weight={weight}
       {...props}
     />
   ),
 );
 Display.displayName = "Typography.Display";
 
-// Hero Component (for hero sections)
-const Hero = React.forwardRef<HTMLHeadingElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <h1 ref={ref} className={cn(typographyStyles.hero, className)} {...props} />
+const Hero = forwardRef<HTMLHeadingElement, TextProps<"h1">>(
+  (
+    { variant = "heading", size = "3xl", weight = "semibold", ...props },
+    ref,
+  ) => (
+    <Text
+      ref={ref}
+      as="h1"
+      variant={variant}
+      size={size}
+      weight={weight}
+      {...props}
+    />
   ),
 );
 Hero.displayName = "Typography.Hero";
 
-// P Component
-const P = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <p ref={ref} className={cn(typographyStyles.p, className)} {...props} />
+const P = forwardRef<HTMLParagraphElement, TextProps<"p">>(
+  ({ variant = "body", size = "md", weight = "regular", ...props }, ref) => (
+    <Text
+      ref={ref}
+      as="p"
+      variant={variant}
+      size={size}
+      weight={weight}
+      {...props}
+    />
   ),
 );
 P.displayName = "Typography.P";
 
-// Body variants
-const BodyLg = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <p
+const BodyLg = forwardRef<HTMLParagraphElement, TextProps<"p">>(
+  ({ variant = "body", size = "lg", weight = "regular", ...props }, ref) => (
+    <Text
       ref={ref}
-      className={cn(typographyStyles.bodyLg, className)}
+      as="p"
+      variant={variant}
+      size={size}
+      weight={weight}
       {...props}
     />
   ),
 );
 BodyLg.displayName = "Typography.BodyLg";
 
-const BodyBase = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <p
+const BodyBase = forwardRef<HTMLParagraphElement, TextProps<"p">>(
+  ({ variant = "body", size = "md", weight = "medium", ...props }, ref) => (
+    <Text
       ref={ref}
-      className={cn(typographyStyles.bodyBase, className)}
+      as="p"
+      variant={variant}
+      size={size}
+      weight={weight}
       {...props}
     />
   ),
 );
 BodyBase.displayName = "Typography.BodyBase";
 
-const BodySm = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <p
+const BodySm = forwardRef<HTMLParagraphElement, TextProps<"p">>(
+  ({ variant = "body", size = "sm", weight = "regular", ...props }, ref) => (
+    <Text
       ref={ref}
-      className={cn(typographyStyles.bodySm, className)}
+      as="p"
+      variant={variant}
+      size={size}
+      weight={weight}
       {...props}
     />
   ),
 );
 BodySm.displayName = "Typography.BodySm";
 
-// Caption Component
-const Caption = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <p
+const Caption = forwardRef<HTMLSpanElement, TextProps<"span">>(
+  (
+    {
+      variant = "body",
+      size = "xs",
+      weight = "medium",
+      tone = "muted",
+      ...props
+    },
+    ref,
+  ) => (
+    <Text
       ref={ref}
-      className={cn(typographyStyles.caption, className)}
+      as="span"
+      variant={variant}
+      size={size}
+      weight={weight}
+      tone={tone}
       {...props}
     />
   ),
 );
 Caption.displayName = "Typography.Caption";
 
-// Overline Component
-const Overline = React.forwardRef<HTMLSpanElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <span
+const Overline = forwardRef<HTMLSpanElement, TextProps<"span">>(
+  (
+    {
+      variant = "label",
+      size = "xs",
+      weight = "semibold",
+      transform = "uppercase",
+      tone = "muted",
+      ...props
+    },
+    ref,
+  ) => (
+    <Text
       ref={ref}
-      className={cn(typographyStyles.overline, className)}
+      as="span"
+      variant={variant}
+      size={size}
+      weight={weight}
+      transform={transform}
+      tone={tone}
       {...props}
     />
   ),
 );
 Overline.displayName = "Typography.Overline";
 
-// Label Component
-const Label = React.forwardRef<
-  HTMLLabelElement,
-  BaseTypographyProps & { htmlFor?: string }
->(({ className, color = "default", ...props }, ref) => (
-  <label
-    ref={ref}
-    className={cn(typographyStyles.label, className)}
-    {...props}
-  />
-));
+const Label = forwardRef<HTMLLabelElement, TextProps<"label">>(
+  ({ variant = "label", size = "sm", weight = "medium", ...props }, ref) => (
+    <Text
+      ref={ref}
+      as="label"
+      variant={variant}
+      size={size}
+      weight={weight}
+      {...props}
+    />
+  ),
+);
 Label.displayName = "Typography.Label";
 
-// Specialized components
-const FeatureTag = React.forwardRef<HTMLSpanElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <span
+const FeatureTag = forwardRef<
+  HTMLSpanElement,
+  TextProps<"span"> & { color?: FeatureAccent }
+>(
+  (
+    {
+      variant = "label",
+      size = "sm",
+      weight = "semibold",
+      transform = "uppercase",
+      tone = "muted",
+      color,
+      className,
+      ...props
+    },
+    ref,
+  ) => (
+    <Text
       ref={ref}
-      className={cn(typographyStyles.featureTag, className)}
+      as="span"
+      variant={variant}
+      size={size}
+      weight={weight}
+      transform={transform}
+      tone={tone}
+      className={cn(color ? FEATURE_ACCENTS[color] : null, className)}
       {...props}
     />
   ),
 );
 FeatureTag.displayName = "Typography.FeatureTag";
 
-const Announcement = React.forwardRef<HTMLSpanElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <span
+const Announcement = forwardRef<HTMLSpanElement, TextProps<"span">>(
+  ({ variant = "body", size = "sm", weight = "medium", ...props }, ref) => (
+    <Text
       ref={ref}
-      className={cn(typographyStyles.announcement, className)}
+      as="span"
+      variant={variant}
+      size={size}
+      weight={weight}
       {...props}
     />
   ),
 );
 Announcement.displayName = "Typography.Announcement";
 
-const AnnouncementBadge = React.forwardRef<
-  HTMLSpanElement,
-  BaseTypographyProps
->(({ className, color = "default", ...props }, ref) => (
-  <span
-    ref={ref}
-    className={cn(typographyStyles.announcementBadge, className)}
-    {...props}
-  />
-));
+const AnnouncementBadge = forwardRef<HTMLSpanElement, TextProps<"span">>(
+  (
+    {
+      variant = "label",
+      size = "xs",
+      weight = "bold",
+      transform = "uppercase",
+      ...props
+    },
+    ref,
+  ) => (
+    <Text
+      ref={ref}
+      as="span"
+      variant={variant}
+      size={size}
+      weight={weight}
+      transform={transform}
+      {...props}
+    />
+  ),
+);
 AnnouncementBadge.displayName = "Typography.AnnouncementBadge";
 
-// Utility components
-const Large = React.forwardRef<HTMLDivElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <div
+const Large = forwardRef<HTMLDivElement, TextProps<"div">>(
+  ({ variant = "body", size = "lg", weight = "semibold", ...props }, ref) => (
+    <Text
       ref={ref}
-      className={cn(typographyStyles.large, className)}
+      as="div"
+      variant={variant}
+      size={size}
+      weight={weight}
       {...props}
     />
   ),
 );
 Large.displayName = "Typography.Large";
 
-const Lead = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <p ref={ref} className={cn(typographyStyles.lead, className)} {...props} />
+const Lead = forwardRef<HTMLParagraphElement, TextProps<"p">>(
+  ({ variant = "body", size = "lg", tone = "muted", ...props }, ref) => (
+    <Text
+      ref={ref}
+      as="p"
+      variant={variant}
+      size={size}
+      tone={tone}
+      {...props}
+    />
   ),
 );
 Lead.displayName = "Typography.Lead";
 
-const Muted = React.forwardRef<HTMLParagraphElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <p ref={ref} className={cn(typographyStyles.muted, className)} {...props} />
+const Muted = forwardRef<HTMLParagraphElement, TextProps<"p">>(
+  ({ variant = "body", size = "sm", tone = "muted", ...props }, ref) => (
+    <Text
+      ref={ref}
+      as="p"
+      variant={variant}
+      size={size}
+      tone={tone}
+      {...props}
+    />
   ),
 );
 Muted.displayName = "Typography.Muted";
 
-const Small = React.forwardRef<HTMLElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <small
+const Small = forwardRef<HTMLElement, TextProps<"small">>(
+  ({ variant = "body", size = "sm", weight = "medium", ...props }, ref) => (
+    <Text
       ref={ref}
-      className={cn(typographyStyles.small, className)}
+      as="small"
+      variant={variant}
+      size={size}
+      weight={weight}
       {...props}
     />
   ),
 );
 Small.displayName = "Typography.Small";
 
-const InlineCode = React.forwardRef<HTMLElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <code
+const InlineCode = forwardRef<HTMLElement, TextProps<"code">>(
+  ({ className, size = "sm", tone = "subtle", ...props }, ref) => (
+    <Text
       ref={ref}
-      className={cn(typographyStyles.inlineCode, className)}
+      as="code"
+      variant="mono"
+      size={size}
+      tone={tone}
+      weight="regular"
+      className={cn("rounded bg-muted px-[0.35rem] py-[0.15rem]", className)}
       {...props}
     />
   ),
 );
 InlineCode.displayName = "Typography.InlineCode";
 
-const Blockquote = React.forwardRef<HTMLQuoteElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <blockquote
+const Blockquote = forwardRef<HTMLQuoteElement, TextProps<"blockquote">>(
+  ({ className, tone = "muted", ...props }, ref) => (
+    <Text
       ref={ref}
-      className={cn(typographyStyles.blockquote, className)}
+      as="blockquote"
+      variant="body"
+      tone={tone}
+      size="lg"
+      className={cn("border-l-2 pl-4 italic", className)}
       {...props}
     />
   ),
 );
 Blockquote.displayName = "Typography.Blockquote";
 
-const List = React.forwardRef<HTMLUListElement, BaseTypographyProps>(
-  ({ className, color = "default", ...props }, ref) => (
-    <ul ref={ref} className={cn(typographyStyles.list, className)} {...props} />
+const List = forwardRef<HTMLUListElement, TextProps<"ul">>(
+  ({ className, ...props }, ref) => (
+    <Text
+      ref={ref}
+      as="ul"
+      variant="body"
+      size="md"
+      className={cn("my-4 ml-5 list-disc space-y-2", className)}
+      {...props}
+    />
   ),
 );
 List.displayName = "Typography.List";
 
-// Main Typography object with compound components
-const Typography = {
+export {
+  Text,
   H1,
   H2,
   H3,
@@ -318,5 +579,3 @@ const Typography = {
   Blockquote,
   List,
 };
-
-export { Typography };

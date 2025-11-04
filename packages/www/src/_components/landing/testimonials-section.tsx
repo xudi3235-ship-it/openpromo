@@ -1,5 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
-import { Typography } from "@openpromo/ui/components/typography";
+import { Text } from "@openpromo/ui/components/typography";
 import { MessageCircleHeart, Plus } from "lucide-react";
 import { Container, Section, Stack } from "../_layout";
 
@@ -102,15 +102,21 @@ export function TestimonialsSection() {
               </div>
 
               {/* Main Heading */}
-              <Typography.Hero className="text-gray-900">
+              <Text
+                as="h2"
+                variant="heading"
+                size="3xl"
+                weight="semibold"
+                className="text-gray-900"
+              >
                 Trusted by the best in your industry
-              </Typography.Hero>
+              </Text>
 
               {/* Subtitle */}
-              <Typography.BodyLg className="text-gray-600">
+              <Text as="p" size="lg" tone="muted" className="text-gray-600">
                 Find out why our solution is the top choice for fast-growing
                 startups.
-              </Typography.BodyLg>
+              </Text>
             </Stack>
           </div>
 

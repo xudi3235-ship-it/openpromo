@@ -1,6 +1,6 @@
 import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
-import { Typography } from "@openpromo/ui/components/typography";
+import { Text } from "@openpromo/ui/components/typography";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { Center, Container, Section } from "../_layout";
@@ -35,13 +35,13 @@ export function HeroSection({ dashboardUrl }: HeroSectionProps) {
             >
               <Badge variant="announcement">
                 <Badge variant="announcement-pill" className="bg-green-50">
-                  <Typography.AnnouncementBadge>
+                  <Text as="span" size="xs" weight="bold" transform="uppercase">
                     NEW
-                  </Typography.AnnouncementBadge>
+                  </Text>
                 </Badge>
-                <Typography.Announcement>
+                <Text as="span" size="sm" weight="medium">
                   Announcing API 2.0
-                </Typography.Announcement>
+                </Text>
               </Badge>
             </motion.div>
 
@@ -49,22 +49,25 @@ export function HeroSection({ dashboardUrl }: HeroSectionProps) {
             <div className="max-w-4xl space-y-6">
               {/* Animated Title */}
               <div className="text-center">
-                <Typography.Display className="inline">
+                <Text
+                  as="h1"
+                  variant="heading"
+                  size="4xl"
+                  weight="bold"
+                  className="inline tracking-tight"
+                >
                   {words.map((word, index) => (
                     <motion.span
                       key={`word-${word}-${index}-${Date.now()}`}
                       initial={{ opacity: 0, filter: "blur(4px)", y: 10 }}
                       animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-                      transition={{
-                        duration: 0.5,
-                        delay: 0.3 + index * 0.08,
-                      }}
+                      transition={{ duration: 0.5, delay: 0.3 + index * 0.08 }}
                       className="inline-block mr-3 last:mr-0"
                     >
                       {word}
                     </motion.span>
                   ))}
-                </Typography.Display>
+                </Text>
               </div>
 
               {/* Animated Description */}
@@ -73,11 +76,16 @@ export function HeroSection({ dashboardUrl }: HeroSectionProps) {
                 animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
                 transition={{ duration: 0.6, delay: 0.6 }}
               >
-                <Typography.BodyLg className="max-w-2xl mx-auto">
+                <Text
+                  as="p"
+                  size="lg"
+                  tone="muted"
+                  className="max-w-2xl mx-auto"
+                >
                   Unlock the potential of your business with our next-level SaaS
                   platform. Transform your workflows and achieve new heights
                   today.
-                </Typography.BodyLg>
+                </Text>
               </motion.div>
             </div>
 

@@ -1,5 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
-import { Typography } from "@openpromo/ui/components/typography";
+import { Text } from "@openpromo/ui/components/typography";
 import { ChevronRight } from "lucide-react";
 import { Container, Section, Stack } from "../_layout";
 
@@ -24,15 +24,26 @@ export function FooterSection({ dashboardUrl }: FooterProps) {
         <Container size="lg" className="relative z-10">
           <div className="text-center max-w-[600px] mx-auto">
             <Stack spacing="lg">
-              <Typography.Hero className="text-white">
+              <Text
+                as="h2"
+                variant="heading"
+                size="3xl"
+                weight="semibold"
+                className="text-white"
+              >
                 Start your trial today.
-              </Typography.Hero>
+              </Text>
 
-              <Typography.BodyLg className="text-gray-300 leading-6">
+              <Text
+                as="p"
+                size="lg"
+                tone="muted"
+                className="text-gray-300 leading-6"
+              >
                 Unlock the potential of your business with our next-level SaaS
                 platform. Transform your workflows and achieve new heights
                 today.
-              </Typography.BodyLg>
+              </Text>
 
               <div className="mt-12">
                 <Button

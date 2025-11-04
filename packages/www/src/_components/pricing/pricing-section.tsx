@@ -6,7 +6,7 @@ import {
   CardFooter,
   CardHeader,
 } from "@openpromo/ui/components/card";
-import { Typography } from "@openpromo/ui/components/typography";
+import { Text } from "@openpromo/ui/components/typography";
 import { Check, ChevronRight, Sparkles, Zap } from "lucide-react";
 import { useState } from "react";
 import { Container, Section } from "../_layout";
@@ -95,14 +95,20 @@ export function PricingSection({ dashboardUrl }: PricingSectionProps) {
             <span className="text-sm font-medium">Pricing</span>
           </Badge>
 
-          <Typography.Display className="mb-6">
+          <Text
+            as="h1"
+            variant="heading"
+            size="4xl"
+            weight="bold"
+            className="mb-6 tracking-tight"
+          >
             Simple, transparent pricing
-          </Typography.Display>
+          </Text>
 
-          <Typography.BodyLg className="text-muted-foreground mb-8">
+          <Text as="p" size="lg" tone="muted" className="mb-8 leading-7">
             Choose the perfect plan for your business. Start free, upgrade when
             you're ready.
-          </Typography.BodyLg>
+          </Text>
 
           {/* Billing Toggle */}
           <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg">
@@ -147,9 +153,9 @@ export function PricingSection({ dashboardUrl }: PricingSectionProps) {
 
         {/* Trust Section */}
         <div className="text-center mt-20">
-          <Typography.BodySm className="text-muted-foreground mb-8">
+          <Text as="p" size="sm" tone="muted" className="mb-8">
             Trusted by teams at companies like
-          </Typography.BodySm>
+          </Text>
           <div className="flex justify-center items-center gap-8 opacity-60">
             {/* Placeholder for company logos */}
             <div className="h-8 w-20 bg-muted rounded" />
@@ -195,14 +201,14 @@ function PricingCard({ plan, isYearly, dashboardUrl }: PricingCardProps) {
       <CardHeader className="text-center pb-8">
         <div className="flex items-center justify-center gap-2 mb-4">
           {plan.icon && <plan.icon className="h-6 w-6 text-primary" />}
-          <Typography.H3 className="text-xl font-semibold">
+          <Text as="h3" variant="heading" size="2xl" weight="semibold">
             {plan.name}
-          </Typography.H3>
+          </Text>
         </div>
 
-        <Typography.BodySm className="text-muted-foreground">
+        <Text as="p" size="sm" tone="muted">
           {plan.description}
-        </Typography.BodySm>
+        </Text>
       </CardHeader>
 
       <CardContent className="text-center pb-8">
@@ -238,9 +244,9 @@ function PricingCard({ plan, isYearly, dashboardUrl }: PricingCardProps) {
                   <Check className="h-2.5 w-2.5 text-success" />
                 </div>
               </div>
-              <Typography.BodySm className="text-foreground">
+              <Text as="span" size="sm" className="text-foreground">
                 {feature}
-              </Typography.BodySm>
+              </Text>
             </div>
           ))}
         </div>

@@ -1,6 +1,6 @@
 import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
-import { Typography } from "@openpromo/ui/components/typography";
+import { Text } from "@openpromo/ui/components/typography";
 import { Container, Stack } from "@openpromo/ui/layout";
 import { Plus, Settings2, Users } from "lucide-react";
 import { useState } from "react";
@@ -64,10 +64,18 @@ function EmptyConnectedAccounts({ onConnect }: { onConnect: () => void }) {
   return (
     <div className="text-center py-12 bg-sidebar rounded-xl border border-sidebar-border">
       <Users className="w-12 h-12 mx-auto mb-4" />
-      <Typography.H3 className="mb-2">No accounts connected</Typography.H3>
-      <Typography.BodyBase className="mb-6">
+      <Text
+        as="h3"
+        variant="heading"
+        size="2xl"
+        weight="semibold"
+        className="mb-2"
+      >
+        No accounts connected
+      </Text>
+      <Text as="p" tone="muted" size="md" weight="medium" className="mb-6">
         Connect your social media accounts to start publishing content
-      </Typography.BodyBase>
+      </Text>
       <Button onClick={onConnect} variant="default">
         <Plus className="w-4 h-4 mr-2" />
         Connect Your First Platform
@@ -83,7 +91,9 @@ function ConnectedAccountsContent({ onConnect }: { onConnect: () => void }) {
   return (
     <Stack spacing="md">
       <div className="flex items-center justify-between">
-        <Typography.H3>Active Connections</Typography.H3>
+        <Text as="h3" variant="heading" size="2xl" weight="semibold">
+          Active Connections
+        </Text>
         <Badge
           variant="secondary"
           className={
@@ -145,12 +155,14 @@ export function ConnectedAccountsPage() {
                   <div className="p-2 bg-sidebar-accent rounded-lg">
                     <Users className="w-5 h-5" />
                   </div>
-                  <Typography.H2>Connected Accounts</Typography.H2>
+                  <Text as="h2" variant="heading" size="3xl" weight="semibold">
+                    Connected Accounts
+                  </Text>
                 </div>
-                <Typography.Large>
+                <Text as="p" size="md" weight="medium" tone="muted">
                   Manage your social media platform connections and publishing
                   settings
-                </Typography.Large>
+                </Text>
               </Stack>
               <Button onClick={() => setIsConnectDialogOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
@@ -166,7 +178,9 @@ export function ConnectedAccountsPage() {
 
           {/* Available Platforms */}
           <Stack spacing="md">
-            <Typography.H3>Available Platforms</Typography.H3>
+            <Text as="h3" variant="heading" size="2xl" weight="semibold">
+              Available Platforms
+            </Text>
             <div className="card-grid-sm">
               {availablePlatforms.map((platform) => (
                 <div
@@ -181,7 +195,14 @@ export function ConnectedAccountsPage() {
                         className="w-8 h-8 rounded-lg"
                       />
                       <div>
-                        <Typography.H4>{platform.name}</Typography.H4>
+                        <Text
+                          as="h4"
+                          variant="heading"
+                          size="xl"
+                          weight="semibold"
+                        >
+                          {platform.name}
+                        </Text>
                         {platform.status === "coming_soon" && (
                           <Badge variant="secondary" className="mt-1 text-xs">
                             Coming Soon
@@ -195,9 +216,15 @@ export function ConnectedAccountsPage() {
                       </Button>
                     )}
                   </div>
-                  <Typography.BodyBase className="mb-4">
+                  <Text
+                    as="p"
+                    size="md"
+                    weight="medium"
+                    tone="muted"
+                    className="mb-4"
+                  >
                     {platform.description}
-                  </Typography.BodyBase>
+                  </Text>
                   <Button
                     variant={
                       platform.status === "available" ? "default" : "secondary"

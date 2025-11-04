@@ -21,7 +21,7 @@
     "@tailwindcss/vite": "^4.1.11",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "astro": "^5.14.6",
+    "astro": "^5.15.3",
     "class-variance-authority": "^0.7.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.12",

@@ -1,5 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
-import { Typography } from "@openpromo/ui/components/typography";
+import { Text } from "@openpromo/ui/components/typography";
 import { BarChart3, Calendar, ChevronRight, Users } from "lucide-react";
 import { Container, Grid, Section, Stack } from "../_layout";
 
@@ -40,17 +40,30 @@ export function FeaturesSection() {
             <Stack spacing="xl" align="center" className="text-center">
               <Stack direction="row" spacing="xs" align="center">
                 <Users className="w-4 h-4 text-blue-600" />
-                <Typography.FeatureTag color="blue">
+                <Text
+                  as="span"
+                  variant="label"
+                  size="sm"
+                  weight="semibold"
+                  transform="uppercase"
+                  className="text-blue-600"
+                >
                   Seamless collaboration
-                </Typography.FeatureTag>
+                </Text>
               </Stack>
-              <Typography.H1 className="max-w-2xl">
+              <Text
+                as="h1"
+                variant="heading"
+                size="3xl"
+                weight="semibold"
+                className="max-w-2xl"
+              >
                 Powering teamwork to simplify workflows
-              </Typography.H1>
-              <Typography.BodyLg className="max-w-2xl">
+              </Text>
+              <Text as="p" size="lg" tone="muted" className="max-w-2xl">
                 Say goodbye to version chaos and embrace a smoother workflow
                 designed to help your team achieve more, together.
-              </Typography.BodyLg>
+              </Text>
             </Stack>
 
             <Grid cols={3} responsive="md" gap="xl">
@@ -62,8 +75,17 @@ export function FeaturesSection() {
                     className="w-full h-auto rounded-lg"
                   />
                   <Stack spacing="md">
-                    <Typography.H3>{feature.title}</Typography.H3>
-                    <Typography.BodySm>{feature.description}</Typography.BodySm>
+                    <Text
+                      as="h3"
+                      variant="heading"
+                      size="2xl"
+                      weight="semibold"
+                    >
+                      {feature.title}
+                    </Text>
+                    <Text as="p" size="sm" tone="muted">
+                      {feature.description}
+                    </Text>
                     <Button
                       variant="ghost"
                       className="justify-start px-0 text-sm font-semibold self-start"
@@ -88,18 +110,25 @@ export function FeaturesSection() {
             <Stack spacing="xl">
               <Stack direction="row" spacing="xs" align="center">
                 <Calendar className="w-4 h-4 text-orange-600" />
-                <Typography.FeatureTag color="orange">
+                <Text
+                  as="span"
+                  variant="label"
+                  size="sm"
+                  weight="semibold"
+                  transform="uppercase"
+                  className="text-orange-600"
+                >
                   Meaningful calendar
-                </Typography.FeatureTag>
+                </Text>
               </Stack>
-              <Typography.H1>
+              <Text as="h2" variant="heading" size="3xl" weight="semibold">
                 Dynamic planner that keeps you ahead
-              </Typography.H1>
-              <Typography.BodyLg>
+              </Text>
+              <Text as="p" size="lg" tone="muted">
                 Stay one step ahead with a calendar that grows with your
                 schedule. Adapt quickly to changes, manage priorities
                 effectively, and achieve your goals with ease.
-              </Typography.BodyLg>
+              </Text>
               <Button variant="secondary" size="lg" className="self-start">
                 Learn more
                 <ChevronRight className="w-4 h-4" />
@@ -132,18 +161,25 @@ export function FeaturesSection() {
             <Stack spacing="xl">
               <Stack direction="row" spacing="xs" align="center">
                 <BarChart3 className="w-4 h-4 text-purple-600" />
-                <Typography.FeatureTag color="purple">
+                <Text
+                  as="span"
+                  variant="label"
+                  size="sm"
+                  weight="semibold"
+                  transform="uppercase"
+                  className="text-purple-600"
+                >
                   Insightful analytics
-                </Typography.FeatureTag>
+                </Text>
               </Stack>
-              <Typography.H1>
+              <Text as="h2" variant="heading" size="3xl" weight="semibold">
                 Analytics that power smarter decisions
-              </Typography.H1>
-              <Typography.BodyLg>
+              </Text>
+              <Text as="p" size="lg" tone="muted">
                 Our cutting-edge analytics deliver detailed trends, patterns,
                 and actionable intelligence to help you make informed decisions
                 and stay ahead of the competition.
-              </Typography.BodyLg>
+              </Text>
               <Button variant="outline" size="lg" className="self-start">
                 Learn more
                 <ChevronRight className="w-4 h-4" />

@@ -1,4 +1,4 @@
-import { Typography } from "@openpromo/ui/components/typography";
+import { Text } from "@openpromo/ui/components/typography";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import dashboardPreview from "../../assets/dashboard-preview.png";
@@ -48,9 +48,9 @@ export function DashboardPreviewSection() {
           >
             {/* Trusted by text */}
             <div className="text-center">
-              <Typography.BodySm className="text-gray-500">
+              <Text as="p" size="sm" tone="muted">
                 Trusted by the world leaders
-              </Typography.BodySm>
+              </Text>
             </div>
 
             {/* Companies Marquee */}

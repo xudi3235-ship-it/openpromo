@@ -752,7 +752,7 @@ importers:
     dependencies:
       '@astrojs/mdx':
         specifier: ^4.3.6
-        version: 4.3.6(astro@5.14.6(@planetscale/database@1.19.0)(@types/node@24.1.0)(aws4fetch@1.0.20)(jiti@2.4.2)(lightningcss@1.30.1)(rollup@4.52.5)(terser@5.43.1)(tsx@4.20.3)(typescript@5.9.3)(yaml@2.8.1))
+        version: 4.3.6(astro@5.15.3(@planetscale/database@1.19.0)(@types/node@24.1.0)(aws4fetch@1.0.20)(jiti@2.4.2)(lightningcss@1.30.1)(rollup@4.52.5)(terser@5.43.1)(tsx@4.20.3)(typescript@5.9.3)(yaml@2.8.1))
       '@astrojs/react':
         specifier: ^4.3.0
         version: 4.3.0(@types/node@24.1.0)(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(jiti@2.4.2)(lightningcss@1.30.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.1)
@@ -778,8 +778,8 @@ importers:
         specifier: 'catalog:'
         version: 19.1.7(@types/react@19.1.10)
       astro:
-        specifier: ^5.14.6
-        version: 5.14.6(@planetscale/database@1.19.0)(@types/node@24.1.0)(aws4fetch@1.0.20)(jiti@2.4.2)(lightningcss@1.30.1)(rollup@4.52.5)(terser@5.43.1)(tsx@4.20.3)(typescript@5.9.3)(yaml@2.8.1)
+        specifier: ^5.15.3
+        version: 5.15.3(@planetscale/database@1.19.0)(@types/node@24.1.0)(aws4fetch@1.0.20)(jiti@2.4.2)(lightningcss@1.30.1)(rollup@4.52.5)(terser@5.43.1)(tsx@4.20.3)(typescript@5.9.3)(yaml@2.8.1)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -5277,8 +5277,8 @@ packages:
     resolution: {integrity: sha512-LElXdjswlqjWrPpJFg1Fx4wpkOCxj1TDHlSV4PlaRxHGWko024xICaa97ZkMfs6DRKlCguiAI+rbXv5GWwXIkg==}
     hasBin: true
 
-  astro@5.14.6:
-    resolution: {integrity: sha512-MSdjKt2W2a56x868DqDWgbfw4D689/8EGhHG4465h7eivTI237u1aBx4iJvgI6WfgdUE61+coAvMjUkEvOWbpA==}
+  astro@5.15.3:
+    resolution: {integrity: sha512-wUO/isJrcUoduRoKacKB9jpO6TxTlPV1zw8UqQx39jSNY7z9IxusJAiib3AiNvqK+dCWhqXx+OnExCCwELmcUw==}
     engines: {node: 18.20.8 || ^20.3.0 || >=22.0.0, npm: '>=9.6.5', pnpm: '>=7.1.0'}
     hasBin: true
 
@@ -8652,12 +8652,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@astrojs/mdx@4.3.6(astro@5.14.6(@planetscale/database@1.19.0)(@types/node@24.1.0)(aws4fetch@1.0.20)(jiti@2.4.2)(lightningcss@1.30.1)(rollup@4.52.5)(terser@5.43.1)(tsx@4.20.3)(typescript@5.9.3)(yaml@2.8.1))':
+  '@astrojs/mdx@4.3.6(astro@5.15.3(@planetscale/database@1.19.0)(@types/node@24.1.0)(aws4fetch@1.0.20)(jiti@2.4.2)(lightningcss@1.30.1)(rollup@4.52.5)(terser@5.43.1)(tsx@4.20.3)(typescript@5.9.3)(yaml@2.8.1))':
     dependencies:
       '@astrojs/markdown-remark': 6.3.7
       '@mdx-js/mdx': 3.1.1
       acorn: 8.15.0
-      astro: 5.14.6(@planetscale/database@1.19.0)(@types/node@24.1.0)(aws4fetch@1.0.20)(jiti@2.4.2)(lightningcss@1.30.1)(rollup@4.52.5)(terser@5.43.1)(tsx@4.20.3)(typescript@5.9.3)(yaml@2.8.1)
+      astro: 5.15.3(@planetscale/database@1.19.0)(@types/node@24.1.0)(aws4fetch@1.0.20)(jiti@2.4.2)(lightningcss@1.30.1)(rollup@4.52.5)(terser@5.43.1)(tsx@4.20.3)(typescript@5.9.3)(yaml@2.8.1)
       es-module-lexer: 1.7.0
       estree-util-visit: 2.0.0
       hast-util-to-html: 9.0.5
@@ -8707,7 +8707,7 @@ snapshots:
   '@astrojs/telemetry@3.3.0':
     dependencies:
       ci-info: 4.3.0
-      debug: 4.4.1
+      debug: 4.4.3
       dlv: 1.1.3
       dset: 3.1.4
       is-docker: 3.0.0
@@ -13966,7 +13966,7 @@ snapshots:
 
   astring@1.9.0: {}
 
-  astro@5.14.6(@planetscale/database@1.19.0)(@types/node@24.1.0)(aws4fetch@1.0.20)(jiti@2.4.2)(lightningcss@1.30.1)(rollup@4.52.5)(terser@5.43.1)(tsx@4.20.3)(typescript@5.9.3)(yaml@2.8.1):
+  astro@5.15.3(@planetscale/database@1.19.0)(@types/node@24.1.0)(aws4fetch@1.0.20)(jiti@2.4.2)(lightningcss@1.30.1)(rollup@4.52.5)(terser@5.43.1)(tsx@4.20.3)(typescript@5.9.3)(yaml@2.8.1):
     dependencies:
       '@astrojs/compiler': 2.12.2
       '@astrojs/internal-helpers': 0.7.4
@@ -13984,14 +13984,14 @@ snapshots:
       common-ancestor-path: 1.0.1
       cookie: 1.0.2
       cssesc: 3.0.0
-      debug: 4.4.1
+      debug: 4.4.3
       deterministic-object-hash: 2.0.2
       devalue: 5.3.2
       diff: 5.2.0
       dlv: 1.1.3
       dset: 3.1.4
       es-module-lexer: 1.7.0
-      esbuild: 0.25.8
+      esbuild: 0.25.11
       estree-walker: 3.0.3
       flattie: 1.1.1
       fontace: 0.3.0
@@ -14000,7 +14000,6 @@ snapshots:
       http-cache-semantics: 4.2.0
       import-meta-resolve: 4.2.0
       js-yaml: 4.1.0
-      kleur: 4.1.5
       magic-string: 0.30.19
       magicast: 0.3.5
       mrmime: 2.0.1
@@ -14008,14 +14007,15 @@ snapshots:
       p-limit: 6.2.0
       p-queue: 8.1.0
       package-manager-detector: 1.3.0
+      picocolors: 1.1.1
       picomatch: 4.0.3
       prompts: 2.4.2
       rehype: 13.0.2
       semver: 7.7.2
-      shiki: 3.12.2
+      shiki: 3.13.0
       smol-toml: 1.4.2
       tinyexec: 1.0.1
-      tinyglobby: 0.2.14
+      tinyglobby: 0.2.15
       tsconfck: 3.1.6(typescript@5.9.3)
       ultrahtml: 1.6.0
       unifont: 0.6.0
@@ -14433,7 +14433,6 @@ snapshots:
   debug@4.4.3:
     dependencies:
       ms: 2.1.3
-    optional: true
 
   decimal.js-light@2.5.1: {}
 

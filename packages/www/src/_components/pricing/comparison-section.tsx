@@ -1,6 +1,6 @@
 import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
-import { Typography } from "@openpromo/ui/components/typography";
+import { Text } from "@openpromo/ui/components/typography";
 import { Check, X } from "lucide-react";
 import { Container, Section } from "../_layout";
 
@@ -143,7 +143,9 @@ export function ComparisonSection({ dashboardUrl }: ComparisonSectionProps) {
       );
     }
     return (
-      <Typography.BodySm className="font-medium">{value}</Typography.BodySm>
+      <Text as="span" size="sm" weight="medium">
+        {value}
+      </Text>
     );
   };
 
@@ -151,13 +153,24 @@ export function ComparisonSection({ dashboardUrl }: ComparisonSectionProps) {
     <Section className="py-24 bg-muted/30">
       <Container size="xl">
         <div className="text-center mb-16">
-          <Typography.Display className="mb-4">
+          <Text
+            as="h1"
+            variant="heading"
+            size="4xl"
+            weight="bold"
+            className="mb-4"
+          >
             Compare all features
-          </Typography.Display>
-          <Typography.BodyLg className="text-muted-foreground max-w-2xl mx-auto">
+          </Text>
+          <Text
+            as="p"
+            size="lg"
+            tone="muted"
+            className="max-w-2xl mx-auto leading-7"
+          >
             See exactly what's included in each plan. Upgrade or downgrade at
             any time.
-          </Typography.BodyLg>
+          </Text>
         </div>
 
         <div className="max-w-5xl mx-auto">
@@ -165,9 +178,9 @@ export function ComparisonSection({ dashboardUrl }: ComparisonSectionProps) {
             {/* Headers */}
             <div className="grid grid-cols-4 bg-muted/50 border-b">
               <div className="p-6">
-                <Typography.H4 className="font-semibold">
+                <Text as="h4" variant="heading" size="xl" weight="semibold">
                   Features
-                </Typography.H4>
+                </Text>
               </div>
               {comparisonData.plans.map((plan) => (
                 <div key={plan.name} className="p-6 text-center relative">
@@ -179,11 +192,15 @@ export function ComparisonSection({ dashboardUrl }: ComparisonSectionProps) {
                       Popular
                     </Badge>
                   )}
-                  <Typography.H4
-                    className={`font-semibold mt-${plan.popular ? "4" : "0"}`}
+                  <Text
+                    as="h4"
+                    variant="heading"
+                    size="xl"
+                    weight="semibold"
+                    className={plan.popular ? "mt-4" : undefined}
                   >
                     {plan.name}
-                  </Typography.H4>
+                  </Text>
                 </div>
               ))}
             </div>
@@ -193,9 +210,16 @@ export function ComparisonSection({ dashboardUrl }: ComparisonSectionProps) {
               <div key={section.title}>
                 {/* Section Title */}
                 <div className="px-6 py-4 bg-muted/30 border-b">
-                  <Typography.BodySm className="font-semibold text-muted-foreground uppercase tracking-wide">
+                  <Text
+                    as="span"
+                    size="sm"
+                    weight="semibold"
+                    tone="muted"
+                    transform="uppercase"
+                    className="tracking-wide"
+                  >
                     {section.title}
-                  </Typography.BodySm>
+                  </Text>
                 </div>
 
                 {/* Features */}
@@ -207,9 +231,9 @@ export function ComparisonSection({ dashboardUrl }: ComparisonSectionProps) {
                     }`}
                   >
                     <div className="p-4 flex items-center">
-                      <Typography.BodySm className="font-medium">
+                      <Text as="span" size="sm" weight="medium">
                         {feature.name}
-                      </Typography.BodySm>
+                      </Text>
                     </div>
                     <div className="p-4 flex items-center justify-center">
                       {renderFeatureValue(feature.starter)}
@@ -228,10 +252,10 @@ export function ComparisonSection({ dashboardUrl }: ComparisonSectionProps) {
 
           {/* CTA Section */}
           <div className="text-center mt-12">
-            <Typography.BodyLg className="text-muted-foreground mb-6">
+            <Text as="p" size="lg" tone="muted" className="mb-6">
               Ready to get started? Choose your plan above or start with a free
               trial.
-            </Typography.BodyLg>
+            </Text>
             <Button asChild size="lg">
               <a href={dashboardUrl}>Start free trial</a>
             </Button>

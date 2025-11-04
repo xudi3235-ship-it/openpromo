@@ -6,7 +6,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
-import { Typography } from "@openpromo/ui/components/typography";
+import { Text } from "@openpromo/ui/components/typography";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, MoreHorizontal, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -66,12 +66,18 @@ export function ConnectedAccountCard({ account }: ConnectedAccountCardProps) {
             className="w-10 h-10 rounded-lg"
           />
           <div>
-            <Typography.H4 className="mb-1">
+            <Text
+              as="h4"
+              variant="heading"
+              size="xl"
+              weight="semibold"
+              className="mb-1"
+            >
               {account.accountName}
-            </Typography.H4>
-            <Typography.Small className="text-[var(--neutral-600)]">
+            </Text>
+            <Text as="span" size="sm" tone="subtle">
               {account.accountId}
-            </Typography.Small>
+            </Text>
           </div>
         </div>
 
@@ -105,21 +111,21 @@ export function ConnectedAccountCard({ account }: ConnectedAccountCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full" />
-            <Typography.Small className="text-[var(--neutral-700)]">
+            <Text as="span" size="sm" tone="muted">
               Connected
-            </Typography.Small>
+            </Text>
           </div>
-          <Typography.Small className="text-[var(--neutral-600)]">
+          <Text as="span" size="sm" tone="subtle">
             Last sync: {account.lastSync}
-          </Typography.Small>
+          </Text>
         </div>
 
         {account.followers && (
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-[var(--neutral-600)]" />
-            <Typography.Small className="text-[var(--neutral-700)]">
+            <Text as="span" size="sm" tone="muted">
               {formatFollowers(account.followers)} followers
-            </Typography.Small>
+            </Text>
           </div>
         )}
       </div>

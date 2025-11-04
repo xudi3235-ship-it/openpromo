@@ -1,4 +1,4 @@
-import { Typography } from "@openpromo/ui/components/typography";
+import { Text } from "@openpromo/ui/components/typography";
 import { cn } from "@openpromo/ui/lib/utils";
 import type * as React from "react";
 
@@ -22,9 +22,15 @@ export function PageLayout({
       {(title || description || action) && (
         <div className="page-header">
           <div>
-            {title && <Typography.H1>{title}</Typography.H1>}
+            {title && (
+              <Text as="h1" variant="heading" size="3xl" weight="semibold">
+                {title}
+              </Text>
+            )}
             {description && (
-              <Typography.BodyBase>{description}</Typography.BodyBase>
+              <Text as="p" size="md" weight="medium" tone="muted">
+                {description}
+              </Text>
             )}
           </div>
           {action && <div>{action}</div>}
@@ -55,9 +61,15 @@ export function PageSection({
       {(title || description || action) && (
         <div className="flex items-center justify-between">
           <div>
-            {title && <Typography.H3>{title}</Typography.H3>}
+            {title && (
+              <Text as="h3" variant="heading" size="2xl" weight="semibold">
+                {title}
+              </Text>
+            )}
             {description && (
-              <Typography.BodyBase>{description}</Typography.BodyBase>
+              <Text as="p" size="md" weight="medium" tone="muted">
+                {description}
+              </Text>
             )}
           </div>
           {action && <div>{action}</div>}
@@ -109,11 +121,25 @@ export function EmptyState({
   return (
     <div className={cn("text-center py-12 px-6", className)}>
       {icon && <div className="mb-4 flex justify-center">{icon}</div>}
-      <Typography.H3 className="mb-2">{title}</Typography.H3>
+      <Text
+        as="h3"
+        variant="heading"
+        size="2xl"
+        weight="semibold"
+        className="mb-2"
+      >
+        {title}
+      </Text>
       {description && (
-        <Typography.BodyBase className="mb-6 max-w-md mx-auto">
+        <Text
+          as="p"
+          size="md"
+          weight="medium"
+          tone="muted"
+          className="mb-6 max-w-md mx-auto"
+        >
           {description}
-        </Typography.BodyBase>
+        </Text>
       )}
       {action && <div>{action}</div>}
     </div>

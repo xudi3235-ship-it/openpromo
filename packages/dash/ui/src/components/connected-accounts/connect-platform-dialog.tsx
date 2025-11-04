@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
-import { Typography } from "@openpromo/ui/components/typography";
+import { Text } from "@openpromo/ui/components/typography";
 import { ExternalLink, Plus } from "lucide-react";
 
 interface ConnectPlatformDialogProps {
@@ -110,22 +110,24 @@ export function ConnectPlatformDialog({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
-                    <Typography.H4>{platform.name}</Typography.H4>
+                    <Text as="h4" variant="heading" size="xl" weight="semibold">
+                      {platform.name}
+                    </Text>
                     {!platform.available && (
                       <span className="px-2 py-1 text-xs bg-sidebar-accent rounded-full">
                         Coming Soon
                       </span>
                     )}
                   </div>
-                  <Typography.BodySm className="mb-3">
+                  <Text as="p" size="sm" tone="muted" className="mb-3">
                     {platform.description}
-                  </Typography.BodySm>
+                  </Text>
 
                   {platform.available && platform.permissions && (
                     <div className="mb-3">
-                      <Typography.Small className="font-medium mb">
+                      <Text as="span" size="sm" weight="medium">
                         Required permissions:
-                      </Typography.Small>
+                      </Text>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {platform.permissions.map((permission) => (
                           <Badge key={permission} variant="announcement-pill">
@@ -170,11 +172,11 @@ export function ConnectPlatformDialog({
         </div>
 
         <div className="mt-6 p-4 bg-sidebar-accent/50 rounded-lg border border-sidebar-border/50">
-          <Typography.Small>
+          <Text as="p" size="sm" tone="muted">
             <strong>Note:</strong> You'll be redirected to the platform's
             authentication page. Make sure you have the necessary permissions
             for the accounts you want to connect.
-          </Typography.Small>
+          </Text>
         </div>
       </DialogContent>
     </Dialog>
