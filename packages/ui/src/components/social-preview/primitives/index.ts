@@ -8,5 +8,5 @@ export type { PreviewContainerProps } from "./preview-container";
 export { PreviewContainer } from "./preview-container";
 export type { PreviewHeaderProps } from "./preview-header";
 export { PreviewHeader } from "./preview-header";
-export type { PreviewMediaProps } from "./preview-media";
+export type { MediaLayout, PreviewMediaProps } from "./preview-media";
 export { PreviewMedia } from "./preview-media";

@@ -29,13 +29,18 @@ export function FBFeedPreview({
   }
 
   // Transform composer preview data to the new format
+  // Use index-based matching to support blob previews (files without URLs yet)
   const transformedData: PreviewData = {
     accountName: previewData.accountName,
     profilePicUrl: previewData.profilePicUrl,
     caption: previewData.caption,
-    media: (previewData.attachments ?? []).map((att) => ({
+    media: (previewData.attachments ?? []).map((att, index) => ({
       type: att.type === "video" ? "video" : "photo",
-      url: att.presignedUrl || att.publicUrl || "",
+      url:
+        att.presignedUrl ||
+        att.publicUrl ||
+        att.file?.name ||
+        `attachment-${index}`,
       thumbnailUrl: att.thumbnailUrl,
     })),
     metrics: {
@@ -50,12 +55,15 @@ export function FBFeedPreview({
       data={transformedData}
       size={size}
       renderMedia={(media: PreviewMediaItem, className: string) => {
-        // Find the matching attachment
-        const attachment = previewData.attachments?.find(
-          (att) =>
-            att.presignedUrl === media.url || att.publicUrl === media.url,
+        // Match by index to support uploading files (blobs) without URLs
+        const mediaIndex = transformedData.media?.findIndex(
+          (m) => m.url === media.url,
         );
+        if (mediaIndex === undefined || mediaIndex === -1) return null;
+
+        const attachment = previewData.attachments?.[mediaIndex];
         if (!attachment) return null;
+
         return renderAttachment(attachment, className, true);
       }}
     />

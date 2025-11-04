@@ -81,6 +81,7 @@ export function FacebookFeedPreview({
         <PreviewMedia
           media={media}
           aspectRatio="3/4"
+          layout="collage"
           renderMedia={renderMedia}
           placeholder={
             <div className="h-64 bg-muted flex items-center justify-center text-muted-foreground text-sm">
