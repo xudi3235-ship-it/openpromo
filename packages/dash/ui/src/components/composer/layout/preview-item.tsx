@@ -8,6 +8,7 @@ interface PreviewItemProps {
   contentType: "reel" | "feed";
   isActive: boolean;
   children: React.ReactNode;
+  size?: "default" | "compact";
 }
 
 export function PreviewItem({
@@ -15,6 +16,7 @@ export function PreviewItem({
   contentType,
   isActive,
   children,
+  size = "default",
 }: PreviewItemProps) {
   const meta = getPlatformMeta(account.platform);
   const accountLabel = account.accountName || meta.label;
@@ -24,9 +26,24 @@ export function PreviewItem({
       : `${meta.label} ${contentType === "reel" ? "Reel" : "Feed"}`;
 
   return (
-    <div className="flex w-[280px] flex-col gap-2 flex-shrink-0">
-      <div className="flex flex-col items-center gap-1 text-center">
-        <div className="flex items-center justify-center gap-2 px-1 text-xs font-medium text-foreground">
+    <div
+      className={cn(
+        "flex flex-col flex-shrink-0",
+        size === "compact" ? "w-[220px] gap-1.5" : "w-[280px] gap-2",
+      )}
+    >
+      <div
+        className={cn(
+          "flex flex-col items-center text-center",
+          size === "compact" ? "gap-0.5" : "gap-1",
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center justify-center gap-2 px-1 font-medium text-foreground",
+            size === "compact" ? "text-[11px]" : "text-xs",
+          )}
+        >
           <span
             className="inline-flex h-2.5 w-2.5 rounded-full border border-border"
             style={{ backgroundColor: meta.accentColor }}
@@ -35,17 +52,25 @@ export function PreviewItem({
             {accountLabel}
           </span>
         </div>
-        <div className="text-[11px] text-muted-foreground">{contentLabel}</div>
+        <div
+          className={cn(
+            "text-muted-foreground",
+            size === "compact" ? "text-[10px]" : "text-[11px]",
+          )}
+        >
+          {contentLabel}
+        </div>
       </div>
       <div
         className={cn(
-          "w-[280px] rounded-2xl",
+          "w-full rounded-2xl",
+          size === "compact" && "rounded-xl",
           isActive && cn("ring-2 ring-offset-2", meta.accentRingClass),
         )}
       >
         {children}
       </div>
-      {isActive && (
+      {isActive && size === "default" && (
         <div className="flex justify-center">
           <Badge
             variant="secondary"
