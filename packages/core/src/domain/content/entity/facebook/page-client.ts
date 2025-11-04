@@ -74,6 +74,10 @@ export class FacebookPageClient {
   async createFeedPost(params: {
     message?: string | null;
     attachedMedia?: AttachedMediaInput;
+    callToAction?: {
+      type: string;
+      value: { link: string };
+    };
     published?: boolean;
   }): Promise<FacebookFeedPostResponse> {
     const body = new URLSearchParams();
@@ -92,6 +96,17 @@ export class FacebookPageClient {
         JSON.stringify({ media_fbid: media.media_fbid }),
       );
     });
+
+    if (params.callToAction) {
+      body.set(
+        "call_to_action",
+        JSON.stringify({
+          type: params.callToAction.type,
+          value: params.callToAction.value,
+        }),
+      );
+      body.set("link", params.callToAction.value.link);
+    }
 
     const response = await facebookGraphRequest<{ id?: string }>(
       this.ctx,

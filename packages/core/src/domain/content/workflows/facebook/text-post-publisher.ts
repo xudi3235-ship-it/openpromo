@@ -37,7 +37,10 @@ export async function publishTextPost(
       );
     }
 
-    const { postId } = await client.createFeedPost({ message });
+    const { postId } = await client.createFeedPost({
+      message,
+      callToAction: content.spec.postSpec.callToAction,
+    });
     return postId;
   });
 

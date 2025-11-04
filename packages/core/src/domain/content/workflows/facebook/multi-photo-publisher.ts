@@ -51,6 +51,7 @@ export async function publishMultiPhotoPost(
       attachedMedia: uploadedPhotoIds.map((photoId) => ({
         media_fbid: photoId,
       })),
+      callToAction: content.spec.postSpec.callToAction,
     });
 
     return postId;
