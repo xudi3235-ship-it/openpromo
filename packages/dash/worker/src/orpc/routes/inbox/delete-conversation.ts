@@ -3,30 +3,32 @@ import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
 import { ErrorCodes, VisibleError } from "@core/utils/error";
 import { eq } from "drizzle-orm";
 import * as z from "zod";
-import { loadConversationForWorkspace } from "../../routes/api/workspaces/inbox/routes/utils/conversation-loader";
-import { orpcBuilder } from "../context";
-import { withWorkspaceRole } from "../middleware";
+import { loadConversationForWorkspace } from "../../../routes/api/workspaces/inbox/routes/utils/conversation-loader";
+import { orpcBuilder } from "../../context";
+import { withWorkspaceRole } from "../../middleware";
 import {
   createWorkspaceInputSchema,
   workspaceRoleMappers,
-} from "../shared/workspace-helpers";
+} from "../../shared/workspace-helpers";
 
-const DeleteConversationInputSchema = createWorkspaceInputSchema(
+const Input = createWorkspaceInputSchema(
   z.object({
     conversationId: z.string().min(1),
   }),
 );
 
-const DeleteConversationOutputSchema = z.object({
-  success: z.boolean(),
-  conversationId: z.string(),
-});
+const Output = z
+  .object({
+    success: z.boolean(),
+    conversationId: z.string(),
+  })
+  .strict();
 
 export const deleteConversation = orpcBuilder
-  .input(DeleteConversationInputSchema)
-  .output(DeleteConversationOutputSchema)
+  .input(Input)
+  .output(Output)
   .use(withWorkspaceRole, workspaceRoleMappers.editor)
-  .handler(async ({ input, context }) => {
+  .handler(async ({ input, context }): Promise<z.infer<typeof Output>> => {
     const { conversationId } = input;
     const workspaceId = context.workspace.workspaceID;
     const db = getDbClient();
@@ -51,7 +53,3 @@ export const deleteConversation = orpcBuilder
 
     return { success: true, conversationId };
   });
-
-export const inboxRouter = {
-  deleteConversation,
-};
