@@ -47,7 +47,7 @@ export function InstagramFeedPreview({
 
   return (
     <PreviewContainer size={size} platform="INSTAGRAM" className={className}>
-      <div className="bg-background border rounded-lg overflow-hidden">
+      <div className="bg-background border rounded-lg">
         {/* Header */}
         <PreviewHeader
           accountName={accountName || "Instagram Account"}
@@ -63,17 +63,20 @@ export function InstagramFeedPreview({
         />
 
         {/* Media */}
-        <PreviewMedia
-          media={media}
-          aspectRatio="1/1"
-          layout="carousel"
-          renderMedia={renderMedia}
-          placeholder={
-            <div className="h-64 bg-muted flex items-center justify-center text-muted-foreground text-sm">
-              Upload media to get started
-            </div>
-          }
-        />
+        <div className="overflow-hidden">
+          <PreviewMedia
+            media={media}
+            aspectRatio="1/1"
+            layout="carousel"
+            objectFit="cover"
+            renderMedia={renderMedia}
+            placeholder={
+              <div className="h-64 bg-muted flex items-center justify-center text-muted-foreground text-sm">
+                Upload media to get started
+              </div>
+            }
+          />
+        </div>
 
         {/* Actions */}
         <InstagramActions size={size} />

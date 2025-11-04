@@ -25,6 +25,15 @@ export function PreviewMedia({
   renderMedia,
   layout = "single",
 }: PreviewMediaProps) {
+  // Map aspect ratio to Tailwind classes
+  const aspectRatioClass = {
+    "9/16": "aspect-[9/16]",
+    "4/5": "aspect-[4/5]",
+    "3/4": "aspect-[3/4]",
+    "1/1": "aspect-square",
+    "16/9": "aspect-video",
+  }[aspectRatio];
+
   if (media.length === 0 && placeholder) {
     return <div className={cn("w-full h-full", className)}>{placeholder}</div>;
   }
@@ -34,7 +43,7 @@ export function PreviewMedia({
       <div
         className={cn(
           "w-full h-full flex items-center justify-center bg-muted/20",
-          `aspect-[${aspectRatio}]`,
+          aspectRatioClass,
           className,
         )}
       >
@@ -62,14 +71,14 @@ export function PreviewMedia({
     mediaItem: PreviewMediaItem,
     className: string,
   ) => {
-    if (renderMedia) {
-      return renderMedia(mediaItem, className);
-    }
-
     const mediaClassName = cn(
       className,
       objectFit === "cover" ? "object-cover" : "object-contain",
     );
+
+    if (renderMedia) {
+      return renderMedia(mediaItem, mediaClassName);
+    }
 
     return mediaItem.type === "video" ? (
       <video
@@ -88,7 +97,7 @@ export function PreviewMedia({
   // Single layout mode - always show first image only
   if (layout === "single") {
     return (
-      <div className={cn(`aspect-[${aspectRatio}]`, className)}>
+      <div className={cn(aspectRatioClass, className)}>
         {renderSingleMedia(media[0], "w-full h-full")}
       </div>
     );
@@ -97,7 +106,7 @@ export function PreviewMedia({
   // Carousel layout (Instagram/TikTok) - show first with indicator
   if (layout === "carousel") {
     return (
-      <div className={cn("relative", `aspect-[${aspectRatio}]`, className)}>
+      <div className={cn("relative", aspectRatioClass, className)}>
         {renderSingleMedia(media[0], "w-full h-full")}
         {media.length > 1 && (
           <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
@@ -182,7 +191,7 @@ export function PreviewMedia({
 
   // Fallback: just show first image
   return (
-    <div className={cn(`aspect-[${aspectRatio}]`, className)}>
+    <div className={cn(aspectRatioClass, className)}>
       {renderSingleMedia(media[0], "w-full h-full")}
     </div>
   );

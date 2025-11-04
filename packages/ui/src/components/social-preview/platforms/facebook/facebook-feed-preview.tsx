@@ -46,7 +46,7 @@ export function FacebookFeedPreview({
 
   return (
     <PreviewContainer size={size} platform="FACEBOOK" className={className}>
-      <div className="bg-background border rounded-lg overflow-hidden">
+      <div className="bg-background border rounded-lg">
         {/* Header */}
         <PreviewHeader
           accountName={accountName || "Facebook Page"}
@@ -78,17 +78,19 @@ export function FacebookFeedPreview({
         )}
 
         {/* Media */}
-        <PreviewMedia
-          media={media}
-          aspectRatio="3/4"
-          layout="collage"
-          renderMedia={renderMedia}
-          placeholder={
-            <div className="h-64 bg-muted flex items-center justify-center text-muted-foreground text-sm">
-              Upload media to get started
-            </div>
-          }
-        />
+        <div className="overflow-hidden">
+          <PreviewMedia
+            media={media}
+            aspectRatio="3/4"
+            layout="collage"
+            renderMedia={renderMedia}
+            placeholder={
+              <div className="h-64 bg-muted flex items-center justify-center text-muted-foreground text-sm">
+                Upload media to get started
+              </div>
+            }
+          />
+        </div>
 
         {/* Engagement Stats */}
         <FacebookEngagementStats

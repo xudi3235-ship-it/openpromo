@@ -35,7 +35,7 @@ export function PreviewContainer({
     >
       <div
         className={cn(
-          "w-full overflow-hidden rounded-xl",
+          "w-full overflow-hidden rounded-lg",
           aspectRatio !== "auto" && `aspect-[${aspectRatio}]`,
         )}
       >
