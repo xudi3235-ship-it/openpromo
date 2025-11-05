@@ -300,17 +300,22 @@ export function ContentCalendar({
       }
     >
       <CalendarDndProvider onEventUpdate={handleEventUpdate}>
-        <header className="px-4 pt-4 pb-3 flex-shrink-0">
-          <div className="flex flex-col gap-0.5">
-            <h1 className="text-lg font-semibold text-foreground">Calendar</h1>
-            <p className="text-xs text-muted-foreground">
+        <header className="px-4 pt-3 pb-2 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-semibold text-foreground">
+              Calendar
+            </h1>
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              •
+            </span>
+            <p className="text-xs text-muted-foreground hidden sm:inline">
               Plan upcoming content across your social accounts.
             </p>
           </div>
         </header>
 
         {/* Controls and Filters Row */}
-        <div className="px-4 py-3 border-b border-border/50 flex-shrink-0">
+        <div className="px-4 py-2 border-b border-border/50 flex-shrink-0">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-0.5 sm:gap-2 flex-wrap">
               {/* View Toggle - Week/Month */}
