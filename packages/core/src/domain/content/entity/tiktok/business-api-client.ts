@@ -72,6 +72,32 @@ export interface TikTokBusinessPublishStatus {
   reason?: string;
 }
 
+export type TikTokBusinessPropertyType = "DOMAIN" | "URL_PREFIX";
+
+export interface TikTokBusinessPropertyEntry {
+  property_id: string;
+  property_type: TikTokBusinessPropertyType;
+  property_url: string;
+  property_status: number;
+  signature?: string;
+  file_name?: string;
+}
+
+export interface TikTokBusinessPropertyAddResult {
+  property_id: string;
+  property_type: TikTokBusinessPropertyType;
+  property_url: string;
+  signature: string;
+  file_name?: string;
+}
+
+export interface TikTokBusinessPropertyVerifyResult {
+  property_id?: string;
+  property_type: TikTokBusinessPropertyType;
+  property_url: string;
+  property_status: number;
+}
+
 /**
  * Client for TikTok Business API v1.3
  * Used for accounts authenticated via Business Login (BUSINESS_LOGIN auth type)
@@ -139,6 +165,12 @@ export class TikTokBusinessAPIClient {
       businessId: tiktokUserID,
       connectedAccountId: account.id,
     });
+  }
+
+  static fromIdentityContext(
+    ctx: TikTokBusinessIdentityContext,
+  ): TikTokBusinessAPIClient {
+    return new TikTokBusinessAPIClient(ctx);
   }
 
   get identity(): TikTokBusinessIdentityContext {
@@ -284,6 +316,66 @@ export class TikTokBusinessAPIClient {
   }
 
   /**
+   * Fetch all URL properties for the business account
+   */
+  async listUrlProperties(): Promise<TikTokBusinessPropertyEntry[]> {
+    const params = new URLSearchParams({
+      business_id: this.ctx.businessId,
+    });
+    const data = await this.get<{
+      property_list?: TikTokBusinessPropertyEntry[];
+    }>(`/open_api/v1.3/business/property/list/?${params.toString()}`);
+    return data.property_list ?? [];
+  }
+
+  /**
+   * Add a URL property (domain or prefix) for the business account
+   */
+  async addUrlProperty(params: {
+    propertyType: TikTokBusinessPropertyType;
+    propertyUrl: string;
+  }): Promise<{ propertyId: string; signature: string; fileName?: string }> {
+    const data = await this.post<TikTokBusinessPropertyAddResult>(
+      "/open_api/v1.3/business/property/add/",
+      {
+        business_id: this.ctx.businessId,
+        property_type: params.propertyType,
+        property_url: params.propertyUrl,
+      },
+    );
+
+    if (!data.signature) {
+      throw new WorkflowError(
+        "TikTok Business property add response missing signature",
+      );
+    }
+
+    return {
+      propertyId: data.property_id,
+      signature: data.signature,
+      fileName: data.file_name,
+    };
+  }
+
+  /**
+   * Check verification status of a URL property
+   */
+  async checkUrlProperty(params: {
+    propertyType: TikTokBusinessPropertyType;
+    propertyUrl: string;
+  }): Promise<TikTokBusinessPropertyVerifyResult> {
+    const data = await this.post<TikTokBusinessPropertyVerifyResult>(
+      "/open_api/v1.3/business/property/verify/",
+      {
+        business_id: this.ctx.businessId,
+        property_type: params.propertyType,
+        property_url: params.propertyUrl,
+      },
+    );
+    return data;
+  }
+
+  /**
    * GET request to Business API
    */
   private async get<T>(path: string): Promise<T> {
@@ -364,7 +456,7 @@ export class TikTokBusinessAPIClient {
       throw new WorkflowError(`TikTok Business API error: ${message}`);
     }
 
-    if (!json.data) {
+    if (json.data === undefined || json.data === null) {
       throw new WorkflowError(
         `TikTok Business API ${path} returned empty data`,
       );

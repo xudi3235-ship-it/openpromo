@@ -2,6 +2,8 @@ import {
   ConnectedAccount,
   tikTokBusinessOAuthService,
 } from "@core/domain/connected-account";
+import { TikTokBusinessAPIClient } from "@core/domain/content/entity/tiktok/business-api-client";
+import { ensureTikTokBusinessUrlPrefixVerified } from "@core/domain/content/entity/tiktok/business-property-manager";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Platform } from "@core/schemas/connected-account.sql";
@@ -84,6 +86,28 @@ export const tikTokBusinessConnectedAccountRoute = new Hono<ApiEnv>().get(
               ? now
               : null,
         });
+
+        try {
+          const client = TikTokBusinessAPIClient.fromIdentityContext({
+            accessToken: authResult.accessToken,
+            refreshToken: authResult.refreshToken,
+            businessId: authResult.id,
+            connectedAccountId: account.id,
+          });
+          await ensureTikTokBusinessUrlPrefixVerified(client);
+        } catch (error) {
+          console.error("Failed to verify TikTok Business URL prefix", error);
+          await ConnectedAccount.deleteById(account.id).catch((deleteError) => {
+            console.error(
+              "Failed to rollback TikTok Business account after verification failure",
+              deleteError,
+            );
+          });
+          throw createVisibleError(500, {
+            message:
+              "Connected to TikTok, but failed to verify video hosting domain. Please try again shortly.",
+          });
+        }
 
         const qp = new URLSearchParams({
           status: "success",

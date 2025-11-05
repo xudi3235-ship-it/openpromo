@@ -11,6 +11,7 @@ import { onlyOrThrow } from "@core/utils/common";
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 import { EntPendingContent } from "./EntContent";
+import { buildTikTokBusinessPrefixes } from "./tiktok/business-property-manager";
 import {
   TikTokDirectPostClient,
   type TikTokIdentityContext,
@@ -497,6 +498,188 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
       key,
       url: Storage.publicUrl(key, publicBucket),
     };
+  }
+
+  async ensureVideoAvailableOnTikTokBusinessDomain(
+    video: Pick<SharedAttachmentSpec, "id" | "presignedUrl" | "mimeType">,
+    businessAccountId: string,
+  ): Promise<{ key: string; url: string }> {
+    if (!video.presignedUrl) {
+      throw new WorkflowError("Video attachment missing presignedUrl");
+    }
+
+    const { keyPrefix } = buildTikTokBusinessPrefixes(businessAccountId);
+    const extension = video.mimeType?.split("/")?.[1]?.split("+")?.[0] || "mp4";
+    const key = `${keyPrefix}videos/${this.data.id}-${video.id}.${extension}`;
+    const publicBucket = Storage.PUBLIC_BUCKET;
+
+    const exists = await Storage.exists(key, publicBucket).catch((error) => {
+      log.warn("failed to check existing TikTok Business video object", {
+        key,
+        error,
+      });
+      return false;
+    });
+
+    if (!exists) {
+      const response = await fetch(video.presignedUrl);
+      if (!response.ok || !response.body) {
+        throw new WorkflowError(
+          `Failed to fetch video ${video.id} for TikTok Business upload: ${response.status} ${response.statusText}`,
+        );
+      }
+      const contentType =
+        video.mimeType || response.headers.get("content-type") || "video/mp4";
+
+      await Storage.upload(
+        key,
+        response.body as ReadableStream<Uint8Array>,
+        publicBucket,
+        {
+          contentType,
+          metadata: {
+            source: "cloudflare-stream",
+            attachmentId: video.id,
+            contentId: this.data.id,
+            tiktokBusinessAccount: businessAccountId,
+          },
+        },
+      );
+    }
+
+    await this.updateAttachments((attachment) => {
+      if (attachment.type !== "video" || attachment.id !== video.id) {
+        return attachment;
+      }
+
+      const metadata = {
+        ...(attachment.metadata as Record<string, unknown> | undefined),
+      };
+      const tiktokMeta = {
+        ...((metadata?.tiktok as Record<string, unknown> | undefined) ?? {}),
+        r2: {
+          key,
+          bucket: publicBucket.name,
+        },
+        business: {
+          accountId: businessAccountId,
+          keyPrefix,
+        },
+      } satisfies Record<string, unknown>;
+
+      return {
+        ...attachment,
+        metadata: {
+          ...metadata,
+          tiktok: tiktokMeta,
+        },
+      } satisfies SharedAttachmentSpec;
+    });
+
+    return {
+      key,
+      url: Storage.publicUrl(key, publicBucket),
+    };
+  }
+
+  async ensurePhotosAvailableOnTikTokBusinessDomain(
+    businessAccountId: string,
+  ): Promise<{ id: string; key: string; url: string }[]> {
+    const photos = this.photosAttachments();
+    if (photos.length === 0) {
+      throw new WorkflowError(
+        `TikTok feed content ${this.data.id} has no photo attachments to prepare`,
+      );
+    }
+
+    const prepared: { id: string; key: string; url: string }[] = [];
+    const { keyPrefix } = buildTikTokBusinessPrefixes(businessAccountId);
+    const publicBucket = Storage.PUBLIC_BUCKET;
+
+    for (const photo of photos) {
+      const sourceUrl = photo.publicUrl ?? photo.presignedUrl;
+      if (!sourceUrl) {
+        throw new WorkflowError(
+          `TikTok photo attachment ${photo.id ?? "unknown"} missing source URL`,
+        );
+      }
+
+      const key = `${keyPrefix}photos/${this.data.id}-${photo.id}`;
+
+      const exists = await Storage.exists(key, publicBucket).catch((error) => {
+        log.warn("failed to check existing TikTok Business photo object", {
+          key,
+          error,
+        });
+        return false;
+      });
+
+      if (!exists) {
+        const response = await fetch(sourceUrl);
+        if (!response.ok || !response.body) {
+          throw new WorkflowError(
+            `Failed to fetch photo ${photo.id ?? "unknown"} for TikTok Business upload: ${response.status} ${response.statusText}`,
+          );
+        }
+
+        const contentType =
+          photo.mimeType ||
+          response.headers.get("content-type") ||
+          "image/jpeg";
+
+        await Storage.upload(
+          key,
+          response.body as ReadableStream<Uint8Array>,
+          publicBucket,
+          {
+            contentType,
+            metadata: {
+              source: "cloudflare-images",
+              attachmentId: photo.id,
+              contentId: this.data.id,
+              tiktokBusinessAccount: businessAccountId,
+            },
+          },
+        );
+      }
+
+      prepared.push({
+        id: photo.id,
+        key,
+        url: Storage.publicUrl(key, publicBucket),
+      });
+
+      await this.updateAttachments((attachment) => {
+        if (attachment.type !== "photo" || attachment.id !== photo.id) {
+          return attachment;
+        }
+
+        const metadata = {
+          ...(attachment.metadata as Record<string, unknown> | undefined),
+        };
+        const tiktokMeta = {
+          ...((metadata?.tiktok as Record<string, unknown> | undefined) ?? {}),
+          r2: {
+            key,
+            bucket: publicBucket.name,
+          },
+          business: {
+            accountId: businessAccountId,
+            keyPrefix,
+          },
+        } satisfies Record<string, unknown>;
+
+        return {
+          ...attachment,
+          metadata: {
+            ...metadata,
+            tiktok: tiktokMeta,
+          },
+        } satisfies SharedAttachmentSpec;
+      });
+    }
+
+    return prepared;
   }
 }
 const log = Log.create({ namespace: "tiktok-feed-entity" });
