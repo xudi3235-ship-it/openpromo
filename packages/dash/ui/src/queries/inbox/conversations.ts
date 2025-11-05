@@ -190,6 +190,13 @@ export function useMarkConversationRead(workspaceSlug: string | undefined) {
           id: conversationId,
         },
       }),
+    // Fail silently - mark-as-read is not critical UX
+    // Backend failures (OAuth, permissions, etc) shouldn't break the UI
+    retry: false,
+    onError: () => {
+      // Silently fail - the conversation will remain unread in the UI
+      // which is acceptable for non-critical operations like read receipts
+    },
     onSuccess: (data, conversationId) => {
       // Type-safe update for infinite queries
       queryClient.setQueriesData<InfiniteData<InboxConversationsList>>(
