@@ -137,11 +137,6 @@ export function InboxLayout() {
         const existing = conversationMap[event.conversationId];
 
         if (!existing) {
-          // New conversation - refetch to get full details
-          console.debug(
-            "[Inbox] New conversation detected, refetching list",
-            event.conversationId,
-          );
           conversationsQuery.refetch();
           return;
         }

@@ -52,10 +52,6 @@ export const createRealtimeSlice: StateCreator<
     if (!existing) {
       // New conversation - we need to fetch the full details
       // This happens when a new conversation is created (e.g., new DM or comment thread)
-      console.debug(
-        "[Inbox] New conversation detected, will be loaded on next refresh",
-        conversationId,
-      );
       // Note: We could fetch it here, but that would require passing queryClient
       // through the store, which is complex. Instead, the conversation will appear
       // on the next query refresh or when the user navigates.

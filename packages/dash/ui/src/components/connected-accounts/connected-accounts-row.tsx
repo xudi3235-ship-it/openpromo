@@ -335,17 +335,15 @@ export function ConnectedAccountsRow({
               label="TikTok"
               isBusiness={false}
             />
-            {/* TikTok Business - Feature in development */}
-            {false && (
-              <AddButton
-                platform="TIKTOK"
-                onClick={handleConnectTikTokBusiness}
-                isConnecting={isConnecting}
-                mouseX={mouseX}
-                label="TikTok Business"
-                isBusiness={true}
-              />
-            )}
+            {/* TikTok Business login - Feature in development */}
+            <AddButton
+              platform="TIKTOK"
+              onClick={handleConnectTikTokBusiness}
+              isConnecting={isConnecting}
+              mouseX={mouseX}
+              label="TikTok Business"
+              isBusiness={true}
+            />
           </>
         )}
       </motion.div>

@@ -1,6 +1,6 @@
 import {
   ConnectedAccount,
-  tikTokBusinessOAuthService,
+  tikTokAdvertiserOAuthService,
 } from "@core/domain/connected-account";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
@@ -17,7 +17,7 @@ const CallbackQuerySchema = z.object({
   state: z.string(),
 });
 
-export const tikTokBusinessConnectedAccountRoute = new Hono<ApiEnv>().get(
+export const tikTokAdvertiserConnectedAccountRoute = new Hono<ApiEnv>().get(
   "/callback",
   zValidator("query", CallbackQuerySchema),
   async (ctx) => {
@@ -44,48 +44,42 @@ export const tikTokBusinessConnectedAccountRoute = new Hono<ApiEnv>().get(
       const workspaceSlug = actor.properties.workspaceSlug;
 
       return Actor.provide("workspace_user", actor.properties, async () => {
-        const authResult = await tikTokBusinessOAuthService.authenticate({
+        const authResult = await tikTokAdvertiserOAuthService.authenticate({
           code: auth_code,
           workspaceSlug,
         });
 
-        const profilePicUrl = authResult.picture || "";
-        const externalUrl = authResult.username
-          ? `https://www.tiktok.com/@${authResult.username}`
-          : "https://www.tiktok.com";
+        const profilePicUrl = authResult.profilePicUrl || "";
+        const externalUrl = "https://ads.tiktok.com";
 
         const now = new Date();
         const account = await ConnectedAccount.create({
           platform: Platform.enum.TIKTOK,
-          tiktokAuthType: "BUSINESS_LOGIN",
-          externalAccountId: authResult.id,
-          accountName: authResult.name,
+          tiktokAuthType: "ADVERTISER",
+          externalAccountId: authResult.advertiserId,
+          accountName: authResult.advertiserName,
           externalUrl,
           profilePicUrl,
           encryptedAccessToken: authResult.accessToken,
-          refreshToken: authResult.refreshToken,
+          refreshToken: null, // Marketing API tokens don't have refresh tokens
           lastBackfillAt: null,
-          tokenExpiresAt: new Date(Date.now() + authResult.expiresIn * 1000),
+          tokenExpiresAt: null, // Marketing API tokens don't expire in the traditional sense
           metadata: {
-            type: "BUSINESS_LOGIN",
-            businessAccountId: authResult.id,
-            businessName: authResult.name,
+            type: "ADVERTISER",
+            advertiserId: authResult.advertiserId,
+            advertiserName: authResult.advertiserName,
             profilePicUrl,
             permissions: authResult.permissions,
           },
-          followersCount: authResult.followerCount ?? 0,
-          followingCount: authResult.followingCount ?? 0,
-          metricsRefreshedAt:
-            authResult.followerCount !== undefined ||
-            authResult.followingCount !== undefined
-              ? now
-              : null,
+          followersCount: 0,
+          followingCount: 0,
+          metricsRefreshedAt: now,
         });
 
         const qp = new URLSearchParams({
           status: "success",
           event: "accounts_connected",
-          message: `Successfully connected to ${account.accountName}.`,
+          message: `Successfully connected to TikTok Advertiser ${account.accountName}.`,
         } satisfies PopupRelayQuery).toString();
         return ctx.redirect(`/api/popup-relay?${qp}`);
       });
@@ -94,7 +88,7 @@ export const tikTokBusinessConnectedAccountRoute = new Hono<ApiEnv>().get(
       const qp = new URLSearchParams({
         status: "error",
         event: "accounts_connected",
-        message: "Failed to connect to your TikTok Business account.",
+        message: "Failed to connect to your TikTok Advertiser account.",
       } satisfies PopupRelayQuery).toString();
       return ctx.redirect(`/api/popup-relay?${qp}`);
     }

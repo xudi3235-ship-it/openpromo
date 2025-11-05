@@ -55,6 +55,14 @@ const getAccountDisplayData = (account: ConnectedAccount) => {
           platform: account.platform as Platform,
         };
       }
+      if (ttMeta.type === "ADVERTISER") {
+        return {
+          pageName: ttMeta?.advertiserName,
+          profilePicUrl: ttMeta.profilePicUrl || "",
+          username: ttMeta?.advertiserName,
+          platform: account.platform as Platform,
+        };
+      }
       return {
         pageName: ttMeta.username || "TikTok Account",
         profilePicUrl: ttMeta.profilePicUrl || "",

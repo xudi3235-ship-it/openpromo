@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { withAuth } from "../../../middleware/with-auth";
 import { facebookConnectedAccountRoute } from "./facebook-oauth-callback-route";
 import { instagramConnectedAccountRoute } from "./instagram-oauth-callback-route";
+import { tikTokAdvertiserConnectedAccountRoute } from "./tiktok-advertiser-oauth-callback-route";
 import { tikTokBusinessConnectedAccountRoute } from "./tiktok-business-oauth-callback-route";
 import { tikTokConnectedAccountRoute } from "./tiktok-oauth-callback-route";
 
@@ -11,4 +12,5 @@ export const connectedAccountsRoute = new Hono<ApiEnv>()
   .route("/facebook", facebookConnectedAccountRoute)
   .route("/instagram", instagramConnectedAccountRoute)
   .route("/tiktok", tikTokConnectedAccountRoute)
+  .route("/tiktok_advertiser", tikTokAdvertiserConnectedAccountRoute)
   .route("/tiktok_business", tikTokBusinessConnectedAccountRoute);

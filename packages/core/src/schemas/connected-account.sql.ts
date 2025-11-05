@@ -67,9 +67,18 @@ const TikTokBusinessLoginMetadata = z.object({
   industryCategory: z.string().optional(),
 });
 
+const TikTokAdvertiserMetadata = z.object({
+  type: z.literal("ADVERTISER"),
+  advertiserId: z.string(),
+  advertiserName: z.string().optional(),
+  profilePicUrl: z.string(),
+  permissions: z.string().array().optional(),
+});
+
 const TikTokAccountMetadata = z.discriminatedUnion("type", [
   TikTokDeveloperOAuthMetadata,
   TikTokBusinessLoginMetadata,
+  TikTokAdvertiserMetadata,
 ]);
 
 export type FBPageMetadata = z.infer<typeof FBPageMetadata>;
@@ -80,6 +89,7 @@ export type TikTokDeveloperOAuthMetadata = z.infer<
 export type TikTokBusinessLoginMetadata = z.infer<
   typeof TikTokBusinessLoginMetadata
 >;
+export type TikTokAdvertiserMetadata = z.infer<typeof TikTokAdvertiserMetadata>;
 export type TikTokAccountMetadata = z.infer<typeof TikTokAccountMetadata>;
 export type ConnectedAccountMetadata =
   | FBPageMetadata
@@ -88,8 +98,9 @@ export type ConnectedAccountMetadata =
 
 // TikTok auth type enum - only used when platform is TIKTOK, otherwise N/A
 export const tiktokAuthTypePgEnum = pgEnum("tiktok_auth_type", [
-  "DEVELOPER_OAUTH",
-  "BUSINESS_LOGIN",
+  "DEVELOPER_OAUTH", // TikTok Login Kit - for organic content API
+  "BUSINESS_LOGIN", // TikTok Business Login - for business accounts
+  "ADVERTISER", // TikTok Marketing API - for advertiser accounts
   "N/A", // for non-TikTok platforms
 ]);
 export const TikTokAuthType = z.enum(tiktokAuthTypePgEnum.enumValues);
