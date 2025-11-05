@@ -49,19 +49,34 @@ export function CTADialog({
     }
   }, [open, initialType, initialLink]);
 
+  const normalizeUrl = (input: string): string => {
+    const trimmed = input.trim();
+    if (!trimmed) return "";
+
+    // If it already has a protocol, return as is
+    if (trimmed.match(/^https?:\/\//i)) {
+      return trimmed;
+    }
+
+    // Add https:// if missing
+    return `https://${trimmed}`;
+  };
+
   const validateUrl = (url: string): string => {
     if (!url.trim()) {
       return "Link is required";
     }
 
+    const normalized = normalizeUrl(url);
+
     try {
-      const urlObj = new URL(url);
+      const urlObj = new URL(normalized);
       if (!["http:", "https:"].includes(urlObj.protocol)) {
         return "Link must start with http:// or https://";
       }
       return "";
     } catch {
-      return "Please enter a valid URL";
+      return "Please enter a valid domain (e.g., example.com)";
     }
   };
 
@@ -78,7 +93,8 @@ export function CTADialog({
   const handleSave = () => {
     const error = validateUrl(link);
     if (!error) {
-      onSave(type, link);
+      const normalizedLink = normalizeUrl(link);
+      onSave(type, normalizedLink);
       onOpenChange(false);
     } else {
       setLinkError(error);
@@ -142,8 +158,8 @@ export function CTADialog({
             <div className="relative">
               <Input
                 id="cta-link"
-                type="url"
-                placeholder="https://example.com"
+                type="text"
+                placeholder="example.com"
                 value={link}
                 onChange={(e) => handleLinkChange(e.target.value)}
                 className={linkError ? "border-destructive" : ""}
@@ -154,7 +170,7 @@ export function CTADialog({
               <p className="text-xs text-destructive">{linkError}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              Where customers will go when they click the button
+              Just enter the domain (https:// will be added automatically)
             </p>
           </div>
         </div>

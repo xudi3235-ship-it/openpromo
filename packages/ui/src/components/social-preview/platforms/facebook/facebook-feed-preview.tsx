@@ -1,6 +1,6 @@
 import { Button } from "@openpromo/ui/components/button";
 import { cn } from "@openpromo/ui/lib/utils";
-import { ExternalLink, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import {
   PreviewContainer,
   PreviewHeader,
@@ -103,87 +103,89 @@ export function FacebookFeedPreview({
           />
         </div>
 
-        {/* Call to Action Button */}
-        {callToActionLabel && (
+        {/* Call to Action Link Preview Card */}
+        {callToActionLabel && callToActionLink && (
           <div
             className={cn(
               "border-t",
-              size === "compact" || size === "thumbnail"
-                ? "px-2 py-2"
-                : "px-3 py-2.5",
+              size === "compact" || size === "thumbnail" ? "p-2" : "p-3",
             )}
           >
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "w-full font-semibold",
-                size === "compact" || size === "thumbnail"
-                  ? "h-8 text-xs"
-                  : "h-9 text-sm",
-              )}
-              asChild={!!callToActionLink}
-              disabled={!callToActionLink}
+            <a
+              href={callToActionLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block border rounded-lg overflow-hidden hover:bg-muted/50 transition-colors"
             >
-              {callToActionLink ? (
-                <a
-                  href={callToActionLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center"
-                >
-                  {/* Try to load favicon from the domain */}
+              {/* Link Details - Compact */}
+              <div
+                className={cn(
+                  "bg-muted/30 flex items-center justify-between gap-3",
+                  size === "compact" || size === "thumbnail" ? "p-2" : "p-2.5",
+                )}
+              >
+                {/* Left: Domain with favicon */}
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   {(() => {
                     try {
                       const url = new URL(callToActionLink);
                       return (
-                        <img
-                          src={`https://www.google.com/s2/favicons?domain=${url.hostname}&sz=32`}
-                          alt=""
-                          className={cn(
-                            "mr-2 flex-shrink-0 rounded",
-                            size === "compact" || size === "thumbnail"
-                              ? "w-3.5 h-3.5"
-                              : "w-4 h-4",
-                          )}
-                          onError={(e) => {
-                            // Fallback to ExternalLink icon if favicon fails
-                            e.currentTarget.style.display = "none";
-                            const icon = e.currentTarget.nextElementSibling;
-                            if (icon) {
-                              (icon as HTMLElement).style.display = "block";
-                            }
-                          }}
-                        />
+                        <>
+                          <img
+                            src={`https://www.google.com/s2/favicons?domain=${url.hostname}&sz=32`}
+                            alt=""
+                            className={cn(
+                              "rounded flex-shrink-0",
+                              size === "compact" || size === "thumbnail"
+                                ? "w-4 h-4"
+                                : "w-5 h-5",
+                            )}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div
+                              className={cn(
+                                "text-muted-foreground uppercase truncate",
+                                size === "compact" || size === "thumbnail"
+                                  ? "text-[9px]"
+                                  : "text-[10px]",
+                              )}
+                            >
+                              {url.hostname.replace(/^www\./, "")}
+                            </div>
+                            <div
+                              className={cn(
+                                "font-semibold truncate",
+                                size === "compact" || size === "thumbnail"
+                                  ? "text-xs"
+                                  : "text-sm",
+                              )}
+                            >
+                              {url.hostname.replace(/^www\./, "").split(".")[0]}
+                            </div>
+                          </div>
+                        </>
                       );
                     } catch {
                       return null;
                     }
                   })()}
-                  <ExternalLink
-                    className={cn(
-                      "mr-2 flex-shrink-0 hidden",
-                      size === "compact" || size === "thumbnail"
-                        ? "w-3.5 h-3.5"
-                        : "w-4 h-4",
-                    )}
-                  />
-                  <span className="truncate">{callToActionLabel}</span>
-                </a>
-              ) : (
-                <>
-                  <ExternalLink
-                    className={cn(
-                      "mr-2 flex-shrink-0",
-                      size === "compact" || size === "thumbnail"
-                        ? "w-3.5 h-3.5"
-                        : "w-4 h-4",
-                    )}
-                  />
-                  <span className="truncate">{callToActionLabel}</span>
-                </>
-              )}
-            </Button>
+                </div>
+
+                {/* Right: CTA Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "font-semibold pointer-events-none flex-shrink-0",
+                    size === "compact" || size === "thumbnail"
+                      ? "h-7 text-[10px] px-3"
+                      : "h-8 text-xs px-4",
+                  )}
+                >
+                  {callToActionLabel}
+                </Button>
+              </div>
+            </a>
           </div>
         )}
 

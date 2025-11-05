@@ -1,6 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
 import { cn } from "@openpromo/ui/lib/utils";
-import { ExternalLink } from "lucide-react";
 import { PreviewContainer, PreviewMedia } from "../../primitives";
 import type {
   BasePreviewProps,
@@ -151,71 +150,57 @@ export function FacebookReelPreview({
                 <div className={cn("line-clamp-2", captionSize)}>{caption}</div>
               )}
 
-              {/* Call to Action Button */}
-              {callToActionLabel && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className={cn(
-                    "w-full bg-white/90 hover:bg-white text-black font-semibold",
-                    isCompact ? "h-7 text-[10px]" : "h-8 text-xs",
-                  )}
-                  asChild={!!callToActionLink}
-                  disabled={!callToActionLink}
+              {/* Call to Action Button with Link Info */}
+              {callToActionLabel && callToActionLink && (
+                <a
+                  href={callToActionLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block space-y-1"
                 >
-                  {callToActionLink ? (
-                    <a
-                      href={callToActionLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center"
-                    >
-                      {/* Try to load favicon from the domain */}
-                      {(() => {
-                        try {
-                          const url = new URL(callToActionLink);
-                          return (
+                  {/* Domain with favicon */}
+                  <div className="flex items-center gap-1">
+                    {(() => {
+                      try {
+                        const url = new URL(callToActionLink);
+                        return (
+                          <>
                             <img
                               src={`https://www.google.com/s2/favicons?domain=${url.hostname}&sz=32`}
                               alt=""
                               className={cn(
-                                "mr-1.5 flex-shrink-0 rounded",
+                                "rounded flex-shrink-0",
                                 isCompact ? "w-3 h-3" : "w-3.5 h-3.5",
                               )}
-                              onError={(e) => {
-                                // Fallback to ExternalLink icon if favicon fails
-                                e.currentTarget.style.display = "none";
-                                const icon = e.currentTarget.nextElementSibling;
-                                if (icon) {
-                                  (icon as HTMLElement).style.display = "block";
-                                }
-                              }}
                             />
-                          );
-                        } catch {
-                          return null;
-                        }
-                      })()}
-                      <ExternalLink
-                        className={cn(
-                          "mr-1.5 flex-shrink-0 hidden",
-                          isCompact ? "w-3 h-3" : "w-3.5 h-3.5",
-                        )}
-                      />
-                      <span className="truncate">{callToActionLabel}</span>
-                    </a>
-                  ) : (
-                    <>
-                      <ExternalLink
-                        className={cn(
-                          "mr-1.5 flex-shrink-0",
-                          isCompact ? "w-3 h-3" : "w-3.5 h-3.5",
-                        )}
-                      />
-                      <span className="truncate">{callToActionLabel}</span>
-                    </>
-                  )}
-                </Button>
+                            <span
+                              className={cn(
+                                "text-white/90 uppercase truncate",
+                                isCompact ? "text-[8px]" : "text-[9px]",
+                              )}
+                            >
+                              {url.hostname.replace(/^www\./, "")}
+                            </span>
+                          </>
+                        );
+                      } catch {
+                        return null;
+                      }
+                    })()}
+                  </div>
+
+                  {/* CTA Button */}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className={cn(
+                      "w-full bg-white/90 hover:bg-white text-black font-semibold pointer-events-none",
+                      isCompact ? "h-7 text-[10px]" : "h-8 text-xs",
+                    )}
+                  >
+                    {callToActionLabel}
+                  </Button>
+                </a>
               )}
 
               {/* Music/Audio */}
