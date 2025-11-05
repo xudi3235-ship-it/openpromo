@@ -106,11 +106,27 @@ const buildInitialTikTokPlacements = (
       ?.map((acc) => {
         if (acc.platform !== "TIKTOK") return null;
 
+        // Handle different TikTok account metadata types
+        const metadata = acc.metadata as
+          | { type: "DEVELOPER_OAUTH"; tiktokUserId: string }
+          | { type: "BUSINESS_LOGIN"; businessAccountId: string }
+          | { type: "ADVERTISER"; advertiserId: string };
+
+        // Extract the appropriate user ID based on account type
+        let tiktokUserID: string;
+        if (metadata.type === "BUSINESS_LOGIN") {
+          tiktokUserID = metadata.businessAccountId;
+        } else if (metadata.type === "DEVELOPER_OAUTH") {
+          tiktokUserID = metadata.tiktokUserId;
+        } else {
+          // ADVERTISER accounts are not supported for organic content posting
+          return null;
+        }
+
         return {
           identity: {
             connectedAccountID: acc.id,
-            tiktokUserID: (acc.metadata as { tiktokUserId: string })
-              .tiktokUserId,
+            tiktokUserID,
           },
           placement: "TT_FEED",
           caption: props.initialMessage || "",
