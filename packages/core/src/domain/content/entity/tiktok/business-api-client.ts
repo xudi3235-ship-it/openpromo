@@ -41,7 +41,24 @@ export interface TikTokBusinessVideoPublishParams {
   isAdsOnly?: boolean;
 }
 
+export interface TikTokBusinessPhotoPublishParams {
+  photoUrls: string[];
+  photoCoverIndex?: number;
+  caption?: string;
+  title?: string;
+  privacyLevel?: TikTokPrivacyLevel;
+  disableComment?: boolean;
+  autoAddMusic?: boolean;
+  isBrandOrganic?: boolean;
+  isBrandedContent?: boolean;
+  isDraft?: boolean;
+}
+
 interface VideoPublishResponse {
+  share_id: string;
+}
+
+interface PhotoPublishResponse {
   share_id: string;
 }
 
@@ -175,6 +192,66 @@ export class TikTokBusinessAPIClient {
     log.info("Video publish initiated", {
       shareId,
       businessId: this.ctx.businessId,
+    });
+
+    return { shareId };
+  }
+
+  /**
+   * Publish a photo post using Business API v1.3
+   * https://business-api.tiktok.com/portal/docs?id=1743172029596673
+   */
+  async publishPhoto(
+    params: TikTokBusinessPhotoPublishParams,
+  ): Promise<{ shareId: string }> {
+    if (!params.photoUrls || params.photoUrls.length === 0) {
+      throw new WorkflowError("At least one photo URL is required");
+    }
+
+    if (params.photoUrls.length > 35) {
+      throw new WorkflowError(
+        "TikTok Business API supports maximum 35 photos per post",
+      );
+    }
+
+    const payload = {
+      business_id: this.ctx.businessId,
+      photo_images: params.photoUrls,
+      photo_cover_index: params.photoCoverIndex ?? 0,
+      post_info: {
+        title: params.title,
+        caption: params.caption,
+        privacy_level: params.privacyLevel ?? "PUBLIC_TO_EVERYONE",
+        disable_comment: params.disableComment ?? false,
+        auto_add_music: params.autoAddMusic ?? false,
+        is_brand_organic: params.isBrandOrganic ?? false,
+        is_branded_content: params.isBrandedContent ?? false,
+        is_draft: params.isDraft ?? false,
+      },
+    };
+
+    log.info("Publishing photo via Business API", {
+      businessId: this.ctx.businessId,
+      photoCount: params.photoUrls.length,
+      caption: params.caption?.substring(0, 50),
+    });
+
+    const data = await this.post<PhotoPublishResponse>(
+      "/open_api/v1.3/business/photo/publish/",
+      payload,
+    );
+
+    const shareId = data.share_id;
+    if (!shareId) {
+      throw new WorkflowError(
+        "TikTok Business photo publish response missing share_id",
+      );
+    }
+
+    log.info("Photo publish initiated", {
+      shareId,
+      businessId: this.ctx.businessId,
+      photoCount: params.photoUrls.length,
     });
 
     return { shareId };

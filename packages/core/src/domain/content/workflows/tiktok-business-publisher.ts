@@ -30,9 +30,7 @@ export class TikTokBusinessPublisher extends BasePublisher {
       await this.prepareVideosIfNeeded(step, pendingContentID);
       publishStatus = await this.publishVideo(step, pendingContentID);
     } else if (postType === "photo") {
-      throw new WorkflowError(
-        "TikTok Business API photo publishing not yet implemented",
-      );
+      publishStatus = await this.publishPhoto(step, pendingContentID);
     } else {
       throw new WorkflowError(
         `Unsupported TikTok post type for content ${pendingContentID}: ${postType}`,
@@ -72,24 +70,17 @@ export class TikTokBusinessPublisher extends BasePublisher {
   ): Promise<TikTokPublishStatusResult> {
     console.log("// publishTikTokFeedVideo (Business API)");
 
-    const content = await step.do("load tiktok video content", async () => {
-      return await EntTikTokFeedPendingContent.fromID(pendingContentID);
-    });
-
-    const client = await step.do(
-      "load tiktok business api client",
-      async () => {
-        return await TikTokBusinessAPIClient.forPlacementSpec(content.spec);
-      },
-    );
-
     await step.do("validate tiktok video context", async () => {
+      const content =
+        await EntTikTokFeedPendingContent.fromID(pendingContentID);
       content.assertReadyForVideoPublishing();
     });
 
     const videoAttachment = await step.do(
       "prepare video attachment",
       async () => {
+        const content =
+          await EntTikTokFeedPendingContent.fromID(pendingContentID);
         const attachment = content.ensureSingleVideoAttachment();
         return attachment;
       },
@@ -104,6 +95,8 @@ export class TikTokBusinessPublisher extends BasePublisher {
     const verifiedVideoUrl = await step.do(
       "ensure video available on verified domain",
       async () => {
+        const content =
+          await EntTikTokFeedPendingContent.fromID(pendingContentID);
         const { url } = await content.ensureVideoAvailableOnVerifiedDomain({
           id: videoAttachment.id,
           presignedUrl: videoAttachment.presignedUrl as string,
@@ -116,6 +109,11 @@ export class TikTokBusinessPublisher extends BasePublisher {
     const { shareId } = await step.do(
       "publish video via business api",
       async () => {
+        const content =
+          await EntTikTokFeedPendingContent.fromID(pendingContentID);
+        const client = await TikTokBusinessAPIClient.forPlacementSpec(
+          content.spec,
+        );
         log.info("Publishing video via Business API", {
           businessId: client.identity.businessId,
           videoUrl: verifiedVideoUrl,
@@ -134,7 +132,7 @@ export class TikTokBusinessPublisher extends BasePublisher {
 
     const finalStatus = await this.waitForPublishCompletion(
       step,
-      client,
+      pendingContentID,
       shareId,
     );
 
@@ -157,9 +155,92 @@ export class TikTokBusinessPublisher extends BasePublisher {
     };
   }
 
+  private async publishPhoto(
+    step: CoreWorkflowStep,
+    pendingContentID: string,
+  ): Promise<TikTokPublishStatusResult> {
+    console.log("// publishTikTokFeedPhoto (Business API)");
+
+    await step.do("validate tiktok photo context", async () => {
+      const content =
+        await EntTikTokFeedPendingContent.fromID(pendingContentID);
+      content.assertReadyForPhotoPublishing();
+    });
+
+    const preparedPhotos = await step.do(
+      "ensure photos available on verified domain",
+      async () => {
+        const content =
+          await EntTikTokFeedPendingContent.fromID(pendingContentID);
+        return await content.ensurePhotosAvailableOnVerifiedDomain();
+      },
+    );
+
+    console.log("prepared photos", preparedPhotos);
+
+    const photoUrls = preparedPhotos.map((photo) => photo.url);
+    if (photoUrls.length === 0) {
+      throw new WorkflowError(
+        `No prepared photo URLs found for TikTok content ${pendingContentID}`,
+      );
+    }
+
+    const photoCoverIndex = 0; // TODO: allow user to select cover photo
+
+    const { shareId } = await step.do(
+      "publish photo via business api",
+      async () => {
+        const content =
+          await EntTikTokFeedPendingContent.fromID(pendingContentID);
+        const client = await TikTokBusinessAPIClient.forPlacementSpec(
+          content.spec,
+        );
+        log.info("Publishing photo via Business API", {
+          businessId: client.identity.businessId,
+          photoCount: photoUrls.length,
+        });
+        return await client.publishPhoto({
+          photoUrls,
+          photoCoverIndex,
+          caption: content.caption(),
+          privacyLevel: "SELF_ONLY", // TODO: update this once app review is done
+          disableComment: false,
+          autoAddMusic: true,
+          isBrandOrganic: false,
+          isBrandedContent: false,
+          isDraft: false,
+        });
+      },
+    );
+
+    const finalStatus = await this.waitForPublishCompletion(
+      step,
+      pendingContentID,
+      shareId,
+    );
+
+    log.info("TikTok Business photo publish completed", {
+      shareId,
+      postIds: finalStatus.post_ids,
+    });
+
+    // Convert Business API response to match TikTokPublishStatusResult
+    return {
+      publish_id: shareId,
+      status: finalStatus.status,
+      post_id: finalStatus.post_ids?.[0],
+      share_id: shareId,
+      share_url: undefined, // Business API doesn't return share_url in status
+      fail_reason: finalStatus.reason,
+      message: finalStatus.status,
+      shareUrl: undefined,
+      failReason: finalStatus.reason,
+    };
+  }
+
   private async waitForPublishCompletion(
     step: CoreWorkflowStep,
-    client: TikTokBusinessAPIClient,
+    pendingContentID: string,
     publishId: string,
     maxAttempts = 20,
   ): Promise<
@@ -172,6 +253,11 @@ export class TikTokBusinessPublisher extends BasePublisher {
       const status = await step.do(
         `fetch business publish status (attempt ${attempt})`,
         async () => {
+          const content =
+            await EntTikTokFeedPendingContent.fromID(pendingContentID);
+          const client = await TikTokBusinessAPIClient.forPlacementSpec(
+            content.spec,
+          );
           return await client.getPublishStatus(publishId);
         },
       );
