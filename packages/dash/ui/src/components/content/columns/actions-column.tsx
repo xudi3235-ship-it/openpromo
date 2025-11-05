@@ -10,7 +10,7 @@ import type { MergedContentEntity } from "@worker/routes/api/workspaces/content"
 import {
   CalendarClock,
   Edit,
-  Eye,
+  ExternalLink,
   MoreHorizontal,
   Trash2,
   Upload,
@@ -67,7 +67,7 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
             onClick={() => handleView(entity)}
             disabled={!contentPermalink}
           >
-            <Eye className="w-4 h-4 mr-1" />
+            <ExternalLink className="w-4 h-4 mr-1" />
             View
           </Button>
         );
@@ -89,7 +89,7 @@ const ActionsCellComponent = ({ entity }: { entity: MergedContentEntity }) => {
               onClick={() => handleView(entity)}
               disabled={!contentPermalink}
             >
-              <Eye className="w-4 h-4 mr-2" /> View content
+              <ExternalLink className="w-4 h-4 mr-2" /> View content
             </DropdownMenuItem>
             {isEntityEditable && (
               <DropdownMenuItem onClick={() => handleEdit(entity)}>
