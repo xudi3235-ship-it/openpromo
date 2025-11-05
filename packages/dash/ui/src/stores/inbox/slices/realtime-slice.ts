@@ -39,7 +39,7 @@ export const createRealtimeSlice: StateCreator<
     }
   },
 
-  handleConversationUpserted: ({
+  handleConversationUpserted: async ({
     conversationId,
     lastMessageAt,
     contact,
@@ -50,11 +50,16 @@ export const createRealtimeSlice: StateCreator<
     const existing = state.byId[conversationId];
 
     if (!existing) {
-      // Conversation not in store yet, might be filtered out
+      // New conversation - we need to fetch the full details
+      // This happens when a new conversation is created (e.g., new DM or comment thread)
       console.debug(
-        "[Inbox] Conversation not found in store, ignoring update",
+        "[Inbox] New conversation detected, will be loaded on next refresh",
         conversationId,
       );
+      // Note: We could fetch it here, but that would require passing queryClient
+      // through the store, which is complex. Instead, the conversation will appear
+      // on the next query refresh or when the user navigates.
+      // For now, we just log it. The UI will update when the query refetches.
       return;
     }
 

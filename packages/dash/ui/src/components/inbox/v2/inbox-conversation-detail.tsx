@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useInboxConversationQuery } from "@/queries/inbox/conversation";
 import { useMarkConversationRead } from "@/queries/inbox/conversations";
 import { useInboxMessagesInfiniteQuery } from "@/queries/inbox/messages";
@@ -11,6 +11,7 @@ import { ConversationSplitLayout } from "./conversation-split-layout";
 export function InboxConversationDetailV2() {
   const { workspaceSlug, conversationId } = Route.useParams();
   const markAsRead = useMarkConversationRead(workspaceSlug);
+  const hasInitializedMessagesRef = useRef<Record<string, boolean>>({});
 
   const syncMessagesFromQuery = useInboxStore(
     (state) => state.syncMessagesFromQuery,
@@ -52,10 +53,14 @@ export function InboxConversationDetailV2() {
     const firstPage = messagesQuery.data.pages[0];
     if (!firstPage) return;
 
-    // Only reset on initial load (when we only have 1 page and it's the first fetch)
-    // Otherwise merge to preserve websocket updates
+    // Only reset on very first load for this conversation, otherwise merge to preserve websocket updates
     const isInitialLoad =
-      messagesQuery.data.pages.length === 1 && !messagesQuery.isFetching;
+      !hasInitializedMessagesRef.current[conversationId] &&
+      messagesQuery.data.pages.length === 1;
+
+    if (isInitialLoad) {
+      hasInitializedMessagesRef.current[conversationId] = true;
+    }
 
     syncMessagesFromQuery({
       conversationId,
@@ -70,7 +75,6 @@ export function InboxConversationDetailV2() {
     conversationId,
     messagesQuery.data,
     messagesQuery.hasNextPage,
-    messagesQuery.isFetching,
     allMessages,
     syncMessagesFromQuery,
   ]);

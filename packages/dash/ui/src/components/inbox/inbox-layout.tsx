@@ -1,7 +1,7 @@
 import { Page, PageContent } from "@openpromo/ui/components/page";
 import type { InboxConversationSummary } from "@shared/inbox";
 import { Outlet } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import { useInboxConversationsInfiniteQuery } from "@/queries/inbox/conversations";
 import { Route } from "@/routes/_authenticated/workspaces/$workspaceSlug/inbox";
@@ -12,6 +12,7 @@ import { InboxSidebar } from "./inbox-sidebar";
 export function InboxLayout() {
   const { workspaceSlug } = Route.useParams();
   const searchParams = Route.useSearch();
+  const hasInitializedRef = useRef(false);
 
   const {
     channel = "all",
@@ -40,6 +41,7 @@ export function InboxLayout() {
   // Initialize store
   useEffect(() => {
     initialize(workspaceSlug);
+    hasInitializedRef.current = false; // Reset on workspace change
   }, [workspaceSlug, initialize]);
 
   // Fetch conversations using URL params (infinite query)
@@ -57,8 +59,13 @@ export function InboxLayout() {
   useEffect(() => {
     if (!conversationsQuery.conversations.length) return;
 
-    // Only replace on initial load, otherwise merge to preserve websocket updates
-    const isInitialLoad = conversationsQuery.data?.pages.length === 1;
+    // Only replace on very first load, otherwise merge to preserve websocket updates
+    const isInitialLoad =
+      !hasInitializedRef.current && conversationsQuery.data?.pages.length === 1;
+
+    if (isInitialLoad) {
+      hasInitializedRef.current = true;
+    }
 
     syncConversationsFromQuery({
       conversations: conversationsQuery.conversations,
@@ -127,6 +134,18 @@ export function InboxLayout() {
   useWorkspaceEvents({
     handlers: {
       "inbox.conversation.upserted": (event) => {
+        const existing = conversationMap[event.conversationId];
+
+        if (!existing) {
+          // New conversation - refetch to get full details
+          console.debug(
+            "[Inbox] New conversation detected, refetching list",
+            event.conversationId,
+          );
+          conversationsQuery.refetch();
+          return;
+        }
+
         handleConversationUpserted({
           conversationId: event.conversationId,
           lastMessageAt: new Date(event.lastMessageAt),
