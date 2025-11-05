@@ -1,5 +1,6 @@
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import type { TikTokFeedPlacementSpec } from "@core/schemas/content.sql";
+import { env } from "@core/utils/env";
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 
@@ -74,28 +75,46 @@ export interface TikTokBusinessPublishStatus {
 
 export type TikTokBusinessPropertyType = "DOMAIN" | "URL_PREFIX";
 
-export interface TikTokBusinessPropertyEntry {
-  property_id: string;
-  property_type: TikTokBusinessPropertyType;
-  property_url: string;
-  property_status: number;
+type TikTokBusinessPropertyTypeApi = 1 | 2;
+
+const propertyTypeToApiValue = (
+  type: TikTokBusinessPropertyType,
+): TikTokBusinessPropertyTypeApi => {
+  switch (type) {
+    case "DOMAIN":
+      return 1;
+    case "URL_PREFIX":
+      return 2;
+    default: {
+      const exhaustiveCheck: never = type;
+      throw new WorkflowError(
+        `Unsupported TikTok Business property type: ${exhaustiveCheck as string}`,
+      );
+    }
+  }
+};
+
+const propertyTypeFromApiValue = (
+  value: TikTokBusinessPropertyTypeApi,
+): TikTokBusinessPropertyType => {
+  switch (value) {
+    case 1:
+      return "DOMAIN";
+    case 2:
+      return "URL_PREFIX";
+    default:
+      throw new WorkflowError(
+        `Unexpected TikTok Business property type value: ${value}`,
+      );
+  }
+};
+
+export interface TikTokBusinessPropertyInfo {
+  propertyType: TikTokBusinessPropertyType;
+  propertyUrl: string;
+  propertyStatus: number;
   signature?: string;
-  file_name?: string;
-}
-
-export interface TikTokBusinessPropertyAddResult {
-  property_id: string;
-  property_type: TikTokBusinessPropertyType;
-  property_url: string;
-  signature: string;
-  file_name?: string;
-}
-
-export interface TikTokBusinessPropertyVerifyResult {
-  property_id?: string;
-  property_type: TikTokBusinessPropertyType;
-  property_url: string;
-  property_status: number;
+  fileName?: string;
 }
 
 /**
@@ -171,6 +190,20 @@ export class TikTokBusinessAPIClient {
     ctx: TikTokBusinessIdentityContext,
   ): TikTokBusinessAPIClient {
     return new TikTokBusinessAPIClient(ctx);
+  }
+
+  private get developerCredentials(): { app_id: string; secret: string } {
+    const appId = env.TIKTOK_BIZ_APP_ID;
+    const appSecret = env.TIKTOK_BIZ_APP_SECRET;
+    if (!appId || !appSecret) {
+      throw new WorkflowError(
+        "TikTok Business API developer credentials are not configured",
+      );
+    }
+    return {
+      app_id: appId,
+      secret: appSecret,
+    };
   }
 
   get identity(): TikTokBusinessIdentityContext {
@@ -318,14 +351,30 @@ export class TikTokBusinessAPIClient {
   /**
    * Fetch all URL properties for the business account
    */
-  async listUrlProperties(): Promise<TikTokBusinessPropertyEntry[]> {
-    const params = new URLSearchParams({
-      business_id: this.ctx.businessId,
-    });
+  async listUrlProperties(): Promise<TikTokBusinessPropertyInfo[]> {
+    const params = new URLSearchParams();
+    params.set("business_id", this.ctx.businessId);
+    params.set("app_id", this.developerCredentials.app_id);
+    params.set("secret", this.developerCredentials.secret);
+
     const data = await this.get<{
-      property_list?: TikTokBusinessPropertyEntry[];
+      property_list?: Array<{
+        property_type: TikTokBusinessPropertyTypeApi;
+        property_url: string;
+        property_status: number;
+        signature?: string;
+        file_name?: string;
+      }>;
     }>(`/open_api/v1.3/business/property/list/?${params.toString()}`);
-    return data.property_list ?? [];
+    return (
+      data.property_list?.map((property) => ({
+        propertyType: propertyTypeFromApiValue(property.property_type),
+        propertyUrl: property.property_url,
+        propertyStatus: property.property_status,
+        signature: property.signature,
+        fileName: property.file_name,
+      })) ?? []
+    );
   }
 
   /**
@@ -334,26 +383,31 @@ export class TikTokBusinessAPIClient {
   async addUrlProperty(params: {
     propertyType: TikTokBusinessPropertyType;
     propertyUrl: string;
-  }): Promise<{ propertyId: string; signature: string; fileName?: string }> {
-    const data = await this.post<TikTokBusinessPropertyAddResult>(
-      "/open_api/v1.3/business/property/add/",
-      {
-        business_id: this.ctx.businessId,
-        property_type: params.propertyType,
-        property_url: params.propertyUrl,
+  }): Promise<TikTokBusinessPropertyInfo> {
+    const data = await this.post<{
+      url_property_info: {
+        file_name: string;
+        property_status: number;
+        property_type: TikTokBusinessPropertyTypeApi;
+        signature: string;
+        url: string;
+      };
+    }>("/open_api/v1.3/business/property/add/", {
+      business_id: this.ctx.businessId,
+      ...this.developerCredentials,
+      url_property_meta: {
+        url: params.propertyUrl,
+        property_type: propertyTypeToApiValue(params.propertyType),
       },
-    );
+    });
 
-    if (!data.signature) {
-      throw new WorkflowError(
-        "TikTok Business property add response missing signature",
-      );
-    }
-
+    const info = data.url_property_info;
     return {
-      propertyId: data.property_id,
-      signature: data.signature,
-      fileName: data.file_name,
+      propertyType: propertyTypeFromApiValue(info.property_type),
+      propertyUrl: info.url,
+      propertyStatus: info.property_status,
+      signature: info.signature,
+      fileName: info.file_name,
     };
   }
 
@@ -363,16 +417,31 @@ export class TikTokBusinessAPIClient {
   async checkUrlProperty(params: {
     propertyType: TikTokBusinessPropertyType;
     propertyUrl: string;
-  }): Promise<TikTokBusinessPropertyVerifyResult> {
-    const data = await this.post<TikTokBusinessPropertyVerifyResult>(
-      "/open_api/v1.3/business/property/verify/",
-      {
-        business_id: this.ctx.businessId,
-        property_type: params.propertyType,
-        property_url: params.propertyUrl,
+  }): Promise<TikTokBusinessPropertyInfo> {
+    const data = await this.post<{
+      url_property_info: {
+        file_name: string;
+        property_status: number;
+        property_type: TikTokBusinessPropertyTypeApi;
+        signature: string;
+        url: string;
+      };
+    }>("/open_api/v1.3/business/property/verify/", {
+      business_id: this.ctx.businessId,
+      ...this.developerCredentials,
+      url_property_meta: {
+        url: params.propertyUrl,
+        property_type: propertyTypeToApiValue(params.propertyType),
       },
-    );
-    return data;
+    });
+    const info = data.url_property_info;
+    return {
+      propertyType: propertyTypeFromApiValue(info.property_type),
+      propertyUrl: info.url,
+      propertyStatus: info.property_status,
+      signature: info.signature,
+      fileName: info.file_name,
+    };
   }
 
   /**

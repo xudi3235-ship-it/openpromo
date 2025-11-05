@@ -62,11 +62,11 @@ export async function ensureTikTokBusinessUrlPrefixVerified(
   const existingProperties = await client.listUrlProperties();
   const existing = existingProperties.find(
     (property) =>
-      property.property_type === "URL_PREFIX" &&
-      normalizeUrl(property.property_url) === normalizedPrefix,
+      property.propertyType === "URL_PREFIX" &&
+      normalizeUrl(property.propertyUrl) === normalizedPrefix,
   );
 
-  if (existing?.property_status === 1) {
+  if (existing?.propertyStatus === 1) {
     log.info("TikTok Business URL prefix already verified", {
       businessId: client.identity.businessId,
       urlPrefix,
@@ -75,7 +75,7 @@ export async function ensureTikTokBusinessUrlPrefixVerified(
   }
 
   let signature = existing?.signature;
-  let fileName = existing?.file_name;
+  let fileName = existing?.fileName;
 
   try {
     const addResult = await client.addUrlProperty({
@@ -112,11 +112,11 @@ export async function ensureTikTokBusinessUrlPrefixVerified(
     log.info("TikTok Business URL prefix verification status", {
       businessId: client.identity.businessId,
       urlPrefix,
-      propertyStatus: verification.property_status,
+      propertyStatus: verification.propertyStatus,
       attempt,
     });
 
-    if (verification.property_status === 1) {
+    if (verification.propertyStatus === 1) {
       return { keyPrefix, urlPrefix: normalizedPrefix };
     }
 
