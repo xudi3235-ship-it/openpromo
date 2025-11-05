@@ -62,6 +62,26 @@ export const createConversationsSlice: StateCreator<
       }),
     ),
 
+  syncConversationsFromQuery: ({ conversations, pagination, isInitialLoad }) =>
+    set(
+      produce((state: InboxConversationsState) => {
+        // Only replace on initial load to preserve websocket updates
+        if (isInitialLoad) {
+          state.byId = {};
+          state.order = [];
+        }
+
+        for (const conversation of conversations) {
+          state.byId[conversation.id] = conversation;
+          if (!state.order.includes(conversation.id)) {
+            state.order.push(conversation.id);
+          }
+        }
+        state.order = sortConversations(state.order, state.byId);
+        state.pagination = pagination;
+      }),
+    ),
+
   upsertConversation: (conversation) =>
     set(
       produce((state: InboxConversationsState) => {

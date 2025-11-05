@@ -235,16 +235,16 @@ export function InboxMessageInput({
         }
         setErrorMessage(error.message || "Unable to send message");
       },
-      onSettled: (_data, _error, _variables, context) => {
+      onSuccess: (_data, _variables, context) => {
+        // Don't invalidate - we handle updates via websocket events
+        // and optimistic updates. Invalidation causes race conditions
+        // where websocket updates are overwritten by refetch results.
         if (!context) return;
-        queryClient.invalidateQueries({
-          queryKey: [
-            "inbox",
-            "messages",
-            context.workspaceSlug,
-            context.conversationId,
-          ],
-          exact: false,
+
+        // Remove the optimistic message - the real one will come via websocket
+        removeMessage({
+          conversationId: context.conversationId,
+          messageId: context.optimisticId,
         });
       },
     },

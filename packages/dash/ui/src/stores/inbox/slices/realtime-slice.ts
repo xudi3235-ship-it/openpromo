@@ -38,4 +38,42 @@ export const createRealtimeSlice: StateCreator<
       });
     }
   },
+
+  handleConversationUpserted: ({
+    conversationId,
+    lastMessageAt,
+    contact,
+    isUnread,
+    lastReadAt,
+  }) => {
+    const state = get();
+    const existing = state.byId[conversationId];
+
+    if (!existing) {
+      // Conversation not in store yet, might be filtered out
+      console.debug(
+        "[Inbox] Conversation not found in store, ignoring update",
+        conversationId,
+      );
+      return;
+    }
+
+    state.upsertConversation({
+      ...existing,
+      lastMessageAt,
+      contact,
+      ...(isUnread !== undefined && { isUnread }),
+      ...(lastReadAt !== undefined && { lastReadAt }),
+    });
+  },
+
+  handleMessageUpserted: ({ conversationId, message }) => {
+    const state = get();
+
+    // Use the specialized method that ensures thread initialization
+    state.appendMessagesFromWebSocket({
+      conversationId,
+      items: [message],
+    });
+  },
 });

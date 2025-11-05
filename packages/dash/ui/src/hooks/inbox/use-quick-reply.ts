@@ -169,6 +169,12 @@ export function useQuickReply(
       onSuccess: (_data, _variables, context) => {
         if (!context) return;
 
+        // Remove the optimistic message - the real one will come via websocket
+        removeMessage({
+          conversationId: context.conversationId,
+          messageId: context.optimisticId,
+        });
+
         // Close quick reply input on success
         setActiveQuickReply(null);
         setText("");

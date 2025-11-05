@@ -128,9 +128,46 @@ export const createMessagesSlice: StateCreator<
       }),
     ),
 
+  syncMessagesFromQuery: ({
+    conversationId,
+    items,
+    page,
+    pageSize,
+    total,
+    hasNextPage,
+    isInitialLoad,
+  }) =>
+    set(
+      produce((state: InboxMessagesState) => {
+        // Only reset on initial load to preserve websocket updates
+        if (!state.threads[conversationId] || isInitialLoad) {
+          state.threads[conversationId] = emptyThread();
+        }
+
+        const thread = state.threads[conversationId];
+        thread.page = page;
+        thread.pageSize = pageSize;
+        thread.total = total;
+        thread.hasMore = hasNextPage;
+        mergeMessages(thread, items);
+      }),
+    ),
+
   appendMessages: ({ conversationId, items }) =>
     set(
       produce((state: InboxMessagesState) => {
+        if (!state.threads[conversationId]) {
+          state.threads[conversationId] = emptyThread();
+        }
+        const thread = state.threads[conversationId];
+        mergeMessages(thread, items);
+      }),
+    ),
+
+  appendMessagesFromWebSocket: ({ conversationId, items }) =>
+    set(
+      produce((state: InboxMessagesState) => {
+        // Ensure thread is initialized before appending
         if (!state.threads[conversationId]) {
           state.threads[conversationId] = emptyThread();
         }

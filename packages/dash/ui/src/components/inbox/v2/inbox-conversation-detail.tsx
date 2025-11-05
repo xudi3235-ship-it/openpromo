@@ -12,9 +12,10 @@ export function InboxConversationDetailV2() {
   const { workspaceSlug, conversationId } = Route.useParams();
   const markAsRead = useMarkConversationRead(workspaceSlug);
 
-  const setMessages = useInboxStore((state) => state.setMessages);
+  const syncMessagesFromQuery = useInboxStore(
+    (state) => state.syncMessagesFromQuery,
+  );
   const setThreadFetching = useInboxStore((state) => state.setThreadFetching);
-  const setThreadHasMore = useInboxStore((state) => state.setThreadHasMore);
   const upsertConversation = useInboxStore((state) => state.upsertConversation);
   const conversationFromStore = useInboxStore((state) => {
     if (!conversationId) return null;
@@ -51,23 +52,27 @@ export function InboxConversationDetailV2() {
     const firstPage = messagesQuery.data.pages[0];
     if (!firstPage) return;
 
-    setMessages({
+    // Only reset on initial load (when we only have 1 page and it's the first fetch)
+    // Otherwise merge to preserve websocket updates
+    const isInitialLoad =
+      messagesQuery.data.pages.length === 1 && !messagesQuery.isFetching;
+
+    syncMessagesFromQuery({
       conversationId,
       items: allMessages,
       page: firstPage.page,
       pageSize: firstPage.pageSize,
       total: firstPage.total,
-      reset: true,
+      hasNextPage: Boolean(messagesQuery.hasNextPage),
+      isInitialLoad,
     });
-
-    setThreadHasMore(conversationId, Boolean(messagesQuery.hasNextPage));
   }, [
     conversationId,
     messagesQuery.data,
     messagesQuery.hasNextPage,
+    messagesQuery.isFetching,
     allMessages,
-    setMessages,
-    setThreadHasMore,
+    syncMessagesFromQuery,
   ]);
 
   const messagesInitialLoading =

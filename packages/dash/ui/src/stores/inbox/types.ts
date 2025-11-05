@@ -25,6 +25,12 @@ export type InboxConversationsActions = {
     pagination: InboxConversationPagination;
     replace?: boolean;
   }): void;
+  /** Merges conversations from query, only replacing on initial load */
+  syncConversationsFromQuery(payload: {
+    conversations: InboxConversationSummary[];
+    pagination: InboxConversationPagination;
+    isInitialLoad: boolean;
+  }): void;
   upsertConversation(conversation: InboxConversationSummary): void;
   removeConversation(conversationId: string): void;
   selectConversation(conversationId: string | null): void;
@@ -56,7 +62,22 @@ export type InboxMessagesActions = {
     total: number;
     reset?: boolean;
   }): void;
+  /** Syncs messages from query, only resetting on initial load */
+  syncMessagesFromQuery(payload: {
+    conversationId: string;
+    items: InboxMessage[];
+    page: number;
+    pageSize: number;
+    total: number;
+    hasNextPage: boolean;
+    isInitialLoad: boolean;
+  }): void;
   appendMessages(payload: {
+    conversationId: string;
+    items: InboxMessage[];
+  }): void;
+  /** Appends messages from websocket, ensuring thread is initialized */
+  appendMessagesFromWebSocket(payload: {
     conversationId: string;
     items: InboxMessage[];
   }): void;
@@ -107,6 +128,19 @@ export type InboxRealtimeActions = {
     conversationId: string;
     data: unknown;
     timestamp: number;
+  }): void;
+  /** Handles conversation.upserted websocket event */
+  handleConversationUpserted(payload: {
+    conversationId: string;
+    lastMessageAt: Date;
+    contact: InboxConversationSummary["contact"];
+    isUnread?: boolean;
+    lastReadAt?: Date | null;
+  }): void;
+  /** Handles message.upserted websocket event */
+  handleMessageUpserted(payload: {
+    conversationId: string;
+    message: InboxMessage;
   }): void;
 };
 

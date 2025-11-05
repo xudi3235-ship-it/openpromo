@@ -22,12 +22,18 @@ export function InboxLayout() {
 
   // Zustand for caching
   const initialize = useInboxStore((state) => state.initialize);
-  const setConversations = useInboxStore((state) => state.setConversations);
+  const syncConversationsFromQuery = useInboxStore(
+    (state) => state.syncConversationsFromQuery,
+  );
   const setConversationLoadingState = useInboxStore(
     (state) => state.setConversationLoadingState,
   );
-  const upsertConversation = useInboxStore((state) => state.upsertConversation);
-  const appendMessages = useInboxStore((state) => state.appendMessages);
+  const handleConversationUpserted = useInboxStore(
+    (state) => state.handleConversationUpserted,
+  );
+  const handleMessageUpserted = useInboxStore(
+    (state) => state.handleMessageUpserted,
+  );
   const conversationOrder = useInboxStore((state) => state.order);
   const conversationMap = useInboxStore((state) => state.byId);
 
@@ -51,7 +57,10 @@ export function InboxLayout() {
   useEffect(() => {
     if (!conversationsQuery.conversations.length) return;
 
-    setConversations({
+    // Only replace on initial load, otherwise merge to preserve websocket updates
+    const isInitialLoad = conversationsQuery.data?.pages.length === 1;
+
+    syncConversationsFromQuery({
       conversations: conversationsQuery.conversations,
       pagination: {
         page: conversationsQuery.data?.pages.length ?? 1,
@@ -59,14 +68,14 @@ export function InboxLayout() {
         total: conversationsQuery.totalCount,
         isFetching: conversationsQuery.isFetching,
       },
-      replace: true,
+      isInitialLoad,
     });
   }, [
     conversationsQuery.conversations,
     conversationsQuery.data?.pages.length,
     conversationsQuery.totalCount,
     conversationsQuery.isFetching,
-    setConversations,
+    syncConversationsFromQuery,
   ]);
 
   useEffect(() => {
@@ -118,19 +127,18 @@ export function InboxLayout() {
   useWorkspaceEvents({
     handlers: {
       "inbox.conversation.upserted": (event) => {
-        const existing = useInboxStore.getState().byId[event.conversationId];
-        if (!existing) return;
-
-        upsertConversation({
-          ...existing,
+        handleConversationUpserted({
+          conversationId: event.conversationId,
           lastMessageAt: new Date(event.lastMessageAt),
           contact: event.contact,
+          isUnread: event.isUnread,
+          lastReadAt: event.lastReadAt ? new Date(event.lastReadAt) : null,
         });
       },
       "inbox.message.upserted": (event) => {
-        appendMessages({
+        handleMessageUpserted({
           conversationId: event.conversationId,
-          items: [event.message],
+          message: event.message,
         });
       },
     },
