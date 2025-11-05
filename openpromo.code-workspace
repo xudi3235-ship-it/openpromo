@@ -98,7 +98,8 @@
     "typescript.experimental.useTsgo": false,
     "chatgpt.commentCodeLensEnabled": false,
     "chatgpt.openOnStartup": true,
-    "python.languageServer": "None"
+    "python.languageServer": "None",
+    "cSpell.words": ["openpromo"]
   },
   "extensions": {
     "recommendations": [
