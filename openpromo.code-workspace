@@ -104,9 +104,12 @@
     "recommendations": [
       "biomejs.biome",
       "bradlc.vscode-tailwindcss",
-      "esbenp.prettier-vscode",
       "charliermarsh.ruff",
-      "astro-build.astro-vscode"
+      "astro-build.astro-vscode",
+      "openai.chatgpt",
+      "anthropic.claude-code",
+      "github.copilot-chat",
+      "github.copilot"
     ]
   }
 }
