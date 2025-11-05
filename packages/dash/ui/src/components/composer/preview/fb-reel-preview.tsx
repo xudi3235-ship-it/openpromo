@@ -19,6 +19,7 @@ export function FBReelPreview({
   const previewData = useComposerPreview({
     platform: "FACEBOOK",
     accountId,
+    placement: "REEL",
   });
 
   const { renderAttachment } = useAttachmentRenderer({
