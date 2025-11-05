@@ -18,28 +18,25 @@ interface TikTokBusinessTokenResponse {
   data?: TikTokBusinessTokenData;
 }
 
-interface TikTokBusinessUser {
-  open_id: string;
-  union_id?: string;
-  avatar_url?: string;
-  avatar_url_100?: string;
-  avatar_large_url?: string;
+interface TikTokBusinessUserData {
   display_name?: string;
   username?: string;
-  follower_count?: number;
-  following_count?: number;
-  likes_count?: number;
-  video_count?: number;
+  profile_image?: string;
+  profile_deep_link?: string;
   bio_description?: string;
+  is_verified?: boolean;
+  is_business_account?: boolean;
+  followers_count?: number;
+  following_count?: number;
+  total_likes?: number;
+  videos_count?: number;
 }
 
 interface TikTokBusinessUserInfoResponse {
   code: number;
   message: string;
   request_id?: string;
-  data?: {
-    user?: TikTokBusinessUser;
-  };
+  data?: TikTokBusinessUserData;
 }
 
 export interface TikTokBusinessAuthTokenDetails {
@@ -265,37 +262,37 @@ export class TikTokBusinessOAuthService {
 
   /**
    * Retrieve TikTok user profile using access token
-   * Uses Business API v1.3 endpoint
+   * Uses Business API v1.3 /business/get/ endpoint
    */
   async getUserProfile(
     accessToken: string,
     openId: string,
-  ): Promise<TikTokBusinessUser> {
+  ): Promise<TikTokBusinessUserData> {
     const fields = [
-      "open_id",
-      "union_id",
-      "avatar_url",
-      "avatar_url_100",
-      "avatar_large_url",
       "display_name",
+      "username",
+      "profile_image",
+      "profile_deep_link",
       "bio_description",
-      "follower_count",
+      "is_verified",
+      "is_business_account",
+      "followers_count",
       "following_count",
-      "likes_count",
-      "video_count",
+      "total_likes",
+      "videos_count",
     ];
 
     const params = new URLSearchParams({
-      open_id: openId,
-      fields: fields.join(","),
+      business_id: openId,
+      fields: JSON.stringify(fields),
     });
 
     const response = await fetch(
-      `https://business-api.tiktok.com/open_api/v1.3/tt_user/info/?${params.toString()}`,
+      `https://business-api.tiktok.com/open_api/v1.3/business/get/?${params.toString()}`,
       {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          "Access-Token": accessToken,
         },
       },
     );
@@ -315,7 +312,7 @@ export class TikTokBusinessOAuthService {
     const json = (await response.json()) as TikTokBusinessUserInfoResponse;
     log.info("TikTok Business user info response", {
       code: json.code,
-      hasData: !!json.data?.user,
+      hasData: !!json.data,
     });
 
     // Check for API error
@@ -329,16 +326,16 @@ export class TikTokBusinessOAuthService {
       );
     }
 
-    const user = json.data?.user;
+    const data = json.data;
 
-    if (!user) {
+    if (!data) {
       log.warn("TikTok Business user info missing", {
         response: JSON.stringify(json),
       });
       throw new Error("TikTok Business user info error: missing user data");
     }
 
-    return user;
+    return data;
   }
 
   /**
@@ -359,21 +356,20 @@ export class TikTokBusinessOAuthService {
     );
 
     const permissions = parseScopes(tokenData.scope);
-    const displayName = user.display_name || user.username || user.open_id;
+    const displayName = user.display_name || user.username || tokenData.open_id;
 
     return {
-      id: user.open_id,
+      id: tokenData.open_id,
       name: displayName,
       username: user.username,
       accessToken: tokenData.access_token,
       refreshToken: tokenData.refresh_token,
       refreshTokenExpiresIn: tokenData.refresh_token_expires_in,
       expiresIn: tokenData.expires_in,
-      picture:
-        user.avatar_url || user.avatar_url_100 || user.avatar_large_url || "",
+      picture: user.profile_image || "",
       permissions,
-      unionId: user.union_id,
-      followerCount: user.follower_count,
+      unionId: undefined, // v1.3 business API doesn't return union_id
+      followerCount: user.followers_count,
       followingCount: user.following_count,
     };
   }
