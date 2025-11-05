@@ -30,14 +30,25 @@ export function PreviewCaption({
   return (
     <div className={cn(spacing, className)}>
       <div className={cn("leading-relaxed", textSize)}>
-        {accountName && (
-          <span className="font-semibold mr-1">{accountName}</span>
+        {accountName && caption ? (
+          <>
+            <span className="font-semibold">{accountName}</span>{" "}
+            <span className={cn("whitespace-pre-wrap", lineClamp)}>
+              {caption}
+            </span>
+          </>
+        ) : accountName ? (
+          <span className="font-semibold">{accountName}</span>
+        ) : (
+          <span
+            className={cn(
+              "text-muted-foreground whitespace-pre-wrap",
+              lineClamp,
+            )}
+          >
+            {caption || placeholder}
+          </span>
         )}
-        <span
-          className={cn("text-muted-foreground whitespace-pre-wrap", lineClamp)}
-        >
-          {caption || placeholder}
-        </span>
       </div>
       {showSeeMore && caption && caption.length > 100 && (
         <button
