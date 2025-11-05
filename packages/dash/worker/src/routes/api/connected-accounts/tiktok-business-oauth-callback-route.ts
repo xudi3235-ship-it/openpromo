@@ -13,16 +13,19 @@ import { zValidator } from "../../../middleware/zod-validator";
 import type { PopupRelayQuery } from "../popup-relay/constants";
 
 const CallbackQuerySchema = z.object({
-  auth_code: z.string(),
+  code: z.string(),
   state: z.string(),
+  scopes: z.string().optional(),
 });
 
+// callback route for tiktok for business account holder login
+// NOTE that this is different from advertiser redirect url.
 export const tikTokBusinessConnectedAccountRoute = new Hono<ApiEnv>().get(
   "/callback",
   zValidator("query", CallbackQuerySchema),
   async (ctx) => {
     try {
-      const { auth_code, state } = ctx.req.valid("query");
+      const { code, state } = ctx.req.valid("query");
 
       const storedAuthState = getAuthState(ctx);
       if (!storedAuthState || storedAuthState.nonce !== state) {
@@ -45,7 +48,7 @@ export const tikTokBusinessConnectedAccountRoute = new Hono<ApiEnv>().get(
 
       return Actor.provide("workspace_user", actor.properties, async () => {
         const authResult = await tikTokBusinessOAuthService.authenticate({
-          code: auth_code,
+          code,
           workspaceSlug,
         });
 
