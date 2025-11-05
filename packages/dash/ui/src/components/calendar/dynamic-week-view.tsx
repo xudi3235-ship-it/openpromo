@@ -239,18 +239,18 @@ export function DynamicWeekView({
           <div
             key={day.toString()}
             className={cn(
-              "py-3 text-center border-r border-border/70 last:border-r-0",
+              "py-1.5 text-center border-r border-border/70 last:border-r-0",
               "data-today:bg-accent/50 data-today:font-semibold",
               isToday(day) && "data-today",
             )}
             data-today={isToday(day) || undefined}
           >
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-tight">
               {format(day, "EEE")}
             </div>
             <div
               className={cn(
-                "text-lg",
+                "text-sm leading-tight",
                 isToday(day)
                   ? "text-foreground font-bold"
                   : "text-foreground/80",
@@ -263,12 +263,12 @@ export function DynamicWeekView({
       </div>
 
       {/* Dynamic day columns */}
-      <div className="grid grid-cols-7 min-h-full">
+      <div className="grid grid-cols-7 flex-1 min-h-0">
         {dayEvents.map(({ day, events: eventsForDay }) => (
           <div
             key={day.toString()}
             className={cn(
-              "border-r border-border/70 last:border-r-0 flex flex-col min-h-full",
+              "border-r border-border/70 last:border-r-0 flex flex-col",
               "bg-background hover:bg-accent/20 transition-colors",
             )}
           >
@@ -277,22 +277,19 @@ export function DynamicWeekView({
               id={`day-${day.toISOString()}`}
               date={day}
               className={cn(
-                "relative p-2 transition-colors",
+                "relative p-2 transition-colors flex-1 overflow-visible",
                 isCreatableDay(day)
                   ? "cursor-pointer hover:bg-accent/10"
                   : "cursor-not-allowed opacity-80",
               )}
               onClick={(event) => handleCreateEvent(day, event)}
             >
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 {/* Events list */}
                 {eventsForDay.map((event) => {
                   const eventData = getEventData(event);
                   return (
-                    <div
-                      key={eventData.id}
-                      className="h-40 w-full" // Increased height for better content visibility
-                    >
+                    <div key={eventData.id} className="w-full">
                       <DraggableCalendarCard event={event}>
                         <CalendarEventCard
                           event={event}
