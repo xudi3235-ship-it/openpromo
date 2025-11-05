@@ -71,19 +71,18 @@ export class TikTokBusinessPublisher extends BasePublisher {
   ): Promise<TikTokPublishStatusResult> {
     console.log("// publishTikTokFeedVideo (Business API)");
 
-    const content = await step.do(
-      "load tiktok business video content",
-      async () => {
-        const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-        c.assertReadyForVideoPublishing();
-        return c;
-      },
-    );
+    // 1. check video
+    await step.do("load tiktok business video content", async () => {
+      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+      c.assertReadyForVideoPublishing();
+    });
 
+    // 2. prepare video attachment
     const videoAttachment = await step.do(
       "prepare video attachment",
       async () => {
-        const attachment = content.ensureSingleVideoAttachment();
+        const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+        const attachment = c.ensureSingleVideoAttachment();
         return attachment;
       },
     );
@@ -94,36 +93,39 @@ export class TikTokBusinessPublisher extends BasePublisher {
       );
     }
 
-    const { verifiedVideoUrl, client } = await step.do(
+    // 3. ensure video available on business verified domain
+    const verifiedVideoUrl = await step.do(
       "ensure video available on business verified domain",
       async () => {
+        const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
         const verifiedClient = await TikTokBusinessAPIClient.forPlacementSpec(
-          content.spec,
+          c.spec,
         );
         await ensureTikTokBusinessUrlPrefixVerified(verifiedClient);
-        const { url } =
-          await content.ensureVideoAvailableOnTikTokBusinessDomain(
-            {
-              id: videoAttachment.id,
-              presignedUrl: videoAttachment.presignedUrl as string,
-              mimeType: videoAttachment.mimeType,
-            },
-            verifiedClient.identity.businessId,
-          );
-        return { verifiedVideoUrl: url, client: verifiedClient };
+        const { url } = await c.ensureVideoAvailableOnTikTokBusinessDomain(
+          {
+            id: videoAttachment.id,
+            presignedUrl: videoAttachment.presignedUrl as string,
+            mimeType: videoAttachment.mimeType,
+          },
+          verifiedClient.identity.businessId,
+        );
+        return url;
       },
     );
-
+    // 4. publish video via business api
     const { shareId } = await step.do(
       "publish video via business api",
       async () => {
+        const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+        const client = await TikTokBusinessAPIClient.forPlacementSpec(c.spec);
         log.info("Publishing video via Business API", {
           businessId: client.identity.businessId,
           videoUrl: verifiedVideoUrl,
         });
         return await client.publishVideo({
           videoUrl: verifiedVideoUrl,
-          caption: content.caption(),
+          caption: c.caption(),
           disableComment: false,
           disableDuet: false,
           disableStitch: false,
@@ -158,33 +160,32 @@ export class TikTokBusinessPublisher extends BasePublisher {
     };
   }
 
+  /**
+   *
+   * docs: https://business-api.tiktok.com/portal/docs?id=1803630424390658
+   */
   private async publishPhoto(
     step: CoreWorkflowStep,
     pendingContentID: string,
   ): Promise<TikTokPublishStatusResult> {
     console.log("// publishTikTokFeedPhoto (Business API)");
+    // 1. check photo
+    await step.do("load tiktok business photo content", async () => {
+      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+      c.assertReadyForPhotoPublishing();
+    });
 
-    const content = await step.do(
-      "load tiktok business photo content",
-      async () => {
-        const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
-        c.assertReadyForPhotoPublishing();
-        return c;
-      },
-    );
-
-    const { preparedPhotos, client } = await step.do(
+    const preparedPhotos = await step.do(
       "ensure photos available on business verified domain",
       async () => {
+        const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
         const verifiedClient = await TikTokBusinessAPIClient.forPlacementSpec(
-          content.spec,
+          c.spec,
         );
         await ensureTikTokBusinessUrlPrefixVerified(verifiedClient);
-        const photos =
-          await content.ensurePhotosAvailableOnTikTokBusinessDomain(
-            verifiedClient.identity.businessId,
-          );
-        return { preparedPhotos: photos, client: verifiedClient };
+        return await c.ensurePhotosAvailableOnTikTokBusinessDomain(
+          verifiedClient.identity.businessId,
+        );
       },
     );
 
@@ -198,10 +199,12 @@ export class TikTokBusinessPublisher extends BasePublisher {
     }
 
     const photoCoverIndex = 0; // TODO: allow user to select cover photo
-
+    // 2. publish photo via business api
     const { shareId } = await step.do(
       "publish photo via business api",
       async () => {
+        const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+        const client = await TikTokBusinessAPIClient.forPlacementSpec(c.spec);
         log.info("Publishing photo via Business API", {
           businessId: client.identity.businessId,
           photoCount: photoUrls.length,
@@ -209,8 +212,9 @@ export class TikTokBusinessPublisher extends BasePublisher {
         return await client.publishPhoto({
           photoUrls,
           photoCoverIndex,
-          caption: content.caption(),
-          privacyLevel: "SELF_ONLY", // TODO: update this once app review is done
+          caption: c.caption(),
+          privacyLevel: "SELF_ONLY", // TODO:  need to check the doc, https://business-api.tiktok.com/portal/docs?id=1803630424390658
+          // need to query first to see the list of allowed values
           disableComment: false,
           autoAddMusic: true,
           isBrandOrganic: false,
