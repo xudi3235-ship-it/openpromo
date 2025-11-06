@@ -1,3 +1,4 @@
+import { refreshWorkspaceTokens } from "@core/domain/connected-account/token-refresher";
 import { runWorkspaceMetricsTask } from "@core/domain/workspace/sync/run-workspace-metrics";
 import { Actor } from "@core/helpers/actor";
 import { type ApiEnv, Binding } from "@core/helpers/api-env";
@@ -17,6 +18,11 @@ const WorkspaceMetricsMessageSchema = BaseJobMessage.extend({
   workspaceId: z.string().min(1),
 });
 
+const WorkspaceTokenRefreshMessageSchema = BaseJobMessage.extend({
+  type: z.literal("workspace.tokens.refresh"),
+  workspaceId: z.string().min(1),
+});
+
 const ImageCleanupMessageSchema = BaseJobMessage.extend({
   type: z.literal("storage.workspace.images.cleanup"),
   workspaceId: z.string().min(1),
@@ -31,6 +37,7 @@ const VideoCleanupMessageSchema = BaseJobMessage.extend({
 
 export const JobQueueMessageSchema = z.discriminatedUnion("type", [
   WorkspaceMetricsMessageSchema,
+  WorkspaceTokenRefreshMessageSchema,
   ImageCleanupMessageSchema,
   VideoCleanupMessageSchema,
 ]);
@@ -38,11 +45,35 @@ export const JobQueueMessageSchema = z.discriminatedUnion("type", [
 export type JobQueueMessage = z.infer<typeof JobQueueMessageSchema>;
 
 type WorkspaceMetricsMessage = z.infer<typeof WorkspaceMetricsMessageSchema>;
+type WorkspaceTokenRefreshMessage = z.infer<
+  typeof WorkspaceTokenRefreshMessageSchema
+>;
 type ImageCleanupMessage = z.infer<typeof ImageCleanupMessageSchema>;
 type VideoCleanupMessage = z.infer<typeof VideoCleanupMessageSchema>;
 
 async function handleWorkspaceMetricsMessage(message: WorkspaceMetricsMessage) {
   await runWorkspaceMetricsTask(message.workspaceId);
+}
+
+async function handleWorkspaceTokenRefreshMessage(
+  message: WorkspaceTokenRefreshMessage,
+) {
+  const result = await refreshWorkspaceTokens(message.workspaceId);
+
+  log.info("workspace token refresh completed", {
+    workspaceId: message.workspaceId,
+    processed: result.processed,
+    refreshed: result.refreshed,
+    skipped: result.skipped,
+    failures: result.failures.length,
+  });
+
+  if (result.failures.length > 0) {
+    log.warn("workspace token refresh encountered failures", {
+      workspaceId: message.workspaceId,
+      failures: result.failures,
+    });
+  }
 }
 
 async function handleImageCleanupMessage(message: ImageCleanupMessage) {
@@ -135,6 +166,9 @@ export async function processJobQueueBatch(
         switch (job.type) {
           case "workspace.metrics.refresh":
             await handleWorkspaceMetricsMessage(job);
+            break;
+          case "workspace.tokens.refresh":
+            await handleWorkspaceTokenRefreshMessage(job);
             break;
           case "storage.workspace.images.cleanup":
             await handleImageCleanupMessage(job);
