@@ -271,6 +271,8 @@ function ConversationListItem({
           q: prev.q,
           unread: prev.unread,
         })}
+        preload="intent"
+        preloadDelay={150}
         className={cn(
           "block w-full rounded-md border border-transparent p-2 text-left transition-colors",
           isSelected
