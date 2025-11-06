@@ -54,6 +54,15 @@ export interface TikTokBusinessAuthTokenDetails {
   followingCount?: number;
 }
 
+type TikTokWebhookEventType = "VIDEO" | "COMMENT";
+
+interface TikTokWebhookResponse {
+  code: number;
+  message?: string;
+  request_id?: string;
+  data?: unknown;
+}
+
 const log = Log.create({ namespace: "TikTokBusinessOAuthService" });
 
 function ensureBusinessTokenData(
@@ -118,6 +127,10 @@ export class TikTokBusinessOAuthService {
 
   private get clientSecret(): string {
     return env.TIKTOK_BIZ_APP_SECRET;
+  }
+
+  private get webhookCallbackUrl(): string {
+    return `${env.VITE_DASHBOARD_URL}/webhooks/tiktok-business`;
   }
 
   /**
@@ -372,6 +385,123 @@ export class TikTokBusinessOAuthService {
       followerCount: user.followers_count,
       followingCount: user.following_count,
     };
+  }
+
+  private async updateWebhookConfiguration(
+    eventType: TikTokWebhookEventType,
+    itemList?: string[],
+  ): Promise<void> {
+    const body = {
+      app_id: this.clientId,
+      secret: this.clientSecret,
+      event_type: eventType,
+      callback_url: this.webhookCallbackUrl,
+      ...(itemList && itemList.length > 0 ? { item_list: itemList } : {}),
+    };
+
+    const response = await fetch(
+      "https://business-api.tiktok.com/open_api/v1.3/business/webhook/update/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      log.warn("TikTok Business webhook update HTTP failure", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        eventType,
+      });
+      throw new Error(
+        `Failed to configure TikTok Business webhook (${eventType})`,
+      );
+    }
+
+    const json = (await response.json()) as TikTokWebhookResponse;
+    if (json.code !== 0) {
+      log.warn("TikTok Business webhook update API failure", {
+        eventType,
+        code: json.code,
+        message: json.message,
+        requestId: json.request_id,
+      });
+      throw new Error(
+        `TikTok Business webhook update error (${eventType}): ${json.message ?? json.code}`,
+      );
+    }
+
+    log.info("TikTok Business webhook configured", {
+      eventType,
+      requestId: json.request_id,
+    });
+  }
+
+  private async deleteWebhookConfiguration(
+    eventType: TikTokWebhookEventType,
+  ): Promise<void> {
+    const body = {
+      app_id: this.clientId,
+      secret: this.clientSecret,
+      event_type: eventType,
+    };
+
+    const response = await fetch(
+      "https://business-api.tiktok.com/open_api/v1.3/business/webhook/delete/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      log.warn("TikTok Business webhook delete HTTP failure", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        eventType,
+      });
+      throw new Error(
+        `Failed to delete TikTok Business webhook (${eventType})`,
+      );
+    }
+
+    const json = (await response.json()) as TikTokWebhookResponse;
+    if (json.code !== 0) {
+      log.warn("TikTok Business webhook delete API failure", {
+        eventType,
+        code: json.code,
+        message: json.message,
+        requestId: json.request_id,
+      });
+      throw new Error(
+        `TikTok Business webhook delete error (${eventType}): ${json.message ?? json.code}`,
+      );
+    }
+
+    log.info("TikTok Business webhook deleted", {
+      eventType,
+      requestId: json.request_id,
+    });
+  }
+
+  async setupWebhook(): Promise<void> {
+    await this.updateWebhookConfiguration("VIDEO");
+    await this.updateWebhookConfiguration("COMMENT");
+  }
+
+  async teardownWebhook(): Promise<void> {
+    await this.deleteWebhookConfiguration("VIDEO");
+    await this.deleteWebhookConfiguration("COMMENT");
   }
 }
 

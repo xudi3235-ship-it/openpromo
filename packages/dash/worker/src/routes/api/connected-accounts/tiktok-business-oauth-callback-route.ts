@@ -95,17 +95,18 @@ export const tikTokBusinessConnectedAccountRoute = new Hono<ApiEnv>().get(
             connectedAccountId: account.id,
           });
           await ensureTikTokBusinessUrlPrefixVerified(client);
+          await tikTokBusinessOAuthService.setupWebhook();
         } catch (error) {
-          console.error("Failed to verify TikTok Business URL prefix", error);
+          console.error("Failed to finalize TikTok Business connection", error);
           await ConnectedAccount.deleteById(account.id).catch((deleteError) => {
             console.error(
-              "Failed to rollback TikTok Business account after verification failure",
+              "Failed to rollback TikTok Business account after setup failure",
               deleteError,
             );
           });
           throw createVisibleError(500, {
             message:
-              "Connected to TikTok, but failed to verify video hosting domain. Please try again shortly.",
+              "Connected to TikTok, but failed to finalize setup. Please try again shortly.",
           });
         }
 
