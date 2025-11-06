@@ -26,26 +26,24 @@ export function PreviewCaption({
   const spacing = isCompact ? "px-2 py-1.5" : "px-3 py-2";
 
   const lineClamp = maxLines ? `line-clamp-${maxLines}` : "";
+  const textContainerClasses = cn(
+    "leading-relaxed whitespace-pre-wrap break-words",
+    textSize,
+    lineClamp,
+  );
 
   return (
     <div className={cn(spacing, className)}>
-      <div className={cn("leading-relaxed", textSize)}>
+      <div className={textContainerClasses}>
         {accountName && caption ? (
           <>
             <span className="font-semibold">{accountName}</span>{" "}
-            <span className={cn("whitespace-pre-wrap", lineClamp)}>
-              {caption}
-            </span>
+            <span>{caption}</span>
           </>
         ) : accountName ? (
           <span className="font-semibold">{accountName}</span>
         ) : (
-          <span
-            className={cn(
-              "text-muted-foreground whitespace-pre-wrap",
-              lineClamp,
-            )}
-          >
+          <span className="text-muted-foreground">
             {caption || placeholder}
           </span>
         )}

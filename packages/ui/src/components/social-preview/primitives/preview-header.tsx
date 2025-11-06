@@ -60,29 +60,36 @@ export function PreviewHeader({
   const shouldShowMeta =
     (variant !== "minimal" || showMetaOnMinimal) && (timestamp || location);
 
-  const locationDisplay = location ? (
-    <span
-      className={cn(
-        "truncate",
-        showLocationPin ? "flex items-center gap-0.5" : undefined,
-      )}
-    >
-      {showLocationPin && (
-        <svg
-          className="w-3 h-3 flex-shrink-0"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-            clipRule="evenodd"
-          />
-        </svg>
-      )}
-      {location}
-    </span>
-  ) : null;
+  const renderLocation = (className?: string) => {
+    if (!location) return null;
+    return (
+      <span
+        className={cn(
+          "truncate",
+          showLocationPin ? "flex items-center gap-0.5" : undefined,
+          className,
+        )}
+      >
+        {showLocationPin && (
+          <svg
+            className="w-3 h-3 flex-shrink-0"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+              clipRule="evenodd"
+            />
+          </svg>
+        )}
+        <span className="truncate">{location}</span>
+      </span>
+    );
+  };
+
+  const renderTimestamp = (className?: string) =>
+    timestamp ? <span className={className}>{timestamp}</span> : null;
 
   return (
     <div
@@ -111,25 +118,24 @@ export function PreviewHeader({
           {shouldShowMeta && (
             <div
               className={cn(
-                "text-muted-foreground",
                 metaSize,
                 metaLayout === "stacked"
-                  ? "mt-0.5 space-y-0.5 leading-tight"
-                  : "flex items-center gap-1",
+                  ? "mt-1 space-y-1 leading-tight"
+                  : "flex items-center gap-1 text-muted-foreground",
               )}
             >
               {metaLayout === "stacked" ? (
                 <>
-                  {locationDisplay}
-                  {timestamp && (
-                    <span className="uppercase tracking-wide">{timestamp}</span>
+                  {renderLocation("font-medium text-foreground")}
+                  {renderTimestamp(
+                    "uppercase tracking-wide text-[10px] text-muted-foreground",
                   )}
                 </>
               ) : (
                 <>
-                  {timestamp && <span>{timestamp}</span>}
-                  {timestamp && location && <span>•</span>}
-                  {locationDisplay}
+                  {renderLocation()}
+                  {location && timestamp && <span>•</span>}
+                  {renderTimestamp()}
                 </>
               )}
             </div>
