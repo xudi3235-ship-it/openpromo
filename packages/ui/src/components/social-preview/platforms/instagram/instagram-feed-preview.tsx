@@ -44,6 +44,9 @@ export function InstagramFeedPreview({
 
   const isCompact = size === "thumbnail" || size === "compact";
   const likesTextSize = isCompact ? "text-xs" : "text-sm";
+  const metadataLocation = location || "New York, NY";
+  const metadataTimestamp = timeLabel || "Just now";
+  const headerAvatarSize = isCompact ? "xs" : "sm";
 
   return (
     <PreviewContainer size={size} platform="INSTAGRAM" className={className}>
@@ -52,9 +55,14 @@ export function InstagramFeedPreview({
         <PreviewHeader
           accountName={accountName || "Instagram Account"}
           profilePicUrl={profilePicUrl}
-          location={location}
+          location={metadataLocation}
+          timestamp={metadataTimestamp}
           size={size}
           variant="minimal"
+          showMetaOnMinimal
+          metaLayout="stacked"
+          avatarSize={headerAvatarSize}
+          showLocationPin={false}
           actions={
             <Button variant="ghost" size="sm" className="p-1 h-auto">
               <MoreHorizontal className="w-4 h-4" />

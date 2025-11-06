@@ -15,6 +15,14 @@ export interface PreviewHeaderProps extends BasePreviewProps {
   actions?: React.ReactNode;
   /** Style variant for different platforms */
   variant?: "default" | "minimal" | "detailed";
+  /** Force showing meta row even for minimal variant */
+  showMetaOnMinimal?: boolean;
+  /** Layout for timestamp/location */
+  metaLayout?: "inline" | "stacked";
+  /** Override avatar size */
+  avatarSize?: "xs" | "sm" | "md" | "lg";
+  /** Toggle location pin icon */
+  showLocationPin?: boolean;
 }
 
 export function PreviewHeader({
@@ -25,13 +33,56 @@ export function PreviewHeader({
   actions,
   variant = "default",
   size = "default",
+  showMetaOnMinimal = false,
+  metaLayout = "inline",
+  avatarSize,
+  showLocationPin = true,
   className,
 }: PreviewHeaderProps) {
   const isCompact = size === "thumbnail" || size === "compact";
 
-  const avatarSize = isCompact ? "w-8 h-8" : "w-10 h-10";
+  const avatarSizeMap: Record<
+    NonNullable<PreviewHeaderProps["avatarSize"]>,
+    string
+  > = {
+    xs: "w-7 h-7",
+    sm: "w-8 h-8",
+    md: "w-10 h-10",
+    lg: "w-12 h-12",
+  };
+  const defaultAvatarSizeKey: NonNullable<PreviewHeaderProps["avatarSize"]> =
+    isCompact ? "sm" : "md";
+  const resolvedAvatarSize =
+    avatarSizeMap[avatarSize ?? defaultAvatarSizeKey] ??
+    avatarSizeMap[defaultAvatarSizeKey];
   const nameSize = isCompact ? "text-xs" : "text-sm";
   const metaSize = isCompact ? "text-[10px]" : "text-xs";
+  const shouldShowMeta =
+    (variant !== "minimal" || showMetaOnMinimal) && (timestamp || location);
+
+  const locationDisplay = location ? (
+    <span
+      className={cn(
+        "truncate",
+        showLocationPin ? "flex items-center gap-0.5" : undefined,
+      )}
+    >
+      {showLocationPin && (
+        <svg
+          className="w-3 h-3 flex-shrink-0"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fillRule="evenodd"
+            d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+            clipRule="evenodd"
+          />
+        </svg>
+      )}
+      {location}
+    </span>
+  ) : null;
 
   return (
     <div
@@ -42,7 +93,7 @@ export function PreviewHeader({
       )}
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        <Avatar className={cn(avatarSize, "flex-shrink-0")}>
+        <Avatar className={cn(resolvedAvatarSize, "flex-shrink-0")}>
           <AvatarImage
             src={profilePicUrl || undefined}
             alt={accountName || ""}
@@ -57,30 +108,29 @@ export function PreviewHeader({
             {accountName}
           </div>
 
-          {variant !== "minimal" && (timestamp || location) && (
+          {shouldShowMeta && (
             <div
               className={cn(
-                "text-muted-foreground flex items-center gap-1",
+                "text-muted-foreground",
                 metaSize,
+                metaLayout === "stacked"
+                  ? "mt-0.5 space-y-0.5 leading-tight"
+                  : "flex items-center gap-1",
               )}
             >
-              {timestamp && <span>{timestamp}</span>}
-              {timestamp && location && <span>•</span>}
-              {location && (
-                <span className="truncate flex items-center gap-0.5">
-                  <svg
-                    className="w-3 h-3 flex-shrink-0"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {location}
-                </span>
+              {metaLayout === "stacked" ? (
+                <>
+                  {locationDisplay}
+                  {timestamp && (
+                    <span className="uppercase tracking-wide">{timestamp}</span>
+                  )}
+                </>
+              ) : (
+                <>
+                  {timestamp && <span>{timestamp}</span>}
+                  {timestamp && location && <span>•</span>}
+                  {locationDisplay}
+                </>
               )}
             </div>
           )}
