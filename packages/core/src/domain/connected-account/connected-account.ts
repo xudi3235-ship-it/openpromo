@@ -15,6 +15,7 @@ import { Actor } from "../../helpers/actor";
 import { connectedAccountRefresher } from "./connected-account-refresher";
 import { facebookOAuthService } from "./facebook-oauth-service";
 import { instagramOAuthService } from "./instragram-oauth-service";
+import { tikTokBusinessOAuthService } from "./tiktok-business-oauth-service";
 import { tikTokOAuthService } from "./tiktok-oauth-service";
 
 const log = Log.create({ namespace: "connected-account" });
@@ -262,8 +263,17 @@ export namespace ConnectedAccount {
     });
     return newAcc;
   }
-  export async function fromTikTokAccountID(id: string) {
-    const workspaceId = Actor.workspaceID();
+  export async function fromTikTokAccountID(
+    id: string,
+    options: {
+      skipWorkspaceCheck?: boolean;
+      disableAutoRefresh?: boolean;
+    } = {},
+  ) {
+    const skipWorkspaceCheck = options.skipWorkspaceCheck ?? false;
+    const disableAutoRefresh = options.disableAutoRefresh ?? skipWorkspaceCheck;
+
+    const workspaceId = skipWorkspaceCheck ? undefined : Actor.workspaceID();
     const [acc] = await db()
       .select()
       .from(connectedAccount)
@@ -271,12 +281,18 @@ export namespace ConnectedAccount {
         and(
           eq(connectedAccount.externalAccountId, id),
           eq(connectedAccount.platform, "TIKTOK"),
-          eq(connectedAccount.workspaceId, workspaceId),
+          workspaceId
+            ? eq(connectedAccount.workspaceId, workspaceId)
+            : undefined,
         ),
       )
       .limit(1);
 
     if (!acc) throw new Error("connected account not found");
+
+    if (disableAutoRefresh) {
+      return acc;
+    }
 
     if (acc.tokenExpiresAt && acc.tokenExpiresAt.getTime() >= inAWeek) {
       return acc;
@@ -284,6 +300,27 @@ export namespace ConnectedAccount {
 
     if (!acc.refreshToken) {
       return acc;
+    }
+
+    if (acc.tiktokAuthType === "BUSINESS_LOGIN") {
+      const newToken = await tikTokBusinessOAuthService.refreshAccessToken(
+        acc.refreshToken,
+      );
+
+      const tokenExpiresAt = new Date(
+        Date.now() + (newToken.expires_in ?? sixtyDaysInSec) * 1000,
+      );
+
+      const refreshToken = newToken.refresh_token || acc.refreshToken;
+
+      const newAcc = await updateAccessToken({
+        id: acc.id,
+        encryptedAccessToken: newToken.access_token,
+        refreshToken,
+        tokenExpiresAt,
+      });
+
+      return newAcc;
     }
 
     const newToken = await tikTokOAuthService.refreshAccessToken(

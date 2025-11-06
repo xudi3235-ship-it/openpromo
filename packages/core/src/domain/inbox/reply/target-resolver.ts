@@ -25,7 +25,9 @@ export async function resolveCommentTarget(
 
   // 2. Try metadata mediaId (for Instagram)
   const channelMeta =
-    context.platform === "FACEBOOK" || context.platform === "INSTAGRAM"
+    context.platform === "FACEBOOK" ||
+    context.platform === "INSTAGRAM" ||
+    context.platform === "TIKTOK"
       ? getChannelMetadata(
           context.conversationMetadata,
           context.platform,

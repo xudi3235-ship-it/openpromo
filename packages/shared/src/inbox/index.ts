@@ -263,6 +263,61 @@ export const IGMessageChangePayload = z.union([
   IGMessageReactionPayload,
 ]);
 
+const TikTokCommentUpdateBase = z
+  .object({
+    event_type: z.literal("comment.update"),
+    business_id: z.string(),
+    video_id: z.string(),
+    comment_id: z.string(),
+    parent_comment_id: z.string().optional(),
+    comment_action: z.string().optional(),
+    event_time: z.number().optional(),
+  })
+  .passthrough();
+
+export const TikTokCommentUpdateEvent = z
+  .union([
+    TikTokCommentUpdateBase,
+    z
+      .object({
+        event_type: z.literal("comment.update"),
+        data: TikTokCommentUpdateBase,
+      })
+      .passthrough(),
+  ])
+  .transform((value) =>
+    "data" in value
+      ? (value.data as z.infer<typeof TikTokCommentUpdateBase>)
+      : (value as z.infer<typeof TikTokCommentUpdateBase>),
+  );
+
+export const TikTokBusinessCommentPayload = z.object({
+  platform: z.literal("tiktok_business"),
+  eventType: z.literal("comment.update"),
+  businessId: z.string(),
+  videoId: z.string(),
+  commentId: z.string(),
+  commentAction: z.string().optional(),
+  comment: z.object({
+    comment_id: z.string(),
+    video_id: z.string(),
+    parent_comment_id: z.string().optional().nullable(),
+    text: z.string().optional().nullable(),
+    status: z.string().optional(),
+    create_time: z.number().optional(),
+    likes: z.number().optional(),
+    liked: z.boolean().optional(),
+    replies: z.number().optional(),
+    owner: z.boolean().optional(),
+    pinned: z.boolean().optional(),
+    unique_identifier: z.string().optional(),
+    user_id: z.string().optional(),
+    username: z.string().optional(),
+    display_name: z.string().optional(),
+    profile_image: z.string().optional(),
+  }),
+});
+
 const IGChangePayload = z.union([IGCommentPayload, IGMessageChangePayload]);
 
 const IGWebhookPayload = z.object({
@@ -286,6 +341,12 @@ export type IGMessageReactionPayloadType = z.infer<
 export type IGMessageChangePayloadType = z.infer<typeof IGMessageChangePayload>;
 export type IGChangePayloadType = z.infer<typeof IGChangePayload>;
 export type IGWebhookPayload = z.infer<typeof IGWebhookPayload>;
+export type TikTokCommentUpdateEventType = z.infer<
+  typeof TikTokCommentUpdateBase
+>;
+export type TikTokBusinessCommentPayloadType = z.infer<
+  typeof TikTokBusinessCommentPayload
+>;
 
 // MessagePayload now includes FB comments as well for unified storage
 export const MessagePayload = z.union([
@@ -295,6 +356,7 @@ export const MessagePayload = z.union([
   IGCommentPayload,
   IGMessageEditPayload,
   IGMessageReactionPayload,
+  TikTokBusinessCommentPayload,
 ]);
 
 export type MessagePayload = z.infer<typeof MessagePayload>;

@@ -111,6 +111,46 @@ export namespace InboxService {
     return created;
   }
 
+  export async function updateContact(input: {
+    id: string;
+    externalId?: string;
+    name?: string;
+    profilePicUrl?: string;
+  }) {
+    const updateValues: Partial<typeof inboxContactsTable.$inferInsert> = {};
+    if (input.externalId) {
+      updateValues.externalId = input.externalId;
+    }
+    if (input.name) {
+      updateValues.name = input.name;
+    }
+    if (input.profilePicUrl) {
+      updateValues.profilePicUrl = input.profilePicUrl;
+    }
+
+    if (Object.keys(updateValues).length === 0) {
+      const [existing] = await db()
+        .select()
+        .from(inboxContactsTable)
+        .where(eq(inboxContactsTable.id, input.id))
+        .limit(1);
+      return existing ?? null;
+    }
+
+    const [updated] = await db()
+      .update(inboxContactsTable)
+      .set(updateValues)
+      .where(eq(inboxContactsTable.id, input.id))
+      .returning();
+
+    log.info("updateContact", {
+      id: input.id,
+      updatedFields: Object.keys(updateValues),
+    });
+
+    return updated ?? null;
+  }
+
   export async function upsertConversation(input: {
     connectedAccountId: string;
     platform: Platform;

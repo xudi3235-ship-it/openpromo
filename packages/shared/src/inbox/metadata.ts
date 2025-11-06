@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-const ReactionPlatform = z.enum(["FACEBOOK", "INSTAGRAM"]);
+const ReactionPlatform = z.enum(["FACEBOOK", "INSTAGRAM", "TIKTOK"]);
 
 export const InboxMessageReactionSchema = z.object({
   platform: ReactionPlatform,

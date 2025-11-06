@@ -73,6 +73,54 @@ export interface TikTokBusinessPublishStatus {
   reason?: string;
 }
 
+interface TikTokBusinessCommentApi {
+  comment_id: string;
+  video_id: string;
+  parent_comment_id?: string;
+  comment_parent_id?: string;
+  text?: string;
+  status?: string;
+  create_time?: string | number;
+  unique_identifier?: string;
+  user_id?: string;
+  username?: string;
+  display_name?: string;
+  profile_image?: string;
+  likes?: number;
+  liked?: boolean;
+  owner?: boolean;
+  pinned?: boolean;
+  replies?: number;
+  reply_list?: TikTokBusinessCommentApi[];
+}
+
+export interface TikTokBusinessComment {
+  commentId: string;
+  videoId: string;
+  parentCommentId?: string | null;
+  text?: string;
+  status?: string;
+  createTime?: number;
+  createdAt?: Date;
+  uniqueIdentifier?: string;
+  userId?: string;
+  username?: string;
+  displayName?: string;
+  profileImage?: string;
+  likes?: number;
+  liked?: boolean;
+  replies?: number;
+  owner?: boolean;
+  pinned?: boolean;
+  replyList?: TikTokBusinessComment[];
+}
+
+export interface TikTokBusinessCommentListResult {
+  comments: TikTokBusinessComment[];
+  cursor?: number;
+  hasMore: boolean;
+}
+
 export type TikTokBusinessPropertyType = "DOMAIN" | "URL_PREFIX";
 
 type TikTokBusinessPropertyTypeApi = 1 | 2;
@@ -349,6 +397,66 @@ export class TikTokBusinessAPIClient {
   }
 
   /**
+   * List comments for a TikTok Business video
+   * https://business-api.tiktok.com/portal/docs?id=1743106759658498
+   */
+  async listComments(params: {
+    videoId: string;
+    commentIds?: string[];
+    includeReplies?: boolean;
+    status?: "PUBLIC" | "ALL";
+    sortField?: "likes" | "replies" | "create_time";
+    sortOrder?: "asc" | "desc" | "smart";
+    cursor?: number;
+    maxCount?: number;
+  }): Promise<TikTokBusinessCommentListResult> {
+    const search = new URLSearchParams({
+      business_id: this.ctx.businessId,
+      video_id: params.videoId,
+    });
+
+    if (params.commentIds && params.commentIds.length > 0) {
+      search.set("comment_ids", JSON.stringify(params.commentIds));
+    }
+    if (typeof params.includeReplies === "boolean") {
+      search.set("include_replies", params.includeReplies ? "true" : "false");
+    }
+    if (params.status) {
+      search.set("status", params.status);
+    }
+    if (params.sortField) {
+      search.set("sort_field", params.sortField);
+    }
+    if (params.sortOrder) {
+      search.set("sort_order", params.sortOrder);
+    }
+    if (typeof params.cursor === "number") {
+      search.set("cursor", String(params.cursor));
+    }
+    if (typeof params.maxCount === "number") {
+      search.set("max_count", String(params.maxCount));
+    }
+
+    const data = await this.get<{
+      comments?: TikTokBusinessCommentApi[];
+      cursor?: number;
+      has_more?: boolean;
+    }>(`/open_api/v1.3/business/comment/list/?${search.toString()}`);
+
+    const comments =
+      data.comments?.map((comment) => this.normalizeComment(comment)) ?? [];
+
+    return {
+      comments,
+      cursor:
+        typeof data.cursor === "number" && Number.isFinite(data.cursor)
+          ? data.cursor
+          : undefined,
+      hasMore: data.has_more ?? false,
+    };
+  }
+
+  /**
    * Fetch all URL properties for the business account
    */
   async listUrlProperties(): Promise<TikTokBusinessPropertyInfo[]> {
@@ -441,6 +549,48 @@ export class TikTokBusinessAPIClient {
       propertyStatus: info.property_status,
       signature: info.signature,
       fileName: info.file_name,
+    };
+  }
+
+  /**
+   * Normalize comment payloads from the API
+   */
+  private normalizeComment(
+    apiComment: TikTokBusinessCommentApi,
+  ): TikTokBusinessComment {
+    const createTimeRaw =
+      typeof apiComment.create_time === "string"
+        ? Number.parseInt(apiComment.create_time, 10)
+        : apiComment.create_time;
+    const createTime =
+      typeof createTimeRaw === "number" && Number.isFinite(createTimeRaw)
+        ? createTimeRaw
+        : undefined;
+    const createdAt =
+      typeof createTime === "number" ? new Date(createTime * 1000) : undefined;
+
+    return {
+      commentId: apiComment.comment_id,
+      videoId: apiComment.video_id,
+      parentCommentId:
+        apiComment.parent_comment_id ?? apiComment.comment_parent_id ?? null,
+      text: apiComment.text,
+      status: apiComment.status,
+      createTime,
+      createdAt,
+      uniqueIdentifier: apiComment.unique_identifier,
+      userId: apiComment.user_id,
+      username: apiComment.username,
+      displayName: apiComment.display_name,
+      profileImage: apiComment.profile_image,
+      likes: apiComment.likes,
+      liked: apiComment.liked,
+      replies: apiComment.replies,
+      owner: apiComment.owner,
+      pinned: apiComment.pinned,
+      replyList: apiComment.reply_list
+        ? apiComment.reply_list.map((reply) => this.normalizeComment(reply))
+        : undefined,
     };
   }
 
