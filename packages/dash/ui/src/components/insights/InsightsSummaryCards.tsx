@@ -1,12 +1,6 @@
 import type { WorkspaceInsightSnapshotRecord } from "@shared/insights";
 import { formatDistanceToNow } from "date-fns";
-import {
-  Heart,
-  MessageCircle,
-  MousePointerClick,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { MomentumCard } from "@/components/momentum/MomentumCard";
 
 type InsightsSummaryCardsProps = {
   snapshotRecord?: WorkspaceInsightSnapshotRecord;
@@ -31,67 +25,80 @@ export function InsightsSummaryCards({
       })
     : null;
 
-  const cards = [
+  const stats = [
     {
-      label: "Total Engagement",
-      value: totals.engagement ?? 0,
-      icon: TrendingUp,
-      color: "text-green-500",
+      label: "Total engagement",
+      value: totals.engagement,
+      hint: "Across your selected window",
     },
     {
       label: "Reach",
       value: totals.reach,
-      icon: Users,
-      color: "text-teal-500",
+      hint: "Unique accounts touched",
     },
     {
       label: "Clicks",
       value: totals.clicks,
-      icon: MousePointerClick,
-      color: "text-purple-500",
+      hint: "Traffic driven from posts",
     },
     {
       label: "Conversions",
       value: totals.conversions,
-      icon: Heart,
-      color: "text-red-500",
+      hint: "Goals completed",
     },
     {
-      label: "Conversion Rate",
+      label: "Conversion rate",
       value: totals.conversionRate,
-      icon: MessageCircle,
-      color: "text-yellow-500",
+      hint: "Conversions / clicks",
+      suffix: "%",
+      precision: 1,
     },
   ];
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
-        {cards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={card.label}
-              className="bg-card rounded-lg p-4 border border-border/40"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <Icon className={`h-4 w-4 ${card.color}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold text-foreground mb-1">
-                  {card.value.toLocaleString()}
-                </p>
-                <p className="text-xs text-muted-foreground">{card.label}</p>
-              </div>
-            </div>
-          );
-        })}
+    <MomentumCard className="space-y-6">
+      <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-sm font-medium text-foreground">Funnel snapshot</p>
+          <p className="text-xs text-muted-foreground">
+            Engagement summary pulled from your latest insight run
+          </p>
+        </div>
+        {lastRefreshed ? (
+          <p className="text-xs text-muted-foreground">
+            Updated {lastRefreshed}
+          </p>
+        ) : null}
       </div>
-      {lastRefreshed && (
-        <p className="text-xs text-muted-foreground text-right">
-          Last updated {lastRefreshed}
-        </p>
-      )}
-    </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        {stats.map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-2xl border border-border/40 p-4 space-y-1"
+          >
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              {stat.label}
+            </p>
+            <p className="text-3xl font-semibold text-foreground">
+              {formatValue(stat.value, stat.suffix, stat.precision)}
+            </p>
+            <p className="text-xs text-muted-foreground">{stat.hint}</p>
+          </div>
+        ))}
+      </div>
+    </MomentumCard>
   );
+}
+
+function formatValue(
+  value: number | undefined,
+  suffix?: string,
+  precision = 0,
+) {
+  if (value === undefined || value === null) return "—";
+  const formatted =
+    suffix === "%"
+      ? (value * 100).toFixed(precision)
+      : Number(value).toLocaleString();
+  return suffix ? `${formatted}${suffix}` : formatted;
 }

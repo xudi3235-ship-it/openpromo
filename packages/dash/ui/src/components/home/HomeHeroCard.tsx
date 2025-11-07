@@ -60,6 +60,20 @@ export function HomeHeroCard({
           </Button>
           <Button variant="outline" asChild disabled={isLoading}>
             <Link
+              to="/workspaces/$workspaceSlug/calendar"
+              params={{ workspaceSlug }}
+              search={{
+                view: "week",
+                date: undefined,
+                platform: undefined,
+                publishingStatus: undefined,
+              }}
+            >
+              Plan calendar
+            </Link>
+          </Button>
+          <Button variant="ghost" asChild disabled={isLoading}>
+            <Link
               to="/workspaces/$workspaceSlug/insights"
               params={{ workspaceSlug }}
             >

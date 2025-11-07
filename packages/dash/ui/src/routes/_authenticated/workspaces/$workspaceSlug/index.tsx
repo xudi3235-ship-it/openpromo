@@ -3,8 +3,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { useMemo } from "react";
 import { HomeHeroCard } from "@/components/home/HomeHeroCard";
-import { HomeQuickActions } from "@/components/home/HomeQuickActions";
-import { HomeSystemHealthCard } from "@/components/home/HomeSystemHealthCard";
 import { InsightsGoalProgress } from "@/components/insights/InsightsGoalProgress";
 import { InsightsInboxSummary } from "@/components/insights/InsightsInboxSummary";
 import { InsightsNextActions } from "@/components/insights/InsightsNextActions";
@@ -18,7 +16,6 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   useWorkspaceInsightSnapshot,
   useWorkspaceInsightsInboxSummary,
-  useWorkspaceInsightsStatus,
   useWorkspaceInsightsTopContent,
 } from "@/queries/insights";
 
@@ -32,26 +29,10 @@ function WorkspaceHomePage() {
   const { workspace } = useWorkspace();
   const { data: snapshotRecord, isPending: snapshotPending } =
     useWorkspaceInsightSnapshot();
-  const { data: status } = useWorkspaceInsightsStatus();
   const { data: inboxSummary, isLoading: inboxLoading } =
     useWorkspaceInsightsInboxSummary();
   const { data: topContent, isLoading: topContentLoading } =
     useWorkspaceInsightsTopContent({ limit: 3, sortBy: "impressions" });
-
-  const normalizedStatus = useMemo(() => {
-    if (!status) return undefined;
-    return {
-      contentLastRefreshedAt: status.contentLastRefreshedAt
-        ? new Date(status.contentLastRefreshedAt)
-        : null,
-      followerLastCollectedAt: status.followerLastCollectedAt
-        ? new Date(status.followerLastCollectedAt)
-        : null,
-      inboxLastUpdatedAt: status.inboxLastUpdatedAt
-        ? new Date(status.inboxLastUpdatedAt)
-        : null,
-    };
-  }, [status]);
 
   const heroHighlight = snapshotRecord?.snapshot.narrativeHighlights?.[0];
   const topStreak = useMemo(() => {
@@ -103,21 +84,12 @@ function WorkspaceHomePage() {
           isLoading={snapshotPending}
         />
 
-        <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-          <InsightsSummaryCards snapshotRecord={snapshotRecord ?? undefined} />
-          <HomeSystemHealthCard
-            status={normalizedStatus}
-            workspaceSlug={workspace.slug}
-          />
-        </div>
+        <InsightsSummaryCards snapshotRecord={snapshotRecord ?? undefined} />
 
-        <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-          <InsightsNextActions
-            goals={snapshotRecord?.snapshot.goals}
-            highlights={snapshotRecord?.snapshot.narrativeHighlights}
-          />
-          <HomeQuickActions workspaceSlug={workspace.slug} />
-        </div>
+        <InsightsNextActions
+          goals={snapshotRecord?.snapshot.goals}
+          highlights={snapshotRecord?.snapshot.narrativeHighlights}
+        />
 
         <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
           {inboxLoading ? (

@@ -43,40 +43,42 @@ export function InsightsInboxSummary({ summary }: InsightsInboxSummaryProps) {
   ];
 
   return (
-    <MomentumCard className="space-y-4">
+    <MomentumCard className="space-y-5">
       <div>
-        <h2 className="font-medium text-foreground mb-1">Inbox Snapshot</h2>
+        <h2 className="font-medium text-foreground mb-1">Inbox snapshot</h2>
         <p className="text-xs text-muted-foreground">
-          How quickly your team responds to audience messages
+          Response health across all connected channels
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="space-y-3">
         {cards.map((card) => {
           const Icon = card.icon;
           return (
             <div
               key={card.label}
-              className="rounded-2xl border border-border/40 p-4"
+              className="flex items-center justify-between rounded-2xl border border-border/40 px-4 py-3"
             >
-              <div className="flex items-center gap-2 mb-2">
-                <Icon className="h-4 w-4 text-primary" />
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  {card.label}
-                </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                    {card.label}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {card.description}
+                </p>
               </div>
-              <div className="text-2xl font-semibold text-foreground mb-1">
+              <p className="text-2xl font-semibold text-foreground">
                 {typeof card.value === "number"
                   ? card.value.toLocaleString()
                   : card.value}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {card.description}
               </p>
             </div>
           );
         })}
       </div>
-      <div className="mt-2 text-xs text-muted-foreground flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-4 border-t border-border/30 pt-3 text-xs text-muted-foreground">
         <span>
           Conversations: {summary?.totalConversations?.toLocaleString() ?? 0}
         </span>
