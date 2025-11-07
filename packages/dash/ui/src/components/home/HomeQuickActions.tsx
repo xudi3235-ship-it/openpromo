@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Calendar, PenSquare, Zap } from "lucide-react";
+import { MomentumCard } from "@/components/momentum/MomentumCard";
 
 type HomeQuickActionsProps = {
   workspaceSlug: string;
@@ -28,8 +29,15 @@ const ACTIONS = [
 
 export function HomeQuickActions({ workspaceSlug }: HomeQuickActionsProps) {
   return (
-    <div className="bg-card border border-border/40 rounded-xl p-5 space-y-3">
-      <h2 className="text-sm font-medium text-foreground">Quick actions</h2>
+    <MomentumCard className="space-y-4" tone="subtle">
+      <div>
+        <p className="text-sm font-medium text-foreground">
+          Workspace shortcuts
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Jump into the tools you use most often
+        </p>
+      </div>
       <div className="space-y-2">
         {ACTIONS.map((action) => {
           const Icon = action.icon;
@@ -38,23 +46,26 @@ export function HomeQuickActions({ workspaceSlug }: HomeQuickActionsProps) {
               key={action.label}
               to={action.href}
               params={{ workspaceSlug }}
-              className="flex items-center gap-3 p-3 rounded-lg border border-border/30 hover:bg-muted/40 transition"
+              className="flex items-center justify-between rounded-xl border border-border/30 px-3 py-2 transition hover:bg-muted/30"
             >
-              <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
-                <Icon className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {action.label}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {action.description}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {action.label}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {action.description}
-                </p>
-              </div>
+              <span className="text-xs text-muted-foreground">Open</span>
             </Link>
           );
         })}
       </div>
-    </div>
+    </MomentumCard>
   );
 }

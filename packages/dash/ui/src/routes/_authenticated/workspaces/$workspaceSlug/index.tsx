@@ -13,6 +13,7 @@ import {
   InsightsTopContent,
   InsightsTopContentSkeleton,
 } from "@/components/insights/InsightsTopContent";
+import { MomentumCard } from "@/components/momentum/MomentumCard";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   useWorkspaceInsightSnapshot,
@@ -58,6 +59,33 @@ function WorkspaceHomePage() {
     return streaks && streaks.length > 0 ? Math.max(...streaks) : undefined;
   }, [snapshotRecord?.snapshot.goals]);
 
+  const heroSuggestion = useMemo(() => {
+    if (
+      !snapshotRecord?.snapshot.goals ||
+      snapshotRecord.snapshot.goals.length === 0
+    ) {
+      return {
+        label: "Starter cadence",
+        description:
+          "Publish three posts this week to unlock personalized targets.",
+        ctaLabel: "Set starter goal",
+        href: `/workspaces/${workspace.slug}/insights`,
+      } as const;
+    }
+
+    const primaryGoal = snapshotRecord.snapshot.goals[0];
+    const percent = Math.round(
+      Math.min(1, Math.max(primaryGoal.progressPercent ?? 0, 0)) * 100,
+    );
+
+    return {
+      label: "Stay on track",
+      description: `You are ${percent}% of the way there. Keep the cadence to protect your streak.`,
+      ctaLabel: "Review goals",
+      href: `/workspaces/${workspace.slug}/insights`,
+    } as const;
+  }, [snapshotRecord?.snapshot.goals, workspace.slug]);
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -66,6 +94,12 @@ function WorkspaceHomePage() {
           workspaceSlug={workspace.slug}
           highlight={heroHighlight}
           streak={topStreak}
+          isLoading={snapshotPending}
+          suggestion={!snapshotPending ? heroSuggestion : undefined}
+        />
+
+        <InsightsGoalProgress
+          goals={snapshotRecord?.snapshot.goals}
           isLoading={snapshotPending}
         />
 
@@ -78,14 +112,22 @@ function WorkspaceHomePage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+          <InsightsNextActions
+            goals={snapshotRecord?.snapshot.goals}
+            highlights={snapshotRecord?.snapshot.narrativeHighlights}
+          />
+          <HomeQuickActions workspaceSlug={workspace.slug} />
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
           {inboxLoading ? (
-            <div className="bg-card rounded-xl p-5 border border-border/40">
+            <MomentumCard>
               <Skeleton className="h-5 w-32 mb-4 rounded" />
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {["a", "b", "c"].map((key) => (
                   <div
                     key={key}
-                    className="rounded-lg border border-border/40 p-4 bg-background"
+                    className="rounded-xl border border-border/40 p-4"
                   >
                     <Skeleton className="h-3 w-24 mb-3 rounded" />
                     <Skeleton className="h-6 w-20 mb-2 rounded" />
@@ -93,19 +135,11 @@ function WorkspaceHomePage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </MomentumCard>
           ) : (
             <InsightsInboxSummary summary={inboxSummary} />
           )}
-          <HomeQuickActions workspaceSlug={workspace.slug} />
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-          <InsightsNextActions
-            goals={snapshotRecord?.snapshot.goals}
-            highlights={snapshotRecord?.snapshot.narrativeHighlights}
-          />
-          <div className="bg-card rounded-xl p-5 border border-border/40">
+          <MomentumCard tone="subtle" className="p-5">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="font-medium text-foreground">Top content</h2>
@@ -130,13 +164,8 @@ function WorkspaceHomePage() {
                 }
               />
             )}
-          </div>
+          </MomentumCard>
         </div>
-
-        <InsightsGoalProgress
-          goals={snapshotRecord?.snapshot.goals}
-          isLoading={snapshotPending}
-        />
       </div>
     </div>
   );

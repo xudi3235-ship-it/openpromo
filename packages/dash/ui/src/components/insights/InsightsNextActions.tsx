@@ -3,6 +3,7 @@ import type {
   InsightNarrativeHighlight,
 } from "@shared/insights";
 import { Lightbulb } from "lucide-react";
+import { MomentumCard } from "@/components/momentum/MomentumCard";
 
 type InsightsNextActionsProps = {
   goals?: InsightGoalSummary[];
@@ -49,9 +50,9 @@ export function InsightsNextActions({
   const actions = buildActions(goals, highlights);
 
   return (
-    <div className="bg-card rounded-lg p-6 border border-border/40 space-y-4">
+    <MomentumCard className="space-y-4">
       <div className="flex items-center gap-2">
-        <Lightbulb className="h-4 w-4 text-amber-500" />
+        <Lightbulb className="h-4 w-4 text-muted-foreground" />
         <div>
           <h2 className="font-medium text-foreground">Next best actions</h2>
           <p className="text-xs text-muted-foreground">
@@ -68,7 +69,7 @@ export function InsightsNextActions({
           {actions.map((action, idx) => (
             <li
               key={`${action.title}-${idx}`}
-              className="border border-border/40 rounded-lg p-4"
+              className="rounded-2xl border border-border/40 p-4"
             >
               <p className="text-sm font-medium text-foreground mb-1">
                 {action.title}
@@ -80,6 +81,6 @@ export function InsightsNextActions({
           ))}
         </ul>
       )}
-    </div>
+    </MomentumCard>
   );
 }

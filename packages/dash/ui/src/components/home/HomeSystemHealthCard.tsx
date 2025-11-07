@@ -1,6 +1,7 @@
 import type { InsightsStatus } from "@shared/insights";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { MomentumCard } from "@/components/momentum/MomentumCard";
 
 type HomeSystemHealthCardProps = {
   status?: InsightsStatus;
@@ -49,15 +50,15 @@ export function HomeSystemHealthCard({
   const items = healthItems(status, workspaceSlug);
 
   return (
-    <div className="bg-card border border-border/40 rounded-xl p-5 space-y-4">
-      <div className="flex items-center gap-2">
-        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+    <MomentumCard className="space-y-4" tone="subtle">
+      <div className="flex items-center justify-between">
         <div>
           <p className="font-medium text-sm text-foreground">System health</p>
           <p className="text-xs text-muted-foreground">
             Keep data fresh and automations running
           </p>
         </div>
+        <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
       </div>
       <div className="space-y-3">
         {items.map((item) => {
@@ -70,7 +71,7 @@ export function HomeSystemHealthCard({
               key={item.label}
               to={item.href}
               params={{ workspaceSlug }}
-              className="flex items-center justify-between rounded-lg border border-border/30 px-3 py-2 hover:bg-muted/40 transition"
+              className="flex items-center justify-between rounded-xl border border-border/30 px-3 py-2 hover:bg-muted/30 transition"
             >
               <div>
                 <p className="text-sm font-medium text-foreground">
@@ -89,6 +90,6 @@ export function HomeSystemHealthCard({
           );
         })}
       </div>
-    </div>
+    </MomentumCard>
   );
 }

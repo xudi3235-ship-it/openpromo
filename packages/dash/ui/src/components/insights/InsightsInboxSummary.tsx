@@ -1,5 +1,6 @@
 import type { InboxSummary } from "@shared/insights";
 import { Inbox, Reply, Timer } from "lucide-react";
+import { MomentumCard } from "@/components/momentum/MomentumCard";
 
 type InsightsInboxSummaryProps = {
   summary?: InboxSummary;
@@ -42,8 +43,8 @@ export function InsightsInboxSummary({ summary }: InsightsInboxSummaryProps) {
   ];
 
   return (
-    <div className="bg-card rounded-lg p-6 border border-border/40">
-      <div className="mb-4">
+    <MomentumCard className="space-y-4">
+      <div>
         <h2 className="font-medium text-foreground mb-1">Inbox Snapshot</h2>
         <p className="text-xs text-muted-foreground">
           How quickly your team responds to audience messages
@@ -55,7 +56,7 @@ export function InsightsInboxSummary({ summary }: InsightsInboxSummaryProps) {
           return (
             <div
               key={card.label}
-              className="rounded-lg border border-border/40 p-4 bg-background"
+              className="rounded-2xl border border-border/40 p-4"
             >
               <div className="flex items-center gap-2 mb-2">
                 <Icon className="h-4 w-4 text-primary" />
@@ -75,7 +76,7 @@ export function InsightsInboxSummary({ summary }: InsightsInboxSummaryProps) {
           );
         })}
       </div>
-      <div className="mt-4 text-xs text-muted-foreground flex items-center gap-4">
+      <div className="mt-2 text-xs text-muted-foreground flex flex-wrap gap-4">
         <span>
           Conversations: {summary?.totalConversations?.toLocaleString() ?? 0}
         </span>
@@ -83,6 +84,6 @@ export function InsightsInboxSummary({ summary }: InsightsInboxSummaryProps) {
           Open threads: {summary?.openMessages?.toLocaleString() ?? 0}
         </span>
       </div>
-    </div>
+    </MomentumCard>
   );
 }
