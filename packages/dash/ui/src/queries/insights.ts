@@ -1,15 +1,8 @@
-import type {
-  InboxSummary,
-  WorkspaceInsightSnapshotRecord,
-} from "@shared/insights";
+import type { AllPlatforms } from "@shared/content";
+import type { WorkspaceInsightSnapshotRecord } from "@shared/insights";
 import { type QueryClient, useQuery } from "@tanstack/react-query";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import {
-  convertHonoQueryOptions,
-  type UseHonoQueryOptions,
-  useHonoQuery,
-} from "@/lib/hono-client";
 import { orpc } from "@/lib/orpc-client";
 import { QUERY_KEYS } from "@/lib/query";
 
@@ -17,20 +10,23 @@ import { QUERY_KEYS } from "@/lib/query";
  * Query options for workspace insights summary
  */
 const workspaceInsightsSummaryQueryOpts = (workspaceSlug: string) => ({
+  ...orpc.insights.getSummary.queryOptions({
+    input: { workspaceSlug },
+  }),
   queryKey: QUERY_KEYS.WORKSPACE_INSIGHTS_SUMMARY(workspaceSlug),
-  queryFn: (api: typeof import("@/lib/hono-client").apiClient) =>
-    api.workspaces[":workspaceSlug"].insights.summary.$get({
-      param: { workspaceSlug },
-    }),
+  staleTime: 1000 * 60 * 5,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
 });
 
 const workspaceInsightsStatusQueryOpts = (workspaceSlug: string) => ({
+  ...orpc.insights.getStatus.queryOptions({
+    input: { workspaceSlug },
+  }),
   queryKey: QUERY_KEYS.WORKSPACE_INSIGHTS_STATUS(workspaceSlug),
-  queryFn: (api: typeof import("@/lib/hono-client").apiClient) =>
-    api.workspaces[":workspaceSlug"].insights.status.$get({
-      param: { workspaceSlug },
-    }),
   staleTime: 1000 * 60 * 5,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
 });
 
 /**
@@ -40,18 +36,14 @@ export const prefetchWorkspaceInsightsSummary = (
   queryClient: QueryClient,
   workspaceSlug: string,
 ) => {
-  queryClient.prefetchQuery(
-    convertHonoQueryOptions(workspaceInsightsSummaryQueryOpts(workspaceSlug)),
-  );
+  queryClient.prefetchQuery(workspaceInsightsSummaryQueryOpts(workspaceSlug));
 };
 
 export const prefetchWorkspaceInsightsStatus = (
   queryClient: QueryClient,
   workspaceSlug: string,
 ) => {
-  queryClient.prefetchQuery(
-    convertHonoQueryOptions(workspaceInsightsStatusQueryOpts(workspaceSlug)),
-  );
+  queryClient.prefetchQuery(workspaceInsightsStatusQueryOpts(workspaceSlug));
 };
 
 /**
@@ -61,24 +53,13 @@ export const prefetchWorkspaceInsightsStatus = (
 export const useWorkspaceInsightsSummary = () => {
   const { workspace } = useWorkspace();
 
-  return useHonoQuery({
-    ...workspaceInsightsSummaryQueryOpts(workspace.slug),
-    errorMessage: "Failed to load workspace insights summary",
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
+  return useQuery(workspaceInsightsSummaryQueryOpts(workspace.slug));
 };
 
 export const useWorkspaceInsightsStatus = () => {
   const { workspace } = useWorkspace();
 
-  return useHonoQuery({
-    ...workspaceInsightsStatusQueryOpts(workspace.slug),
-    errorMessage: "Failed to load insight refresh status",
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
+  return useQuery(workspaceInsightsStatusQueryOpts(workspace.slug));
 };
 
 export type TimeSeriesQueryParams = {
@@ -110,21 +91,20 @@ const workspaceInsightsTimeSeriesQueryOpts = (
     );
 
   return {
+    ...orpc.insights.getTimeSeries.queryOptions({
+      input: {
+        workspaceSlug,
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        interval,
+      },
+    }),
     queryKey: QUERY_KEYS.WORKSPACE_INSIGHTS_TIMESERIES(
       workspaceSlug,
       startDate,
       endDate,
       interval,
     ),
-    queryFn: (api: typeof import("@/lib/hono-client").apiClient) =>
-      api.workspaces[":workspaceSlug"].insights.timeseries.$get({
-        param: { workspaceSlug },
-        query: {
-          start: startDate.toISOString(),
-          end: endDate.toISOString(),
-          interval,
-        },
-      }),
   };
 };
 
@@ -137,9 +117,7 @@ export const prefetchWorkspaceInsightsTimeSeries = (
   params: TimeSeriesQueryParams = {},
 ) => {
   queryClient.prefetchQuery(
-    convertHonoQueryOptions(
-      workspaceInsightsTimeSeriesQueryOpts(workspaceSlug, params),
-    ),
+    workspaceInsightsTimeSeriesQueryOpts(workspaceSlug, params),
   );
 };
 
@@ -152,9 +130,16 @@ export const useWorkspaceInsightsTimeSeries = (
 ) => {
   const { workspace } = useWorkspace();
 
-  return useHonoQuery({
+  return useQuery({
     ...workspaceInsightsTimeSeriesQueryOpts(workspace.slug, params),
-    errorMessage: "Failed to load workspace insights time series",
+    select: (data) =>
+      data?.map((point) => ({
+        ...point,
+        bucket:
+          typeof point.bucket === "string"
+            ? point.bucket
+            : new Date(point.bucket).toISOString(),
+      })),
   });
 };
 
@@ -163,7 +148,7 @@ export type TopContentQueryParams = {
   sortBy?: "impressions" | "engagement";
   start?: Date;
   end?: Date;
-  platform?: string;
+  platform?: AllPlatforms;
 };
 
 /**
@@ -176,6 +161,16 @@ const workspaceInsightsTopContentQueryOpts = (
   const { limit = 5, sortBy = "impressions", start, end, platform } = params;
 
   return {
+    ...orpc.insights.getTopContent.queryOptions({
+      input: {
+        workspaceSlug,
+        limit,
+        sortBy,
+        start: start?.toISOString(),
+        end: end?.toISOString(),
+        platform,
+      },
+    }),
     queryKey: QUERY_KEYS.WORKSPACE_INSIGHTS_TOP_CONTENT(
       workspaceSlug,
       limit,
@@ -184,17 +179,6 @@ const workspaceInsightsTopContentQueryOpts = (
       end?.toISOString(),
       platform ?? null,
     ),
-    queryFn: (api: typeof import("@/lib/hono-client").apiClient) =>
-      api.workspaces[":workspaceSlug"].insights["top-content"].$get({
-        param: { workspaceSlug },
-        query: {
-          limit: limit.toString(),
-          sortBy,
-          start: start?.toISOString(),
-          end: end?.toISOString(),
-          platform: platform ?? undefined,
-        },
-      }),
   };
 };
 
@@ -207,9 +191,7 @@ export const prefetchWorkspaceInsightsTopContent = (
   params: TopContentQueryParams = {},
 ) => {
   queryClient.prefetchQuery(
-    convertHonoQueryOptions(
-      workspaceInsightsTopContentQueryOpts(workspaceSlug, params),
-    ),
+    workspaceInsightsTopContentQueryOpts(workspaceSlug, params),
   );
 };
 
@@ -222,10 +204,9 @@ export const useWorkspaceInsightsTopContent = (
 ) => {
   const { workspace } = useWorkspace();
 
-  return useHonoQuery<{ items: unknown[] }>({
+  return useQuery({
     ...workspaceInsightsTopContentQueryOpts(workspace.slug, params),
-    errorMessage: "Failed to load workspace top content",
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     select: (data) => ({
@@ -234,35 +215,27 @@ export const useWorkspaceInsightsTopContent = (
   });
 };
 
-const workspaceInboxSummaryQueryOpts = (
-  workspaceSlug: string,
-): UseHonoQueryOptions<InboxSummary> => ({
+const workspaceInboxSummaryQueryOpts = (workspaceSlug: string) => ({
+  ...orpc.insights.getInboxSummary.queryOptions({
+    input: { workspaceSlug },
+  }),
   queryKey: QUERY_KEYS.WORKSPACE_INSIGHTS_INBOX_SUMMARY(workspaceSlug),
-  queryFn: (api: typeof import("@/lib/hono-client").apiClient) =>
-    api.workspaces[":workspaceSlug"].insights["inbox"].summary.$get({
-      param: { workspaceSlug },
-    }),
+  staleTime: 1000 * 60 * 5,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
 });
 
 export const prefetchWorkspaceInsightsInboxSummary = (
   queryClient: QueryClient,
   workspaceSlug: string,
 ) => {
-  queryClient.prefetchQuery(
-    convertHonoQueryOptions(workspaceInboxSummaryQueryOpts(workspaceSlug)),
-  );
+  queryClient.prefetchQuery(workspaceInboxSummaryQueryOpts(workspaceSlug));
 };
 
 export const useWorkspaceInsightsInboxSummary = () => {
   const { workspace } = useWorkspace();
 
-  return useHonoQuery({
-    ...workspaceInboxSummaryQueryOpts(workspace.slug),
-    errorMessage: "Failed to load inbox insights",
-    staleTime: 1000 * 60 * 5,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
+  return useQuery(workspaceInboxSummaryQueryOpts(workspace.slug));
 };
 
 export const useWorkspaceInsightSnapshot = () => {
