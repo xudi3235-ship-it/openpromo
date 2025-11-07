@@ -11,7 +11,10 @@ import {
   useWorkspaceInsightsTimeSeries,
   useWorkspaceInsightsTopContent,
 } from "@/queries/insights";
+import { InsightsGoalProgress } from "./InsightsGoalProgress";
 import { InsightsInboxSummary } from "./InsightsInboxSummary";
+import { InsightsNarrativeHighlights } from "./InsightsNarrativeHighlights";
+import { InsightsNextActions } from "./InsightsNextActions";
 import { InsightsSummaryCards } from "./InsightsSummaryCards";
 import { InsightsTimeSeriesChart } from "./InsightsTimeSeriesChart";
 import {
@@ -142,6 +145,18 @@ export function InsightsPage() {
           <InsightsSummaryCards snapshotRecord={snapshot ?? undefined} />
         )}
 
+        {/* Narrative Highlights & Next Actions */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <InsightsNarrativeHighlights
+            highlights={snapshot?.snapshot.narrativeHighlights}
+            isLoading={snapshotPending}
+          />
+          <InsightsNextActions
+            goals={snapshot?.snapshot.goals}
+            highlights={snapshot?.snapshot.narrativeHighlights}
+          />
+        </div>
+
         {/* Inbox Summary */}
         {inboxSummaryLoading ? (
           <div className="bg-card rounded-lg p-6 border border-border/40">
@@ -163,21 +178,27 @@ export function InsightsPage() {
           <InsightsInboxSummary summary={inboxSummary} />
         )}
 
-        {/* Time Series Chart */}
-        <div className="bg-card rounded-lg p-6 border border-border/40">
-          <div className="mb-4">
-            <h2 className="font-medium text-foreground mb-1">
-              Performance Over Time
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Impressions and engagement trends
-            </p>
+        {/* Goals & Time Series */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <InsightsGoalProgress
+            goals={snapshot?.snapshot.goals}
+            isLoading={snapshotPending}
+          />
+          <div className="bg-card rounded-lg p-6 border border-border/40">
+            <div className="mb-4">
+              <h2 className="font-medium text-foreground mb-1">
+                Performance Over Time
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Impressions and engagement trends
+              </p>
+            </div>
+            {timeSeriesLoading ? (
+              <Skeleton className="h-[300px] rounded" />
+            ) : (
+              <InsightsTimeSeriesChart data={timeSeries} />
+            )}
           </div>
-          {timeSeriesLoading ? (
-            <Skeleton className="h-[300px] rounded" />
-          ) : (
-            <InsightsTimeSeriesChart data={timeSeries} />
-          )}
         </div>
 
         {/* Top Content */}
