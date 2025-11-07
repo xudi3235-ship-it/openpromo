@@ -1,55 +1,37 @@
+import type { WorkspaceInsightSnapshotRecord } from "@shared/insights";
 import { formatDistanceToNow } from "date-fns";
 import {
-  Eye,
   Heart,
   MessageCircle,
   MousePointerClick,
-  Share2,
   TrendingUp,
   Users,
 } from "lucide-react";
 
-type SummaryData = {
-  totals: {
-    impressions?: number;
-    engagement?: number;
-    reach?: number;
-    clicks?: number;
-    likes?: number;
-    comments?: number;
-    shares?: number;
-  };
-  lastRefreshedAt: string | null;
-};
-
 type InsightsSummaryCardsProps = {
-  summary?: SummaryData;
+  snapshotRecord?: WorkspaceInsightSnapshotRecord;
 };
 
-export function InsightsSummaryCards({ summary }: InsightsSummaryCardsProps) {
-  const totals = summary?.totals ?? {
-    impressions: 0,
-    engagement: 0,
-    reach: 0,
-    clicks: 0,
-    likes: 0,
-    comments: 0,
-    shares: 0,
+export function InsightsSummaryCards({
+  snapshotRecord,
+}: InsightsSummaryCardsProps) {
+  const funnel = snapshotRecord?.snapshot.funnel;
+
+  const totals = {
+    reach: funnel?.awareness ?? 0,
+    engagement: funnel?.engagement ?? 0,
+    clicks: funnel?.clicks ?? 0,
+    conversions: funnel?.conversions ?? 0,
+    conversionRate: funnel?.conversionRate ?? 0,
   };
 
-  const lastRefreshed = summary?.lastRefreshedAt
-    ? formatDistanceToNow(new Date(summary.lastRefreshedAt), {
+  const lastRefreshed = snapshotRecord?.snapshotDate
+    ? formatDistanceToNow(new Date(snapshotRecord.snapshotDate), {
         addSuffix: true,
       })
     : null;
 
   const cards = [
-    {
-      label: "Total Impressions",
-      value: totals.impressions ?? 0,
-      icon: Eye,
-      color: "text-blue-500",
-    },
     {
       label: "Total Engagement",
       value: totals.engagement ?? 0,
@@ -58,33 +40,27 @@ export function InsightsSummaryCards({ summary }: InsightsSummaryCardsProps) {
     },
     {
       label: "Reach",
-      value: totals.reach ?? 0,
+      value: totals.reach,
       icon: Users,
       color: "text-teal-500",
     },
     {
       label: "Clicks",
-      value: totals.clicks ?? 0,
+      value: totals.clicks,
       icon: MousePointerClick,
       color: "text-purple-500",
     },
     {
-      label: "Likes",
-      value: totals.likes ?? 0,
+      label: "Conversions",
+      value: totals.conversions,
       icon: Heart,
       color: "text-red-500",
     },
     {
-      label: "Comments",
-      value: totals.comments ?? 0,
+      label: "Conversion Rate",
+      value: totals.conversionRate,
       icon: MessageCircle,
       color: "text-yellow-500",
-    },
-    {
-      label: "Shares",
-      value: totals.shares ?? 0,
-      icon: Share2,
-      color: "text-indigo-500",
     },
   ];
 

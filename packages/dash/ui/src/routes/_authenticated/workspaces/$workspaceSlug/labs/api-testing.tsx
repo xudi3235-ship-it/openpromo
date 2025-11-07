@@ -1,5 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { orpc } from "@/lib/orpc-client";
 import {
@@ -14,6 +14,14 @@ function ApiTestingPage() {
   const analyticsMutation = useTestAnalyticsWriteMutation();
   const planetListQuery = useQuery(
     orpc.planet.list.queryOptions({ input: {} }),
+  );
+
+  const snapshotMutation = useMutation(
+    orpc.insights.getSnapshot.mutationOptions({
+      onSuccess: () => {
+        // no-op; query invalidation handled via generated helpers if needed
+      },
+    }),
   );
 
   return (
@@ -48,6 +56,19 @@ function ApiTestingPage() {
           disabled={analyticsMutation.isPending}
         >
           {analyticsMutation.isPending ? "Testing..." : "Test Analytics Write"}
+        </Button>
+
+        <Button
+          onClick={() =>
+            snapshotMutation.mutate({
+              forceRegenerate: true,
+            })
+          }
+          disabled={snapshotMutation.isPending}
+        >
+          {snapshotMutation.isPending
+            ? "Generating..."
+            : "Generate Insight Snapshot"}
         </Button>
 
         <Button

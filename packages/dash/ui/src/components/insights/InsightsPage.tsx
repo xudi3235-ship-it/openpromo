@@ -5,9 +5,9 @@ import { formatDistanceToNow, startOfDay, subDays } from "date-fns";
 import { useMemo, useState } from "react";
 import {
   type TimeSeriesQueryParams,
+  useWorkspaceInsightSnapshot,
   useWorkspaceInsightsInboxSummary,
   useWorkspaceInsightsStatus,
-  useWorkspaceInsightsSummary,
   useWorkspaceInsightsTimeSeries,
   useWorkspaceInsightsTopContent,
 } from "@/queries/insights";
@@ -49,8 +49,8 @@ export function InsightsPage() {
   }, [timeRange, interval]);
 
   // Fetch data independently
-  const { data: summary, isLoading: summaryLoading } =
-    useWorkspaceInsightsSummary();
+  const { data: snapshot, isPending: snapshotPending } =
+    useWorkspaceInsightSnapshot();
 
   const { data: timeSeries, isLoading: timeSeriesLoading } =
     useWorkspaceInsightsTimeSeries(dateRange);
@@ -125,7 +125,7 @@ export function InsightsPage() {
         </div>
 
         {/* Summary Cards */}
-        {summaryLoading ? (
+        {snapshotPending ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {SUMMARY_SKELETON_KEYS.map((key) => (
               <div
@@ -139,7 +139,7 @@ export function InsightsPage() {
             ))}
           </div>
         ) : (
-          <InsightsSummaryCards summary={summary} />
+          <InsightsSummaryCards snapshotRecord={snapshot ?? undefined} />
         )}
 
         {/* Inbox Summary */}
