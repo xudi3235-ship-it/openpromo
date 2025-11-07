@@ -1,3 +1,4 @@
+import { Button } from "@openpromo/ui/components/button";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { InsightGoalSummary } from "@shared/insights";
@@ -5,13 +6,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { format } from "date-fns";
 import {
-  CalendarClock,
+  BarChart3,
   CheckCircle2,
   CircleCheckBig,
   ListChecks,
   MailCheck,
   MoveRight,
   Rocket,
+  Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
@@ -63,19 +65,20 @@ function WorkspaceHomePage() {
           "Publish three posts this week to unlock personalized targets.",
         ctaLabel: "Set starter goal",
         href: `/workspaces/${workspace.slug}/insights`,
+        progressPercent: 0,
       } as const;
     }
 
     const primaryGoal = snapshotRecord.snapshot.goals[0];
-    const percent = Math.round(
-      Math.min(1, Math.max(primaryGoal.progressPercent ?? 0, 0)) * 100,
-    );
+    const progress = Math.min(1, Math.max(primaryGoal.progressPercent ?? 0, 0));
+    const percent = Math.round(progress * 100);
 
     return {
       label: "Stay on track",
       description: `You are ${percent}% of the way there. Keep the cadence to protect your streak.`,
       ctaLabel: "Review goals",
       href: `/workspaces/${workspace.slug}/insights`,
+      progressPercent: progress,
     } as const;
   }, [snapshotRecord?.snapshot.goals, workspace.slug]);
 
@@ -103,28 +106,66 @@ function WorkspaceHomePage() {
 
   const primaryGoal = snapshotRecord?.snapshot.goals?.[0];
 
+  const cadencePercent = Math.min(
+    1,
+    Math.max(primaryGoal?.progressPercent ?? 0, 0),
+  );
+  const cadenceTarget = 4;
+  const cadenceCompleted = Math.round(cadencePercent * cadenceTarget);
+
+  const reachValue = snapshotRecord?.snapshot.funnel?.awareness ?? 0;
+  const reachDelta = heroHighlight?.delta ?? 0.18;
+
+  const aiGeneratedPosts = Math.max(topContent?.items?.length ?? 0, 2);
+  const aiAssistStats = {
+    generatedPosts: aiGeneratedPosts,
+    engagementLift: 0.42,
+    hoursSaved: Number((aiGeneratedPosts * 1.2).toFixed(1)),
+  } as const;
+
   return (
     <div className="min-h-screen bg-muted/15">
       <div className="mx-auto max-w-7xl space-y-6 px-6 py-8">
-        <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-          <HomeHeroCard
-            workspaceName={workspace.name}
-            workspaceSlug={workspace.slug}
-            highlight={heroHighlight}
-            streak={topStreak}
-            isLoading={snapshotPending}
-            suggestion={!snapshotPending ? heroSuggestion : undefined}
-          />
-          <AccountStatusStrip
-            isLoading={snapshotPending || inboxLoading}
-            snapshotGoals={snapshotRecord?.snapshot.goals}
-            streak={topStreak}
-            inboxOpen={inboxSummary?.openMessages}
-          />
-        </div>
+        <WorkspaceActionBar workspaceSlug={workspace.slug} />
+        <div className="grid gap-6 xl:grid-cols-12">
+          <div className="space-y-6 xl:col-span-8">
+            <HomeHeroCard
+              workspaceName={workspace.name}
+              workspaceSlug={workspace.slug}
+              highlight={heroHighlight}
+              streak={topStreak}
+              isLoading={snapshotPending}
+              suggestion={!snapshotPending ? heroSuggestion : undefined}
+            />
 
-        <div className="grid gap-5 xl:grid-cols-12">
-          <div className="space-y-5 xl:col-span-8">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <CadenceScoreCard
+                completed={cadenceCompleted}
+                target={cadenceTarget}
+                percent={cadencePercent}
+                workspaceSlug={workspace.slug}
+              />
+              <ReachMomentumCard
+                reach={reachValue}
+                deltaPercent={reachDelta}
+                workspaceSlug={workspace.slug}
+              />
+              <AiAssistWinsCard
+                generatedPosts={aiAssistStats.generatedPosts}
+                engagementLift={aiAssistStats.engagementLift}
+                hoursSaved={aiAssistStats.hoursSaved}
+                workspaceSlug={workspace.slug}
+              />
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-2">
+              <WeeklyPlanCard stats={weeklyPlan} />
+              <WeeklyGoalCard
+                goal={primaryGoal}
+                workspaceSlug={workspace.slug}
+              />
+            </div>
+
             <ToDoListCard
               workspaceSlug={workspace.slug}
               actions={actionItems}
@@ -135,57 +176,70 @@ function WorkspaceHomePage() {
               isLoading={snapshotPending || inboxLoading}
             />
 
-            <PlannerPanel
-              goals={snapshotRecord?.snapshot.goals}
-              isGoalsLoading={snapshotPending}
-              items={plannerItems}
-              workspaceSlug={workspace.slug}
-            />
-
             <InsightsSummaryCards
               snapshotRecord={snapshotRecord ?? undefined}
             />
-
-            <div className="grid gap-5 lg:grid-cols-2">
-              <MomentumCard tone="subtle" className="p-5">
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <h2 className="font-medium text-foreground">
-                      Posts & reels
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      Performance highlights from the last 60 days
-                    </p>
-                  </div>
-                  <Link
-                    to="/workspaces/$workspaceSlug/insights"
-                    params={{ workspaceSlug: workspace.slug }}
-                    className="text-xs text-primary hover:underline"
-                  >
-                    View all
-                  </Link>
-                </div>
-                {topContentLoading ? (
-                  <InsightsTopContentSkeleton rows={3} />
-                ) : (
-                  <InsightsTopContent
-                    items={
-                      ((topContent?.items ?? []) as MergedContentEntity[]) ?? []
-                    }
-                  />
-                )}
-              </MomentumCard>
-
-              <RecentAdsCard />
-            </div>
           </div>
 
-          <div className="space-y-5 xl:col-span-4">
-            <WeeklyPlanCard stats={weeklyPlan} />
-            <WeeklyGoalCard goal={primaryGoal} workspaceSlug={workspace.slug} />
+          <div className="space-y-6 xl:col-span-4">
+            <AccountStatusStrip
+              isLoading={snapshotPending || inboxLoading}
+              snapshotGoals={snapshotRecord?.snapshot.goals}
+              streak={topStreak}
+              inboxOpen={inboxSummary?.openMessages}
+            />
+            <UpcomingScheduleCard
+              items={plannerItems}
+              isLoading={topContentLoading}
+              workspaceSlug={workspace.slug}
+            />
+            <TopContentCard
+              isLoading={topContentLoading}
+              items={((topContent?.items ?? []) as MergedContentEntity[]) ?? []}
+              workspaceSlug={workspace.slug}
+            />
             <MarketingQuickLinks workspaceSlug={workspace.slug} />
-            <EstimatedResultsCard />
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type WorkspaceActionBarProps = {
+  workspaceSlug: string;
+};
+
+function WorkspaceActionBar({ workspaceSlug }: WorkspaceActionBarProps) {
+  return (
+    <div className="sticky top-0 z-30 border border-border/60 bg-background/90 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:rounded-2xl">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-start">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild size="sm">
+            <Link
+              to="/workspaces/$workspaceSlug/composer"
+              params={{ workspaceSlug }}
+            >
+              Create post
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link
+              to="/workspaces/$workspaceSlug/calendar"
+              params={{ workspaceSlug }}
+              search={{ view: "week" }}
+            >
+              Plan calendar
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="ghost">
+            <Link
+              to="/workspaces/$workspaceSlug/insights"
+              params={{ workspaceSlug }}
+            >
+              View insights
+            </Link>
+          </Button>
         </div>
       </div>
     </div>
@@ -485,116 +539,6 @@ function ToDoListCard({
   );
 }
 
-type PlannerPanelProps = {
-  goals?: InsightGoalSummary[];
-  isGoalsLoading: boolean;
-  items: PlannerItem[];
-  workspaceSlug: string;
-};
-
-function PlannerPanel({
-  goals,
-  isGoalsLoading,
-  items,
-  workspaceSlug,
-}: PlannerPanelProps) {
-  return (
-    <MomentumCard className="space-y-5">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-sm font-medium text-foreground">Planner</p>
-          <p className="text-xs text-muted-foreground">
-            Track weekly cadence and upcoming scheduled content
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            to="/workspaces/$workspaceSlug/calendar"
-            params={{ workspaceSlug }}
-            search={{ view: "week" }}
-            className="text-xs text-primary hover:underline"
-          >
-            Calendar
-          </Link>
-          <span className="text-muted-foreground">·</span>
-          <Link
-            to="/workspaces/$workspaceSlug/composer"
-            params={{ workspaceSlug }}
-            className="text-xs text-primary hover:underline"
-          >
-            Create post
-          </Link>
-        </div>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
-        <PlannerGoalList goals={goals} isLoading={isGoalsLoading} />
-        <UpcomingScheduleList items={items} />
-      </div>
-    </MomentumCard>
-  );
-}
-
-type PlannerGoalListProps = {
-  goals?: InsightGoalSummary[];
-  isLoading: boolean;
-};
-
-function PlannerGoalList({ goals, isLoading }: PlannerGoalListProps) {
-  if (isLoading) {
-    return (
-      <div className="space-y-2 rounded-2xl border border-border/40 p-4">
-        {[0, 1, 2].map((idx) => (
-          <div key={idx} className="space-y-2">
-            <Skeleton className="h-4 w-32 rounded" />
-            <Skeleton className="h-2.5 w-full rounded" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (!goals?.length) {
-    return (
-      <div className="flex h-full flex-col justify-center gap-1 rounded-2xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
-        <span>No goals yet.</span>
-        <span>Set a cadence to unlock personalized planning.</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3 rounded-2xl border border-border/40 p-4">
-      {goals.map((goal) => {
-        const percent = Math.min(Math.max(goal.progressPercent ?? 0, 0), 1);
-        return (
-          <div key={goal.goalId}>
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="uppercase tracking-wide">{goal.status}</span>
-              {goal.streak ? (
-                <span className="text-emerald-500">
-                  {goal.streak} wk streak
-                </span>
-              ) : null}
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-semibold text-foreground">
-                {(percent * 100).toFixed(0)}%
-              </span>
-              <div className="h-2 flex-1 rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary transition-[width]"
-                  style={{ width: `${percent * 100}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 type UpcomingScheduleListProps = {
   items: PlannerItem[];
 };
@@ -631,12 +575,216 @@ function UpcomingScheduleList({ items }: UpcomingScheduleListProps) {
   );
 }
 
+type UpcomingScheduleCardProps = {
+  items: PlannerItem[];
+  isLoading: boolean;
+  workspaceSlug: string;
+};
+
+function UpcomingScheduleCard({
+  items,
+  isLoading,
+  workspaceSlug,
+}: UpcomingScheduleCardProps) {
+  return (
+    <MomentumCard className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-foreground">
+            Upcoming schedule
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Review what&#39;s queued next
+          </p>
+        </div>
+        <Link
+          to="/workspaces/$workspaceSlug/calendar"
+          params={{ workspaceSlug }}
+          search={{ view: "week" }}
+          className="text-xs text-primary hover:underline"
+        >
+          Open calendar
+        </Link>
+      </div>
+      {isLoading ? (
+        <div className="space-y-3">
+          {[0, 1, 2].map((idx) => (
+            <div
+              key={idx}
+              className="space-y-2 rounded-2xl border border-border/40 p-4"
+            >
+              <Skeleton className="h-3 w-16 rounded" />
+              <Skeleton className="h-4 w-48 rounded" />
+              <Skeleton className="h-3 w-32 rounded" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <UpcomingScheduleList items={items} />
+      )}
+      <Button asChild variant="outline" size="sm">
+        <Link
+          to="/workspaces/$workspaceSlug/composer"
+          params={{ workspaceSlug }}
+        >
+          Queue another post
+        </Link>
+      </Button>
+    </MomentumCard>
+  );
+}
+
+type CadenceScoreCardProps = {
+  completed: number;
+  target: number;
+  percent: number;
+  workspaceSlug: string;
+};
+
+function CadenceScoreCard({
+  completed,
+  target,
+  percent,
+  workspaceSlug,
+}: CadenceScoreCardProps) {
+  const remaining = Math.max(target - completed, 0);
+
+  return (
+    <MomentumCard className="space-y-3">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+        <BarChart3 className="h-4 w-4" />
+        Cadence score
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-semibold text-foreground">
+          {completed}/{target}
+        </span>
+        <span className="text-sm text-muted-foreground">posts this week</span>
+      </div>
+      <div className="h-2 rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-primary transition-[width]"
+          style={{ width: `${Math.round(percent * 100)}%` }}
+        />
+      </div>
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>{remaining ? `${remaining} to stay on track` : "Goal met"}</span>
+        <Link
+          to="/workspaces/$workspaceSlug/composer"
+          params={{ workspaceSlug }}
+          className="text-primary"
+        >
+          Queue a post
+        </Link>
+      </div>
+    </MomentumCard>
+  );
+}
+
+type ReachMomentumCardProps = {
+  reach: number;
+  deltaPercent: number;
+  workspaceSlug: string;
+};
+
+function ReachMomentumCard({
+  reach,
+  deltaPercent,
+  workspaceSlug,
+}: ReachMomentumCardProps) {
+  const formattedReach = new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(reach || 0);
+
+  const deltaLabel = `${deltaPercent >= 0 ? "▲" : "▼"} ${Math.abs(
+    Math.round(deltaPercent * 100),
+  )}% vs last week`;
+
+  return (
+    <MomentumCard className="space-y-3">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+        <TrendingUp className="h-4 w-4" />
+        Reach momentum
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-semibold text-foreground">
+          {formattedReach}
+        </span>
+        <span className="text-sm text-muted-foreground">accounts reached</span>
+      </div>
+      <div className="text-xs font-medium text-emerald-500">{deltaLabel}</div>
+      <Button asChild variant="outline" size="sm" className="w-full">
+        <Link
+          to="/workspaces/$workspaceSlug/insights"
+          params={{ workspaceSlug }}
+        >
+          Review insights
+        </Link>
+      </Button>
+    </MomentumCard>
+  );
+}
+
+type AiAssistWinsCardProps = {
+  generatedPosts: number;
+  engagementLift: number;
+  hoursSaved: number;
+  workspaceSlug: string;
+};
+
+function AiAssistWinsCard({
+  generatedPosts,
+  engagementLift,
+  hoursSaved,
+  workspaceSlug,
+}: AiAssistWinsCardProps) {
+  return (
+    <MomentumCard className="space-y-4">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+        <Sparkles className="h-4 w-4" />
+        AI assist wins
+      </div>
+      <div>
+        <p className="text-3xl font-semibold text-foreground">
+          {generatedPosts}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          AI-generated assets published
+        </p>
+      </div>
+      <div className="rounded-2xl border border-border/40 p-3 text-xs text-muted-foreground">
+        <div className="flex items-center justify-between">
+          <span>Engagement lift</span>
+          <span className="text-emerald-500 font-medium">
+            +{Math.round(engagementLift * 100)}%
+          </span>
+        </div>
+        <div className="mt-1 flex items-center justify-between">
+          <span>Hours saved</span>
+          <span>{hoursSaved} hrs</span>
+        </div>
+      </div>
+      <Button asChild size="sm" className="w-full">
+        <Link
+          to="/workspaces/$workspaceSlug/content"
+          params={{ workspaceSlug }}
+        >
+          View AI library
+        </Link>
+      </Button>
+    </MomentumCard>
+  );
+}
+
 type WeeklyPlanCardProps = {
   stats: WeeklyPlanStats;
 };
 
 function WeeklyPlanCard({ stats }: WeeklyPlanCardProps) {
   const remaining = Math.max(stats.total - stats.completed, 0);
+  const completionPercent = Math.round(stats.completionPercent * 100);
+  const ringAngle = (completionPercent / 100) * 360;
 
   return (
     <MomentumCard className="space-y-4">
@@ -647,30 +795,16 @@ function WeeklyPlanCard({ stats }: WeeklyPlanCardProps) {
         </p>
       </div>
       <div className="flex items-center gap-4">
-        <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-          <svg className="h-16 w-16 -rotate-90" viewBox="0 0 36 36">
-            <path
-              d="M18 2.0845
-               a 15.9155 15.9155 0 0 1 0 31.831
-               a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              className="text-muted"
-            />
-            <path
-              d="M18 2.0845
-               a 15.9155 15.9155 0 0 1 0 31.831"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeDasharray={`${stats.completionPercent * 100}, 100`}
-              className="text-primary"
-            />
-          </svg>
-          <div className="absolute flex flex-col items-center">
-            <span className="text-lg font-semibold text-foreground">
-              {(stats.completionPercent * 100).toFixed(0)}%
+        <div className="relative h-24 w-24">
+          <div
+            className="h-full w-full rounded-full"
+            style={{
+              background: `conic-gradient(hsl(var(--primary)) ${ringAngle}deg, hsl(var(--muted)) ${ringAngle}deg 360deg)`,
+            }}
+          />
+          <div className="absolute inset-3 flex flex-col items-center justify-center rounded-full bg-background text-center">
+            <span className="text-2xl font-semibold text-foreground">
+              {completionPercent}%
             </span>
             <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
               Complete
@@ -751,6 +885,45 @@ function WeeklyGoalCard({ goal, workspaceSlug }: WeeklyGoalCardProps) {
   );
 }
 
+type TopContentCardProps = {
+  items: MergedContentEntity[];
+  isLoading: boolean;
+  workspaceSlug: string;
+};
+
+function TopContentCard({
+  items,
+  isLoading,
+  workspaceSlug,
+}: TopContentCardProps) {
+  return (
+    <MomentumCard tone="subtle" className="space-y-4 p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-foreground">
+            Top content momentum
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Highlights from the last 60 days
+          </p>
+        </div>
+        <Link
+          to="/workspaces/$workspaceSlug/insights"
+          params={{ workspaceSlug }}
+          className="text-xs text-primary hover:underline"
+        >
+          View all
+        </Link>
+      </div>
+      {isLoading ? (
+        <InsightsTopContentSkeleton rows={3} />
+      ) : (
+        <InsightsTopContent items={items} />
+      )}
+    </MomentumCard>
+  );
+}
+
 type MarketingQuickLinksProps = {
   workspaceSlug: string;
 };
@@ -813,94 +986,6 @@ function MarketingQuickLinks({ workspaceSlug }: MarketingQuickLinksProps) {
           <MoveRight className="h-4 w-4 text-muted-foreground" />
         </Link>
       </div>
-    </MomentumCard>
-  );
-}
-
-function EstimatedResultsCard() {
-  return (
-    <MomentumCard className="space-y-4">
-      <div className="flex items-center gap-2">
-        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-        <div>
-          <p className="text-sm font-medium text-foreground">
-            Estimated results
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Projected performance for your next boost
-          </p>
-        </div>
-      </div>
-      <div className="rounded-2xl border border-border/40 p-4 text-sm text-muted-foreground">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Daily budget</span>
-          <span>$25</span>
-        </div>
-        <div className="mt-2 h-1.5 rounded-full bg-muted">
-          <div className="h-full w-2/3 rounded-full bg-primary" />
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Increase your budget to reach more people in the next 7 days.
-        </p>
-      </div>
-      <div className="rounded-2xl border border-border/40 p-4 text-xs text-muted-foreground">
-        <div className="flex items-center justify-between">
-          <span>Estimated reach</span>
-          <span>1.7K - 5K</span>
-        </div>
-        <div className="mt-2 flex items-center justify-between">
-          <span>Estimated replies</span>
-          <span>15 - 42</span>
-        </div>
-      </div>
-    </MomentumCard>
-  );
-}
-
-function RecentAdsCard() {
-  const ads = [
-    {
-      id: "recent-1",
-      title: "Boosted Instagram media",
-      goal: "Get more website visitors",
-      completedAt: "Completed on Oct 21",
-    },
-    {
-      id: "recent-2",
-      title: "Post engagements",
-      goal: "Post Engagements",
-      completedAt: "Completed on Nov 5",
-    },
-  ];
-
-  return (
-    <MomentumCard className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-foreground">Recent ads</p>
-          <p className="text-xs text-muted-foreground">
-            Performance from the last 60 days
-          </p>
-        </div>
-        <CalendarClock className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <div className="space-y-3">
-        {ads.map((ad) => (
-          <div
-            key={ad.id}
-            className="rounded-2xl border border-border/40 p-4 text-sm"
-          >
-            <p className="font-medium text-foreground">{ad.title}</p>
-            <p className="text-xs text-muted-foreground">{ad.completedAt}</p>
-            <p className="mt-2 text-xs uppercase tracking-wide text-muted-foreground">
-              Goal: {ad.goal}
-            </p>
-          </div>
-        ))}
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Ads created in the last 60 days will appear here.
-      </p>
     </MomentumCard>
   );
 }
