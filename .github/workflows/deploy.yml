@@ -77,6 +77,8 @@ jobs:
         working-directory: packages/dash
         run: pnpm deploy:${{ github.ref_name }}
         env:
+          VITE_PUBLIC_POSTHOG_KEY: ${{ secrets.VITE_PUBLIC_POSTHOG_KEY }}
+          VITE_PUBLIC_POSTHOG_HOST: ${{ secrets.VITE_PUBLIC_POSTHOG_HOST }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           POSTHOG_CLI_TOKEN: ${{ secrets.POSTHOG_CLI_TOKEN }}
