@@ -1,7 +1,12 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
-import type { InsightGoalSummary } from "@shared/insights";
+import type {
+  AiMediaImpact,
+  CadenceSummary,
+  InsightGoalSummary,
+  ReachMomentum,
+} from "@shared/insights";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { format } from "date-fns";
@@ -13,9 +18,9 @@ import {
   MailCheck,
   MoveRight,
   Rocket,
-  Sparkles,
   Target,
   TrendingUp,
+  Wand2,
 } from "lucide-react";
 import { useMemo } from "react";
 import { HomeHeroCard } from "@/components/home/HomeHeroCard";
@@ -105,23 +110,9 @@ function WorkspaceHomePage() {
   );
 
   const primaryGoal = snapshotRecord?.snapshot.goals?.[0];
-
-  const cadencePercent = Math.min(
-    1,
-    Math.max(primaryGoal?.progressPercent ?? 0, 0),
-  );
-  const cadenceTarget = 4;
-  const cadenceCompleted = Math.round(cadencePercent * cadenceTarget);
-
-  const reachValue = snapshotRecord?.snapshot.funnel?.awareness ?? 0;
-  const reachDelta = heroHighlight?.delta ?? 0.18;
-
-  const aiGeneratedPosts = Math.max(topContent?.items?.length ?? 0, 2);
-  const aiAssistStats = {
-    generatedPosts: aiGeneratedPosts,
-    engagementLift: 0.42,
-    hoursSaved: Number((aiGeneratedPosts * 1.2).toFixed(1)),
-  } as const;
+  const cadenceSummary = snapshotRecord?.snapshot.cadenceSummary;
+  const reachMomentum = snapshotRecord?.snapshot.reachMomentum;
+  const aiMediaImpact = snapshotRecord?.snapshot.aiMediaImpact;
 
   return (
     <div className="min-h-screen bg-muted/15">
@@ -140,20 +131,18 @@ function WorkspaceHomePage() {
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <CadenceScoreCard
-                completed={cadenceCompleted}
-                target={cadenceTarget}
-                percent={cadencePercent}
+                summary={cadenceSummary}
+                isLoading={snapshotPending}
                 workspaceSlug={workspace.slug}
               />
               <ReachMomentumCard
-                reach={reachValue}
-                deltaPercent={reachDelta}
+                summary={reachMomentum}
+                isLoading={snapshotPending}
                 workspaceSlug={workspace.slug}
               />
-              <AiAssistWinsCard
-                generatedPosts={aiAssistStats.generatedPosts}
-                engagementLift={aiAssistStats.engagementLift}
-                hoursSaved={aiAssistStats.hoursSaved}
+              <AiMediaImpactCard
+                summary={aiMediaImpact}
+                isLoading={snapshotPending}
                 workspaceSlug={workspace.slug}
               />
             </div>
@@ -635,19 +624,49 @@ function UpcomingScheduleCard({
 }
 
 type CadenceScoreCardProps = {
-  completed: number;
-  target: number;
-  percent: number;
+  summary?: CadenceSummary;
   workspaceSlug: string;
+  isLoading: boolean;
 };
 
 function CadenceScoreCard({
-  completed,
-  target,
-  percent,
+  summary,
   workspaceSlug,
+  isLoading,
 }: CadenceScoreCardProps) {
-  const remaining = Math.max(target - completed, 0);
+  if (isLoading) {
+    return (
+      <MomentumCard className="space-y-3">
+        <Skeleton className="h-4 w-28 rounded" />
+        <Skeleton className="h-8 w-32 rounded" />
+        <Skeleton className="h-2 w-full rounded" />
+      </MomentumCard>
+    );
+  }
+
+  if (!summary) {
+    return (
+      <MomentumCard className="space-y-3">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+          <BarChart3 className="h-4 w-4" />
+          Cadence score
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Set a cadence goal to start tracking weekly progress.
+        </p>
+        <Button asChild size="sm" variant="outline">
+          <Link
+            to="/workspaces/$workspaceSlug/insights"
+            params={{ workspaceSlug }}
+          >
+            Create goal
+          </Link>
+        </Button>
+      </MomentumCard>
+    );
+  }
+
+  const remaining = Math.max(summary.targetPosts - summary.completedPosts, 0);
 
   return (
     <MomentumCard className="space-y-3">
@@ -657,14 +676,14 @@ function CadenceScoreCard({
       </div>
       <div className="flex items-baseline gap-2">
         <span className="text-3xl font-semibold text-foreground">
-          {completed}/{target}
+          {summary.completedPosts}/{summary.targetPosts}
         </span>
         <span className="text-sm text-muted-foreground">posts this week</span>
       </div>
       <div className="h-2 rounded-full bg-muted">
         <div
           className="h-full rounded-full bg-primary transition-[width]"
-          style={{ width: `${Math.round(percent * 100)}%` }}
+          style={{ width: `${Math.round(summary.progressPercent * 100)}%` }}
         />
       </div>
       <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -682,24 +701,62 @@ function CadenceScoreCard({
 }
 
 type ReachMomentumCardProps = {
-  reach: number;
-  deltaPercent: number;
+  summary?: ReachMomentum;
   workspaceSlug: string;
+  isLoading: boolean;
 };
 
 function ReachMomentumCard({
-  reach,
-  deltaPercent,
+  summary,
   workspaceSlug,
+  isLoading,
 }: ReachMomentumCardProps) {
+  if (isLoading) {
+    return (
+      <MomentumCard className="space-y-3">
+        <Skeleton className="h-4 w-28 rounded" />
+        <Skeleton className="h-8 w-32 rounded" />
+        <Skeleton className="h-6 w-24 rounded" />
+      </MomentumCard>
+    );
+  }
+
+  if (!summary) {
+    return (
+      <MomentumCard className="space-y-3">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+          <TrendingUp className="h-4 w-4" />
+          Reach momentum
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Publish and connect channels to see reach trends.
+        </p>
+        <Button asChild variant="outline" size="sm" className="w-full">
+          <Link
+            to="/workspaces/$workspaceSlug/insights"
+            params={{ workspaceSlug }}
+          >
+            View insights
+          </Link>
+        </Button>
+      </MomentumCard>
+    );
+  }
+
+  const reachValue = summary.reach ?? 0;
   const formattedReach = new Intl.NumberFormat("en-US", {
     notation: "compact",
     maximumFractionDigits: 1,
-  }).format(reach || 0);
+  }).format(reachValue);
 
-  const deltaLabel = `${deltaPercent >= 0 ? "▲" : "▼"} ${Math.abs(
-    Math.round(deltaPercent * 100),
-  )}% vs last week`;
+  const hasDelta = typeof summary.deltaPercent === "number";
+  const deltaPercent = summary.deltaPercent ?? 0;
+  const deltaLabel = hasDelta
+    ? `${deltaPercent >= 0 ? "▲" : "▼"} ${Math.abs(
+        Math.round(deltaPercent * 100),
+      )}% vs last week`
+    : "No change yet";
+  const deltaClass = deltaPercent >= 0 ? "text-emerald-500" : "text-rose-500";
 
   return (
     <MomentumCard className="space-y-3">
@@ -713,7 +770,14 @@ function ReachMomentumCard({
         </span>
         <span className="text-sm text-muted-foreground">accounts reached</span>
       </div>
-      <div className="text-xs font-medium text-emerald-500">{deltaLabel}</div>
+      <div
+        className={cn(
+          "text-xs font-medium",
+          hasDelta ? deltaClass : "text-muted-foreground",
+        )}
+      >
+        {deltaLabel}
+      </div>
       <Button asChild variant="outline" size="sm" className="w-full">
         <Link
           to="/workspaces/$workspaceSlug/insights"
@@ -726,43 +790,73 @@ function ReachMomentumCard({
   );
 }
 
-type AiAssistWinsCardProps = {
-  generatedPosts: number;
-  engagementLift: number;
-  hoursSaved: number;
+type AiMediaImpactCardProps = {
+  summary?: AiMediaImpact;
   workspaceSlug: string;
+  isLoading: boolean;
 };
 
-function AiAssistWinsCard({
-  generatedPosts,
-  engagementLift,
-  hoursSaved,
+function AiMediaImpactCard({
+  summary,
   workspaceSlug,
-}: AiAssistWinsCardProps) {
+  isLoading,
+}: AiMediaImpactCardProps) {
+  if (isLoading) {
+    return (
+      <MomentumCard className="space-y-4">
+        <Skeleton className="h-4 w-32 rounded" />
+        <Skeleton className="h-8 w-16 rounded" />
+        <Skeleton className="h-16 w-full rounded" />
+      </MomentumCard>
+    );
+  }
+
+  if (!summary || summary.generatedPosts === 0) {
+    return (
+      <MomentumCard className="space-y-4">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+          <Wand2 className="h-4 w-4" />
+          AI media impact
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Generate your next product visual to track AI lift.
+        </p>
+        <Button asChild size="sm" className="w-full">
+          <Link
+            to="/workspaces/$workspaceSlug/content"
+            params={{ workspaceSlug }}
+          >
+            Open AI studio
+          </Link>
+        </Button>
+      </MomentumCard>
+    );
+  }
+
   return (
     <MomentumCard className="space-y-4">
       <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-        <Sparkles className="h-4 w-4" />
-        AI assist wins
+        <Wand2 className="h-4 w-4" />
+        AI media impact
       </div>
       <div>
         <p className="text-3xl font-semibold text-foreground">
-          {generatedPosts}
+          {summary.generatedPosts}
         </p>
         <p className="text-sm text-muted-foreground">
-          AI-generated assets published
+          AI-generated visuals published
         </p>
       </div>
       <div className="rounded-2xl border border-border/40 p-3 text-xs text-muted-foreground">
         <div className="flex items-center justify-between">
-          <span>Engagement lift</span>
+          <span>Engagement lift vs manual</span>
           <span className="text-emerald-500 font-medium">
-            +{Math.round(engagementLift * 100)}%
+            +{Math.round(summary.engagementLiftPercent * 100)}%
           </span>
         </div>
         <div className="mt-1 flex items-center justify-between">
           <span>Hours saved</span>
-          <span>{hoursSaved} hrs</span>
+          <span>~{summary.hoursSaved} hrs</span>
         </div>
       </div>
       <Button asChild size="sm" className="w-full">
@@ -770,7 +864,7 @@ function AiAssistWinsCard({
           to="/workspaces/$workspaceSlug/content"
           params={{ workspaceSlug }}
         >
-          View AI library
+          Open AI studio
         </Link>
       </Button>
     </MomentumCard>

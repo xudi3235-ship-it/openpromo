@@ -81,6 +81,10 @@ export const InsightGoalSummarySchema = z.object({
   status: z.string(),
   progressPercent: z.number().optional(),
   streak: z.number().optional(),
+  goalType: z.string().optional(),
+  cadence: z.string().optional(),
+  targetValue: z.number().optional(),
+  actualValue: z.number().optional(),
 });
 
 export type InsightGoalSummary = z.infer<typeof InsightGoalSummarySchema>;
@@ -104,6 +108,29 @@ export const InsightTopContentSchema = z.object({
 
 export type InsightTopContent = z.infer<typeof InsightTopContentSchema>;
 
+export const CadenceSummarySchema = z.object({
+  completedPosts: z.number(),
+  targetPosts: z.number(),
+  progressPercent: z.number(),
+});
+
+export type CadenceSummary = z.infer<typeof CadenceSummarySchema>;
+
+export const ReachMomentumSchema = z.object({
+  reach: z.number(),
+  deltaPercent: z.number().nullable(),
+});
+
+export type ReachMomentum = z.infer<typeof ReachMomentumSchema>;
+
+export const AiMediaImpactSchema = z.object({
+  generatedPosts: z.number(),
+  engagementLiftPercent: z.number(),
+  hoursSaved: z.number(),
+});
+
+export type AiMediaImpact = z.infer<typeof AiMediaImpactSchema>;
+
 export const WorkspaceInsightSnapshotSchema = z.object({
   date: z.coerce.date(),
   funnel: InsightFunnelSchema.optional(),
@@ -111,6 +138,9 @@ export const WorkspaceInsightSnapshotSchema = z.object({
   topContent: z.array(InsightTopContentSchema).optional(),
   goals: z.array(InsightGoalSummarySchema).optional(),
   anomalies: z.array(InsightAnomalySchema).optional(),
+  cadenceSummary: CadenceSummarySchema.optional(),
+  reachMomentum: ReachMomentumSchema.optional(),
+  aiMediaImpact: AiMediaImpactSchema.optional(),
 });
 
 export type WorkspaceInsightSnapshot = z.infer<
