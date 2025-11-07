@@ -1,0 +1,120 @@
+OpenPromo Insights Redesign — Execution Roadmap
+===============================================
+
+Data Layer — P0 Details
+-----------------------
+- Goals & cadence tracking
+  - Table `workspace_goals`: workspace_id, goal_type (`publish_cadence`, `reach`, `conversions`), target_value, cadence_window, start/end dates, status, metadata (owner, alert thresholds, auto-renew flag).
+  - Table `workspace_goal_progress`: goal_id, window_start, window_end, actual_value, variance, streak_count, predicted_completion_date for trend lines.
+- Click-through & value proxies
+  - Extend existing `content_metrics_snapshot` to persist `link_clicks`, `profile_visits`, and other on-platform actions we already ingest.
+  - Allow manual entry or API ingestion of “Value per click” multipliers per workspace so we can estimate dollars saved/earned without Shopify/Stripe integrations.
+- Benchmarks & recommendations
+  - Table `channel_benchmarks`: platform, industry, metric, timeframe, percentile (p50/p75/p90), value.
+  - Table `posting_time_recommendations`: workspace_id, platform, daypart, predicted_lift, confidence, supporting_sample_size.
+- Insight snapshots & events
+  - Materialized table or Durable Object cache `workspace_insight_snapshots` storing JSON blobs:
+    ```
+    {
+      date,
+      funnel: { awareness, engagement, clicks, conversions, conversionRate },
+      narrativeHighlights: [{ metric, delta, headline, explanation, platform }],
+      topContent: [{ contentId, title, metric, change }],
+      goals: [{ goalId, status, progressPercent, streak }],
+      anomalies: [{ metric, severity, detectedAt, insight }]
+    }
+    ```
+- Event stream `insight_events` emitted whenever snapshots change significantly; consumers include UI, email, Slack.
+
+UX → Data Mapping (Working Backwards)
+------------------------------------
+- Hero win card (Home)
+  - Needs `workspace_insight_snapshots.narrativeHighlights` + goal deltas from `workspace_goal_progress`.
+  - Requires streak counts and relative change percentages derived by nightly aggregator; no net-new integrations.
+- Goal progress rings & streak tracker
+  - Powered entirely by `workspace_goals` + `workspace_goal_progress` plus historical publish counts already stored in content snapshots.
+- Funnel board (Insights)
+  - Awareness/engagement/clicks pulled from aggregated `content_metrics_snapshot`.
+  - “Conversion” slot uses click-through proxies (link clicks × value multiplier). When true commerce integrations arrive, we swap in actual conversions.
+- Channel tabs & posting-time advice
+  - Use `channel_benchmarks` + `posting_time_recommendations` produced from historical content performance; no external data needed.
+- Next Best Action queue
+  - Consumes `insight_events` (anomalies, streak breaks) + existing task sources (drafts waiting publish, inbox backlog). Data lives within current content/inbox tables.
+- Email/Slack digests
+  - Render directly from the same snapshot JSON consumed by UI; no extra schema besides snapshots themselves.
+
+Engagement Loop — P0 Execution Plan
+-----------------------------------
+- Goal Setting & Streak Tracker
+  - Flow: Home hero suggests a “smart default” (e.g., “Keep your current 2 posts/week cadence?”) with one-tap accept; advanced modal only if the user wants to customize cadence or reach targets.
+  - Data path: accepting the quick suggestion immediately creates `workspace_goals`, initializes `workspace_goal_progress`, and backfills streaks using historical publish counts; customization reuses the same endpoint with extra fields.
+  - UX beats: progress ring on Home, inline edit to tweak targets, celebratory toast + `insight_event` when goal achieved, gentle reminder when streak is at risk—no heavy wizard required.
+  - Default logic: infer cadence by averaging posts/week over the past 6 weeks, round to the nearest whole number, clamp to a minimum of 1, then pre-fill target = max(current cadence, 3) so users feel encouraged; surface a secondary CTA “Create custom goal” for reach/conversion or different cadence settings.
+  - New-user experience: if we lack history, seed a “Starter goal” card (“Publish your first 3 posts this week”) with contextual helper text and a single “Accept” button; once the user publishes enough content, prompt them to graduate to the smart cadence suggestion.
+- Next Best Action Queue
+  - Task sources: goal gaps (need 1 more post this week), anomaly follow-ups (viral post—repurpose now), inbox backlog, expiring tokens.
+  - Each task stores origin refs (content_id, conversation_id) plus estimated impact derived from snapshot deltas.
+  - UX: ranked list on Home with one-click actions into composer/inbox/token refresher; completing a task emits telemetry for personalization.
+- Proactive Digests & Nudges
+  - Weekly digest worker reads latest snapshot + goal progress to craft consistent narrative emails and Slack posts.
+  - Triggered nudges fire when cadence windows near expiry with low progress, when posts surpass thresholds, or when follower trend dips beyond benchmark.
+  - Infra: reuse existing email worker, add configurable Slack webhook per workspace, both consuming the same DTOs as the UI.
+
+1. Foundation (2–3 sprints)
+   - Instrument new data models: goals (cadence, reach, conversions), experiment metadata, conversion events, and benchmark datasets.
+   - Extend nightly aggregation jobs to compute funnel metrics, anomaly detection, streaks, and “insight snapshot” DTOs consumed by all surfaces.
+   - Restructure the Insights hub UI (narrative header, funnel cards, channel tabs) using placeholder data wired to the new `/insights/*` APIs.
+
+2. Engagement Layer
+   - Ship goal-setting UI plus streak tracker on the Home/Momentum surface; visualize target vs actual cadence and reach.
+   - Build the “Next Best Action” queue that links AI content tools, inbox follow-ups, and automation reminders to quantified impact.
+   - Connect Slack and email digest workers to the new insight events stream so wins, slumps, and reminders reach users proactively.
+
+3. Delight & Growth
+   - Launch the Experiment Lab UI with variant tracking, lift/confidence readouts, and the ability to promote winners into reusable templates.
+   - Add celebratory badges, milestone emails/social cards, and referral hooks that reward consistent publishing and experimentation.
+   - Personalize recommendations with industry benchmarks, posting-time suggestions, and automated “mini-challenges” that keep creators engaged.
+
+Deprioritized (Post-P0) Experiments
+-----------------------------------
+- Dedicated `content_experiments` + `content_experiment_variants` tables, lift/confidence analytics, and automation hooks move to the Delight & Growth phase.
+- Until then, experiments can be tagged ad hoc via metadata on `unified_content` or campaign notes; no UI needs to expose a lab experience for P0.
+
+Final User Experience Vision
+----------------------------
+- Home / Momentum
+  - Hero win card with AI narrative, streak count, and share CTA.
+  - Goal progress rings showing target vs actual and projected completion.
+  - Next Best Action queue with impact estimates and deep links into composer/inbox/automation tools.
+  - Health strip calling out connected-account state, queue failures, inbox backlog.
+- Insights Hub
+  - Narrative header summarizing top highlights/anomalies.
+  - Funnel board (Awareness → Engagement → Clicks → Conversions) with benchmark comparisons and color-coded deltas.
+  - Channel tabs combining charts, best posting times, audience notes, and top content snippets per platform.
+  - Experiment Lab section with variant cards, lift/confidence, and one-click “apply winning recipe”.
+  - Anomaly feed with recommended follow-ups, tied to the insight events stream.
+- Email / Slack / Notifications
+  - Weekly digest mirroring the narrative + funnel view, including calendar suggestions and streak reminders.
+  - Real-time nudges for breakout posts, slipping cadence, or conversion milestones, using the same snapshot DTOs.
+  - Shareable milestone cards that encourage referrals and social proof.
+
+Implementation Plan (Single Builder)
+-----------------------------------
+1. Data Foundations
+   - Add `workspace_goals`, `workspace_goal_progress`, `channel_benchmarks`, `posting_time_recommendations`, and extend `content_metrics_snapshot` with click/profile-visit fields.
+   - Build nightly aggregation workflow to update goal progress + streaks, compute benchmarks/posting-time recs, and produce `workspace_insight_snapshots` JSON blobs.
+   - Emit `insight_events` when snapshots change materially (goal achieved, streak break, anomaly).
+2. Shared APIs (via oRPC)
+   - Implement `/workspaces/:slug/insights/{summary,funnel,goals,top-content,anomalies}` using oRPC handlers that read from snapshots/goals.
+   - Define DTOs in `packages/shared`, generate types, and add React hooks in `dash/ui/src/queries/insights.ts`.
+   - Configure caching/staleness so UI, email workers, and Slack integrations share the same responses.
+3. Insights UI Shell
+   - Update `InsightsPage` to consume narrative/funnel/goal data, add components for highlights, funnel board, benchmarking badges, and channel tabs with placeholders when data missing.
+4. Home / Momentum Surface
+   - Create/expand Home route with hero win card, goal progress ring, system health strip, and smart-default goal CTA (with starter fallback).
+5. Next Best Action Queue
+   - Aggregate tasks from goals, anomalies, inbox backlog; render prioritized list with deep links to composer/inbox/token refresher; track completion telemetry.
+6. Proactive Messaging
+   - Extend email worker + Slack webhook integration to read snapshots/goals and send weekly digests plus triggered nudges (cadence risk, breakout posts, follower dips).
+7. QA & Telemetry
+   - Seed dev fixtures for snapshots/goals, add analytics for goal accept/streak break/task complete, and set up basic dashboards to monitor loop health.

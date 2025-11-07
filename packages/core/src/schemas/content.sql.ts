@@ -95,6 +95,8 @@ const unifiedContentMetricsSchema = z.object({
   likes: posInt.optional(),
   comments: posInt.optional(),
   shares: posInt.optional(),
+  linkClicks: posInt.optional(),
+  profileVisits: posInt.optional(),
 });
 
 export type UnifiedContentMetrics = z.infer<typeof unifiedContentMetricsSchema>;

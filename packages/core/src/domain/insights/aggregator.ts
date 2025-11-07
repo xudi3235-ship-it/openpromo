@@ -1,4 +1,8 @@
 import { and, db, desc, eq, inArray, sql } from "@core/database/db";
+import {
+  createTransaction,
+  type Transaction,
+} from "@core/database/transaction";
 import { computeUnreadStatus } from "@core/domain/inbox/unread-helper";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
 import { connectedAccountMetricsSnapshotTable } from "@core/schemas/connected-account-metrics.sql";
@@ -10,7 +14,21 @@ import {
 } from "@core/schemas/content.sql";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
 import { inboxMessagesTable } from "@core/schemas/inbox-messages.sql";
-import type { AllPlatforms } from "@shared/content";
+import {
+  type InsightEventPayload,
+  type insightEventSeverityEnum,
+  insightEventsTable,
+  type insightEventTypeEnum,
+  type WorkspaceInsightSnapshotPayload,
+  workspaceInsightSnapshotPayloadSchema,
+  workspaceInsightSnapshotsTable,
+} from "@core/schemas/insights.sql";
+import {
+  type WorkspaceGoalSelect,
+  workspaceGoalProgressTable,
+  workspaceGoalsTable,
+} from "@core/schemas/workspace-goals.sql";
+import { type AllPlatforms, ContentPublishingStatus } from "@shared/content";
 import {
   ContentMetricsSummarySchema,
   InboxSummarySchema,
@@ -22,6 +40,7 @@ import {
 } from "@shared/insights";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const SNAPSHOT_LOOKBACK_DAYS = 7;
 
 function truncateToBucket(date: Date, interval: "day" | "week"): Date {
   const year = date.getUTCFullYear();
@@ -58,6 +77,26 @@ function generateBuckets(
 export type InsightsTimeRange = {
   start: Date;
   end: Date;
+};
+
+type FunnelMetrics = {
+  awareness: number;
+  engagement: number;
+  clicks: number;
+  conversions: number;
+  conversionRate: number;
+};
+
+type GoalWindow = {
+  start: Date;
+  endExclusive: Date;
+};
+
+type PendingInsightEvent = {
+  goalId?: string | null;
+  eventType: (typeof insightEventTypeEnum.enumValues)[number];
+  severity?: (typeof insightEventSeverityEnum.enumValues)[number];
+  payload: InsightEventPayload;
 };
 
 export class WorkspaceInsightsAggregator {
@@ -257,6 +296,96 @@ export class WorkspaceInsightsAggregator {
     return points;
   }
 
+  async generateSnapshotForWorkspace(params: {
+    workspaceId: string;
+    snapshotDate?: Date;
+    lookbackDays?: number;
+  }): Promise<WorkspaceInsightSnapshotPayload> {
+    const snapshotDate = this.startOfDayUTC(params.snapshotDate ?? new Date());
+    const lookbackDays = Math.max(
+      params.lookbackDays ?? SNAPSHOT_LOOKBACK_DAYS,
+      1,
+    );
+
+    const currentRange = this.buildRange(snapshotDate, lookbackDays);
+    const previousRangeEnd = this.addDaysUTC(currentRange.start, -1);
+    const previousRange = this.buildRange(previousRangeEnd, lookbackDays);
+
+    const [currentFunnel, previousFunnel, topContent] = await Promise.all([
+      this.aggregateFunnel(params.workspaceId, currentRange),
+      this.aggregateFunnel(params.workspaceId, previousRange),
+      this.getTopContent({
+        workspaceId: params.workspaceId,
+        limit: 3,
+        range: {
+          start: currentRange.start,
+          end: new Date(currentRange.endExclusive.getTime() - 1),
+        },
+      }),
+    ]);
+
+    return createTransaction(async (tx) => {
+      const { summaries: goalSummaries, events } =
+        await this.updateGoalProgress({
+          tx,
+          workspaceId: params.workspaceId,
+          snapshotDate,
+        });
+
+      const payload = workspaceInsightSnapshotPayloadSchema.parse({
+        date: snapshotDate,
+        funnel: currentFunnel,
+        narrativeHighlights: this.buildNarrativeHighlights(
+          currentFunnel,
+          previousFunnel,
+        ),
+        topContent: topContent.map((content) => ({
+          contentId: content.id,
+          title: this.extractContentTitle(content),
+          metric: "impressions",
+          change: content.metrics?.impressions ?? 0,
+          platform: content.placement,
+        })),
+        goals: goalSummaries,
+        anomalies: [],
+      });
+
+      const [snapshot] = await tx
+        .insert(workspaceInsightSnapshotsTable)
+        .values({
+          workspaceId: params.workspaceId,
+          snapshotDate,
+          payload,
+        })
+        .onConflictDoUpdate({
+          target: [
+            workspaceInsightSnapshotsTable.workspaceId,
+            workspaceInsightSnapshotsTable.snapshotDate,
+          ],
+          set: {
+            payload,
+            updatedAt: new Date(),
+          },
+        })
+        .returning({ id: workspaceInsightSnapshotsTable.id });
+
+      if (events.length > 0) {
+        await tx.insert(insightEventsTable).values(
+          events.map((event) => ({
+            workspaceId: params.workspaceId,
+            snapshotId: snapshot.id,
+            goalId: event.goalId ?? null,
+            eventType: event.eventType,
+            severity: event.severity ?? "info",
+            payload: event.payload,
+          })),
+        );
+      }
+
+      return payload;
+    });
+  }
+
   async getTopContent(params: {
     workspaceId: string;
     limit?: number;
@@ -446,6 +575,320 @@ export class WorkspaceInsightsAggregator {
       followerLastCollectedAt,
       inboxLastUpdatedAt,
     });
+  }
+
+  private async aggregateFunnel(
+    workspaceId: string,
+    range: GoalWindow,
+  ): Promise<FunnelMetrics> {
+    const [{ engagement = 0, reach = 0, clicks = 0, conversions = 0 } = {}] =
+      await db()
+        .select({
+          engagement: sql<number>`COALESCE(SUM((metrics->>'engagement')::numeric), 0)`,
+          reach: sql<number>`COALESCE(SUM((metrics->>'reach')::numeric), 0)`,
+          clicks: sql<number>`COALESCE(SUM((metrics->>'clicks')::numeric), 0)`,
+          conversions: sql<number>`COALESCE(SUM((metrics->>'linkClicks')::numeric), 0)`,
+        })
+        .from(contentMetricsSnapshotTable)
+        .where(
+          and(
+            eq(contentMetricsSnapshotTable.workspaceId, workspaceId),
+            sql`${contentMetricsSnapshotTable.collectedAt} >= ${range.start.toISOString()}`,
+            sql`${contentMetricsSnapshotTable.collectedAt} < ${range.endExclusive.toISOString()}`,
+          ),
+        );
+
+    const conversionRate =
+      conversions > 0 && reach > 0 ? conversions / reach : 0;
+
+    return {
+      awareness: Number(reach),
+      engagement: Number(engagement),
+      clicks: Number(clicks),
+      conversions: Number(conversions),
+      conversionRate,
+    };
+  }
+
+  private buildNarrativeHighlights(
+    current: FunnelMetrics,
+    previous: FunnelMetrics,
+  ) {
+    const highlights: NonNullable<
+      WorkspaceInsightSnapshotPayload["narrativeHighlights"]
+    > = [];
+
+    const awarenessDelta = this.computeDeltaPercentage(
+      previous.awareness,
+      current.awareness,
+    );
+
+    if (awarenessDelta !== null) {
+      highlights.push({
+        headline:
+          awarenessDelta >= 0 ? "Reach is growing" : "Reach dipped this period",
+        body:
+          awarenessDelta >= 0
+            ? `You reached ${this.formatNumber(current.awareness)} people, up ${Math.abs(
+                Math.round(awarenessDelta * 100),
+              )}% vs last period.`
+            : `Reach fell ${Math.abs(
+                Math.round(awarenessDelta * 100),
+              )}% to ${this.formatNumber(current.awareness)}.`,
+        metric: "awareness",
+        delta: awarenessDelta,
+      });
+    }
+
+    if (highlights.length === 0) {
+      highlights.push({
+        headline: "Fresh insights are ready",
+        body: `Captured ${this.formatNumber(
+          current.engagement,
+        )} engagements over the last ${SNAPSHOT_LOOKBACK_DAYS} days.`,
+        metric: "engagement",
+      });
+    }
+
+    return highlights;
+  }
+
+  private async updateGoalProgress(params: {
+    tx: Transaction;
+    workspaceId: string;
+    snapshotDate: Date;
+  }) {
+    const goals = await params.tx
+      .select()
+      .from(workspaceGoalsTable)
+      .where(
+        and(
+          eq(workspaceGoalsTable.workspaceId, params.workspaceId),
+          eq(workspaceGoalsTable.status, "active"),
+        ),
+      );
+
+    const summaries: NonNullable<WorkspaceInsightSnapshotPayload["goals"]> = [];
+    const events: PendingInsightEvent[] = [];
+
+    for (const goal of goals) {
+      const window = this.getGoalWindow(params.snapshotDate, goal.cadence);
+      const actualValue = await this.computeGoalActualValue(
+        params.tx,
+        goal,
+        window,
+      );
+
+      const [existingProgress] = await params.tx
+        .select({
+          actualValue: workspaceGoalProgressTable.actualValue,
+          targetValue: workspaceGoalProgressTable.targetValue,
+        })
+        .from(workspaceGoalProgressTable)
+        .where(
+          and(
+            eq(workspaceGoalProgressTable.goalId, goal.id),
+            eq(workspaceGoalProgressTable.windowStart, window.start),
+            eq(workspaceGoalProgressTable.windowEnd, window.endExclusive),
+          ),
+        )
+        .limit(1);
+
+      const wasAchieved =
+        existingProgress !== undefined &&
+        existingProgress.actualValue >= existingProgress.targetValue;
+
+      const [previousWindow] = await params.tx
+        .select({
+          streakCount: workspaceGoalProgressTable.streakCount,
+          actualValue: workspaceGoalProgressTable.actualValue,
+          targetValue: workspaceGoalProgressTable.targetValue,
+          windowEnd: workspaceGoalProgressTable.windowEnd,
+        })
+        .from(workspaceGoalProgressTable)
+        .where(
+          and(
+            eq(workspaceGoalProgressTable.goalId, goal.id),
+            sql`${workspaceGoalProgressTable.windowEnd} < ${window.start.toISOString()}`,
+          ),
+        )
+        .orderBy(desc(workspaceGoalProgressTable.windowEnd))
+        .limit(1);
+
+      const achieved = goal.targetValue > 0 && actualValue >= goal.targetValue;
+      const priorStreakEligible =
+        previousWindow &&
+        previousWindow.actualValue >= previousWindow.targetValue
+          ? previousWindow.streakCount
+          : 0;
+      const streakCount = achieved ? priorStreakEligible + 1 : 0;
+
+      await params.tx
+        .insert(workspaceGoalProgressTable)
+        .values({
+          workspaceId: params.workspaceId,
+          goalId: goal.id,
+          windowStart: window.start,
+          windowEnd: window.endExclusive,
+          actualValue,
+          targetValue: goal.targetValue,
+          streakCount,
+        })
+        .onConflictDoUpdate({
+          target: [
+            workspaceGoalProgressTable.goalId,
+            workspaceGoalProgressTable.windowStart,
+            workspaceGoalProgressTable.windowEnd,
+          ],
+          set: {
+            actualValue,
+            targetValue: goal.targetValue,
+            streakCount,
+            updatedAt: new Date(),
+          },
+        });
+
+      const progressPercent =
+        goal.targetValue > 0 ? actualValue / goal.targetValue : 0;
+
+      summaries.push({
+        goalId: goal.id,
+        status: goal.status,
+        progressPercent: Math.min(Math.max(progressPercent, 0), 1),
+        streak: streakCount,
+      });
+
+      if (achieved && !wasAchieved) {
+        events.push({
+          goalId: goal.id,
+          eventType: "goal_achieved",
+          severity: "info",
+          payload: {
+            message: this.buildGoalAchievementMessage(goal),
+            metric: goal.goalType,
+            delta: actualValue,
+          },
+        });
+      }
+    }
+
+    return { summaries, events };
+  }
+
+  private async computeGoalActualValue(
+    tx: Transaction,
+    goal: WorkspaceGoalSelect,
+    window: GoalWindow,
+  ): Promise<number> {
+    if (goal.goalType === "publish_cadence") {
+      const [{ count = 0 } = {}] = await tx
+        .select({
+          count: sql<number>`COUNT(*)`,
+        })
+        .from(unifiedContentTable)
+        .where(
+          and(
+            eq(unifiedContentTable.workspaceId, goal.workspaceId),
+            eq(
+              unifiedContentTable.publishingStatus,
+              ContentPublishingStatus.PUBLISHED,
+            ),
+            sql`${unifiedContentTable.createdAt} >= ${window.start.toISOString()}`,
+            sql`${unifiedContentTable.createdAt} < ${window.endExclusive.toISOString()}`,
+          ),
+        );
+
+      return Number(count ?? 0);
+    }
+
+    const [{ reach = 0 } = {}] = await tx
+      .select({
+        reach: sql<number>`COALESCE(SUM((metrics->>'reach')::numeric), 0)`,
+      })
+      .from(contentMetricsSnapshotTable)
+      .where(
+        and(
+          eq(contentMetricsSnapshotTable.workspaceId, goal.workspaceId),
+          sql`${contentMetricsSnapshotTable.collectedAt} >= ${window.start.toISOString()}`,
+          sql`${contentMetricsSnapshotTable.collectedAt} < ${window.endExclusive.toISOString()}`,
+        ),
+      );
+
+    return Number(reach ?? 0);
+  }
+
+  private buildGoalAchievementMessage(goal: WorkspaceGoalSelect) {
+    if (goal.goalType === "publish_cadence") {
+      return `You met your ${goal.cadence} publishing goal of ${goal.targetValue} posts.`;
+    }
+    return `You reached your ${goal.cadence} reach goal of ${this.formatNumber(goal.targetValue)} impressions.`;
+  }
+
+  private getGoalWindow(
+    date: Date,
+    cadence: WorkspaceGoalSelect["cadence"],
+  ): GoalWindow {
+    if (cadence === "weekly") {
+      const start = truncateToBucket(date, "week");
+      return { start, endExclusive: this.addDaysUTC(start, 7) };
+    }
+
+    const monthStart = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1),
+    );
+    const nextMonth = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1),
+    );
+    return {
+      start: monthStart,
+      endExclusive: nextMonth,
+    };
+  }
+
+  private buildRange(date: Date, days: number): GoalWindow {
+    const start = this.addDaysUTC(date, -(days - 1));
+    return {
+      start,
+      endExclusive: this.addDaysUTC(date, 1),
+    };
+  }
+
+  private startOfDayUTC(date: Date) {
+    const result = new Date(date);
+    result.setUTCHours(0, 0, 0, 0);
+    return result;
+  }
+
+  private addDaysUTC(date: Date, days: number) {
+    return new Date(date.getTime() + days * MS_PER_DAY);
+  }
+
+  private computeDeltaPercentage(previous: number, current: number) {
+    if (!previous) {
+      return current > 0 ? 1 : null;
+    }
+    return (current - previous) / previous;
+  }
+
+  private formatNumber(value: number) {
+    if (value >= 1_000_000) {
+      return `${(value / 1_000_000).toFixed(1)}M`;
+    }
+    if (value >= 1_000) {
+      return `${(value / 1_000).toFixed(1)}k`;
+    }
+    return value.toString();
+  }
+
+  private extractContentTitle(content: UnifiedContentSelect) {
+    const spec = content.placementSpec as { message?: string } | null;
+    if (spec?.message) {
+      return spec.message.length > 100
+        ? `${spec.message.slice(0, 97)}...`
+        : spec.message;
+    }
+
+    return content.sourceContentId ?? undefined;
   }
 
   private async getTopContentFromSnapshots(params: {
