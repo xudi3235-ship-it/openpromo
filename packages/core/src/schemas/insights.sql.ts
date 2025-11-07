@@ -1,4 +1,10 @@
 import { id, timestamp, timestamps, ulid } from "@core/database/types";
+import {
+  type InsightEventPayload,
+  InsightEventPayloadSchema,
+  type WorkspaceInsightSnapshot,
+  WorkspaceInsightSnapshotSchema,
+} from "@shared/insights";
 import { sql } from "drizzle-orm";
 import {
   index,
@@ -16,57 +22,6 @@ import * as z from "zod";
 import { workspaceGoalsTable } from "./workspace-goals.sql";
 import { workspaceID } from "./workspaces.sql";
 
-const snapshotNarrativeSchema = z.object({
-  headline: z.string(),
-  body: z.string().optional(),
-  metric: z.string().optional(),
-  delta: z.number().optional(),
-  platform: z.string().optional(),
-});
-
-const snapshotFunnelSchema = z.object({
-  awareness: z.number().optional(),
-  engagement: z.number().optional(),
-  clicks: z.number().optional(),
-  conversions: z.number().optional(),
-  conversionRate: z.number().optional(),
-});
-
-const snapshotGoalSchema = z.object({
-  goalId: z.string(),
-  status: z.string(),
-  progressPercent: z.number().optional(),
-  streak: z.number().optional(),
-});
-
-const snapshotAnomalySchema = z.object({
-  metric: z.string(),
-  severity: z.string().optional(),
-  detectedAt: z.coerce.date().optional(),
-  insight: z.string().optional(),
-});
-
-const snapshotTopContentSchema = z.object({
-  contentId: z.string(),
-  title: z.string().optional(),
-  metric: z.string().optional(),
-  change: z.number().optional(),
-  platform: z.string().optional(),
-});
-
-export const workspaceInsightSnapshotPayloadSchema = z.object({
-  date: z.coerce.date(),
-  funnel: snapshotFunnelSchema.optional(),
-  narrativeHighlights: z.array(snapshotNarrativeSchema).optional(),
-  topContent: z.array(snapshotTopContentSchema).optional(),
-  goals: z.array(snapshotGoalSchema).optional(),
-  anomalies: z.array(snapshotAnomalySchema).optional(),
-});
-
-export type WorkspaceInsightSnapshotPayload = z.infer<
-  typeof workspaceInsightSnapshotPayloadSchema
->;
-
 export const workspaceInsightSnapshotsTable = pgTable(
   "workspace_insight_snapshots",
   {
@@ -75,7 +30,7 @@ export const workspaceInsightSnapshotsTable = pgTable(
     ...timestamps,
     snapshotDate: timestamp().notNull(),
     payload: jsonb("payload")
-      .$type<WorkspaceInsightSnapshotPayload>()
+      .$type<WorkspaceInsightSnapshot>()
       .notNull()
       .default(sql`'{}'::jsonb`),
   },
@@ -86,7 +41,7 @@ export const workspaceInsightSnapshotsTable = pgTable(
 );
 
 const snapshotSchemaOpts = {
-  payload: workspaceInsightSnapshotPayloadSchema.optional(),
+  payload: WorkspaceInsightSnapshotSchema.optional(),
   snapshotDate: z.coerce.date(),
 };
 
@@ -127,15 +82,6 @@ export const insightEventSeverityEnum = pgEnum("insight_event_severity", [
   "critical",
 ]);
 
-const insightEventPayloadSchema = z.object({
-  message: z.string(),
-  metric: z.string().optional(),
-  delta: z.number().optional(),
-  relatedContentId: z.string().optional(),
-});
-
-export type InsightEventPayload = z.infer<typeof insightEventPayloadSchema>;
-
 export const insightEventsTable = pgTable(
   "insight_events",
   {
@@ -163,7 +109,7 @@ export const insightEventsTable = pgTable(
 );
 
 const insightEventSchemaOpts = {
-  payload: insightEventPayloadSchema.optional(),
+  payload: InsightEventPayloadSchema.optional(),
 };
 
 export const InsightEventInsertSchema = createInsertSchema(

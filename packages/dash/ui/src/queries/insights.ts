@@ -1,5 +1,8 @@
-import type { InboxSummary } from "@shared/insights";
-import type { QueryClient } from "@tanstack/react-query";
+import type {
+  InboxSummary,
+  WorkspaceInsightSnapshotRecord,
+} from "@shared/insights";
+import { type QueryClient, useQuery } from "@tanstack/react-query";
 import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import {
@@ -7,6 +10,7 @@ import {
   type UseHonoQueryOptions,
   useHonoQuery,
 } from "@/lib/hono-client";
+import { orpc } from "@/lib/orpc-client";
 import { QUERY_KEYS } from "@/lib/query";
 
 /**
@@ -259,4 +263,14 @@ export const useWorkspaceInsightsInboxSummary = () => {
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
+};
+
+export const useWorkspaceInsightSnapshot = () => {
+  const { workspace } = useWorkspace();
+
+  return useQuery<WorkspaceInsightSnapshotRecord>(
+    orpc.insights.getSnapshot.queryOptions({
+      input: { workspaceSlug: workspace.slug },
+    }),
+  );
 };

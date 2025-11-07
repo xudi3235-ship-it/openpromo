@@ -15,12 +15,9 @@ import {
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
 import { inboxMessagesTable } from "@core/schemas/inbox-messages.sql";
 import {
-  type InsightEventPayload,
   type insightEventSeverityEnum,
   insightEventsTable,
   type insightEventTypeEnum,
-  type WorkspaceInsightSnapshotPayload,
-  workspaceInsightSnapshotPayloadSchema,
   workspaceInsightSnapshotsTable,
 } from "@core/schemas/insights.sql";
 import {
@@ -32,9 +29,13 @@ import { type AllPlatforms, ContentPublishingStatus } from "@shared/content";
 import {
   ContentMetricsSummarySchema,
   InboxSummarySchema,
+  type InsightEventPayload,
   InsightsStatusSchema,
   type TimeSeriesPoint,
   TimeSeriesPointSchema,
+  type WorkspaceInsightSnapshot,
+  type WorkspaceInsightSnapshotRecord,
+  WorkspaceInsightSnapshotSchema,
   type WorkspaceSummary,
   WorkspaceSummarySchema,
 } from "@shared/insights";
@@ -300,7 +301,7 @@ export class WorkspaceInsightsAggregator {
     workspaceId: string;
     snapshotDate?: Date;
     lookbackDays?: number;
-  }): Promise<WorkspaceInsightSnapshotPayload> {
+  }): Promise<WorkspaceInsightSnapshot> {
     const snapshotDate = this.startOfDayUTC(params.snapshotDate ?? new Date());
     const lookbackDays = Math.max(
       params.lookbackDays ?? SNAPSHOT_LOOKBACK_DAYS,
@@ -332,7 +333,7 @@ export class WorkspaceInsightsAggregator {
           snapshotDate,
         });
 
-      const payload = workspaceInsightSnapshotPayloadSchema.parse({
+      const payload = WorkspaceInsightSnapshotSchema.parse({
         date: snapshotDate,
         funnel: currentFunnel,
         narrativeHighlights: this.buildNarrativeHighlights(
@@ -577,6 +578,34 @@ export class WorkspaceInsightsAggregator {
     });
   }
 
+  async getLatestSnapshot(params: {
+    workspaceId: string;
+  }): Promise<WorkspaceInsightSnapshotRecord | null> {
+    const [row] = await db()
+      .select({
+        snapshotDate: workspaceInsightSnapshotsTable.snapshotDate,
+        payload: workspaceInsightSnapshotsTable.payload,
+      })
+      .from(workspaceInsightSnapshotsTable)
+      .where(eq(workspaceInsightSnapshotsTable.workspaceId, params.workspaceId))
+      .orderBy(desc(workspaceInsightSnapshotsTable.snapshotDate))
+      .limit(1);
+
+    if (!row) {
+      return null;
+    }
+
+    const snapshotDate =
+      row.snapshotDate instanceof Date
+        ? row.snapshotDate
+        : new Date(row.snapshotDate);
+
+    return {
+      snapshotDate,
+      snapshot: WorkspaceInsightSnapshotSchema.parse(row.payload ?? {}),
+    };
+  }
+
   private async aggregateFunnel(
     workspaceId: string,
     range: GoalWindow,
@@ -615,7 +644,7 @@ export class WorkspaceInsightsAggregator {
     previous: FunnelMetrics,
   ) {
     const highlights: NonNullable<
-      WorkspaceInsightSnapshotPayload["narrativeHighlights"]
+      WorkspaceInsightSnapshot["narrativeHighlights"]
     > = [];
 
     const awarenessDelta = this.computeDeltaPercentage(
@@ -668,7 +697,7 @@ export class WorkspaceInsightsAggregator {
         ),
       );
 
-    const summaries: NonNullable<WorkspaceInsightSnapshotPayload["goals"]> = [];
+    const summaries: NonNullable<WorkspaceInsightSnapshot["goals"]> = [];
     const events: PendingInsightEvent[] = [];
 
     for (const goal of goals) {
