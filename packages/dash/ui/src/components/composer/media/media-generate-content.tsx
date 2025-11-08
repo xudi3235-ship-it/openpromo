@@ -63,11 +63,7 @@ export function MediaGenerateContent() {
   const generateMutation = useProductImageGenerateMutation((data) => {
     // Invalidate the query to refresh the list
     queryClient.invalidateQueries({ queryKey: orpc.imageGen.list.key() });
-
-    // Check if response is async or sync
-    const isAsync = "async" in data && data.async === true;
-
-    if (isAsync) {
+    if (data.async) {
       // Async mode - images will come via WebSocket
       // Don't auto-add, let users select from dialog when ready
       toast.success("Generating images... Check the gallery for results.");
