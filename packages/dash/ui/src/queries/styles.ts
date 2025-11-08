@@ -212,23 +212,31 @@ export const useStyleGenerationDeleteMutation = (styleId?: string) => {
 
 export const useStyleCreateMutation = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
+  const { workspace } = useWorkspace();
 
-  return useMutation({
-    ...orpc.styles.create.mutationOptions({
+  return useMutation(
+    orpc.styles.create.mutationOptions({
       onSuccess: async () => {
         await invalidateStylesListQueries(queryClient);
         toast.success("Style created");
         onSuccess?.();
       },
+      mutationFn: async (input) => {
+        return orpc.styles.create.call({
+          ...input,
+          workspaceId: workspace.id,
+        });
+      },
     }),
-  });
+  );
 };
 
 export const useStyleUpdateMutation = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
+  const { workspace } = useWorkspace();
 
-  return useMutation({
-    ...orpc.styles.update.mutationOptions({
+  return useMutation(
+    orpc.styles.update.mutationOptions({
       onSuccess: async (_data, variables) => {
         await invalidateStylesListQueries(queryClient);
         await queryClient.invalidateQueries({
@@ -239,8 +247,14 @@ export const useStyleUpdateMutation = (onSuccess?: () => void) => {
         toast.success("Style updated");
         onSuccess?.();
       },
+      mutationFn: async (input) => {
+        return orpc.styles.update.call({
+          ...input,
+          workspaceId: workspace.id,
+        });
+      },
     }),
-  });
+  );
 };
 
 export const useStyleDeleteMutation = (onSuccess?: () => void) => {
