@@ -6,14 +6,12 @@ import { contentRoute } from "./content";
 import { createWorkspaceRoute } from "./create-workspace";
 import { deleteWorkspaceRoute } from "./delete-workspace";
 import { getWorkspaceRoute } from "./get-workspace";
-import { imageGenRoute } from "./image-gen";
 import { inboxRoute } from "./inbox";
 import { internalWorkspaceRoute } from "./internal";
 import { listWorkspacesRoute } from "./list-workspaces";
 import { mediaRoute } from "./media";
 import { productsRoute } from "./products";
 import { storageRoute } from "./storage";
-import { stylesRoute } from "./styles";
 import { workspaceTeamRoute } from "./team";
 import { updateWorkspaceRoute } from "./update-workspace";
 import { workspacePusherRoute } from "./workspace-pusher";
@@ -38,9 +36,7 @@ export const workspacesRoute = new Hono<ApiEnv>()
   .route("/:workspaceSlug/connected_accounts", connectedAccountsRoute)
   .route("/:workspaceSlug/inbox", inboxRoute)
   .route("/:workspaceSlug/media", mediaRoute)
-  .route("/:workspaceSlug/image-gen", imageGenRoute)
   .route("/:workspaceSlug/storage", storageRoute)
   .route("/:workspaceSlug/team", workspaceTeamRoute)
   .route("/:workspaceSlug/content", contentRoute)
-  .route("/:workspaceSlug/products", productsRoute)
-  .route("/:workspaceSlug/styles", stylesRoute);
+  .route("/:workspaceSlug/products", productsRoute);
