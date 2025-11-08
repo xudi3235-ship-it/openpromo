@@ -63,7 +63,7 @@ export function StylesInfiniteGrid({
 
   const {
     data,
-    isLoading,
+    isPending,
     error,
     fetchNextPage,
     hasNextPage,
@@ -125,7 +125,7 @@ export function StylesInfiniteGrid({
     return <>{renderErrorContent(error)}</>;
   }
 
-  if (isLoading) {
+  if (isPending) {
     return <>{renderLoadingContent()}</>;
   }
 

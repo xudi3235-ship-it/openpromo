@@ -8,6 +8,7 @@ import {
 import { MoreVertical, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import type { StyleGenerationsResponse } from "@/queries/styles";
 import { useStyleGenerationDeleteMutation } from "@/queries/styles";
 
@@ -25,6 +26,7 @@ export function GenerationCardActions({
   const [dialogOpen, setDialogOpen] = useState(false);
   const styleId = generation.styleComponentId ?? undefined;
   const deleteMutation = useStyleGenerationDeleteMutation(styleId);
+  const { workspace } = useWorkspace();
 
   if (!styleId) {
     return null;
@@ -32,7 +34,11 @@ export function GenerationCardActions({
 
   const handleDelete = async () => {
     try {
-      await deleteMutation.mutateAsync(generation.id);
+      await deleteMutation.mutateAsync({
+        workspaceId: workspace.id,
+        styleId,
+        generationId: generation.id,
+      });
       setDialogOpen(false);
     } catch {
       // keep dialog open so the user can retry if needed

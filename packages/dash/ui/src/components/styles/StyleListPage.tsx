@@ -68,7 +68,7 @@ export function StyleListPage() {
       params.search = debouncedSearch;
     }
     if (officialOnly) {
-      params.officialOnly = "true";
+      params.officialOnly = true;
     }
     if (sort !== "latest") {
       params.sort = sort;

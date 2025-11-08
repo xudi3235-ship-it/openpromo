@@ -16,8 +16,8 @@ export const Route = createFileRoute(
     prefetchConnectedAccounts(context.queryClient, params.workspaceSlug);
     prefetchProductList(context.queryClient, params.workspaceSlug, {});
     prefetchStylesList(context.queryClient, params.workspaceSlug, {
-      page: "1",
-      officialOnly: "true",
+      page: 1,
+      officialOnly: true,
     });
   },
   component: ComposerComponent,

@@ -54,9 +54,9 @@ export function MediaGenerateContent() {
   const { data: productsData, isLoading: isLoadingProducts } =
     useProductListQuery({});
 
-  const { data: stylesData, isLoading: isLoadingStyles } = useStylesListQuery({
-    page: "1",
-    officialOnly: "true",
+  const { data: stylesData, isPending: isLoadingStyles } = useStylesListQuery({
+    page: 1,
+    officialOnly: true,
   });
 
   const generateMutation = useProductImageGenerateMutation((data) => {

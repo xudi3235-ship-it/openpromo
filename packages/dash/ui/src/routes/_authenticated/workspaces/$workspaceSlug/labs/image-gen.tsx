@@ -58,7 +58,7 @@ function ImageGenPage() {
     useProductListQuery({});
 
   const { data: stylesData, isLoading: isLoadingStyles } = useStylesListQuery({
-    page: "1",
+    page: 1,
   });
 
   const { data: generationsData, isLoading: isLoadingGenerations } =

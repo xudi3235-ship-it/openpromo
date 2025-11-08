@@ -16,11 +16,11 @@ export function StyleDetailPage() {
     from: "/_authenticated/workspaces/$workspaceSlug/styles/$styleId",
   });
   const { styleId, workspaceSlug } = params;
-  const { data, isLoading, error } = useStyleDetailsQuery(styleId);
+  const { data, isPending, error } = useStyleDetailsQuery(styleId);
 
   const style = data?.style;
 
-  if (isLoading) {
+  if (isPending) {
     return <StyleDetailSkeleton />;
   }
 

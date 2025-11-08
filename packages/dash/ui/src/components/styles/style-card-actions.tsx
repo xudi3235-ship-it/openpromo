@@ -9,6 +9,7 @@ import { MoreVertical, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useActor, useInternal } from "@/hooks/useActor";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import type { StyleResponse } from "@/queries/styles";
 import { useStyleDeleteMutation } from "@/queries/styles";
 
@@ -19,6 +20,7 @@ interface StyleCardActionsProps {
 export function StyleCardActions({ style }: StyleCardActionsProps) {
   const actor = useActor();
   const isInternal = useInternal();
+  const { workspace } = useWorkspace();
   const deleteMutation = useStyleDeleteMutation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -31,7 +33,10 @@ export function StyleCardActions({ style }: StyleCardActionsProps) {
   }
 
   const handleDelete = async () => {
-    await deleteMutation.mutateAsync(style.id);
+    await deleteMutation.mutateAsync({
+      styleId: style.id,
+      workspaceId: workspace.id,
+    });
     setDeleteDialogOpen(false);
   };
 

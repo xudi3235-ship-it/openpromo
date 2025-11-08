@@ -24,7 +24,7 @@ export function GenerationsInfiniteGrid({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useStyleGenerationsInfiniteQuery(styleId, { pageSize: "12" });
+  } = useStyleGenerationsInfiniteQuery(styleId, { pageSize: 12 });
 
   const { ref: loadMoreRef, isIntersecting } = useIntersectionObserver({
     threshold: 0.1,
