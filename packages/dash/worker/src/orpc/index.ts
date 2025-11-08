@@ -9,13 +9,16 @@ export {
   listPlanet,
   planetRouter,
 } from "./routes/planet";
+export { listStyles, stylesRouter } from "./routes/styles";
 
 import { inboxRouter } from "./routes/inbox";
 import { insightsRouter } from "./routes/insights";
 import { planetRouter } from "./routes/planet";
+import { stylesRouter } from "./routes/styles";
 
 export const orpcRouter = {
   planet: planetRouter,
   inbox: inboxRouter,
   insights: insightsRouter,
+  styles: stylesRouter,
 };

@@ -99,7 +99,7 @@
     "chatgpt.commentCodeLensEnabled": false,
     "chatgpt.openOnStartup": true,
     "python.languageServer": "None",
-    "cSpell.words": ["openpromo"]
+    "cSpell.words": ["openpromo", "orpc"]
   },
   "extensions": {
     "recommendations": [
