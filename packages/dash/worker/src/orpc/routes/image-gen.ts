@@ -28,7 +28,6 @@ const generateImageInput = createWorkspaceInputSchema(
     productId: z.string().min(1),
     styleId: z.string().min(1).optional(),
     referenceImageUrl: z.string().optional(),
-    mode: z.enum(["studio", "style"]).default("studio"),
     batchCount: z.number().int().min(1).max(4).default(1),
     prompt: z.string().optional(),
   }),

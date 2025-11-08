@@ -105,10 +105,6 @@ export function InputsPanel({
     }
   }, [batchCount, resolvedBatchCount, setBatchCount]);
 
-  const hasStyleContext =
-    Boolean(selectedStyleId) || referenceImageUrl.trim().length > 0;
-  const mode = hasStyleContext ? "style" : "studio";
-
   const canGenerate =
     Boolean(selectedProductId) &&
     availableSlots > 0 &&
@@ -134,7 +130,6 @@ export function InputsPanel({
     generateMutation.mutate({
       productId: selectedProductId,
       styleId: selectedStyleId || undefined,
-      mode,
       batchCount: safeBatchCount,
       prompt: trimmedPrompt || undefined,
       referenceImageUrl: trimmedReference || undefined,
@@ -279,9 +274,6 @@ export function InputsPanel({
                   />
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Slots remaining: {availableSlots}</span>
-                    <span>
-                      {mode === "style" ? "Styled run" : "Studio run"}
-                    </span>
                   </div>
                   {availableSlots <= 0 && (
                     <p className="text-xs text-destructive">

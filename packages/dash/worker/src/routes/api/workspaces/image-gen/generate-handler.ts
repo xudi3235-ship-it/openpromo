@@ -86,23 +86,6 @@ export async function generateImages({
       })),
     };
   }
-
-  if (mode === "studio") {
-    const generations = await Promise.all(
-      Array.from({ length: batchCount }, () =>
-        EntImageGeneration.generateStudioBackgroundImage(productId, prompt),
-      ),
-    );
-
-    return {
-      async: false,
-      results: generations.map((generation) => ({
-        imageUrl: generation.data.outputImages[0],
-        generation: generation.toJSON(),
-      })),
-    };
-  }
-
   const generations = await Promise.all(
     Array.from({ length: batchCount }, () =>
       EntImageGeneration.generateProductImageWithReference({

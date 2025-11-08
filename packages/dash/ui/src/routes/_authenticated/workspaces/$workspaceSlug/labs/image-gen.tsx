@@ -92,7 +92,6 @@ function ImageGenPage() {
         generationMode === "style" && selectedStyleId
           ? selectedStyleId
           : undefined,
-      mode: generationMode,
       batchCount,
       prompt: prompt.trim() || undefined,
       referenceImageUrl:

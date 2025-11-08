@@ -55,7 +55,6 @@ export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerat
         string,
         unknown
       >;
-      const mode = metadata.mode === "style" ? "style" : "studio";
 
       // Mark as generating and dispatch event
       await step.do("mark-generating", async () => {
@@ -65,14 +64,6 @@ export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerat
 
       // Generate image using the same logic as sync mode
       await step.do("generate-image", async () => {
-        if (mode === "studio") {
-          await EntImageGeneration.fulfillStudioBackgroundGeneration(
-            generation,
-            (metadata.prompt as string | undefined) ?? undefined,
-          );
-          return;
-        }
-
         await EntImageGeneration.fulfillProductImageWithReference(generation, {
           prompt: (metadata.prompt as string | undefined) ?? "",
           referenceImageUrl: metadata.referenceImageUrl as string | undefined,

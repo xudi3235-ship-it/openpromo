@@ -106,9 +106,6 @@ export function MediaGenerateContent() {
     0,
   );
 
-  const hasStyle = selectedStyleId || referenceImageUrl.trim().length > 0;
-  const mode = hasStyle ? "style" : "studio";
-
   const canGenerate =
     Boolean(selectedProductId) &&
     remainingSlots > 0 &&
@@ -128,7 +125,6 @@ export function MediaGenerateContent() {
     generateMutation.mutate({
       productId: selectedProductId,
       styleId: selectedStyleId || undefined,
-      mode,
       batchCount: safeBatchCount,
       prompt: trimmedPrompt || undefined,
       referenceImageUrl: trimmedReference || undefined,
