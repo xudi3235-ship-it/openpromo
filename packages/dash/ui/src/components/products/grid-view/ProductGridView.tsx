@@ -26,7 +26,7 @@ export function ProductGridView({
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex flex-1 items-center justify-center">
         <ListState
           size="sm"
           className="max-w-sm"
@@ -40,31 +40,39 @@ export function ProductGridView({
   }
 
   if (isLoading) {
-    return <ProductsLoadingState />;
+    return (
+      <div className="flex flex-1">
+        <ProductsLoadingState />
+      </div>
+    );
   }
 
   if (products.length === 0) {
     return (
-      <ProductsEmptyState
-        hasFilters={Boolean(searchQuery)}
-        onAddProduct={onAddProduct}
-      />
+      <div className="flex flex-1 items-center justify-center">
+        <ProductsEmptyState
+          hasFilters={Boolean(searchQuery)}
+          onAddProduct={onAddProduct}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-      {/* Add Product Card */}
-      <AddProductCard onAddProduct={onAddProduct} />
+    <div className="flex flex-1">
+      <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {/* Add Product Card */}
+        <AddProductCard onAddProduct={onAddProduct} />
 
-      {/* Product Cards */}
-      {products.map((product) => (
-        <ProductCard
-          key={product.id}
-          // TODO: bad idea, need to fix the types here
-          product={product as unknown as ProductSelectType}
-        />
-      ))}
+        {/* Product Cards */}
+        {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            // TODO: bad idea, need to fix the types here
+            product={product as unknown as ProductSelectType}
+          />
+        ))}
+      </div>
     </div>
   );
 }
