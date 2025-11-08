@@ -52,13 +52,13 @@ export function MediaGeneratorDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
-      <DialogContent className="max-w-5xl lg:max-w-6xl h-[calc(100vh-120px)] max-h-[800px] p-0 gap-0 flex flex-col">
+      <DialogContent className="w-[90vw] max-w-7xl h-[85vh] p-0 gap-0 flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
           <DialogTitle>Create Product Image</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 px-6 pb-6">
-          <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-[380px_1fr]">
+          <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-[420px_1fr]">
             <InputsPanel
               products={products}
               styles={styles}
