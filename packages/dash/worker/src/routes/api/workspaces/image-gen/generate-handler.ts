@@ -54,6 +54,7 @@ export async function generateImages({
           mode,
           prompt,
           referenceImageUrl,
+          styleId,
         },
       });
 

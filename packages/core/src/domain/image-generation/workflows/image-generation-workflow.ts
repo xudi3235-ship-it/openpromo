@@ -1,5 +1,3 @@
-import { ProductImageGen } from "@core/domain/genai";
-import { EntProduct } from "@core/domain/product";
 import { Actor } from "@core/helpers/actor";
 import {
   type CoreWorkflowContext,
@@ -45,51 +43,49 @@ export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerat
 
     try {
       // 0. Fetch the generation record
-      const gen = await step.do("fetch-generation", async () => {
-        return (await EntImageGeneration.fromID(generationId)).toJSON();
+      const generation = await step.do("fetch-generation", async () => {
+        return EntImageGeneration.fromID(generationId);
       });
 
-      const productID = gen.productId;
+      if (!generation.data.productId) {
+        throw new Error("Generation has no product ID");
+      }
 
-      if (!gen) throw new Error("Generation not found");
-      if (!productID) throw new Error("Generation has no product ID");
+      const metadata = (generation.data.metadata ?? {}) as Record<
+        string,
+        unknown
+      >;
+      const mode = metadata.mode === "style" ? "style" : "studio";
 
-      // 1. derive style ctx
-      const styleCtx = await step.do("derive-style-ctx", async () => {
-        const ent = await EntImageGeneration.fromID(generationId);
-        return ent.deriveStyleContext({
-          productID,
-          // styleId: gen.styleComponentId,
-        });
-      });
-      // 2. mark as generating and dispatch event
+      // Mark as generating and dispatch event
       await step.do("mark-generating", async () => {
-        const ent = await EntImageGeneration.fromID(generationId);
-        await ent.setState("generating");
-        await ent.dispatchUpdateEvent();
+        await generation.setState("generating");
+        await generation.dispatchUpdateEvent();
       });
 
-      // 3. generate image
-      const { imageUrls } = await step.do("generate-image", async () => {
-        const product = await EntProduct.fromID(productID);
-        const out = await ProductImageGen.genImage({
-          product,
-          style: styleCtx.style,
-          prompt: styleCtx.imageGenPrompt,
+      // Generate image using the same logic as sync mode
+      await step.do("generate-image", async () => {
+        if (mode === "studio") {
+          await EntImageGeneration.fulfillStudioBackgroundGeneration(
+            generation,
+            (metadata.prompt as string | undefined) ?? undefined,
+          );
+          return;
+        }
+
+        await EntImageGeneration.fulfillProductImageWithReference(generation, {
+          prompt: (metadata.prompt as string | undefined) ?? "",
+          referenceImageUrl: metadata.referenceImageUrl as string | undefined,
+          styleId:
+            generation.data.styleComponentId ||
+            (metadata.styleId as string | undefined),
         });
-        return {
-          imageUrls: out.imageUrls,
-        };
       });
 
-      // 4. mark as completed, store image URLs and dispatch event
+      // Dispatch completion event with refreshed data
       await step.do("mark-completed", async () => {
-        const ent = await EntImageGeneration.fromID(generationId);
-        await ent.update({
-          state: "completed",
-          outputImages: imageUrls,
-        });
-        await ent.dispatchUpdateEvent();
+        const refreshed = await EntImageGeneration.fromID(generationId);
+        await refreshed.dispatchUpdateEvent();
       });
     } catch (err) {
       console.error("// Image generation workflow failed", {

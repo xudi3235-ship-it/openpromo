@@ -102,10 +102,40 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     productId: string,
     customPrompt?: string,
   ) {
-    let generation = await EntImageGeneration.create({
+    const generation = await EntImageGeneration.create({
       state: "pending",
-      productId: productId,
+      productId,
     });
+    return EntImageGeneration.fulfillStudioBackgroundGeneration(
+      generation,
+      customPrompt,
+    );
+  }
+  static async generateProductImageWithReference(params: {
+    productId: string;
+    referenceImageUrl?: string;
+    prompt: string;
+    styleId?: string;
+  }) {
+    const generation = await EntImageGeneration.create({
+      state: "pending",
+      productId: params.productId,
+      styleComponentId: params.styleId ?? null,
+    });
+    return EntImageGeneration.fulfillProductImageWithReference(generation, {
+      referenceImageUrl: params.referenceImageUrl,
+      prompt: params.prompt,
+      styleId: params.styleId,
+    });
+  }
+
+  static async fulfillStudioBackgroundGeneration(
+    generation: EntImageGeneration,
+    customPrompt?: string,
+  ) {
+    const productId = generation.data.productId;
+    if (!productId) throw new Error("Generation missing product reference");
+
     const product = await EntProduct.fromID(productId);
     const user_input = customPrompt
       ? `Generate studio-grade product shot image for my attached product for ads creative & social visuals.
@@ -119,7 +149,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     here are some additional context about the product:
     ${JSON.stringify(product.data.metadata, null, 2)}
     `;
-    // 0. generate image prompt with our
+
     const oai = getOpenAIClient();
     const response = await oai.responses.create({
       prompt: {
@@ -153,15 +183,16 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     }
     const inputImages = [productImage];
 
-    // 1. generate image using
     const imageUrl = await GenAI.runNanoBanana({
       prompt: image_prompt,
       image_input: inputImages,
     });
-    generation = await generation.update({
+
+    await generation.update({
       outputImages: [imageUrl],
       state: "completed",
       metadata: {
+        ...(generation.data.metadata ?? {}),
         prompt: customPrompt,
         generatedPrompt: image_prompt,
         inputImages,
@@ -169,25 +200,26 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     });
     return generation;
   }
-  static async generateProductImageWithReference(params: {
-    productId: string;
-    referenceImageUrl?: string;
-    prompt: string;
-    styleId?: string;
-  }) {
-    // 0. create generation record
-    const generation = await EntImageGeneration.create({
-      state: "pending",
-      productId: params.productId,
-    });
-    const product = await EntProduct.fromID(params.productId);
 
-    // if we have style ID, load them.
+  static async fulfillProductImageWithReference(
+    generation: EntImageGeneration,
+    params: { referenceImageUrl?: string; prompt: string; styleId?: string },
+  ) {
+    const productId = generation.data.productId;
+    if (!productId) throw new Error("Generation missing product reference");
+
+    const product = await EntProduct.fromID(productId);
+
+    const styleId =
+      params.styleId ?? generation.data.styleComponentId ?? undefined;
+
     async function maybeGetStyleImage(): Promise<string[]> {
-      if (!params.styleId) return [];
-      const style = await EntStyleComponent.fromID(params.styleId);
+      if (!styleId) return [];
+      const style = await EntStyleComponent.fromID(styleId);
       return style.data.imageRefs;
     }
+
+    const styleImageRefs = await maybeGetStyleImage();
 
     function toResponseInput(): ResponseInput {
       const productMsg = {
@@ -204,7 +236,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
           },
         ],
       } as ResponseInputItem;
-      // we either use style images or reference img url
+
       if (styleImageRefs.length > 0) {
         return [
           {
@@ -224,7 +256,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
           productMsg,
         ] as ResponseInput;
       }
-      // either style or img ref.
+
       return [
         {
           role: "user",
@@ -244,8 +276,6 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       ] as ResponseInput;
     }
 
-    const styleImageRefs = await maybeGetStyleImage();
-
     function resolveRefImageUrls() {
       if (styleImageRefs.length > 0) {
         return [...styleImageRefs];
@@ -254,7 +284,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       }
       throw new Error("No reference image URL or style images provided");
     }
-    // 1. load the prompt & generate image prompt
+
     const user_input = `first img is the reference image. and rest imgs are my product. ${params.prompt}`;
     const oai = getOpenAIClient();
     const response = await oai.responses.create({
@@ -278,20 +308,20 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       product.data.imgVariants?.noBg as string,
     ];
 
-    // 2. generate image using
     const imageUrl = await GenAI.runNanoBanana({
       prompt: image_prompt,
       image_input: inputImages,
     });
-    // 3. update generation record with output and metadata
+
     await generation.update({
       outputImages: [imageUrl],
       state: "completed",
       metadata: {
+        ...(generation.data.metadata ?? {}),
         prompt: params.prompt,
         generatedPrompt: image_prompt,
         referenceImageUrl: params.referenceImageUrl,
-        styleId: params.styleId,
+        styleId,
         inputImages,
       },
     });
