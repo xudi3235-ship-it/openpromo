@@ -19,7 +19,7 @@ import {
   useConnectedAccounts,
 } from "@/queries/connected-account";
 import { prefetchInboxUnreadCount } from "@/queries/inbox/conversations";
-import { prefetchStylesInfiniteQuery } from "@/queries/styles";
+import { prefetchStylesInfiniteQuery } from "@/queries/styles-queries";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug",

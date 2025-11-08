@@ -6,7 +6,7 @@ import {
 import {
   prefetchStyleDetails,
   prefetchStyleGenerationsInfiniteQuery,
-} from "@/queries/styles";
+} from "@/queries/styles-queries";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/styles/$styleId",

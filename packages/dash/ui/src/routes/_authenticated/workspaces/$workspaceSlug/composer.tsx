@@ -6,7 +6,7 @@ import {
   useConnectedAccounts,
 } from "@/queries/connected-account";
 import { prefetchProductList } from "@/queries/product";
-import { prefetchStylesList } from "@/queries/styles";
+import { prefetchStylesList } from "@/queries/styles-queries";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/composer",

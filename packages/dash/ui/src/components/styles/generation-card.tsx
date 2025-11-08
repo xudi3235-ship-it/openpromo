@@ -1,4 +1,4 @@
-import type { StyleGenerationsResponse } from "@/queries/styles";
+import type { StyleGenerationsResponse } from "@/queries/styles-queries";
 import { GenerationCardActions } from "./generation-card-actions";
 
 type Generation = StyleGenerationsResponse["generations"][number];

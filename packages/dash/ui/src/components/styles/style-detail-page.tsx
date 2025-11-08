@@ -3,7 +3,7 @@ import { Button } from "@openpromo/ui/components/button";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Link, useParams } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
-import { useStyleDetailsQuery } from "@/queries/styles";
+import { useStyleDetailsQuery } from "@/queries/styles-queries";
 import { GenerationsInfiniteGrid } from "./generations-infinite-grid";
 import { StyleDetails } from "./style-details";
 

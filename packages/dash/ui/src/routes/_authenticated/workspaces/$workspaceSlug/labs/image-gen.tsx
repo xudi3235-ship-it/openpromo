@@ -29,7 +29,7 @@ import {
   useProductImageGenerateMutation,
   useProductListQuery,
 } from "@/queries/product";
-import { useStylesListQuery } from "@/queries/styles";
+import { useStylesListQuery } from "@/queries/styles-queries";
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/labs/image-gen",

@@ -12,7 +12,7 @@ import {
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useStorageUpload } from "@/hooks/useStorageUpload";
-import { useStyleCreateMutation } from "@/queries/styles";
+import { useStyleCreateMutation } from "@/queries/styles-queries";
 import { useStyleComposerStore } from "@/stores/style-composer-store";
 
 interface StyleComposerProps {

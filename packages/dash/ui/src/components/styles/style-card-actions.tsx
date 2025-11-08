@@ -10,8 +10,8 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useActor, useInternal } from "@/hooks/useActor";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import type { StyleResponse } from "@/queries/styles";
-import { useStyleDeleteMutation } from "@/queries/styles";
+import type { StyleResponse } from "@/queries/styles-queries";
+import { useStyleDeleteMutation } from "@/queries/styles-queries";
 
 interface StyleCardActionsProps {
   style: StyleResponse["style"];

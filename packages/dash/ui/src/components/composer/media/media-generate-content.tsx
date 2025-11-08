@@ -8,7 +8,7 @@ import {
   useProductImageGenerateMutation,
   useProductListQuery,
 } from "@/queries/product";
-import { useStylesListQuery } from "@/queries/styles";
+import { useStylesListQuery } from "@/queries/styles-queries";
 import { useComposerStore } from "@/stores/composer-store";
 import { useImageGenComposerStore } from "@/stores/image-gen-composer-store";
 import { GenerateButton } from "./generate-button";

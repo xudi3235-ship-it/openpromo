@@ -15,8 +15,8 @@ import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
 import { StylesInfiniteGrid } from "@/components/styles/styles-infinite-grid";
 import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
-import type { StylesListParams } from "@/queries/styles";
-import { invalidateStylesListQueries } from "@/queries/styles";
+import type { StylesListParams } from "@/queries/styles-queries";
+import { invalidateStylesListQueries } from "@/queries/styles-queries";
 import { StyleComposer } from "./composer";
 
 type SortOption = "latest" | "oldest" | "most_used";

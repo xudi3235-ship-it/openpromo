@@ -9,8 +9,8 @@ import { MoreVertical, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import type { StyleGenerationsResponse } from "@/queries/styles";
-import { useStyleGenerationDeleteMutation } from "@/queries/styles";
+import type { StyleGenerationsResponse } from "@/queries/styles-queries";
+import { useStyleGenerationDeleteMutation } from "@/queries/styles-queries";
 
 type Generation = StyleGenerationsResponse["generations"][number];
 

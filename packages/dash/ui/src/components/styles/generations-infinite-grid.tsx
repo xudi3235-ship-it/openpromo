@@ -3,7 +3,7 @@ import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Sparkles } from "lucide-react";
 import { useEffect } from "react";
 import { useIntersectionObserver } from "usehooks-ts";
-import { useStyleGenerationsInfiniteQuery } from "@/queries/styles";
+import { useStyleGenerationsInfiniteQuery } from "@/queries/styles-queries";
 import { GenerationCard } from "./generation-card";
 
 interface GenerationsInfiniteGridProps {

@@ -8,7 +8,7 @@ import { cn } from "@openpromo/ui/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { CheckCircle2 } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import type { StyleResponse } from "@/queries/styles";
+import type { StyleResponse } from "@/queries/styles-queries";
 import { StyleCardActions } from "./style-card-actions";
 
 interface StyleCardProps {

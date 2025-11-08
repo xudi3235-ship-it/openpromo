@@ -6,7 +6,7 @@ import {
   CarouselPrevious,
 } from "@openpromo/ui/components/carousel";
 import { ImageOff } from "lucide-react";
-import type { StyleResponse } from "@/queries/styles";
+import type { StyleResponse } from "@/queries/styles-queries";
 
 interface StyleDetailsProps {
   style: StyleResponse["style"];

@@ -8,7 +8,7 @@ import {
   type StyleResponse,
   type StylesListParams,
   useStylesInfiniteQuery,
-} from "@/queries/styles";
+} from "@/queries/styles-queries";
 import { StyleCard } from "./style-card";
 
 type StyleItem = StyleResponse["style"];
