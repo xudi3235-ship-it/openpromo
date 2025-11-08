@@ -1,9 +1,14 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { useQueryClient } from "@tanstack/react-query";
-import type { InferRequestType, InferResponseType } from "hono/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { InferRequestType } from "hono/client";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { apiClient, useHonoMutation, useHonoQuery } from "@/lib/hono-client";
+import { orpc } from "@/lib/orpc-client";
+import type {
+  ImageGenRouterInputs,
+  ImageGenRouterOutputs,
+} from "../../../worker/src/orpc/routes/image-gen";
 
 type ProductCreateInput = InferRequestType<
   (typeof apiClient)["workspaces"][":workspaceSlug"]["products"]["$post"]
@@ -17,13 +22,12 @@ type ProductListParams = InferRequestType<
   (typeof apiClient)["workspaces"][":workspaceSlug"]["products"]["$get"]
 >["query"];
 
-export type ProductImageGenerateInput = InferRequestType<
-  (typeof apiClient)["workspaces"][":workspaceSlug"]["image-gen"]["generate"]["$post"]
->["json"];
-
-export type ProductImageGenerateResponse = InferResponseType<
-  (typeof apiClient)["workspaces"][":workspaceSlug"]["image-gen"]["generate"]["$post"]
+export type ProductImageGenerateInput = Omit<
+  ImageGenRouterInputs["generate"],
+  "workspaceId" | "workspaceSlug"
 >;
+
+export type ProductImageGenerateResponse = ImageGenRouterOutputs["generate"];
 
 export const invalidateProductListQueries = async (queryClient: QueryClient) =>
   queryClient.invalidateQueries({
@@ -143,16 +147,17 @@ export const useProductImageGenerateMutation = (
 ) => {
   const { workspace } = useWorkspace();
 
-  return useHonoMutation<
+  return useMutation<
     ProductImageGenerateResponse,
+    Error,
     ProductImageGenerateInput
   >({
-    mutationFn: (api, variables) =>
-      api.workspaces[":workspaceSlug"]["image-gen"].generate.$post({
-        param: { workspaceSlug: workspace.slug },
-        json: variables,
+    mutationFn: async (variables) =>
+      orpc.imageGen.generate.call({
+        ...variables,
+        workspaceSlug: workspace.slug,
       }),
-    onSuccess: (data, variables, _context) => {
+    onSuccess: (data, variables) => {
       const count = variables.batchCount || 1;
 
       // Check if response is async (production) or sync (local)

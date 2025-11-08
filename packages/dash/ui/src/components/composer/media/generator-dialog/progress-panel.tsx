@@ -44,8 +44,8 @@ export function GeneratedImagesGallery({
     new Set(),
   );
   const { data, isLoading, refetch } = useImageGenListQuery({
-    page: "1",
-    pageSize: "12",
+    page: 1,
+    pageSize: 12,
   });
 
   const generations = data?.generations ?? [];

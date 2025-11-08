@@ -3,6 +3,7 @@ import { Spinner } from "@openpromo/ui/components/spinner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { toast } from "sonner";
+import { orpc } from "@/lib/orpc-client";
 import {
   useProductImageGenerateMutation,
   useProductListQuery,
@@ -61,7 +62,7 @@ export function MediaGenerateContent() {
 
   const generateMutation = useProductImageGenerateMutation((data) => {
     // Invalidate the query to refresh the list
-    queryClient.invalidateQueries({ queryKey: ["image-gen-list"] });
+    queryClient.invalidateQueries({ queryKey: orpc.imageGen.list.key() });
 
     // Check if response is async or sync
     const isAsync = "async" in data && data.async === true;

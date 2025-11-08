@@ -1,6 +1,7 @@
 export type { OrpcContext, OrpcWorkspaceContext } from "./context";
 export { orpcBuilder } from "./context";
 export { withWorkspaceRole } from "./middleware";
+export { imageGenRouter } from "./routes/image-gen";
 export { inboxRouter } from "./routes/inbox";
 export { insightsRouter } from "./routes/insights";
 export {
@@ -11,6 +12,7 @@ export {
 } from "./routes/planet";
 export { listStyles, stylesRouter } from "./routes/styles";
 
+import { imageGenRouter } from "./routes/image-gen";
 import { inboxRouter } from "./routes/inbox";
 import { insightsRouter } from "./routes/insights";
 import { planetRouter } from "./routes/planet";
@@ -20,5 +22,6 @@ export const orpcRouter = {
   planet: planetRouter,
   inbox: inboxRouter,
   insights: insightsRouter,
+  imageGen: imageGenRouter,
   styles: stylesRouter,
 };

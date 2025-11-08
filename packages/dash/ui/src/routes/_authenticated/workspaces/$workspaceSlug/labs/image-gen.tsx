@@ -20,6 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Trash2, X } from "lucide-react";
 import { useState } from "react";
+import { orpc } from "@/lib/orpc-client";
 import {
   useImageGenDeleteBatchMutation,
   useImageGenListQuery,
@@ -62,11 +63,11 @@ function ImageGenPage() {
   });
 
   const { data: generationsData, isLoading: isLoadingGenerations } =
-    useImageGenListQuery({ page: "1", pageSize: "50" });
+    useImageGenListQuery({ page: 1, pageSize: 50 });
 
   const generateMutation = useProductImageGenerateMutation(() => {
     // Invalidate the generations list to refetch
-    queryClient.invalidateQueries({ queryKey: ["image-gen-list"] });
+    queryClient.invalidateQueries({ queryKey: orpc.imageGen.list.key() });
   });
 
   const deleteBatchMutation = useImageGenDeleteBatchMutation(() => {
