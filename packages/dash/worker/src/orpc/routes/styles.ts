@@ -62,14 +62,7 @@ const listGenerationsInput = createWorkspaceInputSchema(
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(30).default(12),
     productId: z.string().optional(),
-    productOnly: z
-      .union([z.boolean(), z.string()])
-      .optional()
-      .transform((value) => {
-        if (value == null) return undefined;
-        if (typeof value === "boolean") return value;
-        return value === "true" || value === "1";
-      }),
+    productOnly: z.boolean().default(false),
   }),
 );
 
@@ -145,13 +138,12 @@ export const listStyleGenerations = orpcBuilder
       workspaceSlug: _workspaceSlug,
     } = input;
 
-    const style = await EntStyleComponent.fromID(styleId).catch(() => null);
-    if (!style) {
+    const style = await EntStyleComponent.fromID(styleId);
+    if (!style)
       throw createVisibleError(404, {
         message: `Style component ${styleId} not found`,
         userMessage: "Style not found.",
       });
-    }
 
     const productFilter = productOnly ? (productId ?? null) : productId;
 
@@ -173,21 +165,19 @@ export const deleteStyleGeneration = orpcBuilder
   .handler(async ({ input }) => {
     const { styleId, generationId } = input;
 
-    const style = await EntStyleComponent.fromID(styleId).catch(() => null);
-    if (!style) {
+    const style = await EntStyleComponent.fromID(styleId);
+    if (!style)
       throw createVisibleError(404, {
         message: `Style component ${styleId} not found`,
         userMessage: "Style not found.",
       });
-    }
 
     const generation = await EntImageGeneration.fromID(generationId);
-    if (!generation) {
+    if (!generation)
       throw createVisibleError(404, {
         message: `Generation ${generationId} not found for style ${styleId}`,
         userMessage: "Generation not found.",
       });
-    }
 
     await generation.delete();
     return { success: true };
