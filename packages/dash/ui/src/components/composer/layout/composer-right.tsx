@@ -143,7 +143,7 @@ export function ComposerRight() {
   return (
     <div className="h-full min-h-0 overflow-y-auto bg-background p-4">
       <Stack gap="lg">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
           <h3 className="text-sm font-medium text-foreground">Preview</h3>
           <ViewModeToggle viewMode={viewMode} onViewModeChange={setViewMode} />
         </div>

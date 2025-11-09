@@ -125,6 +125,34 @@ export function GeneratedImagesGallery({
     deleteBatchMutation.mutate({ ids: [generation.id] });
   };
 
+  const handleCardClick = (generation: Generation) => {
+    // Only handle clicks for completed generations
+    if (generation.state !== "completed") return;
+    if (!generation.outputImages?.[0]) return;
+
+    // Only enable click-to-add inside composer
+    if (enableComposerActions) {
+      // Inside composer: add directly to post
+      if (remainingSlots === 0) {
+        toast.error("No more slots available");
+        return;
+      }
+
+      const imageToAdd = {
+        id: generation.id,
+        type: "photo" as const,
+        publicUrl: generation.outputImages[0],
+        thumbnailUrl: generation.outputImages[0],
+        mimeType: "image/jpeg",
+        s3Key: generation.id,
+      };
+
+      useComposerStore.getState().addAttachmentSpecs([imageToAdd]);
+      toast.success("Added to post");
+    }
+    // Outside composer: do nothing on click (use dropdown or multi-select instead)
+  };
+
   const handleAddToPost = () => {
     if (!enableComposerActions) return;
     if (selectedGenerations.size === 0) return;
@@ -296,6 +324,8 @@ export function GeneratedImagesGallery({
                       isAddedToPost={addedGenerationIds.has(generation.id)}
                       onEditRequest={onEditGeneration}
                       onDeleteRequest={handleDeleteSingle}
+                      onCardClick={handleCardClick}
+                      showCreatePostAction={!enableComposerActions}
                     />
                   ))
                 )}
@@ -317,6 +347,8 @@ interface GenerationCardProps {
   isAddedToPost: boolean;
   onEditRequest?: (generation: Generation) => void;
   onDeleteRequest?: (generation: Generation) => void;
+  onCardClick?: (generation: Generation) => void;
+  showCreatePostAction?: boolean;
 }
 
 function GenerationCard({
@@ -326,6 +358,8 @@ function GenerationCard({
   isAddedToPost,
   onEditRequest,
   onDeleteRequest,
+  onCardClick,
+  showCreatePostAction,
 }: GenerationCardProps) {
   const previewImage = generation.outputImages?.[0];
 
@@ -340,20 +374,34 @@ function GenerationCard({
     generation.state,
   );
 
+  // Only clickable inside composer (when showCreatePostAction is false)
+  const isClickable =
+    onCardClick && !isPending && !isAddedToPost && !showCreatePostAction;
+
+  const handleCardClick = () => {
+    if (isClickable) {
+      onCardClick(generation);
+    }
+  };
+
   return (
     <div
       className={cn(
         "border rounded-lg overflow-hidden hover:border-foreground/50 transition-colors group relative",
         isAddedToPost && "ring-2 ring-primary/50 border-primary/50",
+        isClickable && "cursor-pointer hover:shadow-md",
       )}
+      onClick={handleCardClick}
     >
       {/* Checkbox overlay */}
-      <div className="absolute top-2 left-2 z-10">
+      <div
+        className="absolute top-2 left-2 z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
         <Checkbox
           checked={isSelected}
           onCheckedChange={() => onToggleSelection(generation.id)}
           className="bg-background border-2"
-          onClick={(e) => e.stopPropagation()}
         />
       </div>
 
@@ -373,6 +421,7 @@ function GenerationCard({
             generation={generation}
             onEdit={onEditRequest}
             onDelete={onDeleteRequest}
+            showCreatePost={showCreatePostAction}
           />
         </div>
       )}

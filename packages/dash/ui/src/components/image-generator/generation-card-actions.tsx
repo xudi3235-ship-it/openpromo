@@ -17,6 +17,7 @@ interface GenerationCardActionsProps {
   onEdit?: (generation: Generation) => void;
   onDelete?: (generation: Generation) => void;
   onDownload?: (generation: Generation) => void;
+  showCreatePost?: boolean;
 }
 
 export function GenerationCardActions({
@@ -24,6 +25,7 @@ export function GenerationCardActions({
   onEdit,
   onDelete,
   onDownload,
+  showCreatePost = false,
 }: GenerationCardActionsProps) {
   const openComposer = useOpenComposer();
 
@@ -69,7 +71,7 @@ export function GenerationCardActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
-        {isCompleted && (
+        {showCreatePost && isCompleted && (
           <DropdownMenuItem
             onClick={(e) => {
               e.stopPropagation();
