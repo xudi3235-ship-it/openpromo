@@ -16,18 +16,29 @@ type ImageGenDeleteBatchInput = Omit<
   ImageGenRouterInputs["deleteBatch"],
   "workspaceId" | "workspaceSlug"
 >;
+export type ImageGenRefineInput = Omit<
+  ImageGenRouterInputs["refine"],
+  "workspaceId" | "workspaceSlug"
+>;
+export type ImageGenRefineResponse = ImageGenRouterOutputs["refine"];
 
-export const useImageGenListQuery = (params: ImageGenListParams = {}) => {
+export const useImageGenListQuery = (
+  params: ImageGenListParams = {},
+  options?: { enabled?: boolean },
+) => {
   const { workspace } = useWorkspace();
 
-  return useQuery(
-    orpc.imageGen.list.queryOptions({
-      input: {
-        ...params,
-        workspaceSlug: workspace.slug,
-      },
-    }),
-  );
+  const queryOptions = orpc.imageGen.list.queryOptions({
+    input: {
+      ...params,
+      workspaceSlug: workspace.slug,
+    },
+  });
+
+  return useQuery({
+    ...queryOptions,
+    enabled: options?.enabled ?? queryOptions.enabled ?? true,
+  });
 };
 
 export const useImageGenDeleteBatchMutation = (onSuccess?: () => void) => {
@@ -49,6 +60,36 @@ export const useImageGenDeleteBatchMutation = (onSuccess?: () => void) => {
           `Deleted ${data.deletedCount} generation${data.deletedCount !== 1 ? "s" : ""}`,
         );
         onSuccess?.();
+      },
+    }),
+  );
+};
+
+export const useImageGenRefineMutation = (
+  onSuccess?: (data: ImageGenRefineResponse) => void,
+) => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    orpc.imageGen.refine.mutationOptions({
+      mutationFn: async (input: ImageGenRefineInput) =>
+        orpc.imageGen.refine.call({
+          ...input,
+          workspaceSlug: workspace.slug,
+        }),
+      onSuccess: async (data) => {
+        await queryClient.invalidateQueries({
+          queryKey: orpc.imageGen.list.key(),
+        });
+
+        if (data.async) {
+          toast.success("Variation queued");
+        } else {
+          toast.success("Variation generated");
+        }
+
+        onSuccess?.(data);
       },
     }),
   );

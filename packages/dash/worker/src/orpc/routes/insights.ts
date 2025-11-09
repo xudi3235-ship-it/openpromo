@@ -134,7 +134,6 @@ export const getTopContent = orpcBuilder
       input.start && input.end
         ? { start: input.start, end: input.end }
         : undefined;
-
     const rows = await aggregator.getTopContent({
       workspaceId: context.workspace.workspaceID,
       limit: input.limit ?? 5,

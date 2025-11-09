@@ -116,11 +116,13 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     referenceImageUrl?: string;
     prompt: string;
     styleId?: string;
+    parentGenerationId?: string | null;
   }) {
     const generation = await EntImageGeneration.create({
       state: "pending",
       productId: params.productId,
       styleComponentId: params.styleId ?? null,
+      parentGenerationId: params.parentGenerationId ?? null,
     });
     return EntImageGeneration.fulfillProductImageWithReference(generation, {
       referenceImageUrl: params.referenceImageUrl,
@@ -196,7 +198,12 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
 
   static async fulfillProductImageWithReference(
     generation: EntImageGeneration,
-    params: { referenceImageUrl?: string; prompt: string; styleId?: string },
+    params: {
+      referenceImageUrl?: string;
+      prompt: string;
+      styleId?: string;
+      parentGenerationId?: string | null;
+    },
   ) {
     const productId = generation.data.productId;
     if (!productId) throw new Error("Generation missing product reference");
@@ -343,14 +350,34 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
   }
 
   static async list(
-    params: { page?: number; pageSize?: number; productId?: string } = {},
+    params: {
+      page?: number;
+      pageSize?: number;
+      productId?: string;
+      includeVariants?: boolean;
+      parentGenerationId?: string;
+    } = {},
   ) {
-    const { page = 1, pageSize = 20, productId } = params;
+    const {
+      page = 1,
+      pageSize = 20,
+      productId,
+      includeVariants = false,
+      parentGenerationId,
+    } = params;
 
     const filters = [eq(imageGenerationTable.workspaceId, Actor.workspaceID())];
 
     if (productId) {
       filters.push(eq(imageGenerationTable.productId, productId));
+    }
+
+    if (parentGenerationId) {
+      filters.push(
+        eq(imageGenerationTable.parentGenerationId, parentGenerationId),
+      );
+    } else if (!includeVariants) {
+      filters.push(isNull(imageGenerationTable.parentGenerationId));
     }
 
     const whereClause = and(...filters);
@@ -392,9 +419,15 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       page?: number;
       pageSize?: number;
       productId?: string | null;
+      includeVariants?: boolean;
     } = {},
   ) {
-    const { page = 1, pageSize = 20, productId } = params;
+    const {
+      page = 1,
+      pageSize = 20,
+      productId,
+      includeVariants = true,
+    } = params;
 
     const filters = [
       eq(imageGenerationTable.styleComponentId, styleComponentId),
@@ -403,6 +436,10 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       filters.push(isNull(imageGenerationTable.productId));
     } else if (productId) {
       filters.push(eq(imageGenerationTable.productId, productId));
+    }
+
+    if (!includeVariants) {
+      filters.push(isNull(imageGenerationTable.parentGenerationId));
     }
 
     const whereClause = and(...filters);

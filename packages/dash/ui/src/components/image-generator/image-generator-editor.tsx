@@ -1,14 +1,16 @@
 import { Button } from "@openpromo/ui/components/button";
+import { Spinner } from "@openpromo/ui/components/spinner";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { ImageGenListResponse } from "@/queries/image-gen";
-import type {
-  ProductImageGenerateInput,
-  ProductImageGenerateResponse,
-} from "@/queries/product";
+import {
+  type ImageGenListResponse,
+  type ImageGenRefineInput,
+  type ImageGenRefineResponse,
+  useImageGenListQuery,
+} from "@/queries/image-gen";
 
 type Generation = NonNullable<ImageGenListResponse["generations"]>[number];
 
@@ -16,10 +18,10 @@ interface ImageGeneratorEditorProps {
   generations: Generation[];
   isLoadingGenerations: boolean;
   remainingSlots: number;
-  generateMutation: UseMutationResult<
-    ProductImageGenerateResponse,
+  refineMutation: UseMutationResult<
+    ImageGenRefineResponse,
     Error,
-    ProductImageGenerateInput,
+    ImageGenRefineInput,
     unknown
   >;
   onBackToGenerator: () => void;
@@ -31,7 +33,7 @@ export function ImageGeneratorEditor({
   generations,
   isLoadingGenerations,
   remainingSlots,
-  generateMutation,
+  refineMutation,
   onBackToGenerator,
   className,
   initialGenerationId,
@@ -40,6 +42,7 @@ export function ImageGeneratorEditor({
     string | null
   >(null);
   const [prompt, setPrompt] = useState("");
+  const [pendingVariants, setPendingVariants] = useState<{ id: string }[]>([]);
 
   const selectedGeneration = useMemo(() => {
     return (
@@ -86,7 +89,21 @@ export function ImageGeneratorEditor({
   const canGenerate =
     Boolean(selectedGeneration) &&
     remainingSlots > 0 &&
-    !generateMutation.isPending;
+    !refineMutation.isPending;
+
+  const variantsQuery = useImageGenListQuery(
+    selectedGeneration
+      ? {
+          parentGenerationId: selectedGeneration.id,
+          includeVariants: true,
+          page: 1,
+          pageSize: 20,
+        }
+      : {},
+    { enabled: Boolean(selectedGeneration) },
+  );
+
+  const variants = variantsQuery.data?.generations ?? [];
 
   const handleGenerateVariation = () => {
     if (!selectedGeneration) {
@@ -119,13 +136,24 @@ export function ImageGeneratorEditor({
       selectedGeneration.styleComponentId ??
       undefined;
 
-    generateMutation.mutate({
-      productId: selectedGeneration.productId,
-      styleId: resolvedStyleId,
-      batchCount: 1,
-      prompt: prompt.trim() || undefined,
-      referenceImageUrl: referenceImage,
-    });
+    const placeholderId = crypto.randomUUID();
+    setPendingVariants((prev) => [...prev, { id: placeholderId }]);
+
+    refineMutation.mutate(
+      {
+        generationId: selectedGeneration.id,
+        styleId: resolvedStyleId,
+        prompt: prompt.trim() || undefined,
+        referenceImageUrl: referenceImage,
+      },
+      {
+        onSettled: () => {
+          setPendingVariants((prev) =>
+            prev.filter((pending) => pending.id !== placeholderId),
+          );
+        },
+      },
+    );
   };
 
   return (
@@ -179,7 +207,7 @@ export function ImageGeneratorEditor({
               disabled={!canGenerate}
               className="w-full"
             >
-              {generateMutation.isPending
+              {refineMutation.isPending
                 ? "Generating variation..."
                 : "Generate variation"}
             </Button>
@@ -212,6 +240,59 @@ export function ImageGeneratorEditor({
                 </div>
               )}
             </div>
+
+            {(variants.length > 0 || pendingVariants.length > 0) && (
+              <div className="border-t px-4 py-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Variations
+                  </p>
+                  {variantsQuery.isFetching && (
+                    <Spinner className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="overflow-x-auto">
+                  <div className="flex gap-3 pb-2 w-full">
+                    {pendingVariants.map((item) => (
+                      <div
+                        key={item.id}
+                        className="w-20 h-20 rounded-md border border-dashed flex items-center justify-center text-[11px] text-muted-foreground flex-shrink-0"
+                      >
+                        <Spinner className="h-4 w-4" />
+                      </div>
+                    ))}
+                    {variants.map((variant) => {
+                      const preview = variant.outputImages?.[0];
+                      return (
+                        <button
+                          type="button"
+                          key={variant.id}
+                          onClick={() => setSelectedGenerationId(variant.id)}
+                          className={cn(
+                            "w-20 h-20 rounded-md overflow-hidden border flex-shrink-0",
+                            selectedGenerationId === variant.id
+                              ? "border-primary ring-2 ring-primary/40"
+                              : "border-border hover:border-foreground/40",
+                          )}
+                        >
+                          {preview ? (
+                            <img
+                              src={preview}
+                              alt="Variant preview"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-[11px] text-muted-foreground">
+                              Pending
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

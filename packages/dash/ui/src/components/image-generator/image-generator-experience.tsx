@@ -1,5 +1,6 @@
 import type { UseMutationResult } from "@tanstack/react-query";
 import type { ImageGenListResponse } from "@/queries/image-gen";
+import { useImageGenRefineMutation } from "@/queries/image-gen";
 import type {
   ProductImageGenerateInput,
   ProductImageGenerateResponse,
@@ -50,13 +51,15 @@ export function ImageGeneratorExperience({
     setMode("generate");
   };
 
+  const refineMutation = useImageGenRefineMutation();
+
   if (mode === "edit") {
     return (
       <ImageGeneratorEditor
         generations={generations}
         isLoadingGenerations={isLoadingGenerations}
         remainingSlots={surfaceProps.remainingSlots}
-        generateMutation={surfaceProps.generateMutation}
+        refineMutation={refineMutation}
         onBackToGenerator={handleBackToGenerator}
         className={className}
         initialGenerationId={editingGenerationId ?? undefined}

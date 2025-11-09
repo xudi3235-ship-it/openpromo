@@ -1,0 +1,2 @@
+ALTER TABLE "image_generation" ADD COLUMN "parent_generation_id" "ulid";--> statement-breakpoint
+ALTER TABLE "image_generation" ADD CONSTRAINT "image_generation_parent_generation_id_image_generation_id_fk" FOREIGN KEY ("parent_generation_id") REFERENCES "public"."image_generation"("id") ON DELETE set null ON UPDATE no action;

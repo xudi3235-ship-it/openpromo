@@ -1,5 +1,6 @@
 import { id, timestamps, ulid } from "@core/database/types";
 import {
+  type AnyPgColumn,
   index,
   jsonb,
   pgEnum,
@@ -26,6 +27,8 @@ export const ImageGenMetaSchema = z
     referenceImageUrl: z.string().optional(),
     styleId: z.string().optional(),
     inputImages: z.array(z.string()).min(1).optional(),
+    parentGenerationId: z.string().optional(),
+    variationPrompt: z.string().optional(),
   })
   .default({});
 export type ImageGenMeta = z.infer<typeof ImageGenMetaSchema>;
@@ -77,6 +80,10 @@ export const imageGenerationTable = pgTable(
       .default([]),
     metadata: jsonb("metadata").$type<ImageGenMeta>().notNull().default({}),
     context: jsonb("context").$type<ImageGenContext>(),
+    parentGenerationId: ulid("parent_generation_id").references(
+      (): AnyPgColumn => imageGenerationTable.id,
+      { onDelete: "set null" },
+    ),
     // tracking state
     state: imageGenerationStateEnum()
       .notNull()

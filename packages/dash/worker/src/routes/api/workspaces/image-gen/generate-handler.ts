@@ -9,6 +9,7 @@ export type GenerateImageParams = {
   referenceImageUrl?: string;
   batchCount?: number;
   prompt?: string;
+  parentGenerationId?: string;
 };
 
 type AsyncGenerationResult = {
@@ -38,20 +39,54 @@ export async function generateImages({
   referenceImageUrl,
   batchCount = 1,
   prompt,
+  parentGenerationId,
 }: GenerateImageParams): Promise<GenerateImageResponse> {
   const isLocal = env.VITE_ENVIRONMENT === "local";
   const useAsyncWorkflow = !isLocal;
+
+  let resolvedProductId = productId;
+  let resolvedStyleId = styleId;
+  let resolvedReferenceImageUrl = referenceImageUrl;
+  const resolvedPrompt = prompt;
+
+  if (parentGenerationId) {
+    const parentGeneration =
+      await EntImageGeneration.fromID(parentGenerationId);
+
+    resolvedProductId = parentGeneration.data.productId ?? resolvedProductId;
+    resolvedStyleId =
+      resolvedStyleId ?? parentGeneration.data.styleComponentId ?? undefined;
+    if (!resolvedReferenceImageUrl) {
+      const metadata = (parentGeneration.data.metadata ?? {}) as Record<
+        string,
+        unknown
+      >;
+      resolvedReferenceImageUrl =
+        (metadata.referenceImageUrl as string | undefined) ??
+        parentGeneration.data.outputImages?.[0];
+    }
+
+    if (!resolvedReferenceImageUrl) {
+      throw new Error("Parent generation is missing a reference image");
+    }
+  }
+
+  if (!resolvedProductId) {
+    throw new Error("Product is required to generate images");
+  }
 
   if (useAsyncWorkflow) {
     const generationPromises = Array.from({ length: batchCount }, async () => {
       const generation = await EntImageGeneration.create({
         state: "pending",
-        productId,
-        styleComponentId: styleId ?? null,
+        productId: resolvedProductId,
+        styleComponentId: resolvedStyleId ?? null,
+        parentGenerationId: parentGenerationId ?? null,
         metadata: {
-          prompt,
-          referenceImageUrl,
-          styleId,
+          prompt: resolvedPrompt,
+          referenceImageUrl: resolvedReferenceImageUrl,
+          styleId: resolvedStyleId,
+          parentGenerationId,
         },
       });
 
@@ -82,10 +117,11 @@ export async function generateImages({
   const generations = await Promise.all(
     Array.from({ length: batchCount }, () =>
       EntImageGeneration.generateProductImageWithReference({
-        productId,
-        referenceImageUrl: referenceImageUrl as string,
-        prompt: prompt ?? "",
-        styleId,
+        productId: resolvedProductId,
+        referenceImageUrl: resolvedReferenceImageUrl,
+        prompt: resolvedPrompt ?? "",
+        styleId: resolvedStyleId,
+        parentGenerationId,
       }),
     ),
   );
