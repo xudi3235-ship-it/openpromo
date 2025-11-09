@@ -43,7 +43,7 @@ export function GeneratedImagesGallery({
   const [selectedGenerations, setSelectedGenerations] = useState<Set<string>>(
     new Set(),
   );
-  const { data, isLoading, refetch } = useImageGenListQuery({
+  const { data, isPending, refetch } = useImageGenListQuery({
     page: 1,
     pageSize: 12,
   });
@@ -245,7 +245,7 @@ export function GeneratedImagesGallery({
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
           <div className="p-4 pt-2 space-y-4">
-            {isLoading ? (
+            {isPending ? (
               <div className="flex items-center justify-center py-10">
                 <Spinner className="h-6 w-6" />
               </div>

@@ -45,24 +45,24 @@ export function MediaGeneratorDialog({
   const [productSearch, setProductSearch] = useState("");
 
   // Dialog's own product list query with search
-  const { data: productsData, isLoading: isLoadingProducts } =
+  const { data: productsData, isPending: isPendingProducts } =
     useProductListQuery({ search: productSearch || undefined });
 
   const products = productsData?.products || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
-      <DialogContent className="w-[90vw] max-w-7xl h-[85vh] p-0 gap-0 flex flex-col">
+      <DialogContent className="!max-w-none w-full h-[90vh] p-0 gap-0 flex flex-col overflow-hidden sm:w-[95vw] md:w-[90vw] lg:w-[85vw] xl:w-[80vw] 2xl:w-[1200px]">
         <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
           <DialogTitle>Create Product Image</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 px-6 pb-6">
-          <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-[420px_1fr]">
+        <div className="flex-1 min-h-0 px-6 pb-6 overflow-hidden">
+          <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-[420px_1fr] overflow-hidden">
             <InputsPanel
               products={products}
               styles={styles}
-              isLoadingProducts={isLoadingProducts}
+              isLoadingProducts={isPendingProducts}
               isLoadingStyles={isLoadingStyles}
               remainingSlots={remainingSlots}
               generateMutation={generateMutation}
