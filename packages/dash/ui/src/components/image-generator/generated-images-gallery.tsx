@@ -6,9 +6,10 @@ import { Slider } from "@openpromo/ui/components/slider";
 import { Spinner } from "@openpromo/ui/components/spinner";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { UseMutationResult } from "@tanstack/react-query";
-import { Plus, Trash2 } from "lucide-react";
+import { FileText, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useOpenComposer } from "@/hooks/useOpenComposer";
 import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import {
   type ImageGenListResponse,
@@ -52,6 +53,8 @@ export function GeneratedImagesGallery({
     page: 1,
     pageSize: 12,
   });
+
+  const openComposer = useOpenComposer();
 
   const generations = data?.generations ?? [];
 
@@ -197,6 +200,40 @@ export function GeneratedImagesGallery({
     setSelectedGenerations(new Set());
   };
 
+  const handleCreatePostWithSelected = () => {
+    if (enableComposerActions) return; // Only for product visuals page
+    if (selectedGenerations.size === 0) return;
+
+    // Get selected generations and extract image URLs
+    const selectedItems = generations.filter((gen) =>
+      selectedGenerations.has(gen.id),
+    );
+
+    const imagesToAdd = selectedItems
+      .filter((gen) => gen.outputImages?.[0] && gen.state === "completed")
+      .map((gen) => ({
+        id: gen.id,
+        type: "photo" as const,
+        publicUrl: gen.outputImages[0],
+        thumbnailUrl: gen.outputImages[0],
+        mimeType: "image/jpeg",
+        s3Key: gen.id,
+      }));
+
+    if (imagesToAdd.length === 0) {
+      toast.error("No completed images to add");
+      return;
+    }
+
+    // Open composer with selected images
+    openComposer({
+      attachments: imagesToAdd,
+    });
+
+    // Clear selection after creating post
+    setSelectedGenerations(new Set());
+  };
+
   return (
     <div
       className={cn(
@@ -247,9 +284,9 @@ export function GeneratedImagesGallery({
             </div>
             {selectedGenerations.size > 0 && (
               <div className="flex items-center gap-2">
-                {enableComposerActions && (
+                {enableComposerActions ? (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={handleAddToPost}
                     disabled={remainingSlots === 0}
@@ -257,12 +294,22 @@ export function GeneratedImagesGallery({
                     <Plus className="mr-1.5 h-3 w-3" />
                     Add to post
                   </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCreatePostWithSelected}
+                  >
+                    <FileText className="mr-1.5 h-3 w-3" />
+                    Create post
+                  </Button>
                 )}
                 <Button
-                  variant="destructive"
+                  variant="ghost"
                   size="sm"
                   onClick={handleDeleteSelected}
                   disabled={deleteBatchMutation.isPending}
+                  className="text-destructive hover:text-destructive"
                 >
                   {deleteBatchMutation.isPending ? (
                     <>
