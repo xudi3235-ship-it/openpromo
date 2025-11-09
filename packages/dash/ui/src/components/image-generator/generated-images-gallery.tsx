@@ -2,6 +2,7 @@ import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
 import { Checkbox } from "@openpromo/ui/components/checkbox";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
+import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Slider } from "@openpromo/ui/components/slider";
 import { Spinner } from "@openpromo/ui/components/spinner";
 import { cn } from "@openpromo/ui/lib/utils";
@@ -333,8 +334,20 @@ export function GeneratedImagesGallery({
         <ScrollArea className="h-full">
           <div className="p-4 pt-2 space-y-4">
             {isPending ? (
-              <div className="flex items-center justify-center py-10">
-                <Spinner className="h-6 w-6" />
+              <div className={cn("grid gap-3", gridColsClass)}>
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <div
+                    // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders do not need stable keys
+                    key={`loading-skeleton-${index}`}
+                    className="border rounded-lg overflow-hidden"
+                  >
+                    <Skeleton className="aspect-square w-full" />
+                    <div className="p-2.5 space-y-2">
+                      <Skeleton className="h-3 w-3/4" />
+                      <Skeleton className="h-2 w-1/2" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className={cn("grid gap-3", gridColsClass)}>
@@ -345,12 +358,12 @@ export function GeneratedImagesGallery({
                       <div
                         // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders do not need stable keys
                         key={`skeleton-${index}`}
-                        className="border rounded-lg overflow-hidden bg-muted/50 animate-pulse"
+                        className="border rounded-lg overflow-hidden"
                       >
-                        <div className="aspect-square bg-muted" />
+                        <Skeleton className="aspect-square w-full" />
                         <div className="p-2.5 space-y-2">
-                          <div className="h-3 bg-muted rounded w-3/4" />
-                          <div className="h-2 bg-muted rounded w-1/2" />
+                          <Skeleton className="h-3 w-3/4" />
+                          <Skeleton className="h-2 w-1/2" />
                         </div>
                       </div>
                     ),
