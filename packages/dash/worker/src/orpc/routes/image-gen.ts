@@ -49,6 +49,12 @@ const refineImageInput = createWorkspaceInputSchema(
   }),
 );
 
+const promoteVariantInput = createWorkspaceInputSchema(
+  z.object({
+    generationId: z.string().min(1),
+  }),
+);
+
 export const listImageGenerations = orpcBuilder
   .input(listImageGenerationsInput)
   .use(withWorkspaceRole, workspaceRoleMappers.editor)
@@ -132,11 +138,30 @@ export const refineImageGeneration = orpcBuilder
     };
   });
 
+export const promoteVariant = orpcBuilder
+  .input(promoteVariantInput)
+  .use(withWorkspaceRole, workspaceRoleMappers.editor)
+  .handler(async ({ input }) => {
+    const {
+      generationId,
+      workspaceId: _workspaceId,
+      workspaceSlug: _workspaceSlug,
+    } = input;
+
+    const promoted = await EntImageGeneration.promoteVariant(generationId);
+    await promoted.dispatchUpdateEvent();
+
+    return {
+      generation: promoted.toJSON(),
+    };
+  });
+
 export const imageGenRouter = {
   list: listImageGenerations,
   deleteBatch: deleteImageGenerationsBatch,
   generate: generateImage,
   refine: refineImageGeneration,
+  promote: promoteVariant,
 };
 
 export type ImageGenRouterOutputs = InferRouterOutputs<typeof imageGenRouter>;

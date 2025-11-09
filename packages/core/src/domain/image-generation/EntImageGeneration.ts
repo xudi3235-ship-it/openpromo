@@ -1,4 +1,13 @@
-import { and, count, db, desc, eq, inArray, isNull } from "@core/database/db";
+import {
+  and,
+  count,
+  db,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  ne,
+} from "@core/database/db";
 import { Actor } from "@core/helpers/actor";
 import { Ent } from "@core/helpers/ent";
 import { Storage } from "@core/helpers/storage";
@@ -129,6 +138,43 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       prompt: params.prompt,
       styleId: params.styleId,
     });
+  }
+
+  static async promoteVariant(generationId: string) {
+    const variant = await EntImageGeneration.fromID(generationId);
+    const parentId = variant.data.parentGenerationId;
+
+    if (!parentId) {
+      throw new Error("Only child variations can be promoted");
+    }
+
+    const siblings = await db()
+      .select({ id: imageGenerationTable.id })
+      .from(imageGenerationTable)
+      .where(
+        and(
+          eq(imageGenerationTable.workspaceId, Actor.workspaceID()),
+          eq(imageGenerationTable.parentGenerationId, parentId),
+          ne(imageGenerationTable.id, variant.data.id),
+        ),
+      );
+
+    const idsToDelete = siblings.map((row) => row.id);
+    idsToDelete.push(parentId);
+
+    await variant.update({
+      parentGenerationId: null,
+      metadata: {
+        ...(variant.data.metadata ?? {}),
+        parentGenerationId: undefined,
+      },
+    });
+
+    if (idsToDelete.length > 0) {
+      await EntImageGeneration.deleteBatch(idsToDelete);
+    }
+
+    return variant;
   }
 
   static async fulfillStudioBackgroundGeneration(

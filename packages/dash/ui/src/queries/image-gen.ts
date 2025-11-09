@@ -21,6 +21,11 @@ export type ImageGenRefineInput = Omit<
   "workspaceId" | "workspaceSlug"
 >;
 export type ImageGenRefineResponse = ImageGenRouterOutputs["refine"];
+type ImageGenPromoteInput = Omit<
+  ImageGenRouterInputs["promote"],
+  "workspaceId" | "workspaceSlug"
+>;
+type ImageGenPromoteResponse = ImageGenRouterOutputs["promote"];
 
 export const useImageGenListQuery = (
   params: ImageGenListParams = {},
@@ -89,6 +94,30 @@ export const useImageGenRefineMutation = (
           toast.success("Variation generated");
         }
 
+        onSuccess?.(data);
+      },
+    }),
+  );
+};
+
+export const useImageGenPromoteMutation = (
+  onSuccess?: (data: ImageGenPromoteResponse) => void,
+) => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    orpc.imageGen.promote.mutationOptions({
+      mutationFn: async (input: ImageGenPromoteInput) =>
+        orpc.imageGen.promote.call({
+          ...input,
+          workspaceSlug: workspace.slug,
+        }),
+      onSuccess: async (data) => {
+        await queryClient.invalidateQueries({
+          queryKey: orpc.imageGen.list.key(),
+        });
+        toast.success("Variation promoted");
         onSuccess?.(data);
       },
     }),
