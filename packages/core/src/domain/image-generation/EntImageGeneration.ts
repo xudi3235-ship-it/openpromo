@@ -137,18 +137,11 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     if (!productId) throw new Error("Generation missing product reference");
 
     const product = await EntProduct.fromID(productId);
-    const user_input = customPrompt
-      ? `Generate studio-grade product shot image for my attached product for ads creative & social visuals.
+    const user_input = `Generate studio-grade product shot image for my attached product for ads creative & social visuals.
 
-    here are some additional context about the product:
-    ${JSON.stringify(product.data.metadata, null, 2)}
-    
-    Additional instructions from user: ${customPrompt}`
-      : `Generate studio-grade product shot image for my attached product for ads creative & social visuals.
-
-    here are some additional context about the product:
-    ${JSON.stringify(product.data.metadata, null, 2)}
-    `;
+    here are the context for the product:
+    ${JSON.stringify(product.data, null, 2)}
+    ${customPrompt ? `\nAdditional instructions from user: ${customPrompt}` : ""}`;
 
     const oai = getOpenAIClient();
     const response = await oai.responses.create({
@@ -227,7 +220,11 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
         content: [
           {
             type: "input_text",
-            text: `and here are the product related img/context`,
+            text: `and here are the product related img/context. product context: ${JSON.stringify(
+              product.data,
+              null,
+              2,
+            )}`,
           },
           {
             type: "input_image",
@@ -236,7 +233,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
           },
         ],
       } as ResponseInputItem;
-
+      // case 1: style images exist
       if (styleImageRefs.length > 0) {
         return [
           {
@@ -244,7 +241,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
             content: [
               {
                 type: "input_text",
-                text: `here are the style refernce images`,
+                text: `here are the style reference images`,
               },
               ...styleImageRefs.map((url) => ({
                 type: "input_image",
@@ -256,7 +253,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
           productMsg,
         ] as ResponseInput;
       }
-
+      // case 2: only reference image exist, ad hoc
       return [
         {
           role: "user",
