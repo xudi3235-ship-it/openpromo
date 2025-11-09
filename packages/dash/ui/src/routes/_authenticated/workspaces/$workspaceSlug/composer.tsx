@@ -23,20 +23,25 @@ export const Route = createFileRoute(
     });
   },
   component: ComposerComponent,
+  pendingComponent: ComposerPending,
 });
+
+function ComposerPending() {
+  return (
+    <div className="flex h-screen w-full overflow-hidden bg-background">
+      <div className="mx-auto flex h-full w-full max-w-7xl px-4">
+        <ComposerSkeleton />
+      </div>
+    </div>
+  );
+}
 
 function ComposerComponent() {
   const { accounts, isPending } = useConnectedAccounts();
   const { isBlocked, proceed, reset } = useComposerNavigationGuard();
 
   if (isPending) {
-    return (
-      <div className="flex h-screen w-full overflow-hidden bg-background">
-        <div className="mx-auto flex h-full w-full max-w-7xl px-4">
-          <ComposerSkeleton />
-        </div>
-      </div>
-    );
+    return <ComposerPending />;
   }
 
   // Layout handles null state now, so we can assume we have accounts here
