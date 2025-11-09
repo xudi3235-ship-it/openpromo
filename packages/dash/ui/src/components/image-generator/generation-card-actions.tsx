@@ -6,7 +6,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
-import { Download, Edit3, MoreVertical, Trash2 } from "lucide-react";
+import { Download, Edit3, FileText, MoreVertical, Trash2 } from "lucide-react";
+import { useOpenComposer } from "@/hooks/useOpenComposer";
 import type { ImageGenListResponse } from "@/queries/image-gen";
 
 type Generation = NonNullable<ImageGenListResponse["generations"]>[number];
@@ -24,12 +25,32 @@ export function GenerationCardActions({
   onDelete,
   onDownload,
 }: GenerationCardActionsProps) {
+  const openComposer = useOpenComposer();
+
   const handleDownload = () => {
     const imageUrl = generation.outputImages?.[0];
     if (imageUrl) {
       window.open(imageUrl, "_blank");
     }
     onDownload?.(generation);
+  };
+
+  const handleCreatePost = () => {
+    const imageUrl = generation.outputImages?.[0];
+    if (!imageUrl) return;
+
+    openComposer({
+      attachments: [
+        {
+          id: generation.id,
+          type: "photo",
+          publicUrl: imageUrl,
+          thumbnailUrl: imageUrl,
+          mimeType: "image/jpeg",
+          s3Key: generation.id,
+        },
+      ],
+    });
   };
 
   const isCompleted = generation.state === "completed";
@@ -47,7 +68,18 @@ export function GenerationCardActions({
           <span className="sr-only">Actions</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
+      <DropdownMenuContent align="end" className="w-44">
+        {isCompleted && (
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCreatePost();
+            }}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Create post
+          </DropdownMenuItem>
+        )}
         {isCompleted && onEdit && (
           <DropdownMenuItem
             onClick={(e) => {

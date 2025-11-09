@@ -16,6 +16,8 @@ interface ComposerRootProps {
  *
  * Initializes the composer state when mounted with the provided accounts and props.
  * Since we only have one composer active at a time, we use a global store for simplicity.
+ *
+ * The store persists across navigation. To reset it, call `resetComposer()` from the store.
  */
 export function ComposerRoot({
   accounts,
@@ -27,6 +29,8 @@ export function ComposerRoot({
   );
 
   useEffect(() => {
+    // Just initialize with the provided props and accounts
+    // The store will handle merging with existing state if needed
     initializeComposer({
       initialMessage: "",
       ...initComposerProps,
