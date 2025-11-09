@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ImageGeneratorSurface } from "@/components/image-generator/image-generator-surface";
+import { ImageGeneratorExperience } from "@/components/image-generator/image-generator-experience";
 import { useImageGeneratorMutation } from "@/hooks/useImageGeneratorMutation";
+import { useImageGenListQuery } from "@/queries/image-gen";
 import { useProductListQuery } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles-queries";
 
@@ -22,11 +23,17 @@ function ProductVisualsPage() {
     page: 1,
     officialOnly: true,
   });
+  const { data: generationsData, isPending: isPendingGenerations } =
+    useImageGenListQuery({
+      page: 1,
+      pageSize: 12,
+    });
 
   const generateMutation = useImageGeneratorMutation();
 
   const products = productsData?.products ?? [];
   const styles = stylesData?.styles ?? [];
+  const generations = generationsData?.generations ?? [];
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -42,7 +49,7 @@ function ProductVisualsPage() {
 
       <div className="flex-1 px-4 pb-6 pt-4 lg:px-6">
         <div className="h-full rounded-xl border bg-card p-4 lg:p-6">
-          <ImageGeneratorSurface
+          <ImageGeneratorExperience
             products={products}
             styles={styles}
             isLoadingProducts={isPendingProducts}
@@ -53,6 +60,8 @@ function ProductVisualsPage() {
             onProductSearchChange={setProductSearch}
             enableComposerActions={false}
             className="h-full min-h-0"
+            generations={generations}
+            isLoadingGenerations={isPendingGenerations}
           />
         </div>
       </div>

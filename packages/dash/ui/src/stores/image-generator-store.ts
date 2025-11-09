@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
+export type ImageGeneratorMode = "generate" | "edit";
+
 export interface ImageGeneratorState {
   selectedProductId: string;
   selectedStyleId: string;
@@ -8,6 +10,8 @@ export interface ImageGeneratorState {
   prompt: string;
   referenceImageUrl: string;
   isGeneratorDialogOpen: boolean;
+  mode: ImageGeneratorMode;
+  editingGenerationId: string | null;
 
   // Actions
   setSelectedProductId: (productId: string) => void;
@@ -16,6 +20,8 @@ export interface ImageGeneratorState {
   setPrompt: (prompt: string) => void;
   setReferenceImageUrl: (url: string) => void;
   setGeneratorDialogOpen: (open: boolean) => void;
+  setMode: (mode: ImageGeneratorMode) => void;
+  setEditingGenerationId: (generationId: string | null) => void;
   resetForm: () => void;
 }
 
@@ -26,6 +32,8 @@ const initialState = {
   prompt: "",
   referenceImageUrl: "",
   isGeneratorDialogOpen: false,
+  mode: "generate" as ImageGeneratorMode,
+  editingGenerationId: null as string | null,
 };
 
 export const useImageGeneratorStore = create<ImageGeneratorState>()(
@@ -62,6 +70,16 @@ export const useImageGeneratorStore = create<ImageGeneratorState>()(
         state.isGeneratorDialogOpen = open;
       }),
 
+    setMode: (mode) =>
+      set((state) => {
+        state.mode = mode;
+      }),
+
+    setEditingGenerationId: (generationId) =>
+      set((state) => {
+        state.editingGenerationId = generationId;
+      }),
+
     resetForm: () =>
       set((state) => {
         state.selectedProductId = initialState.selectedProductId;
@@ -70,6 +88,8 @@ export const useImageGeneratorStore = create<ImageGeneratorState>()(
         state.prompt = initialState.prompt;
         state.referenceImageUrl = initialState.referenceImageUrl;
         state.isGeneratorDialogOpen = initialState.isGeneratorDialogOpen;
+        state.mode = initialState.mode;
+        state.editingGenerationId = initialState.editingGenerationId;
       }),
   })),
 );

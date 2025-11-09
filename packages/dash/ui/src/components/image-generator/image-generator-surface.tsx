@@ -1,5 +1,6 @@
 import { cn } from "@openpromo/ui/lib/utils";
 import type { UseMutationResult } from "@tanstack/react-query";
+import type { ImageGenListResponse } from "@/queries/image-gen";
 import type {
   ProductImageGenerateInput,
   ProductImageGenerateResponse,
@@ -8,6 +9,8 @@ import { GeneratedImagesGallery } from "./generated-images-gallery";
 import { InputsPanel } from "./inputs-panel";
 import type { ProductSelectItem } from "./product-select";
 import type { StyleGalleryItem } from "./style-gallery";
+
+type Generation = NonNullable<ImageGenListResponse["generations"]>[number];
 
 export interface ImageGeneratorSurfaceProps {
   products: ProductSelectItem[];
@@ -25,6 +28,7 @@ export interface ImageGeneratorSurfaceProps {
   onProductSearchChange: (value: string) => void;
   enableComposerActions?: boolean;
   className?: string;
+  onGenerationEditRequest?: (generation: Generation) => void;
 }
 
 export function ImageGeneratorSurface({
@@ -38,6 +42,7 @@ export function ImageGeneratorSurface({
   onProductSearchChange,
   enableComposerActions = true,
   className,
+  onGenerationEditRequest,
 }: ImageGeneratorSurfaceProps) {
   return (
     <div
@@ -60,6 +65,7 @@ export function ImageGeneratorSurface({
         generateMutation={generateMutation}
         remainingSlots={remainingSlots}
         enableComposerActions={enableComposerActions}
+        onEditGeneration={onGenerationEditRequest}
       />
     </div>
   );

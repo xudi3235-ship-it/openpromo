@@ -32,6 +32,7 @@ interface GeneratedImagesGalleryProps {
   remainingSlots: number;
   enableComposerActions?: boolean;
   className?: string;
+  onEditGeneration?: (generation: Generation) => void;
 }
 
 export function GeneratedImagesGallery({
@@ -39,6 +40,7 @@ export function GeneratedImagesGallery({
   remainingSlots,
   enableComposerActions = true,
   className,
+  onEditGeneration,
 }: GeneratedImagesGalleryProps) {
   const batchCount = useImageGeneratorStore((state) => state.batchCount);
   const [gridCols, setGridCols] = useState(4);
@@ -287,6 +289,7 @@ export function GeneratedImagesGallery({
                       isSelected={selectedGenerations.has(generation.id)}
                       onToggleSelection={handleToggleSelection}
                       isAddedToPost={addedGenerationIds.has(generation.id)}
+                      onEditRequest={onEditGeneration}
                     />
                   ))
                 )}
@@ -306,6 +309,7 @@ interface GenerationCardProps {
   isSelected: boolean;
   onToggleSelection: (id: string) => void;
   isAddedToPost: boolean;
+  onEditRequest?: (generation: Generation) => void;
 }
 
 function GenerationCard({
@@ -313,6 +317,7 @@ function GenerationCard({
   isSelected,
   onToggleSelection,
   isAddedToPost,
+  onEditRequest,
 }: GenerationCardProps) {
   const previewImage = generation.outputImages?.[0];
 
@@ -368,6 +373,20 @@ function GenerationCard({
             <span className="text-xs text-muted-foreground">
               {isPending ? <Spinner className="h-4 w-4" /> : "No image"}
             </span>
+          </div>
+        )}
+        {onEditRequest && generation.state === "completed" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={(event) => {
+                event.stopPropagation();
+                onEditRequest(generation);
+              }}
+            >
+              Fine tune
+            </Button>
           </div>
         )}
       </div>
