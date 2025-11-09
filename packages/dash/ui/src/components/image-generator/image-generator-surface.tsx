@@ -23,6 +23,7 @@ export interface ImageGeneratorSurfaceProps {
   >;
   productSearch: string;
   onProductSearchChange: (value: string) => void;
+  enableComposerActions?: boolean;
   className?: string;
 }
 
@@ -35,6 +36,7 @@ export function ImageGeneratorSurface({
   generateMutation,
   productSearch,
   onProductSearchChange,
+  enableComposerActions = true,
   className,
 }: ImageGeneratorSurfaceProps) {
   return (
@@ -57,6 +59,7 @@ export function ImageGeneratorSurface({
       <GeneratedImagesGallery
         generateMutation={generateMutation}
         remainingSlots={remainingSlots}
+        enableComposerActions={enableComposerActions}
       />
     </div>
   );

@@ -51,6 +51,7 @@ function ProductVisualsPage() {
             generateMutation={generateMutation}
             productSearch={productSearch}
             onProductSearchChange={setProductSearch}
+            enableComposerActions={false}
             className="h-full min-h-0"
           />
         </div>

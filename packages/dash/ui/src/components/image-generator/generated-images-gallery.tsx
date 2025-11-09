@@ -30,12 +30,14 @@ interface GeneratedImagesGalleryProps {
     unknown
   >;
   remainingSlots: number;
+  enableComposerActions?: boolean;
   className?: string;
 }
 
 export function GeneratedImagesGallery({
   generateMutation,
   remainingSlots,
+  enableComposerActions = true,
   className,
 }: GeneratedImagesGalleryProps) {
   const batchCount = useImageGeneratorStore((state) => state.batchCount);
@@ -117,6 +119,7 @@ export function GeneratedImagesGallery({
   };
 
   const handleAddToPost = () => {
+    if (!enableComposerActions) return;
     if (selectedGenerations.size === 0) return;
 
     // Check if adding would exceed remaining slots
@@ -209,15 +212,17 @@ export function GeneratedImagesGallery({
             </div>
             {selectedGenerations.size > 0 && (
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddToPost}
-                  disabled={remainingSlots === 0}
-                >
-                  <Plus className="mr-1.5 h-3 w-3" />
-                  Add to post
-                </Button>
+                {enableComposerActions && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddToPost}
+                    disabled={remainingSlots === 0}
+                  >
+                    <Plus className="mr-1.5 h-3 w-3" />
+                    Add to post
+                  </Button>
+                )}
                 <Button
                   variant="destructive"
                   size="sm"
