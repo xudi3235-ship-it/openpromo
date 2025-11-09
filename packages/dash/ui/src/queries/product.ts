@@ -19,6 +19,16 @@ export type ProductListParams = Omit<
 export type ProductListResponse = ProductRouterOutputs["list"];
 export type ProductResponse = ProductRouterOutputs["get"];
 
+export type ProductCreateInput = Omit<
+  ProductRouterInputs["create"],
+  "workspaceId" | "workspaceSlug"
+>;
+
+export type ProductUpdateInput = Omit<
+  ProductRouterInputs["update"],
+  "workspaceId" | "workspaceSlug"
+>;
+
 export type ProductImageGenerateInput = Omit<
   ImageGenRouterInputs["generate"],
   "workspaceId" | "workspaceSlug"

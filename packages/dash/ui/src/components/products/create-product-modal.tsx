@@ -31,13 +31,17 @@ import { toast } from "sonner";
 import * as z from "zod";
 import { Dropzone } from "@/components/dropzone";
 import { useStorageUpload } from "@/hooks/useStorageUpload";
+import { toCreateInput, toUpdateInput } from "@/lib/product-form-helpers";
 import {
+  type ProductCreateInput,
   useProductCreateMutation,
   useProductUpdateMutation,
 } from "@/queries/product";
 import { useProductModalStore } from "@/stores/product-modal-store";
 
-const schema = z.object({
+// Simple validation schema for form fields only
+// The actual API types come from ORPC
+const formSchema = z.object({
   sourceUrl: z
     .string()
     .url("Please enter a valid URL")
@@ -46,10 +50,10 @@ const schema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
   category: z.string().optional(),
-  tags: z.string().optional(), // We'll store as comma-separated string and convert to array
+  tags: z.string().optional(),
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<typeof formSchema>;
 
 export function CreateProductModal() {
   const {
@@ -81,7 +85,7 @@ export function CreateProductModal() {
   const updateProduct = useProductUpdateMutation(resetForm);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       sourceUrl: "",
       name: "",
@@ -110,40 +114,17 @@ export function CreateProductModal() {
     try {
       setIsUploading(true);
 
-      // Parse tags from comma-separated string to array
-      const tagsArray = values.tags
-        ? values.tags
-            .split(",")
-            .map((tag) => tag.trim())
-            .filter((tag) => tag.length > 0)
-        : undefined;
-
-      type ProductData = {
-        name?: string;
-        description?: string;
-        category?: string;
-        tags?: string[];
-        source?: "MANUAL" | "CUSTOM_URL";
-        sourceUrl?: string;
-        attachments?: Array<{
-          id: string;
-          type: "photo" | "video";
-          publicUrl: string;
-          s3Key?: string;
-        }>;
-        primaryAttachmentId?: string;
-      };
-
-      const productData: ProductData = {};
-
-      // Add common fields if they're provided
-      if (values.name) productData.name = values.name;
-      if (values.description) productData.description = values.description;
-      if (values.category) productData.category = values.category;
-      if (tagsArray && tagsArray.length > 0) productData.tags = tagsArray;
-
       if (isEditMode && product) {
         // Edit mode: only update provided fields
+        const updateData = toUpdateInput(product.id, {
+          name: values.name,
+          description: values.description,
+          category: values.category,
+          tags: values.tags,
+          sourceUrl: activeTab === "url" ? values.sourceUrl : undefined,
+        });
+
+        // Handle attachment uploads
         if (activeTab === "upload" && selectedFiles.length > 0) {
           toast.info("Uploading files...");
           const uploadResults = await uploadFiles(selectedFiles);
@@ -158,50 +139,32 @@ export function CreateProductModal() {
           }));
 
           const allAttachments = [...existingAttachments, ...newAttachments];
-          productData.attachments = allAttachments as Array<{
-            id: string;
-            type: "photo" | "video";
-            publicUrl: string;
-            s3Key?: string;
-          }>;
-          productData.primaryAttachmentId =
+          updateData.attachments = allAttachments;
+          updateData.primaryAttachmentId =
             allAttachments[0]?.id || product.primaryAttachmentId || undefined;
         } else if (existingAttachments.length !== product.attachments.length) {
           // Attachments were removed
-          productData.attachments = existingAttachments as Array<{
-            id: string;
-            type: "photo" | "video";
-            publicUrl: string;
-            s3Key?: string;
-          }>;
-          productData.primaryAttachmentId =
+          updateData.attachments = existingAttachments;
+          updateData.primaryAttachmentId =
             existingAttachments[0]?.id || undefined;
         }
 
-        if (activeTab === "url" && values.sourceUrl) {
-          productData.sourceUrl = values.sourceUrl;
-        }
-
-        updateProduct.mutate({ productId: product.id, ...productData });
+        updateProduct.mutate(updateData);
       } else {
         // Create mode: require attachments or sourceUrl
         if (activeTab === "url" && values.sourceUrl) {
-          const createData = {
+          const createData = toCreateInput({
             name: values.name || "Product from URL",
             description: values.description,
             category: values.category,
-            tags: tagsArray,
-            source: "CUSTOM_URL" as const,
+            tags: values.tags,
+            source: "CUSTOM_URL",
             sourceUrl: values.sourceUrl,
-          };
+          });
           createProduct.mutate(createData);
         } else {
-          let attachments: Array<{
-            id: string;
-            type: "photo" | "video";
-            publicUrl: string;
-            s3Key?: string;
-          }> = [];
+          // Upload files if any
+          let attachments: ProductCreateInput["attachments"] = [];
 
           if (selectedFiles.length > 0) {
             toast.info("Uploading files...");
@@ -225,20 +188,15 @@ export function CreateProductModal() {
             return;
           }
 
-          const createData = {
+          const createData = toCreateInput({
             name: values.name || "Product",
             description: values.description,
             category: values.category,
-            tags: tagsArray,
-            source: "MANUAL" as const,
-            attachments: allAttachments as Array<{
-              id: string;
-              type: "photo" | "video";
-              publicUrl: string;
-              s3Key?: string;
-            }>,
+            tags: values.tags,
+            source: "MANUAL",
+            attachments: allAttachments,
             primaryAttachmentId: allAttachments[0]?.id,
-          };
+          });
           createProduct.mutate(createData);
         }
       }

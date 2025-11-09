@@ -1,6 +1,15 @@
 import type { ProductSelectType } from "@core/schemas/product.sql";
 import { create } from "zustand";
 
+export type ProductFormData = {
+  // Form-only fields that need transformation
+  sourceUrl?: string;
+  name?: string;
+  description?: string;
+  category?: string;
+  tags?: string; // Comma-separated string (will be converted to array)
+};
+
 interface ProductModalState {
   // Modal state
   open: boolean;
