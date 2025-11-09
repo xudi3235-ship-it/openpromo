@@ -29,15 +29,59 @@ export const invalidateStylesListQueries = async (queryClient: QueryClient) => {
   });
 };
 
+// Query options factories - these create the options that both prefetch and hooks use
+const getStylesListOptions = (
+  workspaceSlug: string,
+  params: StylesListParams = {},
+) => orpc.styles.list.queryOptions({ input: { ...params, workspaceSlug } });
+
+const getStylesInfiniteOptions = (
+  workspaceSlug: string,
+  params: Omit<StylesListParams, "page"> = {},
+) =>
+  orpc.styles.list.infiniteOptions({
+    input: (pageParam) => ({
+      ...params,
+      workspaceSlug,
+      page: pageParam,
+    }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage.pagination.hasNextPage
+        ? lastPage.pagination.page + 1
+        : undefined;
+    },
+  });
+
+const getStyleDetailsOptions = (workspaceSlug: string, styleId: string) =>
+  orpc.styles.get.queryOptions({ input: { workspaceSlug, styleId } });
+
+const getStyleGenerationsInfiniteOptions = (
+  workspaceSlug: string,
+  styleId: string,
+  params: Omit<StyleGenerationsParams, "page"> = {},
+) =>
+  orpc.styles.generations.list.infiniteOptions({
+    input: (pageParam) => ({
+      ...params,
+      workspaceSlug,
+      styleId,
+      page: pageParam,
+    }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? page + 1 : undefined;
+    },
+  });
+
+// Prefetch helpers for loaders (use factory functions)
 export const prefetchStylesList = (
   queryClient: QueryClient,
   workspaceSlug: string,
   params: StylesListParams = {},
 ) => {
-  // do not await
-  queryClient.prefetchQuery(
-    orpc.styles.list.queryOptions({ input: { ...params, workspaceSlug } }),
-  );
+  queryClient.prefetchQuery(getStylesListOptions(workspaceSlug, params));
 };
 
 export const prefetchStylesInfiniteQuery = (
@@ -45,21 +89,8 @@ export const prefetchStylesInfiniteQuery = (
   workspaceSlug: string,
   params: Omit<StylesListParams, "page"> = {},
 ) => {
-  // do not await
   queryClient.prefetchInfiniteQuery(
-    orpc.styles.list.infiniteOptions({
-      input: (pageParam) => ({
-        ...params,
-        workspaceSlug,
-        page: pageParam,
-      }),
-      initialPageParam: 1,
-      getNextPageParam: (lastPage) => {
-        return lastPage.pagination.hasNextPage
-          ? lastPage.pagination.page + 1
-          : undefined;
-      },
-    }),
+    getStylesInfiniteOptions(workspaceSlug, params),
   );
 };
 
@@ -68,10 +99,7 @@ export const prefetchStyleDetails = (
   workspaceSlug: string,
   styleId: string,
 ) => {
-  // do not await
-  queryClient.prefetchQuery(
-    orpc.styles.get.queryOptions({ input: { workspaceSlug, styleId } }),
-  );
+  queryClient.prefetchQuery(getStyleDetailsOptions(workspaceSlug, styleId));
 };
 
 export const prefetchStyleGenerationsInfiniteQuery = (
@@ -80,72 +108,61 @@ export const prefetchStyleGenerationsInfiniteQuery = (
   styleId: string,
   params: Omit<StyleGenerationsParams, "page"> = {},
 ) => {
-  // do not await
   queryClient.prefetchInfiniteQuery(
-    orpc.styles.generations.list.infiniteOptions({
-      input: (pageParam) => ({
-        ...params,
-        workspaceSlug,
-        styleId,
-        page: pageParam,
-      }),
-      initialPageParam: 1,
-      getNextPageParam: (lastPage) => {
-        const { page, totalPages } = lastPage.pagination;
-        return page < totalPages ? page + 1 : undefined;
-      },
-    }),
+    getStyleGenerationsInfiniteOptions(workspaceSlug, styleId, params),
   );
 };
 
+// Hooks for components - return both query result and prefetch function
 export const useStylesListQuery = (params: StylesListParams = {}) => {
   const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
 
-  return useQuery(
-    orpc.styles.list.queryOptions({
-      input: {
-        ...params,
-        workspaceSlug: workspace.slug,
-      },
-    }),
-  );
+  return {
+    ...useQuery(getStylesListOptions(workspace.slug, params)),
+    prefetch: (overrideParams?: StylesListParams) =>
+      queryClient.prefetchQuery(
+        getStylesListOptions(workspace.slug, overrideParams ?? params),
+      ),
+  };
 };
 
 export const useStylesInfiniteQuery = (
   params: Omit<StylesListParams, "page"> = {},
 ) => {
   const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
 
-  return useInfiniteQuery(
-    orpc.styles.list.infiniteOptions({
-      input: (pageParam) => ({
-        ...params,
-        workspaceSlug: workspace.slug,
-        page: pageParam,
-      }),
-      initialPageParam: 1,
-      getNextPageParam: (lastPage) => {
-        return lastPage.pagination.hasNextPage
-          ? lastPage.pagination.page + 1
-          : undefined;
-      },
-    }),
-  );
+  return {
+    ...useInfiniteQuery(getStylesInfiniteOptions(workspace.slug, params)),
+    prefetch: (overrideParams?: Omit<StylesListParams, "page">) =>
+      queryClient.prefetchInfiniteQuery(
+        getStylesInfiniteOptions(workspace.slug, overrideParams ?? params),
+      ),
+  };
 };
 
 export const useStyleDetailsQuery = (styleId: string | undefined) => {
   const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
 
-  return useQuery(
-    orpc.styles.get.queryOptions({
-      input: {
-        workspaceSlug: workspace.slug,
+  return {
+    ...useQuery({
+      ...getStyleDetailsOptions(
+        workspace.slug,
         // biome-ignore lint/style/noNonNullAssertion: later
-        styleId: styleId!,
-      },
+        styleId!,
+      ),
       enabled: Boolean(styleId),
     }),
-  );
+    prefetch: (overrideStyleId?: string) => {
+      const id = overrideStyleId ?? styleId;
+      if (!id) return;
+      return queryClient.prefetchQuery(
+        getStyleDetailsOptions(workspace.slug, id),
+      );
+    },
+  };
 };
 
 export const useStyleGenerationsQuery = (
@@ -153,18 +170,33 @@ export const useStyleGenerationsQuery = (
   params: StyleGenerationsParams = {},
 ) => {
   const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
 
-  return useQuery(
-    orpc.styles.generations.list.queryOptions({
-      input: {
-        ...params,
-        workspaceSlug: workspace.slug,
-        // biome-ignore lint/style/noNonNullAssertion: later
-        styleId: styleId!,
-      },
-      enabled: Boolean(styleId),
-    }),
-  );
+  return {
+    ...useQuery(
+      orpc.styles.generations.list.queryOptions({
+        input: {
+          ...params,
+          workspaceSlug: workspace.slug,
+          // biome-ignore lint/style/noNonNullAssertion: later
+          styleId: styleId!,
+        },
+        enabled: Boolean(styleId),
+      }),
+    ),
+    prefetch: (overrideParams?: StyleGenerationsParams) => {
+      if (!styleId) return;
+      return queryClient.prefetchQuery(
+        orpc.styles.generations.list.queryOptions({
+          input: {
+            ...(overrideParams ?? params),
+            workspaceSlug: workspace.slug,
+            styleId,
+          },
+        }),
+      );
+    },
+  };
 };
 
 export const useStyleGenerationsInfiniteQuery = (
@@ -172,24 +204,29 @@ export const useStyleGenerationsInfiniteQuery = (
   params: Omit<StyleGenerationsParams, "page"> = {},
 ) => {
   const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
 
-  return useInfiniteQuery(
-    orpc.styles.generations.list.infiniteOptions({
-      input: (pageParam) => ({
-        ...params,
-        workspaceSlug: workspace.slug,
+  return {
+    ...useInfiniteQuery({
+      ...getStyleGenerationsInfiniteOptions(
+        workspace.slug,
         // biome-ignore lint/style/noNonNullAssertion: later
-        styleId: styleId!,
-        page: pageParam,
-      }),
+        styleId!,
+        params,
+      ),
       enabled: Boolean(styleId),
-      initialPageParam: 1,
-      getNextPageParam: (lastPage) => {
-        const { page, totalPages } = lastPage.pagination;
-        return page < totalPages ? page + 1 : undefined;
-      },
     }),
-  );
+    prefetch: (overrideParams?: Omit<StyleGenerationsParams, "page">) => {
+      if (!styleId) return;
+      return queryClient.prefetchInfiniteQuery(
+        getStyleGenerationsInfiniteOptions(
+          workspace.slug,
+          styleId,
+          overrideParams ?? params,
+        ),
+      );
+    },
+  };
 };
 
 export const useStyleGenerationDeleteMutation = (styleId?: string) => {
