@@ -67,6 +67,11 @@ export class InstagramPublisher extends BasePublisher {
       });
     });
 
+    await step.do("post instagram first comment", async () => {
+      const c = await EntIGFeedPendingContent.fromID(pendingContentID);
+      await c.postFirstComment(postId);
+    });
+
     log.info("Instagram content published", { postId, postType });
   }
 }

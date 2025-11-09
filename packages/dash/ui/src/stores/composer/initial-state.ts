@@ -49,6 +49,7 @@ const buildInitialFacebookPlacements = (
           },
           attachments: [],
           customized: false,
+          firstComment: props.initContentCreateData?.base?.firstComment,
         } satisfies FBFeedPlacementSpec;
       })
       .filter(Boolean) as FBFeedPlacementSpec[]) || []
@@ -82,6 +83,7 @@ const buildInitialInstagramPlacements = (
           caption: props.initialMessage || "",
           attachments: [],
           customized: false,
+          firstComment: props.initContentCreateData?.base?.firstComment,
         } satisfies IGFeedPlacementSpec;
       })
       .filter(Boolean) as IGFeedPlacementSpec[]) || []
@@ -131,6 +133,7 @@ const buildInitialTikTokPlacements = (
           caption: props.initialMessage || "",
           attachments: [],
           customized: false,
+          firstComment: props.initContentCreateData?.base?.firstComment,
         } satisfies TikTokFeedPlacementSpec;
       })
       .filter(Boolean) as TikTokFeedPlacementSpec[]) || []
@@ -155,12 +158,17 @@ export const createComposerInitialState = (
     tiktokFeed: buildInitialTikTokPlacements(props, isEditFlow),
   };
 
+  const baseData = props.initContentCreateData?.base
+    ? { ...props.initContentCreateData.base }
+    : {
+        message: props.initialMessage || "",
+        publishingStatus: "PUBLISH_NOW" as const,
+        attachments: [],
+        firstComment: undefined,
+      };
+
   const contentCreateData: ComposerState["contentCreateData"] = {
-    base: props.initContentCreateData?.base ?? {
-      message: props.initialMessage || "",
-      publishingStatus: "PUBLISH_NOW" as const,
-      attachments: [],
-    },
+    base: baseData,
     placements,
   };
 

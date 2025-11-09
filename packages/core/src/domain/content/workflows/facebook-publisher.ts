@@ -63,6 +63,11 @@ export class FacebookPublisher extends BasePublisher {
       });
     });
 
+    await step.do("post facebook first comment", async () => {
+      const c = await EntFBFeedPendingContent.fromID(pendingContentID);
+      await c.postFirstComment(postId);
+    });
+
     log.info("Facebook content published", { postId, postType });
   }
 }

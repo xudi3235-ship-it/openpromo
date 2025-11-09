@@ -64,6 +64,7 @@ export const contentGroupsRoute = new Hono<ApiEnv>()
         message: groupSpec?.baseMessage || "",
         attachments: groupSpec?.baseAttachments || [],
         schedulingSpec: groupSpec?.baseSchedulingSpec,
+        firstComment: groupSpec?.baseFirstComment,
       },
       placements: {},
     };
@@ -126,6 +127,7 @@ export const contentGroupsRoute = new Hono<ApiEnv>()
           baseMessage: base.message,
           baseAttachments: base.attachments,
           baseSchedulingSpec: base.schedulingSpec,
+          baseFirstComment: base.firstComment,
         },
       },
       contentItems.map((item) => ({

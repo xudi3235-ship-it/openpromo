@@ -70,6 +70,7 @@ export const createContentRoute = new Hono<ApiEnv>().post(
                 baseMessage: base.message,
                 baseAttachments: base.attachments,
                 baseSchedulingSpec: base.schedulingSpec,
+                baseFirstComment: base.firstComment,
               },
             },
             contents: contentItems.map((item) => ({

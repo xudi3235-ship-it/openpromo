@@ -9,15 +9,22 @@ import {
 import { cn } from "@openpromo/ui/lib/utils";
 import type {
   FBFeedPlacementSpec,
+  IGFeedPlacementSpec,
   SharedAttachmentSpec,
   TikTokFeedPlacementSpec,
 } from "@shared/content";
-import { Info, MousePointerClick, SlidersHorizontal } from "lucide-react";
+import {
+  Info,
+  MessageSquareMore,
+  MousePointerClick,
+  SlidersHorizontal,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { useComposerStore } from "@/stores/composer-store";
 import { CTA_OPTIONS } from "../../types/platform-features";
 import { CTADialog } from "./cta-dialog";
+import { FirstCommentDialog } from "./first-comment-dialog";
 import {
   DEFAULT_TIKTOK_OPTIONS,
   formatTikTokPrivacyLevel,
@@ -29,6 +36,7 @@ export function PlatformFeaturesSection() {
   const composer = useComposerStore();
   const [ctaDialogOpen, setCtaDialogOpen] = useState(false);
   const [tiktokDialogOpen, setTikTokDialogOpen] = useState(false);
+  const [firstCommentDialogOpen, setFirstCommentDialogOpen] = useState(false);
 
   // Get selected platforms
   const selectedPlatforms = useMemo(() => {
@@ -77,6 +85,31 @@ export function PlatformFeaturesSection() {
   const handleRemoveCTA = () => {
     composer.removeFacebookCTA();
   };
+
+  const firstComment = useMemo(() => {
+    if (composer.activeAccount) {
+      const entry = composer.placementsByAccount[composer.activeAccount];
+      if (entry) {
+        if (entry.platform === "FACEBOOK") {
+          return (entry.spec as FBFeedPlacementSpec).firstComment;
+        }
+        if (entry.platform === "INSTAGRAM") {
+          return (entry.spec as IGFeedPlacementSpec).firstComment;
+        }
+        if (entry.platform === "TIKTOK") {
+          return (entry.spec as TikTokFeedPlacementSpec).firstComment;
+        }
+      }
+    }
+    return composer.contentCreateData.base.firstComment;
+  }, [
+    composer.activeAccount,
+    composer.placementsByAccount,
+    composer.contentCreateData.base.firstComment,
+  ]);
+
+  const hasFirstComment = Boolean(firstComment?.trim());
+  const firstCommentSummary = summarizeFirstComment(firstComment);
 
   const tiktokFeatureState = useMemo(() => {
     if (!selectedPlatforms.includes("TIKTOK")) return null;
@@ -163,6 +196,13 @@ export function PlatformFeaturesSection() {
           </Tooltip>
         </div>
 
+        {/* Shared Features */}
+        <FirstCommentRow
+          hasValue={hasFirstComment}
+          summary={firstCommentSummary}
+          onOpenDialog={() => setFirstCommentDialogOpen(true)}
+        />
+
         {/* Facebook Features */}
         {selectedPlatforms.includes("FACEBOOK") && (
           <FacebookFeaturesRow
@@ -202,6 +242,16 @@ export function PlatformFeaturesSection() {
         hasVideo={tiktokFeatureState?.hasVideo ?? false}
         photoCount={tiktokFeatureState?.photoCount ?? 0}
         onUpdate={composer.updateTikTokBusinessOptions}
+      />
+
+      <FirstCommentDialog
+        open={firstCommentDialogOpen}
+        onOpenChange={setFirstCommentDialogOpen}
+        initialValue={firstComment ?? ""}
+        onSave={(value) => composer.setFirstComment(value)}
+        onRemove={
+          hasFirstComment ? () => composer.removeFirstComment() : undefined
+        }
       />
     </TooltipProvider>
   );
@@ -364,4 +414,56 @@ function buildTikTokSummary(
     parts.push(`Cover #${(options.photoCoverIndex ?? 0) + 1}`);
   }
   return parts.join(" • ");
+}
+
+function FirstCommentRow({
+  hasValue,
+  summary,
+  onOpenDialog,
+}: {
+  hasValue: boolean;
+  summary?: string;
+  onOpenDialog: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Badge
+        variant="secondary"
+        className="gap-1.5 px-2 py-0.5 text-xs font-medium"
+      >
+        <MessageSquareMore className="h-3 w-3" />
+        All Platforms
+      </Badge>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant={hasValue ? "default" : "outline"}
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={onOpenDialog}
+          >
+            <MessageSquareMore className="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="text-xs">
+            {hasValue ? "Edit first comment" : "Add first comment"}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+      <span className="text-xs text-muted-foreground">
+        {summary ?? "No first comment set"}
+      </span>
+    </div>
+  );
+}
+
+function summarizeFirstComment(comment?: string) {
+  if (!comment) return undefined;
+  const trimmed = comment.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.length > 60) {
+    return `${trimmed.slice(0, 57)}…`;
+  }
+  return trimmed;
 }

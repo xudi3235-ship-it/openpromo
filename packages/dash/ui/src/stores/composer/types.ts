@@ -113,6 +113,8 @@ export interface ComposerActions {
   updateTikTokBusinessOptions: (
     updates: Partial<TikTokBusinessOptions>,
   ) => void;
+  setFirstComment: (comment: string | undefined) => void;
+  removeFirstComment: () => void;
   // Video features
   setVideoThumbnail: (url: string | undefined) => void;
 }

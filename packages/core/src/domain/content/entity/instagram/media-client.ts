@@ -212,6 +212,20 @@ export class InstagramMediaClient {
     return parsed.data.permalink ?? null;
   }
 
+  async createComment(mediaId: string, message: string): Promise<void> {
+    const trimmed = message.trim();
+    if (!trimmed) return;
+
+    await instagramGraphRequest(this.ctx, `/${mediaId}/comments`, {
+      method: "POST",
+      body: {
+        message: trimmed,
+      },
+    });
+
+    log.info("posted instagram first comment", { mediaId });
+  }
+
   /**
    * Utility to prepare remote attachment records based on Instagram media response.
    */

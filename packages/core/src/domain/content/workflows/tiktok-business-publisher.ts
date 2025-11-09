@@ -57,6 +57,11 @@ export class TikTokBusinessPublisher extends BasePublisher {
       });
     });
 
+    await step.do("post tiktok first comment", async () => {
+      const c = await EntTikTokFeedPendingContent.fromID(pendingContentID);
+      await c.postFirstComment(publishedPostId ?? publishStatus.publish_id);
+    });
+
     log.info("TikTok Business content published", {
       postId: publishedPostId,
       contentId: pendingContentID,

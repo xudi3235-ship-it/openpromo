@@ -149,6 +149,22 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     };
   }
 
+  firstComment(): string | undefined {
+    const comment = this.spec.firstComment;
+    if (!comment) return undefined;
+    const trimmed = comment.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  async postFirstComment(postId: string): Promise<void> {
+    const comment = this.firstComment();
+    if (!comment) return;
+    log.warn("TikTok first comment not currently supported", {
+      postId,
+      commentLength: comment.length,
+    });
+  }
+
   assertReadyForVideoPublishing() {
     const hasVideo = this.hasVideoAttachment();
     if (!hasVideo) {

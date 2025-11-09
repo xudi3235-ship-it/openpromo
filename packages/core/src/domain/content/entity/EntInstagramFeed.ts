@@ -77,6 +77,13 @@ export class EntIGFeedPendingContent extends EntPendingContent {
   caption() {
     return this.spec.caption as string;
   }
+
+  firstComment(): string | undefined {
+    const comment = this.spec.firstComment;
+    if (!comment) return undefined;
+    const trimmed = comment.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
   private async instagramClient(): Promise<InstagramMediaClient> {
     return InstagramMediaClient.forPlacementSpec(this.spec);
   }
@@ -232,6 +239,21 @@ export class EntIGFeedPendingContent extends EntPendingContent {
       log.warn("failed to refresh IG placement spec after attachment sync", {
         contentId: this.data.id,
         error: parsed.error?.message,
+      });
+    }
+  }
+
+  async postFirstComment(postId: string): Promise<void> {
+    const comment = this.firstComment();
+    if (!comment) return;
+    try {
+      const client = await this.instagramClient();
+      await client.createComment(postId, comment);
+      log.info("instagram first comment posted", { postId });
+    } catch (error) {
+      log.warn("failed to post instagram first comment", {
+        postId,
+        error: (error as Error).message,
       });
     }
   }

@@ -83,6 +83,13 @@ export class EntFBFeedPendingContent extends EntPendingContent {
     return photoCount > 0 && videoCount > 0;
   }
 
+  firstComment(): string | undefined {
+    const comment = this.spec.firstComment;
+    if (!comment) return undefined;
+    const trimmed = comment.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+
   private async facebookClient(): Promise<FacebookPageClient> {
     return FacebookPageClient.forPlacementSpec(this.spec);
   }
@@ -281,6 +288,21 @@ export class EntFBFeedPendingContent extends EntPendingContent {
       log.warn("failed to refresh FB placement spec after attachment sync", {
         contentId: this.data.id,
         error: parsed.error?.message,
+      });
+    }
+  }
+
+  async postFirstComment(postId: string): Promise<void> {
+    const comment = this.firstComment();
+    if (!comment) return;
+    try {
+      const client = await this.facebookClient();
+      await client.createComment(postId, comment);
+      log.info("facebook first comment posted", { postId });
+    } catch (error) {
+      log.warn("failed to post facebook first comment", {
+        postId,
+        error: (error as Error).message,
       });
     }
   }

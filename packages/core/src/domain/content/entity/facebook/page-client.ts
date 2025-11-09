@@ -378,6 +378,21 @@ export class FacebookPageClient {
     return postId.includes("_") ? postId : `${this.pageID}_${postId}`;
   }
 
+  async createComment(postId: string, message: string): Promise<void> {
+    const trimmed = message.trim();
+    if (!trimmed) return;
+    const graphPostId = this.toGraphPostId(postId);
+    const body = new URLSearchParams();
+    body.set("message", trimmed);
+
+    await facebookGraphRequest(this.ctx, `/${graphPostId}/comments`, {
+      method: "POST",
+      body,
+    });
+
+    log.info("posted facebook first comment", { graphPostId });
+  }
+
   private normalizePostId(rawId: string | null | undefined): string | null {
     if (!rawId) return null;
     if (rawId.includes("_")) {

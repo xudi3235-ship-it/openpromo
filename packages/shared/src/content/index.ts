@@ -127,6 +127,11 @@ export const BasePlacementSpec = z.object({
     .optional(),
   attachments: SharedAttachmentSpec.array().optional(),
   schedulingSpec: SchedulingSpec.optional(),
+  firstComment: z
+    .string()
+    .trim()
+    .max(2200, "First comment must be 2200 characters or fewer")
+    .optional(),
 });
 
 export type BasePlacementSpec = z.infer<typeof BasePlacementSpec>;

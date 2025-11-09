@@ -81,6 +81,7 @@ const pendingContentGroupSpec = z.object({
   baseMessage: z.string().optional(),
   baseAttachments: SharedAttachmentSpec.array().optional(),
   baseSchedulingSpec: SchedulingSpec.optional(),
+  baseFirstComment: z.string().optional(),
 });
 
 type PendingContentGroupSpec = z.infer<typeof pendingContentGroupSpec>;

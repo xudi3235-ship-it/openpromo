@@ -118,6 +118,7 @@ export const createDefaultSpecForAccount = (
   | null => {
   const baseAttachments = [...(state.contentCreateData.base.attachments ?? [])];
   const baseMessage = state.contentCreateData.base.message || "";
+  const baseFirstComment = state.contentCreateData.base.firstComment;
   const schedulingSpec = getSchedulingSpecForNewPlacement(state);
 
   if (account.platform === "FACEBOOK") {
@@ -132,6 +133,7 @@ export const createDefaultSpecForAccount = (
         message: baseMessage,
       },
       customized: false,
+      firstComment: baseFirstComment,
     };
     if (schedulingSpec) {
       spec.schedulingSpec = schedulingSpec;
@@ -149,6 +151,7 @@ export const createDefaultSpecForAccount = (
       caption: baseMessage,
       attachments: [...baseAttachments],
       customized: false,
+      firstComment: baseFirstComment,
     };
     if (schedulingSpec) {
       spec.schedulingSpec = schedulingSpec;
@@ -167,6 +170,7 @@ export const createDefaultSpecForAccount = (
       caption: baseMessage,
       attachments: [...baseAttachments],
       customized: false,
+      firstComment: baseFirstComment,
     };
     if (schedulingSpec) {
       spec.schedulingSpec = schedulingSpec;
