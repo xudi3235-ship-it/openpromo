@@ -1,6 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@openpromo/ui/components/button";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@openpromo/ui/components/collapsible";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -24,8 +29,8 @@ import {
   TabsTrigger,
 } from "@openpromo/ui/components/tabs";
 import { Textarea } from "@openpromo/ui/components/textarea";
-import { Link2, Upload, X } from "lucide-react";
-import { useEffect } from "react";
+import { ChevronDown, Link2, Upload, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -75,6 +80,8 @@ export function CreateProductModal() {
 
   const { uploadFiles, clearUploads } = useStorageUpload();
 
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
   const resetForm = () => {
     form.reset();
     clearUploads();
@@ -95,7 +102,30 @@ export function CreateProductModal() {
     },
   });
 
-  // Populate form when editing
+  // Watch form values to determine if details section should be shown
+  const sourceUrl = form.watch("sourceUrl");
+
+  // Auto-expand details section when user has content
+  useEffect(() => {
+    if (!isEditMode) {
+      const hasContent =
+        selectedFiles.length > 0 ||
+        existingAttachments.length > 0 ||
+        (sourceUrl && sourceUrl.length > 0);
+
+      if (hasContent && !isDetailsOpen) {
+        setIsDetailsOpen(true);
+      }
+    }
+  }, [
+    selectedFiles.length,
+    existingAttachments.length,
+    sourceUrl,
+    isEditMode,
+    isDetailsOpen,
+  ]);
+
+  // Populate form when editing and auto-expand details
   useEffect(() => {
     if (product && open) {
       form.reset({
@@ -105,8 +135,11 @@ export function CreateProductModal() {
         category: product.category || "",
         tags: product.tags?.join(", ") || "",
       });
+      // Always expand details in edit mode
+      setIsDetailsOpen(true);
     } else if (!open) {
       form.reset();
+      setIsDetailsOpen(false);
     }
   }, [product, open, form]);
 
@@ -421,73 +454,105 @@ export function CreateProductModal() {
               </TabsContent>
             </Tabs>
 
-            {/* Product Details Section */}
-            <div className="space-y-3 pt-2 border-t">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Product Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter product name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter product description"
-                        rows={3}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Electronics" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="tags"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tags</FormLabel>
-                      <FormControl>
-                        <Input placeholder="tag1, tag2, tag3" {...field} />
-                      </FormControl>
-                      <p className="text-xs text-muted-foreground">
-                        Comma-separated
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            {/* Product Details Section - Collapsible */}
+            <Collapsible
+              open={isDetailsOpen}
+              onOpenChange={setIsDetailsOpen}
+              className="space-y-3"
+            >
+              <div className="flex items-center justify-between pt-2 border-t">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">
+                    Product Details
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Optional - Add name, description, and more
+                  </p>
+                </div>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-9 p-0"
+                    type="button"
+                  >
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform duration-200 ${
+                        isDetailsOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                    <span className="sr-only">Toggle product details</span>
+                  </Button>
+                </CollapsibleTrigger>
               </div>
-            </div>
+
+              <CollapsibleContent className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter product name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Enter product description"
+                          rows={3}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Electronics" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="tags"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tags</FormLabel>
+                        <FormControl>
+                          <Input placeholder="tag1, tag2, tag3" {...field} />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          Comma-separated
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             <DialogFooter>
               <Button
