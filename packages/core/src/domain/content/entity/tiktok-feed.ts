@@ -12,6 +12,7 @@ import { onlyOrThrow } from "@core/utils/common";
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
 import { EntPendingContent } from "./EntContent";
+import { TikTokBusinessAPIClient } from "./tiktok/business-api-client";
 import { buildTikTokBusinessPrefixes } from "./tiktok/business-property-manager";
 import {
   TikTokDirectPostClient,
@@ -158,11 +159,36 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
 
   async postFirstComment(postId: string): Promise<void> {
     const comment = this.firstComment();
-    if (!comment) return;
-    log.warn("TikTok first comment not currently supported", {
-      postId,
-      commentLength: comment.length,
-    });
+    if (!comment || !postId) return;
+
+    try {
+      const businessClient = await TikTokBusinessAPIClient.forPlacementSpec(
+        this.spec,
+      );
+      await businessClient.createComment({
+        videoId: postId,
+        text: comment,
+      });
+      log.info("tiktok business first comment posted", {
+        postId,
+        contentId: this.data.id,
+      });
+      return;
+    } catch (error) {
+      const message = (error as Error).message;
+      if (message?.includes("Business Login account")) {
+        log.info("tiktok direct accounts do not support first comments yet", {
+          postId,
+          contentId: this.data.id,
+        });
+        return;
+      }
+      log.warn("failed to post tiktok business first comment", {
+        postId,
+        contentId: this.data.id,
+        error: message,
+      });
+    }
   }
 
   assertReadyForVideoPublishing() {

@@ -116,6 +116,15 @@ export interface TikTokBusinessCommentListResult {
   hasMore: boolean;
 }
 
+export interface TikTokBusinessCommentCreateResult {
+  commentId: string;
+  videoId: string;
+  text: string;
+  uniqueIdentifier?: string;
+  userId?: string;
+  createTime?: number;
+}
+
 export type TikTokBusinessPropertyType = "DOMAIN" | "URL_PREFIX";
 
 type TikTokBusinessPropertyTypeApi = 1 | 2;
@@ -448,6 +457,53 @@ export class TikTokBusinessAPIClient {
           ? data.cursor
           : undefined,
       hasMore: data.has_more ?? false,
+    };
+  }
+
+  /**
+   * Create a comment on an owned TikTok Business video
+   * https://business-api.tiktok.com/portal/docs?id=1803630424390658 (v1.3)
+   */
+  async createComment(params: {
+    videoId: string;
+    text: string;
+  }): Promise<TikTokBusinessCommentCreateResult> {
+    const trimmed = params.text?.trim();
+    if (!trimmed) {
+      throw new WorkflowError("TikTok Business comment text cannot be empty");
+    }
+
+    const text = trimmed.length > 150 ? trimmed.slice(0, 150) : trimmed;
+
+    const data = await this.post<{
+      comment_id: string;
+      video_id: string;
+      text: string;
+      unique_identifier?: string;
+      user_id?: string;
+      create_time?: string | number;
+    }>("/open_api/v1.3/business/comment/create/", {
+      business_id: this.ctx.businessId,
+      video_id: params.videoId,
+      text,
+    });
+
+    const createTimeRaw = data.create_time;
+    const createTime =
+      typeof createTimeRaw === "string"
+        ? Number.parseInt(createTimeRaw, 10)
+        : createTimeRaw;
+
+    return {
+      commentId: data.comment_id,
+      videoId: data.video_id,
+      text: data.text,
+      uniqueIdentifier: data.unique_identifier,
+      userId: data.user_id,
+      createTime:
+        typeof createTime === "number" && Number.isFinite(createTime)
+          ? createTime
+          : undefined,
     };
   }
 
