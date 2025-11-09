@@ -37,7 +37,7 @@ function ProductVisualsPage() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="border-b px-6 py-6">
+      <div className="px-6">
         <h1 className="text-2xl font-semibold tracking-tight">
           Product Visuals
         </h1>
