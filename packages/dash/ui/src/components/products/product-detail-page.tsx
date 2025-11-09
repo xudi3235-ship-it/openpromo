@@ -88,7 +88,7 @@ export function ProductDetailPage() {
   const [generatedImage, setGeneratedImage] = React.useState<
     ProductImageGenerateResponse["results"][0] | null
   >(null);
-  const { data, isLoading, error } = useProductQuery(productId);
+  const { data, isPending, error } = useProductQuery(productId);
 
   const generateImage = useProductImageGenerateMutation();
   const isGenerating = generateImage.isPending;
@@ -151,7 +151,7 @@ export function ProductDetailPage() {
     ? "relative overflow-hidden rounded-lg border border-border/60 bg-muted/20"
     : "relative overflow-hidden rounded-lg border border-dashed border-border/70 bg-muted/10";
 
-  if (isLoading) {
+  if (isPending) {
     return <ProductDetailSkeleton />;
   }
 
@@ -359,7 +359,7 @@ export function ProductDetailPage() {
                           variant="outline"
                           className="text-xs font-normal"
                         >
-                          #{tag}
+                          {tag}
                         </Badge>
                       ))}
                     </div>
