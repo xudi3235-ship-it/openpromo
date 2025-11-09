@@ -16,10 +16,10 @@ import type {
   ProductImageGenerateInput,
   ProductImageGenerateResponse,
 } from "@/queries/product";
-import { useImageGenComposerStore } from "@/stores/image-gen-composer-store";
-import { GenerateButton } from "../generate-button";
-import { ProductSelect, type ProductSelectItem } from "../product-select";
-import { StyleGallery, type StyleGalleryItem } from "../style-gallery";
+import { useImageGeneratorStore } from "@/stores/image-generator-store";
+import { GenerateButton } from "./generate-button";
+import { ProductSelect, type ProductSelectItem } from "./product-select";
+import { StyleGallery, type StyleGalleryItem } from "./style-gallery";
 
 interface InputsPanelProps {
   products: ProductSelectItem[];
@@ -65,32 +65,30 @@ export function InputsPanel({
     onProductSearchChange(debouncedSearch.trim());
   }, [debouncedSearch, onProductSearchChange]);
 
-  const selectedProductId = useImageGenComposerStore(
+  const selectedProductId = useImageGeneratorStore(
     (state) => state.selectedProductId,
   );
-  const setSelectedProductId = useImageGenComposerStore(
+  const setSelectedProductId = useImageGeneratorStore(
     (state) => state.setSelectedProductId,
   );
 
-  const selectedStyleId = useImageGenComposerStore(
+  const selectedStyleId = useImageGeneratorStore(
     (state) => state.selectedStyleId,
   );
-  const setSelectedStyleId = useImageGenComposerStore(
+  const setSelectedStyleId = useImageGeneratorStore(
     (state) => state.setSelectedStyleId,
   );
 
-  const batchCount = useImageGenComposerStore((state) => state.batchCount);
-  const setBatchCount = useImageGenComposerStore(
-    (state) => state.setBatchCount,
-  );
+  const batchCount = useImageGeneratorStore((state) => state.batchCount);
+  const setBatchCount = useImageGeneratorStore((state) => state.setBatchCount);
 
-  const prompt = useImageGenComposerStore((state) => state.prompt);
-  const setPrompt = useImageGenComposerStore((state) => state.setPrompt);
+  const prompt = useImageGeneratorStore((state) => state.prompt);
+  const setPrompt = useImageGeneratorStore((state) => state.setPrompt);
 
-  const referenceImageUrl = useImageGenComposerStore(
+  const referenceImageUrl = useImageGeneratorStore(
     (state) => state.referenceImageUrl,
   );
-  const setReferenceImageUrl = useImageGenComposerStore(
+  const setReferenceImageUrl = useImageGeneratorStore(
     (state) => state.setReferenceImageUrl,
   );
 

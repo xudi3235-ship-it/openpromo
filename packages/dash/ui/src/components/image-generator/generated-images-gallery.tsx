@@ -20,7 +20,7 @@ import type {
   ProductImageGenerateResponse,
 } from "@/queries/product";
 import { useComposerStore } from "@/stores/composer-store";
-import { useImageGenComposerStore } from "@/stores/image-gen-composer-store";
+import { useImageGeneratorStore } from "@/stores/image-generator-store";
 
 interface GeneratedImagesGalleryProps {
   generateMutation: UseMutationResult<
@@ -38,7 +38,7 @@ export function GeneratedImagesGallery({
   remainingSlots,
   className,
 }: GeneratedImagesGalleryProps) {
-  const batchCount = useImageGenComposerStore((state) => state.batchCount);
+  const batchCount = useImageGeneratorStore((state) => state.batchCount);
   const [gridCols, setGridCols] = useState(4);
   const [selectedGenerations, setSelectedGenerations] = useState<Set<string>>(
     new Set(),

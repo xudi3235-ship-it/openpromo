@@ -77,6 +77,11 @@ export const useSidebarData = (): SidebarData => {
           url: "/workspaces/$workspaceSlug/styles",
           icon: Palette,
         },
+        {
+          title: "Creator Studio",
+          url: "/workspaces/$workspaceSlug/creator-studio",
+          icon: Image,
+        },
       ],
     },
     {

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-export interface ImageGenComposerState {
+export interface ImageGeneratorState {
   selectedProductId: string;
   selectedStyleId: string;
   batchCount: number;
@@ -28,7 +28,7 @@ const initialState = {
   isGeneratorDialogOpen: false,
 };
 
-export const useImageGenComposerStore = create<ImageGenComposerState>()(
+export const useImageGeneratorStore = create<ImageGeneratorState>()(
   immer((set) => ({
     ...initialState,
 

@@ -1,22 +1,17 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Spinner } from "@openpromo/ui/components/spinner";
-import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { toast } from "sonner";
-import { orpc } from "@/lib/orpc-client";
-import {
-  useProductImageGenerateMutation,
-  useProductListQuery,
-} from "@/queries/product";
+import { GenerateButton } from "@/components/image-generator/generate-button";
+import { ProductSelect } from "@/components/image-generator/product-select";
+import { StyleGallery } from "@/components/image-generator/style-gallery";
+import { useImageGeneratorMutation } from "@/hooks/useImageGeneratorMutation";
+import { useProductListQuery } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles-queries";
 import { useComposerStore } from "@/stores/composer-store";
-import { useImageGenComposerStore } from "@/stores/image-gen-composer-store";
-import { GenerateButton } from "./generate-button";
+import { useImageGeneratorStore } from "@/stores/image-generator-store";
 import { MediaGeneratorDialog } from "./generator-dialog/media-generator-dialog";
 import { MEDIA_CONFIG } from "./media-section-config";
 import { MediaSectionGallery } from "./media-section-gallery";
-import { ProductSelect } from "./product-select";
-import { StyleGallery } from "./style-gallery";
 
 /**
  * MediaGenerateContent - Progressive UX for generating product images
@@ -25,30 +20,29 @@ import { StyleGallery } from "./style-gallery";
  */
 export function MediaGenerateContent() {
   // Store state
-  const selectedProductId = useImageGenComposerStore(
+  const selectedProductId = useImageGeneratorStore(
     (state) => state.selectedProductId,
   );
-  const selectedStyleId = useImageGenComposerStore(
+  const selectedStyleId = useImageGeneratorStore(
     (state) => state.selectedStyleId,
   );
-  const batchCount = useImageGenComposerStore((state) => state.batchCount);
-  const prompt = useImageGenComposerStore((state) => state.prompt);
-  const referenceImageUrl = useImageGenComposerStore(
+  const batchCount = useImageGeneratorStore((state) => state.batchCount);
+  const prompt = useImageGeneratorStore((state) => state.prompt);
+  const referenceImageUrl = useImageGeneratorStore(
     (state) => state.referenceImageUrl,
   );
-  const setGeneratorDialogOpen = useImageGenComposerStore(
+  const setGeneratorDialogOpen = useImageGeneratorStore(
     (state) => state.setGeneratorDialogOpen,
   );
 
   // Store actions
-  const setSelectedProductId = useImageGenComposerStore(
+  const setSelectedProductId = useImageGeneratorStore(
     (state) => state.setSelectedProductId,
   );
-  const setSelectedStyleId = useImageGenComposerStore(
+  const setSelectedStyleId = useImageGeneratorStore(
     (state) => state.setSelectedStyleId,
   );
 
-  const queryClient = useQueryClient();
   const { contentCreateData } = useComposerStore();
 
   // Main section product list - no search filter
@@ -60,34 +54,7 @@ export function MediaGenerateContent() {
     officialOnly: true,
   });
 
-  const generateMutation = useProductImageGenerateMutation((data) => {
-    // Invalidate the query to refresh the list
-    queryClient.invalidateQueries({ queryKey: orpc.imageGen.list.key() });
-    if (data.async) {
-      // Async mode - images will come via WebSocket
-      // Don't auto-add, let users select from dialog when ready
-      toast.success("Generating images... Check the gallery for results.");
-    } else {
-      // Sync mode - images are ready immediately, auto-add to composer
-      const imagesToAdd = data.results
-        .filter((result) => result.imageUrl && result.generation)
-        .map((result) => ({
-          id: result.generation.id,
-          type: "photo" as const,
-          publicUrl: result.imageUrl,
-          thumbnailUrl: result.imageUrl,
-          mimeType: "image/jpeg",
-          s3Key: result.generation.id,
-        }));
-
-      if (imagesToAdd.length > 0) {
-        useComposerStore.getState().addAttachmentSpecs(imagesToAdd);
-        toast.success(
-          `Added ${imagesToAdd.length} image${imagesToAdd.length === 1 ? "" : "s"} to your post!`,
-        );
-      }
-    }
-  });
+  const generateMutation = useImageGeneratorMutation();
 
   const products = productsData?.products || [];
   const styles = stylesData?.styles || [];

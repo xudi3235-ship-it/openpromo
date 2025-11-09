@@ -328,8 +328,8 @@ export function StyleGallery() {
 - ❌ Using negative margins (`-mx-4`) for horizontal scroll in vertical ScrollArea - breaks layout
 
 **Example from codebase:**
-- `packages/dash/ui/src/components/composer/media/generator-dialog/inputs-panel.tsx` - Dialog panel with vertical scroll
-- `packages/dash/ui/src/components/composer/media/style-gallery.tsx` - Horizontal scroll within vertical layout
+- `packages/dash/ui/src/components/image-generator/inputs-panel.tsx` - Dialog panel with vertical scroll
+- `packages/dash/ui/src/components/image-generator/style-gallery.tsx` - Horizontal scroll within vertical layout
 
 ## General patterns
 1. when a state mgmt is getting complex, > 5 states, create a zustand store. refer to composer store for example.

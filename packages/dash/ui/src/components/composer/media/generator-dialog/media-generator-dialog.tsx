@@ -6,15 +6,14 @@ import {
 } from "@openpromo/ui/components/dialog";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { useState } from "react";
+import { ImageGeneratorSurface } from "@/components/image-generator/image-generator-surface";
+import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
 import type {
   ProductImageGenerateInput,
   ProductImageGenerateResponse,
 } from "@/queries/product";
 import { useProductListQuery } from "@/queries/product";
-import { useImageGenComposerStore } from "@/stores/image-gen-composer-store";
-import type { StyleGalleryItem } from "../style-gallery";
-import { InputsPanel } from "./inputs-panel";
-import { GeneratedImagesGallery } from "./progress-panel";
+import { useImageGeneratorStore } from "@/stores/image-generator-store";
 
 interface MediaGeneratorDialogProps {
   styles: StyleGalleryItem[];
@@ -34,10 +33,8 @@ export function MediaGeneratorDialog({
   remainingSlots,
   generateMutation,
 }: MediaGeneratorDialogProps) {
-  const isOpen = useImageGenComposerStore(
-    (state) => state.isGeneratorDialogOpen,
-  );
-  const setOpen = useImageGenComposerStore(
+  const isOpen = useImageGeneratorStore((state) => state.isGeneratorDialogOpen);
+  const setOpen = useImageGeneratorStore(
     (state) => state.setGeneratorDialogOpen,
   );
 
@@ -58,22 +55,16 @@ export function MediaGeneratorDialog({
         </DialogHeader>
 
         <div className="flex-1 min-h-0 px-6 pb-6 overflow-hidden">
-          <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-[420px_1fr] overflow-hidden">
-            <InputsPanel
-              products={products}
-              styles={styles}
-              isLoadingProducts={isPendingProducts}
-              isLoadingStyles={isLoadingStyles}
-              remainingSlots={remainingSlots}
-              generateMutation={generateMutation}
-              productSearch={productSearch}
-              onProductSearchChange={setProductSearch}
-            />
-            <GeneratedImagesGallery
-              generateMutation={generateMutation}
-              remainingSlots={remainingSlots}
-            />
-          </div>
+          <ImageGeneratorSurface
+            products={products}
+            styles={styles}
+            isLoadingProducts={isPendingProducts}
+            isLoadingStyles={isLoadingStyles}
+            remainingSlots={remainingSlots}
+            generateMutation={generateMutation}
+            productSearch={productSearch}
+            onProductSearchChange={setProductSearch}
+          />
         </div>
       </DialogContent>
     </Dialog>
