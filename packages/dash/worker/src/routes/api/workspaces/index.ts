@@ -10,7 +10,6 @@ import { inboxRoute } from "./inbox";
 import { internalWorkspaceRoute } from "./internal";
 import { listWorkspacesRoute } from "./list-workspaces";
 import { mediaRoute } from "./media";
-import { productsRoute } from "./products";
 import { storageRoute } from "./storage";
 import { workspaceTeamRoute } from "./team";
 import { updateWorkspaceRoute } from "./update-workspace";
@@ -38,5 +37,4 @@ export const workspacesRoute = new Hono<ApiEnv>()
   .route("/:workspaceSlug/media", mediaRoute)
   .route("/:workspaceSlug/storage", storageRoute)
   .route("/:workspaceSlug/team", workspaceTeamRoute)
-  .route("/:workspaceSlug/content", contentRoute)
-  .route("/:workspaceSlug/products", productsRoute);
+  .route("/:workspaceSlug/content", contentRoute);
