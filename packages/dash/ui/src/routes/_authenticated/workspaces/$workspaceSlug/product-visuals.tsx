@@ -6,12 +6,12 @@ import { useProductListQuery } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles-queries";
 
 export const Route = createFileRoute(
-  "/_authenticated/workspaces/$workspaceSlug/creator-studio",
+  "/_authenticated/workspaces/$workspaceSlug/product-visuals",
 )({
-  component: CreatorStudioPage,
+  component: ProductVisualsPage,
 });
 
-function CreatorStudioPage() {
+function ProductVisualsPage() {
   const [productSearch, setProductSearch] = useState("");
   const { data: productsData, isPending: isPendingProducts } =
     useProductListQuery({
@@ -32,11 +32,11 @@ function CreatorStudioPage() {
     <div className="flex h-full flex-col bg-background">
       <div className="border-b px-6 py-6">
         <h1 className="text-2xl font-semibold tracking-tight">
-          Creator Studio
+          Product Visuals
         </h1>
         <p className="text-sm text-muted-foreground">
-          Generate ready-to-use product images with styles, prompts, and batch
-          control.
+          Generate ready-to-use product imagery and video concepts with styles,
+          prompts, and batch control.
         </p>
       </div>
 
