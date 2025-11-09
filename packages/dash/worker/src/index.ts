@@ -8,7 +8,7 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { bootstrap } from "./middleware/bootstrap";
 import { cfMetadata } from "./middleware/cf-metadata";
-import { logRequestBody } from "./middleware/log-request-body";
+// import { logRequestBody } from "./middleware/log-request-body";
 import { noCache } from "./middleware/no-cache";
 import { apiRoutes } from "./routes/api";
 import { authRoutes } from "./routes/auth";
@@ -17,7 +17,7 @@ import { webhooksRoutes } from "./routes/webhooks";
 
 const app = new Hono()
   .use(logger())
-  .use(logRequestBody())
+  // .use(logRequestBody())
   .use(cfMetadata())
   .use(noCache())
   .use(bootstrap())

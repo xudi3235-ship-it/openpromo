@@ -69,7 +69,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.13.13",
+    "@cloudflare/vite-plugin": "1.14.0",
     "@hono/vite-build": "^1.7.0",
     "@hono/vite-dev-server": "^0.21.0",
     "@tanstack/router-plugin": "^1.131.7",
