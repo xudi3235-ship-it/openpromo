@@ -3,12 +3,15 @@ import { Spinner } from "@openpromo/ui/components/spinner";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { UseMutationResult } from "@tanstack/react-query";
+import { Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   type ImageGenListResponse,
   type ImageGenRefineInput,
   type ImageGenRefineResponse,
+  useImageGenDeleteBatchMutation,
   useImageGenListQuery,
 } from "@/queries/image-gen";
 
@@ -43,6 +46,10 @@ export function ImageGeneratorEditor({
   >(null);
   const [prompt, setPrompt] = useState("");
   const [pendingVariants, setPendingVariants] = useState<{ id: string }[]>([]);
+  const [variantPendingDeletion, setVariantPendingDeletion] = useState<
+    string | null
+  >(null);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
 
   const selectedGeneration = useMemo(() => {
     return (
@@ -104,6 +111,7 @@ export function ImageGeneratorEditor({
   );
 
   const variants = variantsQuery.data?.generations ?? [];
+  const deleteMutation = useImageGenDeleteBatchMutation();
 
   const handleGenerateVariation = () => {
     if (!selectedGeneration) {
@@ -152,6 +160,26 @@ export function ImageGeneratorEditor({
             prev.filter((pending) => pending.id !== placeholderId),
           );
         },
+      },
+    );
+  };
+
+  const handleConfirmDeleteVariant = () => {
+    if (!variantPendingDeletion) return;
+    deleteMutation.mutate(
+      { ids: [variantPendingDeletion] },
+      {
+        onSettled: () => setVariantPendingDeletion(null),
+      },
+    );
+  };
+
+  const handleDeleteAll = () => {
+    if (variants.length === 0) return;
+    deleteMutation.mutate(
+      { ids: variants.map((variant) => variant.id) },
+      {
+        onSettled: () => setIsDeleteAllDialogOpen(false),
       },
     );
   };
@@ -243,12 +271,26 @@ export function ImageGeneratorEditor({
 
             {(variants.length > 0 || pendingVariants.length > 0) && (
               <div className="border-t px-4 py-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Variations
-                  </p>
-                  {variantsQuery.isFetching && (
-                    <Spinner className="h-3.5 w-3.5 text-muted-foreground" />
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Variations
+                    </p>
+                    {variantsQuery.isFetching && (
+                      <Spinner className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                  </div>
+                  {variants.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleDeleteAll}
+                      disabled={deleteMutation.isPending}
+                      className="h-6 text-xs"
+                    >
+                      <Trash2 className="mr-1 h-3 w-3" />
+                      Delete all
+                    </Button>
                   )}
                 </div>
                 <div className="overflow-x-auto">
@@ -264,17 +306,33 @@ export function ImageGeneratorEditor({
                     {variants.map((variant) => {
                       const preview = variant.outputImages?.[0];
                       return (
-                        <button
-                          type="button"
+                        <div
                           key={variant.id}
-                          onClick={() => setSelectedGenerationId(variant.id)}
                           className={cn(
-                            "w-20 h-20 rounded-md overflow-hidden border flex-shrink-0",
+                            "relative w-20 h-20 rounded-md overflow-hidden border flex-shrink-0",
                             selectedGenerationId === variant.id
                               ? "border-primary ring-2 ring-primary/40"
                               : "border-border hover:border-foreground/40",
                           )}
                         >
+                          <button
+                            type="button"
+                            onClick={() => setSelectedGenerationId(variant.id)}
+                            className="absolute inset-0"
+                            aria-label="Select variant"
+                          />
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setVariantPendingDeletion(variant.id);
+                            }}
+                            className="absolute top-1 right-1 z-10 rounded-full bg-background/80 p-1 shadow"
+                            aria-label="Delete variant"
+                            disabled={deleteMutation.isPending}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
                           {preview ? (
                             <img
                               src={preview}
@@ -286,7 +344,7 @@ export function ImageGeneratorEditor({
                               Pending
                             </div>
                           )}
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
@@ -296,6 +354,26 @@ export function ImageGeneratorEditor({
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(variantPendingDeletion)}
+        onOpenChange={(open) =>
+          setVariantPendingDeletion((prev) => (open ? prev : null))
+        }
+        title="Delete variation"
+        desc="This variation will be permanently deleted."
+        destructive
+        handleConfirm={handleConfirmDeleteVariant}
+        isLoading={deleteMutation.isPending}
+      />
+      <ConfirmDialog
+        open={isDeleteAllDialogOpen}
+        onOpenChange={setIsDeleteAllDialogOpen}
+        title="Delete all variations"
+        desc="All variations for this image will be permanently deleted."
+        destructive
+        handleConfirm={handleDeleteAll}
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }
