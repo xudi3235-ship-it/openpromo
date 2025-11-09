@@ -14,6 +14,10 @@ const link = new RPCLink({
     }),
   interceptors: [
     onError((error) => {
+      // Suppress abort errors - these are expected during query cleanup/cancellation
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
       console.error(error);
     }),
   ],
