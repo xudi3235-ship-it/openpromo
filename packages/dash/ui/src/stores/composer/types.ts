@@ -4,6 +4,7 @@ import type {
   FBFeedPlacementSpec,
   IGFeedPlacementSpec,
   SharedAttachmentSpec,
+  TikTokBusinessOptions,
   TikTokFeedPlacementSpec,
 } from "@shared/content";
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
@@ -109,6 +110,9 @@ export interface ComposerActions {
   // Platform-specific features
   setFacebookCTA: (type: string, link: string) => void;
   removeFacebookCTA: () => void;
+  updateTikTokBusinessOptions: (
+    updates: Partial<TikTokBusinessOptions>,
+  ) => void;
   // Video features
   setVideoThumbnail: (url: string | undefined) => void;
 }

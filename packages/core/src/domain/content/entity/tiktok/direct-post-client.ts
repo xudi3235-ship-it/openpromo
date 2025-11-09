@@ -2,6 +2,7 @@ import { ConnectedAccount } from "@core/domain/connected-account/connected-accou
 import type { TikTokFeedPlacementSpec } from "@core/schemas/content.sql";
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
+import type { TikTokPrivacyLevel as SharedTikTokPrivacyLevel } from "@shared/content";
 
 const log = Log.create({ namespace: "tiktok-direct-post-client" });
 
@@ -23,11 +24,7 @@ interface TikTokAPIResponse<T> {
   error?: TikTokAPIError;
 }
 
-export type TikTokPrivacyLevel =
-  | "PUBLIC_TO_EVERYONE"
-  | "MUTUAL_FOLLOW_FRIENDS"
-  | "FOLLOWER_OF_CREATOR"
-  | "SELF_ONLY";
+export type TikTokPrivacyLevel = SharedTikTokPrivacyLevel;
 
 interface TikTokVideoInitResponse {
   publish_id: string;

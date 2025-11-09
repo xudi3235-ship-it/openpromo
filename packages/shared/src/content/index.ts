@@ -22,6 +22,17 @@ export const TikTokPlacement = {
   TT_FEED: "TT_FEED",
 } as const;
 
+export const TikTokPrivacyLevels = [
+  "PUBLIC_TO_EVERYONE",
+  "MUTUAL_FOLLOW_FRIENDS",
+  "FOLLOWER_OF_CREATOR",
+  "SELF_ONLY",
+] as const;
+
+export type TikTokPrivacyLevel = (typeof TikTokPrivacyLevels)[number];
+
+export const TikTokPrivacyLevelZod = z.enum([...TikTokPrivacyLevels]);
+
 export const AllPlacement = {
   ...IGPlacement,
   ...FBPlacement,
@@ -183,10 +194,24 @@ export const BaseTikTokPlacementSpec = BasePlacementSpec.extend({
   }),
 });
 
+export const TikTokBusinessOptions = z.object({
+  disableComment: z.boolean().optional(),
+  disableDuet: z.boolean().optional(),
+  disableStitch: z.boolean().optional(),
+  autoAddMusic: z.boolean().optional(),
+  privacyLevel: TikTokPrivacyLevelZod.optional(),
+  photoCoverIndex: z.number().int().min(0).optional(),
+  thumbnailOffset: z.number().int().min(0).optional(),
+  customThumbnailUrl: z.string().url().optional(),
+});
+
+export type TikTokBusinessOptions = z.infer<typeof TikTokBusinessOptions>;
+
 export const TikTokFeedPlacementSpec = BaseTikTokPlacementSpec.extend({
   placement: z.literal(TikTokPlacement.TT_FEED),
   caption: z.string().optional(),
   attachments: SharedAttachmentSpec.array().optional(),
+  businessOptions: TikTokBusinessOptions.optional(),
 });
 
 export type TikTokFeedPlacementSpec = z.infer<typeof TikTokFeedPlacementSpec>;
@@ -257,6 +282,20 @@ export const TikTokFeedValidationSpec = TikTokFeedPlacementSpec.superRefine(
         code: "custom",
         message: "At least one attachment is required for TikTok posts.",
       });
+    }
+    if (
+      data.attachments &&
+      data.attachments.length > 0 &&
+      data.businessOptions?.photoCoverIndex !== undefined
+    ) {
+      const maxIndex = data.attachments.length - 1;
+      if (data.businessOptions.photoCoverIndex > maxIndex) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["businessOptions", "photoCoverIndex"],
+          message: `Cover photo index must be between 0 and ${maxIndex}`,
+        });
+      }
     }
     if (hasPhotoAndVideo(data)) {
       ctx.addIssue({

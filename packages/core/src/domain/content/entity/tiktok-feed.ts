@@ -4,6 +4,7 @@ import type {
   UnifiedContentSelect,
 } from "@core/schemas/content.sql";
 import {
+  type TikTokBusinessOptions,
   TikTokFeedPlacementSpec,
   TikTokPlacement,
 } from "@core/schemas/content.sql";
@@ -25,6 +26,25 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
   static type = "tiktok_pending_content";
   spec: TikTokFeedPlacementSpec;
   tiktokUserID: string;
+  private static readonly DEFAULT_BUSINESS_OPTIONS: Required<
+    Pick<
+      TikTokBusinessOptions,
+      | "disableComment"
+      | "disableDuet"
+      | "disableStitch"
+      | "autoAddMusic"
+      | "photoCoverIndex"
+      | "thumbnailOffset"
+    >
+  > & { privacyLevel: TikTokPrivacyLevel } = {
+    disableComment: false,
+    disableDuet: false,
+    disableStitch: false,
+    autoAddMusic: true,
+    photoCoverIndex: 0,
+    thumbnailOffset: 0,
+    privacyLevel: "SELF_ONLY",
+  };
 
   constructor(data: UnifiedContentSelect) {
     super(data);
@@ -111,6 +131,22 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     throw new WorkflowError(
       `TikTok feed content ${this.data.id} requires either a video or photo attachment`,
     );
+  }
+
+  getBusinessOptions(): ResolvedTikTokBusinessOptions {
+    const base = EntTikTokFeedPendingContent.DEFAULT_BUSINESS_OPTIONS;
+    const options = this.spec.businessOptions ?? {};
+    return {
+      disableComment: options.disableComment ?? base.disableComment,
+      disableDuet: options.disableDuet ?? base.disableDuet,
+      disableStitch: options.disableStitch ?? base.disableStitch,
+      autoAddMusic: options.autoAddMusic ?? base.autoAddMusic,
+      privacyLevel: options.privacyLevel ?? base.privacyLevel,
+      photoCoverIndex: options.photoCoverIndex ?? base.photoCoverIndex,
+      thumbnailOffset: options.thumbnailOffset ?? base.thumbnailOffset,
+      customThumbnailUrl:
+        options.customThumbnailUrl ?? this.spec.thumbnailUrl ?? undefined,
+    };
   }
 
   assertReadyForVideoPublishing() {
@@ -682,6 +718,17 @@ export class EntTikTokFeedPendingContent extends EntPendingContent {
     return prepared;
   }
 }
+
+type ResolvedTikTokBusinessOptions = {
+  disableComment: boolean;
+  disableDuet: boolean;
+  disableStitch: boolean;
+  autoAddMusic: boolean;
+  privacyLevel: TikTokPrivacyLevel;
+  photoCoverIndex: number;
+  thumbnailOffset: number;
+  customThumbnailUrl?: string;
+};
 const log = Log.create({ namespace: "tiktok-feed-entity" });
 
 export type {

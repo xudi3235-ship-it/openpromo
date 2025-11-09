@@ -123,12 +123,15 @@ export class TikTokBusinessPublisher extends BasePublisher {
           businessId: client.identity.businessId,
           videoUrl: verifiedVideoUrl,
         });
+        const options = c.getBusinessOptions();
         return await client.publishVideo({
           videoUrl: verifiedVideoUrl,
           caption: c.caption(),
-          disableComment: false,
-          disableDuet: false,
-          disableStitch: false,
+          disableComment: options.disableComment,
+          disableDuet: options.disableDuet,
+          disableStitch: options.disableStitch,
+          thumbnailOffset: options.thumbnailOffset,
+          customThumbnailUrl: options.customThumbnailUrl,
           isBrandOrganic: false,
           isBrandedContent: false,
         });
@@ -198,7 +201,6 @@ export class TikTokBusinessPublisher extends BasePublisher {
       );
     }
 
-    const photoCoverIndex = 0; // TODO: allow user to select cover photo
     // 2. publish photo via business api
     const { shareId } = await step.do(
       "publish photo via business api",
@@ -209,14 +211,20 @@ export class TikTokBusinessPublisher extends BasePublisher {
           businessId: client.identity.businessId,
           photoCount: photoUrls.length,
         });
+        const options = c.getBusinessOptions();
+        const maxIndex = Math.max(photoUrls.length - 1, 0);
+        // TODO: implement this photo cover feature??
+        const photoCoverIndex = Math.min(
+          Math.max(options.photoCoverIndex, 0),
+          maxIndex,
+        );
         return await client.publishPhoto({
           photoUrls,
           photoCoverIndex,
           caption: c.caption(),
-          privacyLevel: "SELF_ONLY", // TODO:  need to check the doc, https://business-api.tiktok.com/portal/docs?id=1803630424390658
-          // need to query first to see the list of allowed values
-          disableComment: false,
-          autoAddMusic: true,
+          privacyLevel: options.privacyLevel,
+          disableComment: options.disableComment,
+          autoAddMusic: options.autoAddMusic,
           isBrandOrganic: false,
           isBrandedContent: false,
           isDraft: false,

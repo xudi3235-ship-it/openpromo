@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ValidationErrors } from "@/components/composer/controls/validation-errors";
 import { PublishingOverlay } from "@/components/composer/layout/publishing-overlay";
 import { useComposerPublishHandlers } from "@/hooks/composer/useComposerHooks";
+import { useInternal } from "@/hooks/useActor";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { validateCaption } from "@/lib/caption-limit";
 import { logComposerEvent } from "@/lib/instrumentation/composer";
@@ -302,6 +303,7 @@ export function ComposerFooter() {
   };
 
   const data = useComposerStore((s) => s.contentCreateData);
+  const isInternal = useInternal();
 
   return (
     <>
@@ -326,12 +328,11 @@ export function ComposerFooter() {
         onOpenChange={setShowCancelConfirm}
         onConfirm={handleConfirmCancel}
       />
-      {import.meta.env.DEV && (
+      {(import.meta.env.DEV || isInternal) && (
         <div className="max-w-md mx-auto my-4 p-2 bg-muted rounded text-xs overflow-auto">
           <pre>{JSON.stringify(data, null, 2)}</pre>
         </div>
       )}
-
       <PublishingOverlay
         isVisible={publishingState.isVisible}
         status={publishingState.status}

@@ -3,6 +3,7 @@ import type { TikTokFeedPlacementSpec } from "@core/schemas/content.sql";
 import { env } from "@core/utils/env";
 import { WorkflowError } from "@core/utils/error";
 import { Log } from "@core/utils/log";
+import type { TikTokPrivacyLevel } from "@shared/content";
 
 const log = Log.create({ namespace: "tiktok-business-api-client" });
 
@@ -19,12 +20,6 @@ interface BusinessAPIResponse<T> {
   request_id?: string;
   data?: T;
 }
-
-export type TikTokPrivacyLevel =
-  | "PUBLIC_TO_EVERYONE"
-  | "MUTUAL_FOLLOW_FRIENDS"
-  | "FOLLOWER_OF_CREATOR"
-  | "SELF_ONLY";
 
 export interface TikTokBusinessVideoPublishParams {
   videoUrl: string;

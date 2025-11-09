@@ -7,17 +7,28 @@ import {
   TooltipTrigger,
 } from "@openpromo/ui/components/tooltip";
 import { cn } from "@openpromo/ui/lib/utils";
-import type { FBFeedPlacementSpec } from "@shared/content";
-import { Info, MousePointerClick } from "lucide-react";
+import type {
+  FBFeedPlacementSpec,
+  SharedAttachmentSpec,
+  TikTokFeedPlacementSpec,
+} from "@shared/content";
+import { Info, MousePointerClick, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { useComposerStore } from "@/stores/composer-store";
 import { CTA_OPTIONS } from "../../types/platform-features";
 import { CTADialog } from "./cta-dialog";
+import {
+  DEFAULT_TIKTOK_OPTIONS,
+  formatTikTokPrivacyLevel,
+  type ResolvedTikTokOptions,
+  TikTokBusinessDialog,
+} from "./tiktok-business-dialog";
 
 export function PlatformFeaturesSection() {
   const composer = useComposerStore();
   const [ctaDialogOpen, setCtaDialogOpen] = useState(false);
+  const [tiktokDialogOpen, setTikTokDialogOpen] = useState(false);
 
   // Get selected platforms
   const selectedPlatforms = useMemo(() => {
@@ -67,6 +78,58 @@ export function PlatformFeaturesSection() {
     composer.removeFacebookCTA();
   };
 
+  const tiktokFeatureState = useMemo(() => {
+    if (!selectedPlatforms.includes("TIKTOK")) return null;
+
+    const resolveOptions = (spec?: TikTokFeedPlacementSpec) => {
+      const defaults = getDefaultTikTokOptions();
+      const options = spec?.businessOptions;
+      return {
+        disableComment: options?.disableComment ?? defaults.disableComment,
+        disableDuet: options?.disableDuet ?? defaults.disableDuet,
+        disableStitch: options?.disableStitch ?? defaults.disableStitch,
+        autoAddMusic: options?.autoAddMusic ?? defaults.autoAddMusic,
+        privacyLevel: options?.privacyLevel ?? defaults.privacyLevel,
+        photoCoverIndex: options?.photoCoverIndex ?? defaults.photoCoverIndex,
+        thumbnailOffset: options?.thumbnailOffset ?? defaults.thumbnailOffset,
+      };
+    };
+
+    const resolveAttachments = (spec?: TikTokFeedPlacementSpec) =>
+      spec?.attachments ?? composer.contentCreateData.base.attachments ?? [];
+
+    if (composer.activeAccount) {
+      const entry = composer.placementsByAccount[composer.activeAccount];
+      if (entry?.platform === "TIKTOK") {
+        const spec = entry.spec as TikTokFeedPlacementSpec;
+        const attachments = resolveAttachments(spec);
+        return {
+          options: resolveOptions(spec),
+          hasPhoto: attachments.some((att) => att.type === "photo"),
+          hasVideo: attachments.some((att) => att.type === "video"),
+          photoCount: attachments.filter((att) => att.type === "photo").length,
+        };
+      }
+    }
+
+    const spec = composer.contentCreateData.placements.tiktokFeed?.[0];
+    const attachments = resolveAttachments(spec);
+    const resolvedOptions = resolveOptions(spec);
+    return {
+      options: resolvedOptions,
+      hasPhoto: attachments.some((att) => att.type === "photo"),
+      hasVideo: attachments.some((att) => att.type === "video"),
+      photoCount: attachments.filter((att) => att.type === "photo").length,
+      summary: buildTikTokSummary(resolvedOptions, attachments),
+    };
+  }, [
+    composer.activeAccount,
+    composer.contentCreateData.placements.tiktokFeed,
+    composer.contentCreateData.base.attachments,
+    composer.placementsByAccount,
+    selectedPlatforms,
+  ]);
+
   // Don't show section if no platforms selected
   if (selectedPlatforms.length === 0) {
     return null;
@@ -115,7 +178,10 @@ export function PlatformFeaturesSection() {
 
         {/* TikTok Features - placeholder for future */}
         {selectedPlatforms.includes("TIKTOK") && (
-          <PlatformRow platform="TIKTOK" features={[]} />
+          <TikTokFeaturesRow
+            summary={tiktokFeatureState?.summary}
+            onOpenDialog={() => setTikTokDialogOpen(true)}
+          />
         )}
       </div>
 
@@ -126,6 +192,16 @@ export function PlatformFeaturesSection() {
         initialLink={facebookCTA?.value.link}
         onSave={handleSaveCTA}
         onRemove={facebookCTA ? handleRemoveCTA : undefined}
+      />
+
+      <TikTokBusinessDialog
+        open={tiktokDialogOpen}
+        onOpenChange={setTikTokDialogOpen}
+        options={tiktokFeatureState?.options ?? DEFAULT_TIKTOK_OPTIONS}
+        hasPhoto={tiktokFeatureState?.hasPhoto ?? false}
+        hasVideo={tiktokFeatureState?.hasVideo ?? false}
+        photoCount={tiktokFeatureState?.photoCount ?? 0}
+        onUpdate={composer.updateTikTokBusinessOptions}
       />
     </TooltipProvider>
   );
@@ -216,4 +292,76 @@ function PlatformRow({
       </div>
     </div>
   );
+}
+
+function TikTokFeaturesRow({
+  summary,
+  onOpenDialog,
+}: {
+  summary?: string;
+  onOpenDialog: () => void;
+}) {
+  const meta = getPlatformMeta("TIKTOK");
+  const Icon = meta.icon;
+
+  return (
+    <div className="flex items-center gap-2">
+      <Badge
+        variant="secondary"
+        className={cn(
+          "gap-1.5 px-2 py-0.5 text-xs font-medium",
+          meta.accentTextClass,
+        )}
+      >
+        <Icon className="h-3 w-3" />
+        TikTok
+      </Badge>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={onOpenDialog}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="text-xs">Open TikTok business settings</p>
+        </TooltipContent>
+      </Tooltip>
+
+      <span className="text-xs text-muted-foreground">
+        {summary ?? "No custom TikTok settings"}
+      </span>
+    </div>
+  );
+}
+
+function getDefaultTikTokOptions(): ResolvedTikTokOptions {
+  return DEFAULT_TIKTOK_OPTIONS;
+}
+
+function buildTikTokSummary(
+  options: ResolvedTikTokOptions,
+  attachments?: SharedAttachmentSpec[] | null,
+) {
+  const hasVideo = attachments?.some((att) => att.type === "video");
+  const hasPhoto = attachments?.some((att) => att.type === "photo");
+  const parts: string[] = [
+    `Privacy: ${formatTikTokPrivacyLevel(options.privacyLevel)}`,
+    options.disableComment ? "Comments off" : "Comments on",
+  ];
+  if (hasVideo) {
+    parts.push(
+      options.disableDuet ? "Duet off" : "Duet on",
+      options.disableStitch ? "Stitch off" : "Stitch on",
+    );
+  }
+  if (hasPhoto) {
+    parts.push(`Cover #${(options.photoCoverIndex ?? 0) + 1}`);
+  }
+  return parts.join(" • ");
 }

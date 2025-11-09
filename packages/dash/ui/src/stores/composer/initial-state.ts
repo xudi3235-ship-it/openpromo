@@ -122,7 +122,6 @@ const buildInitialTikTokPlacements = (
           // ADVERTISER accounts are not supported for organic content posting
           return null;
         }
-
         return {
           identity: {
             connectedAccountID: acc.id,
