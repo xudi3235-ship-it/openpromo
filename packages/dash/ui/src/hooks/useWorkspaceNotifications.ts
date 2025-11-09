@@ -54,7 +54,7 @@ export function useWorkspaceNotifications(
   const {
     data,
     refetch,
-    isLoading: queryLoading,
+    isPending: queryLoading,
     isFetching,
   } = notificationsQuery;
   const invalidateNotifications =

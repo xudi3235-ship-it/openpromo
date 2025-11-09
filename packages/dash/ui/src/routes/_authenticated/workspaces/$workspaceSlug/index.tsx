@@ -48,9 +48,9 @@ function WorkspaceHomePage() {
   const { workspace } = useWorkspace();
   const { data: snapshotRecord, isPending: snapshotPending } =
     useWorkspaceInsightSnapshot();
-  const { data: inboxSummary, isLoading: inboxLoading } =
+  const { data: inboxSummary, isPending: inboxLoading } =
     useWorkspaceInsightsInboxSummary();
-  const { data: topContent, isLoading: topContentLoading } =
+  const { data: topContent, isPending: topContentLoading } =
     useWorkspaceInsightsTopContent({ limit: 3, sortBy: "impressions" });
 
   const heroHighlight = snapshotRecord?.snapshot.narrativeHighlights?.[0];

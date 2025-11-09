@@ -398,7 +398,7 @@ export function ImageGeneratorEditor({
               </div>
               <div className="overflow-x-auto">
                 <div className="flex gap-3 pb-2 w-full min-h-[5rem] items-center">
-                  {variantsQuery.isLoading && (
+                  {variantsQuery.isPending && (
                     <>
                       {Array.from({ length: 4 }, (_, i) => `skeleton-${i}`).map(
                         (key) => (
@@ -410,7 +410,7 @@ export function ImageGeneratorEditor({
                       )}
                     </>
                   )}
-                  {!variantsQuery.isLoading &&
+                  {!variantsQuery.isPending &&
                     pendingVariants.map((item) => (
                       <div
                         key={item.id}
@@ -419,7 +419,7 @@ export function ImageGeneratorEditor({
                         <Spinner className="h-4 w-4" />
                       </div>
                     ))}
-                  {!variantsQuery.isLoading &&
+                  {!variantsQuery.isPending &&
                     variants.map((variant) => {
                       const preview = variant.outputImages?.[0];
                       const isViewing = viewingVariantId === variant.id;
@@ -470,7 +470,7 @@ export function ImageGeneratorEditor({
                         </div>
                       );
                     })}
-                  {!variantsQuery.isLoading &&
+                  {!variantsQuery.isPending &&
                     variants.length === 0 &&
                     pendingVariants.length === 0 && (
                       <div className="text-xs text-muted-foreground py-4 px-2">

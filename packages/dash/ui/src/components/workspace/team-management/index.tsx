@@ -207,7 +207,7 @@ export function TeamManagement() {
       <WorkspaceTeamTable
         members={members}
         invites={invites}
-        isLoading={isPending}
+        isPending={isPending}
         isError={isError}
         onEditMemberRole={
           permissions.canManageRoles ? handleEditRole : undefined

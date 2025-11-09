@@ -83,7 +83,7 @@ export function ProductTableView({
     <>
       <ProductTableBody
         table={table}
-        isLoading={isPending}
+        isPending={isPending}
         hasFilters={Boolean(searchQuery)}
         onAddProduct={onAddProduct}
       />

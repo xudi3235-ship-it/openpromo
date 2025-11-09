@@ -28,7 +28,7 @@ import {
 type WorkspaceTeamTableProps = {
   members: WorkspaceMember[];
   invites: WorkspaceInviteSummary[];
-  isLoading: boolean;
+  isPending: boolean;
   isError: boolean;
   onEditMemberRole?: (member: WorkspaceMember) => void;
   onRemoveMember?: (member: WorkspaceMember) => void;
@@ -40,7 +40,7 @@ type WorkspaceTeamTableProps = {
 export function WorkspaceTeamTable({
   members,
   invites,
-  isLoading,
+  isPending,
   isError,
   onEditMemberRole,
   onRemoveMember,
@@ -65,7 +65,7 @@ export function WorkspaceTeamTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isLoading &&
+          {isPending &&
             Array.from({ length: 3 }).map((_, index) => (
               <TableRow
                 key={`member-skeleton-${
@@ -92,7 +92,7 @@ export function WorkspaceTeamTable({
               </TableRow>
             ))}
 
-          {isError && !isLoading && (
+          {isError && !isPending && (
             <TableRow>
               <TableCell
                 colSpan={5}
@@ -103,7 +103,7 @@ export function WorkspaceTeamTable({
             </TableRow>
           )}
 
-          {!isLoading && !isError && !hasMembers && !hasInvites && (
+          {!isPending && !isError && !hasMembers && !hasInvites && (
             <TableRow>
               <TableCell
                 colSpan={5}
@@ -114,7 +114,7 @@ export function WorkspaceTeamTable({
             </TableRow>
           )}
 
-          {!isLoading &&
+          {!isPending &&
             !isError &&
             members.map((member) => {
               const email = member.user?.email ?? "—";
@@ -160,7 +160,7 @@ export function WorkspaceTeamTable({
               );
             })}
 
-          {!isLoading &&
+          {!isPending &&
             !isError &&
             invites.map((invite) => {
               const inviteeName =

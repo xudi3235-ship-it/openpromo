@@ -46,10 +46,10 @@ export function MediaGenerateContent() {
   const { contentCreateData } = useComposerStore();
 
   // Main section product list - no search filter
-  const { data: productsData, isLoading: isLoadingProducts } =
+  const { data: productsData, isPending: isPendingProducts } =
     useProductListQuery({});
 
-  const { data: stylesData, isPending: isLoadingStyles } = useStylesListQuery({
+  const { data: stylesData, isPending: isPendingStyles } = useStylesListQuery({
     page: 1,
     officialOnly: true,
   });
@@ -94,7 +94,7 @@ export function MediaGenerateContent() {
     });
   };
 
-  if (isLoadingProducts) {
+  if (isPendingProducts) {
     return (
       <div className="flex items-center justify-center py-12 border rounded-lg">
         <div className="text-center space-y-3">
@@ -121,7 +121,7 @@ export function MediaGenerateContent() {
           styles={styles}
           selectedStyleId={selectedStyleId}
           onStyleSelect={setSelectedStyleId}
-          isLoading={isLoadingStyles}
+          isLoading={isPendingStyles}
         />
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
@@ -157,7 +157,7 @@ export function MediaGenerateContent() {
 
       <MediaGeneratorDialog
         styles={styles}
-        isLoadingStyles={isLoadingStyles}
+        isLoadingStyles={isPendingStyles}
         remainingSlots={remainingSlots}
         generateMutation={generateMutation}
       />

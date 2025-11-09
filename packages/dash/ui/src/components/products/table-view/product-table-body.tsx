@@ -14,18 +14,18 @@ import { ProductTableSkeleton } from "./product-table-skeleton";
 
 interface ProductTableBodyProps {
   table: TableType<ProductSelectType>;
-  isLoading: boolean;
+  isPending: boolean;
   hasFilters: boolean;
   onAddProduct: () => void;
 }
 
 export function ProductTableBody({
   table,
-  isLoading,
+  isPending,
   hasFilters,
   onAddProduct,
 }: ProductTableBodyProps) {
-  if (isLoading) {
+  if (isPending) {
     return <ProductTableSkeleton />;
   }
 

@@ -40,7 +40,7 @@ export function ProductTablePage() {
     setDebouncedSearch(value.trim());
   }, 400);
 
-  const { data, isLoading, error } = useProductListQuery({
+  const { data, isPending, error } = useProductListQuery({
     search: debouncedSearch || undefined,
   });
 
@@ -103,7 +103,7 @@ export function ProductTablePage() {
     >
       <ProductTableBody
         table={table}
-        isLoading={isLoading}
+        isPending={isPending}
         hasFilters={Boolean(debouncedSearch)}
         onAddProduct={() => setCreateModalOpen(true)}
       />
