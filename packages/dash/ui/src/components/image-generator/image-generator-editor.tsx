@@ -11,7 +11,7 @@ import { Textarea } from "@openpromo/ui/components/textarea";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { Download, MoreVertical, Trash2, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
@@ -122,10 +122,13 @@ export function ImageGeneratorEditor({
 
   const variants = variantsQuery.data?.generations ?? [];
   const deleteMutation = useImageGenDeleteBatchMutation();
-  const promoteMutation = useImageGenPromoteMutation(() => {
+
+  const handlePromoteSuccess = useCallback(() => {
     setIsPromoteDialogOpen(false);
     onBackToGenerator();
-  });
+  }, [onBackToGenerator]);
+
+  const promoteMutation = useImageGenPromoteMutation(handlePromoteSuccess);
 
   // Determine which generation to display in preview
   const viewingGeneration = useMemo(() => {

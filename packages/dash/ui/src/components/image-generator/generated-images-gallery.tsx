@@ -21,6 +21,7 @@ import type {
 } from "@/queries/product";
 import { useComposerStore } from "@/stores/composer-store";
 import { useImageGeneratorStore } from "@/stores/image-generator-store";
+import { GenerationCardActions } from "./generation-card-actions";
 
 interface GeneratedImagesGalleryProps {
   generateMutation: UseMutationResult<
@@ -118,6 +119,10 @@ export function GeneratedImagesGallery({
   const handleDeleteSelected = () => {
     if (selectedGenerations.size === 0) return;
     deleteBatchMutation.mutate({ ids: Array.from(selectedGenerations) });
+  };
+
+  const handleDeleteSingle = (generation: Generation) => {
+    deleteBatchMutation.mutate({ ids: [generation.id] });
   };
 
   const handleAddToPost = () => {
@@ -290,6 +295,7 @@ export function GeneratedImagesGallery({
                       onToggleSelection={handleToggleSelection}
                       isAddedToPost={addedGenerationIds.has(generation.id)}
                       onEditRequest={onEditGeneration}
+                      onDeleteRequest={handleDeleteSingle}
                     />
                   ))
                 )}
@@ -310,6 +316,7 @@ interface GenerationCardProps {
   onToggleSelection: (id: string) => void;
   isAddedToPost: boolean;
   onEditRequest?: (generation: Generation) => void;
+  onDeleteRequest?: (generation: Generation) => void;
 }
 
 function GenerationCard({
@@ -318,6 +325,7 @@ function GenerationCard({
   onToggleSelection,
   isAddedToPost,
   onEditRequest,
+  onDeleteRequest,
 }: GenerationCardProps) {
   const previewImage = generation.outputImages?.[0];
 
@@ -358,6 +366,17 @@ function GenerationCard({
         </div>
       )}
 
+      {/* Actions dropdown - bottom right */}
+      {!isAddedToPost && (
+        <div className="absolute bottom-14 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+          <GenerationCardActions
+            generation={generation}
+            onEdit={onEditRequest}
+            onDelete={onDeleteRequest}
+          />
+        </div>
+      )}
+
       <div className="aspect-square bg-muted relative overflow-hidden">
         {previewImage ? (
           <img
@@ -373,20 +392,6 @@ function GenerationCard({
             <span className="text-xs text-muted-foreground">
               {isPending ? <Spinner className="h-4 w-4" /> : "No image"}
             </span>
-          </div>
-        )}
-        {onEditRequest && generation.state === "completed" && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={(event) => {
-                event.stopPropagation();
-                onEditRequest(generation);
-              }}
-            >
-              Fine tune
-            </Button>
           </div>
         )}
       </div>
