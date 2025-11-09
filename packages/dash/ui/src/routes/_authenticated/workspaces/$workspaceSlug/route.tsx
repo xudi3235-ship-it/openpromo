@@ -58,7 +58,7 @@ function WorkspaceComponent() {
   const { workspace } = Route.useLoaderData();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { accounts, isLoading } = useConnectedAccounts();
+  const { accounts, isPending } = useConnectedAccounts();
   const { location } = useRouterState();
 
   const { mutate: _ } = useHonoMutation({
@@ -79,7 +79,7 @@ function WorkspaceComponent() {
     (pattern) => pattern.test(location.pathname),
   );
 
-  if (!isLoading && accounts.length === 0) {
+  if (!isPending && accounts.length === 0) {
     return (
       <WorkspaceLayout>
         <WorkspaceNullState

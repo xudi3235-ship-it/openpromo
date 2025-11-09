@@ -35,7 +35,7 @@ export const useConnectedAccounts = () => {
 
   return {
     accounts: query.data?.accounts || [],
-    isLoading: query.isLoading,
+    isPending: query.isPending,
     error: query.error,
     refetch: query.refetch,
   };

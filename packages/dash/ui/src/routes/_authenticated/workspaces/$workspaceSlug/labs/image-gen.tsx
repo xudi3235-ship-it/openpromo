@@ -55,14 +55,14 @@ function ImageGenPage() {
 
   const queryClient = useQueryClient();
 
-  const { data: productsData, isLoading: isLoadingProducts } =
+  const { data: productsData, isPending: isPendingProducts } =
     useProductListQuery({});
 
-  const { data: stylesData, isLoading: isLoadingStyles } = useStylesListQuery({
+  const { data: stylesData, isPending: isPendingStyles } = useStylesListQuery({
     page: 1,
   });
 
-  const { data: generationsData, isLoading: isLoadingGenerations } =
+  const { data: generationsData, isPending: isPendingGenerations } =
     useImageGenListQuery({ page: 1, pageSize: 50 });
 
   const generateMutation = useProductImageGenerateMutation(() => {
@@ -130,7 +130,7 @@ function ImageGenPage() {
   const styles = stylesData?.styles || [];
   const generations = generationsData?.generations || [];
 
-  const isLoading = isLoadingProducts || isLoadingStyles;
+  const isPending = isPendingProducts || isPendingStyles;
 
   // Helper to get primary product image
   const getProductImage = (product: (typeof products)[number]) => {
@@ -167,7 +167,7 @@ function ImageGenPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
         {/* Left Panel - Inputs & Controls */}
         <div className="space-y-6">
-          {isLoading ? (
+          {isPending ? (
             <div className="flex items-center justify-center py-12 border rounded-lg">
               <div className="text-center space-y-3">
                 <Spinner className="h-6 w-6 mx-auto" />
@@ -221,7 +221,7 @@ function ImageGenPage() {
                 <Select
                   value={selectedProductId}
                   onValueChange={setSelectedProductId}
-                  disabled={isLoadingProducts}
+                  disabled={isPendingProducts}
                 >
                   <SelectTrigger id="product-select" className="w-full">
                     <SelectValue placeholder="Select product...">
@@ -295,7 +295,7 @@ function ImageGenPage() {
                   <Select
                     value={selectedStyleId}
                     onValueChange={setSelectedStyleId}
-                    disabled={isLoadingStyles}
+                    disabled={isPendingStyles}
                   >
                     <SelectTrigger id="style-select" className="w-full">
                       <SelectValue placeholder="Select style...">
@@ -485,7 +485,7 @@ function ImageGenPage() {
             </div>
           )}
 
-          {isLoadingGenerations ? (
+          {isPendingGenerations ? (
             <div className="flex items-center justify-center py-12">
               <Spinner className="h-8 w-8" />
             </div>

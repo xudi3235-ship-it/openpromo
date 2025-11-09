@@ -24,9 +24,9 @@ export const Route = createFileRoute(
 });
 
 function ComposerComponent() {
-  const { accounts, isLoading } = useConnectedAccounts();
+  const { accounts, isPending } = useConnectedAccounts();
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background">
         <div className="mx-auto flex h-full w-full max-w-7xl px-4">

@@ -19,7 +19,7 @@ export function GenerationsInfiniteGrid({
 }: GenerationsInfiniteGridProps) {
   const {
     data,
-    isLoading,
+    isPending,
     isError,
     fetchNextPage,
     hasNextPage,
@@ -41,7 +41,7 @@ export function GenerationsInfiniteGrid({
   const allGenerations = data?.pages.flatMap((page) => page.generations) ?? [];
   const totalCount = data?.pages[0]?.pagination.total ?? 0;
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 4 }).map((_, index) => (

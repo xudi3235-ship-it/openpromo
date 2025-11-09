@@ -197,7 +197,7 @@ export function CreateProductModal({
       }
 
       if (isEditMode && product) {
-        updateProduct.mutate({ id: product.id, data: productData });
+        updateProduct.mutate({ productId: product.id, ...productData });
       } else {
         createProduct.mutate(productData);
       }

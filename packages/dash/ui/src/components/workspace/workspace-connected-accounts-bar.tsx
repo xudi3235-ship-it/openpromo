@@ -9,12 +9,12 @@ interface WorkspaceConnectedAccountsBarProps {
 export function WorkspaceConnectedAccountsBar({
   className,
 }: WorkspaceConnectedAccountsBarProps) {
-  const { accounts, isLoading } = useConnectedAccounts();
+  const { accounts, isPending } = useConnectedAccounts();
 
   return (
     <ConnectedAccountsSection
       accounts={accounts}
-      isLoading={isLoading}
+      isLoading={isPending}
       variant="bar"
       className={cn("shrink-0", className)}
     />

@@ -19,7 +19,7 @@ export function DeleteProductDialog({
 
   const handleDelete = async () => {
     if (!product) return;
-    await deleteMutation.mutateAsync(product.id);
+    await deleteMutation.mutateAsync({ productId: product.id });
   };
 
   if (!product) return null;

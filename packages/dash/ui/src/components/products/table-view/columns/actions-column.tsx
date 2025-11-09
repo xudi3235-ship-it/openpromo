@@ -17,11 +17,14 @@ function ActionsCell({ product }: { product: ProductSelectType }) {
   const deleteMutation = useProductDeleteMutation();
 
   const handleDelete = () => {
-    deleteMutation.mutate(product.id, {
-      onSuccess: () => {
-        setShowDeleteConfirm(false);
+    deleteMutation.mutate(
+      { productId: product.id },
+      {
+        onSuccess: () => {
+          setShowDeleteConfirm(false);
+        },
       },
-    });
+    );
   };
 
   return (

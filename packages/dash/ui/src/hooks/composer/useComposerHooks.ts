@@ -23,13 +23,13 @@ export function useComposerDialogLifecycle({
     (state) => state.initializeComposer,
   );
 
-  const { accounts, isLoading: accountsLoading } = useConnectedAccounts();
+  const { accounts, isPending: accountsPending } = useConnectedAccounts();
   const isOpen = mode !== "closed";
   const shouldFetchGroup = isOpen && !!pendingContentGroupID;
 
   const {
     data: contentGroupData,
-    isLoading: contentGroupLoading,
+    isPending: contentGroupPending,
     error: contentGroupError,
     isError: contentGroupIsError,
   } = useContentGroupQuery(
@@ -39,7 +39,7 @@ export function useComposerDialogLifecycle({
   useEffect(() => {
     if (!isOpen) return;
     if (!accounts || accounts.length === 0) return;
-    if (pendingContentGroupID && contentGroupLoading) return;
+    if (pendingContentGroupID && contentGroupPending) return;
 
     const contentData =
       contentGroupData?.contentCreateData ?? initialContentCreateData ?? null;
@@ -54,26 +54,26 @@ export function useComposerDialogLifecycle({
   }, [
     accounts,
     contentGroupData?.contentCreateData,
-    contentGroupLoading,
+    contentGroupPending,
     initializeComposer,
     initialContentCreateData,
     isOpen,
     pendingContentGroupID,
   ]);
 
-  const isLoading = useMemo(() => {
+  const isPending = useMemo(() => {
     if (!isOpen) return false;
-    if (accountsLoading) return true;
+    if (accountsPending) return true;
     if (pendingContentGroupID) {
-      return contentGroupLoading;
+      return contentGroupPending;
     }
     return false;
-  }, [accountsLoading, contentGroupLoading, isOpen, pendingContentGroupID]);
+  }, [accountsPending, contentGroupPending, isOpen, pendingContentGroupID]);
 
   return {
     accounts,
     contentGroupData,
-    isLoading,
+    isPending,
     contentGroupError,
     contentGroupIsError,
   };

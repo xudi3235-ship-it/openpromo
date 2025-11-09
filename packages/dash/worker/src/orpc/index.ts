@@ -10,12 +10,14 @@ export {
   listPlanet,
   planetRouter,
 } from "./routes/planet";
+export { productsRouter } from "./routes/products";
 export { listStyles, stylesRouter } from "./routes/styles";
 
 import { imageGenRouter } from "./routes/image-gen";
 import { inboxRouter } from "./routes/inbox";
 import { insightsRouter } from "./routes/insights";
 import { planetRouter } from "./routes/planet";
+import { productsRouter } from "./routes/products";
 import { stylesRouter } from "./routes/styles";
 
 export const orpcRouter = {
@@ -24,4 +26,5 @@ export const orpcRouter = {
   insights: insightsRouter,
   imageGen: imageGenRouter,
   styles: stylesRouter,
+  products: productsRouter,
 };

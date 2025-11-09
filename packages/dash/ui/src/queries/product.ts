@@ -1,26 +1,23 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { InferRequestType } from "hono/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { apiClient, useHonoMutation, useHonoQuery } from "@/lib/hono-client";
 import { orpc } from "@/lib/orpc-client";
 import type {
   ImageGenRouterInputs,
   ImageGenRouterOutputs,
 } from "../../../worker/src/orpc/routes/image-gen";
+import type {
+  ProductRouterInputs,
+  ProductRouterOutputs,
+} from "../../../worker/src/orpc/routes/products";
 
-type ProductCreateInput = InferRequestType<
-  (typeof apiClient)["workspaces"][":workspaceSlug"]["products"]["$post"]
->["json"];
-
-type ProductUpdateInput = InferRequestType<
-  (typeof apiClient)["workspaces"][":workspaceSlug"]["products"][":id"]["$patch"]
->["json"];
-
-type ProductListParams = InferRequestType<
-  (typeof apiClient)["workspaces"][":workspaceSlug"]["products"]["$get"]
->["query"];
+export type ProductListParams = Omit<
+  ProductRouterInputs["list"],
+  "workspaceSlug"
+>;
+export type ProductListResponse = ProductRouterOutputs["list"];
+export type ProductResponse = ProductRouterOutputs["get"];
 
 export type ProductImageGenerateInput = Omit<
   ImageGenRouterInputs["generate"],
@@ -29,113 +26,128 @@ export type ProductImageGenerateInput = Omit<
 
 export type ProductImageGenerateResponse = ImageGenRouterOutputs["generate"];
 
-export const invalidateProductListQueries = async (queryClient: QueryClient) =>
-  queryClient.invalidateQueries({
-    predicate: (query) =>
-      Array.isArray(query.queryKey) && query.queryKey[0] === "product-list",
-    type: "all",
+export const invalidateProductListQueries = async (
+  queryClient: QueryClient,
+) => {
+  await queryClient.invalidateQueries({
+    queryKey: orpc.products.list.key(),
   });
+};
 
-export const prefetchProductList = async (
+export const prefetchProductList = (
   queryClient: QueryClient,
   workspaceSlug: string,
   params: ProductListParams = {},
 ) => {
-  return queryClient.prefetchQuery({
-    queryKey: ["product-list", params],
-    queryFn: () =>
-      apiClient.workspaces[":workspaceSlug"].products
-        .$get({
-          query: params,
-          param: { workspaceSlug },
-        })
-        .then((res) => res.json()),
-  });
+  // do not await
+  queryClient.prefetchQuery(
+    orpc.products.list.queryOptions({ input: { ...params, workspaceSlug } }),
+  );
+};
+
+export const prefetchProductDetails = (
+  queryClient: QueryClient,
+  workspaceSlug: string,
+  productId: string,
+) => {
+  // do not await
+  queryClient.prefetchQuery(
+    orpc.products.get.queryOptions({ input: { workspaceSlug, productId } }),
+  );
 };
 
 export const useProductListQuery = (params: ProductListParams = {}) => {
   const { workspace } = useWorkspace();
 
-  return useHonoQuery({
-    queryKey: ["product-list", params],
-    queryFn: (api) =>
-      api.workspaces[":workspaceSlug"].products.$get({
-        query: params,
-        param: { workspaceSlug: workspace.slug },
-      }),
-  });
+  return useQuery(
+    orpc.products.list.queryOptions({
+      input: {
+        ...params,
+        workspaceSlug: workspace.slug,
+      },
+    }),
+  );
 };
 
 export const useProductQuery = (productId: string | undefined) => {
   const { workspace } = useWorkspace();
 
-  return useHonoQuery({
-    queryKey: ["product", productId],
-    queryFn: (api) =>
-      api.workspaces[":workspaceSlug"].products[":id"].$get({
-        param: {
-          workspaceSlug: workspace.slug,
-          // biome-ignore lint/style/noNonNullAssertion: guarded by enabled
-          id: productId!,
-        },
-      }),
-    enabled: !!productId,
-  });
+  return useQuery(
+    orpc.products.get.queryOptions({
+      input: {
+        workspaceSlug: workspace.slug,
+        // biome-ignore lint/style/noNonNullAssertion: guarded by enabled
+        productId: productId!,
+      },
+      enabled: Boolean(productId),
+    }),
+  );
 };
 
 export const useProductCreateMutation = (onSuccess?: () => void) => {
-  const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
+  const { workspace } = useWorkspace();
 
-  return useHonoMutation({
-    mutationFn: (api, data: ProductCreateInput) =>
-      api.workspaces[":workspaceSlug"].products.$post({
-        param: { workspaceSlug: workspace.slug },
-        json: data,
-      }),
-    onSuccess: async () => {
-      await invalidateProductListQueries(queryClient);
-      toast.success("Product created");
-      onSuccess?.();
-    },
-  });
+  return useMutation(
+    orpc.products.create.mutationOptions({
+      onSuccess: async () => {
+        await invalidateProductListQueries(queryClient);
+        toast.success("Product created");
+        onSuccess?.();
+      },
+      mutationFn: async (input) => {
+        return orpc.products.create.call({
+          ...input,
+          workspaceId: workspace.id,
+        });
+      },
+    }),
+  );
 };
 
 export const useProductUpdateMutation = (onSuccess?: () => void) => {
-  const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
+  const { workspace } = useWorkspace();
 
-  return useHonoMutation({
-    mutationFn: (api, { id, data }: { id: string; data: ProductUpdateInput }) =>
-      api.workspaces[":workspaceSlug"].products[":id"].$patch({
-        param: { workspaceSlug: workspace.slug, id },
-        json: data,
-      }),
-    onSuccess: async (_data, { id }) => {
-      await invalidateProductListQueries(queryClient);
-      await queryClient.invalidateQueries({
-        queryKey: ["product", id],
-      });
-      toast.success("Product updated");
-      onSuccess?.();
-    },
-  });
+  return useMutation(
+    orpc.products.update.mutationOptions({
+      onSuccess: async (_data, variables) => {
+        await invalidateProductListQueries(queryClient);
+        await queryClient.invalidateQueries({
+          queryKey: orpc.products.get.key({
+            input: { productId: variables.productId },
+          }),
+        });
+        toast.success("Product updated");
+        onSuccess?.();
+      },
+      mutationFn: async (input) => {
+        return orpc.products.update.call({
+          ...input,
+          workspaceId: workspace.id,
+        });
+      },
+    }),
+  );
 };
 
 export const useProductDeleteMutation = (onSuccess?: () => void) => {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
 
-  return useHonoMutation({
-    mutationFn: (api, productId: string) =>
-      api.workspaces[":workspaceSlug"].products[":id"].$delete({
-        param: { workspaceSlug: workspace.slug, id: productId },
-      }),
-    onSuccess: async () => {
-      await invalidateProductListQueries(queryClient);
-      toast.success("Product deleted");
-      onSuccess?.();
-    },
+  return useMutation({
+    ...orpc.products.delete.mutationOptions({
+      onSuccess: async () => {
+        await invalidateProductListQueries(queryClient);
+        await queryClient.invalidateQueries({
+          queryKey: orpc.products.list.key({
+            input: { workspaceId: workspace.id },
+          }),
+        });
+        toast.success("Product deleted");
+        onSuccess?.();
+      },
+    }),
   });
 };
 
