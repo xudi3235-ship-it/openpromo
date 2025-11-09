@@ -18,7 +18,7 @@ export function ProductGridView({
   searchQuery,
   onAddProduct,
 }: ProductGridViewProps) {
-  const { data, isLoading, error } = useProductListQuery({
+  const { data, isPending, error } = useProductListQuery({
     search: searchQuery || undefined,
   });
 
@@ -39,7 +39,7 @@ export function ProductGridView({
     );
   }
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="flex flex-1">
         <ProductsLoadingState />
@@ -60,7 +60,7 @@ export function ProductGridView({
 
   return (
     <div className="flex flex-1">
-      <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <div className="grid w-full grid-cols-2 gap-3 content-start sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {/* Add Product Card */}
         <AddProductCard onAddProduct={onAddProduct} />
 

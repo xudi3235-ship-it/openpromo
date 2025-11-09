@@ -35,7 +35,7 @@ export function ProductTableView({
     pageSize: 10,
   });
 
-  const { data, isLoading, error } = useProductListQuery({
+  const { data, isPending, error } = useProductListQuery({
     search: searchQuery || undefined,
   });
 
@@ -83,7 +83,7 @@ export function ProductTableView({
     <>
       <ProductTableBody
         table={table}
-        isLoading={isLoading}
+        isLoading={isPending}
         hasFilters={Boolean(searchQuery)}
         onAddProduct={onAddProduct}
       />

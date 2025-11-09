@@ -18,7 +18,7 @@ export function ProductsEmptyState({
         className="mx-auto max-w-sm"
         icon={<Package className="h-10 w-10" />}
         title="No products found"
-        description="Try adjusting your search or filters."
+        description="Nothing matches these filters. Adjust your search to find catalog items you can reuse in Composer and Visuals."
       />
     );
   }
@@ -29,7 +29,7 @@ export function ProductsEmptyState({
       className="mx-auto max-w-md"
       icon={<Package className="h-12 w-12" />}
       title="No products yet"
-      description="Add products to your catalog to use them in content generation. Upload images, connect e-commerce platforms, or add custom links."
+      description="Add items you sell so you can quickly pull them into image generation, Composer, and scheduled posts. Start with a manual import—more sync options are coming."
     >
       <Button className="mt-4" onClick={onAddProduct}>
         <Plus className="mr-2 h-4 w-4" />

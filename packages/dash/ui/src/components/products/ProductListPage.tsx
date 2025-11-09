@@ -7,7 +7,7 @@ import {
   ToggleGroupItem,
 } from "@openpromo/ui/components/toggle-group";
 import { Toolbar, ToolbarSection } from "@openpromo/ui/components/toolbar";
-import { LayoutGrid, Plus, Search, Table } from "lucide-react";
+import { LayoutGrid, Plus, Search, Sparkles, Table } from "lucide-react";
 import type * as React from "react";
 import { useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
@@ -37,8 +37,10 @@ export function ProductListPage() {
       <PageHeader>
         <Stack gap="xs">
           <h1 className="text-2xl font-semibold">Products</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage your product catalog for content generation
+          <p className="text-sm text-muted-foreground max-w-2xl">
+            Import and organize the products you sell so they can power image
+            generation, post creation, and any workflow that needs accurate
+            product data.
           </p>
         </Stack>
         <Button onClick={() => setCreateModalOpen(true)}>
@@ -80,7 +82,23 @@ export function ProductListPage() {
         </ToolbarSection>
       </Toolbar>
 
-      <PageContent>
+      <PageContent gap="lg">
+        <div className="rounded-xl border border-border/70 bg-muted/10 p-4">
+          <div className="flex items-start gap-3">
+            <Sparkles className="mt-0.5 h-4 w-4 text-muted-foreground" />
+            <div className="space-y-1 text-sm">
+              <p className="font-medium text-foreground">
+                Keep your catalog campaign-ready
+              </p>
+              <p className="text-muted-foreground">
+                Products you add or update here stay available inside Composer,
+                the Image Generator, and upcoming posting flows so every channel
+                shares the same source of truth.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {filters.view === "table" ? (
           <ProductTableView
             searchQuery={debouncedSearch}
