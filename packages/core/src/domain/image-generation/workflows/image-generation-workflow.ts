@@ -42,34 +42,21 @@ export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerat
     log.info("// Starting image generation workflow", { generationId });
 
     try {
-      // 0. Fetch the generation record
-      const generation = await step.do("fetch-generation", async () => {
-        return EntImageGeneration.fromID(generationId);
-      });
-
-      if (!generation.data.productId) {
-        throw new Error("Generation has no product ID");
-      }
-
-      const metadata = (generation.data.metadata ?? {}) as Record<
-        string,
-        unknown
-      >;
-
-      // Mark as generating and dispatch event
+      // 0. start workflow
       await step.do("mark-generating", async () => {
-        await generation.setState("generating");
-        await generation.dispatchUpdateEvent();
+        const g = await EntImageGeneration.fromID(generationId);
+        await g.setState("generating");
+        await g.dispatchUpdateEvent();
       });
 
       // Generate image using the same logic as sync mode
       await step.do("generate-image", async () => {
-        await EntImageGeneration.fulfillProductImageWithReference(generation, {
+        const g = await EntImageGeneration.fromID(generationId);
+        const metadata = g.data.metadata || {};
+        await EntImageGeneration.fulfillProductImageWithReference(g, {
           prompt: (metadata.prompt as string | undefined) ?? "",
-          referenceImageUrl: metadata.referenceImageUrl as string | undefined,
-          styleId:
-            generation.data.styleComponentId ||
-            (metadata.styleId as string | undefined),
+          referenceImageUrl: metadata?.referenceImageUrl as string | undefined,
+          styleId: g.data.styleComponentId ?? metadata?.styleId,
         });
       });
 

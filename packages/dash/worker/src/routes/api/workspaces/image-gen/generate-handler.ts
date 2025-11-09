@@ -7,7 +7,6 @@ export type GenerateImageParams = {
   productId: string;
   styleId?: string;
   referenceImageUrl?: string;
-  mode?: "studio" | "style";
   batchCount?: number;
   prompt?: string;
 };
@@ -37,7 +36,6 @@ export async function generateImages({
   productId,
   styleId,
   referenceImageUrl,
-  mode = "studio",
   batchCount = 1,
   prompt,
 }: GenerateImageParams): Promise<GenerateImageResponse> {
@@ -51,7 +49,6 @@ export async function generateImages({
         productId,
         styleComponentId: styleId ?? null,
         metadata: {
-          mode,
           prompt,
           referenceImageUrl,
           styleId,
@@ -60,11 +57,7 @@ export async function generateImages({
 
       await generation.dispatchUpdateEvent();
 
-      const actor = Actor.use();
-      if (actor.type !== "workspace_user") {
-        throw new Error("Actor must be workspace_user to trigger workflow");
-      }
-
+      const actor = Actor.assert("workspace_user");
       await Binding.use().ImageGenerationWorkflow.create({
         params: {
           actor,

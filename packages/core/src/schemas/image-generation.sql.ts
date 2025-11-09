@@ -19,8 +19,16 @@ import { workspaceID } from "./workspaces.sql";
 
 // ----- Image Generation -----
 // to make this compatible, fields should be all optional and have defaults upon creation
-export const ImageGenMeta = z.record(z.string(), z.any()).default({});
-export type ImageGenMeta = z.infer<typeof ImageGenMeta>;
+export const ImageGenMetaSchema = z
+  .object({
+    prompt: z.string().optional(),
+    generatedPrompt: z.string().optional(),
+    referenceImageUrl: z.string().optional(),
+    styleId: z.string().optional(),
+    inputImages: z.array(z.string()).min(1).optional(),
+  })
+  .default({});
+export type ImageGenMeta = z.infer<typeof ImageGenMetaSchema>;
 
 export const ImageGenContext = z.object({
   styleCtx: z.string().describe("serialized style ctx"),
