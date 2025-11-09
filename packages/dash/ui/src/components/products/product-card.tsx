@@ -12,7 +12,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ExternalLink, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import * as React from "react";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { CreateProductModal } from "./create-product-modal";
+import { useProductModalStore } from "@/stores/product-modal-store";
 import { DeleteProductDialog } from "./delete-product-dialog";
 
 interface ProductCardProps {
@@ -21,7 +21,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [editModalOpen, setEditModalOpen] = React.useState(false);
+  const { openModal } = useProductModalStore();
   const navigate = useNavigate();
   const { workspace } = useWorkspace();
   const primaryAttachment = product.attachments.find(
@@ -93,7 +93,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const attachmentCount = product.attachments.length;
 
   const handleCardClick = () => {
-    if (deleteDialogOpen || editModalOpen) return;
+    if (deleteDialogOpen) return;
 
     navigate({
       to: "/workspaces/$workspaceSlug/products/$productId",
@@ -183,7 +183,7 @@ export function ProductCard({ product }: ProductCardProps) {
               className="w-40"
               onClick={(event) => event.stopPropagation()}
             >
-              <DropdownMenuItem onSelect={() => setEditModalOpen(true)}>
+              <DropdownMenuItem onSelect={() => openModal(product)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
@@ -257,12 +257,6 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
       </div>
-
-      <CreateProductModal
-        open={editModalOpen}
-        onOpenChange={setEditModalOpen}
-        product={product}
-      />
 
       <DeleteProductDialog
         product={product}

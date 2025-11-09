@@ -11,6 +11,7 @@ import { LayoutGrid, Plus, Search, Sparkles, Table } from "lucide-react";
 import type * as React from "react";
 import { useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
+import { useProductModalStore } from "@/stores/product-modal-store";
 import { CreateProductModal } from "./create-product-modal";
 import { ProductGridView } from "./grid-view/ProductGridView";
 import { ProductTableView } from "./table-view/ProductTableView";
@@ -23,7 +24,7 @@ import { useProductFilters } from "./use-product-filters";
 export function ProductListPage() {
   const { filters, setView } = useProductFilters();
   const [searchValue, setSearchValue] = useState("");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const { openCreateModal } = useProductModalStore();
 
   // Debounced search query for API calls (local state only, not in URL)
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -43,7 +44,7 @@ export function ProductListPage() {
             product data.
           </p>
         </Stack>
-        <Button onClick={() => setCreateModalOpen(true)}>
+        <Button onClick={() => openCreateModal()}>
           <Plus className="mr-2 h-4 w-4" />
           Add Product
         </Button>
@@ -102,20 +103,17 @@ export function ProductListPage() {
         {filters.view === "table" ? (
           <ProductTableView
             searchQuery={debouncedSearch}
-            onAddProduct={() => setCreateModalOpen(true)}
+            onAddProduct={() => openCreateModal()}
           />
         ) : (
           <ProductGridView
             searchQuery={debouncedSearch}
-            onAddProduct={() => setCreateModalOpen(true)}
+            onAddProduct={() => openCreateModal()}
           />
         )}
       </PageContent>
 
-      <CreateProductModal
-        open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
-      />
+      <CreateProductModal />
     </Page>
   );
 }

@@ -1,4 +1,3 @@
-import type { ProductSelectType } from "@core/schemas/product.sql";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@openpromo/ui/components/button";
 import {
@@ -26,7 +25,7 @@ import {
 } from "@openpromo/ui/components/tabs";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { Link2, Upload, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -36,6 +35,7 @@ import {
   useProductCreateMutation,
   useProductUpdateMutation,
 } from "@/queries/product";
+import { useProductModalStore } from "@/stores/product-modal-store";
 
 const schema = z.object({
   sourceUrl: z
@@ -51,57 +51,34 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-interface CreateProductModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  product?: ProductSelectType;
-  prefilledAttachments?: Array<{
-    id: string;
-    type: "photo" | "video";
-    publicUrl?: string;
-    presignedUrl?: string;
-  }>;
-}
-
-export function CreateProductModal({
-  open,
-  onOpenChange,
-  product,
-  prefilledAttachments,
-}: CreateProductModalProps) {
-  const isEditMode = Boolean(product);
-  const [activeTab, setActiveTab] = useState<"upload" | "url">("upload");
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [existingAttachments, setExistingAttachments] = useState<
-    ProductSelectType["attachments"]
-  >([]);
-  const [isUploading, setIsUploading] = useState(false);
+export function CreateProductModal() {
+  const {
+    open,
+    isEditMode,
+    product,
+    activeTab,
+    selectedFiles,
+    existingAttachments,
+    isUploading,
+    closeModal,
+    setActiveTab,
+    addFiles,
+    removeFile,
+    removeExistingAttachment,
+    setIsUploading,
+    reset,
+  } = useProductModalStore();
 
   const { uploadFiles, clearUploads } = useStorageUpload();
 
   const resetForm = () => {
     form.reset();
-    setSelectedFiles([]);
-    setExistingAttachments([]);
-    setActiveTab("upload");
     clearUploads();
-    onOpenChange(false);
+    reset();
   };
 
   const createProduct = useProductCreateMutation(resetForm);
   const updateProduct = useProductUpdateMutation(resetForm);
-
-  const handleFileDrop = (files: File[]) => {
-    setSelectedFiles((prev) => [...prev, ...files]);
-  };
-
-  const removeFile = (index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const removeExistingAttachment = (index: number) => {
-    setExistingAttachments((prev) => prev.filter((_, i) => i !== index));
-  };
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -114,7 +91,7 @@ export function CreateProductModal({
     },
   });
 
-  // Populate form when editing or prefilling
+  // Populate form when editing
   useEffect(() => {
     if (product && open) {
       form.reset({
@@ -124,22 +101,10 @@ export function CreateProductModal({
         category: product.category || "",
         tags: product.tags?.join(", ") || "",
       });
-      setExistingAttachments(product.attachments || []);
-      if (product.sourceUrl) {
-        setActiveTab("url");
-      }
-    } else if (prefilledAttachments && open && !product) {
-      setExistingAttachments(
-        prefilledAttachments as ProductSelectType["attachments"],
-      );
-      setActiveTab("upload");
     } else if (!open) {
       form.reset();
-      setSelectedFiles([]);
-      setExistingAttachments([]);
-      setActiveTab("upload");
     }
-  }, [product, prefilledAttachments, open, form]);
+  }, [product, open, form]);
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     try {
@@ -288,8 +253,8 @@ export function CreateProductModal({
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
       form.reset();
+      closeModal();
     }
-    onOpenChange(newOpen);
   };
 
   const isPending = createProduct.isPending || updateProduct.isPending;
@@ -370,7 +335,7 @@ export function CreateProductModal({
                   accept={{ "image/*": [], "video/*": [] }}
                   maxFiles={10}
                   maxSize={50 * 1024 * 1024}
-                  onDrop={handleFileDrop}
+                  onDrop={addFiles}
                   className="h-32"
                 >
                   <div className="flex h-full items-center justify-center gap-2 text-muted-foreground">

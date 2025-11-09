@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { useProductListQuery } from "@/queries/product";
+import { useProductModalStore } from "@/stores/product-modal-store";
 import { CreateProductModal } from "../create-product-modal";
 import { columns } from "./columns";
 import { ProductTableBody } from "./product-table-body";
@@ -31,7 +32,7 @@ export function ProductTablePage() {
     pageSize: 10,
   });
   const [searchValue, setSearchValue] = useState("");
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const { openCreateModal } = useProductModalStore();
 
   // Debounced search query for API calls (local state only, not in URL)
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -75,7 +76,7 @@ export function ProductTablePage() {
         searchValue={searchValue}
         onSearchChange={setSearchValue}
         table={table}
-        onAddProduct={() => setCreateModalOpen(true)}
+        onAddProduct={() => openCreateModal()}
       >
         <div className="flex h-full items-center justify-center">
           <div className="text-center">
@@ -99,21 +100,18 @@ export function ProductTablePage() {
         updateDebouncedSearch(value);
       }}
       table={table}
-      onAddProduct={() => setCreateModalOpen(true)}
+      onAddProduct={() => openCreateModal()}
     >
       <ProductTableBody
         table={table}
         isPending={isPending}
         hasFilters={Boolean(debouncedSearch)}
-        onAddProduct={() => setCreateModalOpen(true)}
+        onAddProduct={() => openCreateModal()}
       />
 
       <ProductTableFooter table={table} totalCount={products.length} />
 
-      <CreateProductModal
-        open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
-      />
+      <CreateProductModal />
     </ProductTableLayout>
   );
 }
