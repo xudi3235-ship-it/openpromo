@@ -1,5 +1,6 @@
 // Re-export all primitives for easy import
 
+export { CommentsOverlay } from "./comments-overlay";
 export type { PreviewActionsProps } from "./preview-actions";
 export { PreviewActions } from "./preview-actions";
 export type { PreviewCaptionProps } from "./preview-caption";

@@ -41,6 +41,7 @@ export function TikTokPreview({ accountId }: TikTokPreviewProps) {
           shares: previewData.metrics.shares ?? undefined,
         }
       : undefined,
+    firstComment: previewData.firstComment,
   } satisfies Parameters<typeof TikTokFeedPreview>[0]["data"];
 
   return (

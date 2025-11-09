@@ -1,6 +1,8 @@
 import { cn } from "@openpromo/ui/lib/utils";
 import { Bookmark, Music2 } from "lucide-react";
+import { useState } from "react";
 import { PreviewContainer, PreviewMedia } from "../../primitives";
+import { CommentsOverlay } from "../../primitives/comments-overlay";
 import type {
   BasePreviewProps,
   PreviewData,
@@ -23,11 +25,33 @@ export function TikTokFeedPreview({
   renderMedia,
   className,
 }: TikTokFeedPreviewProps) {
-  const { accountName, profilePicUrl, caption, media = [], metrics } = data;
+  const {
+    accountName,
+    profilePicUrl,
+    caption,
+    media = [],
+    metrics,
+    firstComment,
+  } = data;
+
+  const [commentsOpen, setCommentsOpen] = useState(false);
 
   const handle = handleFromName(accountName);
   const displayName = accountName || "TikTok Account";
   const isCompact = size === "thumbnail" || size === "compact";
+
+  // Build comments array
+  const comments = firstComment
+    ? [
+        {
+          id: "1",
+          accountName: displayName,
+          profilePicUrl: profilePicUrl,
+          text: firstComment,
+          isOwner: true,
+        },
+      ]
+    : [];
 
   const avatarSize = isCompact ? "w-6 h-6" : "w-7 h-7";
   const nameSize = isCompact ? "text-[10px]" : "text-xs";
@@ -72,6 +96,8 @@ export function TikTokFeedPreview({
             size={size}
             likes={metrics?.likes}
             comments={metrics?.comments}
+            hasNewComments={!!firstComment}
+            onCommentsClick={() => setCommentsOpen(true)}
           />
 
           {/* Bottom Info Section */}
@@ -135,6 +161,7 @@ export function TikTokFeedPreview({
             </div>
 
             {/* Caption */}
+            {/* Caption */}
             {caption && (
               <p
                 className={cn(
@@ -170,6 +197,14 @@ export function TikTokFeedPreview({
           {/* Border Ring */}
           <div className="pointer-events-none absolute inset-0 ring-1 ring-white/5 rounded-xl" />
         </div>
+
+        {/* Comments Overlay */}
+        <CommentsOverlay
+          isOpen={commentsOpen}
+          onClose={() => setCommentsOpen(false)}
+          comments={comments}
+          platform="TIKTOK"
+        />
       </div>
     </PreviewContainer>
   );

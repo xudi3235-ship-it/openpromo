@@ -9,6 +9,10 @@ export interface InstagramReelActionsProps extends BasePreviewProps {
   shares?: number;
   /** Custom share icon component */
   ShareIcon?: React.ComponentType<{ className?: string }>;
+  /** Whether to show red badge on comments */
+  hasNewComments?: boolean;
+  /** Callback when comments button is clicked */
+  onCommentsClick?: () => void;
 }
 
 export function InstagramReelActions({
@@ -16,6 +20,8 @@ export function InstagramReelActions({
   likes,
   comments,
   ShareIcon = MessageCircle,
+  hasNewComments = false,
+  onCommentsClick,
 }: InstagramReelActionsProps) {
   const isCompact = size === "thumbnail" || size === "compact";
 
@@ -56,13 +62,17 @@ export function InstagramReelActions({
       </div>
 
       {/* Comment */}
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center relative">
         <Button
           variant="ghost"
           size="sm"
           className={cn("p-0 hover:bg-transparent", buttonSize)}
+          onClick={onCommentsClick}
         >
           <MessageCircle className={cn(iconSize, "text-white")} />
+          {hasNewComments && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border border-black" />
+          )}
         </Button>
         {comments !== undefined && (
           <span className={cn("font-semibold mt-0.5", textSize)}>

@@ -40,6 +40,7 @@ export function FacebookFeedPreview({
     metrics,
     timestamp,
     location,
+    firstComment,
   } = data;
 
   const timeLabel = timestamp
@@ -199,6 +200,89 @@ export function FacebookFeedPreview({
 
         {/* Actions */}
         <FacebookActions size={size} />
+
+        {/* First Comment */}
+        {firstComment && (
+          <div
+            className={cn(
+              "border-t bg-muted/30",
+              size === "compact" || size === "thumbnail"
+                ? "px-2 py-2"
+                : "px-3 py-3",
+            )}
+          >
+            <div className="flex gap-2">
+              {/* Commenter Avatar */}
+              <div
+                className={cn(
+                  "rounded-full bg-primary flex items-center justify-center shrink-0",
+                  size === "compact" || size === "thumbnail"
+                    ? "w-6 h-6 text-[8px]"
+                    : "w-8 h-8 text-xs",
+                )}
+              >
+                {profilePicUrl ? (
+                  <img
+                    src={profilePicUrl}
+                    alt="You"
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="font-semibold text-primary-foreground">
+                    {accountName?.charAt(0) || "Y"}
+                  </span>
+                )}
+              </div>
+
+              {/* Comment Bubble */}
+              <div className="flex-1 min-w-0">
+                <div
+                  className={cn(
+                    "bg-muted rounded-2xl inline-block max-w-full",
+                    size === "compact" || size === "thumbnail"
+                      ? "px-2.5 py-1.5"
+                      : "px-3 py-2",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "font-semibold",
+                      size === "compact" || size === "thumbnail"
+                        ? "text-xs mb-0.5"
+                        : "text-sm mb-1",
+                    )}
+                  >
+                    {accountName || "You"}
+                  </div>
+                  <p
+                    className={cn(
+                      "text-foreground whitespace-pre-wrap break-words",
+                      size === "compact" || size === "thumbnail"
+                        ? "text-[11px]"
+                        : "text-sm",
+                    )}
+                  >
+                    {firstComment}
+                  </p>
+                </div>
+
+                {/* Comment Actions */}
+                <div
+                  className={cn(
+                    "flex items-center gap-3 mt-1 text-muted-foreground font-semibold",
+                    size === "compact" || size === "thumbnail"
+                      ? "text-[10px] ml-2"
+                      : "text-xs ml-3",
+                  )}
+                >
+                  <span>Like</span>
+                  <span>Reply</span>
+                  <span>2h</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </PreviewContainer>
   );

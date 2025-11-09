@@ -21,6 +21,7 @@ const BasePreviewFields = {
   permalink: z.string().nullable().optional(),
   timestampLabel: z.string().nullable().optional(),
   metrics: PreviewMetrics,
+  firstComment: z.string().nullable().optional(),
 } satisfies Record<string, z.ZodTypeAny>;
 
 const InstagramFeedPreview = z.object({

@@ -55,6 +55,7 @@ export interface PreviewData {
     shares?: number;
     views?: number;
   };
+  firstComment?: string | null;
 }
 
 export interface BasePreviewProps {

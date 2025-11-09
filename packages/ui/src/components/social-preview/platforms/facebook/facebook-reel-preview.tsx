@@ -1,6 +1,8 @@
 import { Button } from "@openpromo/ui/components/button";
 import { cn } from "@openpromo/ui/lib/utils";
+import { useState } from "react";
 import { PreviewContainer, PreviewMedia } from "../../primitives";
+import { CommentsOverlay } from "../../primitives/comments-overlay";
 import type {
   BasePreviewProps,
   PreviewData,
@@ -18,6 +20,7 @@ export interface FacebookReelPreviewProps extends BasePreviewProps {
   callToActionLabel?: string | null;
   /** Call-to-action button link URL */
   callToActionLink?: string | null;
+  firstComment?: string | null;
 }
 
 export function FacebookReelPreview({
@@ -27,12 +30,28 @@ export function FacebookReelPreview({
   ShareIcon,
   callToActionLabel,
   callToActionLink,
+  firstComment,
   className,
 }: FacebookReelPreviewProps) {
   const { accountName, profilePicUrl, caption, media = [], metrics } = data;
 
+  const [commentsOpen, setCommentsOpen] = useState(false);
+
   const username = accountName || "Facebook Page";
   const isCompact = size === "thumbnail" || size === "compact";
+
+  // Build comments array
+  const comments = firstComment
+    ? [
+        {
+          id: "1",
+          accountName: username,
+          profilePicUrl: profilePicUrl,
+          text: firstComment,
+          isOwner: true,
+        },
+      ]
+    : [];
 
   const avatarSize = isCompact ? "w-6 h-6" : "w-8 h-8";
   const textSize = isCompact ? "text-xs" : "text-sm";
@@ -94,6 +113,8 @@ export function FacebookReelPreview({
             likes={metrics?.likes}
             comments={metrics?.comments}
             shares={metrics?.shares}
+            hasNewComments={!!firstComment}
+            onCommentsClick={() => setCommentsOpen(true)}
             ShareIcon={ShareIcon}
           />
 
@@ -225,6 +246,14 @@ export function FacebookReelPreview({
             </div>
           </div>
         </div>
+
+        {/* Comments Overlay */}
+        <CommentsOverlay
+          isOpen={commentsOpen}
+          onClose={() => setCommentsOpen(false)}
+          comments={comments}
+          platform="FACEBOOK"
+        />
       </div>
     </PreviewContainer>
   );

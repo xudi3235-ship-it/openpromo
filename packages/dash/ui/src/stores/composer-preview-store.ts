@@ -170,6 +170,40 @@ export const useComposerPreview = (
       return contentCreateData.base.message || "";
     };
 
+    const getFirstCommentForAccount = (): string | undefined => {
+      if (!targetAccount) {
+        return contentCreateData.base.firstComment;
+      }
+
+      const entry = placementsByAccount?.[targetAccount.id];
+
+      if (activeAccount === targetAccount.id && entry) {
+        if (entry.platform === "FACEBOOK") {
+          return (entry.spec as FBFeedPlacementSpec).firstComment;
+        }
+        if (entry.platform === "INSTAGRAM") {
+          return (entry.spec as IGFeedPlacementSpec).firstComment;
+        }
+        if (entry.platform === "TIKTOK") {
+          return (entry.spec as TikTokFeedPlacementSpec).firstComment;
+        }
+      }
+
+      if (entry?.customized) {
+        if (entry.platform === "FACEBOOK") {
+          return (entry.spec as FBFeedPlacementSpec).firstComment;
+        }
+        if (entry.platform === "INSTAGRAM") {
+          return (entry.spec as IGFeedPlacementSpec).firstComment;
+        }
+        if (entry.platform === "TIKTOK") {
+          return (entry.spec as TikTokFeedPlacementSpec).firstComment;
+        }
+      }
+
+      return contentCreateData.base.firstComment;
+    };
+
     const getAttachmentsForAccount = (): SharedAttachmentSpec[] => {
       if (!targetAccount) {
         return contentCreateData.base.attachments || [];
@@ -223,6 +257,7 @@ export const useComposerPreview = (
     };
 
     const message = getMessageForAccount();
+    const firstComment = getFirstCommentForAccount();
     const attachments = getAttachmentsForAccount();
 
     // Determine if this is a reel based on options or content
@@ -249,6 +284,7 @@ export const useComposerPreview = (
             shares: 34,
           },
           audioTitle: `Original audio • ${displayData.username || displayData.pageName}`,
+          firstComment: firstComment ?? null,
         };
         return reelPreview;
       }
@@ -267,6 +303,7 @@ export const useComposerPreview = (
           shares: 8,
         },
         location: "San Francisco, California",
+        firstComment: firstComment ?? null,
       };
       return preview;
     }
@@ -295,6 +332,7 @@ export const useComposerPreview = (
           audioTitle: "Original audio",
           callToActionLabel,
           callToActionLink,
+          firstComment: firstComment ?? null,
         };
         return reelPreview;
       }
@@ -314,6 +352,7 @@ export const useComposerPreview = (
         },
         callToActionLabel,
         callToActionLink,
+        firstComment: firstComment ?? null,
       };
       return preview;
     }
@@ -333,6 +372,7 @@ export const useComposerPreview = (
           shares: 89,
         },
         musicTitle: `Original sound • ${displayData.pageName}`,
+        firstComment: firstComment ?? null,
       };
       return preview;
     }
@@ -359,6 +399,7 @@ export const useComposerPreview = (
     options.placement,
     contentCreateData.base.attachments,
     contentCreateData.base.message,
+    contentCreateData.base.firstComment,
     placementsByAccount,
   ]);
 };

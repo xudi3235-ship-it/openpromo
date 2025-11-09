@@ -34,6 +34,7 @@ export function InstagramFeedPreview({
     metrics,
     timestamp,
     location,
+    firstComment,
   } = data;
 
   const timeLabel = timestamp
@@ -109,6 +110,68 @@ export function InstagramFeedPreview({
           size={size}
           maxLines={2}
         />
+
+        {/* First Comment */}
+        {firstComment && (
+          <div className={cn(isCompact ? "px-2 pb-1.5" : "px-3 pb-2")}>
+            <div className="flex items-start gap-2">
+              {/* Commenter Avatar */}
+              <div
+                className={cn(
+                  "rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 p-[1.5px] shrink-0",
+                  isCompact ? "w-5 h-5" : "w-6 h-6",
+                )}
+              >
+                {profilePicUrl ? (
+                  <img
+                    src={profilePicUrl}
+                    alt="You"
+                    className="w-full h-full rounded-full object-cover bg-background"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                    <span
+                      className={cn(
+                        "font-semibold uppercase",
+                        isCompact ? "text-[7px]" : "text-[8px]",
+                      )}
+                    >
+                      {accountName?.charAt(0) || "Y"}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Comment Content */}
+              <div className="flex-1 min-w-0">
+                <p className={cn(isCompact ? "text-xs" : "text-sm")}>
+                  <span className="font-semibold mr-1.5">
+                    {accountName || "you"}
+                  </span>
+                  <span className="text-foreground/90 whitespace-pre-wrap break-words">
+                    {firstComment}
+                  </span>
+                </p>
+
+                {/* Comment Actions */}
+                <div
+                  className={cn(
+                    "flex items-center gap-3 mt-1 text-muted-foreground",
+                    isCompact ? "text-[10px]" : "text-xs",
+                  )}
+                >
+                  <span>2h</span>
+                  <button
+                    type="button"
+                    className="font-semibold hover:text-foreground/70"
+                  >
+                    Reply
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Timestamp */}
         <div

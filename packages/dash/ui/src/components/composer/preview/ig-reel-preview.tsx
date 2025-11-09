@@ -47,6 +47,7 @@ export function IGReelPreview({
       comments: previewData.metrics?.comments ?? undefined,
       shares: previewData.metrics?.shares ?? undefined,
     },
+    firstComment: previewData.firstComment,
   };
 
   // Custom render function that uses the attachment renderer hook

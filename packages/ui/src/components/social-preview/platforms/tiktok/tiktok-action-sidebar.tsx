@@ -7,12 +7,16 @@ export interface TikTokActionSidebarProps {
   likes?: number;
   comments?: number;
   shares?: number;
+  hasNewComments?: boolean;
+  onCommentsClick?: () => void;
 }
 
 export function TikTokActionSidebar({
   size = "default",
   likes,
   comments,
+  hasNewComments = false,
+  onCommentsClick,
 }: TikTokActionSidebarProps) {
   const isCompact = size === "thumbnail" || size === "compact";
 
@@ -27,12 +31,6 @@ export function TikTokActionSidebar({
     return count.toString();
   };
 
-  const actions = [
-    { icon: Heart, label: formatCount(likes) || "Like" },
-    { icon: MessageCircle, label: formatCount(comments) || "Comment" },
-    { icon: Share2, label: "Share" },
-  ];
-
   return (
     <div
       className={cn(
@@ -40,19 +38,55 @@ export function TikTokActionSidebar({
         isCompact ? "right-1.5 bottom-10 gap-2.5" : "right-2 bottom-12 gap-3",
       )}
     >
-      {actions.map(({ icon: Icon, label }) => (
-        <div key={label} className="flex flex-col items-center gap-0.5">
-          <div
-            className={cn(
-              "rounded-full border border-white/10 bg-black/45 backdrop-blur flex items-center justify-center",
-              buttonSize,
-            )}
-          >
-            <Icon className={iconSize} />
-          </div>
-          <span className={cn("font-medium", labelSize)}>{label}</span>
+      {/* Like */}
+      <div className="flex flex-col items-center gap-0.5">
+        <div
+          className={cn(
+            "rounded-full border border-white/10 bg-black/45 backdrop-blur flex items-center justify-center",
+            buttonSize,
+          )}
+        >
+          <Heart className={iconSize} />
         </div>
-      ))}
+        <span className={cn("font-medium", labelSize)}>
+          {formatCount(likes) || "Like"}
+        </span>
+      </div>
+
+      {/* Comment */}
+      <div className="flex flex-col items-center gap-0.5">
+        <button
+          type="button"
+          onClick={onCommentsClick}
+          className={cn(
+            "rounded-full border border-white/10 bg-black/45 backdrop-blur flex items-center justify-center relative",
+            buttonSize,
+          )}
+        >
+          <MessageCircle className={iconSize} />
+          {hasNewComments && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border border-black" />
+          )}
+        </button>
+        <span className={cn("font-medium", labelSize)}>
+          {formatCount(comments) || "Comment"}
+        </span>
+      </div>
+
+      {/* Share */}
+      <div className="flex flex-col items-center gap-0.5">
+        <div
+          className={cn(
+            "rounded-full border border-white/10 bg-black/45 backdrop-blur flex items-center justify-center",
+            buttonSize,
+          )}
+        >
+          <Share2 className={iconSize} />
+        </div>
+        <span className={cn("font-medium", labelSize)}>Share</span>
+      </div>
+
+      {/* Music */}
       <div
         className={cn(
           "rounded-full border border-white/10 bg-black/45 backdrop-blur flex items-center justify-center",
@@ -61,7 +95,8 @@ export function TikTokActionSidebar({
       >
         <Music2 className={iconSize} />
       </div>
-      {/* Profile music disc at bottom */}
+
+      {/* Bookmark */}
       <div
         className={cn(
           "rounded-full border-2 border-white/20 bg-black/60 backdrop-blur flex items-center justify-center",

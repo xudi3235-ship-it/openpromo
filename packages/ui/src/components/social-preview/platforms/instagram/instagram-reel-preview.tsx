@@ -1,5 +1,10 @@
 import { cn } from "@openpromo/ui/lib/utils";
-import { PreviewContainer, PreviewMedia } from "../../primitives";
+import { useState } from "react";
+import {
+  CommentsOverlay,
+  PreviewContainer,
+  PreviewMedia,
+} from "../../primitives";
 import type {
   BasePreviewProps,
   PreviewData,
@@ -22,16 +27,37 @@ export function InstagramReelPreview({
   ShareIcon,
   className,
 }: InstagramReelPreviewProps) {
-  const { accountName, profilePicUrl, caption, media = [], metrics } = data;
+  const {
+    accountName,
+    profilePicUrl,
+    caption,
+    media = [],
+    metrics,
+    firstComment,
+  } = data;
 
   const username = accountName || "instagram";
   const isCompact = size === "thumbnail" || size === "compact";
+  const [commentsOpen, setCommentsOpen] = useState(false);
 
   const avatarSize = isCompact ? "w-6 h-6" : "w-8 h-8";
   const textSize = isCompact ? "text-xs" : "text-sm";
   const captionSize = isCompact ? "text-[10px]" : "text-sm";
   const audioSize = isCompact ? "text-[9px]" : "text-xs";
   const bottomPadding = isCompact ? "p-2" : "p-3";
+
+  // Build comments list
+  const comments = firstComment
+    ? [
+        {
+          id: "first-comment",
+          accountName: username,
+          profilePicUrl,
+          text: firstComment,
+          isOwner: true,
+        },
+      ]
+    : [];
 
   return (
     <PreviewContainer size={size} platform="INSTAGRAM" className={className}>
@@ -88,6 +114,17 @@ export function InstagramReelPreview({
             comments={metrics?.comments}
             shares={metrics?.shares}
             ShareIcon={ShareIcon}
+            hasNewComments={!!firstComment}
+            onCommentsClick={() => setCommentsOpen(true)}
+          />
+
+          {/* Comments Overlay */}
+          <CommentsOverlay
+            isOpen={commentsOpen}
+            onClose={() => setCommentsOpen(false)}
+            comments={comments}
+            size={size}
+            platform="INSTAGRAM"
           />
 
           {/* Bottom Caption Area with Gradient */}

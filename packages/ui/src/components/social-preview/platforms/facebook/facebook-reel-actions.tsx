@@ -7,6 +7,8 @@ export interface FacebookReelActionsProps extends BasePreviewProps {
   likes?: number;
   comments?: number;
   shares?: number;
+  hasNewComments?: boolean;
+  onCommentsClick?: () => void;
   /** Custom share icon component */
   ShareIcon?: React.ComponentType<{ className?: string }>;
 }
@@ -16,6 +18,8 @@ export function FacebookReelActions({
   likes,
   comments,
   shares,
+  hasNewComments = false,
+  onCommentsClick,
   ShareIcon = MessageCircle,
 }: FacebookReelActionsProps) {
   const isCompact = size === "thumbnail" || size === "compact";
@@ -61,9 +65,13 @@ export function FacebookReelActions({
         <Button
           variant="ghost"
           size="sm"
-          className={cn("p-0 hover:bg-transparent", buttonSize)}
+          onClick={onCommentsClick}
+          className={cn("p-0 hover:bg-transparent relative", buttonSize)}
         >
           <MessageCircle className={cn(iconSize, "text-white")} />
+          {hasNewComments && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border border-black" />
+          )}
         </Button>
         {comments !== undefined && (
           <span className={cn("font-semibold mt-0.5", textSize)}>

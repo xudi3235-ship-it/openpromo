@@ -83,6 +83,7 @@ export function FBReelPreview({
       renderMedia={renderMedia}
       callToActionLabel={ctaOption?.label}
       callToActionLink={callToActionLink ?? undefined}
+      firstComment={previewData.firstComment ?? null}
     />
   );
 }
