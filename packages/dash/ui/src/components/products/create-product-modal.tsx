@@ -24,6 +24,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@openpromo/ui/components/tabs";
+import { Textarea } from "@openpromo/ui/components/textarea";
 import { Link2, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { type SubmitHandler, useForm } from "react-hook-form";
@@ -42,6 +43,10 @@ const schema = z.object({
     .url("Please enter a valid URL")
     .optional()
     .or(z.literal("")),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  tags: z.string().optional(), // We'll store as comma-separated string and convert to array
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -102,6 +107,10 @@ export function CreateProductModal({
     resolver: zodResolver(schema),
     defaultValues: {
       sourceUrl: "",
+      name: "",
+      description: "",
+      category: "",
+      tags: "",
     },
   });
 
@@ -110,6 +119,10 @@ export function CreateProductModal({
     if (product && open) {
       form.reset({
         sourceUrl: product.sourceUrl || "",
+        name: product.name || "",
+        description: product.description || "",
+        category: product.category || "",
+        tags: product.tags?.join(", ") || "",
       });
       setExistingAttachments(product.attachments || []);
       if (product.sourceUrl) {
@@ -132,9 +145,20 @@ export function CreateProductModal({
     try {
       setIsUploading(true);
 
+      // Parse tags from comma-separated string to array
+      const tagsArray = values.tags
+        ? values.tags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag.length > 0)
+        : undefined;
+
       type ProductData = {
-        name: string;
-        source: "MANUAL" | "CUSTOM_URL";
+        name?: string;
+        description?: string;
+        category?: string;
+        tags?: string[];
+        source?: "MANUAL" | "CUSTOM_URL";
         sourceUrl?: string;
         attachments?: Array<{
           id: string;
@@ -145,27 +169,21 @@ export function CreateProductModal({
         primaryAttachmentId?: string;
       };
 
-      let productData: ProductData;
+      const productData: ProductData = {};
 
-      if (activeTab === "url" && values.sourceUrl) {
-        productData = {
-          name: "Product from URL",
-          source: "CUSTOM_URL",
-          sourceUrl: values.sourceUrl,
-        };
-      } else {
-        let attachments: Array<{
-          id: string;
-          type: "photo" | "video";
-          publicUrl: string;
-          s3Key?: string;
-        }> = [];
+      // Add common fields if they're provided
+      if (values.name) productData.name = values.name;
+      if (values.description) productData.description = values.description;
+      if (values.category) productData.category = values.category;
+      if (tagsArray && tagsArray.length > 0) productData.tags = tagsArray;
 
-        if (selectedFiles.length > 0) {
+      if (isEditMode && product) {
+        // Edit mode: only update provided fields
+        if (activeTab === "upload" && selectedFiles.length > 0) {
           toast.info("Uploading files...");
           const uploadResults = await uploadFiles(selectedFiles);
 
-          attachments = uploadResults.map((result, index) => ({
+          const newAttachments = uploadResults.map((result, index) => ({
             id: result.key,
             type: selectedFiles[index].type.startsWith("image/")
               ? ("photo" as const)
@@ -173,33 +191,91 @@ export function CreateProductModal({
             publicUrl: result.publicUrl,
             s3Key: result.key,
           }));
-        }
 
-        const allAttachments = [...existingAttachments, ...attachments];
-
-        if (allAttachments.length === 0) {
-          toast.error("Please upload at least one image or video");
-          setIsUploading(false);
-          return;
-        }
-
-        productData = {
-          name: "Product",
-          source: "MANUAL",
-          attachments: allAttachments as Array<{
+          const allAttachments = [...existingAttachments, ...newAttachments];
+          productData.attachments = allAttachments as Array<{
             id: string;
             type: "photo" | "video";
             publicUrl: string;
             s3Key?: string;
-          }>,
-          primaryAttachmentId: allAttachments[0]?.id,
-        };
-      }
+          }>;
+          productData.primaryAttachmentId =
+            allAttachments[0]?.id || product.primaryAttachmentId || undefined;
+        } else if (existingAttachments.length !== product.attachments.length) {
+          // Attachments were removed
+          productData.attachments = existingAttachments as Array<{
+            id: string;
+            type: "photo" | "video";
+            publicUrl: string;
+            s3Key?: string;
+          }>;
+          productData.primaryAttachmentId =
+            existingAttachments[0]?.id || undefined;
+        }
 
-      if (isEditMode && product) {
+        if (activeTab === "url" && values.sourceUrl) {
+          productData.sourceUrl = values.sourceUrl;
+        }
+
         updateProduct.mutate({ productId: product.id, ...productData });
       } else {
-        createProduct.mutate(productData);
+        // Create mode: require attachments or sourceUrl
+        if (activeTab === "url" && values.sourceUrl) {
+          const createData = {
+            name: values.name || "Product from URL",
+            description: values.description,
+            category: values.category,
+            tags: tagsArray,
+            source: "CUSTOM_URL" as const,
+            sourceUrl: values.sourceUrl,
+          };
+          createProduct.mutate(createData);
+        } else {
+          let attachments: Array<{
+            id: string;
+            type: "photo" | "video";
+            publicUrl: string;
+            s3Key?: string;
+          }> = [];
+
+          if (selectedFiles.length > 0) {
+            toast.info("Uploading files...");
+            const uploadResults = await uploadFiles(selectedFiles);
+
+            attachments = uploadResults.map((result, index) => ({
+              id: result.key,
+              type: selectedFiles[index].type.startsWith("image/")
+                ? ("photo" as const)
+                : ("video" as const),
+              publicUrl: result.publicUrl,
+              s3Key: result.key,
+            }));
+          }
+
+          const allAttachments = [...existingAttachments, ...attachments];
+
+          if (allAttachments.length === 0) {
+            toast.error("Please upload at least one image or video");
+            setIsUploading(false);
+            return;
+          }
+
+          const createData = {
+            name: values.name || "Product",
+            description: values.description,
+            category: values.category,
+            tags: tagsArray,
+            source: "MANUAL" as const,
+            attachments: allAttachments as Array<{
+              id: string;
+              type: "photo" | "video";
+              publicUrl: string;
+              s3Key?: string;
+            }>,
+            primaryAttachmentId: allAttachments[0]?.id,
+          };
+          createProduct.mutate(createData);
+        }
       }
     } catch (error) {
       toast.error("Failed to process product");
@@ -421,6 +497,74 @@ export function CreateProductModal({
                 />
               </TabsContent>
             </Tabs>
+
+            {/* Product Details Section */}
+            <div className="space-y-3 pt-2 border-t">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter product name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter product description"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Electronics" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="tags"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tags</FormLabel>
+                      <FormControl>
+                        <Input placeholder="tag1, tag2, tag3" {...field} />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        Comma-separated
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <DialogFooter>
               <Button
