@@ -87,8 +87,8 @@ export function StyleGallery({
       )}
 
       <TooltipProvider>
-        <div className="overflow-x-auto overflow-y-visible">
-          <div className="flex gap-2 pb-2 min-w-max">
+        <div className="max-h-64 overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {styles.map((style) => {
               const imageUrl = getStyleImage(style);
               const isSelected = selectedStyleId === style.id;
@@ -100,7 +100,7 @@ export function StyleGallery({
                       type="button"
                       onClick={() => onStyleSelect(style.id)}
                       className={cn(
-                        "relative flex-shrink-0 w-16 h-16 rounded-md border-2 overflow-hidden transition-all group",
+                        "relative aspect-square w-full rounded-md border-2 overflow-hidden transition-all group",
                         "hover:border-primary/50",
                         isSelected
                           ? "border-primary ring-2 ring-primary/20"
@@ -111,10 +111,10 @@ export function StyleGallery({
                         <img
                           src={imageUrl}
                           alt={style.name || style.id}
-                          className="w-full h-full object-cover"
+                          className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <div className="flex h-full w-full items-center justify-center bg-muted">
                           <span className="text-xs text-muted-foreground">
                             ?
                           </span>
@@ -122,9 +122,9 @@ export function StyleGallery({
                       )}
                       {/* Selected indicator */}
                       {isSelected && (
-                        <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">
+                        <div className="absolute top-1 right-1 rounded-full bg-primary p-0.5 text-primary-foreground">
                           <svg
-                            className="w-2.5 h-2.5"
+                            className="h-2.5 w-2.5"
                             fill="currentColor"
                             viewBox="0 0 20 20"
                           >
@@ -140,7 +140,7 @@ export function StyleGallery({
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-xs">
                     <div className="space-y-1">
-                      <p className="font-medium text-sm">
+                      <p className="text-sm font-medium">
                         {style.name || style.id}
                       </p>
                       {style.description && (
