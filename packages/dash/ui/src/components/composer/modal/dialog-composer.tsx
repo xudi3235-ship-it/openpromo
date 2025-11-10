@@ -5,8 +5,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
+import { useState } from "react";
 import { useComposerDialogLifecycle } from "@/hooks/composer/useComposerHooks";
+import { useComposerStore } from "@/stores/composer-store";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
+import { CancelConfirmationDialog } from "../dialogs/cancel-confirmation-dialog";
 import { ComposerErrorState } from "../layout/composer-error-state";
 import { ComposerLeft } from "../layout/composer-left";
 import { ComposerRight } from "../layout/composer-right";
@@ -20,6 +23,10 @@ export default function ComposerDialog() {
     pendingContentGroupID,
     initialContentCreateData,
   } = useDialogComposerStore();
+  const hasUnsavedChanges = useComposerStore((s) => s.hasUnsavedChanges);
+  const resetComposer = useComposerStore((s) => s.resetComposer);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
   const isOpen = mode === "dialog";
   const { isPending, contentGroupIsError } = useComposerDialogLifecycle({
     mode,
@@ -36,29 +43,59 @@ export default function ComposerDialog() {
     }
   };
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      // User is trying to close the dialog
+      if (hasUnsavedChanges()) {
+        // Show confirmation dialog
+        setShowCancelConfirm(true);
+      } else {
+        // No unsaved changes, close immediately
+        closeComposer();
+      }
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setShowCancelConfirm(false);
+    resetComposer();
+    closeComposer();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && closeComposer()}>
-      <DialogContent className="!max-w-none w-full h-[90vh] p-0 flex flex-col overflow-hidden sm:w-[95vw] md:w-[90vw] lg:w-[85vw] xl:w-[80vw] 2xl:w-[1200px]">
-        <DialogHeader className="sr-only">
-          <DialogTitle>Create Post</DialogTitle>
-          <DialogDescription>
-            Create and schedule content for your social media accounts
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex-1 flex overflow-hidden">
-          {contentGroupIsError ? (
-            <ComposerErrorState onRetry={handleRetry} onClose={closeComposer} />
-          ) : isPending ? (
-            <ComposerSkeleton />
-          ) : (
-            <TwoColumnLayout
-              left={<ComposerLeft />}
-              right={<ComposerRight />}
-              className=""
-            />
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <DialogContent className="!max-w-none w-full h-[90vh] p-0 flex flex-col overflow-hidden sm:w-[95vw] md:w-[90vw] lg:w-[85vw] xl:w-[80vw] 2xl:w-[1200px]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Create Post</DialogTitle>
+            <DialogDescription>
+              Create and schedule content for your social media accounts
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 flex overflow-hidden">
+            {contentGroupIsError ? (
+              <ComposerErrorState
+                onRetry={handleRetry}
+                onClose={closeComposer}
+              />
+            ) : isPending ? (
+              <ComposerSkeleton />
+            ) : (
+              <TwoColumnLayout
+                left={<ComposerLeft />}
+                right={<ComposerRight />}
+                className=""
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <CancelConfirmationDialog
+        open={showCancelConfirm}
+        onOpenChange={setShowCancelConfirm}
+        onConfirm={handleConfirmClose}
+      />
+    </>
   );
 }
