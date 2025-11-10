@@ -17,6 +17,7 @@ export { DMReplyHandler } from "./dm-reply-handler";
 export { FacebookReply } from "./facebook-reply";
 export { InstagramReply } from "./instagram-reply";
 export { resolveCommentTarget } from "./target-resolver";
+export { TikTokReply } from "./tiktok-reply";
 export type {
   CommentReplyContext,
   CommentReplyTarget,

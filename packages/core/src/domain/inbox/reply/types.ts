@@ -10,7 +10,9 @@ export type ReplyContext = {
   platform: AllPlatforms;
   channel: InboxChannel;
   connectedAccountId: string;
+  connectedAccountExternalId: string;
   accessToken: string;
+  refreshToken: string | null;
   contactExternalId: string;
   workspaceId: string;
 };

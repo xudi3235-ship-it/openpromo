@@ -2,6 +2,7 @@ import { ErrorCodes, VisibleError } from "@core/utils/error";
 import { FacebookReply } from "./facebook-reply";
 import { InstagramReply } from "./instagram-reply";
 import { resolveCommentTarget } from "./target-resolver";
+import { TikTokReply } from "./tiktok-reply";
 import type { CommentReplyContext } from "./types";
 
 /**
@@ -20,6 +21,10 @@ export namespace CommentReplyHandler {
 
       case "INSTAGRAM":
         await InstagramReply.sendComment(context, target, text);
+        break;
+
+      case "TIKTOK":
+        await TikTokReply.sendComment(context, target, text);
         break;
 
       default:

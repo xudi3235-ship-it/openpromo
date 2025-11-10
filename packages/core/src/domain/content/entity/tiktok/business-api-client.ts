@@ -508,6 +508,55 @@ export class TikTokBusinessAPIClient {
   }
 
   /**
+   * Reply to an existing TikTok Business comment
+   * https://business-api.tiktok.com/portal/docs?id=1803630424390658 (reply flow)
+   */
+  async replyToComment(params: {
+    videoId: string;
+    commentId: string;
+    text: string;
+  }): Promise<TikTokBusinessCommentCreateResult> {
+    const trimmed = params.text?.trim();
+    if (!trimmed) {
+      throw new WorkflowError("TikTok Business reply text cannot be empty");
+    }
+
+    const text = trimmed.length > 150 ? trimmed.slice(0, 150) : trimmed;
+
+    const data = await this.post<{
+      comment_id: string;
+      video_id: string;
+      text: string;
+      unique_identifier?: string;
+      user_id?: string;
+      create_time?: string | number;
+    }>("/open_api/v1.3/business/comment/reply/", {
+      business_id: this.ctx.businessId,
+      video_id: params.videoId,
+      comment_id: params.commentId,
+      text,
+    });
+
+    const createTimeRaw = data.create_time;
+    const createTime =
+      typeof createTimeRaw === "string"
+        ? Number.parseInt(createTimeRaw, 10)
+        : createTimeRaw;
+
+    return {
+      commentId: data.comment_id,
+      videoId: data.video_id,
+      text: data.text,
+      uniqueIdentifier: data.unique_identifier,
+      userId: data.user_id,
+      createTime:
+        typeof createTime === "number" && Number.isFinite(createTime)
+          ? createTime
+          : undefined,
+    };
+  }
+
+  /**
    * Fetch all URL properties for the business account
    */
   async listUrlProperties(): Promise<TikTokBusinessPropertyInfo[]> {

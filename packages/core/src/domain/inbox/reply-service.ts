@@ -32,6 +32,8 @@ type ConversationRow = {
   contactExternalId: string;
   accessToken: string;
   connectedAccountId: string;
+  connectedAccountExternalId: string;
+  refreshToken: string | null;
 };
 
 export namespace InboxReplyService {
@@ -73,7 +75,9 @@ export namespace InboxReplyService {
       platform: row.platform,
       channel: row.channel,
       connectedAccountId: row.connectedAccountId,
+      connectedAccountExternalId: row.connectedAccountExternalId,
       accessToken: row.accessToken,
+      refreshToken: row.refreshToken,
       contactExternalId: row.contactExternalId,
       workspaceId,
     };
@@ -112,7 +116,7 @@ export namespace InboxReplyService {
         conversationMetadata: (row.conversationMetadata ??
           {}) as InboxMessageMetadata,
       };
-      await CommentReplyHandler.send(commentContext, text);
+      await CommentReplyHandler.send(commentContext, trimmedText);
       await emitPendingReplyEvent(
         row.id,
         row.channel,
@@ -146,6 +150,8 @@ async function loadConversation(
       contactExternalId: inboxContactsTable.externalId,
       accessToken: connectedAccount.encryptedAccessToken,
       connectedAccountId: connectedAccount.id,
+      connectedAccountExternalId: connectedAccount.externalAccountId,
+      refreshToken: connectedAccount.refreshToken,
     })
     .from(inboxConversationsTable)
     .innerJoin(
