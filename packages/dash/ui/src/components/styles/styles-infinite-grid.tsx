@@ -134,10 +134,10 @@ export function StylesInfiniteGrid({
   }
 
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
+    <div className={cn("flex flex-col", className)}>
       <div
         className={cn(
-          "grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+          "grid grid-cols-2 gap-0 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
           gridClassName,
         )}
       >
@@ -158,24 +158,23 @@ interface StylesEmptyStateProps {
 }
 
 export function StylesEmptyState({ hasFilters }: StylesEmptyStateProps) {
-  // Minimal, flat empty states without decorative icons to match site aesthetics
+  // Minimal, flat empty states without decorative icons to match OpenAI aesthetics
   if (hasFilters) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center rounded-md border border-border/50 p-8 text-center bg-transparent">
-        <h2 className="text-lg font-medium">No styles match your filters</h2>
+      <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-border/40 bg-muted/20 p-12 text-center">
+        <h2 className="text-base font-medium">No styles found</h2>
         <p className="mt-2 max-w-md text-sm text-muted-foreground">
-          Try clearing filters or adjust your search to discover more styles.
+          Try adjusting your search or filters
         </p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center rounded-md border border-border/50 p-8 text-center bg-transparent">
-      <h2 className="text-lg font-semibold">Build your first style</h2>
+    <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-border/40 bg-muted/20 p-12 text-center">
+      <h2 className="text-base font-medium">No styles yet</h2>
       <p className="mt-2 max-w-lg text-sm text-muted-foreground leading-relaxed">
-        Drag 3–5 reference images into the composer dock below to create your
-        first reusable visual style.
+        Start by adding reference images in the composer below
       </p>
     </div>
   );
@@ -193,7 +192,7 @@ export function StylesLoadingState({
   return (
     <div
       className={cn(
-        "grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+        "grid grid-cols-2 gap-0 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
         gridClassName,
       )}
     >
@@ -207,7 +206,7 @@ export function StylesLoadingState({
 
 export function CardSkeleton() {
   return (
-    <div className="group relative aspect-[3/4] overflow-hidden rounded-lg">
+    <div className="group relative aspect-square overflow-hidden border border-gray-200 dark:border-gray-800">
       <Skeleton className="h-full w-full" />
     </div>
   );

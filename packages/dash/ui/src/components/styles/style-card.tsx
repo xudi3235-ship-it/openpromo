@@ -1,9 +1,3 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@openpromo/ui/components/avatar";
-import { Badge } from "@openpromo/ui/components/badge";
 import { cn } from "@openpromo/ui/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { CheckCircle2 } from "lucide-react";
@@ -15,50 +9,15 @@ interface StyleCardProps {
   style: StyleResponse["style"];
 }
 
-// Mock creator data - TODO: Replace with real data from API
-const getCreatorForStyle = (styleName: string) => {
-  const creators = [
-    {
-      name: "Alex Chen",
-      avatar: "https://i.pravatar.cc/150?img=12",
-      initials: "AC",
-    },
-    {
-      name: "Sarah Miller",
-      avatar: "https://i.pravatar.cc/150?img=45",
-      initials: "SM",
-    },
-    {
-      name: "Jordan Lee",
-      avatar: "https://i.pravatar.cc/150?img=33",
-      initials: "JL",
-    },
-    {
-      name: "Taylor Brown",
-      avatar: "https://i.pravatar.cc/150?img=27",
-      initials: "TB",
-    },
-  ];
-
-  // Use hash to consistently assign same creator to same style
-  const hash = styleName
-    .split("")
-    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return creators[hash % creators.length];
-};
-
 export function StyleCard({ style }: StyleCardProps) {
   const navigate = useNavigate();
   const { workspace } = useWorkspace();
-  const [primaryImage, ...otherRefs] = style.imageRefs;
+  const [primaryImage] = style.imageRefs;
   const imageCount = style.imageRefs.length;
-  const creator = getCreatorForStyle(style.name);
 
   const isProcessing =
     style.state === "pending" || style.state === "processing";
   const isFailed = style.state === "failed";
-  const isNotStarted = style.state === "not_started";
-  const isReady = style.state === "ready";
 
   const handleOpen = () => {
     navigate({
@@ -83,7 +42,7 @@ export function StyleCard({ style }: StyleCardProps) {
       tabIndex={0}
       onClick={handleOpen}
       onKeyDown={handleKeyDown}
-      className="group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-lg bg-muted transition-all duration-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group relative aspect-square cursor-pointer overflow-hidden border border-gray-200 dark:border-gray-800 bg-muted/30 transition-all duration-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       {/* Main Image */}
       {primaryImage ? (
@@ -91,155 +50,79 @@ export function StyleCard({ style }: StyleCardProps) {
           src={primaryImage}
           alt={style.name}
           className={cn(
-            "h-full w-full object-cover transition-transform duration-700 group-hover:scale-110",
+            "h-full w-full object-cover transition-transform duration-300 group-hover:scale-105",
             (isProcessing || isFailed) && "blur-sm",
           )}
           loading="lazy"
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-          <div className="text-6xl opacity-30">🎨</div>
+        <div className="flex h-full w-full items-center justify-center bg-muted/50">
+          <div className="text-4xl opacity-20">🎨</div>
         </div>
       )}
 
       {/* State Overlay - Processing/Failed */}
       {isProcessing && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-2">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white" />
-            <p className="text-sm font-medium text-white">
-              {style.state === "pending" ? "Pending..." : "Processing..."}
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+            <p className="text-xs font-medium text-white">
+              {style.state === "pending" ? "Pending" : "Processing"}
             </p>
           </div>
         </div>
       )}
 
       {isFailed && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-red-500/20 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-2 px-4 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/80">
-              <span className="text-2xl">⚠️</span>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-red-500/10 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-1.5 px-4 text-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/80">
+              <span className="text-lg">⚠️</span>
             </div>
-            <p className="text-sm font-semibold text-white">
-              Processing Failed
-            </p>
-            {style.failureReason && (
-              <p className="text-xs text-white/80 line-clamp-2">
-                {style.failureReason}
-              </p>
-            )}
+            <p className="text-xs font-medium text-red-600">Failed</p>
           </div>
         </div>
       )}
 
-      {/* Official Badge - Top Left */}
+      {/* Official Badge - Minimal Top Badge */}
       {style.isOfficial && (
-        <div className="absolute left-2 top-2 z-20 flex items-center gap-1.5">
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/80 backdrop-blur-sm">
-            <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+        <div className="absolute left-3 top-3 z-20">
+          <div className="flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur-sm">
+            <CheckCircle2 className="h-3 w-3 text-green-600" />
+            <span className="text-xs font-medium text-gray-900">Official</span>
           </div>
-          <span className="rounded-full bg-black/30 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-md">
-            Official
-          </span>
         </div>
       )}
 
-      {/* State Badge - Top Left (below Official or at top) */}
-      {!isReady && !style.isOfficial && (
-        <div className="absolute left-2 top-2 z-20">
-          <Badge
-            variant={
-              isFailed ? "destructive" : isProcessing ? "secondary" : "outline"
-            }
-            className={cn(
-              "text-xs backdrop-blur-sm",
-              isProcessing && "bg-blue-500/80 text-white hover:bg-blue-500/90",
-              isNotStarted && "bg-gray-500/80 text-white hover:bg-gray-500/90",
-            )}
-          >
-            {style.state === "pending" && "Pending"}
-            {style.state === "processing" && "Processing"}
-            {style.state === "not_started" && "Not Started"}
-            {style.state === "failed" && "Failed"}
-          </Badge>
-        </div>
-      )}
-
-      {/* Top Right Actions */}
-      <div className="absolute right-2 top-2 z-20 flex items-center gap-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        {/* Image Count Badge - Visible on hover */}
-        {imageCount > 0 && (
-          <div className="rounded-full bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
-            {imageCount} {imageCount === 1 ? "image" : "images"}
-          </div>
-        )}
-
-        {/* Actions Dropdown - Visible on hover */}
+      {/* Actions - Top Right */}
+      <div className="absolute right-3 top-3 z-20 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
         <StyleCardActions style={style} />
       </div>
 
-      {/* Overlay with metadata - Appears on hover */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+      {/* Hover Overlay with Metadata */}
+      <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
         <div className="flex h-full flex-col justify-end p-4">
           {/* Title */}
-          <h3 className="mb-2 text-lg font-bold text-white">{style.name}</h3>
+          <h3 className="text-base font-semibold text-white line-clamp-1">
+            {style.name}
+          </h3>
 
           {/* Description */}
-          <p className="mb-3 text-sm text-white/90 line-clamp-2">
-            {style.description}
-          </p>
-
-          {/* Metadata row */}
-          <div className="flex items-center gap-2">
-            <Badge
-              variant="secondary"
-              className="bg-white/20 text-xs text-white backdrop-blur-sm hover:bg-white/30"
-            >
-              {style.slug}
-            </Badge>
-          </div>
-
-          {/* Prompt preview */}
-          {style.imageGenPrompt && (
-            <p className="mt-3 text-xs text-white/70 line-clamp-2">
-              {style.imageGenPrompt}
+          {style.description && (
+            <p className="mt-1 text-xs text-white/80 line-clamp-2">
+              {style.description}
             </p>
           )}
 
-          {/* Additional images preview */}
-          {otherRefs.length > 0 && (
-            <div className="mt-3 flex gap-1">
-              {otherRefs.slice(0, 3).map((ref, idx) => (
-                <div
-                  key={ref}
-                  className="h-8 w-8 overflow-hidden rounded border border-white/20 bg-black/20 backdrop-blur-sm"
-                >
-                  <img
-                    src={ref}
-                    alt={`${style.name} ${idx + 2}`}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
-              ))}
-              {otherRefs.length > 3 && (
-                <div className="flex h-8 w-8 items-center justify-center rounded border border-white/20 bg-black/40 text-xs text-white backdrop-blur-sm">
-                  +{otherRefs.length - 3}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Metadata */}
+          <div className="mt-2 flex items-center gap-2">
+            {imageCount > 0 && (
+              <span className="text-xs text-white/70">
+                {imageCount} {imageCount === 1 ? "image" : "images"}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
-
-      {/* Creator Avatar - Bottom Right on Hover */}
-      <div className="absolute bottom-3 right-3 z-20 translate-y-8 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-        <Avatar className="size-10 ring-2 ring-white/20 transition-all duration-300 hover:ring-white/40">
-          <AvatarImage src={creator.avatar} alt={creator.name} />
-          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-xs font-semibold text-white">
-            {creator.initials}
-          </AvatarFallback>
-        </Avatar>
       </div>
     </div>
   );

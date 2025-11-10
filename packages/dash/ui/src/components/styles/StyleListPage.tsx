@@ -6,7 +6,6 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@openpromo/ui/components/toggle-group";
-import { Toolbar, ToolbarSection } from "@openpromo/ui/components/toolbar";
 import { cn } from "@openpromo/ui/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Clock3, History, Search, TrendingUp } from "lucide-react";
@@ -108,70 +107,66 @@ export function StyleListPage() {
         </Stack>
       </PageHeader>
 
-      <Toolbar size="sm" justify="start" className="flex-wrap gap-y-3">
-        <ToolbarSection>
-          <div className="relative w-64 min-w-[220px] sm:w-80">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, description, or aesthetic..."
-              value={searchValue}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                setSearchValue(event.target.value)
-              }
-              className="pl-9"
-            />
-          </div>
-        </ToolbarSection>
+      <div className="flex items-start justify-start gap-3 flex-wrap px-4">
+        <div className="relative w-64 min-w-[220px] sm:w-80">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, description, or aesthetic..."
+            value={searchValue}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              setSearchValue(event.target.value)
+            }
+            className="pl-9"
+          />
+        </div>
 
-        <ToolbarSection gap="sm">
-          <ToggleGroup
-            type="single"
-            value={sort}
-            onValueChange={(value) => handleSortChange(value ?? "")}
-            className="rounded-md border bg-background"
+        <ToggleGroup
+          type="single"
+          value={sort}
+          onValueChange={(value) => handleSortChange(value ?? "")}
+          className="rounded-md border bg-background"
+        >
+          <ToggleGroupItem
+            value="latest"
+            aria-label="Sort by latest"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
           >
-            <ToggleGroupItem
-              value="latest"
-              aria-label="Sort by latest"
-              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
-            >
-              <Clock3 className="h-4 w-4" />
-              Latest
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              value="oldest"
-              aria-label="Sort by oldest"
-              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
-            >
-              <History className="h-4 w-4" />
-              Oldest
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              value="most_used"
-              aria-label="Sort by most used"
-              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
-            >
-              <TrendingUp className="h-4 w-4" />
-              Most used
-            </ToggleGroupItem>
-          </ToggleGroup>
+            <Clock3 className="h-4 w-4" />
+            Latest
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="oldest"
+            aria-label="Sort by oldest"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
+          >
+            <History className="h-4 w-4" />
+            Oldest
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="most_used"
+            aria-label="Sort by most used"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
+          >
+            <TrendingUp className="h-4 w-4" />
+            Most used
+          </ToggleGroupItem>
+        </ToggleGroup>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={cn(
-              "gap-2",
-              officialOnly &&
-                "border-emerald-500/60 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20",
-            )}
-            onClick={() => setOfficialOnly((prev) => !prev)}
-          >
-            <BadgeCheck className="h-4 w-4" />
-            Official only
-          </Button>
-        </ToolbarSection>
-      </Toolbar>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className={cn(
+            "gap-2",
+            officialOnly &&
+              "border-emerald-500/60 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20",
+          )}
+          onClick={() => setOfficialOnly((prev) => !prev)}
+        >
+          <BadgeCheck className="h-4 w-4" />
+          Official only
+        </Button>
+      </div>
 
       <PageContent>
         <StylesInfiniteGrid params={gridParams} />
