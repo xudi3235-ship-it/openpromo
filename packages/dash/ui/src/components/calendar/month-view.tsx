@@ -221,7 +221,7 @@ export function MonthView({
                     }}
                   >
                     {/* Day number - sticky at top, overlays events on scroll */}
-                    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm flex-shrink-0">
+                    <div className="sticky top-0 z-10 flex-shrink-0">
                       <div className="relative h-7">
                         {/* Default state - show date */}
                         <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 items-center justify-center rounded-full text-sm font-medium shrink-0 group-hover:opacity-0 transition-opacity">
