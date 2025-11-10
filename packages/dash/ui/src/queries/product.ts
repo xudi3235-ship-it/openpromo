@@ -147,6 +147,11 @@ export const useProductDeleteMutation = (onSuccess?: () => void) => {
 
   return useMutation({
     ...orpc.products.delete.mutationOptions({
+      mutationFn: async (variables) =>
+        orpc.products.delete.call({
+          ...variables,
+          workspaceId: workspace.id,
+        }),
       onSuccess: async () => {
         await invalidateProductListQueries(queryClient);
         await queryClient.invalidateQueries({
