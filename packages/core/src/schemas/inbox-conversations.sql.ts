@@ -1,5 +1,6 @@
 import { id, timestamp, timestamps, ulid } from "@core/database/types";
 import { unifiedContentTable } from "@core/schemas/content.sql";
+import { InboxConversationCollabSchema } from "@shared/inbox";
 import { sql } from "drizzle-orm";
 import {
   index,
@@ -9,11 +10,21 @@ import {
   text,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import * as z from "zod";
 import { connectedAccount, platformPgEnum } from "./connected-account.sql";
 import { inboxContactsTable } from "./inbox-contacts.sql";
 
 export const inboxChannelEnum = pgEnum("inbox_channel", ["dm", "post_comment"]);
 export type InboxChannel = (typeof inboxChannelEnum.enumValues)[number];
+
+export const InboxConversationMetadataSchema = z
+  .object({
+    collab: InboxConversationCollabSchema.optional(),
+  })
+  .loose();
+export type InboxConversationMetadata = z.infer<
+  typeof InboxConversationMetadataSchema
+>;
 
 export const inboxConversationsTable = pgTable(
   "inbox_conversations",
@@ -35,7 +46,7 @@ export const inboxConversationsTable = pgTable(
       onDelete: "set null",
     }),
     metadata: jsonb("metadata")
-      .$type<Record<string, unknown>>()
+      .$type<InboxConversationMetadata>()
       .notNull()
       .default({}),
     lastMessageAt: timestamp().notNull(),

@@ -16,6 +16,9 @@ export type ConversationRow = {
   connectedAccountId: string;
   accessToken: string;
   contactExternalId: string | null;
+  contactId: string;
+  contactName: string;
+  contactProfilePicUrl: string;
 };
 
 type DbClient = ReturnType<typeof import("@core/database/db").getDbClient>;
@@ -35,6 +38,9 @@ export async function loadConversationForWorkspace(
       connectedAccountId: inboxConversationsTable.connectedAccountId,
       accessToken: connectedAccount.encryptedAccessToken,
       contactExternalId: inboxContactsTable.externalId,
+      contactId: inboxContactsTable.id,
+      contactName: inboxContactsTable.name,
+      contactProfilePicUrl: inboxContactsTable.profilePicUrl,
     })
     .from(inboxConversationsTable)
     .innerJoin(
@@ -64,5 +70,8 @@ export async function loadConversationForWorkspace(
     connectedAccountId: row.connectedAccountId as string,
     accessToken: row.accessToken as string,
     contactExternalId: row.contactExternalId ?? null,
+    contactId: row.contactId,
+    contactName: row.contactName,
+    contactProfilePicUrl: row.contactProfilePicUrl ?? "",
   } satisfies ConversationRow;
 }

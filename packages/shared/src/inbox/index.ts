@@ -416,6 +416,68 @@ export const InboxContactSchema = z.object({
 });
 export type InboxContact = z.infer<typeof InboxContactSchema>;
 
+export const InboxCollabAssigneeSchema = z.object({
+  userId: z.string(),
+  name: z.string(),
+  avatarUrl: z.string().nullable().optional(),
+  assignedAt: z.coerce.date(),
+});
+export type InboxCollabAssignee = z.infer<typeof InboxCollabAssigneeSchema>;
+
+export const InboxCollabLabelSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.string().optional(),
+  appliedAt: z.coerce.date(),
+});
+export type InboxCollabLabel = z.infer<typeof InboxCollabLabelSchema>;
+
+export const InboxCollabStatusSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  updatedAt: z.coerce.date(),
+});
+export type InboxCollabStatus = z.infer<typeof InboxCollabStatusSchema>;
+
+export const InboxCollabNoteSchema = z.object({
+  id: z.string(),
+  authorId: z.string(),
+  authorName: z.string(),
+  text: z.string(),
+  createdAt: z.coerce.date(),
+});
+export type InboxCollabNote = z.infer<typeof InboxCollabNoteSchema>;
+
+export const InboxCollabReminderSchema = z.object({
+  remindAt: z.coerce.date(),
+  createdBy: z.string(),
+});
+export type InboxCollabReminder = z.infer<typeof InboxCollabReminderSchema>;
+
+export const InboxCollabContactSchema = z
+  .object({
+    email: z.string().email().optional(),
+    phone: z.string().optional(),
+    orderStatus: z.string().optional(),
+  })
+  .partial();
+export type InboxCollabContact = z.infer<typeof InboxCollabContactSchema>;
+
+export const InboxConversationCollabSchema = z
+  .object({
+    assignee: InboxCollabAssigneeSchema.optional(),
+    labels: z.array(InboxCollabLabelSchema).optional(),
+    priority: z.enum(["priority", "normal", "low"]).optional(),
+    status: InboxCollabStatusSchema.optional(),
+    notes: z.array(InboxCollabNoteSchema).optional(),
+    reminder: InboxCollabReminderSchema.optional(),
+    contact: InboxCollabContactSchema.optional(),
+  })
+  .partial();
+export type InboxConversationCollab = z.infer<
+  typeof InboxConversationCollabSchema
+>;
+
 export const InboxConnectedAccountSummary = z.object({
   id: z.string(),
   accountName: z.string().nullable(),
@@ -438,6 +500,8 @@ export const InboxConversationSummarySchema = z.object({
   // Unread status
   isUnread: z.boolean(),
   lastReadAt: z.coerce.date().nullable(),
+  collab: InboxConversationCollabSchema.optional(),
+  notesCount: z.number().optional(),
 });
 export type InboxConversationSummary = z.infer<
   typeof InboxConversationSummarySchema
@@ -469,6 +533,8 @@ export const InboxConversationUpsertedEventSchema = z.object({
   contact: InboxContactSchema,
   isUnread: z.boolean().optional(),
   lastReadAt: z.coerce.date().nullable().optional(),
+  collab: InboxConversationCollabSchema.optional(),
+  notesCount: z.number().optional(),
   timestamp: z.number(),
 });
 

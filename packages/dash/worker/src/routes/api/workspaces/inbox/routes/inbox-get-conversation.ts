@@ -1,4 +1,8 @@
 import { getDbClient } from "@core/database/db";
+import {
+  getNotesCount,
+  readCollabMetadata,
+} from "@core/domain/inbox/collab-metadata";
 import { computeUnreadStatus } from "@core/domain/inbox/unread-helper";
 import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
@@ -75,6 +79,8 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
       platform: row.platform,
       channel: row.channel,
     });
+    const collab = readCollabMetadata(row.metadata);
+    const notesCount = getNotesCount(collab);
 
     const data = InboxConversationSummarySchema.parse({
       id: row.id,
@@ -96,6 +102,8 @@ export const inboxGetConversationRoute = new Hono<ApiEnv>().get(
       postPreview,
       isUnread,
       lastReadAt,
+      collab: collab ?? undefined,
+      notesCount,
     });
     return c.json(data);
   },
