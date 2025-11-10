@@ -1,160 +1,135 @@
-import type { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import type { QueryClient } from "@tanstack/react-query";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import type {
-  WorkspaceTeamInviteResponse,
-  WorkspaceTeamInviteRevokeResponse,
-  WorkspaceTeamMemberRemoveResponse,
-  WorkspaceTeamMemberUpdateResponse,
-  WorkspaceTeamResponse,
-} from "@worker/routes/api/workspaces/team";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import {
-  convertHonoQueryOptions,
-  useHonoMutation,
-  useHonoQuery,
-} from "@/lib/hono-client";
 import { orpc } from "@/lib/orpc-client";
 import { QUERY_KEYS } from "@/lib/query";
 import type {
   WorkspacesRouterInputs,
   WorkspacesRouterOutputs,
 } from "../../../worker/src/orpc/routes/workspaces";
+import type { TeamRouterInputs } from "../../../worker/src/orpc/routes/workspaces/team";
 
 // Export Workspace type for use across the app
 export type Workspace = WorkspacesRouterOutputs["list"]["workspaces"][number];
-
-const workspaceMembersQueryOpts = (workspaceSlug: string) => ({
-  queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspaceSlug),
-  queryFn: (api: typeof import("@/lib/hono-client").apiClient) =>
-    api.workspaces[":workspaceSlug"].team.$get({
-      param: { workspaceSlug },
-    }),
-});
 
 export const prefetchWorkspaceMembers = (
   queryClient: QueryClient,
   workspaceSlug: string,
 ) => {
   queryClient.prefetchQuery(
-    convertHonoQueryOptions(workspaceMembersQueryOpts(workspaceSlug)),
+    orpc.workspaces.team.list.queryOptions({
+      input: { workspaceSlug },
+    }),
   );
 };
 
 export const useWorkspaceMembers = () => {
   const { workspace } = useWorkspace();
 
-  return useHonoQuery<WorkspaceTeamResponse>({
-    ...workspaceMembersQueryOpts(workspace.slug),
-    errorMessage: "Failed to load workspace members",
-    refetchOnMount: true,
-  });
+  return useQuery(
+    orpc.workspaces.team.list.queryOptions({
+      input: {
+        workspaceSlug: workspace.slug,
+      },
+    }),
+  );
 };
 
-type WorkspaceRoleValue = (typeof WORKSPACE_ROLE)[keyof typeof WORKSPACE_ROLE];
-
-export type InviteWorkspaceMemberVariables = {
-  email: string;
-  role: WorkspaceRoleValue;
-};
+export type InviteWorkspaceMemberVariables = Omit<
+  TeamRouterInputs["invite"],
+  "workspaceSlug" | "workspaceId"
+>;
 
 export const useInviteWorkspaceMember = () => {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
 
-  return useHonoMutation<
-    WorkspaceTeamInviteResponse,
-    InviteWorkspaceMemberVariables
-  >({
-    mutationFn: (api, variables) =>
-      api.workspaces[":workspaceSlug"].team.$post({
-        param: { workspaceSlug: workspace.slug },
-        json: variables,
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
-      });
-    },
-  });
+  return useMutation(
+    orpc.workspaces.team.invite.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
+        });
+      },
+      mutationFn: async (input) => {
+        return orpc.workspaces.team.invite.call({
+          workspaceSlug: workspace.slug,
+          email: input.email,
+          role: input.role,
+        });
+      },
+    }),
+  );
 };
 
 export const useRevokeWorkspaceInvite = () => {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
 
-  return useHonoMutation<
-    WorkspaceTeamInviteRevokeResponse,
-    { inviteId: string }
-  >({
-    mutationFn: (api, variables) =>
-      api.workspaces[":workspaceSlug"].team.invites[":inviteId"].$delete({
-        param: {
+  return useMutation(
+    orpc.workspaces.team.revokeInvite.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
+        });
+      },
+      mutationFn: async (input: { inviteId: string }) => {
+        return orpc.workspaces.team.revokeInvite.call({
           workspaceSlug: workspace.slug,
-          inviteId: variables.inviteId,
-        },
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
-      });
-    },
-  });
+          inviteId: input.inviteId,
+        });
+      },
+    }),
+  );
 };
 
-export type UpdateMemberRoleVariables = {
-  memberId: string;
-  role: string;
-};
+export type UpdateMemberRoleVariables = Omit<
+  TeamRouterInputs["updateRole"],
+  "workspaceSlug" | "workspaceId"
+>;
 
 export const useUpdateMemberRole = () => {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
 
-  return useHonoMutation<
-    WorkspaceTeamMemberUpdateResponse,
-    UpdateMemberRoleVariables
-  >({
-    mutationFn: (api, variables) =>
-      api.workspaces[":workspaceSlug"].team.members[":memberId"].$patch({
-        param: {
+  return useMutation(
+    orpc.workspaces.team.updateRole.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
+        });
+      },
+      mutationFn: async (input) => {
+        return orpc.workspaces.team.updateRole.call({
           workspaceSlug: workspace.slug,
-          memberId: variables.memberId,
-        },
-        json: {
-          role: variables.role as WorkspaceRoleValue,
-        },
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
-      });
-    },
-  });
+          memberId: input.memberId,
+          role: input.role,
+        });
+      },
+    }),
+  );
 };
 
 export const useRemoveMember = () => {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
 
-  return useHonoMutation<
-    WorkspaceTeamMemberRemoveResponse,
-    { memberId: string }
-  >({
-    mutationFn: (api, variables) =>
-      api.workspaces[":workspaceSlug"].team.members[":memberId"].$delete({
-        param: {
+  return useMutation(
+    orpc.workspaces.team.remove.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
+        });
+      },
+      mutationFn: async (input: { memberId: string }) => {
+        return orpc.workspaces.team.remove.call({
           workspaceSlug: workspace.slug,
-          memberId: variables.memberId,
-        },
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
-      });
-    },
-  });
+          memberId: input.memberId,
+        });
+      },
+    }),
+  );
 };
 
 export type UpdateWorkspacePayload = Omit<

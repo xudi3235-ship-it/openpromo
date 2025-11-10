@@ -7,6 +7,7 @@ import { UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useWorkspacePermissions } from "@/hooks/useWorkspacePermissions";
 import {
   useInviteWorkspaceMember,
@@ -51,6 +52,7 @@ export function TeamManagement() {
   const revokeInviteMutation = useRevokeWorkspaceInvite();
   const updateRoleMutation = useUpdateMemberRole();
   const removeMemberMutation = useRemoveMember();
+  const { workspace } = useWorkspace();
 
   const resetDialogState = () => {
     setIsDialogOpen(false);
@@ -67,6 +69,7 @@ export function TeamManagement() {
       {
         email: formState.email,
         role: formState.role,
+        workspaceSlug: workspace.slug,
       },
       {
         onSuccess: (result: WorkspaceTeamInviteResponse) => {
@@ -118,6 +121,7 @@ export function TeamManagement() {
 
   const handleUpdateRole = (memberId: string, newRole: string) => {
     updateRoleMutation.mutate(
+      // @ts-expect-error
       { memberId, role: newRole },
       {
         onSuccess: () => {
@@ -140,7 +144,7 @@ export function TeamManagement() {
     if (!memberToRemove) return;
 
     removeMemberMutation.mutate(
-      { memberId: memberToRemove.id },
+      { memberId: memberToRemove.id, workspaceSlug: workspace.slug },
       {
         onSuccess: () => {
           toast.success("Member removed", {
@@ -155,7 +159,7 @@ export function TeamManagement() {
 
   const handleRevokeInvite = (invite: WorkspaceInviteSummary) => {
     revokeInviteMutation.mutate(
-      { inviteId: invite.id },
+      { inviteId: invite.id, workspaceSlug: workspace.slug },
       {
         onSuccess: () => {
           toast.success("Invitation removed", {

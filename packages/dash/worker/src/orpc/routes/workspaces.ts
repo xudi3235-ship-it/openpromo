@@ -21,6 +21,7 @@ import {
   WorkspaceIdentifierSchema,
   workspaceRoleMappers,
 } from "../shared/workspace-helpers";
+import { teamRouter } from "./workspaces/team";
 
 // ============================================================================
 // Input Schemas
@@ -311,6 +312,7 @@ export const workspacesRouter = orpcBuilder.router({
   create: createWorkspaceHandler,
   update: updateWorkspace,
   delete: deleteWorkspace,
+  team: teamRouter,
 });
 
 export type WorkspacesRouterInputs = InferRouterInputs<typeof workspacesRouter>;
