@@ -97,12 +97,10 @@ export function StyleListPage() {
     <Page gap="lg" className="h-full">
       <PageHeader align="start" className="flex-col gap-3 text-left">
         <Stack gap="xs">
-          <h1 className="text-xl font-bold tracking-tight">
-            Creative Style Marketplace
-          </h1>
+          <h1 className="text-xl font-bold tracking-tight">Style References</h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Explore curated visual systems and drop 1–3 reference images into
-            the composer dock below to spin up a new style instantly.
+            Select a style reference to create stunning product visuals for your
+            posts
           </p>
         </Stack>
       </PageHeader>

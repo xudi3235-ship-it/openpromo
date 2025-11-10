@@ -73,7 +73,7 @@ export const useSidebarData = (): SidebarData => {
           icon: Package,
         },
         {
-          title: "Styles",
+          title: "Style References",
           url: "/workspaces/$workspaceSlug/styles",
           icon: Palette,
         },
