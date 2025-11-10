@@ -10,6 +10,7 @@ import type { UseMutationResult } from "@tanstack/react-query";
 import { FileText, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ImageGrid } from "@/components/common/ImageGrid";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
 import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import {
@@ -87,16 +88,16 @@ export function GeneratedImagesGallery({
     return Math.max(1, Math.min(batchCount, 4));
   }, [batchCount, generateMutation.isPending]);
 
-  const gridColsClass = useMemo(() => {
+  const gridColsConfig = useMemo(() => {
     switch (gridCols) {
       case 2:
-        return "grid-cols-2";
+        return { sm: 2, md: 2, lg: 2, xl: 2 };
       case 4:
-        return "grid-cols-4";
+        return { sm: 2, md: 3, lg: 4, xl: 4 };
       case 6:
-        return "grid-cols-6";
+        return { sm: 3, md: 4, lg: 5, xl: 6 };
       default:
-        return "grid-cols-2";
+        return { sm: 2, md: 2, lg: 2, xl: 2 };
     }
   }, [gridCols]);
 
@@ -334,12 +335,12 @@ export function GeneratedImagesGallery({
         <ScrollArea className="h-full">
           <div className="p-4 pt-2 space-y-4">
             {isPending ? (
-              <div className={cn("grid gap-3", gridColsClass)}>
+              <ImageGrid tight cols={gridColsConfig}>
                 {Array.from({ length: 8 }).map((_, index) => (
                   <div
                     // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders do not need stable keys
                     key={`loading-skeleton-${index}`}
-                    className="border rounded-lg overflow-hidden"
+                    className="border border-gray-200 dark:border-gray-800 overflow-hidden"
                   >
                     <Skeleton className="aspect-square w-full" />
                     <div className="p-2.5 space-y-2">
@@ -348,9 +349,9 @@ export function GeneratedImagesGallery({
                     </div>
                   </div>
                 ))}
-              </div>
+              </ImageGrid>
             ) : (
-              <div className={cn("grid gap-3", gridColsClass)}>
+              <ImageGrid tight cols={gridColsConfig}>
                 {/* Loading skeletons when generating */}
                 {generateMutation.isPending &&
                   Array.from({ length: loadingSkeletonCount }).map(
@@ -358,7 +359,7 @@ export function GeneratedImagesGallery({
                       <div
                         // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders do not need stable keys
                         key={`skeleton-${index}`}
-                        className="border rounded-lg overflow-hidden"
+                        className="border border-gray-200 dark:border-gray-800 overflow-hidden"
                       >
                         <Skeleton className="aspect-square w-full" />
                         <div className="p-2.5 space-y-2">
@@ -389,7 +390,7 @@ export function GeneratedImagesGallery({
                     />
                   ))
                 )}
-              </div>
+              </ImageGrid>
             )}
           </div>
         </ScrollArea>
@@ -447,7 +448,7 @@ function GenerationCard({
   return (
     <div
       className={cn(
-        "border rounded-lg overflow-hidden hover:border-foreground/50 transition-colors group relative",
+        "border overflow-hidden hover:border-foreground/50 transition-colors group relative border-gray-200 dark:border-gray-800",
         isAddedToPost && "ring-2 ring-primary/50 border-primary/50",
         isClickable && "cursor-pointer hover:shadow-md",
       )}
