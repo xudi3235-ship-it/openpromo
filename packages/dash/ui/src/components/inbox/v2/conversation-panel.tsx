@@ -8,7 +8,6 @@ import { InboxCommentPanelV2 } from "./comment-panel";
 import { InboxDMPanelV2 } from "./dm-panel";
 
 interface InboxConversationPanelProps {
-  workspaceSlug: string | undefined;
   conversationId: string | undefined;
   conversation: InboxConversationSummary | null;
   isLoading: boolean;
@@ -20,7 +19,6 @@ interface InboxConversationPanelProps {
 }
 
 export function InboxConversationPanelV2({
-  workspaceSlug,
   conversationId,
   conversation,
   isLoading,
@@ -31,7 +29,7 @@ export function InboxConversationPanelV2({
   isFetchingNextPage,
 }: InboxConversationPanelProps) {
   const threads = useInboxStore((state) => state.threads);
-  const { mutate: markAsReadMutate } = useMarkConversationRead(workspaceSlug);
+  const { mutate: markAsReadMutate } = useMarkConversationRead();
   const markedAsReadRef = useRef<Set<string>>(new Set());
 
   const activeThread = conversationId ? threads[conversationId] : undefined;
@@ -61,7 +59,6 @@ export function InboxConversationPanelV2({
           <InboxConversationHeader conversation={conversation} />
           {conversation.channel === "dm" ? (
             <InboxDMPanelV2
-              workspaceSlug={workspaceSlug}
               conversation={conversation}
               messages={activeMessages}
               isLoading={showLoading}
@@ -72,7 +69,6 @@ export function InboxConversationPanelV2({
             />
           ) : (
             <InboxCommentPanelV2
-              workspaceSlug={workspaceSlug}
               conversation={conversation}
               messages={activeMessages}
               isLoading={showLoading}

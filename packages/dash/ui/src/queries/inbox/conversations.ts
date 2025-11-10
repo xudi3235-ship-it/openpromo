@@ -1,16 +1,16 @@
 import type { AllPlatforms } from "@shared";
-import { InboxConversationSummarySchema } from "@shared/inbox";
 import type { InfiniteData, QueryClient } from "@tanstack/react-query";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import type { InboxConversationsList } from "@worker/routes/api/workspaces/inbox";
-import { useMemo } from "react";
 import {
-  apiClient,
-  honoApiCall,
-  type UseHonoQueryOptions,
-  useHonoMutation,
-  useHonoQuery,
-} from "@/lib/hono-client";
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import type { InboxConversationsList } from "@worker/inbox/types";
+import type { InboxRouterOutputs } from "@worker/orpc/routes/inbox";
+import { useMemo } from "react";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { orpc } from "@/lib/orpc-client";
 
 export type InboxConversationsParams = {
   page: number;
@@ -27,59 +27,50 @@ export type InboxConversationsFilters = Omit<
   "page" | "pageSize"
 >;
 
-type InboxConversationsQueryOptions = {
-  onError?: (error: unknown) => void;
-};
+type ListConversationsOutput = InboxRouterOutputs["listConversations"];
 
-function getConversationsQueryOpts(
-  workspaceSlug: string | undefined,
+const getListOptions = (
+  workspaceSlug: string,
   params: InboxConversationsParams,
-  options: InboxConversationsQueryOptions,
-): UseHonoQueryOptions<InboxConversationsList> {
-  const { unread, ...restParams } = params;
-  return {
-    enabled: Boolean(workspaceSlug),
-    queryKey: ["inbox", "conversations", workspaceSlug, params],
-    queryFn: (api: typeof apiClient) =>
-      api.workspaces[":workspaceSlug"].inbox.conversations.$get({
-        param: { workspaceSlug: String(workspaceSlug) },
-        query: {
-          ...restParams,
-          page: params.page.toString(),
-          pageSize: params.pageSize.toString(),
-          ...(unread !== undefined && { unread: unread.toString() }),
-        },
-      }),
-    onError: options.onError,
-  } as unknown as UseHonoQueryOptions<InboxConversationsList>;
-}
+) =>
+  orpc.inbox.listConversations.queryOptions({
+    input: {
+      workspaceSlug,
+      ...params,
+    },
+  });
 
-export function useInboxConversationsQuery(
-  workspaceSlug: string | undefined,
-  params: InboxConversationsParams,
-  options: InboxConversationsQueryOptions = {},
-) {
-  const { data, ...rest } = useHonoQuery<InboxConversationsList>(
-    getConversationsQueryOpts(workspaceSlug, params, options),
-  );
-  // FIXME: this is kinda a bigger problem, hono does not use superjson
-  // and as a result it just deserializes dates as strings, making it hard for us
-  // to reuse the zod types in client side.
-  // this is not gonna scale, we have so many endpoints that have this problems
-  const parsedData = useMemo(() => {
-    if (!data) return undefined;
-    return {
-      ...data,
-      items: data.items.map((item) =>
-        InboxConversationSummarySchema.parse({
-          ...item,
-          lastMessageAt: new Date(item.lastMessageAt),
-        }),
-      ),
-    } satisfies InboxConversationsList;
-  }, [data]);
+const getListInfiniteOptions = (
+  workspaceSlug: string,
+  filters: InboxConversationsFilters,
+  pageSize: number,
+) =>
+  orpc.inbox.listConversations.infiniteOptions({
+    input: (pageParam) => ({
+      workspaceSlug,
+      page: pageParam,
+      pageSize,
+      ...filters,
+    }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const currentPage = lastPage.page;
+      const totalPages = Math.ceil(lastPage.total / lastPage.pageSize);
+      return currentPage < totalPages ? currentPage + 1 : undefined;
+    },
+  });
 
-  return { data: parsedData, ...rest };
+const getUnreadCountOptions = (workspaceSlug: string) =>
+  orpc.inbox.getUnreadCount.queryOptions({
+    input: { workspaceSlug },
+  });
+
+export function useInboxConversationsQuery(params: InboxConversationsParams) {
+  const { workspace } = useWorkspace();
+  return useQuery({
+    ...getListOptions(workspace.slug, params),
+    enabled: Boolean(workspace.slug),
+  });
 }
 
 export async function prefetchInboxConversations(
@@ -87,233 +78,136 @@ export async function prefetchInboxConversations(
   workspaceSlug: string,
   params: InboxConversationsParams = { page: 1, pageSize: 25 },
 ) {
-  const queryOpts = getConversationsQueryOpts(workspaceSlug, params, {});
-  const { unread, ...restParams } = params;
-  // prefetch, no await
-  queryClient.prefetchQuery({
-    ...queryOpts,
-    queryFn: async () => {
-      const response = await apiClient.workspaces[
-        ":workspaceSlug"
-      ].inbox.conversations.$get({
-        param: { workspaceSlug },
-        query: {
-          ...restParams,
-          page: params.page.toString(),
-          pageSize: params.pageSize.toString(),
-          ...(unread !== undefined && { unread: unread.toString() }),
-        },
-      });
-      const payload = await response.json();
-      return {
-        ...payload,
-        items: payload.items.map((item) =>
-          InboxConversationSummarySchema.parse({
-            ...item,
-            lastMessageAt: new Date(item.lastMessageAt),
-          }),
-        ),
-      } satisfies InboxConversationsList;
-    },
-  });
+  await queryClient.prefetchQuery(getListOptions(workspaceSlug, params));
 }
 
 export function useInboxConversationsInfiniteQuery(
-  workspaceSlug: string | undefined,
   filters: InboxConversationsFilters,
   pageSize = 25,
 ) {
-  const { unread, ...restFilters } = filters;
+  const { workspace } = useWorkspace();
   const query = useInfiniteQuery({
-    queryKey: ["inbox", "conversations", workspaceSlug, filters, pageSize],
-    queryFn: async ({ pageParam = 1 }) => {
-      const res = await honoApiCall(
-        (api) =>
-          api.workspaces[":workspaceSlug"].inbox.conversations.$get({
-            param: { workspaceSlug: String(workspaceSlug) },
-            query: {
-              ...restFilters,
-              page: pageParam.toString(),
-              pageSize: pageSize.toString(),
-              ...(unread !== undefined && { unread: unread.toString() }),
-            },
-          }),
-        { disableErrorToast: false },
-      );
-
-      if (!res.success) {
-        throw new Error(res.error.message);
-      }
-
-      // Parse dates
-      return {
-        ...res.data,
-        items: res.data.items.map((item) =>
-          InboxConversationSummarySchema.parse({
-            ...item,
-            lastMessageAt: new Date(item.lastMessageAt),
-          }),
-        ),
-      } satisfies InboxConversationsList;
-    },
-    getNextPageParam: (lastPage) => {
-      const currentPage = lastPage.page;
-      const totalPages = Math.ceil(lastPage.total / lastPage.pageSize);
-      return currentPage < totalPages ? currentPage + 1 : undefined;
-    },
-    initialPageParam: 1,
-    enabled: Boolean(workspaceSlug),
+    ...getListInfiniteOptions(workspace.slug, filters, pageSize),
+    enabled: Boolean(workspace.slug),
   });
 
-  const allConversations = useMemo(() => {
+  const conversations = useMemo(() => {
     if (!query.data) return [];
     return query.data.pages.flatMap((page) => page.items);
   }, [query.data]);
 
+  const totalCount = query.data?.pages[0]?.total ?? 0;
+
   return {
     ...query,
-    conversations: allConversations,
-    totalCount: query.data?.pages[0]?.total ?? 0,
+    conversations,
+    totalCount,
   };
 }
 
-export function useMarkConversationRead(workspaceSlug: string | undefined) {
-  const queryClient = useQueryClient();
+function updateConversationCaches(
+  queryClient: ReturnType<typeof useQueryClient>,
+  workspaceSlug: string,
+  conversationId: string,
+  updater: (
+    conversation: ListConversationsOutput["items"][number],
+  ) => ListConversationsOutput["items"][number],
+) {
+  const conversationsKey = orpc.inbox.listConversations.key({
+    input: { workspaceSlug },
+  });
 
-  return useHonoMutation({
-    mutationFn: (api, conversationId: string) =>
-      api.workspaces[":workspaceSlug"].inbox.conversations[":id"][
-        "mark-read"
-      ].$post({
-        param: {
-          workspaceSlug: String(workspaceSlug),
-          id: conversationId,
-        },
-      }),
-    // Fail silently - mark-as-read is not critical UX
-    // Backend failures (OAuth, permissions, etc) shouldn't break the UI
+  queryClient.setQueriesData<InfiniteData<InboxConversationsList>>(
+    {
+      queryKey: conversationsKey,
+    },
+    (oldData) => {
+      if (!oldData?.pages || !Array.isArray(oldData.pages)) {
+        return oldData;
+      }
+
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page) => {
+          if (!page?.items || !Array.isArray(page.items)) {
+            return page;
+          }
+
+          return {
+            ...page,
+            items: page.items.map((item) =>
+              item.id === conversationId ? updater(item) : item,
+            ),
+          } satisfies InboxConversationsList;
+        }),
+      };
+    },
+  );
+}
+
+export function useMarkConversationRead() {
+  const queryClient = useQueryClient();
+  const { workspace } = useWorkspace();
+
+  return useMutation({
+    mutationFn: async (conversationId: string) => {
+      if (!workspace.slug) throw new Error("Missing workspace slug");
+      return orpc.inbox.markConversationRead.call({
+        workspaceSlug: workspace.slug,
+        conversationId,
+      });
+    },
     retry: false,
     onError: () => {
-      // Silently fail - the conversation will remain unread in the UI
-      // which is acceptable for non-critical operations like read receipts
+      // Silent failure - UI remains unchanged
     },
     onSuccess: (data, conversationId) => {
-      // Type-safe update for infinite queries
-      queryClient.setQueriesData<InfiniteData<InboxConversationsList>>(
-        {
-          queryKey: ["inbox", "conversations", workspaceSlug],
-          exact: false,
-        },
-        (oldData) => {
-          // Guard: ensure oldData exists and has the expected structure
-          if (!oldData?.pages || !Array.isArray(oldData.pages)) {
-            return oldData;
-          }
-
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => {
-              // Guard: ensure page exists and has items array
-              if (!page?.items || !Array.isArray(page.items)) {
-                return page;
-              }
-
-              return {
-                ...page,
-                items: page.items.map((item) => {
-                  // Guard: ensure item exists and has id
-                  if (!item?.id || item.id !== conversationId) {
-                    return item;
-                  }
-
-                  // Safely update the matched conversation
-                  return {
-                    ...item,
-                    isUnread: data.isUnread ?? item.isUnread,
-                    lastReadAt: data.lastReadAt
-                      ? new Date(data.lastReadAt)
-                      : null,
-                  };
-                }),
-              };
-            }),
-          };
-        },
+      updateConversationCaches(
+        queryClient,
+        workspace.slug,
+        conversationId,
+        (item) => ({
+          ...item,
+          isUnread: data.isUnread ?? item.isUnread,
+          lastReadAt: data.lastReadAt ?? item.lastReadAt ?? null,
+        }),
       );
     },
   });
 }
 
-export function useMarkConversationUnread(workspaceSlug: string | undefined) {
+export function useMarkConversationUnread() {
   const queryClient = useQueryClient();
+  const { workspace } = useWorkspace();
 
-  return useHonoMutation({
-    mutationFn: (api, conversationId: string) =>
-      api.workspaces[":workspaceSlug"].inbox.conversations[":id"][
-        "mark-unread"
-      ].$post({
-        param: {
-          workspaceSlug: String(workspaceSlug),
-          id: conversationId,
-        },
-      }),
+  return useMutation({
+    mutationFn: async (conversationId: string) => {
+      if (!workspace.slug) throw new Error("Missing workspace slug");
+      return orpc.inbox.markConversationUnread.call({
+        workspaceSlug: workspace.slug,
+        conversationId,
+      });
+    },
     onSuccess: (data, conversationId) => {
-      // Type-safe update for infinite queries
-      queryClient.setQueriesData<InfiniteData<InboxConversationsList>>(
-        {
-          queryKey: ["inbox", "conversations", workspaceSlug],
-          exact: false,
-        },
-        (oldData) => {
-          // Guard: ensure oldData exists and has the expected structure
-          if (!oldData?.pages || !Array.isArray(oldData.pages)) {
-            return oldData;
-          }
-
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => {
-              // Guard: ensure page exists and has items array
-              if (!page?.items || !Array.isArray(page.items)) {
-                return page;
-              }
-
-              return {
-                ...page,
-                items: page.items.map((item) => {
-                  // Guard: ensure item exists and has id
-                  if (!item?.id || item.id !== conversationId) {
-                    return item;
-                  }
-
-                  // Safely update the matched conversation
-                  return {
-                    ...item,
-                    isUnread: data.isUnread ?? item.isUnread,
-                    lastReadAt: data.lastReadAt
-                      ? new Date(data.lastReadAt)
-                      : null,
-                  };
-                }),
-              };
-            }),
-          };
-        },
+      updateConversationCaches(
+        queryClient,
+        workspace.slug,
+        conversationId,
+        (item) => ({
+          ...item,
+          isUnread: data.isUnread ?? item.isUnread,
+          lastReadAt: data.lastReadAt ?? item.lastReadAt ?? null,
+        }),
       );
     },
   });
 }
 
-// ===== Unread Count Queries =====
-
-export function useInboxUnreadCount(workspaceSlug: string | undefined) {
-  return useHonoQuery<{ unreadCount: number }>({
-    enabled: Boolean(workspaceSlug),
-    queryKey: ["inbox", "unread-count", workspaceSlug],
-    queryFn: (api: typeof apiClient) =>
-      api.workspaces[":workspaceSlug"].inbox["unread-count"].$get({
-        param: { workspaceSlug: String(workspaceSlug) },
-      }),
+export function useInboxUnreadCount() {
+  const { workspace } = useWorkspace();
+  return useQuery({
+    ...getUnreadCountOptions(workspace.slug),
+    enabled: Boolean(workspace.slug),
   });
 }
 
@@ -321,17 +215,5 @@ export async function prefetchInboxUnreadCount(
   queryClient: QueryClient,
   workspaceSlug: string,
 ) {
-  // Prefetch without await - non-blocking
-  queryClient.prefetchQuery({
-    queryKey: ["inbox", "unread-count", workspaceSlug],
-    queryFn: async () => {
-      const response = await apiClient.workspaces[":workspaceSlug"].inbox[
-        "unread-count"
-      ].$get({
-        param: { workspaceSlug },
-      });
-      const data = await response.json();
-      return data as { unreadCount: number };
-    },
-  });
+  await queryClient.prefetchQuery(getUnreadCountOptions(workspaceSlug));
 }

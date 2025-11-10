@@ -1,10 +1,9 @@
 import type { ApiEnv } from "@core/helpers/api-env";
-import type {
-  InboxConversationSummarySchema,
-  InboxMessageSchema,
-} from "@shared/inbox";
 import { Hono } from "hono";
-import type * as z from "zod";
+import type {
+  InboxConversationsList,
+  InboxMessagesList,
+} from "../../../../inbox/types";
 import { withWorkspaceRole } from "../../../../middleware/with-workspace-role";
 import { inboxDeleteConversationRoute } from "./routes/inbox-delete-conversation";
 import { inboxGetConversationRoute } from "./routes/inbox-get-conversation";
@@ -25,16 +24,4 @@ export const inboxRoute = new Hono<ApiEnv>()
   .route("/conversations", inboxDeleteConversationRoute)
   .route("/conversations", inboxPostMessageRoute);
 
-export type InboxConversationsList = {
-  items: z.infer<typeof InboxConversationSummarySchema>[];
-  page: number;
-  pageSize: number;
-  total: number;
-};
-
-export type InboxMessagesList = {
-  items: z.infer<typeof InboxMessageSchema>[];
-  page: number;
-  pageSize: number;
-  total: number;
-};
+export type { InboxConversationsList, InboxMessagesList };

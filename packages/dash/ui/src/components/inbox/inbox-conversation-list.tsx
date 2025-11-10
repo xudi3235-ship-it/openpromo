@@ -158,13 +158,11 @@ function ConversationListItem({
   showQuickReply: boolean;
   onToggleQuickReply: (show: boolean) => void;
 }) {
-  const { text, setText, sendQuickReply, isSubmitting } = useQuickReply(
-    workspaceSlug,
-    conversation,
-  );
-  const markConversationRead = useMarkConversationRead(workspaceSlug);
-  const markConversationUnread = useMarkConversationUnread(workspaceSlug);
-  const deleteConversation = useDeleteConversationOrpc(workspaceSlug);
+  const { text, setText, sendQuickReply, isSubmitting } =
+    useQuickReply(conversation);
+  const markConversationRead = useMarkConversationRead();
+  const markConversationUnread = useMarkConversationUnread();
+  const deleteConversation = useDeleteConversationOrpc();
   const upsertConversation = useInboxStore((state) => state.upsertConversation);
   const removeConversation = useInboxStore((state) => state.removeConversation);
   const selectConversation = useInboxStore((state) => state.selectConversation);
@@ -188,7 +186,7 @@ function ConversationListItem({
   };
 
   const handleToggleUnread = async () => {
-    if (!workspaceSlug || unreadActionPending) return;
+    if (unreadActionPending) return;
 
     try {
       const mutation = conversation.isUnread
@@ -225,7 +223,6 @@ function ConversationListItem({
     try {
       await deleteConversation.mutateAsync({
         conversationId: conversation.id,
-        workspaceSlug,
       });
       removeConversation(conversation.id);
       onToggleQuickReply(false);

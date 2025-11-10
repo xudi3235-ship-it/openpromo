@@ -21,14 +21,15 @@ export function WorkspaceInboxUnread({
   url = "/workspaces/$workspaceSlug/inbox",
   icon: Icon,
 }: WorkspaceInboxUnreadProps) {
-  const { data, isLoading } = useInboxUnreadCount(workspaceSlug);
+  const { data, isPending } = useInboxUnreadCount();
+  const isLoading = isPending;
   const unreadCount = data?.unreadCount ?? 0;
 
   const triggerElement = renderTrigger ? (
     renderTrigger({ unreadCount, isLoading })
   ) : (
     <SidebarMenuButton asChild>
-      <Link to={url}>
+      <Link to={url} params={{ workspaceSlug }}>
         {Icon && <Icon />}
         <span>{title}</span>
         {!isLoading && unreadCount > 0 && (

@@ -1,20 +1,21 @@
 import type { UseMutationOptions } from "@tanstack/react-query";
-import type { InferRequestType, InferResponseType } from "hono/client";
-import { type apiClient, useHonoMutation } from "@/lib/hono-client";
+import { useMutation } from "@tanstack/react-query";
+import type {
+  InboxRouterInputs,
+  InboxRouterOutputs,
+} from "@worker/orpc/routes/inbox";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { orpc } from "@/lib/orpc-client";
 
-type SendMessageRoute =
-  (typeof apiClient)["workspaces"][":workspaceSlug"]["inbox"]["conversations"][":conversationId"]["messages"]["$post"];
-
-type SendMessageResponse = InferResponseType<SendMessageRoute>;
-type SendMessageRequest = InferRequestType<SendMessageRoute>;
-export type SendMessageVariables = SendMessageRequest["json"];
+type SendMessageInput = InboxRouterInputs["sendMessage"];
+type SendMessageOutput = InboxRouterOutputs["sendMessage"];
+export type SendMessageVariables = SendMessageInput["body"];
 
 export function useSendInboxMessageMutation<TContext = unknown>(
-  workspaceSlug: string | undefined,
   conversationId: string | undefined,
   options?: Omit<
     UseMutationOptions<
-      SendMessageResponse,
+      SendMessageOutput,
       Error,
       SendMessageVariables,
       TContext
@@ -22,21 +23,19 @@ export function useSendInboxMessageMutation<TContext = unknown>(
     "mutationFn" | "mutationKey"
   >,
 ) {
-  return useHonoMutation<SendMessageResponse, SendMessageVariables, TContext>({
-    mutationKey: ["inbox", "send", workspaceSlug, conversationId],
-    mutationFn: (api: typeof apiClient, body) => {
-      if (!workspaceSlug || !conversationId) {
+  const { workspace } = useWorkspace();
+
+  return useMutation<SendMessageOutput, Error, SendMessageVariables, TContext>({
+    mutationKey: ["inbox", "send", workspace.slug, conversationId],
+    mutationFn: async (body) => {
+      if (!workspace.slug || !conversationId) {
         throw new Error("Missing workspace or conversation context");
       }
 
-      return api.workspaces[":workspaceSlug"].inbox.conversations[
-        ":conversationId"
-      ].messages.$post({
-        param: {
-          workspaceSlug: String(workspaceSlug),
-          conversationId: String(conversationId),
-        },
-        json: body satisfies SendMessageVariables,
+      return orpc.inbox.sendMessage.call({
+        workspaceSlug: workspace.slug,
+        conversationId,
+        body,
       });
     },
     ...options,

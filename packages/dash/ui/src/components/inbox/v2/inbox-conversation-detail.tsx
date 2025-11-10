@@ -8,7 +8,7 @@ import { InboxConversationPanelV2 } from "./conversation-panel";
 import { ConversationSplitLayout } from "./conversation-split-layout";
 
 export function InboxConversationDetailV2() {
-  const { workspaceSlug, conversationId } = Route.useParams();
+  const { conversationId } = Route.useParams();
   const hasInitializedMessagesRef = useRef<Record<string, boolean>>({});
 
   const syncMessagesFromQuery = useInboxStore(
@@ -20,16 +20,9 @@ export function InboxConversationDetailV2() {
     if (!conversationId) return null;
     return state.byId[conversationId] ?? null;
   });
-  const conversationQuery = useInboxConversationQuery(
-    workspaceSlug,
-    conversationId,
-  );
+  const conversationQuery = useInboxConversationQuery(conversationId);
 
-  const messagesQuery = useInboxMessagesInfiniteQuery(
-    workspaceSlug,
-    conversationId,
-    50,
-  );
+  const messagesQuery = useInboxMessagesInfiniteQuery(conversationId, 50);
 
   const allMessages =
     messagesQuery.data?.pages.flatMap((page) => page.items) ?? [];
@@ -77,22 +70,18 @@ export function InboxConversationDetailV2() {
     syncMessagesFromQuery,
   ]);
 
-  const messagesInitialLoading =
-    messagesQuery.isFetching && !messagesQuery.data;
+  const messagesInitialLoading = messagesQuery.isPending;
   const messagesFetching = messagesQuery.isFetching;
   const activeConversation = conversationQuery.data ?? conversationFromStore;
 
   const conversationLoading =
-    Boolean(conversationId) &&
-    conversationQuery.isFetching &&
-    !activeConversation;
+    conversationQuery.isPending && Boolean(conversationId);
   const hasConversationSelection = Boolean(conversationId);
 
   return (
     <ConversationSplitLayout
       conversationPanel={
         <InboxConversationPanelV2
-          workspaceSlug={workspaceSlug}
           conversationId={conversationId}
           conversation={activeConversation}
           isLoading={messagesInitialLoading}

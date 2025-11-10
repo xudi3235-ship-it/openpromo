@@ -7,7 +7,6 @@ import { InboxMessageInput } from "../inbox-message-input";
 import { InboxMessageThread } from "../inbox-message-thread";
 
 interface InboxDMPanelV2Props {
-  workspaceSlug: string | undefined;
   conversation: InboxConversationSummary;
   messages: InboxMessage[];
   isLoading: boolean;
@@ -18,7 +17,6 @@ interface InboxDMPanelV2Props {
 }
 
 export function InboxDMPanelV2({
-  workspaceSlug,
   conversation,
   messages,
   isLoading,
@@ -81,10 +79,7 @@ export function InboxDMPanelV2({
           onReply={handleReply}
         />
       </div>
-      <InboxMessageInput
-        workspaceSlug={workspaceSlug}
-        conversation={conversation}
-      />
+      <InboxMessageInput conversation={conversation} />
     </div>
   );
 }

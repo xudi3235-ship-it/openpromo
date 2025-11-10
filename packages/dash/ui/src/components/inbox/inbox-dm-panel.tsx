@@ -12,7 +12,6 @@ interface InboxDMPanelProps {
 }
 
 export function InboxDMPanel({
-  workspaceSlug,
   conversation,
   messages,
   isLoading,
@@ -40,10 +39,7 @@ export function InboxDMPanel({
         <ScrollBar orientation="vertical" />
       </ScrollArea>
       <div className="flex-shrink-0 border-t border-border/60 px-6 py-4">
-        <InboxMessageInput
-          workspaceSlug={workspaceSlug}
-          conversation={conversation}
-        />
+        <InboxMessageInput conversation={conversation} />
       </div>
     </div>
   );

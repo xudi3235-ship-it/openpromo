@@ -4,7 +4,7 @@ import type {
   InboxMessage,
 } from "@shared/inbox";
 import { useQueryClient } from "@tanstack/react-query";
-import type { InboxMessagesList } from "@worker/routes/api/workspaces/inbox";
+import type { InboxMessagesList } from "@worker/inbox/types";
 import { Image as ImageIcon, Loader2, Smile, X } from "lucide-react";
 import {
   type FormEvent,
@@ -14,6 +14,8 @@ import {
   useState,
 } from "react";
 import { useAttachmentComposer } from "@/hooks/inbox/useAttachmentComposer";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { orpc } from "@/lib/orpc-client";
 import {
   type SendMessageVariables,
   useSendInboxMessageMutation,
@@ -21,19 +23,12 @@ import {
 import { useInboxStore } from "@/stores/inbox-store";
 import { MessageComposer, type MessageComposerStatus } from "./v2/composer";
 
-type InboxMessageInputProps = {
-  workspaceSlug: string | undefined;
-  conversation: InboxConversationSummary | null;
-};
-
-type MessagesQueryKey = ["inbox", "messages", string, string, number, number];
-
 type SendMessageMutationContext = {
   previousMessages?: InboxMessagesList;
   optimisticId: string;
   conversationId: string;
   workspaceSlug: string;
-  messagesKey: MessagesQueryKey;
+  messagesKey: ReturnType<typeof orpc.inbox.listMessages.queryKey>;
   text: string;
   replyToMessageId: string | null;
   attachments: InboxAttachment[];
@@ -75,10 +70,12 @@ function createOptimisticMessage(
 }
 
 export function InboxMessageInput({
-  workspaceSlug,
   conversation,
-}: InboxMessageInputProps) {
+}: {
+  conversation: InboxConversationSummary | null;
+}) {
   const queryClient = useQueryClient();
+  const { workspace } = useWorkspace();
   const [draft, setDraft] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const {
@@ -134,38 +131,23 @@ export function InboxMessageInput({
   }, [storedDraft]);
 
   const mutation = useSendInboxMessageMutation<SendMessageMutationContext>(
-    workspaceSlug,
     conversationId ?? undefined,
     {
       onMutate: async (variables) => {
-        if (!workspaceSlug || !conversationId || !conversation) {
+        if (!workspace.slug || !conversationId || !conversation) {
           return undefined;
         }
-
         setErrorMessage(null);
-
-        const baseQueryKey = [
-          "inbox",
-          "messages",
-          workspaceSlug,
-          conversationId,
-        ] as const;
-
-        await queryClient.cancelQueries({
-          queryKey: baseQueryKey,
-          exact: false,
+        const listMsgKey = orpc.inbox.listMessages.queryKey({
+          input: {
+            workspaceSlug: workspace.slug,
+            conversationId,
+          },
         });
+        await queryClient.cancelQueries({ queryKey: listMsgKey });
 
-        const messagesKey: MessagesQueryKey = [
-          "inbox",
-          "messages",
-          workspaceSlug,
-          conversationId,
-          DEFAULT_PAGE,
-          DEFAULT_PAGE_SIZE,
-        ];
         const previousMessages =
-          queryClient.getQueryData<InboxMessagesList>(messagesKey);
+          queryClient.getQueryData<InboxMessagesList>(listMsgKey);
 
         initializeThread(conversationId);
 
@@ -185,7 +167,7 @@ export function InboxMessageInput({
           items: [optimisticMessage],
         });
 
-        queryClient.setQueryData<InboxMessagesList>(messagesKey, (current) => {
+        queryClient.setQueryData<InboxMessagesList>(listMsgKey, (current) => {
           if (!current) {
             return {
               items: [optimisticMessage],
@@ -205,8 +187,8 @@ export function InboxMessageInput({
           previousMessages,
           optimisticId,
           conversationId,
-          workspaceSlug,
-          messagesKey,
+          workspaceSlug: workspace.slug,
+          messagesKey: listMsgKey,
           text: textValue,
           replyToMessageId: variables.replyToMessageId ?? null,
           attachments: attachmentsValue,
@@ -236,12 +218,7 @@ export function InboxMessageInput({
         setErrorMessage(error.message || "Unable to send message");
       },
       onSuccess: (_data, _variables, context) => {
-        // Don't invalidate - we handle updates via websocket events
-        // and optimistic updates. Invalidation causes race conditions
-        // where websocket updates are overwritten by refetch results.
         if (!context) return;
-
-        // Remove the optimistic message - the real one will come via websocket
         removeMessage({
           conversationId: context.conversationId,
           messageId: context.optimisticId,
@@ -250,7 +227,7 @@ export function InboxMessageInput({
     },
   );
 
-  const isReady = Boolean(workspaceSlug && conversation?.id);
+  const isReady = Boolean(conversation?.id);
   const trimmedDraft = draft.trim();
   const hasText = trimmedDraft.length > 0;
   const hasAttachments = composerHasAttachments;
@@ -294,6 +271,7 @@ export function InboxMessageInput({
         clearComposerDraft(conversationId);
         clearComposerReplyTarget(conversationId);
       }
+      setErrorMessage(null);
     },
     [
       clearComposerDraft,

@@ -1,20 +1,28 @@
 import type { InfiniteData } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { InboxConversationsList } from "@worker/routes/api/workspaces/inbox";
+import type { InboxConversationsList } from "@worker/inbox/types";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { orpc } from "@/lib/orpc-client";
 
-export function useDeleteConversationOrpc(workspaceSlug: string | undefined) {
+export function useDeleteConversationOrpc() {
   const queryClient = useQueryClient();
+  const { workspace } = useWorkspace();
 
   return useMutation(
     orpc.inbox.deleteConversation.mutationOptions({
       onSuccess: (_data, variables) => {
         const conversationId = variables.conversationId;
-        // Update the infinite query cache to remove the deleted conversation
+        if (!workspace.slug) {
+          return;
+        }
+
+        const conversationsKey = orpc.inbox.listConversations.key({
+          input: { workspaceSlug: workspace.slug },
+        });
+
         queryClient.setQueriesData<InfiniteData<InboxConversationsList>>(
           {
-            queryKey: ["inbox", "conversations", workspaceSlug],
-            exact: false,
+            queryKey: conversationsKey,
           },
           (oldData) => {
             if (!oldData?.pages || !Array.isArray(oldData.pages)) {
@@ -42,7 +50,7 @@ export function useDeleteConversationOrpc(workspaceSlug: string | undefined) {
                 ...page,
                 items: filtered,
                 total: Math.max(0, page.total - 1),
-              };
+              } satisfies InboxConversationsList;
             });
 
             if (removed === 0) {
@@ -52,7 +60,7 @@ export function useDeleteConversationOrpc(workspaceSlug: string | undefined) {
             return {
               ...oldData,
               pages,
-            };
+            } satisfies InfiniteData<InboxConversationsList>;
           },
         );
       },

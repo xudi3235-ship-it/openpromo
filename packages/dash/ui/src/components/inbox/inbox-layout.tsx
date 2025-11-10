@@ -46,14 +46,13 @@ export function InboxLayout() {
 
   // Fetch conversations using URL params (infinite query)
   const conversationsQuery = useInboxConversationsInfiniteQuery(
-    workspaceSlug,
     {
       ...(searchQuery?.trim() && { q: searchQuery.trim() }),
       platform: platform !== "all" ? platform : undefined,
       channel: channel !== "all" ? channel : undefined,
       ...(unread !== undefined && { unread }),
     },
-    25, // pageSize
+    25,
   );
 
   useEffect(() => {
@@ -127,8 +126,7 @@ export function InboxLayout() {
       });
   }, [conversationOrder, conversationMap, channel, platform, searchQuery]);
 
-  const conversationsInitialLoading =
-    conversationsQuery.isFetching && !conversationsQuery.data;
+  const conversationsInitialLoading = conversationsQuery.isPending;
   const conversationsFetching = conversationsQuery.isFetching;
 
   useWorkspaceEvents({

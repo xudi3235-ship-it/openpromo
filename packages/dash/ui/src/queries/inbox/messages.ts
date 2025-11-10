@@ -1,116 +1,75 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import type { InboxMessagesList } from "@worker/routes/api/workspaces/inbox";
-import { useMemo } from "react";
-import {
-  apiClient,
-  type UseHonoQueryOptions,
-  useHonoQuery,
-} from "@/lib/hono-client";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { orpc } from "@/lib/orpc-client";
 
 type InboxMessagesParams = {
   page: number;
   pageSize: number;
 };
 
-type InboxMessagesQueryOptions = {
-  onError?: (error: unknown) => void;
-};
-
-export function useInboxMessagesQuery(
-  workspaceSlug: string | undefined,
-  conversationId: string | undefined,
+const getMessagesOptions = (
+  workspaceSlug: string,
+  conversationId: string,
   params: InboxMessagesParams,
-  options: InboxMessagesQueryOptions = {},
-) {
-  const { onError } = options;
-  const { data, ...rest } = useHonoQuery<InboxMessagesList>({
-    enabled: Boolean(workspaceSlug && conversationId),
-    queryKey: [
-      "inbox",
-      "messages",
+) =>
+  orpc.inbox.listMessages.queryOptions({
+    input: {
       workspaceSlug,
       conversationId,
-      params.page,
-      params.pageSize,
-    ],
-    queryFn: (api: typeof apiClient) =>
-      api.workspaces[":workspaceSlug"].inbox.conversations[
-        ":conversationId"
-      ].messages.$get({
-        param: {
-          workspaceSlug: String(workspaceSlug),
-          conversationId: String(conversationId),
-        },
-        query: {
-          ...params,
-          page: params.page.toString(),
-          pageSize: params.pageSize.toString(),
-        },
-      }),
-    onError,
-  } as unknown as UseHonoQueryOptions<InboxMessagesList>);
-
-  const parsedData = useMemo(() => {
-    if (!data) return undefined;
-    return {
-      ...data,
-      items: data.items.map((item) => ({
-        ...item,
-        createdAt: new Date(item.createdAt),
-      })),
-    };
-  }, [data]);
-
-  return { data: parsedData, ...rest };
-}
-
-export function useInboxMessagesInfiniteQuery(
-  workspaceSlug: string | undefined,
-  conversationId: string | undefined,
-  pageSize = 50,
-  options: InboxMessagesQueryOptions = {},
-) {
-  const { onError } = options;
-
-  return useInfiniteQuery({
-    queryKey: ["inbox", "messages", workspaceSlug, conversationId, pageSize],
-    queryFn: async ({ pageParam }: { pageParam: number }) => {
-      if (!workspaceSlug || !conversationId) {
-        throw new Error("Missing required parameters");
-      }
-
-      const response = await apiClient.workspaces[
-        ":workspaceSlug"
-      ].inbox.conversations[":conversationId"].messages.$get({
-        param: { workspaceSlug, conversationId },
-        query: {
-          page: pageParam.toString(),
-          pageSize: pageSize.toString(),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch messages");
-      }
-
-      const data = (await response.json()) as InboxMessagesList;
-      return {
-        ...data,
-        items: data.items.map((item) => ({
-          ...item,
-          createdAt: new Date(item.createdAt),
-        })),
-      };
+      ...params,
     },
+  });
+
+const getMessagesInfiniteOptions = (
+  workspaceSlug: string,
+  conversationId: string,
+  pageSize: number,
+) =>
+  orpc.inbox.listMessages.infiniteOptions({
+    input: (pageParam) => ({
+      workspaceSlug,
+      conversationId,
+      page: pageParam,
+      pageSize,
+    }),
+    initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const currentPage = lastPage.page;
       const totalPages = Math.ceil(lastPage.total / lastPage.pageSize);
       return currentPage < totalPages ? currentPage + 1 : undefined;
     },
-    initialPageParam: 1,
-    enabled: Boolean(workspaceSlug && conversationId),
-    ...(onError && { onError }),
+  });
+
+export function useInboxMessagesQuery(
+  conversationId: string | undefined,
+  params: InboxMessagesParams,
+) {
+  const { workspace } = useWorkspace();
+  return useQuery({
+    ...getMessagesOptions(
+      workspace.slug,
+      // biome-ignore lint/style/noNonNullAssertion: enabled guards
+      conversationId!,
+      params,
+    ),
+    enabled: Boolean(conversationId),
+  });
+}
+
+export function useInboxMessagesInfiniteQuery(
+  conversationId: string | undefined,
+  pageSize = 50,
+) {
+  const { workspace } = useWorkspace();
+  return useInfiniteQuery({
+    ...getMessagesInfiniteOptions(
+      workspace.slug,
+      // biome-ignore lint/style/noNonNullAssertion: enabled guards
+      conversationId!,
+      pageSize,
+    ),
+    enabled: Boolean(conversationId),
   });
 }
 
@@ -120,26 +79,7 @@ export async function prefetchInboxMessages(
   conversationId: string,
   params: InboxMessagesParams,
 ) {
-  await queryClient.prefetchQuery({
-    queryKey: [
-      "inbox",
-      "messages",
-      workspaceSlug,
-      conversationId,
-      params.page,
-      params.pageSize,
-    ],
-    queryFn: async () => {
-      const response = await apiClient.workspaces[
-        ":workspaceSlug"
-      ].inbox.conversations[":conversationId"].messages.$get({
-        param: { workspaceSlug, conversationId },
-        query: {
-          page: params.page.toString(),
-          pageSize: params.pageSize.toString(),
-        },
-      });
-      return response.json();
-    },
-  });
+  await queryClient.prefetchQuery(
+    getMessagesOptions(workspaceSlug, conversationId, params),
+  );
 }

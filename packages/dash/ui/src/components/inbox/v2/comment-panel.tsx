@@ -12,7 +12,6 @@ import { useInboxStore } from "@/stores/inbox-store";
 import { InboxMessageInput } from "../inbox-message-input";
 
 interface InboxCommentPanelV2Props {
-  workspaceSlug: string | undefined;
   conversation: InboxConversationSummary;
   messages: InboxMessage[];
   isLoading: boolean;
@@ -23,7 +22,6 @@ interface InboxCommentPanelV2Props {
 }
 
 export function InboxCommentPanelV2({
-  workspaceSlug,
   conversation,
   messages,
   isLoading,
@@ -161,10 +159,7 @@ export function InboxCommentPanelV2({
         )}
       </div>
 
-      <InboxMessageInput
-        workspaceSlug={workspaceSlug}
-        conversation={conversation}
-      />
+      <InboxMessageInput conversation={conversation} />
     </div>
   );
 }

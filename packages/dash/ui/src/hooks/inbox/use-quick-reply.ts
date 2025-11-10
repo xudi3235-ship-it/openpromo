@@ -1,15 +1,17 @@
 import type { InboxConversationSummary, InboxMessage } from "@shared/inbox";
 import { useQueryClient } from "@tanstack/react-query";
-import type { InboxMessagesList } from "@worker/routes/api/workspaces/inbox";
+import type { InboxMessagesList } from "@worker/inbox/types";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { orpc } from "@/lib/orpc-client";
 import {
   type SendMessageVariables,
   useSendInboxMessageMutation,
 } from "@/queries/inbox/send-message";
 import { useInboxStore } from "@/stores/inbox-store";
+import { useWorkspace } from "../useWorkspace";
 
-type MessagesQueryKey = ["inbox", "messages", string, string, number, number];
+type MessagesQueryKey = ReturnType<typeof orpc.inbox.listMessages.queryKey>;
 
 type QuickReplyMutationContext = {
   previousMessages?: InboxMessagesList;
@@ -52,11 +54,9 @@ function createOptimisticMessage(
  * Hook for quick reply functionality in inbox conversations
  * Handles optimistic updates and message sending without opening the full conversation
  */
-export function useQuickReply(
-  workspaceSlug: string | undefined,
-  conversation: InboxConversationSummary | null,
-) {
+export function useQuickReply(conversation: InboxConversationSummary | null) {
   const queryClient = useQueryClient();
+  const { workspace } = useWorkspace();
   const [text, setText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -80,34 +80,32 @@ export function useQuickReply(
   }, []);
 
   const mutation = useSendInboxMessageMutation<QuickReplyMutationContext>(
-    workspaceSlug,
     conversationId ?? undefined,
     {
       onMutate: async (variables) => {
-        if (!workspaceSlug || !conversationId || !conversation) {
+        if (!workspace.slug || !conversationId || !conversation) {
           return undefined;
         }
 
-        const baseQueryKey = [
-          "inbox",
-          "messages",
-          workspaceSlug,
-          conversationId,
-        ] as const;
+        const baseQueryKey = orpc.inbox.listMessages.key({
+          input: {
+            workspaceSlug: workspace.slug,
+            conversationId,
+          },
+        });
 
         await queryClient.cancelQueries({
           queryKey: baseQueryKey,
-          exact: false,
         });
 
-        const messagesKey: MessagesQueryKey = [
-          "inbox",
-          "messages",
-          workspaceSlug,
-          conversationId,
-          DEFAULT_PAGE,
-          DEFAULT_PAGE_SIZE,
-        ];
+        const messagesKey: MessagesQueryKey = orpc.inbox.listMessages.queryKey({
+          input: {
+            workspaceSlug: workspace.slug,
+            conversationId,
+            page: DEFAULT_PAGE,
+            pageSize: DEFAULT_PAGE_SIZE,
+          },
+        });
         const previousMessages =
           queryClient.getQueryData<InboxMessagesList>(messagesKey);
 
@@ -145,7 +143,7 @@ export function useQuickReply(
           previousMessages,
           optimisticId,
           conversationId,
-          workspaceSlug,
+          workspaceSlug: workspace.slug,
           messagesKey,
           text: variables.text ?? "",
         } satisfies QuickReplyMutationContext;
@@ -189,7 +187,7 @@ export function useQuickReply(
 
   const sendQuickReply = useCallback(
     async (message: string) => {
-      if (!message.trim() || !conversationId || !workspaceSlug) {
+      if (!message.trim() || !conversationId || !workspace.slug) {
         return;
       }
 
@@ -200,7 +198,7 @@ export function useQuickReply(
       };
       mutation.mutate(payload);
     },
-    [conversationId, workspaceSlug, mutation],
+    [conversationId, mutation, workspace.slug],
   );
 
   const cancel = useCallback(() => {
