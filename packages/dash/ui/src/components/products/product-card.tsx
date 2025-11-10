@@ -91,7 +91,6 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   const createdDate = formatDate(product.createdAt);
-  const attachmentCount = product.attachments.length;
 
   const handleCardClick = () => {
     if (deleteDialogOpen) return;
@@ -149,7 +148,8 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.source?.toLowerCase() ?? "unknown"}
           </span>
 
-          {currentState && (
+          {/* Only show state badge if not ready */}
+          {currentState && product.state !== "ready" && (
             <span
               className={cn(
                 "rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur-sm",
@@ -162,12 +162,6 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <div className="absolute right-3 top-3 z-20 flex items-center gap-2">
-          {attachmentCount > 1 && (
-            <span className="rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-medium text-white shadow-sm backdrop-blur">
-              {attachmentCount} files
-            </span>
-          )}
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
