@@ -3,6 +3,7 @@ import { cn } from "@openpromo/ui/lib/utils";
 import type { ReactNode } from "react";
 import { Fragment, useEffect, useMemo } from "react";
 import { useIntersectionObserver } from "usehooks-ts";
+import { ImageGrid } from "@/components/common/ImageGrid";
 // icons removed to keep empty states minimal and on-brand
 import {
   type StyleResponse,
@@ -135,16 +136,11 @@ export function StylesInfiniteGrid({
 
   return (
     <div className={cn("flex flex-col", className)}>
-      <div
-        className={cn(
-          "grid grid-cols-2 gap-0 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-          gridClassName,
-        )}
-      >
+      <ImageGrid tight className={gridClassName}>
         {styles.map((style) => (
           <Fragment key={style.id}>{renderStyleItem(style)}</Fragment>
         ))}
-      </div>
+      </ImageGrid>
 
       <div ref={observerRef} className="h-4" />
 
@@ -190,17 +186,12 @@ export function StylesLoadingState({
   gridClassName,
 }: StylesLoadingStateProps) {
   return (
-    <div
-      className={cn(
-        "grid grid-cols-2 gap-0 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-        gridClassName,
-      )}
-    >
+    <ImageGrid tight className={gridClassName}>
       {Array.from({ length: skeletonCount }).map((_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: Loading skeleton placeholder
         <CardSkeleton key={index} />
       ))}
-    </div>
+    </ImageGrid>
   );
 }
 

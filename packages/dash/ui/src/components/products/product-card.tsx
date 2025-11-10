@@ -11,6 +11,7 @@ import { cn } from "@openpromo/ui/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { ExternalLink, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import * as React from "react";
+import { ImageGridCard } from "@/components/common/ImageGrid";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useProductModalStore } from "@/stores/product-modal-store";
 import { DeleteProductDialog } from "./delete-product-dialog";
@@ -112,13 +113,13 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <div
-        role="button"
-        tabIndex={0}
+    <>
+      <ImageGridCard
         onClick={handleCardClick}
         onKeyDown={handleKeyDown}
-        className="group relative aspect-[3/4] cursor-pointer overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+        bordered
+        aspectRatio="square"
+        className="bg-muted"
       >
         {imageUrl ? (
           <img
@@ -256,13 +257,13 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
         </div>
-      </div>
+      </ImageGridCard>
 
       <DeleteProductDialog
         product={product}
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
       />
-    </div>
+    </>
   );
 }

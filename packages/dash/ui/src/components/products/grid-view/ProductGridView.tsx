@@ -1,5 +1,6 @@
 import type { ProductSelectType } from "@core/schemas/product.sql";
 import { ListState } from "@openpromo/ui/components/list-state";
+import { ImageGrid } from "@/components/common/ImageGrid";
 import { useProductListQuery } from "@/queries/product";
 import { AddProductCard } from "../add-product-card";
 import { ProductCard } from "../product-card";
@@ -60,7 +61,11 @@ export function ProductGridView({
 
   return (
     <div className="flex flex-1">
-      <div className="grid w-full grid-cols-2 gap-3 content-start sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <ImageGrid
+        tight
+        cols={{ sm: 2, md: 3, lg: 4, xl: 5 }}
+        className="w-full content-start"
+      >
         {/* Add Product Card */}
         <AddProductCard onAddProduct={onAddProduct} />
 
@@ -72,7 +77,7 @@ export function ProductGridView({
             product={product as unknown as ProductSelectType}
           />
         ))}
-      </div>
+      </ImageGrid>
     </div>
   );
 }

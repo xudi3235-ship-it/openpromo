@@ -1,6 +1,7 @@
 import { cn } from "@openpromo/ui/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import { CheckCircle2 } from "lucide-react";
+import { ImageGridCard } from "@/components/common/ImageGrid";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import type { StyleResponse } from "@/queries/styles-queries";
 import { StyleCardActions } from "./style-card-actions";
@@ -37,12 +38,12 @@ export function StyleCard({ style }: StyleCardProps) {
   };
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <ImageGridCard
       onClick={handleOpen}
       onKeyDown={handleKeyDown}
-      className="group relative aspect-square cursor-pointer overflow-hidden border border-gray-200 dark:border-gray-800 bg-muted/30 transition-all duration-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      bordered
+      aspectRatio="square"
+      className="bg-muted/30"
     >
       {/* Main Image */}
       {primaryImage ? (
@@ -124,6 +125,6 @@ export function StyleCard({ style }: StyleCardProps) {
           </div>
         </div>
       </div>
-    </div>
+    </ImageGridCard>
   );
 }
