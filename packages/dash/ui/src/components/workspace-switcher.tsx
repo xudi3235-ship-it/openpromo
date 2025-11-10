@@ -30,8 +30,9 @@ import { useRouter } from "@tanstack/react-router";
 import { ChevronsUpDown, Plus, Star } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { type User, useHonoMutation, type Workspace } from "@/lib/hono-client";
+import { type User, useHonoMutation } from "@/lib/hono-client";
 import { QUERY_KEYS } from "@/lib/query";
+import type { Workspace } from "@/queries/workspace";
 import { Route as WorkspacesRoute } from "@/routes/_authenticated/workspaces/route";
 import { NewWorkspaceModal } from "./new-workspace-modal";
 

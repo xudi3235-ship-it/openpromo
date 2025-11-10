@@ -7,10 +7,10 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@openpromo/ui/components/sidebar";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouteContext } from "@tanstack/react-router";
 import { useLayout } from "@/context/layout-provider";
-import { useHonoQuery } from "@/lib/hono-client";
-import { QUERY_KEYS } from "@/lib/query";
+import { orpc } from "@/lib/orpc-client";
 import { useSidebarData } from "./layout/data/sidebar-data";
 import { NavGroup } from "./layout/nav-group";
 import { NavUser } from "./layout/nav-user";
@@ -20,11 +20,11 @@ import { WorkspaceSwitcher } from "./workspace-switcher";
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { collapsible, variant } = useLayout();
   const { state } = useSidebar();
-  const { data: workspaces, isPending } = useHonoQuery({
-    queryKey: QUERY_KEYS.WORKSPACES,
-    queryFn: (api) => api.workspaces.$get(),
-    staleTime: 1000 * 60, // 1 minute - workspaces list doesn't change frequently
-  });
+  const { data: workspaces, isPending } = useQuery(
+    orpc.workspaces.list.queryOptions({
+      input: {},
+    }),
+  );
   const { workspaceSlug: currentWorkspaceSlug } =
     useParams({
       from: "/_authenticated/workspaces/$workspaceSlug",
@@ -53,7 +53,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <div className="flex-1">
                 <WorkspaceSwitcher
                   currentWorkspaceSlug={currentWorkspaceSlug}
-                  workspaces={workspaces}
+                  workspaces={workspaces.workspaces}
                   defaultWorkspaceSlug={user.defaultWorkspaceSlug}
                 />
               </div>

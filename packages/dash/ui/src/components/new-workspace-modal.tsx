@@ -17,11 +17,11 @@ import {
   FormMessage,
 } from "@openpromo/ui/components/form";
 import { Input } from "@openpromo/ui/components/input";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouteContext } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { useHonoMutation, type Workspace } from "@/lib/hono-client";
+import { orpc } from "@/lib/orpc-client";
 import { QUERY_KEYS } from "@/lib/query";
 
 const schema = z.object({
@@ -46,20 +46,26 @@ export function NewWorkspaceModal({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const createWorkspace = useHonoMutation<Workspace, FormValues>({
-    mutationKey: ["create-workspace"],
-    mutationFn: (api, values) =>
-      api.workspaces.$post({ json: { name: values.name } }),
-    onSuccess: async (ws) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WORKSPACES });
-      form.reset();
-      onOpenChange(false);
-      navigate({
-        to: "/workspaces/$workspaceSlug",
-        params: { workspaceSlug: ws.slug },
-      });
-    },
-  });
+  const createWorkspace = useMutation(
+    orpc.workspaces.create.mutationOptions({
+      onSuccess: async (data) => {
+        await queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.WORKSPACES,
+        });
+        form.reset();
+        onOpenChange(false);
+        navigate({
+          to: "/workspaces/$workspaceSlug",
+          params: { workspaceSlug: data.workspace.slug },
+        });
+      },
+      mutationFn: async (input) => {
+        return orpc.workspaces.create.call({
+          name: input.name,
+        });
+      },
+    }),
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),

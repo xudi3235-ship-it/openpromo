@@ -1,6 +1,6 @@
 import type { WORKSPACE_ROLE } from "@shared/workspace/auth";
 import type { QueryClient } from "@tanstack/react-query";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import type {
   WorkspaceTeamInviteResponse,
@@ -10,13 +10,20 @@ import type {
   WorkspaceTeamResponse,
 } from "@worker/routes/api/workspaces/team";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import type { Workspace } from "@/lib/hono-client";
 import {
   convertHonoQueryOptions,
   useHonoMutation,
   useHonoQuery,
 } from "@/lib/hono-client";
+import { orpc } from "@/lib/orpc-client";
 import { QUERY_KEYS } from "@/lib/query";
+import type {
+  WorkspacesRouterInputs,
+  WorkspacesRouterOutputs,
+} from "../../../worker/src/orpc/routes/workspaces";
+
+// Export Workspace type for use across the app
+export type Workspace = WorkspacesRouterOutputs["list"]["workspaces"][number];
 
 const workspaceMembersQueryOpts = (workspaceSlug: string) => ({
   queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspaceSlug),
@@ -150,30 +157,30 @@ export const useRemoveMember = () => {
   });
 };
 
-export type UpdateWorkspacePayload = {
-  name?: string;
-  profilePicture?: {
-    key: string;
-    url: string;
-  } | null;
-};
+export type UpdateWorkspacePayload = Omit<
+  WorkspacesRouterInputs["update"],
+  "workspaceSlug"
+>;
 
 export const useUpdateWorkspace = () => {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  return useHonoMutation<Workspace, UpdateWorkspacePayload>({
-    mutationFn: (api, variables) =>
-      api.workspaces[":workspaceSlug"].$patch({
-        param: { workspaceSlug: workspace.slug },
-        json: variables,
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.WORKSPACES,
-      });
-      await router.invalidate();
-    },
-  });
+  return useMutation(
+    orpc.workspaces.update.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.WORKSPACES,
+        });
+        await router.invalidate();
+      },
+      mutationFn: async (input) => {
+        return orpc.workspaces.update.call({
+          workspaceSlug: workspace.slug,
+          ...input,
+        });
+      },
+    }),
+  );
 };

@@ -12,6 +12,7 @@ export {
 } from "./routes/planet";
 export { productsRouter } from "./routes/products";
 export { listStyles, stylesRouter } from "./routes/styles";
+export { workspacesRouter } from "./routes/workspaces";
 
 import { imageGenRouter } from "./routes/image-gen";
 import { inboxRouter } from "./routes/inbox";
@@ -19,6 +20,7 @@ import { insightsRouter } from "./routes/insights";
 import { planetRouter } from "./routes/planet";
 import { productsRouter } from "./routes/products";
 import { stylesRouter } from "./routes/styles";
+import { workspacesRouter } from "./routes/workspaces";
 
 export const orpcRouter = {
   planet: planetRouter,
@@ -27,4 +29,5 @@ export const orpcRouter = {
   imageGen: imageGenRouter,
   styles: stylesRouter,
   products: productsRouter,
+  workspaces: workspacesRouter,
 };

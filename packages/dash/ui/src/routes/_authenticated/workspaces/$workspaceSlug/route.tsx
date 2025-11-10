@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
   notFound,
@@ -12,7 +12,7 @@ import { WorkspaceLayout } from "@/components/layout/workspace-layout";
 import { WorkspaceLayoutLoading } from "@/components/loading/workspace-loading";
 import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
-import { honoApiCall, useHonoMutation } from "@/lib/hono-client";
+import { orpc } from "@/lib/orpc-client";
 import { QUERY_KEYS } from "@/lib/query";
 import {
   prefetchConnectedAccounts,
@@ -30,20 +30,21 @@ export const Route = createFileRoute(
     prefetchConnectedAccounts(context.queryClient, params.workspaceSlug);
     prefetchStylesInfiniteQuery(context.queryClient, params.workspaceSlug);
     prefetchInboxUnreadCount(context.queryClient, params.workspaceSlug);
-    const workspace = await honoApiCall((api) =>
-      api.workspaces[":workspaceSlug"].$get({
-        param: {
-          workspaceSlug: params.workspaceSlug,
-        },
-      }),
-    );
-    if (workspace.success) {
-      return { workspace: workspace.data };
+    try {
+      const result = await context.queryClient.fetchQuery(
+        orpc.workspaces.get.queryOptions({
+          input: {
+            workspaceSlug: params.workspaceSlug,
+          },
+        }),
+      );
+      return { workspace: result.workspace };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("not found")) {
+        throw notFound();
+      }
+      throw error;
     }
-    if (workspace.error.status === 404) {
-      throw notFound();
-    }
-    throw new Error(workspace.error.message);
   },
   staleTime: 1000 * 60, // 1 minute
   component: WorkspaceComponent,
@@ -61,19 +62,20 @@ function WorkspaceComponent() {
   const { accounts, isPending } = useConnectedAccounts();
   const { location } = useRouterState();
 
-  const { mutate: _ } = useHonoMutation({
-    mutationFn: (api) =>
-      api.workspaces[":workspaceSlug"].$delete({
-        param: {
+  const { mutate: _ } = useMutation(
+    orpc.workspaces.delete.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WORKSPACES });
+        toast.success(`Workspace ${workspace.name} deleted`);
+        navigate({ to: "/workspaces" });
+      },
+      mutationFn: async () => {
+        return orpc.workspaces.delete.call({
           workspaceSlug: workspace.slug,
-        },
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WORKSPACES });
-      toast.success(`Workspace ${workspace.name} deleted`);
-      navigate({ to: "/workspaces" });
-    },
-  });
+        });
+      },
+    }),
+  );
 
   const shouldShowAccountsBar = !DISABLED_ACCOUNTS_BAR_PATTERNS.some(
     (pattern) => pattern.test(location.pathname),
