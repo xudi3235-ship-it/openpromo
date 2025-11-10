@@ -5,3 +5,13 @@ export function useWorkspace() {
     from: "/_authenticated/workspaces/$workspaceSlug",
   });
 }
+
+export function useWorkspaceID() {
+  const { workspace } = useWorkspace();
+  return workspace.id;
+}
+
+export function useWorkspaceSlug() {
+  const { workspace } = useWorkspace();
+  return workspace.slug;
+}
