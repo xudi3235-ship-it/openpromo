@@ -30,9 +30,9 @@ export class WorkspacePusher extends Pusher {
   }
 
   init(workspaceSlug: string) {
-    console.log(
-      `Current sessions before init: ${this.userWebSocketManager.getTotalSessions()}`,
-    );
+    // console.log(
+    //   `Current sessions before init: ${this.userWebSocketManager.getTotalSessions()}`,
+    // );
     this._workspaceSlug = workspaceSlug;
   }
 
@@ -41,13 +41,13 @@ export class WorkspacePusher extends Pusher {
   }
 
   protected override async onWebSocketDisconnect(ws: WebSocket): Promise<void> {
-    console.log("Workspace Pusher: WebSocket disconnected");
+    // console.log("Workspace Pusher: WebSocket disconnected");
 
     // Find and remove the WebSocket from the manager
     const userId = this.userWebSocketManager.getUserIdFromWebSocket(ws);
     if (userId) {
       this.userWebSocketManager.removeWebSocket(userId, ws);
-      console.log(`Removed WebSocket for user ${userId}`);
+      // console.log(`Removed WebSocket for user ${userId}`);
     }
   }
 
@@ -60,7 +60,7 @@ export class WorkspacePusher extends Pusher {
       throw new Error("Missing workspace user header");
     }
 
-    console.log(`Adding WebSocket for user ${userId}`);
+    // console.log(`Adding WebSocket for user ${userId}`);
 
     this.userWebSocketManager.addWebSocket(userId, ws);
 
@@ -75,48 +75,44 @@ export class WorkspacePusher extends Pusher {
   }
 
   sendMessageToUser(userId: string, message: string) {
-    console.log(
-      `Looking for user ${userId} in workspace ${this.workspaceSlug}`,
-    );
-    console.log(
-      `Total users in manager: ${this.userWebSocketManager.getTotalUsers()}`,
-    );
-    console.log(
-      `Total sessions: ${this.userWebSocketManager.getTotalSessions()}`,
-    );
+    // console.log(
+    //   `Looking for user ${userId} in workspace ${this.workspaceSlug}`,
+    // );
+    // console.log(
+    //   `Total users in manager: ${this.userWebSocketManager.getTotalUsers()}`,
+    // );
+    // console.log(
+    //   `Total sessions: ${this.userWebSocketManager.getTotalSessions()}`,
+    // );
 
     const webSockets = this.userWebSocketManager.getWebSocketsByUserId(userId);
-    let sentCount = 0;
     for (const ws of webSockets) {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(message);
-        sentCount++;
       }
     }
-    console.log(`Sent message to ${sentCount} sessions:`, message);
+    // console.log(`Sent message to ${sentCount} sessions:`, message);
   }
 
   sendMessageToAllUsers(message: string) {
-    console.log(`Sending to all users in workspace ${this.workspaceSlug}`);
-    console.log(
-      `Total users in manager: ${this.userWebSocketManager.getTotalUsers()}`,
-    );
-    console.log(
-      `Total sessions: ${this.userWebSocketManager.getTotalSessions()}`,
-    );
+    // console.log(`Sending to all users in workspace ${this.workspaceSlug}`);
+    // console.log(
+    //   `Total users in manager: ${this.userWebSocketManager.getTotalUsers()}`,
+    // );
+    // console.log(
+    //   `Total sessions: ${this.userWebSocketManager.getTotalSessions()}`,
+    // );
 
     const webSockets = this.userWebSocketManager.getAllWebSockets();
-    let sentCount = 0;
     for (const ws of webSockets) {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(message);
-        sentCount++;
       }
     }
-    console.log(
-      `Sent message to ${sentCount} sessions from all users:`,
-      message,
-    );
+    // console.log(
+    //   `Sent message to ${sentCount} sessions from all users:`,
+    //   message,
+    // );
   }
 
   sendEvent(event: unknown) {
@@ -173,12 +169,12 @@ export class WorkspacePusher extends Pusher {
 
   protected override async onWebSocketMessage(ws: WebSocket, message: unknown) {
     const workspaceSlug = this.workspaceSlug;
-    console.log(
-      "Workspace Pusher: Message received for workspace",
-      workspaceSlug,
-      "- message:",
-      message,
-    );
+    // console.log(
+    //   "Workspace Pusher: Message received for workspace",
+    //   workspaceSlug,
+    //   "- message:",
+    //   message,
+    // );
 
     // Echo message back to sender (for now, can be extended for broadcasting)
     try {
@@ -225,13 +221,13 @@ class UserWebSocketManager {
     sessions.push(newSession);
     this.userIdToWebSocketsMap.set(userId, sessions);
 
-    console.log(
-      `Now have ${sessions.length} sessions for user ${userId} (limit: ${USER_SESSION_LIMIT})`,
-    );
-    console.log(
-      `Total users: ${this.getTotalUsers()}, Total sessions: ${this.getTotalSessions()}`,
-    );
-    console.log(`Session info:`, this.getSessionInfo());
+    // console.log(
+    //   `Now have ${sessions.length} sessions for user ${userId} (limit: ${USER_SESSION_LIMIT})`,
+    // );
+    // console.log(
+    //   `Total users: ${this.getTotalUsers()}, Total sessions: ${this.getTotalSessions()}`,
+    // );
+    // console.log(`Session info:`, this.getSessionInfo());
   }
 
   private evictSession(userId: string, session: WebSocketSession): void {
