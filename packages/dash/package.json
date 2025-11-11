@@ -51,6 +51,7 @@
     "posthog-js": "^1.282.0",
     "posthog-node": "^5.10.4",
     "react": "catalog:",
+    "agents": "catalog:",
     "react-day-picker": "^9.8.1",
     "react-dom": "catalog:",
     "react-dropzone": "^14.3.8",
