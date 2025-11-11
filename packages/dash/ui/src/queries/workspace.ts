@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { orpc } from "@/lib/orpc-client";
-import { QUERY_KEYS } from "@/lib/query";
 import type {
   WorkspacesRouterInputs,
   WorkspacesRouterOutputs,
@@ -49,7 +48,9 @@ export const useInviteWorkspaceMember = () => {
     orpc.workspaces.team.invite.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
+          queryKey: orpc.workspaces.team.list.queryKey({
+            input: { workspaceSlug: workspace.slug },
+          }),
         });
       },
       mutationFn: async (input) => {
@@ -71,7 +72,9 @@ export const useRevokeWorkspaceInvite = () => {
     orpc.workspaces.team.revokeInvite.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
+          queryKey: orpc.workspaces.team.list.queryKey({
+            input: { workspaceSlug: workspace.slug },
+          }),
         });
       },
       mutationFn: async (input: { inviteId: string }) => {
@@ -97,7 +100,9 @@ export const useUpdateMemberRole = () => {
     orpc.workspaces.team.updateRole.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
+          queryKey: orpc.workspaces.team.list.queryKey({
+            input: { workspaceSlug: workspace.slug },
+          }),
         });
       },
       mutationFn: async (input) => {
@@ -119,7 +124,9 @@ export const useRemoveMember = () => {
     orpc.workspaces.team.remove.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.WORKSPACE_MEMBERS(workspace.slug),
+          queryKey: orpc.workspaces.team.list.queryKey({
+            input: { workspaceSlug: workspace.slug },
+          }),
         });
       },
       mutationFn: async (input: { memberId: string }) => {
@@ -146,7 +153,9 @@ export const useUpdateWorkspace = () => {
     orpc.workspaces.update.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.WORKSPACES,
+          queryKey: orpc.workspaces.get.queryKey({
+            input: { workspaceSlug: workspace.slug },
+          }),
         });
         await router.invalidate();
       },

@@ -22,7 +22,6 @@ import { useNavigate, useRouteContext } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { orpc } from "@/lib/orpc-client";
-import { QUERY_KEYS } from "@/lib/query";
 
 const schema = z.object({
   name: z
@@ -50,7 +49,9 @@ export function NewWorkspaceModal({
     orpc.workspaces.create.mutationOptions({
       onSuccess: async (data) => {
         await queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.WORKSPACES,
+          queryKey: orpc.workspaces.list.queryKey({
+            input: {},
+          }),
         });
         form.reset();
         onOpenChange(false);

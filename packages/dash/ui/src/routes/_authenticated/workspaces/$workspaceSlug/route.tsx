@@ -13,7 +13,6 @@ import { WorkspaceLayoutLoading } from "@/components/loading/workspace-loading";
 import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
 import { orpc } from "@/lib/orpc-client";
-import { QUERY_KEYS } from "@/lib/query";
 import {
   prefetchConnectedAccounts,
   useConnectedAccounts,
@@ -65,7 +64,11 @@ function WorkspaceComponent() {
   const { mutate: _ } = useMutation(
     orpc.workspaces.delete.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WORKSPACES });
+        queryClient.invalidateQueries({
+          queryKey: orpc.workspaces.list.queryKey({
+            input: {},
+          }),
+        });
         toast.success(`Workspace ${workspace.name} deleted`);
         navigate({ to: "/workspaces" });
       },

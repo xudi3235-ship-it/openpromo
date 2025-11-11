@@ -30,8 +30,6 @@ export class WorkspacePusher extends Pusher {
   }
 
   init(workspaceSlug: string) {
-    console.log(`Initializing WorkspacePusher for workspace: ${workspaceSlug}`);
-    console.log(`Previous workspace: ${this._workspaceSlug}`);
     console.log(
       `Current sessions before init: ${this.userWebSocketManager.getTotalSessions()}`,
     );
