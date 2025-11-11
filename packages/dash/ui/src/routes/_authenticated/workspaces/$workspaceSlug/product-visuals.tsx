@@ -48,8 +48,8 @@ function ProductVisualsPage() {
         </p>
       </div>
 
-      <div className="flex-1 min-h-0 px-4 pb-6 lg:px-6">
-        <div className="h-full rounded-xl border bg-card p-4 lg:p-6">
+      <div className="flex-1 min-h-0 px-4">
+        <div className="h-full rounded-xl bg-card">
           <ImageGeneratorExperience
             products={products}
             styles={styles}
