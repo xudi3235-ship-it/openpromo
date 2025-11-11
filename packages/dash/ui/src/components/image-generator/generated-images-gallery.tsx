@@ -354,7 +354,6 @@ export function GeneratedImagesGallery({
 
                   {generations.length === 0 && !generateMutation.isPending ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-12 text-center text-sm text-muted-foreground gap-2">
-                      <span className="text-2xl">✨</span>
                       <span>No product images generated yet</span>
                     </div>
                   ) : (
