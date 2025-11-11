@@ -18,7 +18,6 @@ import * as z from "zod";
 import { useStorageUpload } from "@/hooks/useStorageUpload";
 import { toCreateInput, toUpdateInput } from "@/lib/product-form-helpers";
 import {
-  type ProductCreateInput,
   useProductCreateMutation,
   useProductUpdateMutation,
 } from "@/queries/product";
@@ -52,17 +51,20 @@ export function CreateProductModal() {
     activeTab,
     selectedFiles,
     existingAttachments,
+    uploadedAttachments,
     isUploading,
     closeModal,
     setActiveTab,
-    addFiles,
+    addFiles: addFilesToStore,
     removeFile,
     removeExistingAttachment,
+    addUploadedAttachment,
+    removeUploadedAttachment,
     setIsUploading,
     reset,
   } = useProductModalStore();
 
-  const { uploadFiles, clearUploads } = useStorageUpload();
+  const { uploadFile, clearUploads } = useStorageUpload();
 
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -85,6 +87,29 @@ export function CreateProductModal() {
       tags: "",
     },
   });
+
+  // Handle instant file upload when files are added
+  const handleFilesAdded = async (files: File[]) => {
+    addFilesToStore(files);
+    setIsUploading(true);
+
+    // Upload files immediately in the background
+    for (const file of files) {
+      try {
+        const uploaded = await uploadFile(file);
+        addUploadedAttachment({
+          id: uploaded.key,
+          type: uploaded.type,
+          publicUrl: uploaded.publicUrl,
+          s3Key: uploaded.key,
+        });
+      } catch (error) {
+        console.error("Failed to upload file:", error);
+      }
+    }
+
+    setIsUploading(false);
+  };
 
   // Watch form values to determine if details section should be shown
   const sourceUrl = form.watch("sourceUrl");
@@ -129,8 +154,6 @@ export function CreateProductModal() {
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     try {
-      setIsUploading(true);
-
       if (isEditMode && product) {
         // Edit mode: only update provided fields
         const updateData = toUpdateInput(product.id, {
@@ -141,21 +164,12 @@ export function CreateProductModal() {
           sourceUrl: activeTab === "url" ? values.sourceUrl : undefined,
         });
 
-        // Handle attachment uploads
-        if (activeTab === "upload" && selectedFiles.length > 0) {
-          toast.info("Uploading files...");
-          const uploadResults = await uploadFiles(selectedFiles);
-
-          const newAttachments = uploadResults.map((result, index) => ({
-            id: result.key,
-            type: selectedFiles[index].type.startsWith("image/")
-              ? ("photo" as const)
-              : ("video" as const),
-            publicUrl: result.publicUrl,
-            s3Key: result.key,
-          }));
-
-          const allAttachments = [...existingAttachments, ...newAttachments];
+        // Use already uploaded attachments + existing attachments
+        if (activeTab === "upload" && uploadedAttachments.length > 0) {
+          const allAttachments = [
+            ...existingAttachments,
+            ...uploadedAttachments,
+          ];
           updateData.attachments = allAttachments;
           updateData.primaryAttachmentId =
             allAttachments[0]?.id || product.primaryAttachmentId || undefined;
@@ -180,28 +194,14 @@ export function CreateProductModal() {
           });
           createProduct.mutate(createData);
         } else {
-          // Upload files if any
-          let attachments: ProductCreateInput["attachments"] = [];
-
-          if (selectedFiles.length > 0) {
-            toast.info("Uploading files...");
-            const uploadResults = await uploadFiles(selectedFiles);
-
-            attachments = uploadResults.map((result, index) => ({
-              id: result.key,
-              type: selectedFiles[index].type.startsWith("image/")
-                ? ("photo" as const)
-                : ("video" as const),
-              publicUrl: result.publicUrl,
-              s3Key: result.key,
-            }));
-          }
-
-          const allAttachments = [...existingAttachments, ...attachments];
+          // Use uploaded attachments (already uploaded in the background)
+          const allAttachments = [
+            ...existingAttachments,
+            ...uploadedAttachments,
+          ];
 
           if (allAttachments.length === 0) {
             toast.error("Please upload at least one image or video");
-            setIsUploading(false);
             return;
           }
 
@@ -220,8 +220,6 @@ export function CreateProductModal() {
     } catch (error) {
       toast.error("Failed to process product");
       console.error(error);
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -233,16 +231,17 @@ export function CreateProductModal() {
   };
 
   const isPending = createProduct.isPending || updateProduct.isPending;
-  const isProcessing = isPending || isUploading;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <LoadingOverlay
-          isVisible={isProcessing}
-          isUploading={isUploading}
-          isEditMode={isEditMode}
-        />
+        {isPending && (
+          <LoadingOverlay
+            isVisible={isPending}
+            isUploading={false}
+            isEditMode={isEditMode}
+          />
+        )}
 
         <DialogHeader>
           <DialogTitle>
@@ -278,10 +277,13 @@ export function CreateProductModal() {
                 <ProductUploadTab
                   existingAttachments={existingAttachments}
                   selectedFiles={selectedFiles}
+                  uploadedAttachments={uploadedAttachments}
                   isEditMode={isEditMode}
-                  onAddFiles={addFiles}
+                  isUploading={isUploading}
+                  onAddFiles={handleFilesAdded}
                   onRemoveExisting={removeExistingAttachment}
                   onRemoveFile={removeFile}
+                  onRemoveUploaded={removeUploadedAttachment}
                 />
 
                 <ProductUrlTab control={form.control} />
@@ -302,16 +304,14 @@ export function CreateProductModal() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isPending || isUploading}>
-                  {isUploading
-                    ? "Uploading..."
-                    : isPending
-                      ? isEditMode
-                        ? "Updating..."
-                        : "Adding..."
-                      : isEditMode
-                        ? "Update Product"
-                        : "Add Product"}
+                <Button type="submit" disabled={isPending}>
+                  {isPending
+                    ? isEditMode
+                      ? "Updating..."
+                      : "Creating..."
+                    : isEditMode
+                      ? "Update Product"
+                      : "Create Product"}
                 </Button>
               </DialogFooter>
             </form>

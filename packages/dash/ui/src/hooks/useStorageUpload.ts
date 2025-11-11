@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
 import { useWorkspace } from "./useWorkspace";
 
 export interface UploadProgress {
@@ -10,134 +11,154 @@ export interface UploadProgress {
   publicUrl?: string;
 }
 
+export interface UploadedFile {
+  key: string;
+  publicUrl: string;
+  type: "photo" | "video";
+  file: File;
+}
+
 export function useStorageUpload() {
   const { workspace } = useWorkspace();
   const [uploads, setUploads] = useState<Map<string, UploadProgress>>(
     new Map(),
   );
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
-  const uploadFile = async (
-    file: File,
-  ): Promise<{ key: string; publicUrl: string }> => {
-    const fileId = `${file.name}-${file.size}-${Date.now()}`;
+  const uploadFile = useCallback(
+    async (file: File): Promise<UploadedFile> => {
+      const fileId = `${file.name}-${file.size}-${Date.now()}`;
 
-    setUploads((prev) => {
-      const next = new Map(prev);
-      next.set(fileId, {
-        file,
-        progress: 0,
-        status: "pending",
-      });
-      return next;
-    });
-
-    try {
-      // Update status to uploading
       setUploads((prev) => {
         const next = new Map(prev);
-        const current = next.get(fileId);
-        if (current) {
-          next.set(fileId, { ...current, status: "uploading", progress: 0 });
-        }
+        next.set(fileId, {
+          file,
+          progress: 0,
+          status: "uploading",
+        });
         return next;
       });
 
-      // Upload file through backend using FormData
-      const formData = new FormData();
-      formData.append("file", file);
+      try {
+        // Upload file through backend using FormData
+        const formData = new FormData();
+        formData.append("file", file);
 
-      const xhr = new XMLHttpRequest();
+        const xhr = new XMLHttpRequest();
 
-      await new Promise<void>((resolve, reject) => {
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const progress = Math.round((e.loaded / e.total) * 100);
-            setUploads((prev) => {
-              const next = new Map(prev);
-              const current = next.get(fileId);
-              if (current) {
-                next.set(fileId, { ...current, progress });
-              }
-              return next;
+        await new Promise<void>((resolve, reject) => {
+          xhr.upload.addEventListener("progress", (e) => {
+            if (e.lengthComputable) {
+              const progress = Math.round((e.loaded / e.total) * 100);
+              setUploads((prev) => {
+                const next = new Map(prev);
+                const current = next.get(fileId);
+                if (current) {
+                  next.set(fileId, { ...current, progress });
+                }
+                return next;
+              });
+            }
+          });
+
+          xhr.addEventListener("load", () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve();
+            } else {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          });
+
+          xhr.addEventListener("error", () => {
+            reject(new Error("Upload failed"));
+          });
+
+          const uploadUrl = `/api/workspaces/${workspace.slug}/storage/upload`;
+          xhr.open("POST", uploadUrl);
+          xhr.withCredentials = true;
+          xhr.send(formData);
+        });
+
+        // Parse response
+        const responseData = JSON.parse(xhr.responseText);
+        const { key, publicUrl } = responseData;
+
+        const uploadedFile: UploadedFile = {
+          key,
+          publicUrl,
+          type: file.type.startsWith("video/") ? "video" : "photo",
+          file,
+        };
+
+        // Update status to success
+        setUploads((prev) => {
+          const next = new Map(prev);
+          const current = next.get(fileId);
+          if (current) {
+            next.set(fileId, {
+              ...current,
+              status: "success",
+              progress: 100,
+              key,
+              publicUrl,
             });
           }
+          return next;
         });
 
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
+        setUploadedFiles((prev) => [...prev, uploadedFile]);
+
+        return uploadedFile;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Upload failed";
+
+        setUploads((prev) => {
+          const next = new Map(prev);
+          const current = next.get(fileId);
+          if (current) {
+            next.set(fileId, {
+              ...current,
+              status: "error",
+              error: errorMessage,
+            });
           }
+          return next;
         });
 
-        xhr.addEventListener("error", () => {
-          reject(new Error("Upload failed"));
-        });
+        toast.error(`Failed to upload ${file.name}: ${errorMessage}`);
+        throw error;
+      }
+    },
+    [workspace.slug],
+  );
 
-        const uploadUrl = `/api/workspaces/${workspace.slug}/storage/upload`;
-        xhr.open("POST", uploadUrl);
-        xhr.withCredentials = true;
-        xhr.send(formData);
-      });
+  const uploadFiles = useCallback(
+    async (files: File[]): Promise<UploadedFile[]> => {
+      const uploadPromises = files.map((file) => uploadFile(file));
+      return Promise.all(uploadPromises);
+    },
+    [uploadFile],
+  );
 
-      // Parse response
-      const responseData = JSON.parse(xhr.responseText);
-      const { key, publicUrl } = responseData;
-
-      // Update status to success
-      setUploads((prev) => {
-        const next = new Map(prev);
-        const current = next.get(fileId);
-        if (current) {
-          next.set(fileId, {
-            ...current,
-            status: "success",
-            progress: 100,
-            key,
-            publicUrl,
-          });
-        }
-        return next;
-      });
-
-      return { key, publicUrl };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Upload failed";
-
-      setUploads((prev) => {
-        const next = new Map(prev);
-        const current = next.get(fileId);
-        if (current) {
-          next.set(fileId, {
-            ...current,
-            status: "error",
-            error: errorMessage,
-          });
-        }
-        return next;
-      });
-
-      throw error;
-    }
-  };
-
-  const uploadFiles = async (
-    files: File[],
-  ): Promise<Array<{ key: string; publicUrl: string }>> => {
-    const uploadPromises = files.map((file) => uploadFile(file));
-    return Promise.all(uploadPromises);
-  };
-
-  const clearUploads = () => {
+  const clearUploads = useCallback(() => {
     setUploads(new Map());
-  };
+    setUploadedFiles([]);
+  }, []);
+
+  const removeUploadedFile = useCallback((key: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.key !== key));
+  }, []);
 
   return {
     uploads: Array.from(uploads.values()),
+    uploadedFiles,
     uploadFile,
     uploadFiles,
     clearUploads,
+    removeUploadedFile,
+    isUploading: Array.from(uploads.values()).some(
+      (u) => u.status === "uploading" || u.status === "pending",
+    ),
   };
 }

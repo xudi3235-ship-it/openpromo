@@ -10,6 +10,13 @@ export type ProductFormData = {
   tags?: string; // Comma-separated string (will be converted to array)
 };
 
+export interface UploadedAttachment {
+  id: string;
+  type: "photo" | "video";
+  publicUrl: string;
+  s3Key: string;
+}
+
 interface ProductModalState {
   // Modal state
   open: boolean;
@@ -20,6 +27,7 @@ interface ProductModalState {
   activeTab: "upload" | "url";
   selectedFiles: File[];
   existingAttachments: ProductSelectType["attachments"];
+  uploadedAttachments: UploadedAttachment[]; // Files that have been uploaded to temp storage
   isUploading: boolean;
 
   // Prefilled attachments for creation
@@ -49,6 +57,8 @@ interface ProductModalState {
     attachments: ProductSelectType["attachments"],
   ) => void;
   removeExistingAttachment: (index: number) => void;
+  addUploadedAttachment: (attachment: UploadedAttachment) => void;
+  removeUploadedAttachment: (key: string) => void;
   setIsUploading: (uploading: boolean) => void;
   reset: () => void;
 }
@@ -60,6 +70,7 @@ const initialState = {
   activeTab: "upload" as const,
   selectedFiles: [],
   existingAttachments: [],
+  uploadedAttachments: [],
   isUploading: false,
   prefilledAttachments: null,
 };
@@ -75,6 +86,7 @@ export const useProductModalStore = create<ProductModalState>((set) => ({
       existingAttachments: product?.attachments || [],
       activeTab: product?.sourceUrl ? "url" : "upload",
       selectedFiles: [],
+      uploadedAttachments: [],
       prefilledAttachments: null,
     }),
 
@@ -87,6 +99,7 @@ export const useProductModalStore = create<ProductModalState>((set) => ({
         (prefilledAttachments as ProductSelectType["attachments"]) || [],
       activeTab: "upload",
       selectedFiles: [],
+      uploadedAttachments: [],
       prefilledAttachments: prefilledAttachments || null,
     }),
 
@@ -116,6 +129,18 @@ export const useProductModalStore = create<ProductModalState>((set) => ({
     set((state) => ({
       existingAttachments: state.existingAttachments.filter(
         (_, i) => i !== index,
+      ),
+    })),
+
+  addUploadedAttachment: (attachment) =>
+    set((state) => ({
+      uploadedAttachments: [...state.uploadedAttachments, attachment],
+    })),
+
+  removeUploadedAttachment: (key) =>
+    set((state) => ({
+      uploadedAttachments: state.uploadedAttachments.filter(
+        (a) => a.s3Key !== key,
       ),
     })),
 

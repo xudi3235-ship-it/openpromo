@@ -9,7 +9,6 @@ export function AddProductCard({ onAddProduct }: AddProductCardProps) {
   return (
     <ImageGridCard
       onClick={onAddProduct}
-      bordered
       aspectRatio="square"
       className="bg-muted/30 hover:bg-muted/50 transition-colors"
     >

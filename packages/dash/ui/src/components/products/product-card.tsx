@@ -116,7 +116,6 @@ export function ProductCard({ product }: ProductCardProps) {
       <ImageGridCard
         onClick={handleCardClick}
         onKeyDown={handleKeyDown}
-        bordered
         aspectRatio="square"
         className="bg-muted"
       >

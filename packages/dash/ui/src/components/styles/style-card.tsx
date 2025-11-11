@@ -41,7 +41,6 @@ export function StyleCard({ style }: StyleCardProps) {
     <ImageGridCard
       onClick={handleOpen}
       onKeyDown={handleKeyDown}
-      bordered
       aspectRatio="square"
       className="bg-muted/30"
     >
