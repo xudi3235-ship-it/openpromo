@@ -5,11 +5,18 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
 import { cn } from "@openpromo/ui/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
-import { ExternalLink, MoreHorizontal, Pencil, Trash } from "lucide-react";
+import {
+  ExternalLink,
+  MoreHorizontal,
+  Pencil,
+  Sparkles,
+  Trash,
+} from "lucide-react";
 import * as React from "react";
 import { ImageGridCard } from "@/components/common/ImageGrid";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -111,6 +118,19 @@ export function ProductCard({ product }: ProductCardProps) {
     }
   };
 
+  const handleCreateImage = (event: Event) => {
+    event.preventDefault();
+    navigate({
+      to: "/workspaces/$workspaceSlug/product-visuals",
+      params: {
+        workspaceSlug: workspace.slug,
+      },
+      search: {
+        productId: product.id,
+      },
+    });
+  };
+
   return (
     <>
       <ImageGridCard
@@ -177,6 +197,11 @@ export function ProductCard({ product }: ProductCardProps) {
               className="w-40"
               onClick={(event) => event.stopPropagation()}
             >
+              <DropdownMenuItem onSelect={handleCreateImage}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Create Image
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => openModal(product)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit

@@ -9,6 +9,7 @@ import { useImageGeneratorStore } from "@/stores/image-generator-store";
 
 type ProductVisualsSearch = {
   styleId?: string;
+  productId?: string;
 };
 
 export const Route = createFileRoute(
@@ -17,13 +18,14 @@ export const Route = createFileRoute(
   validateSearch: (search: Record<string, unknown>): ProductVisualsSearch => {
     return {
       styleId: (search.styleId as string) || undefined,
+      productId: (search.productId as string) || undefined,
     };
   },
   component: ProductVisualsPage,
 });
 
 function ProductVisualsPage() {
-  const { styleId } = Route.useSearch();
+  const { styleId, productId } = Route.useSearch();
   const [productSearch, setProductSearch] = useState("");
   const { data: productsData, isPending: isPendingProducts } =
     useProductListQuery({
@@ -50,6 +52,9 @@ function ProductVisualsPage() {
   const setSelectedStyleId = useImageGeneratorStore(
     (state) => state.setSelectedStyleId,
   );
+  const setSelectedProductId = useImageGeneratorStore(
+    (state) => state.setSelectedProductId,
+  );
 
   // Pre-select style from URL param
   useEffect(() => {
@@ -57,6 +62,13 @@ function ProductVisualsPage() {
       setSelectedStyleId(styleId);
     }
   }, [styleId, setSelectedStyleId]);
+
+  // Pre-select product from URL param
+  useEffect(() => {
+    if (productId) {
+      setSelectedProductId(productId);
+    }
+  }, [productId, setSelectedProductId]);
 
   return (
     <div className="flex h-full flex-col bg-background">

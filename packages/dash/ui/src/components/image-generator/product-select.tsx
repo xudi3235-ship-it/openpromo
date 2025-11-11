@@ -85,21 +85,26 @@ export function ProductSelect({
                 );
                 if (!product) return null;
                 const imageUrl = getProductImage(product);
+                const productName = product.name || product.id;
+                const displayName =
+                  productName.length > 40
+                    ? `${productName.substring(0, 40)}...`
+                    : productName;
                 return (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     {imageUrl ? (
                       <img
                         src={imageUrl}
-                        alt={product.name || product.id}
-                        className="w-5 h-5 object-cover rounded"
+                        alt={productName}
+                        className="w-5 h-5 object-cover rounded flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-5 h-5 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                      <div className="w-5 h-5 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
                         ?
                       </div>
                     )}
-                    <span className="text-sm truncate">
-                      {product.name || product.id}
+                    <span className="text-sm truncate" title={productName}>
+                      {displayName}
                     </span>
                   </div>
                 );
@@ -114,22 +119,27 @@ export function ProductSelect({
           ) : (
             products.map((product) => {
               const imageUrl = getProductImage(product);
+              const productName = product.name || product.id;
+              const displayName =
+                productName.length > 50
+                  ? `${productName.substring(0, 50)}...`
+                  : productName;
               return (
                 <SelectItem key={product.id} value={product.id}>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     {imageUrl ? (
                       <img
                         src={imageUrl}
-                        alt={product.name || product.id}
-                        className="w-6 h-6 object-cover rounded"
+                        alt={productName}
+                        className="w-6 h-6 object-cover rounded flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                      <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
                         ?
                       </div>
                     )}
-                    <span className="text-sm">
-                      {product.name || product.id}
+                    <span className="text-sm truncate" title={productName}>
+                      {displayName}
                     </span>
                   </div>
                 </SelectItem>
