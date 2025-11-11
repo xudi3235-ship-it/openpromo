@@ -1,7 +1,7 @@
 {
   "name": "openpromo",
   "version": "0.0.0",
-  "packageManager": "pnpm@10.20.0",
+  "packageManager": "pnpm@10.21.0",
   "scripts": {
     "check": "biome check --write --diagnostic-level=warn",
     "sync_secrets": "bash scripts/sync_secrets.sh",
