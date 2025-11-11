@@ -22,6 +22,7 @@ import type {
   TikTokPrivacyLevel,
 } from "@shared/content";
 import { TikTokPrivacyLevels } from "@shared/content";
+import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 
 export type ResolvedTikTokOptions = {
   disableComment: boolean;
@@ -79,6 +80,7 @@ export function TikTokBusinessDialog({
 }: TikTokBusinessDialogProps) {
   const safePhotoCount = Math.max(photoCount, 0);
   const coverDisplayValue = (options.photoCoverIndex ?? 0) + 1;
+  const tiktokMeta = getPlatformMeta("TIKTOK");
 
   const handleCoverIndexChange = (value: string) => {
     if (!value) {
@@ -108,7 +110,12 @@ export function TikTokBusinessDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>TikTok Business options</DialogTitle>
+          <div className="flex items-center gap-2">
+            <tiktokMeta.icon
+              className={`h-5 w-5 ${tiktokMeta.accentTextClass}`}
+            />
+            <DialogTitle>TikTok Business options</DialogTitle>
+          </div>
           <DialogDescription>
             Configure platform-specific settings for Business API publishing.
           </DialogDescription>

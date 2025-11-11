@@ -18,6 +18,7 @@ import {
 } from "@openpromo/ui/components/select";
 import { ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
+import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 import { CTA_OPTIONS, type CTAType } from "../../types/platform-features";
 
 interface CTADialogProps {
@@ -111,11 +112,18 @@ export function CTADialog({
   const selectedOption = CTA_OPTIONS.find((opt) => opt.value === type);
   const canSave = link.trim() && !linkError;
 
+  const facebookMeta = getPlatformMeta("FACEBOOK");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Call-to-Action Button</DialogTitle>
+          <div className="flex items-center gap-2">
+            <facebookMeta.icon
+              className={`h-5 w-5 ${facebookMeta.accentTextClass}`}
+            />
+            <DialogTitle>Call-to-Action Button</DialogTitle>
+          </div>
           <DialogDescription>
             Add a button to your Facebook post to drive customer actions
           </DialogDescription>

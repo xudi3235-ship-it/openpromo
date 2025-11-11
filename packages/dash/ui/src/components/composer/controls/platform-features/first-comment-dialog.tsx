@@ -10,8 +10,9 @@ import {
 import { Label } from "@openpromo/ui/components/label";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { useEffect, useMemo, useState } from "react";
+import { getPlatformMeta } from "@/components/composer/utils/platform-style";
 
-export const FIRST_COMMENT_MAX_LENGTH = 2200;
+export const FIRST_COMMENT_MAX_LENGTH = 150;
 
 interface FirstCommentDialogProps {
   open: boolean;
@@ -40,6 +41,11 @@ export function FirstCommentDialog({
   const remaining = FIRST_COMMENT_MAX_LENGTH - trimmedValue.length;
   const isOverLimit = remaining < 0;
 
+  // Get platform metadata for icons
+  const facebookMeta = getPlatformMeta("FACEBOOK");
+  const instagramMeta = getPlatformMeta("INSTAGRAM");
+  const tiktokMeta = getPlatformMeta("TIKTOK");
+
   const handleSave = () => {
     if (isOverLimit) return;
     onSave(trimmedValue);
@@ -55,7 +61,20 @@ export function FirstCommentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>First comment</DialogTitle>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <facebookMeta.icon
+                className={`h-4 w-4 ${facebookMeta.accentTextClass}`}
+              />
+              <instagramMeta.icon
+                className={`h-4 w-4 ${instagramMeta.accentTextClass}`}
+              />
+              <tiktokMeta.icon
+                className={`h-4 w-4 ${tiktokMeta.accentTextClass}`}
+              />
+            </div>
+            <DialogTitle>First comment</DialogTitle>
+          </div>
           <DialogDescription>
             Add a comment that will be posted right after your content goes
             live. Use it for hashtags, promos, or CTAs.
