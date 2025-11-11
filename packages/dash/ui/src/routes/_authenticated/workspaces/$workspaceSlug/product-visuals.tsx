@@ -38,7 +38,7 @@ function ProductVisualsPage() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="px-6">
+      <div className="flex-shrink-0 px-6 pb-4">
         <h1 className="text-2xl font-semibold tracking-tight">
           Product Visuals
         </h1>
@@ -48,7 +48,7 @@ function ProductVisualsPage() {
         </p>
       </div>
 
-      <div className="flex-1 px-4 pb-6 pt-4 lg:px-6">
+      <div className="flex-1 min-h-0 px-4 pb-6 lg:px-6">
         <div className="h-full rounded-xl border bg-card p-4 lg:p-6">
           <ImageGeneratorExperience
             products={products}

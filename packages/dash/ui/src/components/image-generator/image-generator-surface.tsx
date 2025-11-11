@@ -47,26 +47,30 @@ export function ImageGeneratorSurface({
   return (
     <div
       className={cn(
-        "grid h-full grid-cols-1 gap-6 lg:grid-cols-[420px_1fr] overflow-hidden",
+        "grid h-full grid-cols-1 gap-6 lg:grid-cols-[420px_1fr]",
         className,
       )}
     >
-      <InputsPanel
-        products={products}
-        styles={styles}
-        isLoadingProducts={isLoadingProducts}
-        isLoadingStyles={isLoadingStyles}
-        remainingSlots={remainingSlots}
-        generateMutation={generateMutation}
-        productSearch={productSearch}
-        onProductSearchChange={onProductSearchChange}
-      />
-      <GeneratedImagesGallery
-        generateMutation={generateMutation}
-        remainingSlots={remainingSlots}
-        enableComposerActions={enableComposerActions}
-        onEditGeneration={onGenerationEditRequest}
-      />
+      <div className="min-h-0">
+        <InputsPanel
+          products={products}
+          styles={styles}
+          isLoadingProducts={isLoadingProducts}
+          isLoadingStyles={isLoadingStyles}
+          remainingSlots={remainingSlots}
+          generateMutation={generateMutation}
+          productSearch={productSearch}
+          onProductSearchChange={onProductSearchChange}
+        />
+      </div>
+      <div className="min-h-0">
+        <GeneratedImagesGallery
+          generateMutation={generateMutation}
+          remainingSlots={remainingSlots}
+          enableComposerActions={enableComposerActions}
+          onEditGeneration={onGenerationEditRequest}
+        />
+      </div>
     </div>
   );
 }
