@@ -1,18 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ImageGeneratorExperience } from "@/components/image-generator/image-generator-experience";
 import { useImageGeneratorMutation } from "@/hooks/useImageGeneratorMutation";
 import { useImageGenListQuery } from "@/queries/image-gen";
 import { useProductListQuery } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles-queries";
+import { useImageGeneratorStore } from "@/stores/image-generator-store";
+
+type ProductVisualsSearch = {
+  styleId?: string;
+};
 
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/product-visuals",
 )({
+  validateSearch: (search: Record<string, unknown>): ProductVisualsSearch => {
+    return {
+      styleId: (search.styleId as string) || undefined,
+    };
+  },
   component: ProductVisualsPage,
 });
 
 function ProductVisualsPage() {
+  const { styleId } = Route.useSearch();
   const [productSearch, setProductSearch] = useState("");
   const { data: productsData, isPending: isPendingProducts } =
     useProductListQuery({
@@ -35,6 +46,17 @@ function ProductVisualsPage() {
   const products = productsData?.products ?? [];
   const styles = stylesData?.styles ?? [];
   const generations = generationsData?.generations ?? [];
+
+  const setSelectedStyleId = useImageGeneratorStore(
+    (state) => state.setSelectedStyleId,
+  );
+
+  // Pre-select style from URL param
+  useEffect(() => {
+    if (styleId) {
+      setSelectedStyleId(styleId);
+    }
+  }, [styleId, setSelectedStyleId]);
 
   return (
     <div className="flex h-full flex-col bg-background">

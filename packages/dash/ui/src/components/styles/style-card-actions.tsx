@@ -3,9 +3,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
-import { MoreVertical, Trash2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { MoreVertical, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useActor, useInternal } from "@/hooks/useActor";
@@ -21,16 +23,13 @@ export function StyleCardActions({ style }: StyleCardActionsProps) {
   const actor = useActor();
   const isInternal = useInternal();
   const { workspace } = useWorkspace();
+  const navigate = useNavigate();
   const deleteMutation = useStyleDeleteMutation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Only show actions if the current user is the creator
+  // Only show delete action if the current user is the creator
   const isOwner = actor.id === style.creatorID;
-  const showActions = isOwner || isInternal;
-
-  if (!showActions) {
-    return null;
-  }
+  const showDeleteAction = isOwner || isInternal;
 
   const handleDelete = async () => {
     await deleteMutation.mutateAsync({
@@ -38,6 +37,19 @@ export function StyleCardActions({ style }: StyleCardActionsProps) {
       workspaceId: workspace.id,
     });
     setDeleteDialogOpen(false);
+  };
+
+  const handleUseStyle = (e: Event) => {
+    e.preventDefault();
+    navigate({
+      to: "/workspaces/$workspaceSlug/product-visuals",
+      params: {
+        workspaceSlug: workspace.slug,
+      },
+      search: {
+        styleId: style.id,
+      },
+    });
   };
 
   return (
@@ -59,13 +71,22 @@ export function StyleCardActions({ style }: StyleCardActionsProps) {
           className="w-48"
           onClick={(e) => e.stopPropagation()}
         >
-          <DropdownMenuItem
-            onSelect={() => setDeleteDialogOpen(true)}
-            className="text-destructive focus:text-destructive"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete Style
+          <DropdownMenuItem onSelect={handleUseStyle}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Use This Style
           </DropdownMenuItem>
+          {showDeleteAction && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() => setDeleteDialogOpen(true)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Style
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
