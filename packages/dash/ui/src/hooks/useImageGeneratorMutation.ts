@@ -8,7 +8,20 @@ import {
 } from "@/queries/product";
 import { useComposerStore } from "@/stores/composer-store";
 
-export function useImageGeneratorMutation() {
+interface UseImageGeneratorMutationOptions {
+  /**
+   * Whether to automatically add generated images to the composer after generation.
+   * Default: true (for backward compatibility with composer usage)
+   * Set to false when using in contexts like Product Visuals page where images
+   * should only be added to the gallery, not the composer.
+   */
+  addToComposer?: boolean;
+}
+
+export function useImageGeneratorMutation(
+  options: UseImageGeneratorMutationOptions = {},
+) {
+  const { addToComposer = true } = options;
   const queryClient = useQueryClient();
 
   return useProductImageGenerateMutation(
@@ -20,6 +33,14 @@ export function useImageGeneratorMutation() {
 
       if (data.async) {
         toast.success("Generating images... Check the gallery for results.");
+        return;
+      }
+
+      // Only add to composer if enabled
+      if (!addToComposer) {
+        toast.success(
+          `Generated ${data.results.length} image${data.results.length === 1 ? "" : "s"}!`,
+        );
         return;
       }
 

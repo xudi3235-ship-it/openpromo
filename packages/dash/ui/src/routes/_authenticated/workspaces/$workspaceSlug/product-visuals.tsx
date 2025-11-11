@@ -29,7 +29,8 @@ function ProductVisualsPage() {
       pageSize: 12,
     });
 
-  const generateMutation = useImageGeneratorMutation();
+  // Don't add to composer in product visuals context
+  const generateMutation = useImageGeneratorMutation({ addToComposer: false });
 
   const products = productsData?.products ?? [];
   const styles = stylesData?.styles ?? [];

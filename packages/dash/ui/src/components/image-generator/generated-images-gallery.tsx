@@ -25,6 +25,7 @@ import type {
 import { useComposerStore } from "@/stores/composer-store";
 import { useImageGeneratorStore } from "@/stores/image-generator-store";
 import { GenerationCardActions } from "./generation-card-actions";
+import { GenerationViewerModal } from "./generation-viewer-modal";
 
 interface GeneratedImagesGalleryProps {
   generateMutation: UseMutationResult<
@@ -50,6 +51,9 @@ export function GeneratedImagesGallery({
   const [gridCols, setGridCols] = useState(4);
   const [selectedGenerations, setSelectedGenerations] = useState<Set<string>>(
     new Set(),
+  );
+  const [viewingGeneration, setViewingGeneration] = useState<Generation | null>(
+    null,
   );
   const { data, isPending, refetch } = useImageGenListQuery({
     page: 1,
@@ -131,31 +135,8 @@ export function GeneratedImagesGallery({
   };
 
   const handleCardClick = (generation: Generation) => {
-    // Only handle clicks for completed generations
-    if (generation.state !== "completed") return;
-    if (!generation.outputImages?.[0]) return;
-
-    // Only enable click-to-add inside composer
-    if (enableComposerActions) {
-      // Inside composer: add directly to post
-      if (remainingSlots === 0) {
-        toast.error("No more slots available");
-        return;
-      }
-
-      const imageToAdd = {
-        id: generation.id,
-        type: "photo" as const,
-        publicUrl: generation.outputImages[0],
-        thumbnailUrl: generation.outputImages[0],
-        mimeType: "image/jpeg",
-        s3Key: generation.id,
-      };
-
-      useComposerStore.getState().addAttachmentSpecs([imageToAdd]);
-      toast.success("Added to post");
-    }
-    // Outside composer: do nothing on click (use dropdown or multi-select instead)
+    // Open modal to view the image
+    setViewingGeneration(generation);
   };
 
   const handleAddToPost = () => {
@@ -237,165 +218,176 @@ export function GeneratedImagesGallery({
   };
 
   return (
-    <div
-      className={cn(
-        "border rounded-lg flex flex-col h-full overflow-hidden",
-        className,
-      )}
-    >
-      <div className="px-4 pt-4 pb-2 flex-shrink-0 space-y-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1 flex-1">
-            <h3 className="text-sm font-medium">Generated Images</h3>
-            <p className="text-xs text-muted-foreground">
-              Your product image generations
-            </p>
+    <>
+      <div
+        className={cn(
+          "border rounded-lg flex flex-col h-full overflow-hidden",
+          className,
+        )}
+      >
+        <div className="px-4 pt-4 pb-2 flex-shrink-0 space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1 flex-1">
+              <h3 className="text-sm font-medium">Generated Images</h3>
+              <p className="text-xs text-muted-foreground">
+                Your product image generations
+              </p>
+            </div>
+            <div className="flex items-center gap-3 pt-0.5">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {gridCols} cols
+              </span>
+              <Slider
+                value={[gridCols]}
+                onValueChange={(value) => setGridCols(value[0] || 2)}
+                min={2}
+                max={6}
+                step={2}
+                className="w-20"
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-3 pt-0.5">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {gridCols} cols
-            </span>
-            <Slider
-              value={[gridCols]}
-              onValueChange={(value) => setGridCols(value[0] || 2)}
-              min={2}
-              max={6}
-              step={2}
-              className="w-20"
-            />
-          </div>
+
+          {/* Selection Toolbar */}
+          {generations.length > 0 && (
+            <div className="flex items-center justify-between p-2 border rounded-md bg-background">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={
+                    selectedGenerations.size === generations.length &&
+                    generations.length > 0
+                  }
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Select all"
+                />
+                <span className="text-xs text-muted-foreground">
+                  {selectedGenerations.size > 0
+                    ? `${selectedGenerations.size} selected`
+                    : "Select all"}
+                </span>
+              </div>
+              {selectedGenerations.size > 0 && (
+                <div className="flex items-center gap-2">
+                  {enableComposerActions ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleAddToPost}
+                      disabled={remainingSlots === 0}
+                    >
+                      <Plus className="mr-1.5 h-3 w-3" />
+                      Add to post
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCreatePostWithSelected}
+                    >
+                      <FileText className="mr-1.5 h-3 w-3" />
+                      Create post
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDeleteSelected}
+                    disabled={deleteBatchMutation.isPending}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    {deleteBatchMutation.isPending ? (
+                      <>
+                        <Spinner className="mr-1.5 h-3 w-3" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="mr-1.5 h-3 w-3" />
+                        Delete
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Selection Toolbar */}
-        {generations.length > 0 && (
-          <div className="flex items-center justify-between p-2 border rounded-md bg-background">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={
-                  selectedGenerations.size === generations.length &&
-                  generations.length > 0
-                }
-                onCheckedChange={handleSelectAll}
-                aria-label="Select all"
-              />
-              <span className="text-xs text-muted-foreground">
-                {selectedGenerations.size > 0
-                  ? `${selectedGenerations.size} selected`
-                  : "Select all"}
-              </span>
-            </div>
-            {selectedGenerations.size > 0 && (
-              <div className="flex items-center gap-2">
-                {enableComposerActions ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleAddToPost}
-                    disabled={remainingSlots === 0}
-                  >
-                    <Plus className="mr-1.5 h-3 w-3" />
-                    Add to post
-                  </Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleCreatePostWithSelected}
-                  >
-                    <FileText className="mr-1.5 h-3 w-3" />
-                    Create post
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDeleteSelected}
-                  disabled={deleteBatchMutation.isPending}
-                  className="text-destructive hover:text-destructive"
-                >
-                  {deleteBatchMutation.isPending ? (
-                    <>
-                      <Spinner className="mr-1.5 h-3 w-3" />
-                      Deleting...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="mr-1.5 h-3 w-3" />
-                      Delete
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="flex-1 min-h-0">
-        <ScrollArea className="h-full">
-          <div className="p-4 pt-2 space-y-4">
-            {isPending ? (
-              <ImageGrid tight cols={gridColsConfig}>
-                {Array.from({ length: 8 }).map((_, index) => (
-                  <div
-                    // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders do not need stable keys
-                    key={`loading-skeleton-${index}`}
-                    className="border border-gray-200 dark:border-gray-800 overflow-hidden"
-                  >
-                    <Skeleton className="aspect-square w-full" />
-                    <div className="p-2.5 space-y-2">
-                      <Skeleton className="h-3 w-3/4" />
-                      <Skeleton className="h-2 w-1/2" />
-                    </div>
-                  </div>
-                ))}
-              </ImageGrid>
-            ) : (
-              <ImageGrid tight cols={gridColsConfig}>
-                {/* Loading skeletons when generating */}
-                {generateMutation.isPending &&
-                  Array.from({ length: loadingSkeletonCount }).map(
-                    (_, index) => (
-                      <div
-                        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders do not need stable keys
-                        key={`skeleton-${index}`}
-                        className="border border-gray-200 dark:border-gray-800 overflow-hidden"
-                      >
-                        <Skeleton className="aspect-square w-full" />
-                        <div className="p-2.5 space-y-2">
-                          <Skeleton className="h-3 w-3/4" />
-                          <Skeleton className="h-2 w-1/2" />
-                        </div>
+        <div className="flex-1 min-h-0">
+          <ScrollArea className="h-full">
+            <div className="p-4 pt-2 space-y-4">
+              {isPending ? (
+                <ImageGrid tight cols={gridColsConfig}>
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders do not need stable keys
+                      key={`loading-skeleton-${index}`}
+                      className="border border-gray-200 dark:border-gray-800 overflow-hidden"
+                    >
+                      <Skeleton className="aspect-square w-full" />
+                      <div className="p-2.5 space-y-2">
+                        <Skeleton className="h-3 w-3/4" />
+                        <Skeleton className="h-2 w-1/2" />
                       </div>
-                    ),
-                  )}
+                    </div>
+                  ))}
+                </ImageGrid>
+              ) : (
+                <ImageGrid tight cols={gridColsConfig}>
+                  {/* Loading skeletons when generating */}
+                  {generateMutation.isPending &&
+                    Array.from({ length: loadingSkeletonCount }).map(
+                      (_, index) => (
+                        <div
+                          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders do not need stable keys
+                          key={`skeleton-${index}`}
+                          className="border border-gray-200 dark:border-gray-800 overflow-hidden"
+                        >
+                          <Skeleton className="aspect-square w-full" />
+                          <div className="p-2.5 space-y-2">
+                            <Skeleton className="h-3 w-3/4" />
+                            <Skeleton className="h-2 w-1/2" />
+                          </div>
+                        </div>
+                      ),
+                    )}
 
-                {generations.length === 0 && !generateMutation.isPending ? (
-                  <div className="col-span-full flex flex-col items-center justify-center py-12 text-center text-sm text-muted-foreground gap-2">
-                    <span className="text-2xl">✨</span>
-                    <span>No product images generated yet</span>
-                  </div>
-                ) : (
-                  generations.map((generation) => (
-                    <GenerationCard
-                      key={generation.id}
-                      generation={generation}
-                      isSelected={selectedGenerations.has(generation.id)}
-                      onToggleSelection={handleToggleSelection}
-                      isAddedToPost={addedGenerationIds.has(generation.id)}
-                      onEditRequest={onEditGeneration}
-                      onDeleteRequest={handleDeleteSingle}
-                      onCardClick={handleCardClick}
-                      showCreatePostAction={!enableComposerActions}
-                    />
-                  ))
-                )}
-              </ImageGrid>
-            )}
-          </div>
-        </ScrollArea>
+                  {generations.length === 0 && !generateMutation.isPending ? (
+                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-center text-sm text-muted-foreground gap-2">
+                      <span className="text-2xl">✨</span>
+                      <span>No product images generated yet</span>
+                    </div>
+                  ) : (
+                    generations.map((generation) => (
+                      <GenerationCard
+                        key={generation.id}
+                        generation={generation}
+                        isSelected={selectedGenerations.has(generation.id)}
+                        onToggleSelection={handleToggleSelection}
+                        isAddedToPost={addedGenerationIds.has(generation.id)}
+                        onEditRequest={onEditGeneration}
+                        onDeleteRequest={handleDeleteSingle}
+                        onCardClick={handleCardClick}
+                        showCreatePostAction={!enableComposerActions}
+                      />
+                    ))
+                  )}
+                </ImageGrid>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
       </div>
-    </div>
+
+      {/* Image Viewer Modal */}
+      <GenerationViewerModal
+        generation={viewingGeneration}
+        isOpen={!!viewingGeneration}
+        onClose={() => setViewingGeneration(null)}
+        enableComposerActions={enableComposerActions}
+        remainingSlots={remainingSlots}
+      />
+    </>
   );
 }
 
@@ -435,9 +427,8 @@ function GenerationCard({
     generation.state,
   );
 
-  // Only clickable inside composer (when showCreatePostAction is false)
-  const isClickable =
-    onCardClick && !isPending && !isAddedToPost && !showCreatePostAction;
+  // Cards are always clickable to open the modal
+  const isClickable = onCardClick && !isPending;
 
   const handleCardClick = () => {
     if (isClickable) {
