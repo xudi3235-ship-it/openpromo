@@ -6,22 +6,7 @@ import os
 from dataclasses import dataclass
 from io import BufferedReader
 
-import replicate
-from openai import OpenAI
-
-
-def oai() -> OpenAI:
-    key = os.environ.get("OPENAI_API_KEY")
-    if not key:
-        raise ValueError("OPENAI_API_KEY not set in environment variables")
-    return OpenAI(api_key=key)
-
-
-def rep() -> replicate.Client:
-    key = os.environ.get("REPLICATE_API_TOKEN")
-    if not key:
-        raise ValueError("REPLICATE_API_TOKEN not set in environment variables")
-    return replicate.Client(api_token=key)
+from src.core.shared import oai, rep
 
 
 @dataclass
