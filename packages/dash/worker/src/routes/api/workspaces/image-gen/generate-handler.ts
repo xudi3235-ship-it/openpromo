@@ -1,7 +1,6 @@
 import { EntImageGeneration } from "@core/domain/image-generation";
 import { Actor } from "@core/helpers/actor";
 import { Binding } from "@core/helpers/api-env";
-import { env } from "@core/utils/env";
 
 export type GenerateImageParams = {
   productId: string;
@@ -41,8 +40,8 @@ export async function generateImages({
   prompt,
   parentGenerationId,
 }: GenerateImageParams): Promise<GenerateImageResponse> {
-  const isLocal = env.VITE_ENVIRONMENT === "local";
-  const useAsyncWorkflow = !isLocal;
+  // const isLocal = env.VITE_ENVIRONMENT === "local";
+  const useAsyncWorkflow = true;
 
   let resolvedProductId = productId;
   let resolvedStyleId = styleId;
