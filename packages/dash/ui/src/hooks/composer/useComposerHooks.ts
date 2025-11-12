@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
 import { useCallback, useEffect, useMemo } from "react";
 import { useConnectedAccounts } from "@/queries/connected-account";
-import { useContentGroupQuery } from "@/queries/content";
+import { useContentGroupQuery } from "@/queries/content-orpc";
 import { useComposerStore } from "@/stores/composer-store";
 import type { ComposerMode } from "@/stores/dialog-composer-store";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
@@ -45,7 +45,6 @@ export function useComposerDialogLifecycle({
       contentGroupData?.contentCreateData ?? initialContentCreateData ?? null;
 
     initializeComposer({
-      // @ts-expect-error - Type mismatch between API response (string dates) and store type (Date objects)
       initContentCreateData: contentData || undefined,
       contentGroupID: pendingContentGroupID,
       initialAccounts: accounts,

@@ -201,7 +201,7 @@ class UserWebSocketManager {
 
   addWebSocket(userId: string, ws: WebSocket): void {
     const sessions = this.userIdToWebSocketsMap.get(userId) || [];
-    console.log(`Adding WebSocket for user ${userId}:`, ws);
+    // console.log(`Adding WebSocket for user ${userId}:`, ws);
 
     // Check if we need to evict an old session
     if (sessions.length >= USER_SESSION_LIMIT) {

@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
-import { useContentListQuery } from "@/queries/content";
+import { useContentListQuery } from "@/queries/content-orpc";
 import { BatchActionsToolbar } from "./batch-actions-toolbar";
 import { columns } from "./columns";
 import { ContentErrorState } from "./content-error-state";
@@ -48,7 +48,7 @@ export function ContentListPage() {
     normalizedSearch,
   );
 
-  const { data, isLoading, error, refetch } = useContentListQuery(queryParams);
+  const { data, isPending, error, refetch } = useContentListQuery(queryParams);
   const table = useReactTable({
     data: data?.entities ?? [],
     columns,
@@ -126,7 +126,7 @@ export function ContentListPage() {
         onClearSorting={() => setSorting([])}
       />
 
-      <ContentPageBody table={table} isLoading={isLoading} />
+      <ContentPageBody table={table} isLoading={isPending} />
 
       <ContentPageFooter table={table} pagination={data?.pagination} />
     </ContentPageLayout>

@@ -78,7 +78,7 @@ export default function CalendarPage() {
     : currentDate;
   const { fromDate, toDate } = useCalendarDateRange(pageDate, view);
 
-  const { data, isLoading } = useContentListQuery({
+  const { data, isPending } = useContentListQuery({
     page: 1,
     pageSize: 500,
     sortBy: "createdAt",
@@ -148,7 +148,7 @@ export default function CalendarPage() {
     });
   };
 
-  if (isLoading) {
+  if (isPending) {
     return <CalendarSkeleton />;
   }
 

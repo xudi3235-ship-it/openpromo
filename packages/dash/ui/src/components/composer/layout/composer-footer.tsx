@@ -11,7 +11,7 @@ import { useInternal } from "@/hooks/useActor";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { validateCaption } from "@/lib/caption-limit";
 import { logComposerEvent } from "@/lib/instrumentation/composer";
-import { useComposerMutations } from "@/queries/content";
+import { useComposerMutations } from "@/queries/content-orpc";
 import {
   resolveHasMediaOrLink,
   resolveSelectedPlatforms,
@@ -229,7 +229,7 @@ export function ComposerFooter() {
       return;
     }
 
-    createMutation.mutate({});
+    createMutation.mutate();
   };
 
   const isPending = shouldUpdateGroup

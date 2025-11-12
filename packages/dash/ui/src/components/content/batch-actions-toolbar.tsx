@@ -4,7 +4,7 @@ import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { matchEntity } from "@/lib/hono-client";
-import { useBatchDeleteMutation } from "@/queries/content";
+import { useContentBatchDeleteMutation } from "@/queries/content-orpc";
 
 interface BatchActionsToolbarProps {
   selectedRows: MergedContentEntity[];
@@ -16,7 +16,7 @@ export function BatchActionsToolbar({
   onClearSelection,
 }: BatchActionsToolbarProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const batchDeleteMutation = useBatchDeleteMutation(() => {
+  const batchDeleteMutation = useContentBatchDeleteMutation(() => {
     onClearSelection();
     setShowDeleteConfirm(false);
   });
@@ -31,7 +31,7 @@ export function BatchActionsToolbar({
       }),
     );
 
-    batchDeleteMutation.mutate(ids);
+    batchDeleteMutation.mutate({ contentIds: ids });
   };
 
   return (

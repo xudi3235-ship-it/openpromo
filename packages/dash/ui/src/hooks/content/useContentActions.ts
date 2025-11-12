@@ -3,7 +3,7 @@ import { matchEntity } from "@/lib/hono-client";
 import {
   useContentDeleteMutation,
   useContentGroupDeleteMutation,
-} from "@/queries/content";
+} from "@/queries/content-orpc";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 
 /**
@@ -18,10 +18,14 @@ export const useContentActions = () => {
   const deleteEntity = async (entity: CalendarEvent): Promise<void> => {
     await matchEntity(entity, {
       content: (contentEntity) => {
-        return deleteContent.mutateAsync(contentEntity.entity.id);
+        return deleteContent.mutateAsync({
+          contentId: contentEntity.entity.id,
+        });
       },
       group: (groupEntity) => {
-        return deleteContentGroup.mutateAsync(groupEntity.entity.id);
+        return deleteContentGroup.mutateAsync({
+          contentGroupId: groupEntity.entity.id,
+        });
       },
     });
   };
