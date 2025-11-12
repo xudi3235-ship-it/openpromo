@@ -19,10 +19,10 @@ export const workspacePusherRoute = new Hono<ApiEnv>()
 
       if (!user) return ctx.json({ message: "Unauthorized" }, 401);
 
-      console.log(`WebSocket connection for workspace: ${workspaceSlug}`);
+      // console.log(`WebSocket connection for workspace: ${workspaceSlug}`);
 
       const pusher = ctx.env.WorkspacePusher.getByName(workspaceSlug);
-      console.log(`WebSocket pusher DO ID: ${pusher.id}`);
+      // console.log(`WebSocket pusher DO ID: ${pusher.id}`);
       // Always initialize the workspace slug to ensure it's set correctly
       await pusher.init(workspaceSlug);
 

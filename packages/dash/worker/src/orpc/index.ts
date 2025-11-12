@@ -15,22 +15,41 @@ export { productsRouter } from "./routes/products";
 export { listStyles, stylesRouter } from "./routes/styles";
 export { workspacesRouter } from "./routes/workspaces";
 
-import { contentRouter } from "./routes/content/index";
-import { imageGenRouter } from "./routes/image-gen";
-import { inboxRouter } from "./routes/inbox";
-import { insightsRouter } from "./routes/insights";
-import { planetRouter } from "./routes/planet";
-import { productsRouter } from "./routes/products";
-import { stylesRouter } from "./routes/styles";
-import { workspacesRouter } from "./routes/workspaces";
+import { getPostHogClient } from "@core/providers/posthog";
+import { onError } from "@orpc/server";
+import { orpcBuilder } from "./context";
+import { contentRouter as content } from "./routes/content/index";
+import { imageGenRouter as imageGen } from "./routes/image-gen";
+import { inboxRouter as inbox } from "./routes/inbox";
+import { insightsRouter as insights } from "./routes/insights";
+import { planetRouter as planet } from "./routes/planet";
+import { productsRouter as products } from "./routes/products";
+import { stylesRouter as styles } from "./routes/styles";
+import { workspacesRouter as workspaces } from "./routes/workspaces";
 
-export const orpcRouter = {
-  content: contentRouter,
-  planet: planetRouter,
-  inbox: inboxRouter,
-  insights: insightsRouter,
-  imageGen: imageGenRouter,
-  styles: stylesRouter,
-  products: productsRouter,
-  workspaces: workspacesRouter,
-};
+export const orpcRouter = orpcBuilder
+  .use(
+    onError(async (error, opts) => {
+      console.error("oRPC Error:", error);
+      const { honoContext: c } = opts.context;
+      const user = c.get("user");
+      const posthog = getPostHogClient();
+      posthog.captureException(error, user?.id, {
+        path: c.req.path,
+        method: c.req.method,
+        url: c.req.url,
+        headers: c.req.header(),
+      });
+      await posthog.flush();
+    }),
+  )
+  .router({
+    content,
+    planet,
+    inbox,
+    insights,
+    imageGen,
+    styles,
+    products,
+    workspaces,
+  });
