@@ -6,7 +6,7 @@ import {
   buildFailedNotificationMessage,
   buildPublishedNotificationMessage,
 } from "@/lib/notification-formatters";
-import { invalidateContentListQueries } from "@/queries/content";
+import { invalidateContentListQueries } from "@/queries/content-orpc";
 
 export function useNotificationToast() {
   const queryClient = useQueryClient();

@@ -9,7 +9,10 @@ import {
   getCalendarDateRange,
   useCalendarDateRange,
 } from "@/hooks/calendar/useCalendarDateRange";
-import { prefetchContentList, useContentListQuery } from "@/queries/content";
+import {
+  prefetchContentList,
+  useContentListQuery,
+} from "@/queries/content-orpc";
 
 const calendarSearchSchema = z.object({
   view: z.enum(CalendarViews).catch("week"),

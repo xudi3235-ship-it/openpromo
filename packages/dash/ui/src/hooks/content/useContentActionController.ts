@@ -6,7 +6,7 @@ import {
   resolveRescheduleGroupId,
 } from "@/hooks/calendar/useCalendarDragUpdate";
 import { matchEntity } from "@/lib/hono-client";
-import { useContentGroupPublishMutation } from "@/queries/content";
+import { useContentGroupPublishMutation } from "@/queries/content-orpc";
 import { useCalendarRescheduleStore } from "@/stores/calendar-reschedule-store";
 import { useContentActions } from "./useContentActions";
 import { useDeleteConfirmation } from "./useDeleteConfirmation";
@@ -95,29 +95,35 @@ export const useContentActionController = ({
         const content = contentEntity.entity;
         if (!content.pendingContentGroupId) return;
 
-        publishContentGroup.mutate(content.pendingContentGroupId, {
-          onSuccess: () => {
-            toast.success(
-              "Content is publishing now. This might take a little while—we'll notify you once it's live.",
-            );
+        publishContentGroup.mutate(
+          { contentGroupId: content.pendingContentGroupId },
+          {
+            onSuccess: () => {
+              toast.success(
+                "Content is publishing now. This might take a little while—we'll notify you once it's live.",
+              );
+            },
+            onError: () => {
+              toast.error("Failed to publish content. Please try again.");
+            },
           },
-          onError: () => {
-            toast.error("Failed to publish content. Please try again.");
-          },
-        });
+        );
       },
       group: (groupEntity) => {
         const group = groupEntity.entity;
-        publishContentGroup.mutate(group.id, {
-          onSuccess: () => {
-            toast.success(
-              "Content group is publishing now. This might take a little while—we'll notify you once it's live.",
-            );
+        publishContentGroup.mutate(
+          { contentGroupId: group.id },
+          {
+            onSuccess: () => {
+              toast.success(
+                "Content group is publishing now. This might take a little while—we'll notify you once it's live.",
+              );
+            },
+            onError: () => {
+              toast.error("Failed to publish content group. Please try again.");
+            },
           },
-          onError: () => {
-            toast.error("Failed to publish content group. Please try again.");
-          },
-        });
+        );
       },
     });
   };

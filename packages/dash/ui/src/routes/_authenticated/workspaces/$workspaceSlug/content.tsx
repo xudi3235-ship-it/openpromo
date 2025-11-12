@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as z from "zod";
 import { ContentListPage } from "@/components/content/ContentListPage";
-import { prefetchContentList } from "@/queries/content";
+import { prefetchContentList } from "@/queries/content-orpc";
 
 const contentSearchSchema = z.object({
   // Allow these params but don't use them (from calendar navigation)
