@@ -11,7 +11,7 @@ import type {
   ContentEntity,
   GroupEntity,
   MergedContentEntity,
-} from "@worker/routes/api/workspaces/content";
+} from "@worker/shared/content-types";
 import { hcWithType } from "@worker/types";
 import type { ClientResponse } from "hono/client";
 import { toast } from "sonner";
@@ -235,17 +235,6 @@ export type Org = ApiResult<typeof apiClient.orgs.$get>[0];
 export type ConnectedAccount = ApiResult<
   (typeof apiClient.workspaces)[":workspaceSlug"]["connected_accounts"]["$get"]
 >["accounts"][0];
-// these types are treating all dates as strings
-// trying to figure out how to transform these
-export type ContentListResponse = ApiResult<
-  (typeof apiClient.workspaces)[":workspaceSlug"]["content"]["$get"]
->;
-export type TContentEntity = Extract<
-  ContentListResponse["entities"][0],
-  {
-    type: "content";
-  }
->;
 
 export function matchEntity<T>(
   entity: MergedContentEntity,

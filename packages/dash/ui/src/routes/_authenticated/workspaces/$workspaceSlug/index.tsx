@@ -8,7 +8,7 @@ import type {
   ReachMomentum,
 } from "@shared/insights";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import { format } from "date-fns";
 import {
   BarChart3,

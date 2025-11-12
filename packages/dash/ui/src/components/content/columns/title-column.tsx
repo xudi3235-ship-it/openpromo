@@ -3,7 +3,7 @@ import type { ColumnDef, Row } from "@tanstack/react-table";
 import type {
   ContentEntity,
   MergedContentEntity,
-} from "@worker/routes/api/workspaces/content";
+} from "@worker/shared/content-types";
 import { Image } from "lucide-react";
 import { matchEntity, matchPlacementSpec } from "@/lib/hono-client";
 import { getPlatformIcon } from "../utils/platform-icons";

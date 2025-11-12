@@ -14,7 +14,7 @@ import * as z from "zod";
 import {
   buildContentItems,
   createWorkflowsForContents,
-} from "../../../routes/api/workspaces/content/helpers";
+} from "../../../shared/content-helpers";
 import { orpcBuilder } from "../../context";
 import { withWorkspaceRole } from "../../middleware";
 import {
@@ -34,6 +34,7 @@ const ContentCreateData = z.object({
       message: "At least one placement must be provided.",
     }),
 });
+export type ContentCreateData = z.infer<typeof ContentCreateData>;
 
 const createContentInput = createWorkspaceInputSchema(ContentCreateData);
 

@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
+import type { ContentCreateData } from "@worker/orpc/routes/content/create-content";
 import { useCallback, useEffect, useMemo } from "react";
 import { useConnectedAccounts } from "@/queries/connected-account";
 import { useContentGroupQuery } from "@/queries/content-orpc";

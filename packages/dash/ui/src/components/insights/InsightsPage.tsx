@@ -1,6 +1,6 @@
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@openpromo/ui/components/tabs";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import { formatDistanceToNow, startOfDay, subDays } from "date-fns";
 import { useMemo, useState } from "react";
 import {

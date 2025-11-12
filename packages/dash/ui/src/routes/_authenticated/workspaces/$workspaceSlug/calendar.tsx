@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import { format, parse } from "date-fns";
 import { useState } from "react";
 import * as z from "zod";

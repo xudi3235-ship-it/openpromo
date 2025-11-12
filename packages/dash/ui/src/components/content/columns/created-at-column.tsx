@@ -1,6 +1,6 @@
 import { Button } from "@openpromo/ui/components/button";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import {
   format,
   formatDistanceToNow,

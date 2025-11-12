@@ -1,4 +1,4 @@
-import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
+import type { ContentCreateData } from "@worker/orpc/routes/content/create-content";
 import type { ComposerState } from "../types";
 
 export const createSnapshot = (

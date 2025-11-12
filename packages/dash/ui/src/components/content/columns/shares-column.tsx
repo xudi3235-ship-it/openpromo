@@ -1,6 +1,6 @@
 import { Button } from "@openpromo/ui/components/button";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import { ArrowUpDown, Share2 } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";
 import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";

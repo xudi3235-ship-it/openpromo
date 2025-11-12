@@ -17,7 +17,7 @@ import * as z from "zod";
 import {
   buildContentItems,
   createWorkflowsForContents,
-} from "../../../routes/api/workspaces/content/helpers";
+} from "../../../shared/content-helpers";
 import { orpcBuilder } from "../../context";
 import { withWorkspaceRole } from "../../middleware";
 import {

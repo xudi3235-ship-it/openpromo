@@ -3,7 +3,7 @@ import type {
   IGFeedPlacementSpec,
   TikTokFeedPlacementSpec,
 } from "@shared/content";
-import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
+import type { ContentCreateData } from "@worker/orpc/routes/content/create-content";
 import type { Draft } from "immer";
 import type { ConnectedAccount } from "@/lib/hono-client";
 import type {

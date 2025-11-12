@@ -305,9 +305,9 @@ export function CalendarDndProvider({
           ...calendarEvent,
           entity: {
             ...calendarEvent.entity,
-            // @ts-expect-error
+            // @ts-expect-error later
             schedulingSpec: {
-              // @ts-expect-error
+              // @ts-expect-error later
               ...calendarEvent.entity.schedulingSpec,
               scheduledPublishAt: newStart.toISOString(),
             },

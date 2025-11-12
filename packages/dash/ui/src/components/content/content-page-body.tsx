@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@openpromo/ui/components/table";
 import { flexRender, type Table as TableType } from "@tanstack/react-table";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import { columns } from "./columns";
 import { ContentEmptyState } from "./content-empty-state";
 import { ContentTableSkeleton } from "./content-table-skeleton";

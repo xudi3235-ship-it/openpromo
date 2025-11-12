@@ -6,10 +6,8 @@ import {
   ToggleGroupItem,
 } from "@openpromo/ui/components/toggle-group";
 import { cn } from "@openpromo/ui/lib/utils";
-import type {
-  ContentCreateData,
-  MergedContentEntity,
-} from "@worker/routes/api/workspaces/content";
+import type { ContentCreateData } from "@worker/orpc/routes/content/create-content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import {
   addMonths,
   addWeeks,

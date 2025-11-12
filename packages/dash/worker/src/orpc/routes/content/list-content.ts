@@ -6,7 +6,7 @@ import {
 import { db } from "@openpromo/core/database/db";
 import { and, asc, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import * as z from "zod";
-import type { MergedContentContainer } from "../../../routes/api/workspaces/content";
+import type { MergedContentContainer } from "../../../shared/content-types";
 import { orpcBuilder } from "../../context";
 import { withWorkspaceRole } from "../../middleware";
 import {

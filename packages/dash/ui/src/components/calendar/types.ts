@@ -1,4 +1,4 @@
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 
 export type CalendarView = "month" | "week";
 

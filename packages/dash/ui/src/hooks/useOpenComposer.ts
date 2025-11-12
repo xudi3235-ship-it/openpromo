@@ -1,6 +1,6 @@
 import type { SharedAttachmentSpec } from "@shared/content";
 import { useNavigate } from "@tanstack/react-router";
-import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
+import type { ContentCreateData } from "@worker/orpc/routes/content/create-content";
 import { useCallback } from "react";
 import { useComposerStore } from "@/stores/composer-store";
 import { useWorkspace } from "./useWorkspace";

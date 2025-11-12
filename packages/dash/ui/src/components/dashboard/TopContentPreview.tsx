@@ -10,7 +10,7 @@ import {
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import type { PlacementSpec } from "@shared/content";
 import { Link } from "@tanstack/react-router";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import { ArrowUpRight } from "lucide-react";
 import { getPlatformIcon } from "@/components/content/utils/platform-icons";
 import { matchEntity, matchPlacementSpec } from "@/lib/hono-client";

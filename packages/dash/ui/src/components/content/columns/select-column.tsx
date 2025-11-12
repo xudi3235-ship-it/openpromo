@@ -1,6 +1,6 @@
 import { Checkbox } from "@openpromo/ui/components/checkbox";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 
 export const selectColumn: ColumnDef<MergedContentEntity> = {
   id: "select",

@@ -1,6 +1,6 @@
 import { cn } from "@openpromo/ui/lib/utils";
 import type { PlacementSpec } from "@shared/content";
-import type { GroupEntity } from "@worker/routes/api/workspaces/content";
+import type { GroupEntity } from "@worker/shared/content-types";
 import { getPlatformIcon } from "@/components/content/utils/platform-icons";
 import { matchPlacementSpec } from "@/lib/hono-client";
 import { CalendarEventCardHeader } from "./calendar-event-card-header";

@@ -1,4 +1,4 @@
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import { create } from "zustand";
 
 export interface CalendarReschedulePayload {

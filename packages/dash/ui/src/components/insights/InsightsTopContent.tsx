@@ -16,7 +16,7 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import { ExternalLink } from "lucide-react";
 import { useMemo, useState } from "react";
 import { matchEntity } from "@/lib/hono-client";

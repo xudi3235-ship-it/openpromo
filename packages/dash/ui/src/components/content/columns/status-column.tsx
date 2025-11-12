@@ -1,7 +1,7 @@
 import { Badge } from "@openpromo/ui/components/badge";
 import type { ContentPublishingStatus } from "@shared/content";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import { matchEntity } from "@/lib/hono-client";
 import { STATUS_CONFIG } from "../status-badge-config";
 import { ColumnHeaderWithTooltip } from "./column-header-with-tooltip";

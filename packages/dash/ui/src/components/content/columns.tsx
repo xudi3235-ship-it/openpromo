@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import { actionsColumn } from "./columns/actions-column";
 import { commentsColumn } from "./columns/comments-column";
 import { createdAtColumn } from "./columns/created-at-column";

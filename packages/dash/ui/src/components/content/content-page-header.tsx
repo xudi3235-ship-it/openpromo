@@ -7,7 +7,7 @@ import {
 } from "@openpromo/ui/components/dropdown-menu";
 import { Input } from "@openpromo/ui/components/input";
 import type { Table } from "@tanstack/react-table";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import {
   Calendar,
   ChevronDown,

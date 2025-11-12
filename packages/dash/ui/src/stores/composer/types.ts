@@ -7,7 +7,7 @@ import type {
   TikTokBusinessOptions,
   TikTokFeedPlacementSpec,
 } from "@shared/content";
-import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
+import type { ContentCreateData } from "@worker/orpc/routes/content/create-content";
 import type { ConnectedAccount } from "@/lib/hono-client";
 
 export interface PlacementRegistryEntry {

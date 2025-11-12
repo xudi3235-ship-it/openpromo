@@ -1,4 +1,4 @@
-import type { ContentCreateData } from "@worker/routes/api/workspaces/content";
+import type { ContentCreateData } from "@worker/orpc/routes/content/create-content";
 import { create } from "zustand";
 
 export type ComposerMode = "dialog" | "fullscreen" | "closed";

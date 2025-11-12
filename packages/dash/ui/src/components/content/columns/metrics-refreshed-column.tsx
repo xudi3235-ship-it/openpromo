@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import { formatDistanceToNow } from "date-fns";
 import { RefreshCw } from "lucide-react";
 import { matchEntity } from "@/lib/hono-client";

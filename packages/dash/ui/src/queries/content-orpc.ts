@@ -172,8 +172,8 @@ export const useContentBatchDeleteMutation = (onSuccess?: () => void) => {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
 
-  return useMutation({
-    ...orpc.content.batchDelete.mutationOptions({
+  return useMutation(
+    orpc.content.batchDelete.mutationOptions({
       mutationFn: async (variables) =>
         orpc.content.batchDelete.call({
           ...variables,
@@ -184,7 +184,7 @@ export const useContentBatchDeleteMutation = (onSuccess?: () => void) => {
         await invalidateContentListQueries(queryClient);
 
         if (data.success) {
-          toast.success(`Successfully deleted ${data.deletedCount} item(s)`);
+          toast.success(`Successfully deleted ${data.deleted} item(s)`);
         } else {
           toast.warning("Some items could not be deleted");
         }
@@ -194,7 +194,7 @@ export const useContentBatchDeleteMutation = (onSuccess?: () => void) => {
         toast.error(error.message || "Failed to delete content");
       },
     }),
-  });
+  );
 };
 
 // Content group mutations

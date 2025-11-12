@@ -1,7 +1,7 @@
 import type { AllPlatforms } from "@shared/content";
 import type { WorkspaceInsightSnapshotRecord } from "@shared/insights";
 import { type QueryClient, useQuery } from "@tanstack/react-query";
-import type { MergedContentEntity } from "@worker/routes/api/workspaces/content";
+import type { MergedContentEntity } from "@worker/shared/content-types";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { orpc } from "@/lib/orpc-client";
 import { QUERY_KEYS } from "@/lib/query";

@@ -7,7 +7,7 @@ import {
   WorkspaceSummarySchema,
 } from "@shared/insights";
 import * as z from "zod";
-import { ContentEntity } from "../../routes/api/workspaces/content/shared/types";
+import { ContentEntity } from "../../shared/content-types";
 import { orpcBuilder } from "../context";
 import { withWorkspaceRole } from "../middleware";
 import {
