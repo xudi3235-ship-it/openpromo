@@ -1,4 +1,5 @@
 import { Actor } from "@openpromo/core/helpers/actor";
+import { ORPCError } from "@orpc/server";
 import type { WorkspaceRole } from "@shared/workspace/auth";
 import { checkWorkspaceRole } from "../../helpers/workspace-role-checker";
 import type { OrpcWorkspaceContext } from "../context";
@@ -36,15 +37,21 @@ export const withWorkspaceRole = orpcBuilder.middleware<
   const orgRole = honoContext.get("role");
 
   if (!user) {
-    throw new Error("User is not authenticated");
+    throw new ORPCError("UNAUTHORIZED", {
+      message: "User is not authenticated",
+    });
   }
 
   if (!organizationId) {
-    throw new Error("Organization ID is not set in context");
+    throw new ORPCError("INTERNAL_SERVER_ERROR", {
+      message: "Organization ID is not set in context",
+    });
   }
 
   if (!orgRole) {
-    throw new Error("Organization role is not set in context");
+    throw new ORPCError("INTERNAL_SERVER_ERROR", {
+      message: "Organization role is not set in context",
+    });
   }
 
   // 2. Check workspace role using shared logic
