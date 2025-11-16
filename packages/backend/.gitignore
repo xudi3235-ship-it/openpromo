@@ -121,3 +121,4 @@ ENV/
 env/
 env.bak/
 venv.bak/
+.tmp/
