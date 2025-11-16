@@ -1,7 +1,10 @@
 import os
 
 import replicate
+from google import genai
+from google.genai.types import ContentUnionDict, GenerateContentResponse
 from openai import OpenAI
+from PIL import Image
 
 
 def get_env_or_raise(key: str) -> str:
@@ -12,14 +15,38 @@ def get_env_or_raise(key: str) -> str:
 
 
 def oai() -> OpenAI:
-    key = get_env_or_raise("OPENAI_API_KEY")
-    if not key:
-        raise ValueError("OPENAI_API_KEY not set in environment variables")
-    return OpenAI(api_key=key)
+    return OpenAI(api_key=get_env_or_raise("OPENAI_API_KEY"))
+
+
+def gemini():
+    return genai.Client(
+        api_key=get_env_or_raise("GEMINI_API_KEY"),
+    )
 
 
 def rep() -> replicate.Client:
-    key = get_env_or_raise("REPLICATE_API_TOKEN")
-    if not key:
-        raise ValueError("REPLICATE_API_TOKEN not set in environment variables")
-    return replicate.Client(api_token=key)
+    return replicate.Client(api_token=get_env_or_raise("REPLICATE_API_TOKEN"))
+
+
+def run_nano_banana(
+    image_paths: list[str], prompt: str, contents: ContentUnionDict = {}
+):
+    """
+    might generate multiple images
+    """
+    MODEL_ID = "gemini-2.5-flash-image"
+    images = [Image.open(path) for path in image_paths]
+
+    response: GenerateContentResponse = gemini().models.generate_content(
+        model=MODEL_ID,
+        contents=[contents, prompt, *images],
+    )
+    output_images = []
+    if not response.parts:
+        raise ValueError("No parts in response")
+    for part in response.parts:
+        if part.text:
+            print(part.text)
+        elif image := part.as_image():
+            output_images.append(image)
+    return output_images
