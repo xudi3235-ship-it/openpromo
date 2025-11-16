@@ -2,7 +2,7 @@ import modal
 
 # ---------- img ----------
 image = (
-    modal.Image.debian_slim(python_version="3.11")
+    modal.Image.debian_slim(python_version="3.12.9")
     .run_commands(
         "apt update -y && apt install -y ffmpeg",
     )
