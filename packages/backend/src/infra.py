@@ -1,20 +1,12 @@
 import modal
 
 # ---------- img ----------
-python_deps = [
-    "fastapi[standard]",
-    "scalar-fastapi",
-    "requests",
-    "boto3",
-    "openai",
-    "replicate",
-]
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .run_commands(
         "apt update -y && apt install -y ffmpeg",
     )
-    .pip_install(*python_deps)
+    .pip_install_from_pyproject("pyproject.toml")
     .add_local_python_source("src")
 )
 secret = modal.Secret.from_name(
