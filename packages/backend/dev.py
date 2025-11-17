@@ -1,12 +1,86 @@
+import asyncio
 import base64
+import os
+import shutil
+from pathlib import Path
+from typing import TypedDict
 
-from agents import Agent, Runner
+from agents import (
+    Agent,
+    Runner,
+    ShellCallOutcome,
+    ShellCommandOutput,
+    ShellCommandRequest,
+    ShellResult,
+    ShellTool,
+    function_tool,
+    trace,
+)
 from dotenv import load_dotenv
 from openai.types.responses import ResponseInputImageParam, ResponseInputItemParam
+from pydantic import BaseModel, Field
+from scenedetect.scene_manager import SceneList
 
-from src.core.shared import oai
+from src.core.shared import oai, run_gemini_nano_banana
 
 load_dotenv()
+
+
+class ShellExecutor:
+    """Executes shell commands with optional approval."""
+
+    def __init__(self, cwd: Path | None = None):
+        self.cwd = Path(cwd or Path.cwd())
+
+    async def __call__(self, request: ShellCommandRequest) -> ShellResult:
+        action = request.data.action
+
+        outputs: list[ShellCommandOutput] = []
+        for command in action.commands:
+            proc = await asyncio.create_subprocess_shell(
+                command,
+                cwd=self.cwd,
+                env=os.environ.copy(),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            timed_out = False
+            try:
+                timeout = (action.timeout_ms or 0) / 1000 or None
+                stdout_bytes, stderr_bytes = await asyncio.wait_for(
+                    proc.communicate(), timeout=timeout
+                )
+            except asyncio.TimeoutError:
+                proc.kill()
+                stdout_bytes, stderr_bytes = await proc.communicate()
+                timed_out = True
+
+            stdout = stdout_bytes.decode("utf-8", errors="ignore")
+            stderr = stderr_bytes.decode("utf-8", errors="ignore")
+            outputs.append(
+                ShellCommandOutput(
+                    command=command,
+                    stdout=stdout,
+                    stderr=stderr,
+                    outcome=ShellCallOutcome(
+                        type="timeout" if timed_out else "exit",
+                        exit_code=getattr(proc, "returncode", None),
+                    ),
+                )
+            )
+
+            if timed_out:
+                break
+
+        return ShellResult(
+            output=outputs,
+            provider_data={"working_directory": str(self.cwd)},
+        )
+
+
+shell_tool = ShellTool(
+    executor=ShellExecutor(),  # Use LocalShell() to disable execution
+)
 
 
 def encode_image(image_path: str):
@@ -71,32 +145,220 @@ def run_image_gen_with_style_ref(
     return response.output_text
 
 
-async def run_agent():
-    from agents import SQLiteSession
+def detect_scenes(video_path: str):
+    """
+    detect scenes from a video file, detects by content changes
+    using opencv, useful for splitting shots
+    """
+    from scenedetect import ContentDetector, detect
 
-    # Create agent
-    agent = Agent[str](
-        name="Assistant",
-        instructions="Reply very concisely.",
+    return detect(video_path, ContentDetector())
+
+
+def extract_keyframes(video_path: str):
+    scene_list: SceneList = detect_scenes(video_path)
+    output_dir = "./tmp/extracted_frames"
+    shutil.rmtree(output_dir, ignore_errors=True)
+    os.makedirs(output_dir, exist_ok=True)  # noqa: F821
+
+    shots: list[ShotSpec] = []
+
+    for i, (start_timecode, end_timecode) in enumerate(scene_list):
+        start_seconds = start_timecode.get_seconds()
+        end_seconds = end_timecode.get_seconds()
+
+        # Extract frame at the beginning of the scene
+        start_frame_cmd = f"ffmpeg -i {video_path} -ss {start_seconds} -vframes 1 {output_dir}/scene_{i}_start.jpg"
+        os.system(start_frame_cmd)
+        print(
+            f"Extracted frames for scene {i}: start ({start_seconds}s) and end ({end_seconds}s)."
+        )
+        shots.append(
+            ShotSpec(
+                start_time=start_seconds,
+                end_time=end_seconds,
+                description="",
+                start_frame_image_path=f"{output_dir}/scene_{i}_start.jpg",
+            )
+        )
+    return shots
+
+
+# ------------------------------------------------------------------
+# specs
+# ------------------------------------------------------------------
+class ShotSpec(BaseModel):
+    start_time: float = Field(..., description="Start time of the shot in seconds")
+    end_time: float = Field(..., description="End time of the shot in seconds")
+    description: str = Field(
+        ...,
+        description="Description of the shot content. include specific camera controls, angles, movements, etc.",
+    )
+    start_frame_image_path: str = Field(
+        ..., description="Path to the start frame image of the shot"
     )
 
-    # Create a session instance
-    session = SQLiteSession(
-        "conversation_123",
+    def to_response_input_image_param(self) -> ResponseInputImageParam:
+        with open(self.start_frame_image_path, "rb") as img_file:
+            img_bytes = img_file.read()
+        base64_image = base64.b64encode(img_bytes).decode("utf-8")
+        return {
+            "type": "input_image",
+            "image_url": f"data:image/jpeg;base64,{base64_image}",
+            "detail": "auto",
+        }
+
+
+class VideoSpec(BaseModel):
+    title: str = Field(..., description="Title of the video")
+    description: str = Field(..., description="Description of the video content")
+    video_context: str = Field(
+        ...,
+        description="Overall context or theme of the video, helps to guide shot creation, overall themeing, etc.",
+    )
+    shots: list[ShotSpec] = Field(..., description="List of shots in the video")
+
+    def serialize(self) -> str:
+        # serialzie all fields
+        return self.model_dump_json(indent=2)
+
+    def to_response_input_items(self) -> list[ResponseInputItemParam]:
+        items: list[ResponseInputItemParam] = []
+        items.append(
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": f"here is the serialized video spec: {self.serialize()}. Here are all the shots keyframes from the video.",
+                    },
+                    *[shot.to_response_input_image_param() for shot in self.shots],
+                ],
+            }
+        )
+        return items
+
+
+def read_from_path(path: str) -> str:
+    with open(path, "r") as f:
+        return f.read()
+
+
+class ImageGenInput(TypedDict):
+    prompt: str
+    image_paths: list[str]
+
+
+class ImageGenOutput(TypedDict):
+    error: str | None
+    generated_image_urls: list[str]
+
+
+@function_tool(
+    description_override="generate image, nano banana using prompt + image paths. "
+)
+async def nano_banana_image_gen(input: ImageGenInput):
+    # validate input
+    if not input["prompt"]:
+        return ImageGenOutput(
+            error="prompt is required",
+            generated_image_urls=[],
+        )
+    # if paths are not valid
+    for path in input["image_paths"]:
+        if not os.path.exists(path):
+            return ImageGenOutput(
+                error=f"image path not found: {path}",
+                generated_image_urls=[],
+            )
+    try:
+        output = run_gemini_nano_banana(
+            prompt=input["prompt"],
+            img_paths=input["image_paths"],
+        )
+        return output
+    except Exception as e:
+        return ImageGenOutput(
+            error=str(e),
+            generated_image_urls=[],
+        )
+
+
+async def run_agent(video_path: str):
+    if not os.path.exists(video_path):
+        raise FileNotFoundError(f"Video file not found: {video_path}")
+    # 1. detect scenes
+    shots = extract_keyframes(video_path)
+
+    # 2. run agent to generate spec.
+    sys_prompt = f"""
+        You are expert in breaking down a good video into specs and storyboards, later will be used for replicating this video.
+
+        These input are keyframes of shots from a video, mostly commercial, ads, creative, or even viral shorts.
+
+        Our workflow is we will first reverse engineer the video into a spec, then use the spec to create a new video to capture the ideas from the original video but with different assets.
+
+        ## TASK
+        0. first use the shell tool to inspect the ./tmp dir, which will hold all the keyframe image paths, and the nano banana image generation will also store images under ./tmp.!! ensure the image paths are all correct when you call from here!!
+        1. closely analyze the shots, why they are good, and break down to precise accurate video spec along with all the shot specs details.
+        2. analyze user input given product context and modify the video spec shots to fit.
+        3. TODO: if users provide any context about the product they are selling, use that as reference to modify spets.
+        4. use the the tool to create modified keyframes images with context, follow the attached nano banan prompt guide. For consistency, you shhould consider editing flow, e.g. use prompt to edit generated previous image etc. to understand the paths, assets. etc.
+
+        ## RULES
+        - for paths, DO NOT edit the image paths, keep them as is. 
+        - use the shell tools properly, e.g. read the images under ./tmp
+        ## Appendix
+        ### Sora2 prompt guide
+        {read_from_path("./src/static/sora2_prompt_guide.txt")}
+        ### nano banana prompt guide
+        {read_from_path("./src/static/nanobanana_prompt_guide.txt")}
+    """
+    agent: Agent[str] = Agent[str](
+        name="Agent",
+        model="gpt-5.1",
+        instructions=sys_prompt,
+        output_type=VideoSpec,
+        tools=[nano_banana_image_gen, shell_tool],
     )
 
-    # First turn
-    result = await Runner.run(
-        agent, "What city is the Golden Gate Bridge in?", session=session
-    )
-    print(result.final_output)  # "San Francisco"
-
-    # Second turn - agent automatically remembers previous context
-    result = await Runner.run(agent, "What state is it in?", session=session)
-    print(result.final_output)  # "California"
+    product_image_input = to_img_inputs(["./tmp/hand_cream.png"])
+    with trace("Video Generation workflow"):
+        output = await Runner.run(
+            agent,
+            input=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": "here are the shot keyframes from the video",
+                        },
+                        *[shot.to_response_input_image_param() for shot in shots],
+                    ],
+                },
+                # -------- product info --------
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": "here's the product i'm selling",
+                        },
+                        *product_image_input,
+                    ],
+                },
+            ],
+        )
+        spec = output.final_output_as(VideoSpec)
+        print("Generated Video Spec:")
+        print(spec.serialize())
+        return spec
 
 
 if __name__ == "__main__":
     import asyncio
 
-    asyncio.run(run_agent())
+    video_file_path = "./tmp/sample_1.mp4"
+
+    asyncio.run(run_agent(video_file_path))
