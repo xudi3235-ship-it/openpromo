@@ -41,6 +41,7 @@ reportUnknownMemberType = false
 reportUnknownArgumentType = false
 reportPrivateImportUsage = false
 reportUnusedCallResult= false
+reportExplicitAny = false
 
 pythonVersion = "3.12.9"
 pythonPlatform = "Linux"

@@ -3,20 +3,29 @@ import base64
 import os
 import shutil
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, Literal, Optional, TypedDict, cast
 
 from agents import (
     Agent,
+    AgentHooks,
+    ModelResponse,
+    RunContextWrapper,
+    RunHooks,
     Runner,
     ShellCallOutcome,
     ShellCommandOutput,
     ShellCommandRequest,
     ShellResult,
     ShellTool,
+    Tool,
+    TResponseInputItem,
+    Usage,
     function_tool,
     trace,
 )
+from agents.tool_context import ToolContext
 from dotenv import load_dotenv
+from openai.types import VideoSize
 from openai.types.responses import ResponseInputImageParam, ResponseInputItemParam
 from pydantic import BaseModel, Field
 from scenedetect.scene_manager import SceneList
@@ -24,6 +33,106 @@ from scenedetect.scene_manager import SceneList
 from src.core.shared import oai, run_gemini_nano_banana
 
 load_dotenv()
+
+
+def resize_image(image_path: str, output_path: str, new_size: tuple[int, int]) -> None:
+    from PIL import Image
+
+    with Image.open(image_path) as img:
+        resized_img = img.resize(new_size, Image.Resampling.LANCZOS)
+        resized_img.save(output_path)
+
+
+class LoggingHooks(AgentHooks[Any]):
+    async def on_start(
+        self,
+        context: RunContextWrapper[Any],
+        agent: Agent[Any],
+    ) -> None:
+        print(f"#### {agent.name} is starting.")
+
+    async def on_end(
+        self,
+        context: RunContextWrapper[Any],
+        agent: Agent[Any],
+        output: Any,
+    ) -> None:
+        print(f"#### {agent.name} produced output: {output}.")
+
+
+class ExampleHooks(RunHooks):
+    def __init__(self):
+        self.event_counter = 0
+
+    def _usage_to_str(self, usage: Usage) -> str:
+        return f"{usage.requests} requests, {usage.input_tokens} input tokens, {usage.output_tokens} output tokens, {usage.total_tokens} total tokens"
+
+    async def on_agent_start(self, context: RunContextWrapper, agent: Agent) -> None:
+        self.event_counter += 1
+        print(
+            f"### {self.event_counter}: Agent {agent.name} started. Usage: {self._usage_to_str(context.usage)}"
+        )
+
+    async def on_llm_start(
+        self,
+        context: RunContextWrapper,
+        agent: Agent,
+        system_prompt: Optional[str],
+        input_items: list[TResponseInputItem],
+    ) -> None:
+        self.event_counter += 1
+        print(
+            f"### {self.event_counter}: LLM started. Usage: {self._usage_to_str(context.usage)}"
+        )
+
+    async def on_llm_end(
+        self, context: RunContextWrapper, agent: Agent, response: ModelResponse
+    ) -> None:
+        self.event_counter += 1
+        print(
+            f"### {self.event_counter}: LLM ended. Usage: {self._usage_to_str(context.usage)}"
+        )
+
+    async def on_agent_end(
+        self, context: RunContextWrapper, agent: Agent, output: Any
+    ) -> None:
+        self.event_counter += 1
+        print(
+            f"### {self.event_counter}: Agent {agent.name} ended with output {output}. Usage: {self._usage_to_str(context.usage)}"
+        )
+
+    # Note: The on_tool_start and on_tool_end hooks apply only to local tools.
+    # They do not include hosted tools that run on the OpenAI server side,
+    # such as WebSearchTool, FileSearchTool, CodeInterpreterTool, HostedMCPTool,
+    # or other built-in hosted tools.
+    async def on_tool_start(
+        self, context: RunContextWrapper, agent: Agent, tool: Tool
+    ) -> None:
+        self.event_counter += 1
+        # While this type cast is not ideal,
+        # we don't plan to change the context arg type in the near future for backwards compatibility.
+        tool_context = cast(ToolContext[Any], context)
+        print(f"### {self.event_counter}: Tool {tool.name} started.")
+
+    async def on_tool_end(
+        self, context: RunContextWrapper, agent: Agent, tool: Tool, result: str
+    ) -> None:
+        self.event_counter += 1
+        # While this type cast is not ideal,
+        # we don't plan to change the context arg type in the near future for backwards compatibility.
+        tool_context = cast(ToolContext[Any], context)
+        print(f"### {self.event_counter}: Tool {tool.name} finished. result={result}.")
+
+    async def on_handoff(
+        self, context: RunContextWrapper, from_agent: Agent, to_agent: Agent
+    ) -> None:
+        self.event_counter += 1
+        print(
+            f"### {self.event_counter}: Handoff from {from_agent.name} to {to_agent.name}. Usage: {self._usage_to_str(context.usage)}"
+        )
+
+
+hooks = ExampleHooks()
 
 
 class ShellExecutor:
@@ -161,7 +270,7 @@ def extract_keyframes(video_path: str):
     shutil.rmtree(output_dir, ignore_errors=True)
     os.makedirs(output_dir, exist_ok=True)  # noqa: F821
 
-    shots: list[ShotSpec] = []
+    shots: list[RawShotSpec] = []
 
     for i, (start_timecode, end_timecode) in enumerate(scene_list):
         start_seconds = start_timecode.get_seconds()
@@ -174,7 +283,7 @@ def extract_keyframes(video_path: str):
             f"Extracted frames for scene {i}: start ({start_seconds}s) and end ({end_seconds}s)."
         )
         shots.append(
-            ShotSpec(
+            RawShotSpec(
                 start_time=start_seconds,
                 end_time=end_seconds,
                 description="",
@@ -187,7 +296,7 @@ def extract_keyframes(video_path: str):
 # ------------------------------------------------------------------
 # specs
 # ------------------------------------------------------------------
-class ShotSpec(BaseModel):
+class RawShotSpec(BaseModel):
     start_time: float = Field(..., description="Start time of the shot in seconds")
     end_time: float = Field(..., description="End time of the shot in seconds")
     description: str = Field(
@@ -209,6 +318,33 @@ class ShotSpec(BaseModel):
         }
 
 
+class NewShotSpec(BaseModel):
+    id: int = Field(..., description="sequence id of the new shot, e.g. 1, 2, 3")
+    duration: Literal["4", "8", "12"] = Field(
+        ..., description="Duration of the shot in seconds. Valid values: 4, 8, or 12"
+    )
+    video_prompt: str = Field(..., description="Prompt for this shot")
+    video_size: VideoSize = Field(..., description="Resolution of the generated video")
+    video_start_frame_image_path: str = Field(
+        ..., description="Path to the start frame image for this new shot"
+    )
+
+    def resize_img(self) -> None:
+        # read the current size from video_size, parse "{width}x{height}"
+        size_str = self.video_size
+        width_str, height_str = size_str.split("x")
+        width = int(width_str)
+        height = int(height_str)
+        output_path = self.video_start_frame_image_path.replace(
+            ".jpg", f"_resized_{size_str}.jpg"
+        )
+        resize_image(
+            self.video_start_frame_image_path,
+            output_path,
+            (width, height),
+        )
+
+
 class VideoSpec(BaseModel):
     title: str = Field(..., description="Title of the video")
     description: str = Field(..., description="Description of the video content")
@@ -216,7 +352,13 @@ class VideoSpec(BaseModel):
         ...,
         description="Overall context or theme of the video, helps to guide shot creation, overall themeing, etc.",
     )
-    shots: list[ShotSpec] = Field(..., description="List of shots in the video")
+    raw_shots: list[RawShotSpec] = Field(
+        ..., description="List of raw shots in the input reference video"
+    )
+    new_shots: list[NewShotSpec] = Field(
+        ...,
+        description="List of new shots generated for the output video will be fed to sora2 video generation",
+    )
 
     def serialize(self) -> str:
         # serialzie all fields
@@ -232,7 +374,7 @@ class VideoSpec(BaseModel):
                         "type": "input_text",
                         "text": f"here is the serialized video spec: {self.serialize()}. Here are all the shots keyframes from the video.",
                     },
-                    *[shot.to_response_input_image_param() for shot in self.shots],
+                    *[shot.to_response_input_image_param() for shot in self.raw_shots],
                 ],
             }
         )
@@ -244,9 +386,13 @@ def read_from_path(path: str) -> str:
         return f.read()
 
 
+class VideoGenInput(TypedDict):
+    shot: NewShotSpec
+
+
 class ImageGenInput(TypedDict):
     prompt: str
-    image_paths: list[str]
+    input_image_paths: list[str]
 
 
 class ImageGenOutput(TypedDict):
@@ -254,18 +400,44 @@ class ImageGenOutput(TypedDict):
     generated_image_urls: list[str]
 
 
+@function_tool
+async def gen_video_sora2(input: VideoGenInput):
+    """
+    generate video using sora2 given video spec
+    """
+    shot = input["shot"]
+    shot.resize_img()
+    # rezi
+    video = oai().videos.create(
+        prompt=shot.video_prompt,
+        seconds=shot.duration,
+        input_reference=Path(shot.video_start_frame_image_path),
+    )
+    print(f"created sora2 video.id: {video.id}")
+    while not video.status == "completed":
+        await asyncio.sleep(10)
+        video = oai().videos.retrieve(video.id)
+        print(f"Video status: {video.status}")
+    # done, download
+    res = oai().videos.download_content(video.id)
+    fout = "./tmp/sora2_generated_video.mp4"
+    with open(fout, "wb") as f:
+        f.write(res.read())
+    print(f"Downloaded generated video to {fout}")
+    return fout
+
+
 @function_tool(
     description_override="generate image, nano banana using prompt + image paths. "
 )
 async def nano_banana_image_gen(input: ImageGenInput):
-    # validate input
     if not input["prompt"]:
         return ImageGenOutput(
             error="prompt is required",
             generated_image_urls=[],
         )
-    # if paths are not valid
-    for path in input["image_paths"]:
+
+    for path in input["input_image_paths"]:
         if not os.path.exists(path):
             return ImageGenOutput(
                 error=f"image path not found: {path}",
@@ -274,7 +446,7 @@ async def nano_banana_image_gen(input: ImageGenInput):
     try:
         output = run_gemini_nano_banana(
             prompt=input["prompt"],
-            img_paths=input["image_paths"],
+            img_paths=input["input_image_paths"],
         )
         return output
     except Exception as e:
@@ -303,11 +475,17 @@ async def run_agent(video_path: str):
         1. closely analyze the shots, why they are good, and break down to precise accurate video spec along with all the shot specs details.
         2. analyze user input given product context and modify the video spec shots to fit.
         3. TODO: if users provide any context about the product they are selling, use that as reference to modify spets.
-        4. use the the tool to create modified keyframes images with context, follow the attached nano banan prompt guide. For consistency, you shhould consider editing flow, e.g. use prompt to edit generated previous image etc. to understand the paths, assets. etc.
+        4. use the the tool to create keyframes images with context, follow the attached nano banana prompt guide. Nano banana tool takes prompt + images as input.
+
 
         ## RULES
-        - for paths, DO NOT edit the image paths, keep them as is. 
         - use the shell tools properly, e.g. read the images under ./tmp
+        - WE DONT WANT to create similar images as the original video, we want to create NEW images that capture the essence, ideas, and concepts from the original video but with different assets. Apply that principle when creating prompts for nano banana image generation.
+        - use the new shot spec to create & store all the shots, they should be consistent with other shots, ordering, pacing etc. Each shot has prompt + start frame image paths, use the nano banana tool to craft those images along with shell tool. This is critical. It's the storyboard for video generation.
+        - we will use the video_prompt as well as start frame img for sora2 video gen, this means it's not necessarily better to have more shots, but rather sometimes better to combine them, specifcy them in the prompt following the good sora2 prompt guide, etc. since this improves output quality, video segments are concatenated later after we generate. Critical to follow the sora2 prompt guide.
+        - per sora2 guide, each video genreration can take 1 input reference to guide. 
+        - finally, use the sora2 video gen tool to create the video.
+
         ## Appendix
         ### Sora2 prompt guide
         {read_from_path("./src/static/sora2_prompt_guide.txt")}
@@ -319,20 +497,23 @@ async def run_agent(video_path: str):
         model="gpt-5.1",
         instructions=sys_prompt,
         output_type=VideoSpec,
-        tools=[nano_banana_image_gen, shell_tool],
+        hooks=LoggingHooks(),
+        tools=[nano_banana_image_gen, shell_tool, gen_video_sora2],
     )
 
     product_image_input = to_img_inputs(["./tmp/hand_cream.png"])
     with trace("Video Generation workflow"):
         output = await Runner.run(
             agent,
+            hooks=hooks,
             input=[
+                # -------- shots info --------
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "input_text",
-                            "text": "here are the shot keyframes from the video",
+                            "text": "here are the shot keyframes from the reference video",
                         },
                         *[shot.to_response_input_image_param() for shot in shots],
                     ],

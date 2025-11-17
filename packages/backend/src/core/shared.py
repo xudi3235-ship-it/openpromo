@@ -37,6 +37,7 @@ class NanoBananOutput(BaseModel):
     _raw: GenerateContentResponse
     images: list[GeminiImage]
     image_paths: list[str]
+    prompt: str
 
 
 def run_gemini_nano_banana(
@@ -55,21 +56,19 @@ def run_gemini_nano_banana(
         model=MODEL_ID,
         contents=[prompt, *imgs],
     )
-    # create a base base name from the img_paths
-    base_name = "_".join([Path(p).stem for p in img_paths])
     if not response.parts:
         raise ValueError("No parts in response")
     print(f"Received {len(response.parts)} parts in response")
-    out: NanoBananOutput = NanoBananOutput(_raw=response, images=[], image_paths=[])
+    out: NanoBananOutput = NanoBananOutput(
+        _raw=response, images=[], image_paths=[], prompt=prompt
+    )
     for part in response.parts:
         if part.text is not None:
             print(part.text)
         elif part.inline_data is not None:
             image: GeminiImage | None = part.as_image()
             if image is not None:
-                image_path = (
-                    f"./tmp/generated_images/{base_name + uuid.uuid4().hex}.png"
-                )
+                image_path = f"./tmp/generated_images/{uuid.uuid4().hex[:10]}.png"
                 if not Path("./tmp/generated_images/").exists():
                     Path("./tmp/generated_images/").mkdir(parents=True, exist_ok=True)
                 with open(image_path, "wb") as f:
