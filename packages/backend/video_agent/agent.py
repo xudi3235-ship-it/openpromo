@@ -1,9 +1,6 @@
 from google.adk.agents.llm_agent import Agent
 
 from src.core.shared import (
-    read_docs_guide,
-    run_gemini_nano_banana,
-    run_gemini_veo31,
     run_shell_cmd,
 )
 
@@ -32,8 +29,5 @@ root_agent = Agent(
     instruction=sys_prompt,
     tools=[
         run_shell_cmd,
-        run_gemini_nano_banana,
-        run_gemini_veo31,
-        read_docs_guide,
     ],
 )
