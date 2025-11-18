@@ -56,6 +56,8 @@ async def run_gemini_nano_banana(
     """
     client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
     MODEL_ID = "gemini-2.5-flash-image"
+    # make the paths are ./tmp/...
+    img_paths = [p if p.startswith("./tmp/") else f"./tmp/{p}" for p in img_paths]
     imgs: list[ImageFile] = [Image.open(p) for p in img_paths]
     print(f"Running Gemini Nano Banana with prompt: {prompt} and {len(imgs)} images")
 
@@ -99,8 +101,8 @@ async def run_gemini_nano_banana(
 async def run_gemini_veo31(
     prompt: str,
     output_path: str,
-    prev_video_path: str | None = None,
-    reference_images: list[str] | None = None,
+    prev_video_path: str = "NA",
+    reference_images: list[str] = [],  # pyright: ignore[reportCallInDefaultInitializer]
 ):
     """powerful, single api for video generation and extension using Gemini VEO-3.1 model. this tool is capabale of text to video, images to video(with references), and video extension(using previous video as base). it runs, polls, and downloads the generated video.
 
@@ -109,7 +111,7 @@ async def run_gemini_veo31(
     Args:
         prompt: text prompt for video generation
         output_path: path to save the generated video
-        prev_video_path: optional, previously generated video path to use as a base. this is used for video extension.
+        prev_video_path: optional, previously generated video path to use as a base. this is used for video extension. default is "NA" which means no previous video.
         reference_images: list of image paths to use as reference images for chracter, product, style, etc. up to 3.
     """
     reference_images = reference_images or []
@@ -125,7 +127,9 @@ async def run_gemini_veo31(
 
     client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
 
-    prev_video = Video.from_file(location=prev_video_path) if prev_video_path else None
+    prev_video = (
+        Video.from_file(location=prev_video_path) if prev_video_path != "NA" else None
+    )
 
     operation = client.models.generate_videos(
         model="veo-3.1-generate-preview",

@@ -1,7 +1,10 @@
+from dotenv import load_dotenv
 from google.adk.apps.app import App
 from google.adk.runners import InMemoryRunner
 
 from video_agent.agent import root_agent
+
+load_dotenv()
 
 app = App(
     name="agents",
