@@ -242,7 +242,7 @@ dev = [
 requires-dist = [
     { name = "boto3", specifier = "==1.40.74" },
     { name = "fastapi", extras = ["standard"], specifier = "==0.121.2" },
-    { name = "google-adk", specifier = ">=1.18.0" },
+    { name = "google-adk", specifier = "==1.18.0" },
     { name = "google-genai", specifier = "==1.50.1" },
     { name = "modal", specifier = ">=1.2.2" },
     { name = "openai", specifier = "==2.8.0" },
