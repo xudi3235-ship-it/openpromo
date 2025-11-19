@@ -2,7 +2,7 @@ import asyncio
 
 from agents import function_tool
 from google import genai
-from google.genai.types import GeneratedVideo, Video
+from google.genai.types import GeneratedVideo, GenerateVideosSource, Video
 from google.genai.types import Image as GeminiImage
 
 from src.core.shared import get_env_or_raise
@@ -12,43 +12,50 @@ from src.core.shared import get_env_or_raise
 async def run_gemini_veo31(
     prompt: str,
     output_path: str,
-    prev_video_path: str = "NA",
-    reference_images: list[str] = [],  # pyright: ignore[reportCallInDefaultInitializer]
+    input_image_path: str | None = None,
+    input_video_path: str | None = None,
 ):
     """powerful, single api for video generation and extension using Gemini VEO-3.1 model. this tool is capabale of text to video, images to video(with references), and video extension(using previous video as base). it runs, polls, and downloads the generated video.
 
     full doc: https://ai.google.dev/gemini-api/docs/video.md.txt
 
+    The following use cases are supported:
+    1. Text to video generation.
+    2a. Image to video generation (additional text prompt is optional).
+    2b. Image to video generation with frame interpolation (specify last_frame
+    in config).
+    3. Video extension (additional text prompt is optional)
+
+
+
     Args:
         prompt: text prompt for video generation
         output_path: path to save the generated video
-        prev_video_path: optional, previously generated video path to use as a base. this is used for video extension. default is "NA" which means no previous video.
-        reference_images: list of image paths to use as reference images for chracter, product, style, etc. up to 3.
+        input_image_path: optional path to input image to guide video generation
+        input_video_path: optional path to input video to extend
     """
-    reference_images = reference_images or []
-    if len(reference_images) > 3:
-        raise ValueError("Maximum of 3 reference images are allowed.")
-
-    reference_images_objs = [
-        genai.types.VideoGenerationReferenceImage(
-            image=GeminiImage.from_file(location=path)
-        )
-        for path in reference_images
-    ]
-
     client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
 
-    prev_video = (
-        Video.from_file(location=prev_video_path) if prev_video_path != "NA" else None
+    input_video = (
+        Video.from_file(location=input_video_path)
+        if input_video_path is not None
+        else None
+    )
+    input_image = (
+        GeminiImage.from_file(location=input_image_path)
+        if input_image_path is not None
+        else None
     )
 
+    # https://ai.google.dev/gemini-api/docs/video?example=dialogue#veo-model-parameters
     operation = client.models.generate_videos(
         model="veo-3.1-generate-preview",
-        prompt=prompt,
-        video=prev_video,
-        # https://ai.google.dev/gemini-api/docs/video?example=dialogue#veo-model-parameters
+        source=GenerateVideosSource(
+            prompt=prompt,
+            image=input_image,
+            video=input_video,
+        ),
         config=genai.types.GenerateVideosConfig(
-            reference_images=reference_images_objs,
             number_of_videos=1,
             duration_seconds=8,
             resolution="720p",

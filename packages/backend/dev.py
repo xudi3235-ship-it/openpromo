@@ -22,7 +22,7 @@ def create_input() -> Message:
         "content": [
             {
                 "type": "input_text",
-                "text": "here's the product and image. help me create a image using the running man referecne image. this will be the key element for the product demo video later. product is a water bottle that helps you stay hydrated during workouts. DO NOT create video yet.",
+                "text": "here's the product and image. help me create a image using the running man referecne image. this will be the key element for the product demo video later. product is a water bottle. Help me crate a bright, clean, refershing image, and then use that to create a video later.",
             },
             *to_img_inputs(["./tmp/products/bottle.jpg"]),
         ],
@@ -41,7 +41,7 @@ async def run_agent():
 
 
     ## guidelines
-    - ./tmp is set to be current working dir. product image inputs are in the ./tmp/products folder. shell commands are executed in ./tmp
+    - use shell tool, we should store things inside ./tmp dir. product image inputs are in the ./tmp/products folder. ensure you only run shell commands in ./tmp, all paths need to include ./tmp as prefix.
     - use tools properly, e.g. shell tool for file ops, gemini nano banana for image gen, veo3.1 for video gen, and some helpers read_docs_guide for look up docs/guide for how each tool are used. 
 
     """

@@ -66,5 +66,5 @@ class ShellExecutor:
 
 
 shell_tool = ShellTool(
-    executor=ShellExecutor(Path("./tmp")),
+    executor=ShellExecutor(),
 )
