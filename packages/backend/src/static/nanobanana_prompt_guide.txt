@@ -311,27 +311,3 @@ Aspect ratio	Resolution	Tokens
 16:9	1344x768	1290
 21:9	1536x672	1290
 When to use Imagen
-
-In addition to using Gemini's built-in image generation capabilities, you can also access Imagen, our specialized image generation model, through the Gemini API.
-
-Attribute	Imagen	Gemini Native Image
-Strengths	Most capable image generation model to date. Recommended for photorealistic images, sharper clarity, improved spelling and typography.	Default recommendation.
-Unparalleled flexibility, contextual understanding, and simple, mask-free editing. Uniquely capable of multi-turn conversational editing.
-Availability	Generally available	Preview (Production usage allowed)
-Latency	Low. Optimized for near-real-time performance.	Higher. More computation is required for its advanced capabilities.
-Cost	Cost-effective for specialized tasks. $0.02/image to $0.12/image	Token-based pricing. $30 per 1 million tokens for image output (image output tokenized at 1290 tokens per image flat, up to 1024x1024px)
-Recommended tasks	
-Image quality, photorealism, artistic detail, or specific styles (e.g., impressionism, anime) are top priorities.
-Infusing branding, style, or generating logos and product designs.
-Generating advanced spelling or typography.
-Interleaved text and image generation to seamlessly blend text and images.
-Combine creative elements from multiple images with a single prompt.
-Make highly specific edits to images, modify individual elements with simple language commands, and iteratively work on an image.
-Apply a specific design or texture from one image to another while preserving the original subject's form and details.
-Imagen 4 should be your go-to model starting to generate images with Imagen. Choose Imagen 4 Ultra for advanced use-cases or when you need the best image quality (note that can only generate one image at a time).
-
-What's next
-
-Find more examples and code samples in the cookbook guide.
-Check out the Veo guide to learn how to generate videos with the Gemini API.
-To learn more about Gemini models, see Gemini models.
