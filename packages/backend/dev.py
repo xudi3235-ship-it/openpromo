@@ -42,9 +42,9 @@ class AppContext(BaseModel):
 
 def create_user_input() -> Message:
     user_msg = """here's the product.
-    I wanna create a fast paced multiple shot, angles dynamic video for this product. using the cozy reference BG.
+    I wanna create a fast paced multiple shot, angles dynamic video for this product. using the lifestyle.jpg reference img.
 
-    i want some viral social media ad style video, with dynamic camera movements, multiple shots, showcasing the product features in an engaging way.
+    help me create a multi-shot 15s shorts video. 16:9
     """
 
     return {
@@ -184,6 +184,7 @@ async def run_agent():
     - stiching videos is less preferred compared to extension, however it might be suitable for some cases. in that case, generate different videos with veo3.1, then use shell tool to stich with ffmpeg.
     - when extending video, it's critical to ensure continuity, this applies to both visual, narrative flow, and audio! think carefully when crafting the extension prompt.
     - when creating veo3.1 prompt, you can add a <negative_prompt> section to explicity state what to avoid in the video. this is useful to avoid unwanted artifacts, issues. E.g. distorted logos, weird physics, etc.
+    - for reference object accuracy, ingridients, use reference images as input is preferred. use the tools properly, we have differtn options, e.g. start frame + prompt, sart+last frame interpolation, prompt + img references, etc.
 
     TASKS
     - analyze inputs, understand product, selling points, and target audience.

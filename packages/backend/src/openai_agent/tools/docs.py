@@ -187,7 +187,71 @@ IMAGE_PROMPT_GUIDE_GENERAL = """
 
 
 GOOD_VEO31_PROMPT_EXAMPLES = """
-    Best Veo 3 Prompts That Generated Millions of Views (+ Exact Templates)
+    <style_references/>
+    Style References That Work Consistently:
+    Camera/Equipment References:
+
+    “Shot on Arri Alexa” - Produces professional digital cinema look
+
+    “Shot on RED Dragon” - Crisp, detailed, slightly cooler tones
+
+    “Shot on 35mm film” - Film grain, warmer colors, organic feel
+
+    “iPhone 15 Pro cinematography” - Modern mobile aesthetic
+
+    Director Style References:
+
+    “Wes Anderson style” - Symmetrical, pastel colors, precise framing
+
+    “David Fincher style” - Dark, precise, clinical lighting
+
+    “Christopher Nolan style” - Epic scope, practical effects feel
+
+    “Denis Villeneuve style” - Atmospheric, moody, wide shots
+
+    Movie Cinematography References:
+
+    “Blade Runner 2049 cinematography” - Neon, atmospheric, futuristic
+
+    “Mad Max Fury Road style” - Saturated, gritty, high contrast
+
+    “Her (2013) cinematography” - Soft, warm, intimate lighting
+
+    “Interstellar visual style” - Epic, cosmic, natural lighting
+
+    Color Grading Terms:
+
+    “Teal and orange grade” - Popular Hollywood color scheme
+
+    “Film noir lighting” - High contrast, dramatic shadows
+
+    “Golden hour cinematography” - Warm, natural backlighting
+
+    “Cyberpunk color palette” - Neon blues, magentas, purples
+
+    /// some custom good rules below ///
+
+    What I learned:
+    Front-load the important stuff - Veo 3 weights early words more heavily
+    Lock down the “what” then iterate on the “How”
+    One action per prompt - Multiple actions = chaos (one action per secene)
+    Specific > Creative - "Walking sadly" < "shuffling with hunched shoulders"
+    Audio cues are OP - Most people ignore these, huge mistake (give the vide a realistic feel)
+    Camera movements that actually work:
+    Slow push/pull (dolly in/out)
+    Orbit around subject
+    Handheld follow
+    Static with subject movement
+    Avoid:
+    Complex combinations ("pan while zooming during a dolly")
+    Unmotivated movements
+    Multiple focal points
+    Style references that consistently deliver:
+    "Shot on [specific camera]"
+    "[Director name] style"
+    "[Movie] cinematography"
+    Specific color grading terms
+
 
     Best Veo 3 Prompts That Generated Millions of Views (+ Exact Templates)
     Last week, I watched a $500K commercial director get humbled—by a 22-year-old college kid with $5 in Veo 3 credits. 
