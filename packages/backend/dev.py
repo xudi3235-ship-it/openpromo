@@ -40,7 +40,7 @@ class AppContext(BaseModel):
     )
 
 
-def create_input() -> Message:
+def create_user_input() -> Message:
     user_msg = """here's the product.
     I wanna create a fast paced multiple shot, angles dynamic video for this product. using the cozy reference BG.
     """
@@ -114,6 +114,7 @@ async def run_agent():
 
     ABOUT VIDEO GENERATION
     - veo3.1 can only create up to 8s video at a time!! this is critical, so this means the image generation, storyboard, eveyrhting need to be planned around this constraint. Longer videos can be achieved by extending prev one, or creating mutliple videos, use your reasoning and specific use cases to decide best approach.
+    - camera movements, transitions be smooth, creative, and authentic.
 
     TASKS
     - analyze inputs, understand product, selling points, and target audience.
@@ -167,7 +168,7 @@ async def run_agent():
             agent,
             hooks=ExampleHooks(),
             input=[
-                create_input(),
+                create_user_input(),
             ],
         )
 
