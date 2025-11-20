@@ -43,6 +43,8 @@ class AppContext(BaseModel):
 def create_user_input() -> Message:
     user_msg = """here's the product.
     I wanna create a fast paced multiple shot, angles dynamic video for this product. using the cozy reference BG.
+
+    i want some viral social media ad style video, with dynamic camera movements, multiple shots, showcasing the product features in an engaging way.
     """
 
     return {
@@ -63,10 +65,17 @@ You specialize in creating product social media ads/shorts/videos for products t
 
 
 @function_tool
-async def evaluate_image(image_paths: list[str]):
+async def evaluate_image(
+    image_paths: list[str],
+):
+    """
+    Evaluate generated images to ensure they meet quality and relevance criteria.
+    Args:
+        image_paths: List of paths to the images to evaluate.
+    """
     resp = oai().responses.create(
         model="gpt-5.1",
-        reasoning={"effort": "high"},
+        reasoning={"effort": "medium"},
         input=[
             {
                 "role": "system",
@@ -96,6 +105,61 @@ async def evaluate_image(image_paths: list[str]):
     return feedback
 
 
+@function_tool
+async def evaluate_video_input(
+    image_paths: list[str],
+    prompt: str,
+):
+    """
+    Evaluate inputs for veo3.1 generation, including images, prompt
+    Args:
+        image_paths: veo3.1 image input, if any.
+        prompt: The veo3.1 prompt to evaluate.
+    """
+    print(f"Evaluating veo3.1 inputs, prompt: {prompt}, images: {image_paths}")
+
+    resp = oai().responses.create(
+        model="gpt-5.1",
+        reasoning={"effort": "medium"},
+        input=[
+            {
+                "role": "system",
+                "content": f"""
+                ROLE & GOAL
+                You are expert inputs for veo3.1 video generation for SMBs, including image and video prompts.
+
+                Given the primary goal of the agent who produced these imgs: {PRIMARY_GOAL}
+                and the primary target is SMBS(small businesses) who need quick, high-quality, engaging social media shorts/ads/videos for their products on social media(tiktok, ig reels, fb reels, etc).
+
+                SCOPE
+                * Focus on: the camera movements, the shot, storyboard, if they make sense, and what can be improved, also dialogue, audio, etc, pretty much everything, to ensure the quality!
+                * Evaluate how well the images align with the product, reference images, and overall goal.
+                * if good enough, then approve with a single sentence, else Provide constructive feedback *ONLY what could be improved to better meet the primary in concise 2-3 sentence acitonable terms.
+
+                REFERENCES
+                ### veo3.1 guide
+                {StaticPrompts.veo31_from_url()}
+                ### GOOD veo3.1 prompt examples
+                {StaticPrompts.good_veo31_prompt_examples()}
+                """,
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": f"Here is the veo3.1 prompt to evaluate:\n{prompt}, and here are the images input.",
+                    },
+                    *to_img_inputs(image_paths),
+                ],
+            },
+        ],
+    )
+    feedback = resp.output_text
+    print(f"Image evaluation feedback: {feedback}")
+    return feedback
+
+
 async def run_agent():
     sys_prompt = f"""
     You are expert in social media visuals, ads creatives. 
@@ -111,16 +175,22 @@ async def run_agent():
     ABOUT IMAGE GENERATION
     - when generating images, ALWAYS use the product image as input to ensure product is clearly visible.
     - feel free to generate a couple different images with differnt prompts, if they are part of the complex shots needed for longer video. 
+    - image prompt needs to be ultra-detailed, this is critical.
 
     ABOUT VIDEO GENERATION
     - veo3.1 can only create up to 8s video at a time!! this is critical, so this means the image generation, storyboard, eveyrhting need to be planned around this constraint. Longer videos can be achieved by extending prev one, or creating mutliple videos, use your reasoning and specific use cases to decide best approach.
     - camera movements, transitions be smooth, creative, and authentic.
+    - **FOR NOW, don't add texts, it's not accurate enough yet.
+    - stiching videos is less preferred compared to extension, however it might be suitable for some cases. in that case, generate different videos with veo3.1, then use shell tool to stich with ffmpeg.
+    - when extending video, it's critical to ensure continuity, this applies to both visual, narrative flow, and audio! think carefully when crafting the extension prompt.
+    - when creating veo3.1 prompt, you can add a <negative_prompt> section to explicity state what to avoid in the video. this is useful to avoid unwanted artifacts, issues. E.g. distorted logos, weird physics, etc.
 
     TASKS
     - analyze inputs, understand product, selling points, and target audience.
     - pick the best fitting image reference, and *preferrably use the reference + product image as input to craft a image(nano banana) following the docs guide. ALWAYS use product image as input when creating image. This will be key start frame for the product demo video.
     - evaluate the generated images using the evaluate_image tool to ensure they meet quality and relevance criteria, and make adjustments, depends on feedback you can either regenerate, or use image input to `edit` the previously generated image to fix issues with small tweaks. ONLY NEED TO RUN THIS ONCE!!
-    - create a good veo3.1 prompt with the new image to create product demo shot!! you can specify multiple shots follwing the veo3.1 guide in a single video gen. fast paced, dynamic camera movement, variety, commercial. specificy sounds, dialog, music, etc as needed.
+    - create a good veo3.1 prompt with the new image to create product demo video. you can specify multiple shots follwing the veo3.1 guide in a single video gen.
+    - before running veo3.1, use the evaluate_video_input tool to ensure the inputs are good enough, if not, make adjustments based on the feedback.
     - our goal is social media video shorts, overall duration is 15-30s, so roughly you can use the extension feature to extend it, with new prompts, variety, etc.
 
 
@@ -158,6 +228,7 @@ async def run_agent():
         tools=[
             shell_tool,
             evaluate_image,
+            evaluate_video_input,
             run_gemini_nano_banana,
             run_gemini_veo31,
         ],
@@ -166,6 +237,7 @@ async def run_agent():
     with trace("Video Generation workflow"):
         await Runner.run(
             agent,
+            max_turns=50,
             hooks=ExampleHooks(),
             input=[
                 create_user_input(),

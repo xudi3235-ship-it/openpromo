@@ -55,8 +55,9 @@ async def run_gemini_veo31(
         input_video_uri: optional uri to input video to extend, has to be the previously generated veo3.1 video uri.
     """
     print(
-        f"Running Gemini VEO-3.1 with inputs: {prompt}, {input_image_path}, {input_video_uri}, {config}"
+        f">>> Running Gemini VEO-3.1 with inputs: {prompt}, {input_image_path}, {input_video_uri}, {config}"
     )
+    MODEL_ID = "veo-3.1-fast-generate-preview"
     client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
 
     if input_image_path and input_video_uri:
@@ -65,11 +66,7 @@ async def run_gemini_veo31(
             "message": "Please provide either input_image_path or input_video_uri, not both.",
         }
 
-    input_video = (
-        Video(uri=input_video_uri, mime_type="video/mp4")
-        if input_video_uri is not None
-        else None
-    )
+    input_video = Video(uri=input_video_uri) if input_video_uri is not None else None
 
     input_image = (
         GeminiImage.from_file(location=input_image_path)
@@ -79,7 +76,7 @@ async def run_gemini_veo31(
 
     # https://ai.google.dev/gemini-api/docs/video?example=dialogue#veo-model-parameters
     operation: GenerateVideosOperation = client.models.generate_videos(
-        model="veo-3.1-generate-preview",
+        model=MODEL_ID,
         source=GenerateVideosSource(
             prompt=prompt,
             image=input_image,
@@ -100,6 +97,42 @@ async def run_gemini_veo31(
         "output_path": output_path,
         "video_uri": video.uri,
     }
+
+
+async def test_veo31_extension():
+    import time
+
+    client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
+    prompt = "A cinematic, haunting video. A ghostly woman with long white hair and a flowing dress swings gently on a rope swing beneath a massive, gnarled tree in a foggy, moonlit clearing. The fog thickens and swirls around her, and she slowly fades away, vanishing completely. The empty swing is left swaying rhythmically on its own in the eerie silence."
+
+    operation = client.models.generate_videos(
+        model="veo-3.1-generate-preview",
+        prompt=prompt,
+    )
+    # Poll the operation status until the video is ready.
+    while not operation.done:
+        print("Waiting for video generation to complete...")
+        time.sleep(10)
+        operation = client.operations.get(operation)
+
+    # Download the video.
+    video = operation.response.generated_videos[0]
+    print(video)
+    # extend the video
+    operation_ext = client.models.generate_videos(
+        model="veo-3.1-generate-preview",
+        prompt="Extend the spooky atmosphere with more fog and eerie sounds.",
+        video=video.video,
+    )
+    while not operation_ext.done:
+        print("Waiting for video extension to complete...")
+        time.sleep(10)
+        operation_ext = client.operations.get(operation_ext)
+    # save extended video
+    video_ext = operation_ext.response.generated_videos[0]
+    client.files.download(file=video_ext.video)  # pyright: ignore[reportArgumentType]
+    video_ext.video.save("./tmp/extended_video.mp4")
+    pass
 
 
 async def poll_veo31_operation_and_get_video(op: GenerateVideosOperation):

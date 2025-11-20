@@ -246,7 +246,7 @@ requires-dist = [
     { name = "google-genai", specifier = "==1.51.0" },
     { name = "modal", specifier = ">=1.2.2" },
     { name = "openai", specifier = "==2.8.1" },
-    { name = "openai-agents", extras = ["litellm"], specifier = ">=0.5.1" },
+    { name = "openai-agents", extras = ["litellm"], specifier = ">=0.6.1" },
     { name = "pillow", specifier = ">=12.0.0" },
     { name = "replicate", specifier = "==1.0.7" },
     { name = "requests", specifier = "==2.32.5" },
@@ -2085,7 +2085,7 @@ wheels = [
 
 [[package]]
 name = "openai-agents"
-version = "0.5.1"
+version = "0.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "griffe" },
@@ -2096,9 +2096,9 @@ dependencies = [
     { name = "types-requests" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b8/1f/322595f9a7ffd48afe2449bb92090eb893ba6ae4475e3ee549f64566a3a1/openai_agents-0.5.1.tar.gz", hash = "sha256:e193cd3a1b0d4f9a3f3fa9c4011c0b1f8876fa5f38bde4ae41d6a834a5791124", size = 1990900, upload-time = "2025-11-13T17:59:36.173Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/88/dc/7323c8d96211f252a2ebb288782a8f40bef6b472878eeebb59b3097a5708/openai_agents-0.6.1.tar.gz", hash = "sha256:067d2b66669c390c840effeb02d80939b4ac4a4db53e9735b74895a6d916b840", size = 2011463, upload-time = "2025-11-20T01:17:07.941Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/ca/352a7167ac040f9e7d6765081f4021811914724303d1417525d50942e15e/openai_agents-0.5.1-py3-none-any.whl", hash = "sha256:7077c47d8e4230d788a18922df7cd69f13c3328a57744156195da4921c08c835", size = 231786, upload-time = "2025-11-13T17:59:32.691Z" },
+    { url = "https://files.pythonhosted.org/packages/11/53/d8076306f324992c79e9b2ee597f2ce863f0ac5d1fd24e6ad88f2a4dcbc0/openai_agents-0.6.1-py3-none-any.whl", hash = "sha256:7bde01c8d2fd723b0c72c9b207dcfeb12a8d211078f5d259945fb163a6f52b89", size = 237609, upload-time = "2025-11-20T01:17:06.454Z" },
 ]
 
 [package.optional-dependencies]
