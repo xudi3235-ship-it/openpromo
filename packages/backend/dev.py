@@ -5,6 +5,7 @@ from agents import (
     Agent,
     ModelSettings,
     Runner,
+    TResponseInputItem,
     function_tool,
     trace,
 )
@@ -44,7 +45,7 @@ def create_user_input() -> Message:
     user_msg = """here's the product.
     I wanna create a fast paced multiple shot, angles dynamic video for this product. using the lifestyle.jpg reference img.
 
-    help me create a multi-shot 15s shorts video. 16:9
+    overall i wanna create a UGC style video of a 25yo mixed race girl talking about this product in her dorm. help me create a prompt image first, i will confirm with you to continue next steps for video gen
     """
 
     return {
@@ -234,16 +235,32 @@ async def run_agent():
             run_gemini_veo31,
         ],
     )
-
+    init_input: list[TResponseInputItem] = [
+        create_user_input(),
+    ]
     with trace("Video Generation workflow"):
-        await Runner.run(
-            agent,
-            max_turns=50,
-            hooks=ExampleHooks(),
-            input=[
-                create_user_input(),
-            ],
-        )
+        current_agent = agent
+        current_input_items: list[TResponseInputItem] = init_input
+        while True:
+            try:
+                user_input = input(" > ")
+            except (EOFError, KeyboardInterrupt):
+                print()
+                break
+            if user_input.strip().lower() in {"exit", "quit"}:
+                break
+            if not user_input:
+                continue
+
+            current_input_items.append({"role": "user", "content": user_input})
+            result = await Runner.run(
+                current_agent,
+                max_turns=100,
+                hooks=ExampleHooks(),
+                input=current_input_items,
+            )
+            current_agent = result.last_agent
+            current_input_items = result.to_input_list()
 
 
 if __name__ == "__main__":
