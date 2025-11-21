@@ -1,5 +1,5 @@
 import asyncio
-from typing import Literal
+from dataclasses import dataclass
 
 from agents import (
     Agent,
@@ -12,14 +12,18 @@ from agents import (
 from dotenv import load_dotenv
 from openai.types.responses.response_input_item_param import Message
 from openai.types.shared import Reasoning
-from pydantic import BaseModel, Field
 
 from src.core.shared import oai
 from src.openai_agent.helpers import to_img_inputs
 from src.openai_agent.hooks import ExampleHooks, LoggingHooks
 from src.openai_agent.tools import run_gemini_nano_banana, shell_tool
 from src.openai_agent.tools.docs import StaticPrompts
-from src.openai_agent.tools.veo31 import run_gemini_veo31
+from src.openai_agent.tools.veo31 import (
+    veo31_image_to_video,
+    veo31_reference_images_to_video,
+    veo31_text_to_video,
+    veo31_video_extension,
+)
 
 load_dotenv()
 
@@ -35,10 +39,10 @@ Step 3. generate video using veo3.1 fast.
 """
 
 
-class AppContext(BaseModel):
-    stage: Literal["image_gen", "video_gen"] = Field(
-        ..., description="Current stage of the workflow"
-    )
+@dataclass
+class AppContext:
+    # add context here to this data class
+    pass
 
 
 def create_user_input() -> Message:
@@ -171,7 +175,11 @@ async def run_agent():
     AUTONOMY & PLANNING
     * use shell tool, we should store things inside ./tmp dir. product image inputs are in the ./tmp/products folder. ensure you only run shell commands in ./tmp, all paths need to include ./tmp as prefix.
     * nano_banana is used for image generation. it can take image inputs with great accuracy, details, follow docs/guide.
-    * veo3.1 is used for video generation. it has different modes.
+    * veo3.1 is used for video generation. We have specific tools for different modes:
+      - `veo31_text_to_video`: for pure text-to-video generation.
+      - `veo31_image_to_video`: for image-to-video generation (start frame), optionally with end frame for interpolation.
+      - `veo31_video_extension`: for extending an existing veo3.1 video.
+      - `veo31_reference_images_to_video`: for using reference assets ("ingredients") to generate video.
 
     ABOUT IMAGE GENERATION
     - when generating images, ALWAYS use the product image as input to ensure product is clearly visible.
@@ -185,7 +193,7 @@ async def run_agent():
     - stiching videos is less preferred compared to extension, however it might be suitable for some cases. in that case, generate different videos with veo3.1, then use shell tool to stich with ffmpeg.
     - when extending video, it's critical to ensure continuity, this applies to both visual, narrative flow, and audio! think carefully when crafting the extension prompt.
     - when creating veo3.1 prompt, you can add a <negative_prompt> section to explicity state what to avoid in the video. this is useful to avoid unwanted artifacts, issues. E.g. distorted logos, weird physics, etc.
-    - for reference object accuracy, ingridients, use reference images as input is preferred. use the tools properly, we have differtn options, e.g. start frame + prompt, sart+last frame interpolation, prompt + img references, etc.
+    - for reference object accuracy, ingridients, use `veo31_reference_images_to_video` with reference images as input. Note that this tool requires 16:9 aspect ratio.
 
     TASKS
     - analyze inputs, understand product, selling points, and target audience.
@@ -193,6 +201,7 @@ async def run_agent():
     - evaluate the generated images using the evaluate_image tool to ensure they meet quality and relevance criteria, and make adjustments, depends on feedback you can either regenerate, or use image input to `edit` the previously generated image to fix issues with small tweaks. ONLY NEED TO RUN THIS ONCE!!
     - create a good veo3.1 prompt with the new image to create product demo video. you can specify multiple shots follwing the veo3.1 guide in a single video gen.
     - before running veo3.1, use the evaluate_video_input tool to ensure the inputs are good enough, if not, make adjustments based on the feedback.
+    - choose the correct veo3.1 tool based on your need (text-to-video, image-to-video, extension, or reference-images).
     - our goal is social media video shorts, overall duration is 15-30s, so roughly you can use the extension feature to extend it, with new prompts, variety, etc.
 
 
@@ -232,7 +241,10 @@ async def run_agent():
             evaluate_image,
             evaluate_video_input,
             run_gemini_nano_banana,
-            run_gemini_veo31,
+            veo31_text_to_video,
+            veo31_image_to_video,
+            veo31_video_extension,
+            veo31_reference_images_to_video,
         ],
     )
     init_input: list[TResponseInputItem] = [
