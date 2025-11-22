@@ -1,23 +1,23 @@
 import asyncio
-from dataclasses import dataclass
 
 from agents import (
     Agent,
     ModelSettings,
     Runner,
     TResponseInputItem,
-    function_tool,
     trace,
 )
 from dotenv import load_dotenv
 from openai.types.responses.response_input_item_param import Message
 from openai.types.shared import Reasoning
+from pydantic import BaseModel
 
-from src.core.shared import oai
 from src.openai_agent.helpers import to_img_inputs
 from src.openai_agent.hooks import ExampleHooks, LoggingHooks
 from src.openai_agent.tools import run_gemini_nano_banana, shell_tool
+from src.openai_agent.tools.constants import PRIMARY_GOAL, TIKTOK_STYLE_HOOKS_EXAMPLES
 from src.openai_agent.tools.docs import StaticPrompts
+from src.openai_agent.tools.evaluation import evaluate_image, evaluate_video_input
 from src.openai_agent.tools.veo31 import (
     veo31_image_to_video,
     veo31_reference_images_to_video,
@@ -28,25 +28,52 @@ from src.openai_agent.tools.veo31 import (
 load_dotenv()
 
 """
-Nov 18, 2025.
+Nov 20, 2025.
 
-sub-agent system for video generation pipeline.
+// Experiment on video production pipeline
 
-Step 0. find good pinterest ref images related.
-Step 1. use the tools, create, modify, generate images
-Step 2. sanity check on those images, if not good, back to step 1
-Step 3. generate video using veo3.1 fast.
+Our pipeline has different stages:
+
+Stage A: brainstorm, select, and confirm the video type, style, blueprint to create. This should be grounding truth, it's top-down planning for how the shape of video will be. NOTE: later this can be enhanced with a gallery or internal collections
+
+Stage B: image generation. Use the context, video blueprint, product img, to generate key frames, ingridients needed for next stage. Use evals to ensure the quality.
+
+Stage C: video generation, full execution mode. use the previous runtime context along with the images, to use veo3.1 tools to create final video. It should figure out when to use text-to-video, image-to-video, extension, reference-images-to-video, etc. Use evals to ensure quality.
+
+// Open Questions
+- missing some good exmaples to structure the video blueprint.
 """
 
 
-@dataclass
-class AppContext:
-    # add context here to this data class
-    pass
+class ProductContext(BaseModel):
+    name: str
+    description: str
+    images: list[str]
+    target_audience: str
+    selling_points: str
+    extra: dict[str, str]
+
+
+class UserContext(BaseModel):
+    product: ProductContext
+    business: str
+    extra: dict[str, str]
+
+
+class StageContext(BaseModel):
+    stage_name: str
+    stage_description: str
+    output: str
+
+
+class RuntimeContext(BaseModel):
+    user_context: UserContext
+    stage_contexts: list[StageContext]
 
 
 def create_user_input() -> Message:
-    user_msg = """here's the product.
+    user_msg = """
+    here's the product.
     I wanna create a fast paced multiple shot, angles dynamic video for this product. using the lifestyle.jpg reference img.
 
     overall i wanna create a UGC style video of a 25yo mixed race girl talking about this product in her dorm. help me create a prompt image first, i will confirm with you to continue next steps for video gen
@@ -64,105 +91,49 @@ def create_user_input() -> Message:
     }
 
 
-PRIMARY_GOAL = """
-You specialize in creating product social media ads/shorts/videos for products that are highly engaging, highly converging, and/or helps build brand awareness. You might be Given product info, description and images. You will also use the references dir which contains good reference images as grouding to create assets and videos. We target SMBs(small businesses) ONLY.
-"""
+# ---------------------------------------------------------------
+# agents def
+# ---------------------------------------------------------------
+composer_agent = Agent[str](
+    name="ComposerAgent",
+    model="gpt-5.1",
+    model_settings=ModelSettings(
+        reasoning=Reasoning(effort="high"),
+        verbosity="medium",
+    ),
+    instructions=f"""
+    Our topline goal
+    {PRIMARY_GOAL}
+    You are expert in composing video blueprints, styles, shot lists for product social media ads/shorts/videos for products that are highly engaging, highly converging, and/or helps build brand awareness. We focus on SMBs, and we wanna build robust tools to produce frequently used videos on social media shorts(vertical formats). So think critically about the types of videos that are suitable!
+
+    The high level workflow: in next stage, your blueprint will be sent to image generation agent, we use that to create ingridients, keyframe (1st frame) img that contains the product, optiaonlly some reference object. then use those combined to product video, which has couple modes: text-to-video, image-to-video, video extension, reference-images-to-video.
+    beaware of the contraints of the video generation model: max 8s video at a time, so we have to plan the shots aroudn this limit, and we can use extension feature to handle this. 8 -> 16s -> 24s, etc. So the blueprint needs to incorporate 
+
+    A couple examples:
+    1. pure product demo shots, different angles, studio lit -> show case the features, details, texture, etc.
+    2. UGC styles, pov-style, tiktok-style, shot on iphone style, talking to camera, holding product, explaining features, CRITICAL -- it does not feel like an ad, it feels authentic, raw, real. For UGC, you need to clearly specifcy the setting(BG, props, env, lighting etc), the person(demographics, clothing, hairstyle, tone, mannerism, etc), the dialogue(script), the camera movements(shots, angles, transitions, etc).
+    3. lifestyle shots, product in use in real life scenarios, e.g. kitchen, outdoors, gym, etc.
+    4. comparison shots, e.g. before and after using the product, side by side comparison with competitors, etc. 
+    5. creative shots, e.g. stop motion, hyperlapse, slow motion, etc. that features special effects, to show ingridients, features, etc. Suitable products: beuaty, food, beverage, etc.
+
+    these are some common video types, you need to build on these and add in details and ensure quality, and ensure the video blueprint is ultra-detailed, clear, and executable for next stages.
+
+    INPUT:
+    - product info, image that user's trying to sell/promote, etc.
 
 
-@function_tool
-async def evaluate_image(
-    image_paths: list[str],
-):
-    """
-    Evaluate generated images to ensure they meet quality and relevance criteria.
-    Args:
-        image_paths: List of paths to the images to evaluate.
-    """
-    resp = oai().responses.create(
-        model="gpt-5.1",
-        reasoning={"effort": "medium"},
-        input=[
-            {
-                "role": "system",
-                "content": f"""
-                ROLE & GOAL
-                You are expert in evaluating images generated from product + reference images, that will be later used for video generation flow.
-                Given the primary goal of the agent who produced these imgs: {PRIMARY_GOAL}
-                and the primary target is SMBS(small businesses) who need quick, high-quality, engaging social media shorts/ads/videos for their products on social media(tiktok, ig reels, fb reels, etc).
+    SCOPE
+    * focus on what video types and all details on how the video should be shaped up. next stage we will have image generation, and later video generation that depends on your deliverables.
+    * 
 
-                SCOPE
-                * Focus on: analyzing the generated images, understanding product, selling points, and target audience.
-                * Evaluate how well the images align with the product, reference images, and overall goal.
-                * consider aspects like visual appeal, clarity of product representation, creativity, and suitability for social media platforms.
-                * if good enough, then approve with a single sentence, else Provide constructive feedback *ONLY what could be improved to better meet the primary in concise 2-sentence acitonable terms.
-                """,
-            },
-            {
-                "role": "user",
-                "content": [
-                    *to_img_inputs(image_paths),
-                ],
-            },
-        ],
-    )
-    feedback = resp.output_text
-    print(f"Image evaluation feedback: {feedback}")
-    return feedback
+    TASK & GUIDELINES
+    1. closely understand the product, selling points, target audience. and craft a video blueprint that's ultra detailed and describes what the video would look like.
+    2. the video blueprint should mainly focus onthe types of video. -> UGC? lifestyle? demo? etc. Fill in, ultra-detailed, 
+    3. specify the shots needed, and how the shots would look like. e.g. angles, lighting, env, bg, props, person(demographics, clothing, hairstyle, tone, mannerism, etc), camera movements(shots, angles, transitions, etc), dialogue(script), etc.
+    4. the more detailed the better, as this is the top-funnel.
 
-
-@function_tool
-async def evaluate_video_input(
-    image_paths: list[str],
-    prompt: str,
-):
-    """
-    Evaluate inputs for veo3.1 generation, including images, prompt
-    Args:
-        image_paths: veo3.1 image input, if any.
-        prompt: The veo3.1 prompt to evaluate.
-    """
-    print(f"Evaluating veo3.1 inputs, prompt: {prompt}, images: {image_paths}")
-
-    resp = oai().responses.create(
-        model="gpt-5.1",
-        reasoning={"effort": "medium"},
-        input=[
-            {
-                "role": "system",
-                "content": f"""
-                ROLE & GOAL
-                You are expert inputs for veo3.1 video generation for SMBs, including image and video prompts.
-
-                Given the primary goal of the agent who produced these imgs: {PRIMARY_GOAL}
-                and the primary target is SMBS(small businesses) who need quick, high-quality, engaging social media shorts/ads/videos for their products on social media(tiktok, ig reels, fb reels, etc).
-
-                SCOPE
-                * Focus on: the camera movements, the shot, storyboard, if they make sense, and what can be improved, also dialogue, audio, etc, pretty much everything, to ensure the quality!
-                * Evaluate how well the images align with the product, reference images, and overall goal.
-                * if good enough, then approve with a single sentence, else Provide constructive feedback *ONLY what could be improved to better meet the primary in concise 2-3 sentence acitonable terms.
-
-                REFERENCES
-                ### veo3.1 guide
-                {StaticPrompts.veo31_from_url()}
-                ### GOOD veo3.1 prompt examples
-                {StaticPrompts.good_veo31_prompt_examples()}
-                """,
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "input_text",
-                        "text": f"Here is the veo3.1 prompt to evaluate:\n{prompt}, and here are the images input.",
-                    },
-                    *to_img_inputs(image_paths),
-                ],
-            },
-        ],
-    )
-    feedback = resp.output_text
-    print(f"Image evaluation feedback: {feedback}")
-    return feedback
+    """,
+)
 
 
 async def run_agent():
@@ -194,6 +165,34 @@ async def run_agent():
     - when extending video, it's critical to ensure continuity, this applies to both visual, narrative flow, and audio! think carefully when crafting the extension prompt.
     - when creating veo3.1 prompt, you can add a <negative_prompt> section to explicity state what to avoid in the video. this is useful to avoid unwanted artifacts, issues. E.g. distorted logos, weird physics, etc.
     - for reference object accuracy, ingridients, use `veo31_reference_images_to_video` with reference images as input. Note that this tool requires 16:9 aspect ratio.
+    - ensure the scene cuts are not weird, abrupt, unintuitive.
+    
+    VIDEO STRUCTURE
+    - ALWAYS start with strong hook in the first 3-6 seconds, to grab attention!! as this is the most critical for social media shorts ads. Depending on specific types, e.g. for tiktok style, you can refer to the examples below:
+    {TIKTOK_STYLE_HOOKS_EXAMPLES}
+    
+    ABOUT DIFFERENT VIDEO TOOLS
+    - video extension: prompt + previous video as input for continuation. Pros: best continuity, cons: might lose precision on the elements referenced
+    - image to video: start frame, (last frame) + prompt as input. Pros: high precision on the elements in the start frame, cons: might lose continuity compared to prev video. interpolation works for some cases.
+    - reference images to video: reference images + prompt as input. Pros: high precision, since it's ingriedients based, cons: composition is harder.
+
+    - Known issues & Best practices:
+        - need to think carefully about extension prompt, as we tried standard shot-based breakdown and it's not really working well, loses context from prev video segment. see how we can enhance that by either more context, tweaking prev video ending shot, etc.
+        - for UGC style videos, depends on the storyboard, for multiple differtn scenes, cuts. sometimes  it's better to create a bunch of start frames, and create multiple segments then stitch together, this is good workaround to ensure object / refernce accuracy, since you can use image edit capabiltiy to create a single keyframe first, then prompt the edits with *different inputs. 
+        - Rule of thumb: for compelx scenes, multiple cuts, extension might not work, consider image-to-video with multiple keyframes instead.
+        - Overall, you can combine differtn tools, approaches to achieve the best results, use your reasoning to decide.
+
+
+
+    ABOUTE HIGH LEVEL VIDEO TYPES & BLUEPRINT
+    overall we prioritize time-savings for SMBs on social media, so we focus on videos that are most frequently and is suitable for us to produce quickly meanwhile it fits with the product, social media platform trends and preferences, etc.
+
+    A couple video types that work well:
+    1. pure product demo shots, different angles, studio lit -> show case the features, details, texture, etc.
+    2. UGC styles, pov-style, tiktok-style, shot on iphone style, talking to camera, holding product, explaining features, CRITICAL -- it does not feel like an ad, it feels authentic, raw, real. For UGC, you need to clearly specifcy the setting(BG, props, env, lighting etc), the person(demographics, clothing, hairstyle, tone, mannerism, etc), the dialogue(script), the camera movements(shots, angles, transitions, etc).
+    3. lifestyle shots, product in use in real life scenarios, e.g. kitchen, outdoors, gym, etc.
+    4. comparison shots, e.g. before and after using the product, side by side comparison with competitors, etc. 
+    5. creative shots, e.g. stop motion, hyperlapse, slow motion, etc. that features special effects, to show ingridients, features, etc. Suitable products: beuaty, food, beverage, etc.
 
     TASKS
     - analyze inputs, understand product, selling points, and target audience.
@@ -225,6 +224,11 @@ async def run_agent():
     {StaticPrompts.good_veo31_prompt_examples}
     ### good nano banana prompt examples
     {StaticPrompts.good_nano_banana_prompt_examples}
+    ### additional guidelines about UGC videos
+    - slightly faster paces on both dialogue and scene cuts movements, since our duration is very limited.
+    - ensure the cuts are not abrupt, hard to understand. many times when we use `hard cut` during shots transitons, it feels very weird, like it continues the emotion/dialogue, but the scene changes abruptly, which is jarring. prefer smooth transitions use other prompts / techniques to address this.
+    - ensure physics is correct, e.g. the water bottle opening, pouring water, and emotion movements are nautral, and makes sense.
+    
     """
     agent = Agent[str](
         name="Agent",
@@ -261,6 +265,11 @@ async def run_agent():
                 break
             if user_input.strip().lower() in {"exit", "quit"}:
                 break
+            # switch agent
+            if user_input.strip().lower() in {"_next"}:
+                if current_agent == composer_agent:
+                    print(">>> Switching to next agent...")
+                    current_agent = agent
             if not user_input:
                 continue
 
