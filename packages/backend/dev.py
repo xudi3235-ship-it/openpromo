@@ -87,6 +87,11 @@ async def run_agent():
                 break
             if user_input.strip().lower() in {"exit", "quit"}:
                 break
+            if user_input.strip().lower() in {"clear"}:
+                print(">>> clearing the agent conversation...")
+                current_agent = main_agent
+                current_input_items = init_input
+                continue
             # switch agent
             if user_input.strip().lower() in {"_next"}:
                 if current_agent == composer_agent:
