@@ -1,10 +1,11 @@
 from agents import Agent, ModelSettings
 from openai.types.shared import Reasoning
 
+from src.openai_agent.context import RuntimeContext
 from src.openai_agent.tools import run_gemini_nano_banana, shell_tool
 from src.openai_agent.tools.constants import PRIMARY_GOAL, TIKTOK_STYLE_HOOKS_EXAMPLES
 from src.openai_agent.tools.docs import StaticPrompts
-from src.openai_agent.tools.evaluation import evaluate_image, evaluate_video_input
+from src.openai_agent.tools.evaluation import evaluate_image
 from src.openai_agent.tools.veo31 import (
     veo31_image_to_video,
     veo31_reference_images_to_video,
@@ -13,7 +14,7 @@ from src.openai_agent.tools.veo31 import (
 )
 
 
-def create_main_agent() -> Agent[str]:
+def create_main_agent() -> Agent[RuntimeContext]:
     """Create and return the main video generation agent."""
     sys_prompt = f"""
     You are expert in social media visuals, ads creatives. 
@@ -44,6 +45,7 @@ def create_main_agent() -> Agent[str]:
     - when creating veo3.1 prompt, you can add a <negative_prompt> section to explicity state what to avoid in the video. this is useful to avoid unwanted artifacts, issues. E.g. distorted logos, weird physics, etc.
     - for reference object accuracy, ingridients, use `veo31_reference_images_to_video` with reference images as input. Note that this tool requires 16:9 aspect ratio.
     - ensure the scene cuts are not weird, abrupt, unintuitive.
+    - the prompt needs to be ultra-detailed and clear, create it to your best ability.
     
     VIDEO STRUCTURE
     - ALWAYS start with strong hook in the first 3-6 seconds, to grab attention!! as this is the most critical for social media shorts ads. Depending on specific types, e.g. for tiktok hooks, here are some examples/ideas for your ref, use creativity to adapt and enhance:
@@ -79,7 +81,6 @@ def create_main_agent() -> Agent[str]:
     - pick the best fitting image reference, and *preferrably use the reference + product image as input to craft a image(nano banana) following the docs guide. ALWAYS use product image as input when creating image. This will be key start frame for the product demo video.
     - evaluate the generated images using the evaluate_image tool to ensure they meet quality and relevance criteria, and make adjustments, depends on feedback you can either regenerate, or use image input to `edit` the previously generated image to fix issues with small tweaks. ONLY NEED TO RUN THIS ONCE!!
     - create a good veo3.1 prompt with the new image to create product demo video. you can specify multiple shots follwing the veo3.1 guide in a single video gen.
-    - before running veo3.1, use the evaluate_video_input tool to ensure the inputs are good enough, if not, make adjustments based on the feedback.
     - choose the correct veo3.1 tool based on your need (text-to-video, image-to-video, extension, or reference-images).
     - our goal is social media video shorts, overall duration is 15-30s, so roughly you can use the extension feature to extend it, with new prompts, variety, etc.
 
@@ -110,7 +111,7 @@ def create_main_agent() -> Agent[str]:
     - ensure physics is correct, e.g. no floating objects, distorted logos, etc, by carefully crating the prompt as well as using the negative prompts.
     - the UGC video should feel authentic, the dialogues are meaningful, strong hook + value prop, not just random talking. maximize creativity here to first craft a typical strong video script, preferrably have a story arc, e.g. problem -> solution -> benefit, etc. or rumor, surprise, etc. then think about how to best visualize it with camera movements, shots, angles, etc. Ultimately you are the owner here to create engaging, eye-grabbing ugc style "ad" video that feels authentic and real.
     """
-    agent = Agent[str](
+    agent = Agent[RuntimeContext](
         name="Agent",
         model="gpt-5.1",
         model_settings=ModelSettings(
@@ -122,7 +123,7 @@ def create_main_agent() -> Agent[str]:
         tools=[
             shell_tool,
             evaluate_image,
-            evaluate_video_input,
+            # evaluate_video_generation_input,
             run_gemini_nano_banana,
             veo31_text_to_video,
             veo31_image_to_video,

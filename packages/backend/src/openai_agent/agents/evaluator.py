@@ -2,10 +2,11 @@ import subprocess
 from pathlib import Path
 from typing import Literal
 
-from agents import function_tool
+from agents import RunContextWrapper, function_tool
 from openai.types.responses import ResponseInputContentParam
 
 from src.core.shared import oai
+from src.openai_agent.context import RuntimeContext
 from src.openai_agent.helpers import to_img_inputs
 from src.openai_agent.tools.constants import PRIMARY_GOAL, TIKTOK_STYLE_HOOKS_EXAMPLES
 from src.openai_agent.tools.docs import StaticPrompts
@@ -13,6 +14,8 @@ from src.openai_agent.tools.docs import StaticPrompts
 
 @function_tool
 async def evaluate_video_generation_input(
+    wrapper: RunContextWrapper[RuntimeContext],
+    current_state: str,
     video_tool_name: Literal[
         "text_to_video",
         "image_to_video",
@@ -27,6 +30,7 @@ async def evaluate_video_generation_input(
     Evaluate video generation inputs before sending to veo3.1.
 
     Args:
+        current_state: a brief summary of the videos, keyframes, etc. generated so far.
         video_tool_name: The veo3.1 tool being used (text_to_video, image_to_video, video_extension, reference_images_to_video)
         prompt: The veo3.1 prompt to evaluate
         input_image_path: List of paths to input images (for image_to_video, reference_images_to_video)
@@ -40,15 +44,19 @@ async def evaluate_video_generation_input(
     
     PRIMARY GOAL
     {PRIMARY_GOAL}
+
+    Current State:
+    {current_state}
     
     ROLE
-    Your task is to evaluate video generation inputs (prompts, images, settings) BEFORE they're sent to veo3.1. Your goal is to catch issues early, ensure quality, optimize for social media shorts (TikTok, IG Reels, FB Reels), and VALIDATE THE RIGHT TOOL IS BEING USED.
+    Your task is to evaluate video generation inputs (prompts, images, settings) BEFORE they're sent to veo3.1. Your goal is to catch issues early, ensure quality, optimize for social media shorts (TikTok, IG Reels, FB Reels), and VALIDATE THE RIGHT TOOL IS BEING USED. ONLY GIVE feedback on *what could be improved*, DO NOT rewrite the prompt yourself.
     
     CRITICAL: VEO3.1 CONSTRAINTS
     - **8 SECOND MAX per video generation** - This is non-negotiable! Longer videos MUST use extension or stitching.
     - Target platform: TikTok, IG Reels, FB Reels (15-30s total duration)
     - Aspect ratio: 9:16 (vertical) for social media shorts
     - **Text overlays are NOT accurate yet** - avoid prompts requesting text/captions
+
     
     TOOL SELECTION VALIDATION (CRITICAL)
     Verify the correct veo3.1 tool is being used for this use case:
@@ -228,8 +236,12 @@ async def evaluate_video_generation_input(
     user_content: list[ResponseInputContentParam] = [
         {
             "type": "input_text",
+            "text": f"Runtime Context: {wrapper.context.model_dump_json()}",
+        },
+        {
+            "type": "input_text",
             "text": f"Video Tool: {video_tool_name}\n\nPrompt to evaluate:\n{prompt}",
-        }
+        },
     ]
 
     # Add images if provided
