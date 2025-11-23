@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Literal
 
 from agents import function_tool
@@ -40,23 +41,27 @@ def read_docs_guide(
 
 class StaticPrompts:
     @staticmethod
+    @lru_cache
     def veo31_from_url():
         url = "https://ai.google.dev/gemini-api/docs/video.md.txt"
         return StaticPrompts.fetch_url_content(url)
 
     @staticmethod
+    @lru_cache
     def imagen_4_from_url():
         return StaticPrompts.fetch_url_content(
             "https://ai.google.dev/gemini-api/docs/imagen.md.txt"
         )
 
     @staticmethod
+    @lru_cache
     def nano_banana_prompt_guide_from_url():
         return StaticPrompts.fetch_url_content(
             "https://ai.google.dev/gemini-api/docs/image-generation.md.txt"
         )
 
     @staticmethod
+    @lru_cache
     def image_understanding_guide_from_url():
         return StaticPrompts.fetch_url_content(
             "https://ai.google.dev/gemini-api/docs/image-understanding.md.txt"
@@ -75,6 +80,7 @@ class StaticPrompts:
         return NANO_BANANA_GOOD_PROMPT_EXAMPLES
 
     @staticmethod
+    @lru_cache
     def fetch_url_content(url: str) -> str:
         import requests
 

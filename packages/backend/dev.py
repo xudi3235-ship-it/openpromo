@@ -86,6 +86,7 @@ async def run_agent():
         create_user_input(),
     ]
     with trace("Video Generation workflow"):
+        # init agent
         current_agent = main_agent
         current_input_items: list[TResponseInputItem] = init_input
         while True:

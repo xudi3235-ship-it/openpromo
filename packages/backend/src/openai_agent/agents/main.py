@@ -46,7 +46,7 @@ def create_main_agent() -> Agent[str]:
     - ensure the scene cuts are not weird, abrupt, unintuitive.
     
     VIDEO STRUCTURE
-    - ALWAYS start with strong hook in the first 3-6 seconds, to grab attention!! as this is the most critical for social media shorts ads. Depending on specific types, e.g. for tiktok style, you can refer to the examples below:
+    - ALWAYS start with strong hook in the first 3-6 seconds, to grab attention!! as this is the most critical for social media shorts ads. Depending on specific types, e.g. for tiktok hooks, here are some examples/ideas for your ref, use creativity to adapt and enhance:
     {TIKTOK_STYLE_HOOKS_EXAMPLES}
     
     ABOUT DIFFERENT VIDEO TOOLS
@@ -71,6 +71,8 @@ def create_main_agent() -> Agent[str]:
     3. lifestyle shots, product in use in real life scenarios, e.g. kitchen, outdoors, gym, etc.
     4. comparison shots, e.g. before and after using the product, side by side comparison with competitors, etc. 
     5. creative shots, e.g. stop motion, hyperlapse, slow motion, etc. that features special effects, to show ingridients, features, etc. Suitable products: beuaty, food, beverage, etc.
+
+    It's critical to use reasoning to see what's best fit for product, target users, etc. The categories are non-exhaustive, feel free to combine, enhance, and create new styles that fits the product and social media trends.
 
     TASKS
     - analyze inputs, understand product, selling points, and target audience.
@@ -105,8 +107,8 @@ def create_main_agent() -> Agent[str]:
     ### additional guidelines about UGC videos
     - slightly faster paces on both dialogue and scene cuts movements, since our duration is very limited.
     - ensure the cuts are not abrupt, hard to understand. many times when we use `hard cut` during shots transitons, it feels very weird, like it continues the emotion/dialogue, but the scene changes abruptly, which is jarring. prefer smooth transitions use other prompts / techniques to address this.
-    - ensure physics is correct, e.g. the water bottle opening, pouring water, and emotion movements are nautral, and makes sense.
-    
+    - ensure physics is correct, e.g. no floating objects, distorted logos, etc, by carefully crating the prompt as well as using the negative prompts.
+    - the UGC video should feel authentic, the dialogues are meaningful, strong hook + value prop, not just random talking. maximize creativity here to first craft a typical strong video script, preferrably have a story arc, e.g. problem -> solution -> benefit, etc. or rumor, surprise, etc. then think about how to best visualize it with camera movements, shots, angles, etc. Ultimately you are the owner here to create engaging, eye-grabbing ugc style "ad" video that feels authentic and real.
     """
     agent = Agent[str](
         name="Agent",
