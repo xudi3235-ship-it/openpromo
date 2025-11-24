@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from openai.types.responses.response_input_item_param import Message
 
 from src.openai_agent.agents import composer_agent
-from src.openai_agent.agents.main import main_agent
+from src.openai_agent.agents.main_agent import main_agent
 from src.openai_agent.context import ProductContext, RuntimeContext, UserContext
 from src.openai_agent.helpers import to_img_inputs
 from src.openai_agent.hooks import ExampleHooks
