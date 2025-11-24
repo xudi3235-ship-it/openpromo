@@ -18,6 +18,7 @@ class NanoBananaOutput(BaseModel):
     image_paths: list[str]
     text_output: str
     prompt: str
+    error: str | None = None
 
 
 class ConfigParams(BaseModel):
@@ -61,18 +62,27 @@ async def run_gemini_nano_banana(
     MODEL_ID = (
         "gemini-3-pro-image-preview" if use_pro_model else "gemini-2.5-flash-image"
     )
-    response = client.models.generate_content(
-        model=MODEL_ID,
-        contents=[prompt, *imgs],
-        config=GenerateContentConfig(
-            response_modalities=["IMAGE"],
-            image_config=ImageConfig(
-                image_size=config_params.image_size,
-                aspect_ratio=config_params.aspect_ratio,
+    try:
+        response = client.models.generate_content(
+            model=MODEL_ID,
+            contents=[prompt, *imgs],
+            config=GenerateContentConfig(
+                response_modalities=["IMAGE"],
+                image_config=ImageConfig(
+                    image_size=config_params.image_size,
+                    aspect_ratio=config_params.aspect_ratio,
+                ),
             ),
-        ),
-        # config={"response_modalities": ["IMAGE"], "image_config": {"image_size": ""}},
-    )
+        )
+    except Exception as e:
+        print(f"Error during image generation: {e}")
+        return NanoBananaOutput(
+            images=[],
+            image_paths=[],
+            prompt=prompt,
+            text_output="error when generating image",
+            error=str(e),
+        )
     if not response.parts:
         raise ValueError("No parts in response")
     out: NanoBananaOutput = NanoBananaOutput(

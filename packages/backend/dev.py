@@ -39,8 +39,6 @@ def create_user_input() -> Message:
     here's the product.
     I wanna create tiktok style ugc video for this water bottle.
     I wanna feature a feature a 28yo mixed race female.
-    no extension. create a keyframe fisst, edit that image, use the two image
-    to create separate videos, then stich.
     """
 
     return {
