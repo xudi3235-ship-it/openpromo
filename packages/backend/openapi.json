@@ -15,9 +15,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EchoResponse"
-                }
+                "schema": { "$ref": "#/components/schemas/EchoResponse" }
               }
             }
           }
@@ -32,9 +30,7 @@
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TranscodeVideoRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/TranscodeVideoRequest" }
             }
           },
           "required": true
@@ -54,9 +50,7 @@
             "description": "Validation Error",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
               }
             }
           }
@@ -71,9 +65,7 @@
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FFprobeRequest"
-              }
+              "schema": { "$ref": "#/components/schemas/FFprobeRequest" }
             }
           },
           "required": true
@@ -83,9 +75,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FFprobeResponse"
-                }
+                "schema": { "$ref": "#/components/schemas/FFprobeResponse" }
               }
             }
           },
@@ -93,9 +83,7 @@
             "description": "Validation Error",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
               }
             }
           }
@@ -111,7 +99,11 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EditVideoJobSubmitRequest"
+                "anyOf": [
+                  { "$ref": "#/components/schemas/EditVideoJobSubmitRequest" },
+                  { "$ref": "#/components/schemas/AgentVideoJobSubmitRequest" }
+                ],
+                "title": "Req"
               }
             }
           },
@@ -122,9 +114,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobSubmitResponse"
-                }
+                "schema": { "$ref": "#/components/schemas/JobSubmitResponse" }
               }
             }
           },
@@ -132,9 +122,7 @@
             "description": "Validation Error",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
               }
             }
           }
@@ -151,10 +139,7 @@
             "name": "call_id",
             "in": "path",
             "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Call Id"
-            }
+            "schema": { "type": "string", "title": "Call Id" }
           }
         ],
         "responses": {
@@ -162,9 +147,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobResultResponse"
-                }
+                "schema": { "$ref": "#/components/schemas/JobResultResponse" }
               }
             }
           },
@@ -172,9 +155,41 @@
             "description": "Validation Error",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/job/agent-video/generate": {
+      "post": {
+        "tags": ["jobs"],
+        "summary": "Generate Agent Video",
+        "description": "Generate a video using the AI agent based on product information and user instructions.\n\nThis endpoint runs the video generation agent synchronously and returns the result.\nFor long-running jobs, consider using the /job/submit endpoint instead.",
+        "operationId": "generate_agent_video_job_agent_video_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AgentVideoRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AgentVideoResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
               }
             }
           }
@@ -192,9 +207,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
+                  "additionalProperties": { "type": "string" },
                   "type": "object",
                   "title": "Response Ping Experimental Ping Get"
                 }
@@ -207,32 +220,59 @@
   },
   "components": {
     "schemas": {
+      "AgentVideoJobSubmitRequest": {
+        "properties": {
+          "fn": { "type": "string", "const": "agent_video", "title": "Fn" },
+          "data": { "$ref": "#/components/schemas/AgentVideoRequest" }
+        },
+        "type": "object",
+        "required": ["fn", "data"],
+        "title": "AgentVideoJobSubmitRequest"
+      },
+      "AgentVideoRequest": {
+        "properties": {
+          "product": { "$ref": "#/components/schemas/ProductInfo" },
+          "business": {
+            "type": "string",
+            "title": "Business",
+            "default": "A startup focused on innovative products"
+          },
+          "user_message": { "type": "string", "title": "User Message" },
+          "max_turns": {
+            "type": "integer",
+            "title": "Max Turns",
+            "default": 100
+          }
+        },
+        "type": "object",
+        "required": ["product", "user_message"],
+        "title": "AgentVideoRequest"
+      },
+      "AgentVideoResponse": {
+        "properties": {
+          "status": { "type": "string", "title": "Status" },
+          "message": { "type": "string", "title": "Message" },
+          "result": {
+            "anyOf": [
+              { "additionalProperties": true, "type": "object" },
+              { "type": "null" }
+            ],
+            "title": "Result"
+          }
+        },
+        "type": "object",
+        "required": ["status", "message"],
+        "title": "AgentVideoResponse"
+      },
       "EchoResponse": {
         "properties": {
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
+          "message": { "type": "string", "title": "Message" },
           "ffmpeg_version": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Ffmpeg Version"
           },
           "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Error"
           }
         },
@@ -242,14 +282,8 @@
       },
       "EditVideoJobSubmitRequest": {
         "properties": {
-          "fn": {
-            "type": "string",
-            "const": "edit_video",
-            "title": "Fn"
-          },
-          "data": {
-            "$ref": "#/components/schemas/VideoEditRequest"
-          }
+          "fn": { "type": "string", "const": "edit_video", "title": "Fn" },
+          "data": { "$ref": "#/components/schemas/VideoEditRequest" }
         },
         "type": "object",
         "required": ["fn", "data"],
@@ -263,9 +297,7 @@
             "default": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
           },
           "cmd": {
-            "items": {
-              "type": "string"
-            },
+            "items": { "type": "string" },
             "type": "array",
             "title": "Cmd"
           }
@@ -275,19 +307,9 @@
       },
       "FFprobeResponse": {
         "properties": {
-          "output": {
-            "type": "string",
-            "title": "Output"
-          },
+          "output": { "type": "string", "title": "Output" },
           "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Error"
           }
         },
@@ -298,9 +320,7 @@
       "HTTPValidationError": {
         "properties": {
           "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
+            "items": { "$ref": "#/components/schemas/ValidationError" },
             "type": "array",
             "title": "Detail"
           }
@@ -312,6 +332,7 @@
         "properties": {
           "fn": {
             "type": "string",
+            "enum": ["edit_video", "agent_video"],
             "title": "Fn"
           },
           "status": {
@@ -321,23 +342,14 @@
           },
           "result": {
             "anyOf": [
-              {
-                "$ref": "#/components/schemas/VideoEditResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
+              { "$ref": "#/components/schemas/VideoEditResponse" },
+              { "$ref": "#/components/schemas/AgentVideoResponse" },
+              { "type": "null" }
+            ],
+            "title": "Result"
           },
           "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Error"
           }
         },
@@ -346,15 +358,42 @@
         "title": "JobResultResponse"
       },
       "JobSubmitResponse": {
-        "properties": {
-          "call_id": {
-            "type": "string",
-            "title": "Call Id"
-          }
-        },
+        "properties": { "call_id": { "type": "string", "title": "Call Id" } },
         "type": "object",
         "required": ["call_id"],
         "title": "JobSubmitResponse"
+      },
+      "ProductInfo": {
+        "properties": {
+          "name": { "type": "string", "title": "Name" },
+          "description": { "type": "string", "title": "Description" },
+          "images": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Images"
+          },
+          "target_audience": { "type": "string", "title": "Target Audience" },
+          "selling_points": { "type": "string", "title": "Selling Points" },
+          "extra": {
+            "anyOf": [
+              {
+                "additionalProperties": { "type": "string" },
+                "type": "object"
+              },
+              { "type": "null" }
+            ],
+            "title": "Extra"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "images",
+          "target_audience",
+          "selling_points"
+        ],
+        "title": "ProductInfo"
       },
       "TranscodeVideoRequest": {
         "properties": {
@@ -375,24 +414,14 @@
       },
       "TranscodeVideoResponse": {
         "properties": {
-          "output_url": {
-            "type": "string",
-            "title": "Output Url"
-          },
+          "output_url": { "type": "string", "title": "Output Url" },
           "transcoded": {
             "type": "boolean",
             "title": "Transcoded",
             "default": true
           },
           "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Error"
           }
         },
@@ -403,27 +432,12 @@
       "ValidationError": {
         "properties": {
           "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
+            "items": { "anyOf": [{ "type": "string" }, { "type": "integer" }] },
             "type": "array",
             "title": "Location"
           },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          }
+          "msg": { "type": "string", "title": "Message" },
+          "type": { "type": "string", "title": "Error Type" }
         },
         "type": "object",
         "required": ["loc", "msg", "type"],
@@ -454,10 +468,7 @@
       },
       "VideoEditResponse": {
         "properties": {
-          "output_url": {
-            "type": "string",
-            "title": "Output Url"
-          }
+          "output_url": { "type": "string", "title": "Output Url" }
         },
         "type": "object",
         "required": ["output_url"],
@@ -465,11 +476,7 @@
       }
     },
     "securitySchemes": {
-      "ModalKey": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "Modal-Key"
-      },
+      "ModalKey": { "type": "apiKey", "in": "header", "name": "Modal-Key" },
       "ModalSecret": {
         "type": "apiKey",
         "in": "header",
@@ -477,10 +484,5 @@
       }
     }
   },
-  "security": [
-    {
-      "ModalKey": [],
-      "ModalSecret": []
-    }
-  ]
+  "security": [{ "ModalKey": [], "ModalSecret": [] }]
 }
