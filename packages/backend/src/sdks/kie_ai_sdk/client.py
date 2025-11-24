@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from .common import CommonOperations
+    from .jobs import JobsOperations
     from .upload import UploadOperations
     from .veo import VeoOperations
 
@@ -55,6 +56,7 @@ class KieAIClient:
         self._veo: "VeoOperations | None" = None
         self._upload: "UploadOperations | None" = None
         self._common: "CommonOperations | None" = None
+        self._jobs: "JobsOperations | None" = None
 
     @property
     def veo(self) -> "VeoOperations":
@@ -82,6 +84,15 @@ class KieAIClient:
 
             self._common = CommonOperations(self)
         return self._common
+
+    @property
+    def jobs(self) -> "JobsOperations":
+        """Access job-based API operations (e.g., Sora 2 Pro Storyboard)."""
+        if self._jobs is None:
+            from .jobs import JobsOperations
+
+            self._jobs = JobsOperations(self)
+        return self._jobs
 
     def _handle_response(
         self, response: requests.Response, response_model: type[T]

@@ -38,6 +38,91 @@ class TaskStatus(int, Enum):
     GENERATION_FAILED = 3
 
 
+class TaskState(str, Enum):
+    """Job task states."""
+
+    WAITING = "waiting"
+    QUEUING = "queuing"
+    GENERATING = "generating"
+    SUCCESS = "success"
+    FAIL = "fail"
+
+
+class FrameDuration(str, Enum):
+    """Video frame duration options for storyboard."""
+
+    TEN_SECONDS = "10"
+    FIFTEEN_SECONDS = "15"
+    TWENTY_FIVE_SECONDS = "25"
+
+
+class StoryboardAspectRatio(str, Enum):
+    """Aspect ratio options for storyboard videos."""
+
+    PORTRAIT = "portrait"
+    LANDSCAPE = "landscape"
+
+
+class ByteDanceResolution(str, Enum):
+    """Resolution options for ByteDance video generation."""
+
+    R_720P = "720p"
+    R_1080P = "1080p"
+
+
+class ByteDanceDuration(str, Enum):
+    """Duration options for ByteDance video generation."""
+
+    FIVE_SECONDS = "5"
+    TEN_SECONDS = "10"
+
+
+class NanoBananaAspectRatio(str, Enum):
+    """Aspect ratio options for Nano Banana Pro."""
+
+    SQUARE = "1:1"
+    PORTRAIT_2_3 = "2:3"
+    LANDSCAPE_3_2 = "3:2"
+    PORTRAIT_3_4 = "3:4"
+    LANDSCAPE_4_3 = "4:3"
+    PORTRAIT_4_5 = "4:5"
+    LANDSCAPE_5_4 = "5:4"
+    PORTRAIT_9_16 = "9:16"
+    LANDSCAPE_16_9 = "16:9"
+    ULTRAWIDE = "21:9"
+
+
+class NanoBananaResolution(str, Enum):
+    """Resolution options for Nano Banana Pro."""
+
+    ONE_K = "1K"
+    TWO_K = "2K"
+    FOUR_K = "4K"
+
+
+class NanoBananaOutputFormat(str, Enum):
+    """Output format options for Nano Banana Pro."""
+
+    PNG = "png"
+    JPG = "jpg"
+
+
+class GrokAspectRatio(str, Enum):
+    """Aspect ratio options for Grok Imagine."""
+
+    SQUARE = "1:1"
+    PORTRAIT_2_3 = "2:3"
+    LANDSCAPE_3_2 = "3:2"
+
+
+class GrokMode(str, Enum):
+    """Generation mode options for Grok Imagine."""
+
+    FUN = "fun"
+    NORMAL = "normal"
+    SPICY = "spicy"
+
+
 # ===== REQUEST MODELS =====
 
 
@@ -134,6 +219,185 @@ class GetDownloadUrlRequest(BaseModel):
     """Request model for getting download URL."""
 
     url: str = Field(..., description="Generated file URL from kie.ai services")
+
+
+class StoryboardShot(BaseModel):
+    """Individual scene in a storyboard."""
+
+    scene: str = Field(..., alias="Scene", description="Scene description/prompt")
+    duration: float = Field(
+        ..., ge=0, description="Duration in seconds (typically 7.5s per scene)"
+    )
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
+class StoryboardInput(BaseModel):
+    """Input parameters for Sora 2 Pro Storyboard."""
+
+    n_frames: FrameDuration = Field(
+        ..., alias="n_frames", description="Total video length"
+    )
+    shots: list[StoryboardShot] = Field(
+        ..., description="Array of scene objects defining the storyboard sequence"
+    )
+    image_urls: list[str] | None = Field(
+        None, alias="image_urls", description="Reference images for visual consistency"
+    )
+    aspect_ratio: StoryboardAspectRatio | None = Field(
+        None, alias="aspect_ratio", description="Video aspect ratio"
+    )
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
+class ByteDanceInput(BaseModel):
+    """Input parameters for ByteDance V1 Pro Fast Image-to-Video."""
+
+    prompt: str = Field(
+        ..., max_length=10000, description="Text prompt to generate the video"
+    )
+    image_url: str = Field(
+        ..., alias="image_url", description="URL of the image to generate video from"
+    )
+    resolution: ByteDanceResolution | None = Field(
+        None, description="Video resolution (720p or 1080p)"
+    )
+    duration: ByteDanceDuration | None = Field(
+        None, description="Duration of the video in seconds (5s or 10s)"
+    )
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
+class NanoBananaInput(BaseModel):
+    """Input parameters for Nano Banana Pro image generation."""
+
+    prompt: str = Field(
+        ..., max_length=5000, description="Text description of the image to generate"
+    )
+    image_input: list[str] | None = Field(
+        None,
+        alias="image_input",
+        max_length=8,
+        description="Input images to transform or use as reference (up to 8 images)",
+    )
+    aspect_ratio: NanoBananaAspectRatio | None = Field(
+        None, alias="aspect_ratio", description="Aspect ratio of the generated image"
+    )
+    resolution: NanoBananaResolution | None = Field(
+        None, description="Resolution of the generated image (1K, 2K, 4K)"
+    )
+    output_format: NanoBananaOutputFormat | None = Field(
+        None, alias="output_format", description="Format of the output image"
+    )
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
+class GrokImageToVideoInput(BaseModel):
+    """Input parameters for Grok Imagine Image-to-Video."""
+
+    image_urls: list[str] | None = Field(
+        None,
+        alias="image_urls",
+        max_length=1,
+        description="One external image URL for video generation (only one supported)",
+    )
+    task_id: str | None = Field(
+        None,
+        alias="task_id",
+        max_length=100,
+        description="Task ID of a Grok-generated image (supports Spicy mode)",
+    )
+    index: int | None = Field(
+        None,
+        ge=0,
+        le=5,
+        description="Image index (0-5) when using task_id (Grok generates 6 images)",
+    )
+    prompt: str | None = Field(
+        None,
+        max_length=5000,
+        description="Text prompt describing the desired video motion",
+    )
+    mode: GrokMode | None = Field(
+        None, description="Generation mode (fun, normal, spicy)"
+    )
+
+    @field_validator("image_urls")
+    @classmethod
+    def validate_image_urls(cls, v: list[str] | None) -> list[str] | None:
+        if v is not None and len(v) > 1:
+            raise ValueError("Only one image URL is supported")
+        return v
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
+class GrokTextToVideoInput(BaseModel):
+    """Input parameters for Grok Imagine Text-to-Video."""
+
+    prompt: str = Field(
+        ..., max_length=5000, description="Text prompt describing the desired video"
+    )
+    aspect_ratio: GrokAspectRatio | None = Field(
+        None, alias="aspect_ratio", description="Aspect ratio of the generated video"
+    )
+    mode: GrokMode | None = Field(
+        None, description="Generation mode (fun, normal, spicy)"
+    )
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
+class GrokTextToImageInput(BaseModel):
+    """Input parameters for Grok Imagine Text-to-Image."""
+
+    prompt: str = Field(
+        ..., max_length=5000, description="Text prompt describing the desired image"
+    )
+    aspect_ratio: GrokAspectRatio | None = Field(
+        None, alias="aspect_ratio", description="Aspect ratio of the generated image"
+    )
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
+class GrokUpscaleInput(BaseModel):
+    """Input parameters for Grok Imagine Upscale."""
+
+    task_id: str = Field(
+        ...,
+        alias="task_id",
+        max_length=100,
+        description="Task ID of a Kie AI-generated video to upscale (360p to 720p)",
+    )
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
+class CreateTaskRequest(BaseModel):
+    """Request model for creating a job task."""
+
+    model: str = Field(..., description="Model name to use for generation")
+    call_back_url: str | None = Field(
+        None,
+        alias="callBackUrl",
+        description="Callback URL for task completion notifications",
+    )
+    input: (
+        StoryboardInput
+        | ByteDanceInput
+        | NanoBananaInput
+        | GrokImageToVideoInput
+        | GrokTextToVideoInput
+        | GrokTextToImageInput
+        | GrokUpscaleInput
+        | dict[str, Any]
+    ) = Field(..., description="Input parameters for the model")
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
 
 
 # ===== RESPONSE MODELS =====
@@ -261,3 +525,57 @@ class DownloadUrlResponse(ApiResponse):
     """Download URL response."""
 
     data: str | None = None
+
+
+class TaskResultData(BaseModel):
+    """Task result data."""
+
+    task_id: str = Field(..., alias="taskId", description="Task ID")
+    model: str = Field(..., description="Model used for generation")
+    state: TaskState = Field(..., description="Task state")
+    param: str = Field(..., description="Complete request parameters as JSON string")
+    result_json: str | None = Field(
+        None, alias="resultJson", description="Result JSON with generated media URLs"
+    )
+    fail_code: str | None = Field(None, alias="failCode", description="Error code")
+    fail_msg: str | None = Field(None, alias="failMsg", description="Error message")
+    complete_time: int | None = Field(
+        None, alias="completeTime", description="Completion timestamp"
+    )
+    create_time: int | None = Field(
+        None, alias="createTime", description="Creation timestamp"
+    )
+    update_time: int | None = Field(
+        None, alias="updateTime", description="Update timestamp"
+    )
+    consume_credits: int | None = Field(
+        None, alias="consumeCredits", description="Credits consumed"
+    )
+    cost_time: int | None = Field(
+        None, alias="costTime", description="Time cost in seconds"
+    )
+    remained_credits: int | None = Field(
+        None, alias="remainedCredits", description="Remaining credits"
+    )
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
+class CreateTaskData(BaseModel):
+    """Create task response data."""
+
+    task_id: str = Field(..., alias="taskId", description="Task ID")
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
+class CreateTaskResponse(ApiResponse):
+    """Response from create task API."""
+
+    data: CreateTaskData
+
+
+class TaskDetailsResponse(ApiResponse):
+    """Response from task query API."""
+
+    data: TaskResultData
