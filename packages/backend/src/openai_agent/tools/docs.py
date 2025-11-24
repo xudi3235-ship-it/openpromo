@@ -75,6 +75,12 @@ class StaticPrompts:
         return NANO_BANANA_GOOD_PROMPT_EXAMPLES
 
     @staticmethod
+    def nano_banana_pro_howto_guide():
+        return StaticPrompts.fetch_url_content(
+            "https://replicate.com/blog/how-to-prompt-nano-banana-pro"
+        )
+
+    @staticmethod
     def fetch_url_content(url: str) -> str:
         import requests
 

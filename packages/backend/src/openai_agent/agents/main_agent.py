@@ -135,6 +135,8 @@ def create_main_agent() -> Agent[RuntimeContext]:
     {StaticPrompts.good_veo31_prompt_examples}
     ### good nano banana prompt examples
     {StaticPrompts.good_nano_banana_prompt_examples}
+    ### nano baanana pro guide
+    {StaticPrompts.nano_banana_pro_howto_guide()}
     ### additional guidelines about UGC videos
     - slightly faster paces on both dialogue and scene cuts movements, since our duration is very limited.
     - ensure the cuts are not abrupt, hard to understand. many times when we use `hard cut` during shots transitons, it feels very weird, like it continues the emotion/dialogue, but the scene changes abruptly, which is jarring. prefer smooth transitions use other prompts / techniques to address this.

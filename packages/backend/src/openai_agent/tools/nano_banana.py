@@ -4,7 +4,11 @@ from typing import Literal
 
 from agents import function_tool
 from google import genai
-from google.genai.types import GenerateContentConfig, ImageConfig
+from google.genai.types import (
+    GenerateContentConfig,
+    GenerateContentResponse,
+    ImageConfig,
+)
 from google.genai.types import Image as GeminiImage
 from PIL import Image
 from PIL.ImageFile import ImageFile
@@ -30,64 +34,27 @@ class ConfigParams(BaseModel):
     )
 
 
-@function_tool
-async def run_gemini_nano_banana(
-    prompt: str,
-    config_params: ConfigParams,
-    img_paths: list[str] | None = None,
-    use_pro_model: bool = False,
-) -> NanoBananaOutput:
-    """
-    Run the Gemini Nano Banana model with the given prompt and image paths. Auto-saves generated images to the images_paths
-
-    for advanced, maximum quality prefer to use pro model.
-    Args:
-        prompt: The text prompt to guide image generation.
-        config_params: Configuration parameters for image generation, e.g. aspect ratio, image size.
-        img_paths: A list of file paths to input images. Optional, defaults to an empty list. paths have to exist! use shell tool to ensure.
-        use_pro_model: If True, uses the pro version model, with higher quality, details, and understanding.
-    """
-    client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
+def _prepare_image_inputs(img_paths: list[str] | None) -> list[ImageFile]:
     if img_paths is None:
-        img_paths = []
-
+        return []
     # make the paths are ./tmp/...
-    img_paths = [p if p.startswith("./tmp/") else f"./tmp/{p}" for p in img_paths]
-    imgs: list[ImageFile] = [Image.open(p) for p in img_paths]
-    print(f"Running Gemini Nano Banana with prompt: {prompt} and {len(imgs)} images")
+    fixed_paths = [p if p.startswith("./tmp/") else f"./tmp/{p}" for p in img_paths]
+    return [Image.open(p) for p in fixed_paths]
+
+
+def _save_generated_images(
+    response: GenerateContentResponse, prompt: str
+) -> NanoBananaOutput:
+    if not response.parts:
+        raise ValueError("No parts in response")
+
+    out: NanoBananaOutput = NanoBananaOutput(
+        images=[], image_paths=[], prompt=prompt, text_output=""
+    )
 
     if not Path("./tmp/generated_images/").exists():
         Path("./tmp/generated_images/").mkdir(parents=True, exist_ok=True)
 
-    MODEL_ID = (
-        "gemini-3-pro-image-preview" if use_pro_model else "gemini-2.5-flash-image"
-    )
-    try:
-        response = client.models.generate_content(
-            model=MODEL_ID,
-            contents=[prompt, *imgs],
-            config=GenerateContentConfig(
-                response_modalities=["IMAGE"],
-                image_config=ImageConfig(
-                    image_size=config_params.image_size,
-                    aspect_ratio=config_params.aspect_ratio,
-                ),
-            ),
-        )
-    except Exception as e:
-        print(f"Error during image generation: {e}")
-        return NanoBananaOutput(
-            images=[],
-            image_paths=[],
-            prompt=prompt,
-            text_output="error when generating image",
-            error=str(e),
-        )
-    if not response.parts:
-        raise ValueError("No parts in response")
-    out: NanoBananaOutput = NanoBananaOutput(
-        images=[], image_paths=[], prompt=prompt, text_output=""
-    )
     for part in response.parts:
         if part.text is not None:
             print(part.text)
@@ -106,3 +73,75 @@ async def run_gemini_nano_banana(
             out.images.append(image)
             out.image_paths.append(image_path)
     return out
+
+
+async def generate_images_core(
+    prompt: str,
+    config_params: ConfigParams,
+    img_paths: list[str] | None = None,
+) -> NanoBananaOutput:
+    print("args: ", prompt, config_params, img_paths)
+    client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
+
+    imgs = _prepare_image_inputs(img_paths)
+    print(f"Running Gemini Nano Banana with prompt: {prompt} and {len(imgs)} images")
+
+    MODEL_ID = "gemini-3-pro-image-preview"  # for pro model
+    try:
+        response = client.models.generate_content(
+            model=MODEL_ID,
+            contents=[prompt, *imgs],
+            config=GenerateContentConfig(
+                response_modalities=["IMAGE", "TEXT"],
+                image_config=ImageConfig(
+                    image_size=config_params.image_size,
+                    aspect_ratio=config_params.aspect_ratio,
+                ),
+            ),
+        )
+    except Exception as e:
+        print(f"Error during image generation: {e}")
+        return NanoBananaOutput(
+            images=[],
+            image_paths=[],
+            prompt=prompt,
+            text_output="error when generating image",
+            error=str(e),
+        )
+    return _save_generated_images(response, prompt)
+
+
+@function_tool
+async def run_gemini_nano_banana(
+    prompt: str,
+    config_params: ConfigParams,
+    img_paths: list[str] | None = None,
+) -> NanoBananaOutput:
+    """
+    Run the Gemini Nano Banana model with the given prompt and image paths. Auto-saves generated images to the images_paths
+
+    for advanced, maximum quality prefer to use pro model.
+    Args:
+        prompt: The text prompt to guide image generation.
+        config_params: Configuration parameters for image generation, e.g. aspect ratio, image size.
+        img_paths: A list of file paths to input images. Optional, defaults to an empty list. paths have to exist! use shell tool to ensure.
+    """
+    return await generate_images_core(prompt, config_params, img_paths)
+
+
+async def test_gemini_nano_banana():
+    print("Running test_gemini_nano_banana...")
+    output = await generate_images_core(
+        prompt="Ultra-realistic vertical smartphone photo, TikTok-style UGC frame. A 28-year-old woman with warm medium-brown skin, natural curly shoulder-length hair, and an athletic build is sitting cross-legged on a yoga mat in a bright modern living room, casual athleisure outfit in muted earth tones. She holds the exact dark green reusable water bottle from the product photo clearly in her right hand close to the camera, label and measurement marks clean and undistorted, lid and carry handle matching the reference product image. The camera is slightly below eye level, focusing sharply on the bottle in the foreground with gentle depth of field so her face and cozy living room background are softly blurred. Natural soft daylight from a side window, subtle reflections on the bottle, realistic shadows on the floor. No overexposed highlights, no dramatic studio lighting—just authentic phone camera vibe, slight hand-held feel, perfect for a TikTok hook shot. No on-screen text or graphics, no extra props besides a neatly rolled towel and a plant in the background.\n<negative_prompt>illustration, cartoon, 3D render, distorted or duplicated bottle, incorrect bottle color, missing or warped logo, unreadable measurement marks, extra fingers, extra hands, disfigured face, warped body, floating objects, extreme wide-angle distortion, harsh spotlight, cluttered background, over-saturated colors, motion blur on bottle, text overlay, captions, watermarks other than SynthID</negative_prompt>",
+        config_params=ConfigParams(aspect_ratio="1:1", image_size="1K"),
+        img_paths=["./tmp/products/bottle.jpg", "./tmp/reference/lifestyle.jpg"],
+    )
+    print(f"Generated {len(output.image_paths)} images.")
+    for path in output.image_paths:
+        print(f"Image saved at: {path}")
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(test_gemini_nano_banana())

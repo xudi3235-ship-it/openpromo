@@ -13,6 +13,7 @@ from src.openai_agent.agents.main_agent import main_agent
 from src.openai_agent.context import ProductContext, RuntimeContext, UserContext
 from src.openai_agent.helpers import to_img_inputs
 from src.openai_agent.hooks import ExampleHooks
+from src.openai_agent.tools.nano_banana import test_gemini_nano_banana
 
 load_dotenv()
 
@@ -113,4 +114,6 @@ async def run_agent():
 if __name__ == "__main__":
     import asyncio
 
-    asyncio.run(run_agent())
+    asyncio.run(test_gemini_nano_banana())
+
+    # asyncio.run(run_agent())
