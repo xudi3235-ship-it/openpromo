@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { videoGenCallbackSchemaCallbacksVideoGenSchemaPostBody } from "../generated/openpromo_backend.zod";
 import {
   InboxConversationUpsertedEventSchema,
   InboxMessageUpsertedEventSchema,
@@ -12,6 +13,7 @@ import { StyleStateZod } from "../style";
  */
 export enum WorkspaceEventType {
   ImageGenerationUpdated = "image_generation.updated",
+  VideoGenerationUpdated = "video_generation.updated",
   StyleComponentUpdated = "style_component.updated",
   // System control events (sent by WorkspacePusher itself)
   Connect = "connect",
@@ -55,6 +57,31 @@ export const ImageGenerationUpdatedEventSchema = z.object({
 export type ImageGenerationUpdatedEvent = z.infer<
   typeof ImageGenerationUpdatedEventSchema
 >;
+
+// ============ Video Generation Events ============
+
+/**
+ * Event fired when a video generation job is updated
+ * Contains essential fields needed for client-side UI updates
+ *
+ * Source of truth: Python Pydantic models in backend/src/routes/callbacks.py
+ * Generated via orval from OpenAPI spec - extracted from callback schema's `event` field.
+ */
+export const VideoGenerationUpdatedEventSchema =
+  videoGenCallbackSchemaCallbacksVideoGenSchemaPostBody.shape.event;
+
+export type VideoGenerationUpdatedEvent = z.infer<
+  typeof VideoGenerationUpdatedEventSchema
+>;
+
+/**
+ * Video generation state enum - derived from the generated event schema
+ * Source of truth: Python Pydantic models in backend/src/routes/callbacks.py
+ */
+export const VideoGenerationStateSchema =
+  VideoGenerationUpdatedEventSchema.shape.state;
+
+export type VideoGenerationState = z.infer<typeof VideoGenerationStateSchema>;
 
 // ============ Style Component Events ============
 
@@ -139,6 +166,7 @@ export type NotificationEvent = z.infer<typeof NotificationEventSchema>;
 export const WorkspaceEventSchema = z.discriminatedUnion("type", [
   // Business events
   ImageGenerationUpdatedEventSchema,
+  VideoGenerationUpdatedEventSchema,
   StyleComponentUpdatedEventSchema,
   // System control events
   ConnectEventSchema,
@@ -163,6 +191,8 @@ const eventSchemaMap = {
   // Business events
   [WorkspaceEventType.ImageGenerationUpdated]:
     ImageGenerationUpdatedEventSchema,
+  [WorkspaceEventType.VideoGenerationUpdated]:
+    VideoGenerationUpdatedEventSchema,
   [WorkspaceEventType.StyleComponentUpdated]: StyleComponentUpdatedEventSchema,
   // System control events
   [WorkspaceEventType.Connect]: ConnectEventSchema,

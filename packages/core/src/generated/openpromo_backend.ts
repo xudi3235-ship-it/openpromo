@@ -6,8 +6,40 @@
  * OpenAPI spec version: 0.1.0
  */
 import { modalFetch } from "./modal-fetch";
+export interface AgentVideoGenErrorOut {
+  /** Description of the error that occurred. */
+  error_message: string;
+  /** Type or category of the error. */
+  error_type: string;
+}
+
+export type AgentVideoGenOutputStatus =
+  (typeof AgentVideoGenOutputStatus)[keyof typeof AgentVideoGenOutputStatus];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const AgentVideoGenOutputStatus = {
+  success: "success",
+  error: "error",
+} as const;
+
+/**
+ * Output data, varies based on success or error.
+ */
+export type AgentVideoGenOutputData =
+  | AgentVideoGenSuccessOut
+  | AgentVideoGenErrorOut;
+
 export interface AgentVideoGenOutput {
+  status: AgentVideoGenOutputStatus;
+  /** Output data, varies based on success or error. */
+  data: AgentVideoGenOutputData;
+}
+
+export interface AgentVideoGenSuccessOut {
+  /** The URL of the generated video. */
   video_url: string;
+  /** A brief summary of the generated video. */
+  summary: string;
 }
 
 export interface AgentVideoJobSubmitRequest {
@@ -143,6 +175,34 @@ export interface VideoEditResponse {
   output_url: string;
 }
 
+/**
+ * Request body for video generation job updates.
+
+Modal sends this to the CF worker's internal endpoint.
+The CF worker broadcasts the event directly to WebSocket.
+ */
+export interface VideoGenCallbackRequest {
+  /** The workspace ID to send the update to */
+  workspace_id: string;
+  /** The WebSocket event to broadcast */
+  event: VideoGenUpdatedEvent;
+}
+
+/**
+ * Optional message
+ */
+export type VideoGenCallbackResponseMessage = string | null;
+
+/**
+ * Response from the callback endpoint.
+ */
+export interface VideoGenCallbackResponse {
+  /** Whether the callback was processed successfully */
+  success: boolean;
+  /** Optional message */
+  message?: VideoGenCallbackResponseMessage;
+}
+
 export interface VideoGenFailResponse {
   /** Failure status. */
   status?: "failed";
@@ -191,6 +251,59 @@ export interface VideoGenSuccessResponse {
   status?: "success";
   /** Output from the video generation agent. */
   out: AgentVideoGenOutput;
+}
+
+/**
+ * Current state of the job
+ */
+export type VideoGenUpdatedEventState =
+  (typeof VideoGenUpdatedEventState)[keyof typeof VideoGenUpdatedEventState];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const VideoGenUpdatedEventState = {
+  queued: "queued",
+  processing: "processing",
+  completed: "completed",
+  failed: "failed",
+} as const;
+
+/**
+ * Progress percentage (0-100), only for processing state
+ */
+export type VideoGenUpdatedEventProgress = number | null;
+
+/**
+ * Status message or error description
+ */
+export type VideoGenUpdatedEventMessage = string | null;
+
+/**
+ * URL of the generated video, only for completed state
+ */
+export type VideoGenUpdatedEventOutputUrl = string | null;
+
+/**
+ * WebSocket event fired when a video generation job is updated.
+This is what clients receive via WorkspacePusher.
+
+Modal sends this directly to the CF worker, which passes it through
+to the WebSocket without transformation.
+ */
+export interface VideoGenUpdatedEvent {
+  /** Event type discriminator */
+  type?: "video_generation.updated";
+  /** The video generation job ID */
+  job_id: string;
+  /** Current state of the job */
+  state: VideoGenUpdatedEventState;
+  /** Progress percentage (0-100), only for processing state */
+  progress?: VideoGenUpdatedEventProgress;
+  /** Status message or error description */
+  message?: VideoGenUpdatedEventMessage;
+  /** URL of the generated video, only for completed state */
+  output_url?: VideoGenUpdatedEventOutputUrl;
+  /** Unix timestamp in milliseconds */
+  timestamp: number;
 }
 
 export type SubmitJobJobSubmitPostBody =
@@ -481,6 +594,58 @@ export const pingExperimentalPingGet = async (
     {
       ...options,
       method: "GET",
+    },
+  );
+};
+
+/**
+ * **This is a schema-only endpoint for documentation purposes.**
+    
+    The actual callback endpoint is on the Cloudflare Worker at:
+    `POST /api/orpc/internal.videoJobUpdate`
+    
+    This route exists solely to include the callback schemas in the OpenAPI spec,
+    enabling TypeScript code generation via orval.
+ * @summary Video Generation Callback Schema
+ */
+export type videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponse200 = {
+  data: VideoGenCallbackResponse;
+  status: 200;
+};
+
+export type videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponse422 = {
+  data: HTTPValidationError;
+  status: 422;
+};
+
+export type videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponseSuccess =
+  videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponse200 & {
+    headers: Headers;
+  };
+export type videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponseError =
+  videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponse422 & {
+    headers: Headers;
+  };
+
+export type videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponse =
+  | videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponseSuccess
+  | videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponseError;
+
+export const getVideoGenCallbackSchemaCallbacksVideoGenSchemaPostUrl = () => {
+  return `https://promobase--openpromo-backend-api.modal.run/callbacks/video-gen/schema`;
+};
+
+export const videoGenCallbackSchemaCallbacksVideoGenSchemaPost = async (
+  videoGenCallbackRequest: VideoGenCallbackRequest,
+  options?: RequestInit,
+): Promise<videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponse> => {
+  return modalFetch<videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponse>(
+    getVideoGenCallbackSchemaCallbacksVideoGenSchemaPostUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(videoGenCallbackRequest),
     },
   );
 };

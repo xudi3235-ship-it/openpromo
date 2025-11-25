@@ -24,11 +24,12 @@ export default defineConfig({
     },
   },
   // Generate Zod schemas for validation (reusable in ORPC)
+  // Output to shared package as single source of truth
   "openpromo-backend-zod": {
     input: "../../backend/openapi.json",
     output: {
       mode: "single",
-      target: "../../core/src/generated/openpromo_backend.zod.ts",
+      target: "../../shared/src/generated/openpromo_backend.zod.ts",
       client: "zod",
       biome: true,
       override: {

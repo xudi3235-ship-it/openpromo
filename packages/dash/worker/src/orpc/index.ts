@@ -5,6 +5,7 @@ export { contentRouter } from "./routes/content/index";
 export { imageGenRouter } from "./routes/image-gen";
 export { inboxRouter } from "./routes/inbox";
 export { insightsRouter } from "./routes/insights";
+export { internalRouter } from "./routes/internal";
 export {
   createPlanet,
   findPlanet,
@@ -23,6 +24,7 @@ import { contentRouter as content } from "./routes/content/index";
 import { imageGenRouter as imageGen } from "./routes/image-gen";
 import { inboxRouter as inbox } from "./routes/inbox";
 import { insightsRouter as insights } from "./routes/insights";
+import { internalRouter as internal } from "./routes/internal";
 import { planetRouter as planet } from "./routes/planet";
 import { productsRouter as products } from "./routes/products";
 import { stylesRouter as styles } from "./routes/styles";
@@ -55,4 +57,5 @@ export const orpcRouter = orpcBuilder
     styles,
     products,
     workspaces,
+    internal,
   });

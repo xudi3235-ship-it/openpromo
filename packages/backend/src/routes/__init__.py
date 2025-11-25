@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from .callbacks import router as callbacks_router
 from .docs import router as docs_router
 from .experimental import router as experimental_router
 from .ffprobe import router as ffprobe_router
@@ -14,6 +15,7 @@ ROUTERS = [
     jobs_router,
     docs_router,
     experimental_router,
+    callbacks_router,
 ]
 
 

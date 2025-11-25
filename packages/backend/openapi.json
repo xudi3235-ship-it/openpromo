@@ -226,17 +226,101 @@
           }
         }
       }
+    },
+    "/callbacks/video-gen/schema": {
+      "post": {
+        "tags": ["callbacks"],
+        "summary": "Video Generation Callback Schema",
+        "description": "**This is a schema-only endpoint for documentation purposes.**\n    \n    The actual callback endpoint is on the Cloudflare Worker at:\n    `POST /api/orpc/internal.videoJobUpdate`\n    \n    This route exists solely to include the callback schemas in the OpenAPI spec,\n    enabling TypeScript code generation via orval.",
+        "operationId": "video_gen_callback_schema_callbacks_video_gen_schema_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoGenCallbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoGenCallbackResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
-      "AgentVideoGenOutput": {
+      "AgentVideoGenErrorOut": {
         "properties": {
-          "video_url": { "type": "string", "title": "Video Url" }
+          "error_message": {
+            "type": "string",
+            "title": "Error Message",
+            "description": "Description of the error that occurred."
+          },
+          "error_type": {
+            "type": "string",
+            "title": "Error Type",
+            "description": "Type or category of the error."
+          }
         },
         "type": "object",
-        "required": ["video_url"],
+        "required": ["error_message", "error_type"],
+        "title": "AgentVideoGenErrorOut"
+      },
+      "AgentVideoGenOutput": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "error"],
+            "title": "Status"
+          },
+          "data": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/AgentVideoGenSuccessOut" },
+              { "$ref": "#/components/schemas/AgentVideoGenErrorOut" }
+            ],
+            "title": "Data",
+            "description": "Output data, varies based on success or error."
+          }
+        },
+        "type": "object",
+        "required": ["status", "data"],
         "title": "AgentVideoGenOutput"
+      },
+      "AgentVideoGenSuccessOut": {
+        "properties": {
+          "video_url": {
+            "type": "string",
+            "title": "Video Url",
+            "description": "The URL of the generated video."
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "A brief summary of the generated video."
+          }
+        },
+        "type": "object",
+        "required": ["video_url", "summary"],
+        "title": "AgentVideoGenSuccessOut"
       },
       "AgentVideoJobSubmitRequest": {
         "properties": {
@@ -425,6 +509,41 @@
         "required": ["output_url"],
         "title": "VideoEditResponse"
       },
+      "VideoGenCallbackRequest": {
+        "properties": {
+          "workspace_id": {
+            "type": "string",
+            "title": "Workspace Id",
+            "description": "The workspace ID to send the update to"
+          },
+          "event": {
+            "$ref": "#/components/schemas/VideoGenUpdatedEvent",
+            "description": "The WebSocket event to broadcast"
+          }
+        },
+        "type": "object",
+        "required": ["workspace_id", "event"],
+        "title": "VideoGenCallbackRequest",
+        "description": "Request body for video generation job updates.\n\nModal sends this to the CF worker's internal endpoint.\nThe CF worker broadcasts the event directly to WebSocket."
+      },
+      "VideoGenCallbackResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "Whether the callback was processed successfully"
+          },
+          "message": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Message",
+            "description": "Optional message"
+          }
+        },
+        "type": "object",
+        "required": ["success"],
+        "title": "VideoGenCallbackResponse",
+        "description": "Response from the callback endpoint."
+      },
       "VideoGenFailResponse": {
         "properties": {
           "status": {
@@ -547,6 +666,55 @@
         "type": "object",
         "required": ["out"],
         "title": "VideoGenSuccessResponse"
+      },
+      "VideoGenUpdatedEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "video_generation.updated",
+            "title": "Type",
+            "description": "Event type discriminator",
+            "default": "video_generation.updated"
+          },
+          "job_id": {
+            "type": "string",
+            "title": "Job Id",
+            "description": "The video generation job ID"
+          },
+          "state": {
+            "type": "string",
+            "enum": ["queued", "processing", "completed", "failed"],
+            "title": "State",
+            "description": "Current state of the job"
+          },
+          "progress": {
+            "anyOf": [
+              { "type": "number", "maximum": 100.0, "minimum": 0.0 },
+              { "type": "null" }
+            ],
+            "title": "Progress",
+            "description": "Progress percentage (0-100), only for processing state"
+          },
+          "message": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Message",
+            "description": "Status message or error description"
+          },
+          "output_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Output Url",
+            "description": "URL of the generated video, only for completed state"
+          },
+          "timestamp": {
+            "type": "integer",
+            "title": "Timestamp",
+            "description": "Unix timestamp in milliseconds"
+          }
+        },
+        "type": "object",
+        "required": ["job_id", "state", "timestamp"],
+        "title": "VideoGenUpdatedEvent",
+        "description": "WebSocket event fired when a video generation job is updated.\nThis is what clients receive via WorkspacePusher.\n\nModal sends this directly to the CF worker, which passes it through\nto the WebSocket without transformation."
       }
     },
     "securitySchemes": {

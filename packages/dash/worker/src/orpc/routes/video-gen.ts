@@ -3,8 +3,8 @@ import {
   generateAgentVideoJobVideoGeneratePost,
   type VideoGenResponse,
 } from "@core/generated/openpromo_backend";
-import { generateAgentVideoJobVideoGeneratePostBody as videoGenRequestSchema } from "@core/generated/openpromo_backend.zod";
 import type { InferRouterInputs, InferRouterOutputs } from "@orpc/server";
+import { generateAgentVideoJobVideoGeneratePostBody as videoGenRequestSchema } from "@shared/generated/openpromo_backend.zod";
 import { orpcBuilder } from "../context";
 import { withModalAuth, withWorkspaceRole } from "../middleware";
 import {

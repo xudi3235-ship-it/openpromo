@@ -27,6 +27,7 @@
     "@openpromo/ui": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/server": "catalog:",
+    "@orpc/openapi": "catalog:",
     "@orpc/tanstack-query": "^1.10.3",
     "@radix-ui/react-slot": "^1.2.3",
     "@remixicon/react": "^4.6.0",

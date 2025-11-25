@@ -12,12 +12,14 @@ from agents import (
 )
 from agents.tool_context import ToolContext
 
+from src.openai_agent.context import RuntimeContext
+
 
 class LoggingHooks(AgentHooks[Any]):
     @override
     async def on_start(
         self,
-        context: RunContextWrapper[Any],
+        context: RunContextWrapper[RuntimeContext],
         agent: Agent[Any],
     ) -> None:
         print(f"#### {agent.name} is starting.")
@@ -25,7 +27,7 @@ class LoggingHooks(AgentHooks[Any]):
     @override
     async def on_end(
         self,
-        context: RunContextWrapper[Any],
+        context: RunContextWrapper[RuntimeContext],
         agent: Agent[Any],
         output: Any,  # pyright: ignore[reportAny]
     ) -> None:
@@ -88,7 +90,7 @@ class ExampleHooks(RunHooks):
     # or other built-in hosted tools.
     @override
     async def on_tool_start(
-        self, context: RunContextWrapper, agent: Agent, tool: Tool
+        self, context: RunContextWrapper[RuntimeContext], agent: Agent, tool: Tool
     ) -> None:
         self.event_counter += 1
         # While this type cast is not ideal,
@@ -98,7 +100,11 @@ class ExampleHooks(RunHooks):
 
     @override
     async def on_tool_end(
-        self, context: RunContextWrapper, agent: Agent, tool: Tool, result: str
+        self,
+        context: RunContextWrapper[RuntimeContext],
+        agent: Agent,
+        tool: Tool,
+        result: str,
     ) -> None:
         self.event_counter += 1
         # While this type cast is not ideal,
@@ -108,7 +114,10 @@ class ExampleHooks(RunHooks):
 
     @override
     async def on_handoff(
-        self, context: RunContextWrapper, from_agent: Agent, to_agent: Agent
+        self,
+        context: RunContextWrapper[RuntimeContext],
+        from_agent: Agent,
+        to_agent: Agent,
     ) -> None:
         self.event_counter += 1
         print(
