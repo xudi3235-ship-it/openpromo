@@ -5,16 +5,17 @@
  * They use .route() and .output() for OpenAPI compliance.
  *
  * Schema source of truth: Python Pydantic models in backend/src/routes/callbacks.py
- * Generated Zod schemas: @shared/generated/openpromo_backend.zod.ts
+ * Route definitions: @core/generated/internal-api.ts
  */
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
-import { ORPCError } from "@orpc/server";
 import {
-  // Reuse the generated Zod schema from orval - source of truth is Python Pydantic
-  videoGenCallbackSchemaCallbacksVideoGenSchemaPostBody,
-  videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponse,
-} from "@shared/generated/openpromo_backend.zod";
-import * as z from "zod";
+  HEALTH_CHECK_ROUTE,
+  HealthCheckOutputSchema,
+  VIDEO_JOB_UPDATE_ROUTE,
+  VideoJobUpdateInputSchema,
+  VideoJobUpdateOutputSchema,
+} from "@core/generated/internal-api";
+import { ORPCError } from "@orpc/server";
 import { orpcBuilder } from "../context";
 
 // ============ Auth Middleware ============
@@ -57,16 +58,9 @@ const withInternalAuth = orpcBuilder.middleware(async ({ context, next }) => {
  * This ensures type consistency between Python and TypeScript.
  */
 export const videoJobUpdate = orpcBuilder
-  .route({
-    method: "POST",
-    path: "/internal/video-job-update",
-    summary: "Update video generation job status",
-    description:
-      "Receives job status updates from Modal and dispatches to workspace WebSocket",
-    tags: ["internal"],
-  })
-  .input(videoGenCallbackSchemaCallbacksVideoGenSchemaPostBody)
-  .output(videoGenCallbackSchemaCallbacksVideoGenSchemaPostResponse)
+  .route(VIDEO_JOB_UPDATE_ROUTE)
+  .input(VideoJobUpdateInputSchema)
+  .output(VideoJobUpdateOutputSchema)
   .use(withInternalAuth)
   .handler(async ({ input }) => {
     const { workspace_id: workspaceId, event } = input;
@@ -85,19 +79,8 @@ export const videoJobUpdate = orpcBuilder
  * Health check endpoint for internal API
  */
 export const internalHealthCheck = orpcBuilder
-  .route({
-    method: "GET",
-    path: "/internal/health",
-    summary: "Health check",
-    description: "Simple health check for internal API",
-    tags: ["internal"],
-  })
-  .output(
-    z.object({
-      status: z.string(),
-      timestamp: z.number(),
-    }),
-  )
+  .route(HEALTH_CHECK_ROUTE)
+  .output(HealthCheckOutputSchema)
   .handler(async () => {
     return {
       status: "ok",

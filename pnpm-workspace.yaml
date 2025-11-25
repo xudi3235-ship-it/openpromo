@@ -15,6 +15,7 @@ catalog:
   "@orpc/server": "^1.10.3"
   "@orpc/client": "^1.10.3"
   "@orpc/openapi": "^1.10.3"
+  "@orpc/zod": "^1.10.3"
   vite: ^7.2.2
   agents: ^0.2.21
   "ai": ^5.0.92

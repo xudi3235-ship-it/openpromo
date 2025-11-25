@@ -7,7 +7,8 @@
     "sync_secrets": "bash scripts/sync_secrets.sh",
     "postinstall": "lefthook install",
     "typecheck": "pnpm run --parallel -r typecheck",
-    "lint": "pnpm check && pnpm typecheck"
+    "lint": "pnpm check && pnpm typecheck",
+    "meerkat": "bash scripts/meerkat.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.6",

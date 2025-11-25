@@ -1,0 +1,182 @@
+{
+  "info": {
+    "title": "OpenPromo Internal API",
+    "version": "0.0.0",
+    "description": "Internal API for Modal → Cloudflare Worker communication. These endpoints are designed to be called from Modal backend services."
+  },
+  "servers": [
+    {
+      "url": "https://openpromo.app/api/orpc",
+      "description": "prod"
+    },
+    {
+      "url": "http://raydev.openpromo.app/api/orpc",
+      "description": "dev raydev"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Admin API token for internal service authentication"
+      }
+    }
+  },
+  "openapi": "3.1.1",
+  "paths": {
+    "/internal/video-job-update": {
+      "post": {
+        "operationId": "videoJobUpdate",
+        "summary": "Update video generation job status",
+        "description": "Receives job status updates from Modal and dispatches to workspace WebSocket",
+        "tags": ["internal"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "workspace_id": {
+                    "type": "string",
+                    "description": "The workspace ID to send the update to"
+                  },
+                  "event": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "const": "video_generation.updated",
+                        "default": "video_generation.updated",
+                        "description": "Event type discriminator"
+                      },
+                      "job_id": {
+                        "type": "string",
+                        "description": "The video generation job ID"
+                      },
+                      "state": {
+                        "enum": ["queued", "processing", "completed", "failed"],
+                        "description": "Current state of the job"
+                      },
+                      "progress": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "Progress percentage (0-100), only for processing state"
+                      },
+                      "message": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "Status message or error description"
+                      },
+                      "output_url": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "URL of the generated video, only for completed state"
+                      },
+                      "timestamp": {
+                        "type": "number",
+                        "description": "Unix timestamp in milliseconds"
+                      }
+                    },
+                    "required": ["job_id", "state", "timestamp"],
+                    "additionalProperties": false,
+                    "description": "WebSocket event fired when a video generation job is updated.\nThis is what clients receive via WorkspacePusher.\n\nModal sends this directly to the CF worker, which passes it through\nto the WebSocket without transformation."
+                  }
+                },
+                "required": ["workspace_id", "event"],
+                "additionalProperties": false,
+                "description": "Request body for video generation job updates.\n\nModal sends this to the CF worker's internal endpoint.\nThe CF worker broadcasts the event directly to WebSocket."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "description": "Whether the callback was processed successfully"
+                    },
+                    "message": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "Optional message"
+                    }
+                  },
+                  "required": ["success"],
+                  "additionalProperties": false,
+                  "description": "Response from the callback endpoint."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/health": {
+      "get": {
+        "operationId": "healthCheck",
+        "summary": "Health check",
+        "description": "Simple health check for internal API",
+        "tags": ["internal"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["status", "timestamp"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

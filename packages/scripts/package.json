@@ -4,7 +4,8 @@
   "type": "module",
   "sideEffects": false,
   "dependencies": {
-    "@openpromo/core": "workspace:*"
+    "@openpromo/core": "workspace:*",
+    "@openpromo/shared": "workspace:*"
   },
   "scripts": {
     "orval": "orval --config src/orval.config.ts",

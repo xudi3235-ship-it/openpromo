@@ -10,6 +10,7 @@
     "db:generate": "pnpm db generate",
     "db:migrate": "pnpm db migrate",
     "db:studio": "pnpm db studio",
+    "gen:openapi": "tsx src/generated/gen-openapi.ts",
     "test": "doppler run vitest"
   },
   "exports": {
@@ -53,6 +54,8 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@orpc/openapi": "catalog:",
+    "@orpc/zod": "catalog:",
     "drizzle-kit": "^0.31.4",
     "tsx": "^4.20.3",
     "vite-tsconfig-paths": "^5.1.4",
