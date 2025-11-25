@@ -5,6 +5,16 @@
     "description": "Backend API for OpenPromo",
     "version": "0.1.0"
   },
+  "servers": [
+    {
+      "url": "https://promobase--openpromo-backend-api.modal.run",
+      "description": "prod"
+    },
+    {
+      "url": "https://promobase--openpromo-backend-api-dev.modal.run",
+      "description": "dev"
+    }
+  ],
   "paths": {
     "/": {
       "get": {

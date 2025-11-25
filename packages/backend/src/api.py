@@ -12,6 +12,7 @@ def custom_openapi():
         version=fapi.version,
         description=fapi.description,
         routes=fapi.routes,
+        servers=fapi.servers,
     )
     schema.setdefault("components", {}).setdefault("securitySchemes", {}).update(
         {
@@ -29,10 +30,18 @@ fapi = FastAPI(
     description="Backend API for OpenPromo",
     version="0.1.0",
     title="OpenPromo Backend API",
-    openapi_url="/openapi.json",
     servers=[
-        {"url": "http://localhost:8000", "description": "Local development server"},
+        # put prod first here
+        {
+            "url": "https://promobase--openpromo-backend-api.modal.run",
+            "description": "prod",
+        },
+        {
+            "url": "https://promobase--openpromo-backend-api-dev.modal.run",
+            "description": "dev",
+        },
     ],
+    openapi_url="/openapi.json",
 )
 fapi.openapi = custom_openapi
 

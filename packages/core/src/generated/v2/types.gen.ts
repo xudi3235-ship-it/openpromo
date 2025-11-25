@@ -482,5 +482,8 @@ export type PingExperimentalPingGetResponse =
   PingExperimentalPingGetResponses[keyof PingExperimentalPingGetResponses];
 
 export type ClientOptions = {
-  baseUrl: `${string}://${string}` | (string & {});
+  baseUrl:
+    | "https://promobase--openpromo-backend-api.modal.run"
+    | "https://promobase--openpromo-backend-api-dev.modal.run"
+    | (string & {});
 };

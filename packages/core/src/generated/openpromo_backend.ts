@@ -217,7 +217,7 @@ export type echoGetResponseSuccess = echoGetResponse200 & {
 export type echoGetResponse = echoGetResponseSuccess;
 
 export const getEchoGetUrl = () => {
-  return `http://localhost:3000/`;
+  return `https://promobase--openpromo-backend-api.modal.run/`;
 };
 
 export const echoGet = async (
@@ -256,7 +256,7 @@ export type transcodeVideoVideoTranscodePostResponse =
   | transcodeVideoVideoTranscodePostResponseError;
 
 export const getTranscodeVideoVideoTranscodePostUrl = () => {
-  return `http://localhost:3000/video/transcode`;
+  return `https://promobase--openpromo-backend-api.modal.run/video/transcode`;
 };
 
 export const transcodeVideoVideoTranscodePost = async (
@@ -301,7 +301,7 @@ export type runFfprobeFfprobePostResponse =
   | runFfprobeFfprobePostResponseError;
 
 export const getRunFfprobeFfprobePostUrl = () => {
-  return `http://localhost:3000/ffprobe`;
+  return `https://promobase--openpromo-backend-api.modal.run/ffprobe`;
 };
 
 export const runFfprobeFfprobePost = async (
@@ -346,7 +346,7 @@ export type submitJobJobSubmitPostResponse =
   | submitJobJobSubmitPostResponseError;
 
 export const getSubmitJobJobSubmitPostUrl = () => {
-  return `http://localhost:3000/job/submit`;
+  return `https://promobase--openpromo-backend-api.modal.run/job/submit`;
 };
 
 export const submitJobJobSubmitPost = async (
@@ -391,7 +391,7 @@ export type getJobResultJobResultCallIdGetResponse =
   | getJobResultJobResultCallIdGetResponseError;
 
 export const getGetJobResultJobResultCallIdGetUrl = (callId: string) => {
-  return `http://localhost:3000/job/result/${callId}`;
+  return `https://promobase--openpromo-backend-api.modal.run/job/result/${callId}`;
 };
 
 export const getJobResultJobResultCallIdGet = async (
@@ -438,7 +438,7 @@ export type generateAgentVideoJobVideoGeneratePostResponse =
   | generateAgentVideoJobVideoGeneratePostResponseError;
 
 export const getGenerateAgentVideoJobVideoGeneratePostUrl = () => {
-  return `http://localhost:3000/job/video/generate`;
+  return `https://promobase--openpromo-backend-api.modal.run/job/video/generate`;
 };
 
 export const generateAgentVideoJobVideoGeneratePost = async (
@@ -473,7 +473,7 @@ export type pingExperimentalPingGetResponse =
   pingExperimentalPingGetResponseSuccess;
 
 export const getPingExperimentalPingGetUrl = () => {
-  return `http://localhost:3000/experimental/ping`;
+  return `https://promobase--openpromo-backend-api.modal.run/experimental/ping`;
 };
 
 export const pingExperimentalPingGet = async (

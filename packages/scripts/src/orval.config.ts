@@ -7,7 +7,10 @@ export default defineConfig({
       mode: "single",
       target: "../../core/src/generated/openpromo_backend.ts",
       client: "fetch",
-      baseUrl: "http://localhost:3000",
+      baseUrl: {
+        getBaseUrlFromSpecification: true,
+        index: 0,
+      },
       headers: true,
       mock: false,
       biome: true,
