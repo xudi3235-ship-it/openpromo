@@ -1,9 +1,22 @@
 """Data models and enums for KIE.AI SDK."""
 
 from enum import Enum
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+Timestamp: TypeAlias = int
+TimestampInput: TypeAlias = str | int | None
+
+
+def coerce_timestamp(value: TimestampInput) -> int | None:
+    if value is None:
+        return None
+    normalized = str(value).strip()
+    try:
+        return int(normalized)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid timestamp: {value}") from exc
 
 
 class AspectRatio(str, Enum):
@@ -416,8 +429,8 @@ class VideoResponse(BaseModel):
     result_urls: list[str] = Field(
         default_factory=list, alias="resultUrls", description="Generated video URLs"
     )
-    origin_urls: list[str] = Field(
-        default_factory=list,
+    origin_urls: list[str] | None = Field(
+        None,
         alias="originUrls",
         description="Original quality video URLs",
     )
@@ -433,7 +446,7 @@ class VideoDetailsData(BaseModel):
     param_json: str | None = Field(
         None, alias="paramJson", description="JSON string of parameters"
     )
-    complete_time: str | None = Field(
+    complete_time: Timestamp | None = Field(
         None, alias="completeTime", description="Completion timestamp"
     )
     response: VideoResponse | None = Field(None, description="Video response details")
@@ -445,15 +458,20 @@ class VideoDetailsData(BaseModel):
     error_code: str | None = Field(
         None, alias="errorCode", description="Error code if failed"
     )
-    error_message: str = Field(
-        default="", alias="errorMessage", description="Error message if failed"
+    error_message: str | None = Field(
+        None, alias="errorMessage", description="Error message if failed"
     )
-    create_time: str | None = Field(
+    create_time: Timestamp | None = Field(
         None, alias="createTime", description="Creation timestamp"
     )
     fallback_flag: bool = Field(
         False, alias="fallbackFlag", description="Whether fallback model was used"
     )
+
+    @field_validator("create_time", "complete_time", mode="before")
+    @classmethod
+    def _normalize_timestamps(cls, value: TimestampInput) -> int | None:
+        return coerce_timestamp(value)
 
 
 class Video1080pData(BaseModel):
@@ -472,7 +490,14 @@ class FileUploadData(BaseModel):
     download_url: str = Field(..., alias="downloadUrl", description="Download URL")
     file_size: int = Field(..., alias="fileSize", description="File size in bytes")
     mime_type: str = Field(..., alias="mimeType", description="MIME type")
-    uploaded_at: str = Field(..., alias="uploadedAt", description="Upload timestamp")
+    uploaded_at: Timestamp = Field(
+        ..., alias="uploadedAt", description="Upload timestamp"
+    )
+
+    @field_validator("uploaded_at", mode="before")
+    @classmethod
+    def _normalize_uploaded_at(cls, value: TimestampInput) -> int | None:
+        return coerce_timestamp(value)
 
 
 class ApiResponse(BaseModel):
@@ -539,15 +564,21 @@ class TaskResultData(BaseModel):
     )
     fail_code: str | None = Field(None, alias="failCode", description="Error code")
     fail_msg: str | None = Field(None, alias="failMsg", description="Error message")
-    complete_time: int | None = Field(
+    complete_time: Timestamp | None = Field(
         None, alias="completeTime", description="Completion timestamp"
     )
-    create_time: int | None = Field(
+    create_time: Timestamp | None = Field(
         None, alias="createTime", description="Creation timestamp"
     )
-    update_time: int | None = Field(
+    update_time: Timestamp | None = Field(
         None, alias="updateTime", description="Update timestamp"
     )
+
+    @field_validator("complete_time", "create_time", "update_time", mode="before")
+    @classmethod
+    def _normalize_task_timestamps(cls, value: TimestampInput) -> int | None:
+        return coerce_timestamp(value)
+
     consume_credits: int | None = Field(
         None, alias="consumeCredits", description="Credits consumed"
     )
