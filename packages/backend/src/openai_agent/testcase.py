@@ -9,7 +9,7 @@ from agents import Runner, TResponseInputItem, trace
 from dotenv import load_dotenv
 
 from src.openai_agent.agents.main_agent import main_agent
-from src.openai_agent.context import ProductContext, RuntimeContext, UserContext
+from src.openai_agent.context import RuntimeContext
 from src.openai_agent.helpers import to_img_inputs
 
 load_dotenv()
@@ -60,19 +60,8 @@ class VideoGenTestSuite:
             ]
 
             runtime_context = RuntimeContext(
-                user_context=UserContext(
-                    product=ProductContext(
-                        name=test_case.product_name,
-                        description=test_case.product_description,
-                        images=test_case.product_images_urls,
-                        target_audience=test_case.target_audience,
-                        selling_points=test_case.selling_points,
-                        extra={},
-                    ),
-                    business="Test Business",
-                    extra={},
-                ),
-                stage_contexts=[],
+                product=test_case.product_name,
+                business="ecommerce",
             )
 
             with trace(f"Test Case: {test_case.name}"):

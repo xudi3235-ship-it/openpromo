@@ -162,16 +162,16 @@
         }
       }
     },
-    "/job/agent-video/generate": {
+    "/job/video/generate": {
       "post": {
         "tags": ["jobs"],
         "summary": "Generate Agent Video",
         "description": "Generate a video using the AI agent based on product information and user instructions.\n\nThis endpoint runs the video generation agent synchronously and returns the result.\nFor long-running jobs, consider using the /job/submit endpoint instead.",
-        "operationId": "generate_agent_video_job_agent_video_generate_post",
+        "operationId": "generate_agent_video_job_video_generate_post",
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/AgentVideoRequest" }
+              "schema": { "$ref": "#/components/schemas/VideoGenRequest" }
             }
           },
           "required": true
@@ -181,7 +181,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/AgentVideoResponse" }
+                "schema": { "$ref": "#/components/schemas/VideoGenResponse" }
               }
             }
           },
@@ -220,49 +220,22 @@
   },
   "components": {
     "schemas": {
+      "AgentVideoGenOutput": {
+        "properties": {
+          "video_url": { "type": "string", "title": "Video Url" }
+        },
+        "type": "object",
+        "required": ["video_url"],
+        "title": "AgentVideoGenOutput"
+      },
       "AgentVideoJobSubmitRequest": {
         "properties": {
           "fn": { "type": "string", "const": "agent_video", "title": "Fn" },
-          "data": { "$ref": "#/components/schemas/AgentVideoRequest" }
+          "data": { "$ref": "#/components/schemas/VideoGenRequest" }
         },
         "type": "object",
         "required": ["fn", "data"],
         "title": "AgentVideoJobSubmitRequest"
-      },
-      "AgentVideoRequest": {
-        "properties": {
-          "product": { "$ref": "#/components/schemas/ProductInfo" },
-          "business": {
-            "type": "string",
-            "title": "Business",
-            "default": "A startup focused on innovative products"
-          },
-          "user_message": { "type": "string", "title": "User Message" },
-          "max_turns": {
-            "type": "integer",
-            "title": "Max Turns",
-            "default": 100
-          }
-        },
-        "type": "object",
-        "required": ["product", "user_message"],
-        "title": "AgentVideoRequest"
-      },
-      "AgentVideoResponse": {
-        "properties": {
-          "status": { "type": "string", "title": "Status" },
-          "message": { "type": "string", "title": "Message" },
-          "result": {
-            "anyOf": [
-              { "additionalProperties": true, "type": "object" },
-              { "type": "null" }
-            ],
-            "title": "Result"
-          }
-        },
-        "type": "object",
-        "required": ["status", "message"],
-        "title": "AgentVideoResponse"
       },
       "EchoResponse": {
         "properties": {
@@ -343,7 +316,7 @@
           "result": {
             "anyOf": [
               { "$ref": "#/components/schemas/VideoEditResponse" },
-              { "$ref": "#/components/schemas/AgentVideoResponse" },
+              { "$ref": "#/components/schemas/VideoGenResponse" },
               { "type": "null" }
             ],
             "title": "Result"
@@ -362,38 +335,6 @@
         "type": "object",
         "required": ["call_id"],
         "title": "JobSubmitResponse"
-      },
-      "ProductInfo": {
-        "properties": {
-          "name": { "type": "string", "title": "Name" },
-          "description": { "type": "string", "title": "Description" },
-          "images": {
-            "items": { "type": "string" },
-            "type": "array",
-            "title": "Images"
-          },
-          "target_audience": { "type": "string", "title": "Target Audience" },
-          "selling_points": { "type": "string", "title": "Selling Points" },
-          "extra": {
-            "anyOf": [
-              {
-                "additionalProperties": { "type": "string" },
-                "type": "object"
-              },
-              { "type": "null" }
-            ],
-            "title": "Extra"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "images",
-          "target_audience",
-          "selling_points"
-        ],
-        "title": "ProductInfo"
       },
       "TranscodeVideoRequest": {
         "properties": {
@@ -473,6 +414,129 @@
         "type": "object",
         "required": ["output_url"],
         "title": "VideoEditResponse"
+      },
+      "VideoGenFailResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "failed",
+            "title": "Status",
+            "description": "Failure status.",
+            "default": "failed"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "Error message describing the failure."
+          }
+        },
+        "type": "object",
+        "required": ["error"],
+        "title": "VideoGenFailResponse"
+      },
+      "VideoGenInProgressResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "in_progress",
+            "title": "Status",
+            "description": "In-progress status.",
+            "default": "in_progress"
+          },
+          "progress": {
+            "type": "number",
+            "title": "Progress",
+            "description": "Progress percentage of the video generation."
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Status message describing the current progress."
+          }
+        },
+        "type": "object",
+        "required": ["progress", "message"],
+        "title": "VideoGenInProgressResponse"
+      },
+      "VideoGenRequest": {
+        "properties": {
+          "product": {
+            "type": "string",
+            "title": "Product",
+            "description": "Product context, stringfied."
+          },
+          "product_imgs": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Product Imgs",
+            "description": "List of product images, urls."
+          },
+          "avatar_imgs": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Avatar Imgs",
+            "description": "List of avatar images, urls."
+          },
+          "business": {
+            "type": "string",
+            "title": "Business",
+            "description": "Business context, stringfied."
+          },
+          "user_message": {
+            "type": "string",
+            "title": "User Message",
+            "description": "User message or instructions for video generation."
+          },
+          "max_turns": {
+            "type": "integer",
+            "title": "Max Turns",
+            "description": "Maximum number of turns for the AI agent.",
+            "default": 100
+          }
+        },
+        "type": "object",
+        "required": [
+          "product",
+          "product_imgs",
+          "avatar_imgs",
+          "business",
+          "user_message"
+        ],
+        "title": "VideoGenRequest",
+        "description": "request schema for our internal video generation agent."
+      },
+      "VideoGenResponse": {
+        "properties": {
+          "data": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/VideoGenFailResponse" },
+              { "$ref": "#/components/schemas/VideoGenInProgressResponse" },
+              { "$ref": "#/components/schemas/VideoGenSuccessResponse" }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": ["data"],
+        "title": "VideoGenResponse"
+      },
+      "VideoGenSuccessResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "success",
+            "title": "Status",
+            "description": "Success status.",
+            "default": "success"
+          },
+          "out": {
+            "$ref": "#/components/schemas/AgentVideoGenOutput",
+            "description": "Output from the video generation agent."
+          }
+        },
+        "type": "object",
+        "required": ["out"],
+        "title": "VideoGenSuccessResponse"
       }
     },
     "securitySchemes": {

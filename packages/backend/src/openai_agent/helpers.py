@@ -32,6 +32,23 @@ def to_img_inputs(img_paths: list[str]) -> list[ResponseInputImageParam]:
     return imgs
 
 
+def download_image(url: str, save_path: str) -> None:
+    import requests
+
+    response = requests.get(url)
+    response.raise_for_status()  # Raise an error for bad responses
+
+    with open(save_path, "wb") as file:
+        file.write(response.content)
+
+
+def inspect_tmp_dir():
+    import subprocess
+
+    result = subprocess.run(["tree", "./tmp"], capture_output=True, text=True)
+    return result.stdout
+
+
 def run_image_gen_with_style_ref(
     prompt: str,
     image_ref_urls: list[str],

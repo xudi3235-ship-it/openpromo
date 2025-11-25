@@ -1,5 +1,6 @@
 from agents import Agent, ModelSettings
 from openai.types.shared import Reasoning
+from pydantic import BaseModel
 
 from src.openai_agent.context import RuntimeContext
 from src.openai_agent.tools import run_gemini_nano_banana, shell_tool
@@ -33,6 +34,10 @@ Some of the shared/common rules apply to all types, e.g. strong hook, clear valu
 7. comparsion video, a variation of UGC video, typically feature it as "other solution" vs our product, 
 
 """
+
+
+class AgentVideoGenOutput(BaseModel):
+    video_url: str
 
 
 def create_main_agent() -> Agent[RuntimeContext]:
@@ -151,7 +156,7 @@ def create_main_agent() -> Agent[RuntimeContext]:
             verbosity="medium",
         ),
         instructions=sys_prompt,
-        # output_type=VideoSpec,
+        output_type=AgentVideoGenOutput,
         tools=[
             shell_tool,
             evaluate_image,

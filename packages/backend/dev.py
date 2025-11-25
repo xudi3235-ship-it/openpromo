@@ -10,8 +10,8 @@ from openai.types.responses.response_input_item_param import Message
 
 from src.openai_agent.agents import composer_agent
 from src.openai_agent.agents.main_agent import main_agent
-from src.openai_agent.context import ProductContext, RuntimeContext, UserContext
-from src.openai_agent.helpers import to_img_inputs
+from src.openai_agent.context import RuntimeContext
+from src.openai_agent.helpers import inspect_tmp_dir, to_img_inputs
 from src.openai_agent.hooks import ExampleHooks
 
 load_dotenv()
@@ -34,44 +34,44 @@ Stage C: video generation, full execution mode. use the previous runtime context
 """
 
 
-def create_user_input() -> Message:
+def create_user_input() -> list[Message]:
     user_msg = """
     here's the product.
     I wanna create tiktok style ugc video for this water bottle.
-    I wanna feature a feature a 28yo mixed race female.
     """
 
-    return {
-        "role": "user",
-        "content": [
-            {
-                "type": "input_text",
-                "text": user_msg,
-            },
-            *to_img_inputs(["./tmp/products/bottle.jpg"]),
-        ],
-    }
+    return [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": user_msg,
+                },
+                *to_img_inputs(["./tmp/products/bottle.jpg"]),
+                {
+                    "type": "input_text",
+                    "text": "here is the avatar i'd like to use",
+                },
+                *to_img_inputs(["./tmp/avatar/girl.jpg"]),
+                {
+                    "type": "input_text",
+                    "text": "here is the current, latest tmp dir structure:\n"
+                    + inspect_tmp_dir(),
+                },
+            ],
+        }
+    ]
 
 
 async def run_agent():
     """Run the video generation workflow with the main agent."""
     init_input: list[TResponseInputItem] = [
-        create_user_input(),
+        *create_user_input(),
     ]
     runtime_context = RuntimeContext(
-        user_context=UserContext(
-            product=ProductContext(
-                name="Hydration Water Bottle",
-                description="A sleek, insulated water bottle that keeps drinks cold for 24 hours and hot for 12 hours.",
-                images=["./tmp/products/bottle.jpg"],
-                target_audience="Active individuals, athletes, and outdoor enthusiasts.",
-                selling_points="Durable stainless steel construction, leak-proof lid, and eco-friendly design.",
-                extra={},
-            ),
-            business="A startup focused on sustainable and innovative hydration solutions.",
-            extra={},
-        ),
-        stage_contexts=[],
+        product="hydro flask water bottle",
+        business="ecommerce",
     )
     with trace("Video Generation workflow"):
         # init agent
