@@ -1,16 +1,16 @@
 import os
-from typing import cast
+from typing import Any, cast
 
 import replicate
 from replicate.helpers import FileOutput
 
-from .imagen_4_fast import Imagen4FastInput
-from .kling_v2_5_turbo_pro import KlingV25TurboProInput
-from .nano_banana import NanoBananaProInput
-from .seedream import Seedream4Input
-from .topaz import TopazVideoUpscaleInput
-from .wan_2_5_t2v import Wan25T2VInput
-from .wan_2_5_t2v_fast import Wan25T2VFastInput
+from .models.imagen_4_fast import Imagen4FastInput
+from .models.kling_v2_5_turbo_pro import KlingV25TurboProInput
+from .models.nano_banana import NanoBananaProInput
+from .models.seedream import Seedream4Input
+from .models.topaz import TopazVideoUpscaleInput
+from .models.wan_2_5_t2v import Wan25T2VInput
+from .models.wan_2_5_t2v_fast import Wan25T2VFastInput
 
 
 class ReplicateApi:
@@ -97,3 +97,13 @@ class ReplicateApi:
             input=input_data.model_dump(exclude_none=True),
         )
         return cast(FileOutput, out)
+
+    def create_prediction(self, model_id: str, input: dict[str, Any]):
+        model = self.client.models.get(model_id)
+        return self.client.predictions.create(
+            model=model,
+            input=input,
+        )
+
+    def wait_until_complete(self, prediction_id: str):
+        return self.client.predictions.get(prediction_id).wait()
