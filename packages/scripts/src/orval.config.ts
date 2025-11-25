@@ -1,7 +1,8 @@
 import { defineConfig } from "orval";
 
 export default defineConfig({
-  "petstore-file": {
+  // Generate the fetch client with Modal auth
+  "openpromo-backend": {
     input: "../../backend/openapi.json",
     output: {
       mode: "single",
@@ -18,6 +19,31 @@ export default defineConfig({
         mutator: {
           path: "../../core/src/generated/modal-fetch.ts",
           name: "modalFetch",
+        },
+      },
+    },
+  },
+  // Generate Zod schemas for validation (reusable in ORPC)
+  "openpromo-backend-zod": {
+    input: "../../backend/openapi.json",
+    output: {
+      mode: "single",
+      target: "../../core/src/generated/openpromo_backend.zod.ts",
+      client: "zod",
+      biome: true,
+      override: {
+        zod: {
+          strict: {
+            body: true,
+            response: true,
+          },
+          generate: {
+            body: true,
+            response: true,
+            query: true,
+            param: true,
+            header: false,
+          },
         },
       },
     },

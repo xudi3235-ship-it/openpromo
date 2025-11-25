@@ -13,6 +13,7 @@ export {
 } from "./routes/planet";
 export { productsRouter } from "./routes/products";
 export { listStyles, stylesRouter } from "./routes/styles";
+export { videoGenRouter } from "./routes/video-gen";
 export { workspacesRouter } from "./routes/workspaces";
 
 import { getPostHogClient } from "@core/providers/posthog";
@@ -25,6 +26,7 @@ import { insightsRouter as insights } from "./routes/insights";
 import { planetRouter as planet } from "./routes/planet";
 import { productsRouter as products } from "./routes/products";
 import { stylesRouter as styles } from "./routes/styles";
+import { videoGenRouter as videoGen } from "./routes/video-gen";
 import { workspacesRouter as workspaces } from "./routes/workspaces";
 
 export const orpcRouter = orpcBuilder
@@ -49,6 +51,7 @@ export const orpcRouter = orpcBuilder
     inbox,
     insights,
     imageGen,
+    videoGen,
     styles,
     products,
     workspaces,
