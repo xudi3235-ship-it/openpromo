@@ -25,26 +25,35 @@ async def gen_video_sora2(
         video_size: size of the video.
         input_reference: path to the input reference image or video.
     """
-    video = oai().videos.create(
-        model=model,
-        prompt=prompt,
-        seconds=duration,
-        size=video_size,
-        input_reference=Path(input_reference),
-    )
-    print(f"created sora2 video.id: {video.id}")
-    while not video.status == "completed":
-        await asyncio.sleep(10)
-        video = oai().videos.retrieve(video.id)
-        print(f"Video status: {video.status}")
-    # done, download
-    res = oai().videos.download_content(video.id)
-    fout = "./tmp/sora2_generated_video.mp4"
-    with open(fout, "wb") as f:
-        f.write(res.read())
-    print(f"Downloaded generated video to {fout}")
-    return {
-        "status": "success",
-        "message": f"Video generated and saved to {fout}",
-        "output_path": fout,
-    }
+    try:
+        video = oai().videos.create(
+            model=model,
+            prompt=prompt,
+            seconds=duration,
+            size=video_size,
+            input_reference=Path(input_reference),
+        )
+        print(f"created sora2 video.id: {video.id}")
+        while not video.status == "completed":
+            await asyncio.sleep(10)
+            video = oai().videos.retrieve(video.id)
+            print(f"Video status: {video.status}")
+        # done, download
+        res = oai().videos.download_content(video.id)
+        fout = "./tmp/sora2_generated_video.mp4"
+        with open(fout, "wb") as f:
+            f.write(res.read())
+        print(f"Downloaded generated video to {fout}")
+        return {
+            "status": "success",
+            "message": f"Video generated and saved to {fout}",
+            "output_path": fout,
+        }
+    except Exception as e:
+        error_msg = f"Error in gen_video_sora2: {str(e)}"
+        print(error_msg)
+        return {
+            "status": "error",
+            "message": error_msg,
+            "error_type": type(e).__name__,
+        }

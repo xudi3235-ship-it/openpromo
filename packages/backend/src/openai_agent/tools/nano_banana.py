@@ -127,7 +127,18 @@ async def run_gemini_nano_banana(
         config_params: Configuration parameters for image generation, e.g. aspect ratio, image size. Defaul
         img_paths: A list of file paths to input images. Optional, defaults to an empty list. paths have to exist! use shell tool to ensure.
     """
-    return await generate_images_core(prompt, config_params, img_paths)
+    try:
+        return await generate_images_core(prompt, config_params, img_paths)
+    except Exception as e:
+        error_msg = f"Error in run_gemini_nano_banana: {str(e)}"
+        print(error_msg)
+        return NanoBananaOutput(
+            images=[],
+            image_paths=[],
+            prompt=prompt,
+            text_output="error when generating image",
+            error=error_msg,
+        )
 
 
 async def test_gemini_nano_banana():

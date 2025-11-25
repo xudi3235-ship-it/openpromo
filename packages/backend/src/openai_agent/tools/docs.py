@@ -25,17 +25,22 @@ def read_docs_guide(
         The content of the prompt guide as a string.
 
     """
-    match category:
-        case "veo31":
-            return StaticPrompts.veo31_from_url()
-        case "nanobanana":
-            return StaticPrompts.nano_banana_prompt_guide_from_url()
-        case "imagen4":
-            return StaticPrompts.imagen_4_from_url()
-        case "image_understanding":
-            return StaticPrompts.image_understanding_guide_from_url()
-        case _:  # pyright: ignore[reportUnnecessaryComparison]
-            raise ValueError(f"Unsupported category type: {category}")  # pyright: ignore[reportUnreachable]
+    try:
+        match category:
+            case "veo31":
+                return StaticPrompts.veo31_from_url()
+            case "nanobanana":
+                return StaticPrompts.nano_banana_prompt_guide_from_url()
+            case "imagen4":
+                return StaticPrompts.imagen_4_from_url()
+            case "image_understanding":
+                return StaticPrompts.image_understanding_guide_from_url()
+            case _:  # pyright: ignore[reportUnnecessaryComparison]
+                raise ValueError(f"Unsupported category type: {category}")  # pyright: ignore[reportUnreachable]
+    except Exception as e:
+        error_msg = f"Error in read_docs_guide for category '{category}': {str(e)}"
+        print(error_msg)
+        return f"Error: {error_msg}"
 
 
 class StaticPrompts:
@@ -82,11 +87,34 @@ class StaticPrompts:
 
     @staticmethod
     def fetch_url_content(url: str) -> str:
+        import re
+
         import requests
 
         response = requests.get(url)
         if response.status_code == 200:
-            return response.text
+            text = response.text
+            # Remove HTML tags
+            text = re.sub(r"<[^>]+>", "", text)
+            # Remove JavaScript code blocks
+            text = re.sub(
+                r"<script[^>]*>.*?</script>", "", text, flags=re.DOTALL | re.IGNORECASE
+            )
+            # Remove CSS code blocks
+            text = re.sub(
+                r"<style[^>]*>.*?</style>", "", text, flags=re.DOTALL | re.IGNORECASE
+            )
+            # Remove HTML comments
+            text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+            # Remove multiple whitespace and newlines
+            text = re.sub(r"\s+", " ", text)
+            # Decode HTML entities
+            import html
+
+            text = html.unescape(text)
+            out = text.strip()
+            print(f"Fetched content from {url}, length: {len(out)}")
+            return out
         else:
             raise ValueError(
                 f"Failed to fetch content from {url}, status code: {response.status_code}"

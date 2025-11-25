@@ -44,28 +44,37 @@ async def veo31_text_to_video(
         output_path: path to save the generated video
         config: configuration parameters for the video
     """
-    print(f">>> Running Gemini VEO-3.1 Text-to-Video: {prompt}, {config}")
-    MODEL_ID = "veo-3.1-generate-preview"
-    client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
+    try:
+        print(f">>> Running Gemini VEO-3.1 Text-to-Video: {prompt}, {config}")
+        MODEL_ID = "veo-3.1-generate-preview"
+        client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
 
-    operation = client.models.generate_videos(
-        model=MODEL_ID,
-        source=GenerateVideosSource(prompt=prompt),
-        config=genai.types.GenerateVideosConfig(
-            number_of_videos=config.number_of_videos,
-            duration_seconds=config.duration_seconds,
-            resolution=config.resolution,
-            aspect_ratio=config.aspect_ratio,
-        ),
-    )
-    video = await poll_veo31_operation_and_get_video(operation)
-    save_video_to_path(video, output_path)
-    return {
-        "status": "success",
-        "message": f"Video generated and saved to {output_path}",
-        "output_path": output_path,
-        "video_uri": video.uri,
-    }
+        operation = client.models.generate_videos(
+            model=MODEL_ID,
+            source=GenerateVideosSource(prompt=prompt),
+            config=genai.types.GenerateVideosConfig(
+                number_of_videos=config.number_of_videos,
+                duration_seconds=config.duration_seconds,
+                resolution=config.resolution,
+                aspect_ratio=config.aspect_ratio,
+            ),
+        )
+        video = await poll_veo31_operation_and_get_video(operation)
+        save_video_to_path(video, output_path)
+        return {
+            "status": "success",
+            "message": f"Video generated and saved to {output_path}",
+            "output_path": output_path,
+            "video_uri": video.uri,
+        }
+    except Exception as e:
+        error_msg = f"Error in veo31_text_to_video: {str(e)}"
+        print(error_msg)
+        return {
+            "status": "error",
+            "message": error_msg,
+            "error_type": type(e).__name__,
+        }
 
 
 @function_tool
@@ -85,41 +94,50 @@ async def veo31_image_to_video(
         config: configuration parameters for the video
         input_last_frame_path: optional path to input last frame image for frame interpolation.
     """
-    print(
-        f">>> Running Gemini VEO-3.1 Image-to-Video: {prompt}, {input_image_path}, {config}"
-    )
-    MODEL_ID = "veo-3.1-generate-preview"
-    client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
+    try:
+        print(
+            f">>> Running Gemini VEO-3.1 Image-to-Video: {prompt}, {input_image_path}, {config}"
+        )
+        MODEL_ID = "veo-3.1-generate-preview"
+        client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
 
-    input_image = GeminiImage.from_file(location=input_image_path)
-    input_last_frame = (
-        GeminiImage.from_file(location=input_last_frame_path)
-        if input_last_frame_path
-        else None
-    )
+        input_image = GeminiImage.from_file(location=input_image_path)
+        input_last_frame = (
+            GeminiImage.from_file(location=input_last_frame_path)
+            if input_last_frame_path
+            else None
+        )
 
-    operation = client.models.generate_videos(
-        model=MODEL_ID,
-        source=GenerateVideosSource(
-            prompt=prompt,
-            image=input_image,
-        ),
-        config=genai.types.GenerateVideosConfig(
-            number_of_videos=config.number_of_videos,
-            duration_seconds=config.duration_seconds,
-            resolution=config.resolution,
-            aspect_ratio=config.aspect_ratio,
-            last_frame=input_last_frame,
-        ),
-    )
-    video = await poll_veo31_operation_and_get_video(operation)
-    save_video_to_path(video, output_path)
-    return {
-        "status": "success",
-        "message": f"Video generated and saved to {output_path}",
-        "output_path": output_path,
-        "video_uri": video.uri,
-    }
+        operation = client.models.generate_videos(
+            model=MODEL_ID,
+            source=GenerateVideosSource(
+                prompt=prompt,
+                image=input_image,
+            ),
+            config=genai.types.GenerateVideosConfig(
+                number_of_videos=config.number_of_videos,
+                duration_seconds=config.duration_seconds,
+                resolution=config.resolution,
+                aspect_ratio=config.aspect_ratio,
+                last_frame=input_last_frame,
+            ),
+        )
+        video = await poll_veo31_operation_and_get_video(operation)
+        save_video_to_path(video, output_path)
+        return {
+            "status": "success",
+            "message": f"Video generated and saved to {output_path}",
+            "output_path": output_path,
+            "video_uri": video.uri,
+        }
+    except Exception as e:
+        error_msg = f"Error in veo31_image_to_video: {str(e)}"
+        print(error_msg)
+        return {
+            "status": "error",
+            "message": error_msg,
+            "error_type": type(e).__name__,
+        }
 
 
 @function_tool
@@ -137,35 +155,44 @@ async def veo31_video_extension(
         input_video_uri: uri to input video to extend, has to be the previously generated veo3.1 video uri.
         config: configuration parameters for the video
     """
-    print(
-        f">>> Running Gemini VEO-3.1 Video Extension: {prompt}, {input_video_uri}, {config}"
-    )
-    MODEL_ID = "veo-3.1-generate-preview"
-    client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
+    try:
+        print(
+            f">>> Running Gemini VEO-3.1 Video Extension: {prompt}, {input_video_uri}, {config}"
+        )
+        MODEL_ID = "veo-3.1-generate-preview"
+        client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
 
-    input_video = Video(uri=input_video_uri)
+        input_video = Video(uri=input_video_uri)
 
-    operation = client.models.generate_videos(
-        model=MODEL_ID,
-        source=GenerateVideosSource(
-            prompt=prompt,
-            video=input_video,
-        ),
-        config=genai.types.GenerateVideosConfig(
-            number_of_videos=config.number_of_videos,
-            duration_seconds=config.duration_seconds,
-            resolution=config.resolution,
-            aspect_ratio=config.aspect_ratio,
-        ),
-    )
-    video = await poll_veo31_operation_and_get_video(operation)
-    save_video_to_path(video, output_path)
-    return {
-        "status": "success",
-        "message": f"Video generated and saved to {output_path}",
-        "output_path": output_path,
-        "video_uri": video.uri,
-    }
+        operation = client.models.generate_videos(
+            model=MODEL_ID,
+            source=GenerateVideosSource(
+                prompt=prompt,
+                video=input_video,
+            ),
+            config=genai.types.GenerateVideosConfig(
+                number_of_videos=config.number_of_videos,
+                duration_seconds=config.duration_seconds,
+                resolution=config.resolution,
+                aspect_ratio=config.aspect_ratio,
+            ),
+        )
+        video = await poll_veo31_operation_and_get_video(operation)
+        save_video_to_path(video, output_path)
+        return {
+            "status": "success",
+            "message": f"Video generated and saved to {output_path}",
+            "output_path": output_path,
+            "video_uri": video.uri,
+        }
+    except Exception as e:
+        error_msg = f"Error in veo31_video_extension: {str(e)}"
+        print(error_msg)
+        return {
+            "status": "error",
+            "message": error_msg,
+            "error_type": type(e).__name__,
+        }
 
 
 @function_tool
@@ -184,50 +211,60 @@ async def veo31_reference_images_to_video(
         reference_images: list of paths to reference images to guide video generation.
         config: configuration parameters for the video. CRITICAL: aspect_ratio must be 16:9.
     """
-    print(
-        f">>> Running Gemini VEO-3.1 Reference-Images-to-Video: {prompt}, {reference_images}, {config}"
-    )
+    try:
+        print(
+            f">>> Running Gemini VEO-3.1 Reference-Images-to-Video: {prompt}, {reference_images}, {config}"
+        )
 
-    if config.aspect_ratio != "16:9":
+        if config.aspect_ratio != "16:9":
+            return {
+                "status": "error",
+                "message": "When using reference_images, aspect_ratio must be set to 16:9.",
+                "error_type": "ValidationError",
+            }
+
+        MODEL_ID = "veo-3.1-generate-preview"
+        client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
+
+        ref_imgs = [
+            GeminiImage.from_file(location=img_path) for img_path in reference_images
+        ]
+
+        ref_imgs_obj = [
+            genai.types.VideoGenerationReferenceImage(
+                image=img,
+                reference_type=VideoGenerationReferenceType.ASSET,
+            )
+            for img in ref_imgs
+        ]
+
+        operation = client.models.generate_videos(
+            model=MODEL_ID,
+            source=GenerateVideosSource(prompt=prompt),
+            config=genai.types.GenerateVideosConfig(
+                number_of_videos=config.number_of_videos,
+                duration_seconds=config.duration_seconds,
+                resolution=config.resolution,
+                aspect_ratio=config.aspect_ratio,
+                reference_images=ref_imgs_obj,
+            ),
+        )
+        video = await poll_veo31_operation_and_get_video(operation)
+        save_video_to_path(video, output_path)
+        return {
+            "status": "success",
+            "message": f"Video generated and saved to {output_path}",
+            "output_path": output_path,
+            "video_uri": video.uri,
+        }
+    except Exception as e:
+        error_msg = f"Error in veo31_reference_images_to_video: {str(e)}"
+        print(error_msg)
         return {
             "status": "error",
-            "message": "When using reference_images, aspect_ratio must be set to 16:9.",
+            "message": error_msg,
+            "error_type": type(e).__name__,
         }
-
-    MODEL_ID = "veo-3.1-generate-preview"
-    client = genai.Client(api_key=get_env_or_raise("GEMINI_API_KEY"))
-
-    ref_imgs = [
-        GeminiImage.from_file(location=img_path) for img_path in reference_images
-    ]
-
-    ref_imgs_obj = [
-        genai.types.VideoGenerationReferenceImage(
-            image=img,
-            reference_type=VideoGenerationReferenceType.ASSET,
-        )
-        for img in ref_imgs
-    ]
-
-    operation = client.models.generate_videos(
-        model=MODEL_ID,
-        source=GenerateVideosSource(prompt=prompt),
-        config=genai.types.GenerateVideosConfig(
-            number_of_videos=config.number_of_videos,
-            duration_seconds=config.duration_seconds,
-            resolution=config.resolution,
-            aspect_ratio=config.aspect_ratio,
-            reference_images=ref_imgs_obj,
-        ),
-    )
-    video = await poll_veo31_operation_and_get_video(operation)
-    save_video_to_path(video, output_path)
-    return {
-        "status": "success",
-        "message": f"Video generated and saved to {output_path}",
-        "output_path": output_path,
-        "video_uri": video.uri,
-    }
 
 
 async def test_veo31_extension():
@@ -274,7 +311,16 @@ async def poll_veo31_operation_and_get_video(op: GenerateVideosOperation):
         await asyncio.sleep(10)
         operation = client.operations.get(op)
     resp = operation.response
-    if not resp or not resp.generated_videos:
+    if not resp:
+        raise ValueError("No response from video generation operation.")
+    if resp.rai_media_filtered_count:
+        reason = resp.rai_media_filtered_reasons
+        exception_msg = (
+            f"Video generation failed due to RAI filtering. "
+            f"Filtered count: {resp.rai_media_filtered_count}, Reasons: {reason}"
+        )
+        raise ValueError(exception_msg)
+    if not resp.generated_videos:
         raise ValueError("No video generated.")
     generated_video: GeneratedVideo = resp.generated_videos[0]
     video = generated_video.video

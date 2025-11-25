@@ -1,6 +1,8 @@
+from typing import Literal
+
 from agents import Agent, ModelSettings
 from openai.types.shared import Reasoning
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.openai_agent.context import RuntimeContext
 from src.openai_agent.tools import run_gemini_nano_banana, shell_tool
@@ -36,8 +38,23 @@ Some of the shared/common rules apply to all types, e.g. strong hook, clear valu
 """
 
 
+class AgentVideoGenSuccessOut(BaseModel):
+    video_url: str = Field(..., description="The URL of the generated video.")
+    summary: str = Field(..., description="A brief summary of the generated video.")
+
+
+class AgentVideoGenErrorOut(BaseModel):
+    error_message: str = Field(
+        ..., description="Description of the error that occurred."
+    )
+    error_type: str = Field(..., description="Type or category of the error.")
+
+
 class AgentVideoGenOutput(BaseModel):
-    video_url: str
+    status: Literal["success", "error"]
+    data: AgentVideoGenSuccessOut | AgentVideoGenErrorOut = Field(
+        ..., description="Output data, varies based on success or error."
+    )
 
 
 def create_main_agent() -> Agent[RuntimeContext]:
