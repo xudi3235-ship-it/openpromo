@@ -1,7 +1,5 @@
 """Job operations for Sora 2 Pro Storyboard and other job-based APIs."""
 
-from typing import cast
-
 from .models import (
     ByteDanceDuration,
     ByteDanceInput,
@@ -25,6 +23,7 @@ from .models import (
     TaskDetailsResponse,
 )
 from .protocols import ClientProtocol
+from .result_helpers import TaskResultPayload, parse_task_result_payload
 
 
 class JobsOperations:
@@ -276,6 +275,13 @@ class JobsOperations:
 
         return self.client._handle_response(response, CreateTaskResponse)  # pyright: ignore[reportPrivateUsage]
 
+    def get_task_result_payload(
+        self, task_details: TaskDetailsResponse
+    ) -> TaskResultPayload | None:
+        """Parse the task details' result_json into a payload helper."""
+
+        return parse_task_result_payload(task_details.data.result_json)
+
     def extract_image_urls(self, task_details: TaskDetailsResponse) -> list[str]:
         """
         Extract image URLs from Nano Banana Pro task results.
@@ -295,23 +301,16 @@ class JobsOperations:
             >>> print(image_urls[0])
             https://example.com/generated-image.jpg
         """
-        import json
 
         if task_details.data.state != "success":
             raise ValueError(
                 f"Task is not successful. Current state: {task_details.data.state}"
             )
 
-        if not task_details.data.result_json:
+        payload = self.get_task_result_payload(task_details)
+        if not payload:
             raise ValueError("No result_json found in task details")
-
-        try:
-            result = cast(
-                dict[str, list[str]], json.loads(task_details.data.result_json)
-            )
-            return result.get("resultUrls", [])
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse result_json: {e}") from e
+        return payload.result_urls
 
     def extract_video_url(self, task_details: TaskDetailsResponse) -> str:
         """
@@ -332,26 +331,18 @@ class JobsOperations:
             >>> print(video_url)
             https://example.com/generated-video.mp4
         """
-        import json
 
         if task_details.data.state != "success":
             raise ValueError(
                 f"Task is not successful. Current state: {task_details.data.state}"
             )
 
-        if not task_details.data.result_json:
+        payload = self.get_task_result_payload(task_details)
+        if not payload:
             raise ValueError("No result_json found in task details")
-
-        try:
-            result = cast(
-                dict[str, list[str]], json.loads(task_details.data.result_json)
-            )
-            urls: list[str] = result.get("resultUrls", [])
-            if not urls:
-                raise ValueError("No resultUrls found in result_json")
-            return urls[0]
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse result_json: {e}") from e
+        if not payload.result_urls:
+            raise ValueError("No resultUrls found in result_json")
+        return payload.result_urls[0]
 
     def create_grok_image_to_video_task(
         self,

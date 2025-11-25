@@ -5,7 +5,14 @@ import requests
 
 from src.core.shared import get_env_or_raise
 from src.sdks.kie_ai_sdk.client import KieAIClient
-from src.sdks.kie_ai_sdk.models import AspectRatio, Model
+from src.sdks.kie_ai_sdk.models import (
+    AspectRatio,
+    Model,
+    NanoBananaAspectRatio,
+    NanoBananaOutputFormat,
+    NanoBananaResolution,
+    TaskState,
+)
 
 # Set up logging
 logging.basicConfig(
@@ -94,9 +101,74 @@ def fetch_video_details(task_id: str):
     return data
 
 
+def test_kie_ai_nanobanana_pro():
+    """Create a Nano Banana Pro image to verify job-based image generation."""
+
+    api_key = get_env_or_raise("KIE_AI_API_KEY")
+    client = KieAIClient(api_key)
+    image_path = "/Users/ruizeli/dev/openpromo/packages/backend/tmp/generated_images/4049de4050.png"
+    try:
+        logger.info("Uploading reference image for Nano Banana...")
+        upload_result = client.upload.upload_file_stream(
+            file_path=image_path,
+            upload_path="images/nanobanana",
+            file_name="ref_nanobanana.png",
+        )
+        reference_url = upload_result.data.download_url
+
+        logger.info("Submitting Nano Banana Pro task...")
+        task_response = client.jobs.create_nanobanana_task(
+            prompt="A stylized hero shot of the hydration bottle floating above a reflective black surface",
+            image_input=[reference_url],
+            aspect_ratio=NanoBananaAspectRatio.LANDSCAPE_16_9,
+            resolution=NanoBananaResolution.TWO_K,
+            output_format=NanoBananaOutputFormat.PNG,
+        )
+
+        task_id = task_response.data.task_id
+        logger.info("Nano Banana task %s created (waiting for completion)", task_id)
+
+        while True:
+            details = client.jobs.get_task_details(task_id)
+            state_value = details.data.state
+            logger.info("Nano Banana task %s state=%s", task_id, state_value)
+
+            try:
+                state_enum = TaskState(state_value)
+            except ValueError:
+                state_enum = None
+
+            if state_enum == TaskState.SUCCESS:
+                break
+            if state_enum == TaskState.FAIL:
+                logger.error("Nano Banana task %s failed", task_id)
+                return details
+
+            time.sleep(5)
+
+        payload = client.jobs.get_task_result_payload(details)
+        if not payload:
+            logger.warning(
+                "Nano Banana task %s completed without parsable result_json",
+                task_id,
+            )
+            return details
+
+        logger.info(
+            "Nano Banana result payload result_urls=%s origin_urls=%s",
+            payload.result_urls,
+            payload.origin_urls,
+        )
+
+        return details
+    finally:
+        client.close()
+
+
 if __name__ == "__main__":
     from dotenv import load_dotenv
 
     load_dotenv()
     # test_kie_ai_veo31()
+    test_kie_ai_nanobanana_pro()
     fetch_video_details("f7faff8419c91d36a51c88b6070bbe1e")

@@ -5,18 +5,21 @@ from typing import Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-Timestamp: TypeAlias = int
-TimestampInput: TypeAlias = str | int | None
+Timestamp: TypeAlias = str | int
+TimestampInput: TypeAlias = Timestamp | None
 
 
-def coerce_timestamp(value: TimestampInput) -> int | None:
+def coerce_timestamp(value: TimestampInput) -> Timestamp | None:
     if value is None:
         return None
+    if isinstance(value, int):
+        return value
+
     normalized = str(value).strip()
-    try:
+    if normalized.isdigit():
         return int(normalized)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(f"Invalid timestamp: {value}") from exc
+
+    return normalized
 
 
 class AspectRatio(str, Enum):
@@ -470,7 +473,7 @@ class VideoDetailsData(BaseModel):
 
     @field_validator("create_time", "complete_time", mode="before")
     @classmethod
-    def _normalize_timestamps(cls, value: TimestampInput) -> int | None:
+    def _normalize_timestamps(cls, value: TimestampInput) -> Timestamp | None:
         return coerce_timestamp(value)
 
 
@@ -496,7 +499,7 @@ class FileUploadData(BaseModel):
 
     @field_validator("uploaded_at", mode="before")
     @classmethod
-    def _normalize_uploaded_at(cls, value: TimestampInput) -> int | None:
+    def _normalize_uploaded_at(cls, value: TimestampInput) -> Timestamp | None:
         return coerce_timestamp(value)
 
 
@@ -576,7 +579,7 @@ class TaskResultData(BaseModel):
 
     @field_validator("complete_time", "create_time", "update_time", mode="before")
     @classmethod
-    def _normalize_task_timestamps(cls, value: TimestampInput) -> int | None:
+    def _normalize_task_timestamps(cls, value: TimestampInput) -> Timestamp | None:
         return coerce_timestamp(value)
 
     consume_credits: int | None = Field(
