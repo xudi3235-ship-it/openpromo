@@ -176,7 +176,7 @@ async def veo31_reference_images_to_video(
     config: ConfigParams,
 ):
     """Generate a video using reference images (assets) using Gemini VEO-3.1.
-    Use this to do "ingredients to video" generation, for strong consistency.
+    Use this to do "ingredients to video" generation, for strong consistency. Only works for aspect ratio 16:9.
 
     Args:
         prompt: text prompt for video generation

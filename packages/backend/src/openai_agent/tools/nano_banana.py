@@ -118,12 +118,13 @@ async def run_gemini_nano_banana(
     img_paths: list[str] | None = None,
 ) -> NanoBananaOutput:
     """
-    Run the Gemini Nano Banana model with the given prompt and image paths. Auto-saves generated images to the images_paths
+    Run the Gemini Nano Banana model with the given prompt and image paths. Auto-saves generated images to the images_paths. Powered by nano banana pro.
 
-    for advanced, maximum quality prefer to use pro model.
+    for image_size, if need more details & higher quality, use 2K or 4K.
+
     Args:
         prompt: The text prompt to guide image generation.
-        config_params: Configuration parameters for image generation, e.g. aspect ratio, image size.
+        config_params: Configuration parameters for image generation, e.g. aspect ratio, image size. Defaul
         img_paths: A list of file paths to input images. Optional, defaults to an empty list. paths have to exist! use shell tool to ensure.
     """
     return await generate_images_core(prompt, config_params, img_paths)
