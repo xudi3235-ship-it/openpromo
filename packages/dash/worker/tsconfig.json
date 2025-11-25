@@ -6,8 +6,9 @@
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "types": ["node", "vite/client", "./worker-configuration.d.ts"],
+    "types": ["node", "./worker-configuration.d.ts"],
     "erasableSyntaxOnly": false,
     "noEmit": true
-  }
+  },
+  "include": ["src/**/*"]
 }

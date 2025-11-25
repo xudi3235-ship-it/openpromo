@@ -8,6 +8,7 @@
   },
   "scripts": {
     "codegen": "doppler run tsx src/codegen.ts",
+    "orval": "orval --config src/orval.config.ts",
     "setup-facebook-subscription": "doppler run tsx src/setup-facebook-subscription.ts"
   },
   "devDependencies": {

@@ -3,6 +3,27 @@
 /** biome-ignore-all lint: generated file */
 
 /**
+ * AgentVideoGenOutput
+ */
+export type AgentVideoGenOutput = {
+  /**
+   * Video Url
+   */
+  video_url: string;
+};
+
+/**
+ * AgentVideoJobSubmitRequest
+ */
+export type AgentVideoJobSubmitRequest = {
+  /**
+   * Fn
+   */
+  fn: "agent_video";
+  data: VideoGenRequest;
+};
+
+/**
  * EchoResponse
  */
 export type EchoResponse = {
@@ -76,12 +97,15 @@ export type JobResultResponse = {
   /**
    * Fn
    */
-  fn: string;
+  fn: "edit_video" | "agent_video";
   /**
    * Status
    */
   status: "pending" | "succeeded" | "failed";
-  result?: VideoEditResponse | null;
+  /**
+   * Result
+   */
+  result?: VideoEditResponse | VideoGenResponse | null;
   /**
    * Error
    */
@@ -176,6 +200,108 @@ export type VideoEditResponse = {
   output_url: string;
 };
 
+/**
+ * VideoGenFailResponse
+ */
+export type VideoGenFailResponse = {
+  /**
+   * Status
+   * Failure status.
+   */
+  status?: "failed";
+  /**
+   * Error
+   * Error message describing the failure.
+   */
+  error: string;
+};
+
+/**
+ * VideoGenInProgressResponse
+ */
+export type VideoGenInProgressResponse = {
+  /**
+   * Status
+   * In-progress status.
+   */
+  status?: "in_progress";
+  /**
+   * Progress
+   * Progress percentage of the video generation.
+   */
+  progress: number;
+  /**
+   * Message
+   * Status message describing the current progress.
+   */
+  message: string;
+};
+
+/**
+ * VideoGenRequest
+ * request schema for our internal video generation agent.
+ */
+export type VideoGenRequest = {
+  /**
+   * Product
+   * Product context, stringfied.
+   */
+  product: string;
+  /**
+   * Product Imgs
+   * List of product images, urls.
+   */
+  product_imgs: Array<string>;
+  /**
+   * Avatar Imgs
+   * List of avatar images, urls.
+   */
+  avatar_imgs: Array<string>;
+  /**
+   * Business
+   * Business context, stringfied.
+   */
+  business: string;
+  /**
+   * User Message
+   * User message or instructions for video generation.
+   */
+  user_message: string;
+  /**
+   * Max Turns
+   * Maximum number of turns for the AI agent.
+   */
+  max_turns?: number;
+};
+
+/**
+ * VideoGenResponse
+ */
+export type VideoGenResponse = {
+  /**
+   * Data
+   */
+  data:
+    | VideoGenFailResponse
+    | VideoGenInProgressResponse
+    | VideoGenSuccessResponse;
+};
+
+/**
+ * VideoGenSuccessResponse
+ */
+export type VideoGenSuccessResponse = {
+  /**
+   * Status
+   * Success status.
+   */
+  status?: "success";
+  /**
+   * Output from the video generation agent.
+   */
+  out: AgentVideoGenOutput;
+};
+
 export type EchoGetData = {
   body?: never;
   path?: never;
@@ -247,7 +373,10 @@ export type RunFfprobeFfprobePostResponse =
   RunFfprobeFfprobePostResponses[keyof RunFfprobeFfprobePostResponses];
 
 export type SubmitJobJobSubmitPostData = {
-  body: EditVideoJobSubmitRequest;
+  /**
+   * Req
+   */
+  body: EditVideoJobSubmitRequest | AgentVideoJobSubmitRequest;
   path?: never;
   query?: never;
   url: "/job/submit";
@@ -304,6 +433,33 @@ export type GetJobResultJobResultCallIdGetResponses = {
 
 export type GetJobResultJobResultCallIdGetResponse =
   GetJobResultJobResultCallIdGetResponses[keyof GetJobResultJobResultCallIdGetResponses];
+
+export type GenerateAgentVideoJobVideoGeneratePostData = {
+  body: VideoGenRequest;
+  path?: never;
+  query?: never;
+  url: "/job/video/generate";
+};
+
+export type GenerateAgentVideoJobVideoGeneratePostErrors = {
+  /**
+   * Validation Error
+   */
+  422: HttpValidationError;
+};
+
+export type GenerateAgentVideoJobVideoGeneratePostError =
+  GenerateAgentVideoJobVideoGeneratePostErrors[keyof GenerateAgentVideoJobVideoGeneratePostErrors];
+
+export type GenerateAgentVideoJobVideoGeneratePostResponses = {
+  /**
+   * Successful Response
+   */
+  200: VideoGenResponse;
+};
+
+export type GenerateAgentVideoJobVideoGeneratePostResponse =
+  GenerateAgentVideoJobVideoGeneratePostResponses[keyof GenerateAgentVideoJobVideoGeneratePostResponses];
 
 export type PingExperimentalPingGetData = {
   body?: never;

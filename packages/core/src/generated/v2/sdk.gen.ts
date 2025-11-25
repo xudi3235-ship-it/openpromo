@@ -7,6 +7,9 @@ import { client as _heyApiClient } from "./client.gen";
 import type {
   EchoGetData,
   EchoGetResponses,
+  GenerateAgentVideoJobVideoGeneratePostData,
+  GenerateAgentVideoJobVideoGeneratePostErrors,
+  GenerateAgentVideoJobVideoGeneratePostResponses,
   GetJobResultJobResultCallIdGetData,
   GetJobResultJobResultCallIdGetErrors,
   GetJobResultJobResultCallIdGetResponses,
@@ -183,6 +186,42 @@ export const getJobResultJobResultCallIdGet = <
     ],
     url: "/job/result/{call_id}",
     ...options,
+  });
+};
+
+/**
+ * Generate Agent Video
+ * Generate a video using the AI agent based on product information and user instructions.
+ *
+ * This endpoint runs the video generation agent synchronously and returns the result.
+ * For long-running jobs, consider using the /job/submit endpoint instead.
+ */
+export const generateAgentVideoJobVideoGeneratePost = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<GenerateAgentVideoJobVideoGeneratePostData, ThrowOnError>,
+) => {
+  return (options.client ?? _heyApiClient).post<
+    GenerateAgentVideoJobVideoGeneratePostResponses,
+    GenerateAgentVideoJobVideoGeneratePostErrors,
+    ThrowOnError
+  >({
+    security: [
+      {
+        name: "Modal-Key",
+        type: "apiKey",
+      },
+      {
+        name: "Modal-Secret",
+        type: "apiKey",
+      },
+    ],
+    url: "/job/video/generate",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
   });
 };
 

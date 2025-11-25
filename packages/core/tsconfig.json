@@ -5,7 +5,7 @@
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "types": ["node", "vite/client", "../dash/worker/worker-configuration"],
+    "types": ["node", "../dash/worker/worker-configuration"],
     "skipLibCheck": true
   },
   "include": ["src/**/*"]
