@@ -4,6 +4,7 @@ from typing import Any, cast
 import replicate
 from replicate.helpers import FileOutput
 
+from .models.flux_2_pro import Flux2ProInput
 from .models.imagen_4_fast import Imagen4FastInput
 from .models.kling_v2_5_turbo_pro import KlingV25TurboProInput
 from .models.nano_banana import NanoBananaProInput
@@ -94,6 +95,17 @@ class ReplicateApi:
         """
         out = self.client.run(
             KlingV25TurboProInput.MODEL_ID,
+            input=input_data.model_dump(exclude_none=True),
+        )
+        return cast(FileOutput, out)
+
+    def run_flux_2_pro(self, input_data: Flux2ProInput) -> FileOutput:
+        """
+        Run Flux 2 Pro for image generation/editing.
+        https://replicate.com/black-forest-labs/flux-2-pro
+        """
+        out = self.client.run(
+            Flux2ProInput.MODEL_ID,
             input=input_data.model_dump(exclude_none=True),
         )
         return cast(FileOutput, out)

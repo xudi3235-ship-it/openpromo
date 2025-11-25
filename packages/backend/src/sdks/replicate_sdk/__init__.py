@@ -1,4 +1,5 @@
 from .client import ReplicateApi
+from .models.flux_2_pro import Flux2ProInput
 from .models.imagen_4_fast import Imagen4FastInput
 from .models.kling_v2_5_turbo_pro import KlingV25TurboProInput
 from .models.nano_banana import NanoBananaProInput
@@ -16,4 +17,5 @@ __all__ = [
     "Wan25T2VFastInput",
     "Wan25T2VInput",
     "KlingV25TurboProInput",
+    "Flux2ProInput",
 ]

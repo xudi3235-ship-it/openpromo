@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -17,7 +17,7 @@ class TaskResultPayload(BaseModel):
         description="Original-quality URLs returned when available",
     )
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
 
 
 def parse_task_result_payload(
