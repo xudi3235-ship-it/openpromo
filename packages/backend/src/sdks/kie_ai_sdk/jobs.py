@@ -35,7 +35,7 @@ class JobsOperations:
 
     def create_storyboard_task(
         self,
-        shots: list[dict[str, str | float]],
+        shots: list[StoryboardShot | dict[str, str | float]],
         n_frames: FrameDuration,
         aspect_ratio: StoryboardAspectRatio | None = None,
         image_urls: list[str] | None = None,
@@ -83,29 +83,40 @@ class JobsOperations:
             >>> task_id = result.data.task_id
         """
         # Convert shots to StoryboardShot objects
-        shot_objects = [
-            StoryboardShot.model_validate(shot, strict=False) for shot in shots
-        ]
+        shot_objects: list[StoryboardShot] = []
+        for shot in shots:
+            if isinstance(shot, StoryboardShot):
+                shot_objects.append(shot)
+                continue
+
+            # shot is expected to be a dict like {"Scene": str, "duration": float}
+            scene_val = shot.get("Scene") or shot.get("scene")
+            duration_val = shot.get("duration")
+
+            if scene_val is None or duration_val is None:
+                raise ValueError("Each storyboard shot requires 'Scene' and 'duration'")
+
+            # ensure correct types before constructing
+            scene_str = str(scene_val)
+            duration_float = float(duration_val)
+
+            shot_objects.append(
+                StoryboardShot(Scene=scene_str, duration=duration_float)
+            )
 
         # Create input object
-        storyboard_input = StoryboardInput.model_validate(
-            {
-                "n_frames": n_frames,
-                "shots": [shot.model_dump(by_alias=True) for shot in shot_objects],
-                "image_urls": image_urls,
-                "aspect_ratio": aspect_ratio,
-            },
-            strict=False,
+        storyboard_input = StoryboardInput(
+            n_frames=n_frames,
+            shots=shot_objects,
+            image_urls=image_urls,
+            aspect_ratio=aspect_ratio,
         )
 
         # Create task request
-        request = CreateTaskRequest.model_validate(
-            {
-                "model": "sora-2-pro-storyboard",
-                "callBackUrl": callback_url,
-                "input": storyboard_input.model_dump(by_alias=True, exclude_none=True),
-            },
-            strict=False,
+        request = CreateTaskRequest(
+            model="sora-2-pro-storyboard",
+            callBackUrl=callback_url,
+            input=storyboard_input.model_dump(by_alias=True, exclude_none=True),
         )
 
         response = self.client.session.post(
@@ -182,24 +193,18 @@ class JobsOperations:
             >>> task_id = result.data.task_id
         """
         # Create input object
-        bytedance_input = ByteDanceInput.model_validate(
-            {
-                "prompt": prompt,
-                "image_url": image_url,
-                "resolution": resolution,
-                "duration": duration,
-            },
-            strict=False,
+        bytedance_input = ByteDanceInput(
+            prompt=prompt,
+            image_url=image_url,
+            resolution=resolution,
+            duration=duration,
         )
 
         # Create task request
-        request = CreateTaskRequest.model_validate(
-            {
-                "model": "bytedance/v1-pro-fast-image-to-video",
-                "callBackUrl": callback_url,
-                "input": bytedance_input.model_dump(by_alias=True, exclude_none=True),
-            },
-            strict=False,
+        request = CreateTaskRequest(
+            model="bytedance/v1-pro-fast-image-to-video",
+            callBackUrl=callback_url,
+            input=bytedance_input.model_dump(by_alias=True, exclude_none=True),
         )
 
         response = self.client.session.post(
@@ -249,25 +254,19 @@ class JobsOperations:
             >>> task_id = result.data.task_id
         """
         # Create input object
-        nanobanana_input = NanoBananaInput.model_validate(
-            {
-                "prompt": prompt,
-                "image_input": image_input,
-                "aspect_ratio": aspect_ratio,
-                "resolution": resolution,
-                "output_format": output_format,
-            },
-            strict=False,
+        nanobanana_input = NanoBananaInput(
+            prompt=prompt,
+            image_input=image_input,
+            aspect_ratio=aspect_ratio,
+            resolution=resolution,
+            output_format=output_format,
         )
 
         # Create task request
-        request = CreateTaskRequest.model_validate(
-            {
-                "model": "nano-banana-pro",
-                "callBackUrl": callback_url,
-                "input": nanobanana_input.model_dump(by_alias=True, exclude_none=True),
-            },
-            strict=False,
+        request = CreateTaskRequest(
+            model="nano-banana-pro",
+            callBackUrl=callback_url,
+            input=nanobanana_input.model_dump(by_alias=True, exclude_none=True),
         )
 
         response = self.client.session.post(
@@ -394,25 +393,19 @@ class JobsOperations:
             >>> task_id = result.data.task_id
         """
         # Create input object
-        grok_input = GrokImageToVideoInput.model_validate(
-            {
-                "image_urls": image_urls,
-                "task_id": task_id,
-                "index": index,
-                "prompt": prompt,
-                "mode": mode,
-            },
-            strict=False,
+        grok_input = GrokImageToVideoInput(
+            image_urls=image_urls,
+            task_id=task_id,
+            index=index,
+            prompt=prompt,
+            mode=mode,
         )
 
         # Create task request
-        request = CreateTaskRequest.model_validate(
-            {
-                "model": "grok-imagine/image-to-video",
-                "callBackUrl": callback_url,
-                "input": grok_input.model_dump(by_alias=True, exclude_none=True),
-            },
-            strict=False,
+        request = CreateTaskRequest(
+            model="grok-imagine/image-to-video",
+            callBackUrl=callback_url,
+            input=grok_input.model_dump(by_alias=True, exclude_none=True),
         )
 
         response = self.client.session.post(
@@ -456,23 +449,17 @@ class JobsOperations:
             >>> task_id = result.data.task_id
         """
         # Create input object
-        grok_input = GrokTextToVideoInput.model_validate(
-            {
-                "prompt": prompt,
-                "aspect_ratio": aspect_ratio,
-                "mode": mode,
-            },
-            strict=False,
+        grok_input = GrokTextToVideoInput(
+            prompt=prompt,
+            aspect_ratio=aspect_ratio,
+            mode=mode,
         )
 
         # Create task request
-        request = CreateTaskRequest.model_validate(
-            {
-                "model": "grok-imagine/text-to-video",
-                "callBackUrl": callback_url,
-                "input": grok_input.model_dump(by_alias=True, exclude_none=True),
-            },
-            strict=False,
+        request = CreateTaskRequest(
+            model="grok-imagine/text-to-video",
+            callBackUrl=callback_url,
+            input=grok_input.model_dump(by_alias=True, exclude_none=True),
         )
 
         response = self.client.session.post(
@@ -513,22 +500,13 @@ class JobsOperations:
             >>> task_id = result.data.task_id
         """
         # Create input object
-        grok_input = GrokTextToImageInput.model_validate(
-            {
-                "prompt": prompt,
-                "aspect_ratio": aspect_ratio,
-            },
-            strict=False,
-        )
+        grok_input = GrokTextToImageInput(prompt=prompt, aspect_ratio=aspect_ratio)
 
         # Create task request
-        request = CreateTaskRequest.model_validate(
-            {
-                "model": "grok-imagine/text-to-image",
-                "callBackUrl": callback_url,
-                "input": grok_input.model_dump(by_alias=True, exclude_none=True),
-            },
-            strict=False,
+        request = CreateTaskRequest(
+            model="grok-imagine/text-to-image",
+            callBackUrl=callback_url,
+            input=grok_input.model_dump(by_alias=True, exclude_none=True),
         )
 
         response = self.client.session.post(
@@ -566,21 +544,13 @@ class JobsOperations:
             >>> upscale_task_id = result.data.task_id
         """
         # Create input object
-        grok_input = GrokUpscaleInput.model_validate(
-            {
-                "task_id": task_id,
-            },
-            strict=False,
-        )
+        grok_input = GrokUpscaleInput(task_id=task_id)
 
         # Create task request
-        request = CreateTaskRequest.model_validate(
-            {
-                "model": "grok-imagine/upscale",
-                "callBackUrl": callback_url,
-                "input": grok_input.model_dump(by_alias=True, exclude_none=True),
-            },
-            strict=False,
+        request = CreateTaskRequest(
+            model="grok-imagine/upscale",
+            callBackUrl=callback_url,
+            input=grok_input.model_dump(by_alias=True, exclude_none=True),
         )
 
         response = self.client.session.post(

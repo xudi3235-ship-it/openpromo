@@ -60,19 +60,16 @@ class VeoOperations:
             ... )
             >>> task_id = result.data.task_id
         """
-        request = GenerateVideoRequest.model_validate(
-            {
-                "prompt": prompt,
-                "imageUrls": image_urls,
-                "model": model,
-                "generationType": generation_type,
-                "aspectRatio": aspect_ratio,
-                "seeds": seeds,
-                "callBackUrl": callback_url,
-                "enableTranslation": enable_translation,
-                "watermark": watermark,
-            },
-            strict=False,
+        request = GenerateVideoRequest(
+            prompt=prompt,
+            imageUrls=image_urls,
+            model=model,
+            generationType=generation_type,
+            aspectRatio=aspect_ratio,
+            seeds=seeds,
+            callBackUrl=callback_url,
+            enableTranslation=enable_translation,
+            watermark=watermark,
         )
 
         response = self.client.session.post(
@@ -114,15 +111,12 @@ class VeoOperations:
             ... )
             >>> extension_task_id = result.data.task_id
         """
-        request = ExtendVideoRequest.model_validate(
-            {
-                "taskId": task_id,
-                "prompt": prompt,
-                "seeds": seeds,
-                "watermark": watermark,
-                "callBackUrl": callback_url,
-            },
-            strict=False,
+        request = ExtendVideoRequest(
+            taskId=task_id,
+            prompt=prompt,
+            seeds=seeds,
+            watermark=watermark,
+            callBackUrl=callback_url,
         )
 
         response = self.client.session.post(

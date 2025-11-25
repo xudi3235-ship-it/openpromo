@@ -49,13 +49,8 @@ class UploadOperations:
             ... )
             >>> url = result.data.download_url
         """
-        request = UploadFileBase64Request.model_validate(
-            {
-                "base64Data": base64_data,
-                "uploadPath": upload_path,
-                "fileName": file_name,
-            },
-            strict=False,
+        request = UploadFileBase64Request(
+            base64Data=base64_data, uploadPath=upload_path, fileName=file_name
         )
 
         response = self.client.session.post(
@@ -157,9 +152,8 @@ class UploadOperations:
             ... )
             >>> url = result.data.download_url
         """
-        request = UploadFileUrlRequest.model_validate(
-            {"fileUrl": file_url, "uploadPath": upload_path, "fileName": file_name},
-            strict=False,
+        request = UploadFileUrlRequest(
+            fileUrl=file_url, uploadPath=upload_path, fileName=file_name
         )
 
         response = self.client.session.post(

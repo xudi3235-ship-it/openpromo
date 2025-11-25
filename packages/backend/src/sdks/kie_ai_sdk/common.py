@@ -47,7 +47,7 @@ class CommonOperations:
             ...     "https://tempfile.1f6cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxbd98"
             ... )
         """
-        request = GetDownloadUrlRequest.model_validate({"url": url}, strict=False)
+        request = GetDownloadUrlRequest(url=url)
 
         response = self.client.session.post(
             f"{self.client.base_url}/api/v1/common/download-url",
