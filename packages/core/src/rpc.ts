@@ -4,9 +4,9 @@
 import type { Interceptor } from "@connectrpc/connect";
 import { createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
-import { FFprobeService } from "./gen/ffprobe/v1/ffprobe_pb";
-import { HelloService } from "./gen/hello/v1/hello_pb";
-import { VideoService } from "./gen/video/v1/video_pb";
+import { FFprobeService } from "@shared/gen/ffprobe/v1/ffprobe_pb";
+import { HelloService } from "@shared/gen/hello/v1/hello_pb";
+import { VideoService } from "@shared/gen/video/v1/video_pb";
 import { env } from "./utils/env";
 
 // Interceptor to add auth headers to all requests
@@ -45,14 +45,17 @@ export const ffprobeClient = createClient(FFprobeService, transport);
 export type {
   FFprobeRequest,
   FFprobeResponse,
-} from "./gen/ffprobe/v1/ffprobe_pb";
-export { FFprobeService } from "./gen/ffprobe/v1/ffprobe_pb";
+} from "@shared/gen/ffprobe/v1/ffprobe_pb";
+export { FFprobeService } from "@shared/gen/ffprobe/v1/ffprobe_pb";
 // Hello types
-export type { HelloRequest, HelloResponse } from "./gen/hello/v1/hello_pb";
-export { HelloService } from "./gen/hello/v1/hello_pb";
+export type {
+  HelloRequest,
+  HelloResponse,
+} from "@shared/gen/hello/v1/hello_pb";
+export { HelloService } from "@shared/gen/hello/v1/hello_pb";
 // Video types
 export type {
   TranscodeRequest,
   TranscodeResponse,
-} from "./gen/video/v1/video_pb";
-export { VideoService } from "./gen/video/v1/video_pb";
+} from "@shared/gen/video/v1/video_pb";
+export { VideoService } from "@shared/gen/video/v1/video_pb";

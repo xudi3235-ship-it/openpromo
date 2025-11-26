@@ -1,11 +1,17 @@
 import { create } from "@bufbuild/protobuf";
 import type { ConnectRouter } from "@connectrpc/connect";
+import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { connectWorkersAdapter } from "@depot/connectrpc-workers";
 import {
   InternalService,
   VideoJobUpdateResponseSchema,
-} from "@openpromo/core/gen/internal/v1/internal_pb";
+} from "@shared/gen/internal/v1/internal_pb";
+import {
+  createWorkspaceEvent,
+  mapVideoJobState,
+  WorkspaceEventType,
+} from "@shared/workspace";
 import { Hono } from "hono";
 import { withAuth } from "../../middleware/with-auth";
 
@@ -16,16 +22,35 @@ import { withAuth } from "../../middleware/with-auth";
 function routes(router: ConnectRouter) {
   router.service(InternalService, {
     async videoJobUpdate(request) {
+      const { workspaceId, event } = request;
+
+      if (!event) {
+        console.warn("[connect] VideoJobUpdate: missing event");
+        return create(VideoJobUpdateResponseSchema, { success: false });
+      }
+
       console.log("[1.] VideoJobUpdate RPC called", {
-        workspaceId: request.workspaceId,
-        jobId: request.event?.jobId,
-        state: request.event?.state,
-        progress: request.event?.progress,
-        message: request.event?.message,
+        workspaceId,
+        jobId: event.jobId,
+        state: event.state,
+        progress: event.progress,
+        message: event.message,
       });
 
-      // TODO: Implement actual logic to broadcast via WebSocket
-      // This will be connected to the Durable Object that manages WebSocket connections
+      // Transform proto event to WebSocket event format
+      const wsEvent = createWorkspaceEvent(
+        WorkspaceEventType.VideoGenerationUpdated,
+        {
+          jobId: event.jobId,
+          state: mapVideoJobState(event.state),
+          progress: event.progress,
+          message: event.message,
+          outputUrl: event.outputUrl,
+        },
+      );
+
+      // Dispatch to workspace WebSocket via Durable Object
+      await dispatchWorkspaceEvent(workspaceId, wsEvent);
 
       return create(VideoJobUpdateResponseSchema, {
         success: true,

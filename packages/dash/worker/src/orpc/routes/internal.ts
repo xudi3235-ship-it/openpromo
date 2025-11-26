@@ -1,8 +1,9 @@
 /**
  * Internal ORPC routes for Modal → Cloudflare Worker communication
  *
- * These routes are designed to be consumed by Python SDK generated from OpenAPI spec.
- * They use .route() and .output() for OpenAPI compliance.
+ * @deprecated Use Connect RPC InternalService at /api/connect instead.
+ * This route is kept for backward compatibility and will be removed
+ * once all Modal clients migrate to the Connect RPC client.
  *
  * Schema source of truth: Python Pydantic models in backend/src/routes/callbacks.py
  * Route definitions: @core/generated/internal-api.ts
@@ -16,6 +17,11 @@ import {
   VideoJobUpdateOutputSchema,
 } from "@core/generated/internal-api";
 import { ORPCError } from "@orpc/server";
+import {
+  createWorkspaceEvent,
+  type VideoGenerationState,
+  WorkspaceEventType,
+} from "@shared/workspace";
 import { orpcBuilder } from "../context";
 
 // ============ Auth Middleware ============
@@ -46,10 +52,23 @@ const withInternalAuth = orpcBuilder.middleware(async ({ context, next }) => {
   return next({ context });
 });
 
+/**
+ * Map legacy snake_case state to new VideoGenerationState
+ * (Legacy includes "queued" which we map to "processing")
+ */
+function mapLegacyState(
+  state: "processing" | "completed" | "failed" | "queued",
+): VideoGenerationState {
+  if (state === "queued") return "processing";
+  return state;
+}
+
 // ============ Internal Routes ============
 
 /**
  * POST /internal/video-job-update
+ *
+ * @deprecated Use Connect RPC InternalService.VideoJobUpdate instead.
  *
  * Receives video generation job updates from Modal backend
  * and dispatches them to the workspace WebSocket.
@@ -65,9 +84,19 @@ export const videoJobUpdate = orpcBuilder
   .handler(async ({ input }) => {
     const { workspace_id: workspaceId, event } = input;
 
-    // Pass through the event directly - no transformation needed
-    // Modal sends the event in the exact format clients expect
-    await dispatchWorkspaceEvent(workspaceId, event);
+    // Transform legacy snake_case event to new camelCase format
+    const wsEvent = createWorkspaceEvent(
+      WorkspaceEventType.VideoGenerationUpdated,
+      {
+        jobId: event.job_id,
+        state: mapLegacyState(event.state),
+        progress: event.progress ?? undefined,
+        message: event.message ?? undefined,
+        outputUrl: event.output_url ?? undefined,
+      },
+    );
+
+    await dispatchWorkspaceEvent(workspaceId, wsEvent);
 
     return {
       success: true,

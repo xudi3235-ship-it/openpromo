@@ -122,9 +122,9 @@ log_step "Step 2/6: Generate Protobuf/Connect RPC code"
 cd "$ROOT_DIR/packages/backend"
 make buf
 log_success "Generated packages/backend/src/gen/ (Python Connect RPC stubs)"
-cd "$ROOT_DIR/packages/core"
+cd "$ROOT_DIR/packages/shared"
 npx buf generate ../backend/proto
-log_success "Generated packages/core/src/gen/ (TypeScript Connect RPC client)"
+log_success "Generated packages/shared/src/gen/ (TypeScript Connect RPC client)"
 
 # Step 3: Generate TypeScript Zod schemas via orval
 log_step "Step 3/6: Generate TypeScript Zod schemas via orval"

@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { videoGenCallbackSchemaCallbacksVideoGenSchemaPostBody } from "../generated/openpromo_backend.zod";
+import { VideoJobState } from "../gen/internal/v1/internal_pb";
 import {
   InboxConversationUpsertedEventSchema,
   InboxMessageUpsertedEventSchema,
@@ -61,27 +61,74 @@ export type ImageGenerationUpdatedEvent = z.infer<
 // ============ Video Generation Events ============
 
 /**
+ * Video generation state mapping from proto VideoJobState enum
+ * Source of truth: internal.v1.VideoJobState
+ */
+const VIDEO_JOB_STATE_MAP = {
+  [VideoJobState.PROCESSING]: "processing",
+  [VideoJobState.COMPLETED]: "completed",
+  [VideoJobState.FAILED]: "failed",
+} as const;
+
+/**
+ * Video generation state enum (Zod schema)
+ * Derived from proto VideoJobState enum values
+ */
+export const VideoGenerationStateSchema = z.enum([
+  VIDEO_JOB_STATE_MAP[VideoJobState.PROCESSING],
+  VIDEO_JOB_STATE_MAP[VideoJobState.COMPLETED],
+  VIDEO_JOB_STATE_MAP[VideoJobState.FAILED],
+]);
+
+export type VideoGenerationState = z.infer<typeof VideoGenerationStateSchema>;
+
+/**
+ * Map proto VideoJobState enum to WebSocket event state string
+ * Handles UNSPECIFIED by defaulting to "processing"
+ */
+export function mapVideoJobState(
+  protoState: VideoJobState,
+): VideoGenerationState {
+  return (
+    VIDEO_JOB_STATE_MAP[protoState as keyof typeof VIDEO_JOB_STATE_MAP] ??
+    "processing"
+  );
+}
+
+// Re-export VideoJobState for consumers that need the proto enum
+export { VideoJobState };
+
+/**
  * Event fired when a video generation job is updated
  * Contains essential fields needed for client-side UI updates
  *
- * Source of truth: Python Pydantic models in backend/src/routes/callbacks.py
- * Generated via orval from OpenAPI spec - extracted from callback schema's `event` field.
+ * Source of truth: internal.v1.VideoJobEvent from proto
+ * This schema is used for WebSocket events sent to clients
  */
-export const VideoGenerationUpdatedEventSchema =
-  videoGenCallbackSchemaCallbacksVideoGenSchemaPostBody.shape.event;
+export const VideoGenerationUpdatedEventSchema = z.object({
+  type: z.literal(WorkspaceEventType.VideoGenerationUpdated),
+  jobId: z.string().describe("The video generation job ID"),
+  state: VideoGenerationStateSchema.describe("Current state of the job"),
+  timestamp: z.number().describe("Unix timestamp in milliseconds"),
+  progress: z
+    .number()
+    .min(0)
+    .max(100)
+    .optional()
+    .describe("Progress percentage (0-100), only for processing state"),
+  message: z
+    .string()
+    .optional()
+    .describe("Status message or error description"),
+  outputUrl: z
+    .string()
+    .optional()
+    .describe("URL of the generated video, only for completed state"),
+});
 
 export type VideoGenerationUpdatedEvent = z.infer<
   typeof VideoGenerationUpdatedEventSchema
 >;
-
-/**
- * Video generation state enum - derived from the generated event schema
- * Source of truth: Python Pydantic models in backend/src/routes/callbacks.py
- */
-export const VideoGenerationStateSchema =
-  VideoGenerationUpdatedEventSchema.shape.state;
-
-export type VideoGenerationState = z.infer<typeof VideoGenerationStateSchema>;
 
 // ============ Style Component Events ============
 

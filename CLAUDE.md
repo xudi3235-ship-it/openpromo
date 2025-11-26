@@ -117,3 +117,89 @@ Below are the packages that are no longer in use, only kept in monorepo for futu
 
 - `packages/web-api`
 - `packages/web-ui`
+
+## Connect RPC Architecture
+
+We use [Connect RPC](https://connectrpc.com/) for type-safe RPC communication between Modal Python backend and CF Worker.
+
+### Overview
+
+```
+Modal Python Backend          CF Worker (Hono)           Dashboard
+       │                            │                        │
+       │  Connect RPC (protobuf)    │                        │
+       │──InternalService.VideoJobUpdate──►│                 │
+       │                            │──dispatchWorkspaceEvent──►│
+       │◄──success response─────────│     (WebSocket via DO)  │
+```
+
+### Proto Files
+
+- **Location**: `packages/backend/proto/`
+- **Internal service**: `internal/v1/internal.proto` - Modal → CF Worker callbacks
+- **Video service**: `video/v1/video.proto` - Video processing RPCs
+
+### Generated Code
+
+- **Python (server/client)**: `packages/backend/src/gen/`
+- **TypeScript (client)**: `packages/shared/src/gen/`
+
+### Key Files
+
+- `packages/dash/worker/src/routes/api/connect.ts` - Connect RPC server handler in CF Worker
+- `packages/backend/src/rpc/internal_client.py` - Python Connect RPC client
+- `packages/backend/src/core/callbacks.py` - Python utilities for pushing job updates
+- `packages/shared/src/workspace/events.ts` - Zod schemas derived from proto enums
+
+### Adding New RPCs
+
+1. Define the RPC in proto file (`packages/backend/proto/`)
+2. Run `pnpm meerkat` to generate code
+3. Implement the handler in `connect.ts` (CF Worker side)
+4. Use the generated client in Python
+
+## Meerkat - Codegen Orchestrator
+
+`meerkat` is our codegen orchestrator that runs all code generation in the correct order.
+
+### Usage
+
+```bash
+# Run all codegen steps
+pnpm meerkat
+
+# Skip Modal OpenAPI generation (use existing openapi.json)
+pnpm meerkat --skip-modal
+
+# Skip legacy Python SDK generation (using Connect RPC instead)
+pnpm meerkat --skip-sdk
+
+# Skip both
+pnpm meerkat --skip-modal --skip-sdk
+```
+
+### Steps
+
+1. **Generate Python OpenAPI spec** from Modal/FastAPI (source of truth for callbacks)
+2. **Generate Protobuf/Connect RPC code** for backend (Python) and client (TypeScript)
+3. **Generate TypeScript Zod schemas** from Python OpenAPI via orval
+4. **Generate Internal API OpenAPI spec** from ORPC routes
+5. **Generate Python SDK** for Internal API (legacy, optional)
+
+### Proto → Zod Type Derivation
+
+The Zod schemas in `@shared/workspace/events.ts` are derived directly from proto enums:
+
+```typescript
+// VideoGenerationStateSchema is derived from proto VideoJobState enum
+const VIDEO_JOB_STATE_MAP = {
+  [VideoJobState.PROCESSING]: "processing",
+  [VideoJobState.COMPLETED]: "completed",
+  [VideoJobState.FAILED]: "failed",
+} as const;
+
+export const VideoGenerationStateSchema = z.enum([...]);
+export function mapVideoJobState(protoState: VideoJobState): VideoGenerationState;
+```
+
+This ensures type consistency between proto definitions and Zod validation.
