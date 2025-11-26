@@ -1,9 +1,13 @@
 /**
  * Internal ORPC routes for Modal → Cloudflare Worker communication
  *
- * @deprecated Use Connect RPC InternalService at /api/connect instead.
- * This route is kept for backward compatibility and will be removed
- * once all Modal clients migrate to the Connect RPC client.
+ * @deprecated LEGACY - Use Connect RPC InternalService at /api/connect instead.
+ *
+ * This route is kept for backward compatibility with existing Modal clients.
+ * New internal services should use Connect RPC:
+ *   - Proto definitions: packages/backend/proto/internal/v1/internal.proto
+ *   - Connect handler: packages/dash/worker/src/routes/api/connect.ts
+ *   - Python client: packages/backend/src/rpc/internal_client.py
  *
  * Schema source of truth: Python Pydantic models in backend/src/routes/callbacks.py
  * Route definitions: @core/generated/internal-api.ts

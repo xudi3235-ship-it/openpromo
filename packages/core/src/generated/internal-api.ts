@@ -1,6 +1,12 @@
 /**
  * Internal API Router Definition for OpenAPI Generation
  *
+ * @deprecated This is legacy infrastructure. New internal services should use
+ * Connect RPC instead. See:
+ *   - Proto definitions: packages/backend/proto/
+ *   - Connect RPC handler: packages/dash/worker/src/routes/api/connect.ts
+ *   - Python client: packages/backend/src/rpc/internal_client.py
+ *
  * This file defines the internal API routes schema without any runtime dependencies
  * (middleware, Cloudflare Worker context, etc.). It's used for:
  * 1. OpenAPI spec generation (Python SDK)

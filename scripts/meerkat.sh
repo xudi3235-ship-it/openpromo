@@ -6,8 +6,11 @@
 # 1. Generate Python OpenAPI spec from Modal/FastAPI (source of truth for callbacks)
 # 2. Generate Protobuf/Connect RPC code for backend (Python) and client (TypeScript)
 # 3. Generate TypeScript Zod schemas from Python OpenAPI via orval
-# 4. Generate Internal API OpenAPI spec from ORPC routes
+# 4. Generate Internal API OpenAPI spec from ORPC routes (legacy)
 # 5. Generate Python SDK from Internal API OpenAPI spec (legacy, optional)
+#
+# NOTE: For new internal services, use Connect RPC (step 2) instead of ORPC (steps 4-5).
+# See packages/backend/proto/ for proto definitions.
 #
 # Connect RPC Flow:
 #   - Proto files: packages/backend/proto/
@@ -60,8 +63,10 @@ show_help() {
     echo "  1. Generate Python OpenAPI spec from Modal/FastAPI"
     echo "  2. Generate Protobuf/Connect RPC code for backend (Python) and client (TypeScript)"
     echo "  3. Generate TypeScript Zod schemas via orval"
-    echo "  4. Generate Internal API OpenAPI spec from ORPC"
+    echo "  4. Generate Internal API OpenAPI spec from ORPC (legacy)"
     echo "  5. Generate Python SDK for Internal API (legacy, skippable with --skip-sdk)"
+    echo ""
+    echo "NOTE: For new internal services, use Connect RPC (step 2) instead of ORPC."
     echo ""
     echo "Connect RPC:"
     echo "  Proto files live in packages/backend/proto/"
@@ -132,11 +137,12 @@ cd "$ROOT_DIR/packages/scripts"
 pnpm orval
 log_success "Generated packages/shared/src/generated/openpromo_backend.zod.ts"
 
-# Step 4: Generate Internal API OpenAPI spec from ORPC
-log_step "Step 4/6: Generate Internal API OpenAPI spec from ORPC"
+# Step 4: Generate Internal API OpenAPI spec from ORPC (legacy)
+# NOTE: New internal services should use Connect RPC instead (see step 2)
+log_step "Step 4/6: Generate Internal API OpenAPI spec from ORPC (legacy)"
 cd "$ROOT_DIR/packages/core"
 pnpm gen:openapi
-log_success "Generated packages/dash/worker/openapi-internal.json"
+log_success "Generated packages/dash/worker/openapi-internal.json (legacy)"
 
 # Step 5: Generate Python SDK for Internal API (legacy, optional)
 if [ "$SKIP_SDK" = false ]; then

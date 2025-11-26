@@ -1,6 +1,10 @@
 /**
  * Generate OpenAPI spec from ORPC internal routes
  *
+ * @deprecated This is legacy infrastructure. New internal services should use
+ * Connect RPC instead. See packages/backend/proto/ for proto definitions and
+ * packages/dash/worker/src/routes/api/connect.ts for the Connect RPC handler.
+ *
  * This script generates an OpenAPI 3.1 specification for the internal API
  * that Modal uses to communicate with the Cloudflare Worker.
  *
