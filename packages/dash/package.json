@@ -39,8 +39,8 @@
     "@tanstack/react-devtools": "^0.6.4",
     "@tanstack/react-query": "^5.85.5",
     "@tanstack/react-query-devtools": "^5.85.5",
-    "@tanstack/react-router": "^1.131.7",
-    "@tanstack/react-router-devtools": "^1.131.7",
+    "@tanstack/react-router": "^1.139.7",
+    "@tanstack/react-router-devtools": "^1.139.7",
     "@tanstack/react-table": "^8.21.3",
     "@uppy/core": "^5.0.1",
     "@workos-inc/node": "catalog:",
@@ -74,10 +74,11 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.14.0",
+    "@cloudflare/vite-plugin": "1.15.3",
+    "@cloudflare/workers-types": "^4.20251126.0",
     "@hono/vite-build": "^1.7.0",
-    "@hono/vite-dev-server": "^0.21.0",
-    "@tanstack/router-plugin": "^1.131.7",
+    "@hono/vite-dev-server": "^0.23.0",
+    "@tanstack/router-plugin": "^1.139.7",
     "@tsconfig/vite-react": "^7.0.0",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
@@ -87,6 +88,6 @@
     "vite-bundle-analyzer": "^1.2.3",
     "vite-plugin-mkcert": "^1.17.8",
     "vite-tsconfig-paths": "^5.1.4",
-    "wrangler": "catalog:"
+    "wrangler": "^4.51.0"
   }
 }
