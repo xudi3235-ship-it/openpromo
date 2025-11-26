@@ -259,7 +259,6 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
           onDrop={handleDrop}
           onPaste={handlePaste}
           role="region"
-          tabIndex={0}
         >
           <div className="flex flex-col gap-3 px-4 py-4 sm:px-5">
             <div className="flex items-center justify-between">

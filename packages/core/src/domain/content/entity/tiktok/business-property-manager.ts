@@ -44,7 +44,7 @@ async function uploadVerificationFile(
 }
 
 function normalizeUrl(url: string): string {
-  return url.replace(/\/+$/, "") + "/";
+  return `${url.replace(/\/+$/, "")}/`;
 }
 
 async function delay(ms: number) {

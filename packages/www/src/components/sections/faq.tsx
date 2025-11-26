@@ -67,7 +67,6 @@ const Faq = ({ withBorders = true }: { withBorders?: boolean }) => {
           <Accordion type="single" collapsible className="space-y-4">
             {faqData.map((item, index) => (
               <AccordionItem
-                // biome-ignore lint/suspicious/noArrayIndexKey: ok
                 key={index}
                 value={`item-${index}`}
                 className="text-primary rounded-[7px] border px-6 data-[state=open]:pb-2 last:border-b"

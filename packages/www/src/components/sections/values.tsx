@@ -37,7 +37,6 @@ const Values = () => {
         {values.map((value, index) => {
           const Icon = value.icon;
           return (
-            // biome-ignore lint/suspicious/noArrayIndexKey: ok
             <div className="flex gap-2.5" key={index}>
               <Icon className="mt-0.5 size-[18px] shrink-0" />
               <div>

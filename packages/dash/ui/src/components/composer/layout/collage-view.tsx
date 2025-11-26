@@ -37,7 +37,6 @@ export function CollageView({
         const Component = isReel ? IGReelPreview : IGFeedPreview;
         return <Component accountId={account.id} />;
       }
-      case "TIKTOK":
       default:
         return <TikTokPreview accountId={account.id} />;
     }

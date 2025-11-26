@@ -15,7 +15,7 @@ export abstract class Pusher extends DurableObject<ApiEnv> {
       upgradeHeader?.toLowerCase() === "websocket" &&
       connectionHeader?.toLowerCase().includes("upgrade")
     ) {
-      console.log("Pusher fetch - WebSocket upgrade request");
+      // console.log("Pusher fetch - WebSocket upgrade request");
 
       // Get the WebSocket pair
       const webSocketPair = new WebSocketPair();

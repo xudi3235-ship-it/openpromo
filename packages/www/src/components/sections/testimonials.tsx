@@ -110,7 +110,6 @@ const Testimonials = ({ withBorders = true }: { withBorders?: boolean }) => {
 
       <div className="container mt-10 grid gap-8 sm:grid-cols-2 md:mt-14 lg:grid-cols-3">
         {testimonials.map((testimonial, index) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: ok
           <TestimonialCard key={index} {...testimonial} />
         ))}
       </div>

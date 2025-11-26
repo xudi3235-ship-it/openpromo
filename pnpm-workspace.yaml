@@ -2,23 +2,23 @@ packages:
   - packages/*
 
 catalog:
+  '@orpc/client': ^1.10.3
+  '@orpc/openapi': ^1.10.3
+  '@orpc/server': ^1.10.3
+  '@orpc/zod': ^1.10.3
   '@types/react': 19.1.10
   '@types/react-dom': 19.1.7
   '@workos-inc/node': ^7.66.0
+  agents: ^0.2.21
+  ai: ^5.0.92
   cloudflare: ^5.0.0
   drizzle-orm: ^0.44.7
   hono: ^4.10.3
   react: 19.1.1
   react-dom: 19.1.1
-  wrangler: 4.46.0
-  zod: 4.1.0
-  "@orpc/server": "^1.10.3"
-  "@orpc/client": "^1.10.3"
-  "@orpc/openapi": "^1.10.3"
-  "@orpc/zod": "^1.10.3"
   vite: ^7.2.2
-  agents: ^0.2.21
-  "ai": ^5.0.92
+  wrangler: 4.51.0
+  zod: 4.1.0
 
 onlyBuiltDependencies:
   - '@parcel/watcher'

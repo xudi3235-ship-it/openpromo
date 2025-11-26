@@ -30,7 +30,6 @@ const AdaptiveList = () => {
       <div className="grid flex-1 max-lg:divide-y max-lg:border-x lg:grid-cols-3 lg:divide-x">
         {DATA.map((item, index) => (
           <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: ok
             key={index}
             className={`relative isolate pt-5 text-start lg:pt-20`}
           >

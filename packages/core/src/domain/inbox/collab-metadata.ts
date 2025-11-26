@@ -13,7 +13,7 @@ export function readCollabMetadata(
 ): InboxConversationCollab | null {
   const wrapper = ensureRecord(metadata);
   if (!wrapper) return null;
-  const collab = ensureRecord(wrapper["collab"]);
+  const collab = ensureRecord(wrapper.collab);
   if (!collab) return null;
 
   const parsed = InboxConversationCollabSchema.safeParse(collab);

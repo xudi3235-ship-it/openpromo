@@ -320,19 +320,17 @@ function sumBreakdown(
 export function instagramMediaMetricsToUnifiedContentMetrics(
   metrics: InstagramMediaMetricsValueMap,
 ): UnifiedContentMetrics {
-  const reach = coerceNumber(metrics["reach"]?.value ?? null);
-  const impressionsRaw = coerceNumber(metrics["views"]?.value ?? null);
+  const reach = coerceNumber(metrics.reach?.value ?? null);
+  const impressionsRaw = coerceNumber(metrics.views?.value ?? null);
   const impressions = impressionsRaw > 0 ? impressionsRaw : reach;
-  const engagementRaw = coerceNumber(
-    metrics["total_interactions"]?.value ?? null,
-  );
-  const likes = coerceNumber(metrics["likes"]?.value ?? null);
-  const comments = coerceNumber(metrics["comments"]?.value ?? null);
-  const shares = coerceNumber(metrics["shares"]?.value ?? null);
-  const profileVisits = coerceNumber(metrics["profile_visits"]?.value ?? null);
-  const saves = coerceNumber(metrics["saved"]?.value ?? null);
+  const engagementRaw = coerceNumber(metrics.total_interactions?.value ?? null);
+  const likes = coerceNumber(metrics.likes?.value ?? null);
+  const comments = coerceNumber(metrics.comments?.value ?? null);
+  const shares = coerceNumber(metrics.shares?.value ?? null);
+  const profileVisits = coerceNumber(metrics.profile_visits?.value ?? null);
+  const saves = coerceNumber(metrics.saved?.value ?? null);
 
-  const profileActivityBreakdown = metrics["profile_activity"]?.breakdown;
+  const profileActivityBreakdown = metrics.profile_activity?.breakdown;
   const derivedClicks = sumBreakdown(profileActivityBreakdown, /.*/);
 
   const engagement =

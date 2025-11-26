@@ -112,9 +112,9 @@ export const useTikTokBusinessOauthMutation = () => {
   const { workspace } = useWorkspace();
   return useHonoMutation({
     mutationFn: (api, variables: { state?: string }) =>
-      api.workspaces[":workspaceSlug"].connected_accounts[
-        "tiktok_business"
-      ].auth.$get({
+      api.workspaces[
+        ":workspaceSlug"
+      ].connected_accounts.tiktok_business.auth.$get({
         query: { state: variables.state },
         param: { workspaceSlug: workspace.slug },
       }),

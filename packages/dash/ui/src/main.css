@@ -1,4 +1,3 @@
 @import "@openpromo/ui/styles/globals.css";
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: tailwind */
 @source "../../../ui/src";

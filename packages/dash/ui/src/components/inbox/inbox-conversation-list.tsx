@@ -364,7 +364,6 @@ function ConversationListItem({
             placeholder="Quick reply..."
             disabled={isSubmitting}
             className="h-7 w-full rounded-md border border-border/60 bg-background px-2 text-xs focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
-            autoFocus
           />
         </form>
       )}

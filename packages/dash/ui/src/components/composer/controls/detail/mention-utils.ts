@@ -45,7 +45,7 @@ export function replaceWord(
   // Use execCommand for undo support (deprecated but still works)
   textarea.focus();
   textarea.setSelectionRange(start, end);
-  document.execCommand("insertText", false, newValue + " ");
+  document.execCommand("insertText", false, `${newValue} `);
 }
 
 /**

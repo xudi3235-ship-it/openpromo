@@ -146,7 +146,6 @@ export const listContents = orpcBuilder
       case "shares":
         orderByColumn = sql`COALESCE((${unifiedContentTable.metrics} ->> 'shares')::integer, 0)`;
         break;
-      case "createdAt":
       default:
         orderByColumn = unifiedContentTable.createdAt;
         break;

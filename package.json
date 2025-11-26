@@ -11,13 +11,13 @@
     "meerkat": "bash scripts/meerkat.sh"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.6",
-    "@tsconfig/node22": "^22.0.2",
-    "@types/node": "^22.17.1",
-    "@typescript/native-preview": "7.0.0-dev.20250910.1",
-    "lefthook": "^1.12.3",
+    "@biomejs/biome": "^2.3.7",
+    "@tsconfig/node22": "^22.0.5",
+    "@types/node": "^24.10.1",
+    "@typescript/native-preview": "7.0.0-dev.20251126.1",
+    "lefthook": "^2.0.4",
     "orval": "^7.17.0",
-    "typescript": "^5.9.2",
+    "typescript": "^5.9.3",
     "wrangler": "catalog:"
   },
   "engines": {
@@ -30,6 +30,6 @@
     }
   },
   "dependencies": {
-    "ts-pattern": "^5.8.0"
+    "ts-pattern": "^5.9.0"
   }
 }

@@ -54,9 +54,7 @@ export const useContentActionController = ({
             | undefined) ?? {};
 
         const metadataUrl =
-          metadata?.["permalinkUrl"] ??
-          metadata?.["shareUrl"] ??
-          metadata?.["permalink"];
+          metadata?.permalinkUrl ?? metadata?.shareUrl ?? metadata?.permalink;
 
         if (typeof metadataUrl === "string") return metadataUrl;
         return null;

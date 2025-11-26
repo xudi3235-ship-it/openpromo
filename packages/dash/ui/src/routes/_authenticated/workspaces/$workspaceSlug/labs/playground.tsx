@@ -92,7 +92,6 @@ function PlaygroundPage() {
         return "Closing";
       case "closed":
         return "Disconnected";
-      case "error":
       default:
         return "Error";
     }

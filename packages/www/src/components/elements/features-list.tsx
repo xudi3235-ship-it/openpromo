@@ -64,7 +64,6 @@ const FeaturesList = () => {
       <div className="flex-1 lg:w-[60%]">
         {FEATURES_DATA.map((item, index) => (
           <TabsContent
-            // biome-ignore lint/suspicious/noArrayIndexKey: ok
             key={index}
             value={item.title}
             className="m-0 px-6 py-[38px] max-lg:border-x lg:border-none"

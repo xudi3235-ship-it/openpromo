@@ -22,7 +22,6 @@ export const Metrics = () => {
     <section className="container pb-14 md:pb-20 lg:pb-24">
       <div className="flex flex-col justify-between gap-6 sm:flex-row">
         {ITEMS.map((metric, index) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: ok
           <div key={index} className="flex flex-col">
             <span className="text-primary text-[3.375rem] leading-[120%] tracking-[-2.8px]">
               {metric.value}

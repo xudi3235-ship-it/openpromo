@@ -194,8 +194,8 @@ export class TikTokDirectPostClient {
     );
 
     const dataRecord = data as unknown as Record<string, unknown>;
-    const message = data.message || dataRecord?.["status_msg"];
-    const failReason = data.fail_reason || dataRecord?.["fail_msg"];
+    const message = data.message || dataRecord?.status_msg;
+    const failReason = data.fail_reason || dataRecord?.fail_msg;
 
     return {
       ...data,

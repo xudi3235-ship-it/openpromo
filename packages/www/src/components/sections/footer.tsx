@@ -40,14 +40,12 @@ const Footer = () => {
         </div>
         <div className="flex flex-1 justify-between gap-8 max-sm:flex-col">
           {sections.map((section, sectionIdx) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: ok
             <div key={sectionIdx}>
               <h3 className="text-muted-foreground-subtle text-sm tracking-[-0.28px]">
                 {section.title}
               </h3>
               <ul className="mt-6 space-y-6 text-sm tracking-[-0.28px] lg:mt-8 lg:space-y-8">
                 {section.links.map((link, linkIdx) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: ok
                   <li key={linkIdx} className="hover:text-primary">
                     <a href={link.href}>{link.name}</a>
                   </li>

@@ -119,7 +119,6 @@ const Contact = () => {
 
         <div className="grid flex-1 gap-6 self-start lg:grid-cols-2">
           {contactMethods.map((method, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: ok
             <ContactMethod key={index} {...method} />
           ))}
         </div>

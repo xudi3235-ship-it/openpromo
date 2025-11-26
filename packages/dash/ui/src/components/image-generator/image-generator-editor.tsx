@@ -398,18 +398,12 @@ export function ImageGeneratorEditor({
               </div>
               <div className="overflow-x-auto">
                 <div className="flex gap-3 pb-2 w-full min-h-[5rem] items-center">
-                  {variantsQuery.isPending && (
-                    <>
-                      {Array.from({ length: 4 }, (_, i) => `skeleton-${i}`).map(
-                        (key) => (
-                          <Skeleton
-                            key={key}
-                            className="w-20 h-20 rounded-md"
-                          />
-                        ),
-                      )}
-                    </>
-                  )}
+                  {variantsQuery.isPending &&
+                    Array.from({ length: 4 }, (_, i) => `skeleton-${i}`).map(
+                      (key) => (
+                        <Skeleton key={key} className="w-20 h-20 rounded-md" />
+                      ),
+                    )}
                   {!variantsQuery.isPending &&
                     pendingVariants.map((item) => (
                       <div

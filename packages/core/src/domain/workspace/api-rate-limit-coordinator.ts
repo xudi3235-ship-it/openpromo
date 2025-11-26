@@ -65,12 +65,12 @@ class MetaRateLimitParser implements RateLimitParser {
       try {
         const parsed = JSON.parse(appUsage) as Record<string, unknown>;
         callCount =
-          this.parseInteger(parsed["call_count"]) ??
-          this.parseInteger(parsed["call_volume"]);
+          this.parseInteger(parsed.call_count) ??
+          this.parseInteger(parsed.call_volume);
         totalCpuTime =
-          this.parseInteger(parsed["total_cputime"]) ??
-          this.parseInteger(parsed["cpu_time"]);
-        totalTime = this.parseInteger(parsed["total_time"]);
+          this.parseInteger(parsed.total_cputime) ??
+          this.parseInteger(parsed.cpu_time);
+        totalTime = this.parseInteger(parsed.total_time);
       } catch {
         // Ignore parse errors, will try business usage header
       }
@@ -87,11 +87,11 @@ class MetaRateLimitParser implements RateLimitParser {
             | Record<string, unknown>
             | undefined;
           if (firstEntry) {
-            callCount ??= this.parseInteger(firstEntry["call_count"]);
-            totalCpuTime ??= this.parseInteger(firstEntry["total_cputime"]);
-            totalTime ??= this.parseInteger(firstEntry["total_time"]);
+            callCount ??= this.parseInteger(firstEntry.call_count);
+            totalCpuTime ??= this.parseInteger(firstEntry.total_cputime);
+            totalTime ??= this.parseInteger(firstEntry.total_time);
             estimatedTimeToRegainAccess = this.parseInteger(
-              firstEntry["estimated_time_to_regain_access"],
+              firstEntry.estimated_time_to_regain_access,
             );
           }
         }

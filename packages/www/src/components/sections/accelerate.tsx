@@ -71,7 +71,6 @@ const Accelerate = () => {
       <div className="container border-x pb-40 lg:pt-20 [&>*:last-child]:pb-20 [&>div>div:first-child]:!pt-20">
         {TIMELINE_ITEMS.map((item, index) => (
           <TimelineItem
-            // biome-ignore lint/suspicious/noArrayIndexKey: ok
             key={index}
             index={index}
             title={item.title}
