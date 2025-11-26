@@ -87,13 +87,17 @@ class AgentVideoJobRequest(_message.Message):
     BUSINESS_FIELD_NUMBER: _ClassVar[int]
     USER_MESSAGE_FIELD_NUMBER: _ClassVar[int]
     MAX_TURNS_FIELD_NUMBER: _ClassVar[int]
+    WORKSPACE_ID_FIELD_NUMBER: _ClassVar[int]
+    JOB_ID_FIELD_NUMBER: _ClassVar[int]
     product: str
     product_imgs: _containers.RepeatedScalarFieldContainer[str]
     avatar_imgs: _containers.RepeatedScalarFieldContainer[str]
     business: str
     user_message: str
     max_turns: int
-    def __init__(self, product: _Optional[str] = ..., product_imgs: _Optional[_Iterable[str]] = ..., avatar_imgs: _Optional[_Iterable[str]] = ..., business: _Optional[str] = ..., user_message: _Optional[str] = ..., max_turns: _Optional[int] = ...) -> None: ...
+    workspace_id: str
+    job_id: str
+    def __init__(self, product: _Optional[str] = ..., product_imgs: _Optional[_Iterable[str]] = ..., avatar_imgs: _Optional[_Iterable[str]] = ..., business: _Optional[str] = ..., user_message: _Optional[str] = ..., max_turns: _Optional[int] = ..., workspace_id: _Optional[str] = ..., job_id: _Optional[str] = ...) -> None: ...
 
 class JobSubmitResponse(_message.Message):
     __slots__ = ()
