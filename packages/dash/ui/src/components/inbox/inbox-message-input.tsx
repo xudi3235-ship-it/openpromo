@@ -23,16 +23,18 @@ import {
 import { useInboxStore } from "@/stores/inbox-store";
 import { MessageComposer, type MessageComposerStatus } from "./v2/composer";
 
-type SendMessageMutationContext = {
-  previousMessages?: InboxMessagesList;
-  optimisticId: string;
-  conversationId: string;
-  workspaceSlug: string;
-  messagesKey: ReturnType<typeof orpc.inbox.listMessages.queryKey>;
-  text: string;
-  replyToMessageId: string | null;
-  attachments: InboxAttachment[];
-};
+type SendMessageMutationContext =
+  | {
+      previousMessages?: InboxMessagesList;
+      optimisticId: string;
+      conversationId: string;
+      workspaceSlug: string;
+      messagesKey: ReturnType<typeof orpc.inbox.listMessages.queryKey>;
+      text: string;
+      replyToMessageId: string | null;
+      attachments: InboxAttachment[];
+    }
+  | undefined;
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 50;

@@ -13,14 +13,16 @@ import { useWorkspace } from "../useWorkspace";
 
 type MessagesQueryKey = ReturnType<typeof orpc.inbox.listMessages.queryKey>;
 
-type QuickReplyMutationContext = {
-  previousMessages?: InboxMessagesList;
-  optimisticId: string;
-  conversationId: string;
-  workspaceSlug: string;
-  messagesKey: MessagesQueryKey;
-  text: string;
-};
+type QuickReplyMutationContext =
+  | {
+      previousMessages?: InboxMessagesList;
+      optimisticId: string;
+      conversationId: string;
+      workspaceSlug: string;
+      messagesKey: MessagesQueryKey;
+      text: string;
+    }
+  | undefined;
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 50;
