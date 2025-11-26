@@ -393,6 +393,19 @@ class GrokUpscaleInput(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
 
 
+class SoraWatermarkRemoverInput(BaseModel):
+    """Input parameters for Sora 2 Watermark Remover."""
+
+    video_url: str = Field(
+        ...,
+        alias="video_url",
+        max_length=500,
+        description="Sora 2 video URL (must be publicly accessible, starting with sora.chatgpt.com)",
+    )
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
 class CreateTaskRequest(BaseModel):
     """Request model for creating a job task."""
 
@@ -410,6 +423,7 @@ class CreateTaskRequest(BaseModel):
         | GrokTextToVideoInput
         | GrokTextToImageInput
         | GrokUpscaleInput
+        | SoraWatermarkRemoverInput
         | dict[str, Any]
     ) = Field(..., description="Input parameters for the model")
 

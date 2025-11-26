@@ -7,10 +7,12 @@ from src.core.shared import get_env_or_raise
 from src.sdks.kie_ai_sdk.client import KieAIClient
 from src.sdks.kie_ai_sdk.models import (
     AspectRatio,
+    FrameDuration,
     Model,
     NanoBananaAspectRatio,
     NanoBananaOutputFormat,
     NanoBananaResolution,
+    StoryboardAspectRatio,
     TaskState,
 )
 
@@ -101,6 +103,77 @@ def fetch_video_details(task_id: str):
     return data
 
 
+def test_kie_ai_sora2_storyboard():
+    """Create a Sora 2 Pro Storyboard video to verify multi-scene video generation."""
+
+    api_key = get_env_or_raise("KIE_AI_API_KEY")
+    client = KieAIClient(api_key)
+
+    try:
+        logger.info("Submitting Sora 2 Pro Storyboard task...")
+
+        # Define storyboard shots
+        shots = [
+            {
+                "Scene": "A cute fluffy orange-and-white kitten wearing orange headphones, sitting at a cozy indoor table with a small slice of cake on a plate, a toy fish and a silver microphone nearby, warm soft lighting, cinematic close-up, shallow depth of field, gentle ASMR atmosphere.",
+                "duration": 7.5,
+            },
+            {
+                "Scene": "The same cute fluffy orange-and-white kitten wearing orange headphones, in the same cozy indoor ASMR setup with the toy fish and microphone, the cake now finished, the kitten gently licks its lips with a satisfied smile, warm ambient lighting, cinematic close-up, shallow depth of field, calm and content mood.",
+                "duration": 7.5,
+            },
+        ]
+
+        task_response = client.jobs.create_storyboard_task(
+            shots=shots,
+            n_frames=FrameDuration.FIFTEEN_SECONDS,
+            aspect_ratio=StoryboardAspectRatio.LANDSCAPE,
+        )
+
+        task_id = task_response.data.task_id
+        logger.info(
+            "Sora 2 Storyboard task %s created (waiting for completion)", task_id
+        )
+
+        while True:
+            details = client.jobs.get_task_details(task_id)
+            state_value = details.data.state
+            logger.info("Sora 2 Storyboard task %s state=%s", task_id, state_value)
+
+            try:
+                state_enum = TaskState(state_value)
+            except ValueError:
+                state_enum = None
+
+            if state_enum == TaskState.SUCCESS:
+                break
+            if state_enum == TaskState.FAIL:
+                logger.error(
+                    "Sora 2 Storyboard task %s failed: %s",
+                    task_id,
+                    details.data.fail_msg,
+                )
+                return details
+
+            time.sleep(10)  # Storyboard takes longer, poll every 10s
+
+        # Extract video URL
+        video_url = client.jobs.extract_video_url(details)
+        logger.info("Sora 2 Storyboard video generated: %s", video_url)
+
+        # Download the video
+        download_path = "/Users/ruizeli/dev/openpromo/packages/backend/tmp/sora2_storyboard_video.mp4"
+        logger.info("Downloading video to %s...", download_path)
+        response = requests.get(video_url)
+        with open(download_path, "wb") as f:
+            f.write(response.content)
+        logger.info("Video downloaded successfully!")
+
+        return details
+    finally:
+        client.close()
+
+
 def test_kie_ai_nanobanana_pro():
     """Create a Nano Banana Pro image to verify job-based image generation."""
 
@@ -170,5 +243,6 @@ if __name__ == "__main__":
 
     load_dotenv()
     # test_kie_ai_veo31()
-    test_kie_ai_nanobanana_pro()
-    fetch_video_details("f7faff8419c91d36a51c88b6070bbe1e")
+    # test_kie_ai_nanobanana_pro()
+    test_kie_ai_sora2_storyboard()
+    # fetch_video_details("f7faff8419c91d36a51c88b6070bbe1e")

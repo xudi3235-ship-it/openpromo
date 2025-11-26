@@ -1,5 +1,7 @@
 """Job operations for Sora 2 Pro Storyboard and other job-based APIs."""
 
+from collections.abc import Sequence
+
 from .models import (
     ByteDanceDuration,
     ByteDanceInput,
@@ -17,6 +19,7 @@ from .models import (
     NanoBananaInput,
     NanoBananaOutputFormat,
     NanoBananaResolution,
+    SoraWatermarkRemoverInput,
     StoryboardAspectRatio,
     StoryboardInput,
     StoryboardShot,
@@ -34,7 +37,7 @@ class JobsOperations:
 
     def create_storyboard_task(
         self,
-        shots: list[StoryboardShot | dict[str, str | float]],
+        shots: Sequence[StoryboardShot | dict[str, str | float]],
         n_frames: FrameDuration,
         aspect_ratio: StoryboardAspectRatio | None = None,
         image_urls: list[str] | None = None,
@@ -542,6 +545,52 @@ class JobsOperations:
             model="grok-imagine/upscale",
             callBackUrl=callback_url,
             input=grok_input.model_dump(by_alias=True, exclude_none=True),
+        )
+
+        response = self.client.session.post(
+            f"{self.client.base_url}/api/v1/jobs/createTask",
+            json=request.model_dump(by_alias=True, exclude_none=True),
+        )
+
+        return self.client._handle_response(response, CreateTaskResponse)  # pyright: ignore[reportPrivateUsage]
+
+    def create_sora_watermark_remover_task(
+        self,
+        video_url: str,
+        callback_url: str | None = None,
+    ) -> CreateTaskResponse:
+        """
+        Create a Sora 2 Watermark Remover task.
+
+        Args:
+            video_url: Sora 2 video URL (must be publicly accessible,
+                       starting with sora.chatgpt.com, max 500 characters)
+            callback_url: Optional callback URL for task completion notifications
+
+        Returns:
+            CreateTaskResponse with task_id for tracking
+
+        Note:
+            - Uses AI detection and motion tracking to remove dynamic watermarks
+            - Keeps frames smooth and natural
+            - Processing time typically 1-3 seconds
+            - Pricing: 10 credits per use (~$0.05)
+            - Video URL must be publicly accessible from OpenAI
+
+        Example:
+            >>> result = client.jobs.create_sora_watermark_remover_task(
+            ...     video_url="https://sora.chatgpt.com/p/s_68e83bd7eee88191be79d2ba7158516f"
+            ... )
+            >>> task_id = result.data.task_id
+        """
+        # Create input object
+        watermark_input = SoraWatermarkRemoverInput(video_url=video_url)
+
+        # Create task request
+        request = CreateTaskRequest(
+            model="sora-watermark-remover",
+            callBackUrl=callback_url,
+            input=watermark_input.model_dump(by_alias=True, exclude_none=True),
         )
 
         response = self.client.session.post(
