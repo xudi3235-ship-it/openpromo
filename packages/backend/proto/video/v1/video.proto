@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package video.v1;
+
+// Request to transcode a video for a specific platform
+message TranscodeRequest {
+  // URL of the input video
+  string input_url = 1;
+  // Target platform: "ig_reel" or "fb_reel"
+  string platform = 2;
+}
+
+// Response from video transcoding
+message TranscodeResponse {
+  // URL of the transcoded video (or original if no transcoding needed)
+  string output_url = 1;
+  // Whether the video was actually transcoded
+  bool transcoded = 2;
+  // Error message if any
+  optional string error = 3;
+}
+
+// Video service for transcoding and processing videos
+service VideoService {
+  // Transcode a video for a specific platform (Instagram Reels, Facebook Reels)
+  rpc Transcode(TranscodeRequest) returns (TranscodeResponse) {}
+}

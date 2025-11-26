@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package ffprobe.v1;
+
+// Request to run ffprobe on a video
+message FFprobeRequest {
+  // URL of the input video
+  string input_url = 1;
+  // Additional ffprobe command arguments
+  repeated string cmd = 2;
+}
+
+// Response from ffprobe
+message FFprobeResponse {
+  // Output from ffprobe
+  string output = 1;
+  // Error message if any
+  optional string error = 2;
+}
+
+// FFprobe service for analyzing video files
+service FFprobeService {
+  // Run ffprobe on a video file
+  rpc Probe(FFprobeRequest) returns (FFprobeResponse) {}
+}

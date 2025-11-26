@@ -1,5 +1,3 @@
-from typing import override
-
 import modal
 
 from src.api import fapi
@@ -41,43 +39,16 @@ def connect_rpc():
     Connect RPC server endpoint.
 
     This provides a Connect Protocol compatible RPC server.
+    All services are defined in src/rpc/ and combined into a single app.
+
     Test with:
         curl -X POST https://<modal-url>/hello.v1.HelloService/SayHello \
             -H "Content-Type: application/json" \
             -d '{"name": "World"}'
     """
-    from typing import TYPE_CHECKING, cast
+    from src.rpc import rpc_app
 
-    from connectrpc.request import RequestContext
-    from starlette.applications import Starlette
-    from starlette.responses import PlainTextResponse
-    from starlette.routing import Mount, Route
-
-    # Import generated code (run `make buf` first)
-    from src.gen.hello.v1.hello_connect import HelloService, HelloServiceASGIApplication
-    from src.gen.hello.v1.hello_pb2 import HelloRequest, HelloResponse
-
-    if TYPE_CHECKING:
-        from starlette.types import ASGIApp
-
-    class MyHelloService(HelloService):
-        @override
-        async def say_hello(
-            self,
-            request: HelloRequest,
-            ctx: RequestContext[HelloRequest, HelloResponse],
-        ) -> HelloResponse:  # type: ignore[override]
-            return HelloResponse(message=f"Hello, {request.name}!")
-
-    hello_app = HelloServiceASGIApplication(MyHelloService())
-
-    starlette_app = Starlette(
-        routes=[
-            Route("/healthz", lambda _: PlainTextResponse("OK")),  # pyright: ignore[reportUnknownLambdaType]
-            Mount(hello_app.path, cast("ASGIApp", hello_app)),
-        ]
-    )
-    return starlette_app
+    return rpc_app
 
 
 @app.local_entrypoint()
