@@ -15,6 +15,13 @@ from .models import (
     GrokTextToImageInput,
     GrokTextToVideoInput,
     GrokUpscaleInput,
+    IdeogramCharacterEditInput,
+    IdeogramCharacterRemixInput,
+    IdeogramCharacterInput,
+    IdeogramImageSize,
+    IdeogramNumImages,
+    IdeogramRenderingSpeed,
+    IdeogramStyle,
     NanoBananaAspectRatio,
     NanoBananaInput,
     NanoBananaOutputFormat,
@@ -591,6 +598,242 @@ class JobsOperations:
             model="sora-watermark-remover",
             callBackUrl=callback_url,
             input=watermark_input.model_dump(by_alias=True, exclude_none=True),
+        )
+
+        response = self.client.session.post(
+            f"{self.client.base_url}/api/v1/jobs/createTask",
+            json=request.model_dump(by_alias=True, exclude_none=True),
+        )
+
+        return self.client._handle_response(response, CreateTaskResponse)  # pyright: ignore[reportPrivateUsage]
+
+    def create_ideogram_character_edit_task(
+        self,
+        prompt: str,
+        image_url: str,
+        mask_url: str,
+        reference_image_urls: list[str],
+        rendering_speed: IdeogramRenderingSpeed | None = None,
+        style: IdeogramStyle | None = None,
+        expand_prompt: bool | None = None,
+        num_images: IdeogramNumImages | None = None,
+        seed: int | None = None,
+        callback_url: str | None = None,
+    ) -> CreateTaskResponse:
+        """
+        Create an Ideogram Character Edit task.
+
+        Args:
+            prompt: The prompt to fill the masked part of the image (max 5000 characters)
+            image_url: The image URL to generate an image from. Needs to match the dimensions of the mask
+            mask_url: The mask URL to inpaint the image. Needs to match the dimensions of the input image
+            reference_image_urls: A set of images to use as character references (currently only 1 image is supported)
+            rendering_speed: The rendering speed to use (TURBO, BALANCED, QUALITY)
+            style: The style type to generate with (AUTO, REALISTIC, FICTION)
+            expand_prompt: Determine if MagicPrompt should be used in generating the request or not
+            num_images: Number of images to generate (1, 2, 3, 4)
+            seed: Seed for the random number generator
+            callback_url: Optional callback URL for task completion notifications
+
+        Returns:
+            CreateTaskResponse with task_id for tracking
+
+        Note:
+            - Uses Ideogram's Character Edit model for inpainting with character consistency
+            - Reference images help maintain consistent character appearance
+            - Mask defines which areas to inpaint
+            - Pricing: Varies by rendering speed and image count
+
+        Example:
+            >>> result = client.jobs.create_ideogram_character_edit_task(
+            ...     prompt="A fabulous look head tilted down, looking forward with a smile",
+            ...     image_url="https://example.com/input.jpg",
+            ...     mask_url="https://example.com/mask.jpg",
+            ...     reference_image_urls=["https://example.com/character.jpg"],
+            ...     rendering_speed=IdeogramRenderingSpeed.BALANCED,
+            ...     num_images=IdeogramNumImages.ONE
+            ... )
+            >>> task_id = result.data.task_id
+        """
+        # Create input object
+        ideogram_input = IdeogramCharacterEditInput(
+            prompt=prompt,
+            image_url=image_url,
+            mask_url=mask_url,
+            reference_image_urls=reference_image_urls,
+            rendering_speed=rendering_speed,
+            style=style,
+            expand_prompt=expand_prompt,
+            num_images=num_images,
+            seed=seed,
+        )
+
+        # Create task request
+        request = CreateTaskRequest(
+            model="ideogram/character-edit",
+            callBackUrl=callback_url,
+            input=ideogram_input.model_dump(by_alias=True, exclude_none=True),
+        )
+
+        response = self.client.session.post(
+            f"{self.client.base_url}/api/v1/jobs/createTask",
+            json=request.model_dump(by_alias=True, exclude_none=True),
+        )
+
+        return self.client._handle_response(response, CreateTaskResponse)  # pyright: ignore[reportPrivateUsage]
+
+    def create_ideogram_character_remix_task(
+        self,
+        prompt: str,
+        image_url: str,
+        reference_image_urls: list[str],
+        rendering_speed: IdeogramRenderingSpeed | None = None,
+        style: IdeogramStyle | None = None,
+        expand_prompt: bool | None = None,
+        image_size: IdeogramImageSize | None = None,
+        num_images: IdeogramNumImages | None = None,
+        seed: int | None = None,
+        strength: float | None = None,
+        negative_prompt: str | None = None,
+        image_urls: list[str] | None = None,
+        reference_mask_urls: str | None = None,
+        callback_url: str | None = None,
+    ) -> CreateTaskResponse:
+        """
+        Create an Ideogram Character Remix task.
+
+        Args:
+            prompt: The prompt to remix the image with (max 5000 characters)
+            image_url: The image URL to remix
+            reference_image_urls: A set of images to use as character references (currently only 1 image is supported)
+            rendering_speed: The rendering speed to use (TURBO, BALANCED, QUALITY)
+            style: The style type to generate with (AUTO, REALISTIC, FICTION)
+            expand_prompt: Determine if MagicPrompt should be used in generating the request or not
+            image_size: The resolution of the generated image
+            num_images: Number of images to generate (1, 2, 3, 4)
+            seed: Seed for the random number generator
+            strength: Strength of the input image in the remix (0.1 - 1.0)
+            negative_prompt: Description of what to exclude from an image (max 500 characters)
+            image_urls: A set of images to use as style references
+            reference_mask_urls: A set of masks to apply to the character references
+            callback_url: Optional callback URL for task completion notifications
+
+        Returns:
+            CreateTaskResponse with task_id for tracking
+
+        Note:
+            - Uses Ideogram's Character Remix model for transforming images while maintaining character consistency
+            - Strength parameter controls how much of the original image to preserve
+            - Style references can influence the visual aesthetic
+            - Pricing: Varies by rendering speed and image count
+
+        Example:
+            >>> result = client.jobs.create_ideogram_character_remix_task(
+            ...     prompt="A fisheye lens selfie photograph taken at night on an urban street",
+            ...     image_url="https://example.com/input.jpg",
+            ...     reference_image_urls=["https://example.com/character.jpg"],
+            ...     rendering_speed=IdeogramRenderingSpeed.BALANCED,
+            ...     strength=0.8,
+            ...     num_images=IdeogramNumImages.ONE
+            ... )
+            >>> task_id = result.data.task_id
+        """
+        # Create input object
+        ideogram_input = IdeogramCharacterRemixInput(
+            prompt=prompt,
+            image_url=image_url,
+            reference_image_urls=reference_image_urls,
+            rendering_speed=rendering_speed,
+            style=style,
+            expand_prompt=expand_prompt,
+            image_size=image_size,
+            num_images=num_images,
+            seed=seed,
+            strength=strength,
+            negative_prompt=negative_prompt,
+            image_urls=image_urls or [],
+            reference_mask_urls=reference_mask_urls or "",
+        )
+
+        # Create task request
+        request = CreateTaskRequest(
+            model="ideogram/character-remix",
+            callBackUrl=callback_url,
+            input=ideogram_input.model_dump(by_alias=True, exclude_none=True),
+        )
+
+        response = self.client.session.post(
+            f"{self.client.base_url}/api/v1/jobs/createTask",
+            json=request.model_dump(by_alias=True, exclude_none=True),
+        )
+
+        return self.client._handle_response(response, CreateTaskResponse)  # pyright: ignore[reportPrivateUsage]
+
+    def create_ideogram_character_task(
+        self,
+        prompt: str,
+        reference_image_urls: list[str],
+        rendering_speed: IdeogramRenderingSpeed | None = None,
+        style: IdeogramStyle | None = None,
+        expand_prompt: bool | None = None,
+        num_images: IdeogramNumImages | None = None,
+        image_size: IdeogramImageSize | None = None,
+        seed: int | None = None,
+        negative_prompt: str | None = None,
+        callback_url: str | None = None,
+    ) -> CreateTaskResponse:
+        """
+        Create an Ideogram Character task.
+
+        Args:
+            prompt: The prompt to generate the character image (max 5000 characters)
+            reference_image_urls: A set of images to use as character references (currently only 1 image is supported)
+            rendering_speed: The rendering speed to use (TURBO, BALANCED, QUALITY)
+            style: The style type to generate with (AUTO, REALISTIC, FICTION)
+            expand_prompt: Determine if MagicPrompt should be used in generating the request or not
+            num_images: Number of images to generate (1, 2, 3, 4)
+            image_size: The resolution of the generated image
+            seed: Seed for the random number generator
+            negative_prompt: Description of what to exclude from an image (max 5000 characters)
+            callback_url: Optional callback URL for task completion notifications
+
+        Returns:
+            CreateTaskResponse with task_id for tracking
+
+        Note:
+            - Uses Ideogram's Character model for generating character-consistent images
+            - Reference images help maintain consistent character appearance across generations
+            - Supports various aspect ratios and rendering speeds
+            - Pricing: Varies by rendering speed and image count
+
+        Example:
+            >>> result = client.jobs.create_ideogram_character_task(
+            ...     prompt="Place the woman from the uploaded portrait, wearing a casual white blouse, in a peaceful garden setting",
+            ...     reference_image_urls=["https://example.com/character.jpg"],
+            ...     rendering_speed=IdeogramRenderingSpeed.BALANCED,
+            ...     image_size=IdeogramImageSize.SQUARE_HD,
+            ...     num_images=IdeogramNumImages.ONE
+            ... )
+            >>> task_id = result.data.task_id
+        """
+        # Create input object
+        ideogram_input = IdeogramCharacterInput(
+            prompt=prompt,
+            reference_image_urls=reference_image_urls,
+            rendering_speed=rendering_speed,
+            style=style,
+            expand_prompt=expand_prompt,
+            num_images=num_images,
+            image_size=image_size,
+            seed=seed,
+            negative_prompt=negative_prompt,
+        )
+
+        # Create task request
+        request = CreateTaskRequest(
+            model="ideogram/character",
+            callBackUrl=callback_url,
+            input=ideogram_input.model_dump(by_alias=True, exclude_none=True),
         )
 
         response = self.client.session.post(

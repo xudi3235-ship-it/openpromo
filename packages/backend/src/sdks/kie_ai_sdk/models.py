@@ -139,6 +139,42 @@ class GrokMode(str, Enum):
     SPICY = "spicy"
 
 
+class IdeogramRenderingSpeed(str, Enum):
+    """Rendering speed options for Ideogram models."""
+
+    TURBO = "TURBO"
+    BALANCED = "BALANCED"
+    QUALITY = "QUALITY"
+
+
+class IdeogramStyle(str, Enum):
+    """Style options for Ideogram models."""
+
+    AUTO = "AUTO"
+    REALISTIC = "REALISTIC"
+    FICTION = "FICTION"
+
+
+class IdeogramImageSize(str, Enum):
+    """Image size options for Ideogram models."""
+
+    SQUARE = "square"
+    SQUARE_HD = "square_hd"
+    PORTRAIT_4_3 = "portrait_4_3"
+    PORTRAIT_16_9 = "portrait_16_9"
+    LANDSCAPE_4_3 = "landscape_4_3"
+    LANDSCAPE_16_9 = "landscape_16_9"
+
+
+class IdeogramNumImages(str, Enum):
+    """Number of images options for Ideogram models."""
+
+    ONE = "1"
+    TWO = "2"
+    THREE = "3"
+    FOUR = "4"
+
+
 # ===== REQUEST MODELS =====
 
 
@@ -406,6 +442,155 @@ class SoraWatermarkRemoverInput(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
 
 
+class IdeogramCharacterEditInput(BaseModel):
+    """Input parameters for Ideogram Character Edit."""
+
+    prompt: str = Field(
+        ...,
+        max_length=5000,
+        description="The prompt to fill the masked part of the image",
+    )
+    image_url: str = Field(
+        ...,
+        alias="image_url",
+        description="The image URL to generate an image from. Needs to match the dimensions of the mask",
+    )
+    mask_url: str = Field(
+        ...,
+        alias="mask_url",
+        description="The mask URL to inpaint the image. Needs to match the dimensions of the input image",
+    )
+    reference_image_urls: list[str] = Field(
+        ...,
+        alias="reference_image_urls",
+        description="A set of images to use as character references. Currently only 1 image is supported, rest will be ignored",
+    )
+    rendering_speed: IdeogramRenderingSpeed | None = Field(
+        IdeogramRenderingSpeed.BALANCED,
+        description="The rendering speed to use",
+    )
+    style: IdeogramStyle | None = Field(
+        IdeogramStyle.AUTO,
+        description="The style type to generate with. Cannot be used with style_codes",
+    )
+    expand_prompt: bool | None = Field(
+        True,
+        description="Determine if MagicPrompt should be used in generating the request or not",
+    )
+    num_images: IdeogramNumImages | None = Field(
+        IdeogramNumImages.ONE,
+        description="Number of images to generate",
+    )
+    seed: int | None = Field(None, description="Seed for the random number generator")
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
+class IdeogramCharacterRemixInput(BaseModel):
+    """Input parameters for Ideogram Character Remix."""
+
+    prompt: str = Field(
+        ...,
+        max_length=5000,
+        description="The prompt to remix the image with",
+    )
+    image_url: str = Field(
+        ...,
+        alias="image_url",
+        description="The image URL to remix",
+    )
+    reference_image_urls: list[str] = Field(
+        ...,
+        alias="reference_image_urls",
+        description="A set of images to use as character references. Currently only 1 image is supported, rest will be ignored",
+    )
+    rendering_speed: IdeogramRenderingSpeed | None = Field(
+        IdeogramRenderingSpeed.BALANCED,
+        description="The rendering speed to use",
+    )
+    style: IdeogramStyle | None = Field(
+        IdeogramStyle.AUTO,
+        description="The style type to generate with. Cannot be used with style_codes",
+    )
+    expand_prompt: bool | None = Field(
+        True,
+        description="Determine if MagicPrompt should be used in generating the request or not",
+    )
+    image_size: IdeogramImageSize | None = Field(
+        IdeogramImageSize.SQUARE_HD,
+        description="The resolution of the generated image",
+    )
+    num_images: IdeogramNumImages | None = Field(
+        IdeogramNumImages.ONE,
+        description="Number of images to generate",
+    )
+    seed: int | None = Field(None, description="Seed for the random number generator")
+    strength: float | None = Field(
+        0.8,
+        ge=0.1,
+        le=1.0,
+        description="Strength of the input image in the remix",
+    )
+    negative_prompt: str | None = Field(
+        "",
+        max_length=500,
+        description="Description of what to exclude from an image",
+    )
+    image_urls: list[str] = Field(
+        default_factory=list,
+        description="A set of images to use as style references",
+    )
+    reference_mask_urls: str = Field(
+        "",
+        description="A set of masks to apply to the character references. Currently only 1 mask is supported",
+    )
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
+class IdeogramCharacterInput(BaseModel):
+    """Input parameters for Ideogram Character."""
+
+    prompt: str = Field(
+        ...,
+        max_length=5000,
+        description="The prompt to generate the character image",
+    )
+    reference_image_urls: list[str] = Field(
+        ...,
+        alias="reference_image_urls",
+        description="A set of images to use as character references. Currently only 1 image is supported, rest will be ignored",
+    )
+    rendering_speed: IdeogramRenderingSpeed | None = Field(
+        IdeogramRenderingSpeed.BALANCED,
+        description="The rendering speed to use",
+    )
+    style: IdeogramStyle | None = Field(
+        IdeogramStyle.AUTO,
+        description="The style type to generate with. Cannot be used with style_codes",
+    )
+    expand_prompt: bool | None = Field(
+        True,
+        description="Determine if MagicPrompt should be used in generating the request or not",
+    )
+    num_images: IdeogramNumImages | None = Field(
+        IdeogramNumImages.ONE,
+        description="Number of images to generate",
+    )
+    image_size: IdeogramImageSize | None = Field(
+        IdeogramImageSize.SQUARE_HD,
+        description="The resolution of the generated image",
+    )
+    seed: int | None = Field(None, description="Seed for the random number generator")
+    negative_prompt: str | None = Field(
+        "",
+        max_length=5000,
+        description="Description of what to exclude from an image",
+    )
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(populate_by_name=True)
+
+
 class CreateTaskRequest(BaseModel):
     """Request model for creating a job task."""
 
@@ -424,6 +609,9 @@ class CreateTaskRequest(BaseModel):
         | GrokTextToImageInput
         | GrokUpscaleInput
         | SoraWatermarkRemoverInput
+        | IdeogramCharacterEditInput
+        | IdeogramCharacterRemixInput
+        | IdeogramCharacterInput
         | dict[str, Any]
     ) = Field(..., description="Input parameters for the model")
 
