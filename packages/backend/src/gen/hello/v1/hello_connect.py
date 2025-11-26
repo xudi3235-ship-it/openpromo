@@ -3,7 +3,7 @@
 # source: hello/v1/hello.proto
 # pyright: reportMissingTypeArgument=false
 
-from collections.abc import Iterable, Mapping
+from collections.abc import AsyncIterator, Iterable, Iterator, Mapping
 from typing import Protocol
 
 from connectrpc.client import ConnectClient, ConnectClientSync
@@ -12,31 +12,17 @@ from connectrpc.errors import ConnectError
 from connectrpc.interceptor import Interceptor, InterceptorSync
 from connectrpc.method import IdempotencyLevel, MethodInfo
 from connectrpc.request import Headers, RequestContext
-from connectrpc.server import (
-    ConnectASGIApplication,
-    ConnectWSGIApplication,
-    Endpoint,
-    EndpointSync,
-)
-
+from connectrpc.server import ConnectASGIApplication, ConnectWSGIApplication, Endpoint, EndpointSync
 from . import hello_pb2 as hello_dot_v1_dot_hello__pb2
 
 
 class HelloService(Protocol):
-    async def say_hello(
-        self, request: hello_dot_v1_dot_hello__pb2.HelloRequest, ctx: RequestContext
-    ) -> hello_dot_v1_dot_hello__pb2.HelloResponse:
+    async def say_hello(self, request: hello_dot_v1_dot_hello__pb2.HelloRequest, ctx: RequestContext) -> hello_dot_v1_dot_hello__pb2.HelloResponse:
         raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
 
 
 class HelloServiceASGIApplication(ConnectASGIApplication):
-    def __init__(
-        self,
-        service: HelloService,
-        *,
-        interceptors: Iterable[Interceptor] = (),
-        read_max_bytes: int | None = None,
-    ) -> None:
+    def __init__(self, service: HelloService, *, interceptors: Iterable[Interceptor]=(), read_max_bytes: int | None = None) -> None:
         super().__init__(
             endpoints={
                 "/hello.v1.HelloService/SayHello": Endpoint.unary(
@@ -83,19 +69,12 @@ class HelloServiceClient(ConnectClient):
 
 
 class HelloServiceSync(Protocol):
-    def say_hello(
-        self, request: hello_dot_v1_dot_hello__pb2.HelloRequest, ctx: RequestContext
-    ) -> hello_dot_v1_dot_hello__pb2.HelloResponse:
+    def say_hello(self, request: hello_dot_v1_dot_hello__pb2.HelloRequest, ctx: RequestContext) -> hello_dot_v1_dot_hello__pb2.HelloResponse:
         raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
 
 
 class HelloServiceWSGIApplication(ConnectWSGIApplication):
-    def __init__(
-        self,
-        service: HelloServiceSync,
-        interceptors: Iterable[InterceptorSync] = (),
-        read_max_bytes: int | None = None,
-    ) -> None:
+    def __init__(self, service: HelloServiceSync, interceptors: Iterable[InterceptorSync]=(), read_max_bytes: int | None = None) -> None:
         super().__init__(
             endpoints={
                 "/hello.v1.HelloService/SayHello": EndpointSync.unary(

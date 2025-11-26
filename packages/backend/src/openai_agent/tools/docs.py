@@ -1,6 +1,10 @@
+# Cache directory for fetched URL content
+from pathlib import Path
 from typing import Literal
 
 from agents import function_tool
+
+STATIC_DIR = Path(__file__).parent.parent.parent / "static"
 
 
 @function_tool
@@ -47,24 +51,27 @@ class StaticPrompts:
     @staticmethod
     def veo31_from_url():
         url = "https://ai.google.dev/gemini-api/docs/video.md.txt"
-        return StaticPrompts.fetch_url_content(url)
+        return StaticPrompts.fetch_url_content(url, cache_name="veo31_guide.txt")
 
     @staticmethod
     def imagen_4_from_url():
         return StaticPrompts.fetch_url_content(
-            "https://ai.google.dev/gemini-api/docs/imagen.md.txt"
+            "https://ai.google.dev/gemini-api/docs/imagen.md.txt",
+            cache_name="imagen4_guide.txt",
         )
 
     @staticmethod
     def nano_banana_prompt_guide_from_url():
         return StaticPrompts.fetch_url_content(
-            "https://ai.google.dev/gemini-api/docs/image-generation.md.txt"
+            "https://ai.google.dev/gemini-api/docs/image-generation.md.txt",
+            cache_name="image_generation_guide.txt",
         )
 
     @staticmethod
     def image_understanding_guide_from_url():
         return StaticPrompts.fetch_url_content(
-            "https://ai.google.dev/gemini-api/docs/image-understanding.md.txt"
+            "https://ai.google.dev/gemini-api/docs/image-understanding.md.txt",
+            cache_name="image_understanding_guide.txt",
         )
 
     @staticmethod
@@ -82,15 +89,52 @@ class StaticPrompts:
     @staticmethod
     def nano_banana_pro_howto_guide():
         return StaticPrompts.fetch_url_content(
-            "https://replicate.com/blog/how-to-prompt-nano-banana-pro"
+            "https://replicate.com/blog/how-to-prompt-nano-banana-pro",
+            cache_name="nano_banana_pro_howto.txt",
         )
 
     @staticmethod
-    def fetch_url_content(url: str) -> str:
+    def _get_cache_path(cache_name: str) -> Path:
+        """Get the cache file path for a given cache name."""
+        return STATIC_DIR / "cache" / cache_name
+
+    @staticmethod
+    def fetch_url_content(url: str, cache_name: str | None = None) -> str:
+        """Fetch content from URL, using cached version if available.
+
+        Args:
+            url: The URL to fetch content from.
+            cache_name: Optional cache filename. If provided, will check cache first
+                       and save to cache after fetching.
+
+        Returns:
+            The fetched (or cached) content as a string.
+        """
+        import hashlib
+        import html
         import re
 
         import requests
 
+        # Generate cache name from URL hash if not provided
+        if cache_name is None:
+            url_hash = hashlib.md5(url.encode()).hexdigest()[:12]
+            cache_name = f"url_cache_{url_hash}.txt"
+
+        cache_path = StaticPrompts._get_cache_path(cache_name)
+
+        # Check if cached version exists
+        if cache_path.exists():
+            try:
+                content = cache_path.read_text(encoding="utf-8")
+                print(
+                    f"Loaded cached content from {cache_path}, length: {len(content)}"
+                )
+                return content
+            except Exception as e:
+                print(f"Failed to read cache {cache_path}: {e}, fetching from URL")
+
+        # Fetch from URL
         response = requests.get(url)
         if response.status_code == 200:
             text = response.text
@@ -109,10 +153,17 @@ class StaticPrompts:
             # Remove multiple whitespace and newlines
             text = re.sub(r"\s+", " ", text)
             # Decode HTML entities
-            import html
-
             text = html.unescape(text)
             out = text.strip()
+
+            # Save to cache
+            try:
+                cache_path.parent.mkdir(parents=True, exist_ok=True)
+                cache_path.write_text(out, encoding="utf-8")
+                print(f"Cached content to {cache_path}, length: {len(out)}")
+            except Exception as e:
+                print(f"Failed to write cache {cache_path}: {e}")
+
             print(f"Fetched content from {url}, length: {len(out)}")
             return out
         else:
