@@ -15,7 +15,7 @@
     "embla-carousel-react": "^8.6.0",
     "frimousse": "^0.3.0",
     "input-otp": "^1.4.2",
-    "lucide-react": "^0.539.0",
+    "lucide-react": "catalog:",
     "radix-ui": "^1.4.3",
     "react": "catalog:",
     "react-day-picker": "^9.8.1",
