@@ -7,16 +7,16 @@ settings:
 catalogs:
   default:
     '@orpc/client':
-      specifier: ^1.10.3
+      specifier: ^1.11.3
       version: 1.11.3
     '@orpc/openapi':
-      specifier: ^1.10.3
+      specifier: ^1.11.3
       version: 1.11.3
     '@orpc/server':
-      specifier: ^1.10.3
+      specifier: ^1.11.3
       version: 1.11.3
     '@orpc/zod':
-      specifier: ^1.10.3
+      specifier: ^1.11.3
       version: 1.11.3
     '@types/react':
       specifier: 19.1.10
