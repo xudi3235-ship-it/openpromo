@@ -233,9 +233,18 @@ importers:
 
   packages/dash:
     dependencies:
+      '@bufbuild/protobuf':
+        specifier: ^2.10.1
+        version: 2.10.1
       '@cloudflare/stream-react':
         specifier: ^1.9.3
         version: 1.9.3(react@19.1.1)
+      '@connectrpc/connect':
+        specifier: ^2.1.1
+        version: 2.1.1(@bufbuild/protobuf@2.10.1)
+      '@depot/connectrpc-workers':
+        specifier: ^2.0.0
+        version: 2.0.0(@bufbuild/protobuf@2.10.1)(@cloudflare/workers-types@4.20250903.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.1))
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -1764,6 +1773,13 @@ packages:
 
   '@date-fns/tz@1.3.1':
     resolution: {integrity: sha512-LnBOyuj+piItX/D5BWBSckBsuZyOt7Jg2obGNiObq7qjl1A2/8F+i4RS8/MmkSdnw6hOe6afrJLCWrUWZw5Mlw==}
+
+  '@depot/connectrpc-workers@2.0.0':
+    resolution: {integrity: sha512-6ZmSVP1sFp/F+IV7yGC//hnB3LZZkpNutq0qFDzZoQcAagGgUbgZzHe3SOkk4vfhiuLE5GigAYXarnMMkWIoGQ==}
+    peerDependencies:
+      '@bufbuild/protobuf': '>=2.0.0 <3.0.0'
+      '@cloudflare/workers-types': '*'
+      '@connectrpc/connect': '>=2.0.0 <3.0.0'
 
   '@dnd-kit/accessibility@3.1.1':
     resolution: {integrity: sha512-2P+YgaXF+gRsIihwwY1gCsQSYnu9Zyj2py8kY5fFvUM1qm2WA2u639R6YNVfU4GWr+ZM5mqEsfHZZLoRONbemw==}
@@ -11268,6 +11284,12 @@ snapshots:
     optional: true
 
   '@date-fns/tz@1.3.1': {}
+
+  '@depot/connectrpc-workers@2.0.0(@bufbuild/protobuf@2.10.1)(@cloudflare/workers-types@4.20250903.0)(@connectrpc/connect@2.1.1(@bufbuild/protobuf@2.10.1))':
+    dependencies:
+      '@bufbuild/protobuf': 2.10.1
+      '@cloudflare/workers-types': 4.20250903.0
+      '@connectrpc/connect': 2.1.1(@bufbuild/protobuf@2.10.1)
 
   '@dnd-kit/accessibility@3.1.1(react@19.1.1)':
     dependencies:

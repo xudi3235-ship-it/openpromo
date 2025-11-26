@@ -4,60 +4,54 @@ Callback utilities for pushing job updates to Cloudflare Workers.
 This module provides functions to send real-time progress updates
 from Modal to the CF Worker, which then broadcasts to clients via WebSocket.
 
-Uses the generated internal_api SDK for type-safe API calls.
+Uses Connect RPC for type-safe, efficient communication.
 """
 
-import os
 import time
 from types import TracebackType
 from typing import Literal
 
-from src.sdks.internal_api import AuthenticatedClient
-from src.sdks.internal_api.api.internal import video_job_update
-from src.sdks.internal_api.models.video_job_update_body import VideoJobUpdateBody
-from src.sdks.internal_api.models.video_job_update_body_event import (
-    VideoJobUpdateBodyEvent,
+from src.gen.internal.v1.internal_pb2 import (
+    VIDEO_JOB_STATE_COMPLETED,
+    VIDEO_JOB_STATE_FAILED,
+    VIDEO_JOB_STATE_PROCESSING,
+    VideoJobEvent,
+    VideoJobState,
+    VideoJobUpdateRequest,
 )
-from src.sdks.internal_api.models.video_job_update_body_event_state import (
-    VideoJobUpdateBodyEventState,
-)
+from src.rpc.internal_client import get_internal_service_client
 
 # Re-export for convenience
-VideoGenState = VideoJobUpdateBodyEventState
+VideoGenState = VideoJobState
 
 
-def get_internal_api_client() -> AuthenticatedClient:
-    """Get the internal API client for CF Worker communication."""
-    base_url = os.environ.get("VITE_DASHBOARD_URL")
-    token = os.environ.get("ADMIN_API_TOKEN")
-
-    if not base_url or not token:
-        raise ValueError(
-            "Internal API client not configured: missing VITE_DASHBOARD_URL or ADMIN_API_TOKEN"
-        )
-
-    return AuthenticatedClient(
-        base_url=base_url + "/api/orpc",  # worker's internal endpoint
-        token=token,
-        prefix="Bearer",
-    )
+def _map_state_to_proto(state: str | VideoJobState) -> VideoJobState:
+    """Map string state to proto enum if needed."""
+    if isinstance(state, int):  # Already a proto enum
+        return state
+    state_map = {
+        "processing": VIDEO_JOB_STATE_PROCESSING,
+        "completed": VIDEO_JOB_STATE_COMPLETED,
+        "failed": VIDEO_JOB_STATE_FAILED,
+    }
+    return state_map.get(state.lower(), VIDEO_JOB_STATE_PROCESSING)
 
 
 async def push_video_gen_update(
     workspace_id: str,
     job_id: str,
-    state: VideoJobUpdateBodyEventState,
+    state: VideoJobState | str,
     progress: float | None = None,
     message: str | None = None,
     output_url: str | None = None,
 ) -> bool:
     """
-    Push a video generation update to the CF Worker.
+    Push a video generation update to the CF Worker via Connect RPC.
 
     Args:
         workspace_id: The workspace to send the update to
         job_id: The video generation job ID
-        state: Current state (use VideoJobUpdateBodyEventState enum)
+        state: Current state (VideoJobState enum or string)
         progress: Progress percentage (0-100), only for processing state
         message: Status message or error description
         output_url: URL of the generated video, only for completed state
@@ -65,28 +59,35 @@ async def push_video_gen_update(
     Returns:
         True if the callback was sent successfully, False otherwise
     """
-    client = get_internal_api_client()
+    client = get_internal_service_client()
 
-    event = VideoJobUpdateBodyEvent(
+    # Convert state if it's a string
+    proto_state = _map_state_to_proto(state)
+
+    event = VideoJobEvent(
         job_id=job_id,
-        state=state,
+        state=proto_state,
         timestamp=time.time() * 1000,  # milliseconds
-        progress=progress,
-        message=message,
-        output_url=output_url,
     )
+    # Set optional fields only if provided
+    if progress is not None:
+        event.progress = progress
+    if message is not None:
+        event.message = message
+    if output_url is not None:
+        event.output_url = output_url
 
-    body = VideoJobUpdateBody(
+    request = VideoJobUpdateRequest(
         workspace_id=workspace_id,
         event=event,
     )
 
     try:
-        response = await video_job_update.asyncio(client=client, body=body)
-        return response is not None and response.success
+        response = await client.video_job_update(request)
+        return response.success
     except Exception as e:
         # Log but don't fail the job if callback fails
-        print(f"Failed to push callback: {e}")
+        print(f"[callbacks] Failed to push Connect RPC callback: {e}")
         return False
 
 
@@ -129,7 +130,7 @@ class JobProgressReporter:
         await push_video_gen_update(
             workspace_id=self.workspace_id,
             job_id=self.job_id,
-            state=VideoJobUpdateBodyEventState.PROCESSING,
+            state=VIDEO_JOB_STATE_PROCESSING,
             progress=0,
             message="Starting...",
         )
@@ -139,7 +140,7 @@ class JobProgressReporter:
         await push_video_gen_update(
             workspace_id=self.workspace_id,
             job_id=self.job_id,
-            state=VideoJobUpdateBodyEventState.PROCESSING,
+            state=VIDEO_JOB_STATE_PROCESSING,
             progress=progress,
             message=message,
         )
@@ -149,7 +150,7 @@ class JobProgressReporter:
         await push_video_gen_update(
             workspace_id=self.workspace_id,
             job_id=self.job_id,
-            state=VideoJobUpdateBodyEventState.COMPLETED,
+            state=VIDEO_JOB_STATE_COMPLETED,
             progress=100,
             message=message,
             output_url=output_url,
@@ -160,6 +161,6 @@ class JobProgressReporter:
         await push_video_gen_update(
             workspace_id=self.workspace_id,
             job_id=self.job_id,
-            state=VideoJobUpdateBodyEventState.FAILED,
+            state=VIDEO_JOB_STATE_FAILED,
             message=error,
         )

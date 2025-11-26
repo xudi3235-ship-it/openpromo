@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package internal.v1;
+
+// ============ Video Job Updates ============
+
+enum VideoJobState {
+  VIDEO_JOB_STATE_UNSPECIFIED = 0;
+  VIDEO_JOB_STATE_PROCESSING = 1;
+  VIDEO_JOB_STATE_COMPLETED = 2;
+  VIDEO_JOB_STATE_FAILED = 3;
+}
+
+// Event payload for video job updates
+message VideoJobEvent {
+  string job_id = 1;
+  VideoJobState state = 2;
+  double timestamp = 3;  // milliseconds since epoch
+  optional double progress = 4;  // 0-100, only for processing state
+  optional string message = 5;
+  optional string output_url = 6;  // only for completed state
+}
+
+// Request to update video job status
+message VideoJobUpdateRequest {
+  string workspace_id = 1;
+  VideoJobEvent event = 2;
+}
+
+// Response for video job update
+message VideoJobUpdateResponse {
+  bool success = 1;
+}
+
+// Internal service for Modal -> CF Worker callbacks
+// This service is implemented by the CF Worker and called by Modal
+service InternalService {
+  // Push a video job status update to be broadcast via WebSocket
+  rpc VideoJobUpdate(VideoJobUpdateRequest) returns (VideoJobUpdateResponse) {}
+}

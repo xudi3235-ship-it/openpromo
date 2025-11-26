@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import { onError } from "../../helpers/error";
 import { workOSAuth } from "../../middleware/workos-auth";
 import { type OrpcContext, orpcRouter } from "../../orpc";
+import { connectRoute } from "./connect";
 import { connectedAccountsRoute } from "./connected-accounts";
 import { examplesRoute } from "./examples";
 import { hashtagsRoute } from "./hashtags";
@@ -34,6 +35,7 @@ export const apiRoutes = new Hono<ApiEnv>()
 
     await next();
   })
+  .route("/connect", connectRoute)
   .route("/ping", pingRoute)
   .route("/examples", examplesRoute)
   .route("/hashtags", hashtagsRoute)
