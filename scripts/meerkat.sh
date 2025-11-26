@@ -115,6 +115,12 @@ cd "$ROOT_DIR/packages/backend"
 uv run python scripts/gen_internal_api.py
 log_success "Generated packages/backend/src/sdks/internal_api/"
 
+# Step 5: run biome lint
+log_step "Step 5/5: Run Biome lint"
+cd "$ROOT_DIR"
+pnpm lint
+log_success "Biome lint passed"
+
 echo -e "\n${GREEN}"
 echo "  ╔══════════════════════════════════════════════════════════╗"
 echo "  ║                                                          ║"

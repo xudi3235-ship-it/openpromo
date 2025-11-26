@@ -15,7 +15,7 @@ from agents.tool_context import ToolContext
 from src.openai_agent.context import RuntimeContext
 
 
-class LoggingHooks(AgentHooks[Any]):
+class LoggingHooks(AgentHooks[RuntimeContext]):
     @override
     async def on_start(
         self,
