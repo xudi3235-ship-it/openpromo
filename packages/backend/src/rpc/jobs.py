@@ -154,7 +154,7 @@ class JobsServiceImpl(JobsService):
         self,
         request: AgentVideoJobRequest,
         ctx: RequestContext[AgentVideoJobRequest, JobSubmitResponse],
-    ) -> JobSubmitResponse:  # type: ignore[override]
+    ) -> JobSubmitResponse:
         """Submit an agent video generation job to Modal."""
         # Create the pydantic request
         data = VideoGenRequest(
@@ -182,7 +182,7 @@ class JobsServiceImpl(JobsService):
         self,
         request: JobResultRequest,
         ctx: RequestContext[JobResultRequest, JobResultResponse],
-    ) -> JobResultResponse:  # type: ignore[override]
+    ) -> JobResultResponse:
         """Get the result of a submitted job."""
         fn_str, modal_call_id, workspace_id = _parse_call_id(request.call_id)
         fn_enum = (
@@ -253,33 +253,33 @@ class JobsServiceImpl(JobsService):
                 )
 
             status = parsed.data.status
-            if status == "success":
-                payload = _build_agent_video_payload(parsed.data.out)  # type: ignore[union-attr]  # pyright: ignore[reportAttributeAccessIssue]
-                if not payload:
+            match status:
+                case "success":
+                    payload = _build_agent_video_payload(parsed.data.out)  # type: ignore[union-attr]  # pyright: ignore[reportAttributeAccessIssue]
+                    if not payload:
+                        return JobResultResponse(
+                            metadata=metadata,
+                            state=JOB_STATE_FAILED,
+                            error_message="Agent output missing payload",
+                        )
+
+                    return JobResultResponse(
+                        metadata=metadata,
+                        state=JOB_STATE_SUCCEEDED,
+                        agent_video=payload,
+                    )
+
+                case "failed":
                     return JobResultResponse(
                         metadata=metadata,
                         state=JOB_STATE_FAILED,
-                        error_message="Agent output missing payload",
+                        error_message=getattr(parsed.data, "error", "Unknown error"),
                     )
-
-                return JobResultResponse(
-                    metadata=metadata,
-                    state=JOB_STATE_SUCCEEDED,
-                    agent_video=payload,
-                )
-
-            if status == "failed":
-                return JobResultResponse(
-                    metadata=metadata,
-                    state=JOB_STATE_FAILED,
-                    error_message=getattr(parsed.data, "error", "Unknown error"),
-                )
-
-            return JobResultResponse(
-                metadata=metadata,
-                state=JOB_STATE_IN_PROGRESS,
-            )
-
+                case "in_progress":
+                    return JobResultResponse(
+                        metadata=metadata,
+                        state=JOB_STATE_IN_PROGRESS,
+                    )
         return JobResultResponse(
             metadata=metadata,
             state=JOB_STATE_FAILED,
