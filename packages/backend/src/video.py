@@ -207,13 +207,13 @@ async def transcode_video_for_ig_reel(path: Path, *, max_width: int = 1080) -> P
 
 @app.function()
 async def edit_video(req: "VideoEditRequest") -> "VideoEditResponse":
-    from src.routes.schemas import VideoEditResponse
-    
     # 1. download video
     import subprocess
     import tempfile
 
     import requests
+
+    from src.routes.schemas import VideoEditResponse
 
     res = requests.get(req.input_url)
     res.raise_for_status()
