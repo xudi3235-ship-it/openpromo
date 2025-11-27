@@ -95,7 +95,7 @@ export const imageGenerationTable = pgTable(
   (table) => [uniqueIndex().on(table.id), index().on(table.createdAt)],
 );
 
-const imageGenerationRefinements = {
+const opts = {
   outputImages: z.array(z.string()).default([]),
   state: z.enum(imageGenerationStates).default("pending"),
   stateMessage: z.string().optional().nullable(),
@@ -104,17 +104,17 @@ const imageGenerationRefinements = {
 
 export const ImageGenerationInsert = createInsertSchema(
   imageGenerationTable,
-  imageGenerationRefinements,
+  opts,
 );
 
 export const ImageGenerationUpdate = createUpdateSchema(
   imageGenerationTable,
-  imageGenerationRefinements,
+  opts,
 );
 
 export const ImageGenerationSelect = createSelectSchema(
   imageGenerationTable,
-  imageGenerationRefinements,
+  opts,
 );
 
 export type ImageGenerationInsertType = z.infer<typeof ImageGenerationInsert>;

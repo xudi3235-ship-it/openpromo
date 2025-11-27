@@ -7,7 +7,14 @@ image = (
         "apt update -y && apt install -y ffmpeg tree",
     )
     .pip_install_from_pyproject("pyproject.toml")
-    .add_local_python_source("src")
+    .add_local_python_source(
+        "src",
+        ignore=[
+            "__pycache__",
+            "*.pyc",
+            "tmp",
+        ],
+    )
 )
 secret = modal.Secret.from_name(
     "openpromo-secrets",
