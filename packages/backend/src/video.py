@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import modal
 from attr import dataclass
@@ -7,14 +7,14 @@ from attr import dataclass
 from src.common import s3_client, url_to_temp_path
 from src.infra import image, secret, vols
 from src.logger import logger
-from src.routes.schemas import (
-    VideoEditRequest,
-    VideoEditResponse,
-    VideoGenFailResponse,
-    VideoGenRequest,
-    VideoGenResponse,
-    VideoGenSuccessResponse,
-)
+
+if TYPE_CHECKING:
+    from src.routes.schemas import (
+        VideoEditRequest,
+        VideoEditResponse,
+        VideoGenRequest,
+        VideoGenResponse,
+    )
 
 app = modal.App("video-backend", image=image, secrets=[secret], volumes=vols)  # pyright: ignore[reportArgumentType]
 
@@ -206,7 +206,9 @@ async def transcode_video_for_ig_reel(path: Path, *, max_width: int = 1080) -> P
 
 
 @app.function()
-async def edit_video(req: VideoEditRequest) -> VideoEditResponse:
+async def edit_video(req: "VideoEditRequest") -> "VideoEditResponse":
+    from src.routes.schemas import VideoEditResponse
+    
     # 1. download video
     import subprocess
     import tempfile
@@ -449,7 +451,7 @@ class FbReelTranscoder:
 
 
 @app.function()
-async def agent_video(req: VideoGenRequest) -> VideoGenResponse:
+async def agent_video(req: "VideoGenRequest") -> "VideoGenResponse":
     """
     Modal function for async video generation using the AI agent.
 
@@ -459,6 +461,11 @@ async def agent_video(req: VideoGenRequest) -> VideoGenResponse:
 
     from src.openai_agent.agents.main_agent import AgentVideoGenOutput, main_agent
     from src.openai_agent.hooks import ExampleHooks
+    from src.routes.schemas import (
+        VideoGenFailResponse,
+        VideoGenResponse,
+        VideoGenSuccessResponse,
+    )
 
     logger.info(
         "agent_video started",
