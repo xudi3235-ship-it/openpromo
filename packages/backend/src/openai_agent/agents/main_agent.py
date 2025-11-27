@@ -9,8 +9,7 @@ from src.openai_agent.tools import run_gemini_nano_banana, shell_tool
 from src.openai_agent.tools.constants import PRIMARY_GOAL
 from src.openai_agent.tools.docs import StaticPrompts
 from src.openai_agent.tools.evaluation import evaluate_image
-from src.openai_agent.tools.veo31 import (
-    veo31_image_to_video,
+from src.openai_agent.tools.veo31.tools import (
     veo31_reference_images_to_video,
     veo31_text_to_video,
     veo31_video_extension,
@@ -180,12 +179,11 @@ def create_main_agent() -> Agent[RuntimeContext]:
         tools=[
             shell_tool,
             evaluate_image,
-            # evaluate_video_generation_input,
             run_gemini_nano_banana,
+            # unified interface for veo3.1
             veo31_text_to_video,
-            veo31_image_to_video,
-            veo31_video_extension,
             veo31_reference_images_to_video,
+            veo31_video_extension,
         ],
     )
     return agent

@@ -56,7 +56,7 @@ def create_user_input() -> list[Message]:
                 *to_img_inputs(["./tmp/avatar/girl.jpg"]),
                 {
                     "type": "input_text",
-                    "text": "here is the current, latest tmp dir structure:\n"
+                    "text": "here is the current, latest tmp dir structure. no need to run shell tool to inspect it for now.\n"
                     + inspect_tmp_dir(),
                 },
             ],

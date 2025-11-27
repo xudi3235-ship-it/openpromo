@@ -104,6 +104,105 @@ def _build_metadata(
     )
 
 
+def _fn_str_to_enum(fn_str: str) -> JobFunction:
+    """Convert function string to JobFunction enum."""
+    return (
+        JOB_FUNCTION_EDIT_VIDEO if fn_str == "edit_video" else JOB_FUNCTION_AGENT_VIDEO
+    )
+
+
+def _fetch_modal_result(
+    modal_call_id: str,
+) -> tuple[object | None, str | None, bool]:
+    """
+    Fetch result from Modal.
+
+    Returns:
+        (result, error_message, is_in_progress)
+    """
+    function_call = modal.FunctionCall.from_id(modal_call_id)
+
+    try:
+        result = function_call.get(timeout=0)
+        return result, None, False
+    except modal.exception.OutputExpiredError:
+        return None, "Output expired", False
+    except TimeoutError:
+        return None, None, True
+    except Exception as exc:
+        logger.exception("Failed to fetch job result", exc_info=exc)
+        return None, str(exc), False
+
+
+def _process_edit_video_result(
+    result: object,
+    metadata: JobMetadata,
+) -> JobResultResponse:
+    """Process edit_video job result."""
+    if isinstance(result, dict):
+        parsed = VideoEditResponse(**result)
+    elif isinstance(result, VideoEditResponse):
+        parsed = result
+    else:
+        return JobResultResponse(
+            metadata=metadata,
+            state=JOB_STATE_FAILED,
+            error_message="Unexpected result payload type",
+        )
+
+    return JobResultResponse(
+        metadata=metadata,
+        state=JOB_STATE_SUCCEEDED,
+        edit_video=EditVideoJobPayload(output_url=parsed.output_url),
+    )
+
+
+def _process_agent_video_result(
+    result: object,
+    metadata: JobMetadata,
+) -> JobResultResponse:
+    """Process agent_video job result."""
+    if isinstance(result, dict):
+        parsed = VideoGenResponsePydantic(**result)
+    elif isinstance(result, VideoGenResponsePydantic):
+        parsed = result
+    else:
+        return JobResultResponse(
+            metadata=metadata,
+            state=JOB_STATE_FAILED,
+            error_message="Unexpected result payload type",
+        )
+
+    status = parsed.data.status
+    match status:
+        case "success":
+            payload = _build_agent_video_payload(parsed.data.out)  # type: ignore[union-attr]  # pyright: ignore[reportAttributeAccessIssue]
+            if not payload:
+                return JobResultResponse(
+                    metadata=metadata,
+                    state=JOB_STATE_FAILED,
+                    error_message="Agent output missing payload",
+                )
+
+            return JobResultResponse(
+                metadata=metadata,
+                state=JOB_STATE_SUCCEEDED,
+                agent_video=payload,
+            )
+
+        case "failed":
+            return JobResultResponse(
+                metadata=metadata,
+                state=JOB_STATE_FAILED,
+                error_message=getattr(parsed.data, "error", "Unknown error"),
+            )
+        case "in_progress":
+            return JobResultResponse(
+                metadata=metadata,
+                state=JOB_STATE_IN_PROGRESS,
+            )
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -185,11 +284,7 @@ class JobsServiceImpl(JobsService):
     ) -> JobResultResponse:
         """Get the result of a submitted job."""
         fn_str, modal_call_id, workspace_id = _parse_call_id(request.call_id)
-        fn_enum = (
-            JOB_FUNCTION_EDIT_VIDEO
-            if fn_str == "edit_video"
-            else JOB_FUNCTION_AGENT_VIDEO
-        )
+        fn_enum = _fn_str_to_enum(fn_str)
         metadata = _build_metadata(fn_enum, request.call_id, workspace_id)
 
         if not fn_str or not modal_call_id:
@@ -199,87 +294,27 @@ class JobsServiceImpl(JobsService):
                 error_message="Invalid call_id format",
             )
 
-        function_call = modal.FunctionCall.from_id(modal_call_id)
+        result, error_message, is_in_progress = _fetch_modal_result(modal_call_id)
 
-        try:
-            result = function_call.get(timeout=0)
-        except modal.exception.OutputExpiredError:
+        if error_message:
             return JobResultResponse(
                 metadata=metadata,
                 state=JOB_STATE_FAILED,
-                error_message="Output expired",
+                error_message=error_message,
             )
-        except TimeoutError:
+
+        if is_in_progress:
             return JobResultResponse(
                 metadata=metadata,
                 state=JOB_STATE_IN_PROGRESS,
             )
-        except Exception as exc:
-            logger.exception("Failed to fetch job result", exc_info=exc)
-            return JobResultResponse(
-                metadata=metadata,
-                state=JOB_STATE_FAILED,
-                error_message=str(exc),
-            )
 
         if fn_str == "edit_video":
-            if isinstance(result, dict):
-                parsed = VideoEditResponse(**result)
-            elif isinstance(result, VideoEditResponse):
-                parsed = result
-            else:
-                return JobResultResponse(
-                    metadata=metadata,
-                    state=JOB_STATE_FAILED,
-                    error_message="Unexpected result payload type",
-                )
-
-            return JobResultResponse(
-                metadata=metadata,
-                state=JOB_STATE_SUCCEEDED,
-                edit_video=EditVideoJobPayload(output_url=parsed.output_url),
-            )
+            return _process_edit_video_result(result, metadata)
 
         if fn_str == "agent_video":
-            if isinstance(result, dict):
-                parsed = VideoGenResponsePydantic(**result)
-            elif isinstance(result, VideoGenResponsePydantic):
-                parsed = result
-            else:
-                return JobResultResponse(
-                    metadata=metadata,
-                    state=JOB_STATE_FAILED,
-                    error_message="Unexpected result payload type",
-                )
+            return _process_agent_video_result(result, metadata)
 
-            status = parsed.data.status
-            match status:
-                case "success":
-                    payload = _build_agent_video_payload(parsed.data.out)  # type: ignore[union-attr]  # pyright: ignore[reportAttributeAccessIssue]
-                    if not payload:
-                        return JobResultResponse(
-                            metadata=metadata,
-                            state=JOB_STATE_FAILED,
-                            error_message="Agent output missing payload",
-                        )
-
-                    return JobResultResponse(
-                        metadata=metadata,
-                        state=JOB_STATE_SUCCEEDED,
-                        agent_video=payload,
-                    )
-
-                case "failed":
-                    return JobResultResponse(
-                        metadata=metadata,
-                        state=JOB_STATE_FAILED,
-                        error_message=getattr(parsed.data, "error", "Unknown error"),
-                    )
-                case "in_progress":
-                    return JobResultResponse(
-                        metadata=metadata,
-                        state=JOB_STATE_IN_PROGRESS,
-                    )
         return JobResultResponse(
             metadata=metadata,
             state=JOB_STATE_FAILED,
