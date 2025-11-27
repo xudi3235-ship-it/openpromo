@@ -45,7 +45,13 @@ class VideoGenerationResult(BaseModel):
     status: Literal["success", "error"]
     message: str
     output_path: str | None = None
-    video_uri: str | None = None  # Google video URI (for extensions)
-    task_id: str | None = None  # Kie AI task ID (for extensions)
+    video_uri: str | None = Field(
+        default=None, description="Google video URI (for extensions)"
+    )
+    task_id: str | None = Field(
+        default=None, description="Kie AI task ID (for extensions)"
+    )
     provider: VideoProvider
-    error_type: str | None = None
+    error_type: str | None = Field(
+        default=None, description="Type of error if status is 'error'"
+    )

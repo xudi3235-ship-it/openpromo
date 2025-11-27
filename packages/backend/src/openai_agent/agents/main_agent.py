@@ -103,12 +103,11 @@ def create_main_agent() -> Agent[RuntimeContext]:
     CRITICAL, MUST FOLLOW
     {VIDEO_TYPES_REGISTRY}
 
-
-
     4.2 ABOUT DIFFERENT VIDEO TOOLS
     - video extension: prompt + previous video as input for continuation. Pros: best continuity, cons: might lose precision on the elements referenced
     - image to video: start frame, (last frame) + prompt as input. Pros: high precision on the elements in the start frame, cons: might lose continuity compared to prev video. interpolation works for some cases.
     - reference images to video: reference images + prompt as input. Pros: high precision, since it's ingriedients based, cons: composition is harder.
+    - for veo31 tools, prefer to use kie ai provider for higher rate limit.
 
     - Known issues & Best practices:
         - need to think carefully about extension prompt, as we tried standard shot-based breakdown and it's not really working well, loses context from prev video segment. see how we can enhance that by either more context, tweaking prev video ending shot, etc.
