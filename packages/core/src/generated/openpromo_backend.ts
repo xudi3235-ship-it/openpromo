@@ -36,6 +36,8 @@ export interface AgentVideoGenOutput {
 }
 
 export interface AgentVideoGenSuccessOut {
+  /** The local file path of the generated video. */
+  local_video_path: string;
   /** The URL of the generated video. */
   video_url: string;
   /** A brief summary of the generated video. */

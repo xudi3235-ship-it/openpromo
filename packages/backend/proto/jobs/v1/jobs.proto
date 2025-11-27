@@ -18,147 +18,100 @@ enum Cadence {
   CADENCE_MONTHLY = 3;
 }
 
-enum JobStatus {
-  JOB_STATUS_UNSPECIFIED = 0;
-  JOB_STATUS_PENDING = 1;
-  JOB_STATUS_SUCCEEDED = 2;
-  JOB_STATUS_FAILED = 3;
-}
-
 enum JobFunction {
   JOB_FUNCTION_UNSPECIFIED = 0;
   JOB_FUNCTION_EDIT_VIDEO = 1;
   JOB_FUNCTION_AGENT_VIDEO = 2;
 }
 
-enum VideoGenStatus {
-  VIDEO_GEN_STATUS_UNSPECIFIED = 0;
-  VIDEO_GEN_STATUS_SUCCESS = 1;
-  VIDEO_GEN_STATUS_FAILED = 2;
-  VIDEO_GEN_STATUS_IN_PROGRESS = 3;
+enum JobState {
+  JOB_STATE_UNSPECIFIED = 0;
+  JOB_STATE_PENDING = 1;
+  JOB_STATE_IN_PROGRESS = 2;
+  JOB_STATE_SUCCEEDED = 3;
+  JOB_STATE_FAILED = 4;
 }
 
-enum AgentOutputStatus {
-  AGENT_OUTPUT_STATUS_UNSPECIFIED = 0;
-  AGENT_OUTPUT_STATUS_SUCCESS = 1;
-  AGENT_OUTPUT_STATUS_ERROR = 2;
+// ============ Shared Metadata ============
+
+message JobEnvelope {
+  JobFunction fn = 1;
+  string workspace_id = 2;
+  optional string client_job_id = 3;
+}
+
+message JobMetadata {
+  string call_id = 1;
+  JobFunction fn = 2;
+  string workspace_id = 3;
+  int64 created_at_epoch_ms = 4;
+  int64 updated_at_epoch_ms = 5;
 }
 
 // ============ Job Submission ============
 
-// Request to submit an edit video job
 message EditVideoJobRequest {
-  string input_url = 1;
-  AspectRatio aspect_ratio = 2;
-  Cadence cadence = 3;
+  JobEnvelope envelope = 1;
+  string input_url = 2;
+  AspectRatio aspect_ratio = 3;
+  Cadence cadence = 4;
+  bool wait_for_completion = 5;
 }
 
-// Request to submit an agent video generation job
 message AgentVideoJobRequest {
-  string product = 1;
-  repeated string product_imgs = 2;
-  repeated string avatar_imgs = 3;
-  string business = 4;
-  string user_message = 5;
-  int32 max_turns = 6;
-  // For realtime progress updates via WebSocket
-  string workspace_id = 7;
+  JobEnvelope envelope = 1;
+  string product = 2;
+  repeated string product_imgs = 3;
+  repeated string avatar_imgs = 4;
+  string business = 5;
+  string user_message = 6;
+  int32 max_turns = 7;
+  bool wait_for_completion = 8;
 }
 
-// Response after submitting a job
 message JobSubmitResponse {
   string call_id = 1;
 }
 
 // ============ Job Result ============
 
-// Request to get a job result
 message JobResultRequest {
   string call_id = 1;
 }
 
-// Video edit result
-message VideoEditResult {
+message EditVideoJobPayload {
   string output_url = 1;
+  optional float progress = 2;
+  optional string progress_message = 3;
 }
 
-// Agent video generation output
-message AgentVideoGenSuccessOut {
+message AgentVideoJobPayload {
   string video_url = 1;
   string summary = 2;
+  optional float progress = 3;
+  optional string progress_message = 4;
 }
 
-message AgentVideoGenErrorOut {
-  string error_message = 1;
-  string error_type = 2;
-}
-
-message AgentVideoGenOutput {
-  AgentOutputStatus status = 1;
-  oneof data {
-    AgentVideoGenSuccessOut success = 2;
-    AgentVideoGenErrorOut error = 3;
-  }
-}
-
-// Video generation result variants
-message VideoGenFailResult {
-  string error = 1;
-}
-
-message VideoGenInProgressResult {
-  float progress = 1;
-  string message = 2;
-}
-
-message VideoGenSuccessResult {
-  AgentVideoGenOutput out = 1;
-}
-
-// Response for job result
 message JobResultResponse {
-  JobFunction fn = 1;
-  JobStatus status = 2;
-  optional string error = 3;
-  oneof result {
-    VideoEditResult edit_result = 4;
-    VideoGenSuccessResult video_gen_result = 5;
+  JobMetadata metadata = 1;
+  JobState state = 2;
+  optional string error_code = 3;
+  optional string error_message = 4;
+  oneof payload {
+    EditVideoJobPayload edit_video = 5;
+    AgentVideoJobPayload agent_video = 6;
   }
 }
 
-// ============ Synchronous Video Generation ============
+// ============ Jobs service ============
 
-// Request for synchronous video generation
-message VideoGenerateRequest {
-  string product = 1;
-  repeated string product_imgs = 2;
-  repeated string avatar_imgs = 3;
-  string business = 4;
-  string user_message = 5;
-  int32 max_turns = 6;
-}
-
-// Response for synchronous video generation
-message VideoGenerateResponse {
-  VideoGenStatus status = 1;
-  oneof data {
-    VideoGenSuccessResult success = 2;
-    VideoGenFailResult fail = 3;
-    VideoGenInProgressResult in_progress = 4;
-  }
-}
-
-// Jobs service for managing async and sync video generation jobs
 service JobsService {
   // Submit an edit video job (async)
   rpc SubmitEditVideoJob(EditVideoJobRequest) returns (JobSubmitResponse) {}
-  
+
   // Submit an agent video job (async)
   rpc SubmitAgentVideoJob(AgentVideoJobRequest) returns (JobSubmitResponse) {}
-  
+
   // Get the result of a submitted job
   rpc GetJobResult(JobResultRequest) returns (JobResultResponse) {}
-  
-  // Generate a video synchronously
-  rpc GenerateVideo(VideoGenerateRequest) returns (VideoGenerateResponse) {}
 }

@@ -22,29 +22,103 @@ import {
 export const file_jobs_v1_jobs: GenFile =
   /*@__PURE__*/
   fileDesc(
-    "ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEidwoTRWRpdFZpZGVvSm9iUmVxdWVzdBIRCglpbnB1dF91cmwYASABKAkSKgoMYXNwZWN0X3JhdGlvGAIgASgOMhQuam9icy52MS5Bc3BlY3RSYXRpbxIhCgdjYWRlbmNlGAMgASgOMhAuam9icy52MS5DYWRlbmNlIqMBChRBZ2VudFZpZGVvSm9iUmVxdWVzdBIPCgdwcm9kdWN0GAEgASgJEhQKDHByb2R1Y3RfaW1ncxgCIAMoCRITCgthdmF0YXJfaW1ncxgDIAMoCRIQCghidXNpbmVzcxgEIAEoCRIUCgx1c2VyX21lc3NhZ2UYBSABKAkSEQoJbWF4X3R1cm5zGAYgASgFEhQKDHdvcmtzcGFjZV9pZBgHIAEoCSIkChFKb2JTdWJtaXRSZXNwb25zZRIPCgdjYWxsX2lkGAEgASgJIiMKEEpvYlJlc3VsdFJlcXVlc3QSDwoHY2FsbF9pZBgBIAEoCSIlCg9WaWRlb0VkaXRSZXN1bHQSEgoKb3V0cHV0X3VybBgBIAEoCSI9ChdBZ2VudFZpZGVvR2VuU3VjY2Vzc091dBIRCgl2aWRlb191cmwYASABKAkSDwoHc3VtbWFyeRgCIAEoCSJCChVBZ2VudFZpZGVvR2VuRXJyb3JPdXQSFQoNZXJyb3JfbWVzc2FnZRgBIAEoCRISCgplcnJvcl90eXBlGAIgASgJIq8BChNBZ2VudFZpZGVvR2VuT3V0cHV0EioKBnN0YXR1cxgBIAEoDjIaLmpvYnMudjEuQWdlbnRPdXRwdXRTdGF0dXMSMwoHc3VjY2VzcxgCIAEoCzIgLmpvYnMudjEuQWdlbnRWaWRlb0dlblN1Y2Nlc3NPdXRIABIvCgVlcnJvchgDIAEoCzIeLmpvYnMudjEuQWdlbnRWaWRlb0dlbkVycm9yT3V0SABCBgoEZGF0YSIjChJWaWRlb0dlbkZhaWxSZXN1bHQSDQoFZXJyb3IYASABKAkiPQoYVmlkZW9HZW5JblByb2dyZXNzUmVzdWx0EhAKCHByb2dyZXNzGAEgASgCEg8KB21lc3NhZ2UYAiABKAkiQgoVVmlkZW9HZW5TdWNjZXNzUmVzdWx0EikKA291dBgBIAEoCzIcLmpvYnMudjEuQWdlbnRWaWRlb0dlbk91dHB1dCLuAQoRSm9iUmVzdWx0UmVzcG9uc2USIAoCZm4YASABKA4yFC5qb2JzLnYxLkpvYkZ1bmN0aW9uEiIKBnN0YXR1cxgCIAEoDjISLmpvYnMudjEuSm9iU3RhdHVzEhIKBWVycm9yGAMgASgJSAGIAQESLwoLZWRpdF9yZXN1bHQYBCABKAsyGC5qb2JzLnYxLlZpZGVvRWRpdFJlc3VsdEgAEjoKEHZpZGVvX2dlbl9yZXN1bHQYBSABKAsyHi5qb2JzLnYxLlZpZGVvR2VuU3VjY2Vzc1Jlc3VsdEgAQggKBnJlc3VsdEIICgZfZXJyb3IijQEKFFZpZGVvR2VuZXJhdGVSZXF1ZXN0Eg8KB3Byb2R1Y3QYASABKAkSFAoMcHJvZHVjdF9pbWdzGAIgAygJEhMKC2F2YXRhcl9pbWdzGAMgAygJEhAKCGJ1c2luZXNzGAQgASgJEhQKDHVzZXJfbWVzc2FnZRgFIAEoCRIRCgltYXhfdHVybnMYBiABKAUi4gEKFVZpZGVvR2VuZXJhdGVSZXNwb25zZRInCgZzdGF0dXMYASABKA4yFy5qb2JzLnYxLlZpZGVvR2VuU3RhdHVzEjEKB3N1Y2Nlc3MYAiABKAsyHi5qb2JzLnYxLlZpZGVvR2VuU3VjY2Vzc1Jlc3VsdEgAEisKBGZhaWwYAyABKAsyGy5qb2JzLnYxLlZpZGVvR2VuRmFpbFJlc3VsdEgAEjgKC2luX3Byb2dyZXNzGAQgASgLMiEuam9icy52MS5WaWRlb0dlbkluUHJvZ3Jlc3NSZXN1bHRIAEIGCgRkYXRhKm4KC0FzcGVjdFJhdGlvEhwKGEFTUEVDVF9SQVRJT19VTlNQRUNJRklFRBAAEhUKEUFTUEVDVF9SQVRJT18xNl85EAESFAoQQVNQRUNUX1JBVElPXzRfMxACEhQKEEFTUEVDVF9SQVRJT18xXzEQAypeCgdDYWRlbmNlEhcKE0NBREVOQ0VfVU5TUEVDSUZJRUQQABIRCg1DQURFTkNFX0RBSUxZEAESEgoOQ0FERU5DRV9XRUVLTFkQAhITCg9DQURFTkNFX01PTlRITFkQAypwCglKb2JTdGF0dXMSGgoWSk9CX1NUQVRVU19VTlNQRUNJRklFRBAAEhYKEkpPQl9TVEFUVVNfUEVORElORxABEhgKFEpPQl9TVEFUVVNfU1VDQ0VFREVEEAISFQoRSk9CX1NUQVRVU19GQUlMRUQQAypmCgtKb2JGdW5jdGlvbhIcChhKT0JfRlVOQ1RJT05fVU5TUEVDSUZJRUQQABIbChdKT0JfRlVOQ1RJT05fRURJVF9WSURFTxABEhwKGEpPQl9GVU5DVElPTl9BR0VOVF9WSURFTxACKo8BCg5WaWRlb0dlblN0YXR1cxIgChxWSURFT19HRU5fU1RBVFVTX1VOU1BFQ0lGSUVEEAASHAoYVklERU9fR0VOX1NUQVRVU19TVUNDRVNTEAESGwoXVklERU9fR0VOX1NUQVRVU19GQUlMRUQQAhIgChxWSURFT19HRU5fU1RBVFVTX0lOX1BST0dSRVNTEAMqeAoRQWdlbnRPdXRwdXRTdGF0dXMSIwofQUdFTlRfT1VUUFVUX1NUQVRVU19VTlNQRUNJRklFRBAAEh8KG0FHRU5UX09VVFBVVF9TVEFUVVNfU1VDQ0VTUxABEh0KGUFHRU5UX09VVFBVVF9TVEFUVVNfRVJST1IQAjLOAgoLSm9ic1NlcnZpY2USUAoSU3VibWl0RWRpdFZpZGVvSm9iEhwuam9icy52MS5FZGl0VmlkZW9Kb2JSZXF1ZXN0Ghouam9icy52MS5Kb2JTdWJtaXRSZXNwb25zZSIAElIKE1N1Ym1pdEFnZW50VmlkZW9Kb2ISHS5qb2JzLnYxLkFnZW50VmlkZW9Kb2JSZXF1ZXN0Ghouam9icy52MS5Kb2JTdWJtaXRSZXNwb25zZSIAEkcKDEdldEpvYlJlc3VsdBIZLmpvYnMudjEuSm9iUmVzdWx0UmVxdWVzdBoaLmpvYnMudjEuSm9iUmVzdWx0UmVzcG9uc2UiABJQCg1HZW5lcmF0ZVZpZGVvEh0uam9icy52MS5WaWRlb0dlbmVyYXRlUmVxdWVzdBoeLmpvYnMudjEuVmlkZW9HZW5lcmF0ZVJlc3BvbnNlIgBiBnByb3RvMw",
+    "ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEicwoLSm9iRW52ZWxvcGUSIAoCZm4YASABKA4yFC5qb2JzLnYxLkpvYkZ1bmN0aW9uEhQKDHdvcmtzcGFjZV9pZBgCIAEoCRIaCg1jbGllbnRfam9iX2lkGAMgASgJSACIAQFCEAoOX2NsaWVudF9qb2JfaWQikAEKC0pvYk1ldGFkYXRhEg8KB2NhbGxfaWQYASABKAkSIAoCZm4YAiABKA4yFC5qb2JzLnYxLkpvYkZ1bmN0aW9uEhQKDHdvcmtzcGFjZV9pZBgDIAEoCRIbChNjcmVhdGVkX2F0X2Vwb2NoX21zGAQgASgDEhsKE3VwZGF0ZWRfYXRfZXBvY2hfbXMYBSABKAMivAEKE0VkaXRWaWRlb0pvYlJlcXVlc3QSJgoIZW52ZWxvcGUYASABKAsyFC5qb2JzLnYxLkpvYkVudmVsb3BlEhEKCWlucHV0X3VybBgCIAEoCRIqCgxhc3BlY3RfcmF0aW8YAyABKA4yFC5qb2JzLnYxLkFzcGVjdFJhdGlvEiEKB2NhZGVuY2UYBCABKA4yEC5qb2JzLnYxLkNhZGVuY2USGwoTd2FpdF9mb3JfY29tcGxldGlvbhgFIAEoCCLSAQoUQWdlbnRWaWRlb0pvYlJlcXVlc3QSJgoIZW52ZWxvcGUYASABKAsyFC5qb2JzLnYxLkpvYkVudmVsb3BlEg8KB3Byb2R1Y3QYAiABKAkSFAoMcHJvZHVjdF9pbWdzGAMgAygJEhMKC2F2YXRhcl9pbWdzGAQgAygJEhAKCGJ1c2luZXNzGAUgASgJEhQKDHVzZXJfbWVzc2FnZRgGIAEoCRIRCgltYXhfdHVybnMYByABKAUSGwoTd2FpdF9mb3JfY29tcGxldGlvbhgIIAEoCCIkChFKb2JTdWJtaXRSZXNwb25zZRIPCgdjYWxsX2lkGAEgASgJIiMKEEpvYlJlc3VsdFJlcXVlc3QSDwoHY2FsbF9pZBgBIAEoCSKBAQoTRWRpdFZpZGVvSm9iUGF5bG9hZBISCgpvdXRwdXRfdXJsGAEgASgJEhUKCHByb2dyZXNzGAIgASgCSACIAQESHQoQcHJvZ3Jlc3NfbWVzc2FnZRgDIAEoCUgBiAEBQgsKCV9wcm9ncmVzc0ITChFfcHJvZ3Jlc3NfbWVzc2FnZSKSAQoUQWdlbnRWaWRlb0pvYlBheWxvYWQSEQoJdmlkZW9fdXJsGAEgASgJEg8KB3N1bW1hcnkYAiABKAkSFQoIcHJvZ3Jlc3MYAyABKAJIAIgBARIdChBwcm9ncmVzc19tZXNzYWdlGAQgASgJSAGIAQFCCwoJX3Byb2dyZXNzQhMKEV9wcm9ncmVzc19tZXNzYWdlIqgCChFKb2JSZXN1bHRSZXNwb25zZRImCghtZXRhZGF0YRgBIAEoCzIULmpvYnMudjEuSm9iTWV0YWRhdGESIAoFc3RhdGUYAiABKA4yES5qb2JzLnYxLkpvYlN0YXRlEhcKCmVycm9yX2NvZGUYAyABKAlIAYgBARIaCg1lcnJvcl9tZXNzYWdlGAQgASgJSAKIAQESMgoKZWRpdF92aWRlbxgFIAEoCzIcLmpvYnMudjEuRWRpdFZpZGVvSm9iUGF5bG9hZEgAEjQKC2FnZW50X3ZpZGVvGAYgASgLMh0uam9icy52MS5BZ2VudFZpZGVvSm9iUGF5bG9hZEgAQgkKB3BheWxvYWRCDQoLX2Vycm9yX2NvZGVCEAoOX2Vycm9yX21lc3NhZ2UqbgoLQXNwZWN0UmF0aW8SHAoYQVNQRUNUX1JBVElPX1VOU1BFQ0lGSUVEEAASFQoRQVNQRUNUX1JBVElPXzE2XzkQARIUChBBU1BFQ1RfUkFUSU9fNF8zEAISFAoQQVNQRUNUX1JBVElPXzFfMRADKl4KB0NhZGVuY2USFwoTQ0FERU5DRV9VTlNQRUNJRklFRBAAEhEKDUNBREVOQ0VfREFJTFkQARISCg5DQURFTkNFX1dFRUtMWRACEhMKD0NBREVOQ0VfTU9OVEhMWRADKmYKC0pvYkZ1bmN0aW9uEhwKGEpPQl9GVU5DVElPTl9VTlNQRUNJRklFRBAAEhsKF0pPQl9GVU5DVElPTl9FRElUX1ZJREVPEAESHAoYSk9CX0ZVTkNUSU9OX0FHRU5UX1ZJREVPEAIqhgEKCEpvYlN0YXRlEhkKFUpPQl9TVEFURV9VTlNQRUNJRklFRBAAEhUKEUpPQl9TVEFURV9QRU5ESU5HEAESGQoVSk9CX1NUQVRFX0lOX1BST0dSRVNTEAISFwoTSk9CX1NUQVRFX1NVQ0NFRURFRBADEhQKEEpPQl9TVEFURV9GQUlMRUQQBDL8AQoLSm9ic1NlcnZpY2USUAoSU3VibWl0RWRpdFZpZGVvSm9iEhwuam9icy52MS5FZGl0VmlkZW9Kb2JSZXF1ZXN0Ghouam9icy52MS5Kb2JTdWJtaXRSZXNwb25zZSIAElIKE1N1Ym1pdEFnZW50VmlkZW9Kb2ISHS5qb2JzLnYxLkFnZW50VmlkZW9Kb2JSZXF1ZXN0Ghouam9icy52MS5Kb2JTdWJtaXRSZXNwb25zZSIAEkcKDEdldEpvYlJlc3VsdBIZLmpvYnMudjEuSm9iUmVzdWx0UmVxdWVzdBoaLmpvYnMudjEuSm9iUmVzdWx0UmVzcG9uc2UiAGIGcHJvdG8z",
   );
 
 /**
- * Request to submit an edit video job
- *
+ * @generated from message jobs.v1.JobEnvelope
+ */
+export type JobEnvelope = Message<"jobs.v1.JobEnvelope"> & {
+  /**
+   * @generated from field: jobs.v1.JobFunction fn = 1;
+   */
+  fn: JobFunction;
+
+  /**
+   * @generated from field: string workspace_id = 2;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: optional string client_job_id = 3;
+   */
+  clientJobId?: string;
+};
+
+/**
+ * Describes the message jobs.v1.JobEnvelope.
+ * Use `create(JobEnvelopeSchema)` to create a new message.
+ */
+export const JobEnvelopeSchema: GenMessage<JobEnvelope> =
+  /*@__PURE__*/
+  messageDesc(file_jobs_v1_jobs, 0);
+
+/**
+ * @generated from message jobs.v1.JobMetadata
+ */
+export type JobMetadata = Message<"jobs.v1.JobMetadata"> & {
+  /**
+   * @generated from field: string call_id = 1;
+   */
+  callId: string;
+
+  /**
+   * @generated from field: jobs.v1.JobFunction fn = 2;
+   */
+  fn: JobFunction;
+
+  /**
+   * @generated from field: string workspace_id = 3;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: int64 created_at_epoch_ms = 4;
+   */
+  createdAtEpochMs: bigint;
+
+  /**
+   * @generated from field: int64 updated_at_epoch_ms = 5;
+   */
+  updatedAtEpochMs: bigint;
+};
+
+/**
+ * Describes the message jobs.v1.JobMetadata.
+ * Use `create(JobMetadataSchema)` to create a new message.
+ */
+export const JobMetadataSchema: GenMessage<JobMetadata> =
+  /*@__PURE__*/
+  messageDesc(file_jobs_v1_jobs, 1);
+
+/**
  * @generated from message jobs.v1.EditVideoJobRequest
  */
 export type EditVideoJobRequest = Message<"jobs.v1.EditVideoJobRequest"> & {
   /**
-   * @generated from field: string input_url = 1;
+   * @generated from field: jobs.v1.JobEnvelope envelope = 1;
+   */
+  envelope?: JobEnvelope;
+
+  /**
+   * @generated from field: string input_url = 2;
    */
   inputUrl: string;
 
   /**
-   * @generated from field: jobs.v1.AspectRatio aspect_ratio = 2;
+   * @generated from field: jobs.v1.AspectRatio aspect_ratio = 3;
    */
   aspectRatio: AspectRatio;
 
   /**
-   * @generated from field: jobs.v1.Cadence cadence = 3;
+   * @generated from field: jobs.v1.Cadence cadence = 4;
    */
   cadence: Cadence;
+
+  /**
+   * @generated from field: bool wait_for_completion = 5;
+   */
+  waitForCompletion: boolean;
 };
 
 /**
@@ -53,50 +127,51 @@ export type EditVideoJobRequest = Message<"jobs.v1.EditVideoJobRequest"> & {
  */
 export const EditVideoJobRequestSchema: GenMessage<EditVideoJobRequest> =
   /*@__PURE__*/
-  messageDesc(file_jobs_v1_jobs, 0);
+  messageDesc(file_jobs_v1_jobs, 2);
 
 /**
- * Request to submit an agent video generation job
- *
  * @generated from message jobs.v1.AgentVideoJobRequest
  */
 export type AgentVideoJobRequest = Message<"jobs.v1.AgentVideoJobRequest"> & {
   /**
-   * @generated from field: string product = 1;
+   * @generated from field: jobs.v1.JobEnvelope envelope = 1;
+   */
+  envelope?: JobEnvelope;
+
+  /**
+   * @generated from field: string product = 2;
    */
   product: string;
 
   /**
-   * @generated from field: repeated string product_imgs = 2;
+   * @generated from field: repeated string product_imgs = 3;
    */
   productImgs: string[];
 
   /**
-   * @generated from field: repeated string avatar_imgs = 3;
+   * @generated from field: repeated string avatar_imgs = 4;
    */
   avatarImgs: string[];
 
   /**
-   * @generated from field: string business = 4;
+   * @generated from field: string business = 5;
    */
   business: string;
 
   /**
-   * @generated from field: string user_message = 5;
+   * @generated from field: string user_message = 6;
    */
   userMessage: string;
 
   /**
-   * @generated from field: int32 max_turns = 6;
+   * @generated from field: int32 max_turns = 7;
    */
   maxTurns: number;
 
   /**
-   * For realtime progress updates via WebSocket
-   *
-   * @generated from field: string workspace_id = 7;
+   * @generated from field: bool wait_for_completion = 8;
    */
-  workspaceId: string;
+  waitForCompletion: boolean;
 };
 
 /**
@@ -105,11 +180,9 @@ export type AgentVideoJobRequest = Message<"jobs.v1.AgentVideoJobRequest"> & {
  */
 export const AgentVideoJobRequestSchema: GenMessage<AgentVideoJobRequest> =
   /*@__PURE__*/
-  messageDesc(file_jobs_v1_jobs, 1);
+  messageDesc(file_jobs_v1_jobs, 3);
 
 /**
- * Response after submitting a job
- *
  * @generated from message jobs.v1.JobSubmitResponse
  */
 export type JobSubmitResponse = Message<"jobs.v1.JobSubmitResponse"> & {
@@ -125,11 +198,9 @@ export type JobSubmitResponse = Message<"jobs.v1.JobSubmitResponse"> & {
  */
 export const JobSubmitResponseSchema: GenMessage<JobSubmitResponse> =
   /*@__PURE__*/
-  messageDesc(file_jobs_v1_jobs, 2);
+  messageDesc(file_jobs_v1_jobs, 4);
 
 /**
- * Request to get a job result
- *
  * @generated from message jobs.v1.JobResultRequest
  */
 export type JobResultRequest = Message<"jobs.v1.JobResultRequest"> & {
@@ -145,215 +216,110 @@ export type JobResultRequest = Message<"jobs.v1.JobResultRequest"> & {
  */
 export const JobResultRequestSchema: GenMessage<JobResultRequest> =
   /*@__PURE__*/
-  messageDesc(file_jobs_v1_jobs, 3);
+  messageDesc(file_jobs_v1_jobs, 5);
 
 /**
- * Video edit result
- *
- * @generated from message jobs.v1.VideoEditResult
+ * @generated from message jobs.v1.EditVideoJobPayload
  */
-export type VideoEditResult = Message<"jobs.v1.VideoEditResult"> & {
+export type EditVideoJobPayload = Message<"jobs.v1.EditVideoJobPayload"> & {
   /**
    * @generated from field: string output_url = 1;
    */
   outputUrl: string;
+
+  /**
+   * @generated from field: optional float progress = 2;
+   */
+  progress?: number;
+
+  /**
+   * @generated from field: optional string progress_message = 3;
+   */
+  progressMessage?: string;
 };
 
 /**
- * Describes the message jobs.v1.VideoEditResult.
- * Use `create(VideoEditResultSchema)` to create a new message.
+ * Describes the message jobs.v1.EditVideoJobPayload.
+ * Use `create(EditVideoJobPayloadSchema)` to create a new message.
  */
-export const VideoEditResultSchema: GenMessage<VideoEditResult> =
-  /*@__PURE__*/
-  messageDesc(file_jobs_v1_jobs, 4);
-
-/**
- * Agent video generation output
- *
- * @generated from message jobs.v1.AgentVideoGenSuccessOut
- */
-export type AgentVideoGenSuccessOut =
-  Message<"jobs.v1.AgentVideoGenSuccessOut"> & {
-    /**
-     * @generated from field: string video_url = 1;
-     */
-    videoUrl: string;
-
-    /**
-     * @generated from field: string summary = 2;
-     */
-    summary: string;
-  };
-
-/**
- * Describes the message jobs.v1.AgentVideoGenSuccessOut.
- * Use `create(AgentVideoGenSuccessOutSchema)` to create a new message.
- */
-export const AgentVideoGenSuccessOutSchema: GenMessage<AgentVideoGenSuccessOut> =
-  /*@__PURE__*/
-  messageDesc(file_jobs_v1_jobs, 5);
-
-/**
- * @generated from message jobs.v1.AgentVideoGenErrorOut
- */
-export type AgentVideoGenErrorOut = Message<"jobs.v1.AgentVideoGenErrorOut"> & {
-  /**
-   * @generated from field: string error_message = 1;
-   */
-  errorMessage: string;
-
-  /**
-   * @generated from field: string error_type = 2;
-   */
-  errorType: string;
-};
-
-/**
- * Describes the message jobs.v1.AgentVideoGenErrorOut.
- * Use `create(AgentVideoGenErrorOutSchema)` to create a new message.
- */
-export const AgentVideoGenErrorOutSchema: GenMessage<AgentVideoGenErrorOut> =
+export const EditVideoJobPayloadSchema: GenMessage<EditVideoJobPayload> =
   /*@__PURE__*/
   messageDesc(file_jobs_v1_jobs, 6);
 
 /**
- * @generated from message jobs.v1.AgentVideoGenOutput
+ * @generated from message jobs.v1.AgentVideoJobPayload
  */
-export type AgentVideoGenOutput = Message<"jobs.v1.AgentVideoGenOutput"> & {
+export type AgentVideoJobPayload = Message<"jobs.v1.AgentVideoJobPayload"> & {
   /**
-   * @generated from field: jobs.v1.AgentOutputStatus status = 1;
+   * @generated from field: string video_url = 1;
    */
-  status: AgentOutputStatus;
+  videoUrl: string;
 
   /**
-   * @generated from oneof jobs.v1.AgentVideoGenOutput.data
+   * @generated from field: string summary = 2;
    */
-  data:
-    | {
-        /**
-         * @generated from field: jobs.v1.AgentVideoGenSuccessOut success = 2;
-         */
-        value: AgentVideoGenSuccessOut;
-        case: "success";
-      }
-    | {
-        /**
-         * @generated from field: jobs.v1.AgentVideoGenErrorOut error = 3;
-         */
-        value: AgentVideoGenErrorOut;
-        case: "error";
-      }
-    | { case: undefined; value?: undefined };
+  summary: string;
+
+  /**
+   * @generated from field: optional float progress = 3;
+   */
+  progress?: number;
+
+  /**
+   * @generated from field: optional string progress_message = 4;
+   */
+  progressMessage?: string;
 };
 
 /**
- * Describes the message jobs.v1.AgentVideoGenOutput.
- * Use `create(AgentVideoGenOutputSchema)` to create a new message.
+ * Describes the message jobs.v1.AgentVideoJobPayload.
+ * Use `create(AgentVideoJobPayloadSchema)` to create a new message.
  */
-export const AgentVideoGenOutputSchema: GenMessage<AgentVideoGenOutput> =
+export const AgentVideoJobPayloadSchema: GenMessage<AgentVideoJobPayload> =
   /*@__PURE__*/
   messageDesc(file_jobs_v1_jobs, 7);
 
 /**
- * Video generation result variants
- *
- * @generated from message jobs.v1.VideoGenFailResult
- */
-export type VideoGenFailResult = Message<"jobs.v1.VideoGenFailResult"> & {
-  /**
-   * @generated from field: string error = 1;
-   */
-  error: string;
-};
-
-/**
- * Describes the message jobs.v1.VideoGenFailResult.
- * Use `create(VideoGenFailResultSchema)` to create a new message.
- */
-export const VideoGenFailResultSchema: GenMessage<VideoGenFailResult> =
-  /*@__PURE__*/
-  messageDesc(file_jobs_v1_jobs, 8);
-
-/**
- * @generated from message jobs.v1.VideoGenInProgressResult
- */
-export type VideoGenInProgressResult =
-  Message<"jobs.v1.VideoGenInProgressResult"> & {
-    /**
-     * @generated from field: float progress = 1;
-     */
-    progress: number;
-
-    /**
-     * @generated from field: string message = 2;
-     */
-    message: string;
-  };
-
-/**
- * Describes the message jobs.v1.VideoGenInProgressResult.
- * Use `create(VideoGenInProgressResultSchema)` to create a new message.
- */
-export const VideoGenInProgressResultSchema: GenMessage<VideoGenInProgressResult> =
-  /*@__PURE__*/
-  messageDesc(file_jobs_v1_jobs, 9);
-
-/**
- * @generated from message jobs.v1.VideoGenSuccessResult
- */
-export type VideoGenSuccessResult = Message<"jobs.v1.VideoGenSuccessResult"> & {
-  /**
-   * @generated from field: jobs.v1.AgentVideoGenOutput out = 1;
-   */
-  out?: AgentVideoGenOutput;
-};
-
-/**
- * Describes the message jobs.v1.VideoGenSuccessResult.
- * Use `create(VideoGenSuccessResultSchema)` to create a new message.
- */
-export const VideoGenSuccessResultSchema: GenMessage<VideoGenSuccessResult> =
-  /*@__PURE__*/
-  messageDesc(file_jobs_v1_jobs, 10);
-
-/**
- * Response for job result
- *
  * @generated from message jobs.v1.JobResultResponse
  */
 export type JobResultResponse = Message<"jobs.v1.JobResultResponse"> & {
   /**
-   * @generated from field: jobs.v1.JobFunction fn = 1;
+   * @generated from field: jobs.v1.JobMetadata metadata = 1;
    */
-  fn: JobFunction;
+  metadata?: JobMetadata;
 
   /**
-   * @generated from field: jobs.v1.JobStatus status = 2;
+   * @generated from field: jobs.v1.JobState state = 2;
    */
-  status: JobStatus;
+  state: JobState;
 
   /**
-   * @generated from field: optional string error = 3;
+   * @generated from field: optional string error_code = 3;
    */
-  error?: string;
+  errorCode?: string;
 
   /**
-   * @generated from oneof jobs.v1.JobResultResponse.result
+   * @generated from field: optional string error_message = 4;
    */
-  result:
+  errorMessage?: string;
+
+  /**
+   * @generated from oneof jobs.v1.JobResultResponse.payload
+   */
+  payload:
     | {
         /**
-         * @generated from field: jobs.v1.VideoEditResult edit_result = 4;
+         * @generated from field: jobs.v1.EditVideoJobPayload edit_video = 5;
          */
-        value: VideoEditResult;
-        case: "editResult";
+        value: EditVideoJobPayload;
+        case: "editVideo";
       }
     | {
         /**
-         * @generated from field: jobs.v1.VideoGenSuccessResult video_gen_result = 5;
+         * @generated from field: jobs.v1.AgentVideoJobPayload agent_video = 6;
          */
-        value: VideoGenSuccessResult;
-        case: "videoGenResult";
+        value: AgentVideoJobPayload;
+        case: "agentVideo";
       }
     | { case: undefined; value?: undefined };
 };
@@ -364,99 +330,7 @@ export type JobResultResponse = Message<"jobs.v1.JobResultResponse"> & {
  */
 export const JobResultResponseSchema: GenMessage<JobResultResponse> =
   /*@__PURE__*/
-  messageDesc(file_jobs_v1_jobs, 11);
-
-/**
- * Request for synchronous video generation
- *
- * @generated from message jobs.v1.VideoGenerateRequest
- */
-export type VideoGenerateRequest = Message<"jobs.v1.VideoGenerateRequest"> & {
-  /**
-   * @generated from field: string product = 1;
-   */
-  product: string;
-
-  /**
-   * @generated from field: repeated string product_imgs = 2;
-   */
-  productImgs: string[];
-
-  /**
-   * @generated from field: repeated string avatar_imgs = 3;
-   */
-  avatarImgs: string[];
-
-  /**
-   * @generated from field: string business = 4;
-   */
-  business: string;
-
-  /**
-   * @generated from field: string user_message = 5;
-   */
-  userMessage: string;
-
-  /**
-   * @generated from field: int32 max_turns = 6;
-   */
-  maxTurns: number;
-};
-
-/**
- * Describes the message jobs.v1.VideoGenerateRequest.
- * Use `create(VideoGenerateRequestSchema)` to create a new message.
- */
-export const VideoGenerateRequestSchema: GenMessage<VideoGenerateRequest> =
-  /*@__PURE__*/
-  messageDesc(file_jobs_v1_jobs, 12);
-
-/**
- * Response for synchronous video generation
- *
- * @generated from message jobs.v1.VideoGenerateResponse
- */
-export type VideoGenerateResponse = Message<"jobs.v1.VideoGenerateResponse"> & {
-  /**
-   * @generated from field: jobs.v1.VideoGenStatus status = 1;
-   */
-  status: VideoGenStatus;
-
-  /**
-   * @generated from oneof jobs.v1.VideoGenerateResponse.data
-   */
-  data:
-    | {
-        /**
-         * @generated from field: jobs.v1.VideoGenSuccessResult success = 2;
-         */
-        value: VideoGenSuccessResult;
-        case: "success";
-      }
-    | {
-        /**
-         * @generated from field: jobs.v1.VideoGenFailResult fail = 3;
-         */
-        value: VideoGenFailResult;
-        case: "fail";
-      }
-    | {
-        /**
-         * @generated from field: jobs.v1.VideoGenInProgressResult in_progress = 4;
-         */
-        value: VideoGenInProgressResult;
-        case: "inProgress";
-      }
-    | { case: undefined; value?: undefined };
-};
-
-/**
- * Describes the message jobs.v1.VideoGenerateResponse.
- * Use `create(VideoGenerateResponseSchema)` to create a new message.
- */
-export const VideoGenerateResponseSchema: GenMessage<VideoGenerateResponse> =
-  /*@__PURE__*/
-  messageDesc(file_jobs_v1_jobs, 13);
+  messageDesc(file_jobs_v1_jobs, 8);
 
 /**
  * @generated from enum jobs.v1.AspectRatio
@@ -523,38 +397,6 @@ export const CadenceSchema: GenEnum<Cadence> =
   enumDesc(file_jobs_v1_jobs, 1);
 
 /**
- * @generated from enum jobs.v1.JobStatus
- */
-export enum JobStatus {
-  /**
-   * @generated from enum value: JOB_STATUS_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: JOB_STATUS_PENDING = 1;
-   */
-  PENDING = 1,
-
-  /**
-   * @generated from enum value: JOB_STATUS_SUCCEEDED = 2;
-   */
-  SUCCEEDED = 2,
-
-  /**
-   * @generated from enum value: JOB_STATUS_FAILED = 3;
-   */
-  FAILED = 3,
-}
-
-/**
- * Describes the enum jobs.v1.JobStatus.
- */
-export const JobStatusSchema: GenEnum<JobStatus> =
-  /*@__PURE__*/
-  enumDesc(file_jobs_v1_jobs, 2);
-
-/**
  * @generated from enum jobs.v1.JobFunction
  */
 export enum JobFunction {
@@ -579,70 +421,46 @@ export enum JobFunction {
  */
 export const JobFunctionSchema: GenEnum<JobFunction> =
   /*@__PURE__*/
+  enumDesc(file_jobs_v1_jobs, 2);
+
+/**
+ * @generated from enum jobs.v1.JobState
+ */
+export enum JobState {
+  /**
+   * @generated from enum value: JOB_STATE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: JOB_STATE_PENDING = 1;
+   */
+  PENDING = 1,
+
+  /**
+   * @generated from enum value: JOB_STATE_IN_PROGRESS = 2;
+   */
+  IN_PROGRESS = 2,
+
+  /**
+   * @generated from enum value: JOB_STATE_SUCCEEDED = 3;
+   */
+  SUCCEEDED = 3,
+
+  /**
+   * @generated from enum value: JOB_STATE_FAILED = 4;
+   */
+  FAILED = 4,
+}
+
+/**
+ * Describes the enum jobs.v1.JobState.
+ */
+export const JobStateSchema: GenEnum<JobState> =
+  /*@__PURE__*/
   enumDesc(file_jobs_v1_jobs, 3);
 
 /**
- * @generated from enum jobs.v1.VideoGenStatus
- */
-export enum VideoGenStatus {
-  /**
-   * @generated from enum value: VIDEO_GEN_STATUS_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: VIDEO_GEN_STATUS_SUCCESS = 1;
-   */
-  SUCCESS = 1,
-
-  /**
-   * @generated from enum value: VIDEO_GEN_STATUS_FAILED = 2;
-   */
-  FAILED = 2,
-
-  /**
-   * @generated from enum value: VIDEO_GEN_STATUS_IN_PROGRESS = 3;
-   */
-  IN_PROGRESS = 3,
-}
-
-/**
- * Describes the enum jobs.v1.VideoGenStatus.
- */
-export const VideoGenStatusSchema: GenEnum<VideoGenStatus> =
-  /*@__PURE__*/
-  enumDesc(file_jobs_v1_jobs, 4);
-
-/**
- * @generated from enum jobs.v1.AgentOutputStatus
- */
-export enum AgentOutputStatus {
-  /**
-   * @generated from enum value: AGENT_OUTPUT_STATUS_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: AGENT_OUTPUT_STATUS_SUCCESS = 1;
-   */
-  SUCCESS = 1,
-
-  /**
-   * @generated from enum value: AGENT_OUTPUT_STATUS_ERROR = 2;
-   */
-  ERROR = 2,
-}
-
-/**
- * Describes the enum jobs.v1.AgentOutputStatus.
- */
-export const AgentOutputStatusSchema: GenEnum<AgentOutputStatus> =
-  /*@__PURE__*/
-  enumDesc(file_jobs_v1_jobs, 5);
-
-/**
- * Jobs service for managing async and sync video generation jobs
- *
  * @generated from service jobs.v1.JobsService
  */
 export const JobsService: GenService<{
@@ -675,15 +493,5 @@ export const JobsService: GenService<{
     methodKind: "unary";
     input: typeof JobResultRequestSchema;
     output: typeof JobResultResponseSchema;
-  };
-  /**
-   * Generate a video synchronously
-   *
-   * @generated from rpc jobs.v1.JobsService.GenerateVideo
-   */
-  generateVideo: {
-    methodKind: "unary";
-    input: typeof VideoGenerateRequestSchema;
-    output: typeof VideoGenerateResponseSchema;
   };
 }> = /*@__PURE__*/ serviceDesc(file_jobs_v1_jobs, 0);

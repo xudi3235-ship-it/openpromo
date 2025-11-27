@@ -7,7 +7,7 @@ import {
 } from "@core/helpers/workflow";
 import { jobsClient } from "@core/rpc";
 import { Log } from "@core/utils/log";
-import { JobStatus } from "@shared/gen/jobs/v1/jobs_pb";
+import { JobFunction, JobState } from "@shared/gen/jobs/v1/jobs_pb";
 import { z } from "zod";
 import { EntVideoGeneration } from "../EntVideoGeneration";
 
@@ -57,13 +57,18 @@ export class VideoGenerationWorkflow extends CoreWorkflowEntrypoint<VideoGenerat
         }
 
         const response = await jobsClient.submitAgentVideoJob({
+          envelope: {
+            fn: JobFunction.AGENT_VIDEO,
+            workspaceId: g.data.workspaceId,
+            clientJobId: generationId,
+          },
           product: metadata.prompt,
           productImgs: metadata.productImages,
           avatarImgs: metadata.avatarImages ?? [],
           business: "", // TODO: add business context to metadata if needed
           userMessage: metadata.prompt,
           maxTurns: 100,
-          workspaceId: g.data.workspaceId,
+          waitForCompletion: false,
         });
 
         log.info("Job submitted", { callId: response.callId, generationId });
@@ -92,10 +97,14 @@ export class VideoGenerationWorkflow extends CoreWorkflowEntrypoint<VideoGenerat
         const result = await step.do(`poll-${pollAttempt}`, async () => {
           const response = await jobsClient.getJobResult({ callId });
 
-          if (response.status === JobStatus.PENDING) {
+          if (
+            response.state === JobState.PENDING ||
+            response.state === JobState.IN_PROGRESS
+          ) {
             log.info("Job still pending", {
               generationId,
               attempt: pollAttempt,
+              state: response.state,
             });
             return { done: false, response };
           }
@@ -110,42 +119,43 @@ export class VideoGenerationWorkflow extends CoreWorkflowEntrypoint<VideoGenerat
           await step.do("handle-result", async () => {
             const g = await EntVideoGeneration.fromID(generationId);
 
-            if (response.status === JobStatus.FAILED) {
-              await g.setState("failed", response.error ?? "Job failed");
+            const failureMessage =
+              response.errorMessage ?? response.errorCode ?? "Job failed";
+
+            if (response.state === JobState.FAILED) {
+              await g.setState("failed", failureMessage);
               await g.dispatchUpdateEvent();
               return;
             }
 
-            if (response.status === JobStatus.SUCCEEDED) {
-              if (response.result.case !== "videoGenResult") {
-                await g.setState("failed", "Unexpected result type");
-                await g.dispatchUpdateEvent();
-                return;
-              }
-
-              const out = response.result.value.out;
-              if (!out || out.data.case !== "success") {
-                const errorMsg =
-                  out?.data.case === "error"
-                    ? out.data.value.errorMessage
-                    : "No output from agent";
-                await g.setState("failed", errorMsg);
-                await g.dispatchUpdateEvent();
-                return;
-              }
-
-              await g.update({
-                state: "completed",
-                stateMessage: out.data.value.summary,
-                outputVideoUrl: out.data.value.videoUrl,
-              });
+            if (response.state !== JobState.SUCCEEDED) {
+              await g.setState(
+                "failed",
+                `Unexpected job state: ${response.state}`,
+              );
               await g.dispatchUpdateEvent();
-
-              log.info("Video generation completed", {
-                generationId,
-                videoUrl: out.data.value.videoUrl,
-              });
+              return;
             }
+
+            if (response.payload.case !== "agentVideo") {
+              await g.setState("failed", "Unexpected result payload");
+              await g.dispatchUpdateEvent();
+              return;
+            }
+
+            const out = response.payload.value;
+
+            await g.update({
+              state: "completed",
+              stateMessage: out.summary || "Video generation completed",
+              outputVideoUrl: out.videoUrl,
+            });
+            await g.dispatchUpdateEvent();
+
+            log.info("Video generation completed", {
+              generationId,
+              videoUrl: out.videoUrl,
+            });
           });
         }
       }

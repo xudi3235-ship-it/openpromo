@@ -108,6 +108,7 @@ export const getJobResultJobResultCallIdGetResponse = zod.object({
   "out": zod.object({
   "status": zod.enum(['success', 'error']),
   "data": zod.union([zod.object({
+  "local_video_path": zod.string().describe('The local file path of the generated video.'),
   "video_url": zod.string().describe('The URL of the generated video.'),
   "summary": zod.string().describe('A brief summary of the generated video.')
 }).strict(),zod.object({
@@ -154,6 +155,7 @@ export const generateAgentVideoJobVideoGeneratePostResponse = zod.object({
   "out": zod.object({
   "status": zod.enum(['success', 'error']),
   "data": zod.union([zod.object({
+  "local_video_path": zod.string().describe('The local file path of the generated video.'),
   "video_url": zod.string().describe('The URL of the generated video.'),
   "summary": zod.string().describe('A brief summary of the generated video.')
 }).strict(),zod.object({

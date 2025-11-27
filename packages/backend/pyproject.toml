@@ -35,7 +35,8 @@ include = ["src"]
 exclude = ["**/node_modules",
     "**/__pycache__",
     "src/experimental",
-    "src/typestubs"
+    "src/typestubs",
+    "src/gen"
 ]
 ignore = ["src/oldstuff"]
 defineConstant = { DEBUG = true }

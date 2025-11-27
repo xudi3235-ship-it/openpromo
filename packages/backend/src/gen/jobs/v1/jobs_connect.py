@@ -26,9 +26,6 @@ class JobsService(Protocol):
     async def get_job_result(self, request: jobs_dot_v1_dot_jobs__pb2.JobResultRequest, ctx: RequestContext) -> jobs_dot_v1_dot_jobs__pb2.JobResultResponse:
         raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
 
-    async def generate_video(self, request: jobs_dot_v1_dot_jobs__pb2.VideoGenerateRequest, ctx: RequestContext) -> jobs_dot_v1_dot_jobs__pb2.VideoGenerateResponse:
-        raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
-
 
 class JobsServiceASGIApplication(ConnectASGIApplication):
     def __init__(self, service: JobsService, *, interceptors: Iterable[Interceptor]=(), read_max_bytes: int | None = None) -> None:
@@ -63,16 +60,6 @@ class JobsServiceASGIApplication(ConnectASGIApplication):
                         idempotency_level=IdempotencyLevel.UNKNOWN,
                     ),
                     function=service.get_job_result,
-                ),
-                "/jobs.v1.JobsService/GenerateVideo": Endpoint.unary(
-                    method=MethodInfo(
-                        name="GenerateVideo",
-                        service_name="jobs.v1.JobsService",
-                        input=jobs_dot_v1_dot_jobs__pb2.VideoGenerateRequest,
-                        output=jobs_dot_v1_dot_jobs__pb2.VideoGenerateResponse,
-                        idempotency_level=IdempotencyLevel.UNKNOWN,
-                    ),
-                    function=service.generate_video,
                 ),
             },
             interceptors=interceptors,
@@ -146,26 +133,6 @@ class JobsServiceClient(ConnectClient):
             timeout_ms=timeout_ms,
         )
 
-    async def generate_video(
-        self,
-        request: jobs_dot_v1_dot_jobs__pb2.VideoGenerateRequest,
-        *,
-        headers: Headers | Mapping[str, str] | None = None,
-        timeout_ms: int | None = None,
-    ) -> jobs_dot_v1_dot_jobs__pb2.VideoGenerateResponse:
-        return await self.execute_unary(
-            request=request,
-            method=MethodInfo(
-                name="GenerateVideo",
-                service_name="jobs.v1.JobsService",
-                input=jobs_dot_v1_dot_jobs__pb2.VideoGenerateRequest,
-                output=jobs_dot_v1_dot_jobs__pb2.VideoGenerateResponse,
-                idempotency_level=IdempotencyLevel.UNKNOWN,
-            ),
-            headers=headers,
-            timeout_ms=timeout_ms,
-        )
-
 
 class JobsServiceSync(Protocol):
     def submit_edit_video_job(self, request: jobs_dot_v1_dot_jobs__pb2.EditVideoJobRequest, ctx: RequestContext) -> jobs_dot_v1_dot_jobs__pb2.JobSubmitResponse:
@@ -173,8 +140,6 @@ class JobsServiceSync(Protocol):
     def submit_agent_video_job(self, request: jobs_dot_v1_dot_jobs__pb2.AgentVideoJobRequest, ctx: RequestContext) -> jobs_dot_v1_dot_jobs__pb2.JobSubmitResponse:
         raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
     def get_job_result(self, request: jobs_dot_v1_dot_jobs__pb2.JobResultRequest, ctx: RequestContext) -> jobs_dot_v1_dot_jobs__pb2.JobResultResponse:
-        raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
-    def generate_video(self, request: jobs_dot_v1_dot_jobs__pb2.VideoGenerateRequest, ctx: RequestContext) -> jobs_dot_v1_dot_jobs__pb2.VideoGenerateResponse:
         raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
 
 
@@ -211,16 +176,6 @@ class JobsServiceWSGIApplication(ConnectWSGIApplication):
                         idempotency_level=IdempotencyLevel.UNKNOWN,
                     ),
                     function=service.get_job_result,
-                ),
-                "/jobs.v1.JobsService/GenerateVideo": EndpointSync.unary(
-                    method=MethodInfo(
-                        name="GenerateVideo",
-                        service_name="jobs.v1.JobsService",
-                        input=jobs_dot_v1_dot_jobs__pb2.VideoGenerateRequest,
-                        output=jobs_dot_v1_dot_jobs__pb2.VideoGenerateResponse,
-                        idempotency_level=IdempotencyLevel.UNKNOWN,
-                    ),
-                    function=service.generate_video,
                 ),
             },
             interceptors=interceptors,
@@ -288,26 +243,6 @@ class JobsServiceClientSync(ConnectClientSync):
                 service_name="jobs.v1.JobsService",
                 input=jobs_dot_v1_dot_jobs__pb2.JobResultRequest,
                 output=jobs_dot_v1_dot_jobs__pb2.JobResultResponse,
-                idempotency_level=IdempotencyLevel.UNKNOWN,
-            ),
-            headers=headers,
-            timeout_ms=timeout_ms,
-        )
-
-    def generate_video(
-        self,
-        request: jobs_dot_v1_dot_jobs__pb2.VideoGenerateRequest,
-        *,
-        headers: Headers | Mapping[str, str] | None = None,
-        timeout_ms: int | None = None,
-    ) -> jobs_dot_v1_dot_jobs__pb2.VideoGenerateResponse:
-        return self.execute_unary(
-            request=request,
-            method=MethodInfo(
-                name="GenerateVideo",
-                service_name="jobs.v1.JobsService",
-                input=jobs_dot_v1_dot_jobs__pb2.VideoGenerateRequest,
-                output=jobs_dot_v1_dot_jobs__pb2.VideoGenerateResponse,
                 idempotency_level=IdempotencyLevel.UNKNOWN,
             ),
             headers=headers,

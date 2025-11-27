@@ -24,53 +24,39 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12jobs/v1/jobs.proto\x12\x07jobs.v1\"\x97\x01\n\x13\x45\x64itVideoJobRequest\x12\x1b\n\tinput_url\x18\x01 \x01(\tR\x08inputUrl\x12\x37\n\x0c\x61spect_ratio\x18\x02 \x01(\x0e\x32\x14.jobs.v1.AspectRatioR\x0b\x61spectRatio\x12*\n\x07\x63\x61\x64\x65nce\x18\x03 \x01(\x0e\x32\x10.jobs.v1.CadenceR\x07\x63\x61\x64\x65nce\"\xf3\x01\n\x14\x41gentVideoJobRequest\x12\x18\n\x07product\x18\x01 \x01(\tR\x07product\x12!\n\x0cproduct_imgs\x18\x02 \x03(\tR\x0bproductImgs\x12\x1f\n\x0b\x61vatar_imgs\x18\x03 \x03(\tR\navatarImgs\x12\x1a\n\x08\x62usiness\x18\x04 \x01(\tR\x08\x62usiness\x12!\n\x0cuser_message\x18\x05 \x01(\tR\x0buserMessage\x12\x1b\n\tmax_turns\x18\x06 \x01(\x05R\x08maxTurns\x12!\n\x0cworkspace_id\x18\x07 \x01(\tR\x0bworkspaceId\",\n\x11JobSubmitResponse\x12\x17\n\x07\x63\x61ll_id\x18\x01 \x01(\tR\x06\x63\x61llId\"+\n\x10JobResultRequest\x12\x17\n\x07\x63\x61ll_id\x18\x01 \x01(\tR\x06\x63\x61llId\"0\n\x0fVideoEditResult\x12\x1d\n\noutput_url\x18\x01 \x01(\tR\toutputUrl\"P\n\x17\x41gentVideoGenSuccessOut\x12\x1b\n\tvideo_url\x18\x01 \x01(\tR\x08videoUrl\x12\x18\n\x07summary\x18\x02 \x01(\tR\x07summary\"[\n\x15\x41gentVideoGenErrorOut\x12#\n\rerror_message\x18\x01 \x01(\tR\x0c\x65rrorMessage\x12\x1d\n\nerror_type\x18\x02 \x01(\tR\terrorType\"\xc7\x01\n\x13\x41gentVideoGenOutput\x12\x32\n\x06status\x18\x01 \x01(\x0e\x32\x1a.jobs.v1.AgentOutputStatusR\x06status\x12<\n\x07success\x18\x02 \x01(\x0b\x32 .jobs.v1.AgentVideoGenSuccessOutH\x00R\x07success\x12\x36\n\x05\x65rror\x18\x03 \x01(\x0b\x32\x1e.jobs.v1.AgentVideoGenErrorOutH\x00R\x05\x65rrorB\x06\n\x04\x64\x61ta\"*\n\x12VideoGenFailResult\x12\x14\n\x05\x65rror\x18\x01 \x01(\tR\x05\x65rror\"P\n\x18VideoGenInProgressResult\x12\x1a\n\x08progress\x18\x01 \x01(\x02R\x08progress\x12\x18\n\x07message\x18\x02 \x01(\tR\x07message\"G\n\x15VideoGenSuccessResult\x12.\n\x03out\x18\x01 \x01(\x0b\x32\x1c.jobs.v1.AgentVideoGenOutputR\x03out\"\x9d\x02\n\x11JobResultResponse\x12$\n\x02\x66n\x18\x01 \x01(\x0e\x32\x14.jobs.v1.JobFunctionR\x02\x66n\x12*\n\x06status\x18\x02 \x01(\x0e\x32\x12.jobs.v1.JobStatusR\x06status\x12\x19\n\x05\x65rror\x18\x03 \x01(\tH\x01R\x05\x65rror\x88\x01\x01\x12;\n\x0b\x65\x64it_result\x18\x04 \x01(\x0b\x32\x18.jobs.v1.VideoEditResultH\x00R\neditResult\x12J\n\x10video_gen_result\x18\x05 \x01(\x0b\x32\x1e.jobs.v1.VideoGenSuccessResultH\x00R\x0evideoGenResultB\x08\n\x06resultB\x08\n\x06_error\"\xd0\x01\n\x14VideoGenerateRequest\x12\x18\n\x07product\x18\x01 \x01(\tR\x07product\x12!\n\x0cproduct_imgs\x18\x02 \x03(\tR\x0bproductImgs\x12\x1f\n\x0b\x61vatar_imgs\x18\x03 \x03(\tR\navatarImgs\x12\x1a\n\x08\x62usiness\x18\x04 \x01(\tR\x08\x62usiness\x12!\n\x0cuser_message\x18\x05 \x01(\tR\x0buserMessage\x12\x1b\n\tmax_turns\x18\x06 \x01(\x05R\x08maxTurns\"\x85\x02\n\x15VideoGenerateResponse\x12/\n\x06status\x18\x01 \x01(\x0e\x32\x17.jobs.v1.VideoGenStatusR\x06status\x12:\n\x07success\x18\x02 \x01(\x0b\x32\x1e.jobs.v1.VideoGenSuccessResultH\x00R\x07success\x12\x31\n\x04\x66\x61il\x18\x03 \x01(\x0b\x32\x1b.jobs.v1.VideoGenFailResultH\x00R\x04\x66\x61il\x12\x44\n\x0bin_progress\x18\x04 \x01(\x0b\x32!.jobs.v1.VideoGenInProgressResultH\x00R\ninProgressB\x06\n\x04\x64\x61ta*n\n\x0b\x41spectRatio\x12\x1c\n\x18\x41SPECT_RATIO_UNSPECIFIED\x10\x00\x12\x15\n\x11\x41SPECT_RATIO_16_9\x10\x01\x12\x14\n\x10\x41SPECT_RATIO_4_3\x10\x02\x12\x14\n\x10\x41SPECT_RATIO_1_1\x10\x03*^\n\x07\x43\x61\x64\x65nce\x12\x17\n\x13\x43\x41\x44\x45NCE_UNSPECIFIED\x10\x00\x12\x11\n\rCADENCE_DAILY\x10\x01\x12\x12\n\x0e\x43\x41\x44\x45NCE_WEEKLY\x10\x02\x12\x13\n\x0f\x43\x41\x44\x45NCE_MONTHLY\x10\x03*p\n\tJobStatus\x12\x1a\n\x16JOB_STATUS_UNSPECIFIED\x10\x00\x12\x16\n\x12JOB_STATUS_PENDING\x10\x01\x12\x18\n\x14JOB_STATUS_SUCCEEDED\x10\x02\x12\x15\n\x11JOB_STATUS_FAILED\x10\x03*f\n\x0bJobFunction\x12\x1c\n\x18JOB_FUNCTION_UNSPECIFIED\x10\x00\x12\x1b\n\x17JOB_FUNCTION_EDIT_VIDEO\x10\x01\x12\x1c\n\x18JOB_FUNCTION_AGENT_VIDEO\x10\x02*\x8f\x01\n\x0eVideoGenStatus\x12 \n\x1cVIDEO_GEN_STATUS_UNSPECIFIED\x10\x00\x12\x1c\n\x18VIDEO_GEN_STATUS_SUCCESS\x10\x01\x12\x1b\n\x17VIDEO_GEN_STATUS_FAILED\x10\x02\x12 \n\x1cVIDEO_GEN_STATUS_IN_PROGRESS\x10\x03*x\n\x11\x41gentOutputStatus\x12#\n\x1f\x41GENT_OUTPUT_STATUS_UNSPECIFIED\x10\x00\x12\x1f\n\x1b\x41GENT_OUTPUT_STATUS_SUCCESS\x10\x01\x12\x1d\n\x19\x41GENT_OUTPUT_STATUS_ERROR\x10\x02\x32\xce\x02\n\x0bJobsService\x12P\n\x12SubmitEditVideoJob\x12\x1c.jobs.v1.EditVideoJobRequest\x1a\x1a.jobs.v1.JobSubmitResponse\"\x00\x12R\n\x13SubmitAgentVideoJob\x12\x1d.jobs.v1.AgentVideoJobRequest\x1a\x1a.jobs.v1.JobSubmitResponse\"\x00\x12G\n\x0cGetJobResult\x12\x19.jobs.v1.JobResultRequest\x1a\x1a.jobs.v1.JobResultResponse\"\x00\x12P\n\rGenerateVideo\x12\x1d.jobs.v1.VideoGenerateRequest\x1a\x1e.jobs.v1.VideoGenerateResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12jobs/v1/jobs.proto\x12\x07jobs.v1\"\x91\x01\n\x0bJobEnvelope\x12$\n\x02\x66n\x18\x01 \x01(\x0e\x32\x14.jobs.v1.JobFunctionR\x02\x66n\x12!\n\x0cworkspace_id\x18\x02 \x01(\tR\x0bworkspaceId\x12\'\n\rclient_job_id\x18\x03 \x01(\tH\x00R\x0b\x63lientJobId\x88\x01\x01\x42\x10\n\x0e_client_job_id\"\xcd\x01\n\x0bJobMetadata\x12\x17\n\x07\x63\x61ll_id\x18\x01 \x01(\tR\x06\x63\x61llId\x12$\n\x02\x66n\x18\x02 \x01(\x0e\x32\x14.jobs.v1.JobFunctionR\x02\x66n\x12!\n\x0cworkspace_id\x18\x03 \x01(\tR\x0bworkspaceId\x12-\n\x13\x63reated_at_epoch_ms\x18\x04 \x01(\x03R\x10\x63reatedAtEpochMs\x12-\n\x13updated_at_epoch_ms\x18\x05 \x01(\x03R\x10updatedAtEpochMs\"\xf9\x01\n\x13\x45\x64itVideoJobRequest\x12\x30\n\x08\x65nvelope\x18\x01 \x01(\x0b\x32\x14.jobs.v1.JobEnvelopeR\x08\x65nvelope\x12\x1b\n\tinput_url\x18\x02 \x01(\tR\x08inputUrl\x12\x37\n\x0c\x61spect_ratio\x18\x03 \x01(\x0e\x32\x14.jobs.v1.AspectRatioR\x0b\x61spectRatio\x12*\n\x07\x63\x61\x64\x65nce\x18\x04 \x01(\x0e\x32\x10.jobs.v1.CadenceR\x07\x63\x61\x64\x65nce\x12.\n\x13wait_for_completion\x18\x05 \x01(\x08R\x11waitForCompletion\"\xb2\x02\n\x14\x41gentVideoJobRequest\x12\x30\n\x08\x65nvelope\x18\x01 \x01(\x0b\x32\x14.jobs.v1.JobEnvelopeR\x08\x65nvelope\x12\x18\n\x07product\x18\x02 \x01(\tR\x07product\x12!\n\x0cproduct_imgs\x18\x03 \x03(\tR\x0bproductImgs\x12\x1f\n\x0b\x61vatar_imgs\x18\x04 \x03(\tR\navatarImgs\x12\x1a\n\x08\x62usiness\x18\x05 \x01(\tR\x08\x62usiness\x12!\n\x0cuser_message\x18\x06 \x01(\tR\x0buserMessage\x12\x1b\n\tmax_turns\x18\x07 \x01(\x05R\x08maxTurns\x12.\n\x13wait_for_completion\x18\x08 \x01(\x08R\x11waitForCompletion\",\n\x11JobSubmitResponse\x12\x17\n\x07\x63\x61ll_id\x18\x01 \x01(\tR\x06\x63\x61llId\"+\n\x10JobResultRequest\x12\x17\n\x07\x63\x61ll_id\x18\x01 \x01(\tR\x06\x63\x61llId\"\xa7\x01\n\x13\x45\x64itVideoJobPayload\x12\x1d\n\noutput_url\x18\x01 \x01(\tR\toutputUrl\x12\x1f\n\x08progress\x18\x02 \x01(\x02H\x00R\x08progress\x88\x01\x01\x12.\n\x10progress_message\x18\x03 \x01(\tH\x01R\x0fprogressMessage\x88\x01\x01\x42\x0b\n\t_progressB\x13\n\x11_progress_message\"\xc0\x01\n\x14\x41gentVideoJobPayload\x12\x1b\n\tvideo_url\x18\x01 \x01(\tR\x08videoUrl\x12\x18\n\x07summary\x18\x02 \x01(\tR\x07summary\x12\x1f\n\x08progress\x18\x03 \x01(\x02H\x00R\x08progress\x88\x01\x01\x12.\n\x10progress_message\x18\x04 \x01(\tH\x01R\x0fprogressMessage\x88\x01\x01\x42\x0b\n\t_progressB\x13\n\x11_progress_message\"\xe9\x02\n\x11JobResultResponse\x12\x30\n\x08metadata\x18\x01 \x01(\x0b\x32\x14.jobs.v1.JobMetadataR\x08metadata\x12\'\n\x05state\x18\x02 \x01(\x0e\x32\x11.jobs.v1.JobStateR\x05state\x12\"\n\nerror_code\x18\x03 \x01(\tH\x01R\terrorCode\x88\x01\x01\x12(\n\rerror_message\x18\x04 \x01(\tH\x02R\x0c\x65rrorMessage\x88\x01\x01\x12=\n\nedit_video\x18\x05 \x01(\x0b\x32\x1c.jobs.v1.EditVideoJobPayloadH\x00R\teditVideo\x12@\n\x0b\x61gent_video\x18\x06 \x01(\x0b\x32\x1d.jobs.v1.AgentVideoJobPayloadH\x00R\nagentVideoB\t\n\x07payloadB\r\n\x0b_error_codeB\x10\n\x0e_error_message*n\n\x0b\x41spectRatio\x12\x1c\n\x18\x41SPECT_RATIO_UNSPECIFIED\x10\x00\x12\x15\n\x11\x41SPECT_RATIO_16_9\x10\x01\x12\x14\n\x10\x41SPECT_RATIO_4_3\x10\x02\x12\x14\n\x10\x41SPECT_RATIO_1_1\x10\x03*^\n\x07\x43\x61\x64\x65nce\x12\x17\n\x13\x43\x41\x44\x45NCE_UNSPECIFIED\x10\x00\x12\x11\n\rCADENCE_DAILY\x10\x01\x12\x12\n\x0e\x43\x41\x44\x45NCE_WEEKLY\x10\x02\x12\x13\n\x0f\x43\x41\x44\x45NCE_MONTHLY\x10\x03*f\n\x0bJobFunction\x12\x1c\n\x18JOB_FUNCTION_UNSPECIFIED\x10\x00\x12\x1b\n\x17JOB_FUNCTION_EDIT_VIDEO\x10\x01\x12\x1c\n\x18JOB_FUNCTION_AGENT_VIDEO\x10\x02*\x86\x01\n\x08JobState\x12\x19\n\x15JOB_STATE_UNSPECIFIED\x10\x00\x12\x15\n\x11JOB_STATE_PENDING\x10\x01\x12\x19\n\x15JOB_STATE_IN_PROGRESS\x10\x02\x12\x17\n\x13JOB_STATE_SUCCEEDED\x10\x03\x12\x14\n\x10JOB_STATE_FAILED\x10\x04\x32\xfc\x01\n\x0bJobsService\x12P\n\x12SubmitEditVideoJob\x12\x1c.jobs.v1.EditVideoJobRequest\x1a\x1a.jobs.v1.JobSubmitResponse\"\x00\x12R\n\x13SubmitAgentVideoJob\x12\x1d.jobs.v1.AgentVideoJobRequest\x1a\x1a.jobs.v1.JobSubmitResponse\"\x00\x12G\n\x0cGetJobResult\x12\x19.jobs.v1.JobResultRequest\x1a\x1a.jobs.v1.JobResultResponse\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'jobs.v1.jobs_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_ASPECTRATIO']._serialized_start=1911
-  _globals['_ASPECTRATIO']._serialized_end=2021
-  _globals['_CADENCE']._serialized_start=2023
-  _globals['_CADENCE']._serialized_end=2117
-  _globals['_JOBSTATUS']._serialized_start=2119
-  _globals['_JOBSTATUS']._serialized_end=2231
-  _globals['_JOBFUNCTION']._serialized_start=2233
-  _globals['_JOBFUNCTION']._serialized_end=2335
-  _globals['_VIDEOGENSTATUS']._serialized_start=2338
-  _globals['_VIDEOGENSTATUS']._serialized_end=2481
-  _globals['_AGENTOUTPUTSTATUS']._serialized_start=2483
-  _globals['_AGENTOUTPUTSTATUS']._serialized_end=2603
-  _globals['_EDITVIDEOJOBREQUEST']._serialized_start=32
-  _globals['_EDITVIDEOJOBREQUEST']._serialized_end=183
-  _globals['_AGENTVIDEOJOBREQUEST']._serialized_start=186
-  _globals['_AGENTVIDEOJOBREQUEST']._serialized_end=429
-  _globals['_JOBSUBMITRESPONSE']._serialized_start=431
-  _globals['_JOBSUBMITRESPONSE']._serialized_end=475
-  _globals['_JOBRESULTREQUEST']._serialized_start=477
-  _globals['_JOBRESULTREQUEST']._serialized_end=520
-  _globals['_VIDEOEDITRESULT']._serialized_start=522
-  _globals['_VIDEOEDITRESULT']._serialized_end=570
-  _globals['_AGENTVIDEOGENSUCCESSOUT']._serialized_start=572
-  _globals['_AGENTVIDEOGENSUCCESSOUT']._serialized_end=652
-  _globals['_AGENTVIDEOGENERROROUT']._serialized_start=654
-  _globals['_AGENTVIDEOGENERROROUT']._serialized_end=745
-  _globals['_AGENTVIDEOGENOUTPUT']._serialized_start=748
-  _globals['_AGENTVIDEOGENOUTPUT']._serialized_end=947
-  _globals['_VIDEOGENFAILRESULT']._serialized_start=949
-  _globals['_VIDEOGENFAILRESULT']._serialized_end=991
-  _globals['_VIDEOGENINPROGRESSRESULT']._serialized_start=993
-  _globals['_VIDEOGENINPROGRESSRESULT']._serialized_end=1073
-  _globals['_VIDEOGENSUCCESSRESULT']._serialized_start=1075
-  _globals['_VIDEOGENSUCCESSRESULT']._serialized_end=1146
-  _globals['_JOBRESULTRESPONSE']._serialized_start=1149
-  _globals['_JOBRESULTRESPONSE']._serialized_end=1434
-  _globals['_VIDEOGENERATEREQUEST']._serialized_start=1437
-  _globals['_VIDEOGENERATEREQUEST']._serialized_end=1645
-  _globals['_VIDEOGENERATERESPONSE']._serialized_start=1648
-  _globals['_VIDEOGENERATERESPONSE']._serialized_end=1909
-  _globals['_JOBSSERVICE']._serialized_start=2606
-  _globals['_JOBSSERVICE']._serialized_end=2940
+  _globals['_ASPECTRATIO']._serialized_start=1768
+  _globals['_ASPECTRATIO']._serialized_end=1878
+  _globals['_CADENCE']._serialized_start=1880
+  _globals['_CADENCE']._serialized_end=1974
+  _globals['_JOBFUNCTION']._serialized_start=1976
+  _globals['_JOBFUNCTION']._serialized_end=2078
+  _globals['_JOBSTATE']._serialized_start=2081
+  _globals['_JOBSTATE']._serialized_end=2215
+  _globals['_JOBENVELOPE']._serialized_start=32
+  _globals['_JOBENVELOPE']._serialized_end=177
+  _globals['_JOBMETADATA']._serialized_start=180
+  _globals['_JOBMETADATA']._serialized_end=385
+  _globals['_EDITVIDEOJOBREQUEST']._serialized_start=388
+  _globals['_EDITVIDEOJOBREQUEST']._serialized_end=637
+  _globals['_AGENTVIDEOJOBREQUEST']._serialized_start=640
+  _globals['_AGENTVIDEOJOBREQUEST']._serialized_end=946
+  _globals['_JOBSUBMITRESPONSE']._serialized_start=948
+  _globals['_JOBSUBMITRESPONSE']._serialized_end=992
+  _globals['_JOBRESULTREQUEST']._serialized_start=994
+  _globals['_JOBRESULTREQUEST']._serialized_end=1037
+  _globals['_EDITVIDEOJOBPAYLOAD']._serialized_start=1040
+  _globals['_EDITVIDEOJOBPAYLOAD']._serialized_end=1207
+  _globals['_AGENTVIDEOJOBPAYLOAD']._serialized_start=1210
+  _globals['_AGENTVIDEOJOBPAYLOAD']._serialized_end=1402
+  _globals['_JOBRESULTRESPONSE']._serialized_start=1405
+  _globals['_JOBRESULTRESPONSE']._serialized_end=1766
+  _globals['_JOBSSERVICE']._serialized_start=2218
+  _globals['_JOBSSERVICE']._serialized_end=2470
 # @@protoc_insertion_point(module_scope)
