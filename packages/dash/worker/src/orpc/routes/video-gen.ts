@@ -112,18 +112,32 @@ export const getVideoJobResult = orpcBuilder
     const { callId } = input;
 
     const response = await jobsClient.getJobResult({ callId });
+    console.log("Video job result response:", response);
 
-    if (response.result.case !== "videoGenResult") {
-      throw new Error(`Unexpected result type: ${response.result.case}`);
-    }
-
-    return {
+    const base = {
       callId,
       fn: response.fn,
       fnLabel: JobFunction[response.fn],
       status: response.status,
       statusLabel: JobStatus[response.status],
       error: response.error ?? null,
+    };
+
+    // Job still pending - no result yet
+    if (response.status === JobStatus.PENDING) {
+      return { ...base, videoGen: null };
+    }
+
+    // Job completed but wrong result type (e.g. edit_result instead of video_gen_result)
+    if (response.result.case !== "videoGenResult") {
+      console.warn(
+        `Expected videoGenResult but got case=${response.result.case}`,
+      );
+      return { ...base, videoGen: null };
+    }
+
+    return {
+      ...base,
       videoGen: mapVideoGenOutput(response.result.value.out),
     };
   });

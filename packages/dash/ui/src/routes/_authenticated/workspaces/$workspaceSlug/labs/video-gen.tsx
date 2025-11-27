@@ -29,7 +29,7 @@ import {
   Sparkles,
   VideoIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useProductListQuery } from "@/queries/product";
@@ -60,6 +60,8 @@ function VideoGenerationLab() {
   const [customProductImageInput, setCustomProductImageInput] = useState("");
   const [avatarImageInput, setAvatarImageInput] = useState("");
   const [activeCallId, setActiveCallId] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const pollingStartRef = useRef<number | null>(null);
 
   const defaultBusinessContext = workspace.name ?? workspace.slug ?? "";
 
@@ -143,6 +145,8 @@ function VideoGenerationLab() {
 
   const submitMutation = useVideoGenSubmitMutation((data) => {
     setActiveCallId(data.callId);
+    pollingStartRef.current = Date.now();
+    setElapsedSeconds(0);
   });
 
   const statusQuery = useVideoGenStatusQuery(
@@ -152,12 +156,27 @@ function VideoGenerationLab() {
       refetchInterval: (query) => {
         if (!activeCallId) return false;
         const data = query.state.data as VideoGenStatusResponse | undefined;
-        return data?.status === JobStatus.PENDING ? 2500 : false;
+        return data?.status === JobStatus.PENDING ? 5_000 : false;
       },
     },
   );
 
   const statusData = statusQuery.data;
+  const isPolling = statusData?.status === JobStatus.PENDING;
+
+  // Update elapsed time while polling
+  useEffect(() => {
+    const startTime = pollingStartRef.current;
+    if (!isPolling || !startTime) return;
+
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setElapsedSeconds(elapsed);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isPolling]);
+
   const agentResult = statusData?.videoGen;
   const videoUrl =
     agentResult?.kind === "success" ? agentResult.videoUrl : null;
@@ -168,6 +187,8 @@ function VideoGenerationLab() {
 
   const resetJobState = () => {
     setActiveCallId(null);
+    pollingStartRef.current = null;
+    setElapsedSeconds(0);
   };
 
   const handleSubmit = () => {
@@ -469,14 +490,21 @@ function VideoGenerationLab() {
                         {formatEnumLabel(statusData.statusLabel)}
                       </p>
                     </div>
-                    <Badge
-                      className={cn(
-                        "border",
-                        getJobStatusTone(statusData.status),
+                    <div className="flex items-center gap-2">
+                      {isPolling && elapsedSeconds > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {formatElapsedTime(elapsedSeconds)}
+                        </span>
                       )}
-                    >
-                      {statusBadgeCopy(statusData.status)}
-                    </Badge>
+                      <Badge
+                        className={cn(
+                          "border",
+                          getJobStatusTone(statusData.status),
+                        )}
+                      >
+                        {statusBadgeCopy(statusData.status)}
+                      </Badge>
+                    </div>
                   </div>
 
                   <div className="grid gap-3 rounded-lg border p-3 text-sm">
@@ -609,4 +637,11 @@ function parseUrlList(value: string) {
     .split(/[\n,]/)
     .map((url) => url.trim())
     .filter((url) => url.length > 0);
+}
+
+function formatElapsedTime(seconds: number) {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}m ${secs}s`;
 }

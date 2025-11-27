@@ -4,7 +4,7 @@ import modal
 image = (
     modal.Image.debian_slim(python_version="3.12.9")
     .run_commands(
-        "apt update -y && apt install -y ffmpeg",
+        "apt update -y && apt install -y ffmpeg tree",
     )
     .pip_install_from_pyproject("pyproject.toml")
     .add_local_python_source("src")

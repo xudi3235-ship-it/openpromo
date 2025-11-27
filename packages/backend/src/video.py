@@ -457,9 +457,17 @@ async def agent_video(req: "VideoGenRequest") -> "VideoGenResponse":
 
     This is spawned by the RPC service and runs asynchronously.
     """
+    import uuid
+    from pathlib import Path
+
     from agents import Runner
 
-    from src.openai_agent.agents.main_agent import AgentVideoGenOutput, main_agent
+    from src.common import EphemeralCadence, R2Utils
+    from src.openai_agent.agents.main_agent import (
+        AgentVideoGenOutput,
+        AgentVideoGenSuccessOut,
+        main_agent,
+    )
     from src.openai_agent.hooks import ExampleHooks
     from src.routes.schemas import (
         VideoGenFailResponse,
@@ -489,6 +497,42 @@ async def agent_video(req: "VideoGenRequest") -> "VideoGenResponse":
             context=req.to_agent_runtime_context(),
         )
         agent_output = result.final_output_as(AgentVideoGenOutput)
+
+        # If success, upload video to R2 and replace the URL
+        if (
+            agent_output.status == "success"
+            and isinstance(agent_output.data, AgentVideoGenSuccessOut)
+            and agent_output.data.local_video_path
+        ):
+            print("Uploading generated video to R2...")
+            local_path = Path(agent_output.data.local_video_path)
+
+            if local_path.exists():
+                # Generate a unique key for the video
+                video_id = uuid.uuid4().hex[:12]
+                ext = local_path.suffix or ".mp4"
+                dest_key = f"{video_id}{ext}"
+
+                # Copy to R2 mounted volume
+                _, key = R2Utils.cp(local_path, dest_key, EphemeralCadence.WEEKLY)
+
+                # Generate presigned URL (valid for 7 days)
+                presigned_url = R2Utils.gen_presigned_url(key, expires_in=7 * 24 * 3600)
+
+                # Update the agent output with the R2 URL
+                agent_output = AgentVideoGenOutput(
+                    status="success",
+                    data=AgentVideoGenSuccessOut(
+                        local_video_path=str(local_path),
+                        video_url=presigned_url,
+                        summary=agent_output.data.summary,
+                    ),
+                )
+
+                logger.info(
+                    "agent_video uploaded to R2",
+                    extra={"key": key, "local_path": str(local_path)},
+                )
 
         logger.info(
             "agent_video succeeded",

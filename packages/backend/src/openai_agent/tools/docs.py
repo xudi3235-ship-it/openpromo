@@ -127,9 +127,6 @@ class StaticPrompts:
         if cache_path.exists():
             try:
                 content = cache_path.read_text(encoding="utf-8")
-                print(
-                    f"Loaded cached content from {cache_path}, length: {len(content)}"
-                )
                 return content
             except Exception as e:
                 print(f"Failed to read cache {cache_path}: {e}, fetching from URL")

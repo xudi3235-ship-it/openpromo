@@ -33,7 +33,12 @@ def to_img_inputs(img_paths: list[str]) -> list[ResponseInputImageParam]:
 
 
 def download_image(url: str, save_path: str) -> None:
+    import os
+
     import requests
+
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     response = requests.get(url)
     response.raise_for_status()  # Raise an error for bad responses

@@ -39,6 +39,9 @@ Some of the shared/common rules apply to all types, e.g. strong hook, clear valu
 
 
 class AgentVideoGenSuccessOut(BaseModel):
+    local_video_path: str = Field(
+        ..., description="The local file path of the generated video."
+    )
     video_url: str = Field(..., description="The URL of the generated video.")
     summary: str = Field(..., description="A brief summary of the generated video.")
 

@@ -9,6 +9,7 @@ Test with:
         -d '{"product": "test", "product_imgs": [], "avatar_imgs": [], "business": "test", "user_message": "hello", "max_turns": 10}'
 """
 
+import logging
 from typing import Literal, override
 
 import modal
@@ -94,6 +95,9 @@ def _build_agent_video_gen_output(
     return AgentVideoGenOutput(status=AGENT_OUTPUT_STATUS_ERROR)
 
 
+logger = logging.getLogger(__name__)
+
+
 class JobsServiceImpl(JobsService):
     """Implementation of the JobsService RPC service."""
 
@@ -163,6 +167,7 @@ class JobsServiceImpl(JobsService):
         """Get the result of a submitted job."""
         # Parse the call_id
         fn_str, _, call_id = request.call_id.partition(":")
+        logger.debug(f"Parsing call_id: fn_str={fn_str}, call_id={call_id}")
         fn_enum = (
             JOB_FUNCTION_EDIT_VIDEO
             if fn_str == "edit_video"
