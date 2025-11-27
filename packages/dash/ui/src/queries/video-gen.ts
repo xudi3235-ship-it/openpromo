@@ -1,8 +1,4 @@
-import {
-  type UseQueryOptions,
-  useMutation,
-  useQuery,
-} from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { orpc } from "@/lib/orpc-client";
@@ -11,29 +7,36 @@ import type {
   VideoGenRouterOutputs,
 } from "../../../worker/src/orpc/routes/video-gen";
 
-export type VideoGenSubmitInput = Omit<
-  VideoGenRouterInputs["submit"],
+// ============ Workflow-based video generation ============
+
+export type VideoGenStartInput = Omit<
+  VideoGenRouterInputs["start"],
   "workspaceId" | "workspaceSlug"
 >;
-export type VideoGenSubmitResponse = VideoGenRouterOutputs["submit"];
+export type VideoGenStartResponse = VideoGenRouterOutputs["start"];
 
-export type VideoGenStatusInput = Omit<
-  VideoGenRouterInputs["status"],
+export type VideoGenGetInput = Omit<
+  VideoGenRouterInputs["get"],
   "workspaceId" | "workspaceSlug"
 >;
-export type VideoGenStatusResponse = VideoGenRouterOutputs["status"];
+export type VideoGenGetResponse = VideoGenRouterOutputs["get"];
 
-export const useVideoGenSubmitMutation = (
+/**
+ * Hook to start a video generation workflow.
+ * Creates a generation record and kicks off the Cloudflare Workflow.
+ * Status updates are received via WebSocket events.
+ */
+export const useVideoGenStartMutation = (
   onSuccess?: (
-    data: VideoGenSubmitResponse,
-    variables: VideoGenSubmitInput,
+    data: VideoGenStartResponse,
+    variables: VideoGenStartInput,
   ) => void,
 ) => {
   const { workspace } = useWorkspace();
 
-  return useMutation<VideoGenSubmitResponse, Error, VideoGenSubmitInput>({
+  return useMutation<VideoGenStartResponse, Error, VideoGenStartInput>({
     mutationFn: async (variables) =>
-      orpc.videoGen.submit.call({
+      orpc.videoGen.start.call({
         ...variables,
         workspaceSlug: workspace.slug,
       }),
@@ -44,32 +47,5 @@ export const useVideoGenSubmitMutation = (
     onError: (error) => {
       toast.error(error.message || "Failed to start video generation");
     },
-  });
-};
-
-type StatusQueryOptions = Pick<
-  UseQueryOptions<VideoGenStatusResponse, Error>,
-  "enabled" | "refetchInterval"
->;
-
-export const useVideoGenStatusQuery = (
-  input: VideoGenStatusInput | null,
-  options?: StatusQueryOptions,
-) => {
-  const { workspace } = useWorkspace();
-
-  const queryOptions = orpc.videoGen.status.queryOptions({
-    input: {
-      workspaceSlug: workspace.slug,
-      callId: input?.callId ?? "",
-    },
-  });
-
-  return useQuery({
-    ...queryOptions,
-    enabled:
-      Boolean(input?.callId) &&
-      (options?.enabled ?? queryOptions.enabled ?? true),
-    refetchInterval: options?.refetchInterval,
   });
 };

@@ -1,14 +1,9 @@
 // Use orval generated client and Zod schemas
 
+import { EntVideoGeneration } from "@core/domain/video-generation";
 import { Actor } from "@core/helpers/actor";
-import { jobsClient } from "@core/rpc";
+import { Binding } from "@core/helpers/api-env";
 import type { InferRouterInputs, InferRouterOutputs } from "@orpc/server";
-import {
-  AgentOutputStatus,
-  type AgentVideoGenOutput,
-  JobFunction,
-  JobStatus,
-} from "@shared/gen/jobs/v1/jobs_pb";
 import * as z from "zod";
 import { orpcBuilder } from "../context";
 import { withWorkspaceRole } from "../middleware";
@@ -17,134 +12,93 @@ import {
   workspaceRoleMappers,
 } from "../shared/workspace-helpers";
 
-const DEFAULT_MAX_TURNS = 100;
+// ============ Workflow-based video generation ============
 
-const submitVideoJobInput = createWorkspaceInputSchema(
+const startVideoGenInput = createWorkspaceInputSchema(
   z.object({
-    product: z.string().min(1, "Product context is required"),
+    productId: z.string().optional(),
+    prompt: z.string().min(1, "Prompt is required"),
     productImages: z
       .array(z.string().url("Product image must be a valid URL"))
       .min(1, "Provide at least one product image"),
     avatarImages: z
       .array(z.string().url("Avatar image must be a valid URL"))
       .default([]),
-    business: z.string().min(1, "Business context is required"),
-    userMessage: z.string().min(1, "Please provide generation instructions"),
-    maxTurns: z.number().int().min(1).max(200).default(DEFAULT_MAX_TURNS),
-    jobId: z.string().optional(),
+    styleComponentId: z.string().optional(),
   }),
 );
 
-const pollVideoJobInput = createWorkspaceInputSchema(
-  z.object({
-    callId: z.string().min(1, "callId is required"),
-  }),
-);
-
-// Map video gen output to a clean response shape
-const mapVideoGenOutput = (out: AgentVideoGenOutput | undefined) => {
-  if (!out) {
-    return null;
-  }
-
-  const base = {
-    status: out.status,
-    statusLabel: AgentOutputStatus[out.status],
-  };
-
-  if (out.data.case === "success") {
-    return {
-      ...base,
-      kind: "success" as const,
-      videoUrl: out.data.value.videoUrl,
-      summary: out.data.value.summary,
-    };
-  }
-
-  if (out.data.case === "error") {
-    return {
-      ...base,
-      kind: "error" as const,
-      error: {
-        message: out.data.value.errorMessage,
-        type: out.data.value.errorType,
-      },
-    };
-  }
-
-  return { ...base, kind: "unknown" as const };
-};
-
-export const submitVideoJob = orpcBuilder
-  .input(submitVideoJobInput)
+/**
+ * Start a video generation workflow.
+ * Creates a generation record and kicks off the Cloudflare Workflow.
+ */
+export const startVideoGeneration = orpcBuilder
+  .input(startVideoGenInput)
   .use(withWorkspaceRole, workspaceRoleMappers.editor)
   .handler(async ({ input }) => {
-    const {
-      product,
-      productImages,
-      avatarImages,
-      business,
-      userMessage,
-      maxTurns,
-    } = input;
+    const { productId, prompt, productImages, avatarImages, styleComponentId } =
+      input;
 
-    const workspaceId = Actor.workspaceID();
-
-    const response = await jobsClient.submitAgentVideoJob({
-      product,
-      productImgs: productImages,
-      avatarImgs: avatarImages ?? [],
-      business,
-      userMessage,
-      maxTurns,
-      workspaceId,
+    // Create the generation record
+    const generation = await EntVideoGeneration.create({
+      state: "not_started",
+      productId: productId ?? null,
+      styleComponentId: styleComponentId ?? null,
+      metadata: {
+        prompt,
+        productImages,
+        avatarImages: avatarImages ?? [],
+      },
     });
 
+    // Kick off the workflow
+    const actor = Actor.assert("workspace_user");
+    await Binding.use().VideoGenerationWorkflow.create({
+      params: {
+        actor,
+        generationId: generation.data.id,
+      },
+    });
+
+    // Dispatch initial event
+    await generation.dispatchUpdateEvent();
+
     return {
-      callId: response.callId,
+      generationId: generation.data.id,
+      state: generation.data.state,
+      generation: generation.toJSON(),
     };
   });
 
-export const getVideoJobResult = orpcBuilder
-  .input(pollVideoJobInput)
-  .use(withWorkspaceRole, workspaceRoleMappers.editor)
+const getVideoGenInput = createWorkspaceInputSchema(
+  z.object({
+    generationId: z.string().min(1, "generationId is required"),
+  }),
+);
+
+/**
+ * Get the status of a video generation.
+ */
+export const getVideoGeneration = orpcBuilder
+  .input(getVideoGenInput)
+  .use(withWorkspaceRole, workspaceRoleMappers.viewer)
   .handler(async ({ input }) => {
-    const { callId } = input;
+    const { generationId } = input;
 
-    const response = await jobsClient.getJobResult({ callId });
-    console.log("Video job result response:", response);
-
-    const base = {
-      callId,
-      fn: response.fn,
-      fnLabel: JobFunction[response.fn],
-      status: response.status,
-      statusLabel: JobStatus[response.status],
-      error: response.error ?? null,
-    };
-
-    // Job still pending - no result yet
-    if (response.status === JobStatus.PENDING) {
-      return { ...base, videoGen: null };
-    }
-
-    // Job completed but wrong result type (e.g. edit_result instead of video_gen_result)
-    if (response.result.case !== "videoGenResult") {
-      console.warn(
-        `Expected videoGenResult but got case=${response.result.case}`,
-      );
-      return { ...base, videoGen: null };
-    }
+    const generation = await EntVideoGeneration.fromID(generationId);
 
     return {
-      ...base,
-      videoGen: mapVideoGenOutput(response.result.value.out),
+      generationId: generation.data.id,
+      state: generation.data.state,
+      stateMessage: generation.data.stateMessage,
+      outputVideoUrl: generation.data.outputVideoUrl,
+      generation: generation.toJSON(),
     };
   });
 
 export const videoGenRouter = {
-  submit: submitVideoJob,
-  status: getVideoJobResult,
+  start: startVideoGeneration,
+  get: getVideoGeneration,
 };
 
 export type VideoGenRouterOutputs = InferRouterOutputs<typeof videoGenRouter>;

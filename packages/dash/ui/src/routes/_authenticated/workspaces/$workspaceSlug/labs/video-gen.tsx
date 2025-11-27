@@ -17,7 +17,10 @@ import { Slider } from "@openpromo/ui/components/slider";
 import { Spinner } from "@openpromo/ui/components/spinner";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { cn } from "@openpromo/ui/lib/utils";
-import { JobStatus } from "@shared/gen/jobs/v1/jobs_pb";
+import {
+  type VideoGenerationUpdatedEvent,
+  WorkspaceEventType,
+} from "@shared/workspace";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -25,19 +28,15 @@ import {
   Film,
   Link2,
   PlayCircle,
-  RefreshCw,
   Sparkles,
   VideoIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useWorkspaceEvents } from "@/hooks/useWorkspaceEvents";
 import { useProductListQuery } from "@/queries/product";
-import type { VideoGenStatusResponse } from "@/queries/video-gen";
-import {
-  useVideoGenStatusQuery,
-  useVideoGenSubmitMutation,
-} from "@/queries/video-gen";
+import { useVideoGenStartMutation } from "@/queries/video-gen";
 
 const DEFAULT_MAX_TURNS = 60;
 
@@ -59,9 +58,42 @@ function VideoGenerationLab() {
   );
   const [customProductImageInput, setCustomProductImageInput] = useState("");
   const [avatarImageInput, setAvatarImageInput] = useState("");
-  const [activeCallId, setActiveCallId] = useState<string | null>(null);
+  const [activeGenerationId, setActiveGenerationId] = useState<string | null>(
+    null,
+  );
+  const [generationState, setGenerationState] = useState<{
+    state: string;
+    message?: string;
+    outputUrl?: string;
+  } | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const pollingStartRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+
+  // Handle video generation WebSocket events
+  const handleVideoGenEvent = useCallback(
+    (event: VideoGenerationUpdatedEvent) => {
+      if (event.jobId !== activeGenerationId) return;
+
+      setGenerationState({
+        state: event.state,
+        message: event.message,
+        outputUrl: event.outputUrl,
+      });
+
+      if (event.state === "completed") {
+        toast.success("Video generation complete!");
+      } else if (event.state === "failed") {
+        toast.error(event.message ?? "Video generation failed");
+      }
+    },
+    [activeGenerationId],
+  );
+
+  useWorkspaceEvents(workspace.slug, {
+    handlers: {
+      [WorkspaceEventType.VideoGenerationUpdated]: handleVideoGenEvent,
+    },
+  });
 
   const defaultBusinessContext = workspace.name ?? workspace.slug ?? "";
 
@@ -143,31 +175,20 @@ function VideoGenerationLab() {
     userMessage.trim().length > 0 &&
     productImagesPayload.length > 0;
 
-  const submitMutation = useVideoGenSubmitMutation((data) => {
-    setActiveCallId(data.callId);
-    pollingStartRef.current = Date.now();
+  const startMutation = useVideoGenStartMutation((data) => {
+    setActiveGenerationId(data.generationId);
+    startTimeRef.current = Date.now();
     setElapsedSeconds(0);
   });
 
-  const statusQuery = useVideoGenStatusQuery(
-    activeCallId ? { callId: activeCallId } : null,
-    {
-      enabled: Boolean(activeCallId),
-      refetchInterval: (query) => {
-        if (!activeCallId) return false;
-        const data = query.state.data as VideoGenStatusResponse | undefined;
-        return data?.status === JobStatus.PENDING ? 5_000 : false;
-      },
-    },
-  );
+  const isProcessing =
+    generationState?.state === "processing" ||
+    generationState?.state === "not_started";
 
-  const statusData = statusQuery.data;
-  const isPolling = statusData?.status === JobStatus.PENDING;
-
-  // Update elapsed time while polling
+  // Update elapsed time while processing
   useEffect(() => {
-    const startTime = pollingStartRef.current;
-    if (!isPolling || !startTime) return;
+    const startTime = startTimeRef.current;
+    if (!isProcessing || !startTime) return;
 
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
@@ -175,37 +196,32 @@ function VideoGenerationLab() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isPolling]);
+  }, [isProcessing]);
 
-  const agentResult = statusData?.videoGen;
-  const videoUrl =
-    agentResult?.kind === "success" ? agentResult.videoUrl : null;
-  const agentSummary =
-    agentResult?.kind === "success" ? agentResult.summary : null;
-  const agentError =
-    agentResult?.kind === "error" ? agentResult.error.message : null;
+  const videoUrl = generationState?.outputUrl ?? null;
+  const summary = generationState?.message ?? null;
+  const error =
+    generationState?.state === "failed" ? generationState.message : null;
 
   const resetJobState = () => {
-    setActiveCallId(null);
-    pollingStartRef.current = null;
+    setActiveGenerationId(null);
+    setGenerationState(null);
+    startTimeRef.current = null;
     setElapsedSeconds(0);
   };
 
   const handleSubmit = () => {
-    if (!canSubmit || submitMutation.isPending) {
+    if (!canSubmit || startMutation.isPending) {
       if (productImagesPayload.length === 0) {
         toast.error("Select or paste at least one product image URL");
       }
       return;
     }
 
-    submitMutation.mutate({
-      product: productContext.trim(),
-      business: businessContext.trim(),
-      userMessage: userMessage.trim(),
+    startMutation.mutate({
+      prompt: `Product: ${productContext.trim()}\n\nBusiness: ${businessContext.trim()}\n\nInstructions: ${userMessage.trim()}\n\nMax turns: ${maxTurns}`,
       productImages: productImagesPayload,
       avatarImages: avatarImageUrls,
-      maxTurns,
     });
   };
 
@@ -234,9 +250,9 @@ function VideoGenerationLab() {
               media, and custom prompts.
             </p>
           </div>
-          {activeCallId && (
+          {activeGenerationId && (
             <Badge className="bg-secondary text-secondary-foreground border border-border/70">
-              Active Call · {shortenCallId(activeCallId)}
+              Generation · {shortenId(activeGenerationId)}
             </Badge>
           )}
         </div>
@@ -427,9 +443,9 @@ function VideoGenerationLab() {
                 className="w-full"
                 size="lg"
                 onClick={handleSubmit}
-                disabled={!canSubmit || submitMutation.isPending}
+                disabled={!canSubmit || startMutation.isPending}
               >
-                {submitMutation.isPending ? (
+                {startMutation.isPending ? (
                   <Spinner className="mr-2 h-4 w-4" />
                 ) : (
                   <PlayCircle className="mr-2 h-4 w-4" />
@@ -445,24 +461,14 @@ function VideoGenerationLab() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Film className="h-4 w-4" />
-                Job status
+                Generation status
               </CardTitle>
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
                   variant="ghost"
                   className="text-xs"
-                  disabled={!activeCallId || statusQuery.isFetching}
-                  onClick={() => statusQuery.refetch()}
-                >
-                  <RefreshCw className="mr-1 h-3.5 w-3.5" />
-                  Refresh
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-xs"
-                  disabled={!activeCallId}
+                  disabled={!activeGenerationId}
                   onClick={resetJobState}
                 >
                   Clear
@@ -470,28 +476,28 @@ function VideoGenerationLab() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {!activeCallId ? (
+              {!activeGenerationId ? (
                 <p className="text-sm text-muted-foreground">
                   Run the generator to see live status and preview outputs.
                 </p>
-              ) : statusQuery.isPending ? (
+              ) : !generationState ? (
                 <div className="flex items-center gap-3 rounded-lg border p-4 text-sm">
                   <Spinner className="h-4 w-4" />
-                  Polling Modal job...
+                  Starting workflow...
                 </div>
-              ) : statusData ? (
+              ) : (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs uppercase text-muted-foreground">
-                        Status
+                        State
                       </p>
-                      <p className="text-sm font-medium">
-                        {formatEnumLabel(statusData.statusLabel)}
+                      <p className="text-sm font-medium capitalize">
+                        {generationState.state.replace(/_/g, " ")}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {isPolling && elapsedSeconds > 0 && (
+                      {isProcessing && elapsedSeconds > 0 && (
                         <span className="text-xs text-muted-foreground">
                           {formatElapsedTime(elapsedSeconds)}
                         </span>
@@ -499,57 +505,57 @@ function VideoGenerationLab() {
                       <Badge
                         className={cn(
                           "border",
-                          getJobStatusTone(statusData.status),
+                          getStateTone(generationState.state),
                         )}
                       >
-                        {statusBadgeCopy(statusData.status)}
+                        {getStateBadge(generationState.state)}
                       </Badge>
                     </div>
                   </div>
 
                   <div className="grid gap-3 rounded-lg border p-3 text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Function</span>
-                      <span className="font-medium">
-                        {formatEnumLabel(statusData.fnLabel)}
+                      <span className="text-muted-foreground">
+                        Generation ID
                       </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Call ID</span>
                       <code className="rounded bg-muted px-2 py-1 text-xs">
-                        {statusData.callId}
+                        {activeGenerationId}
                       </code>
                     </div>
+                    {generationState.message && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Message</span>
+                        <span className="text-sm">
+                          {generationState.message}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  {agentError && (
+                  {error && (
                     <div className="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
                       <AlertCircle className="h-4 w-4 text-destructive" />
                       <div>
                         <p className="font-medium text-destructive">
                           Generation failed
                         </p>
-                        <p className="text-muted-foreground">{agentError}</p>
+                        <p className="text-muted-foreground">{error}</p>
                       </div>
                     </div>
                   )}
 
-                  {agentResult && agentResult.kind === "success" && (
+                  {generationState.state === "completed" && (
                     <div className="rounded-lg border p-3 text-sm">
                       <div className="flex items-center gap-2 text-sm font-medium">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                        Agent output ready
+                        Video generation complete
                       </div>
-                      <p className="mt-2 text-muted-foreground">
-                        {agentSummary || "Video generated successfully."}
-                      </p>
+                      {summary && (
+                        <p className="mt-2 text-muted-foreground">{summary}</p>
+                      )}
                     </div>
                   )}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Unable to fetch status.
-                </p>
               )}
             </CardContent>
           </Card>
@@ -573,10 +579,8 @@ function VideoGenerationLab() {
                     Your browser does not support embedded videos.
                   </video>
                 </div>
-                {agentSummary && (
-                  <p className="text-sm text-muted-foreground">
-                    {agentSummary}
-                  </p>
+                {summary && (
+                  <p className="text-sm text-muted-foreground">{summary}</p>
                 )}
                 <Button variant="outline" size="sm" asChild className="w-full">
                   <a href={videoUrl} target="_blank" rel="noreferrer">
@@ -592,43 +596,36 @@ function VideoGenerationLab() {
   );
 }
 
-function shortenCallId(callId: string) {
-  if (callId.length <= 24) return callId;
-  return `${callId.slice(0, 12)}…${callId.slice(-8)}`;
+function shortenId(id: string) {
+  if (id.length <= 24) return id;
+  return `${id.slice(0, 12)}…${id.slice(-8)}`;
 }
 
-function formatEnumLabel(label?: string | null) {
-  if (!label) return "Unknown";
-  return label
-    .replace(/(JOB_STATUS_|JOB_FUNCTION_|AGENT_OUTPUT_STATUS_)/g, "")
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/(?:^|\s)\w/g, (segment) => segment.toUpperCase());
-}
-
-function getJobStatusTone(status?: JobStatus) {
-  switch (status) {
-    case JobStatus.SUCCEEDED:
+function getStateTone(state: string) {
+  switch (state) {
+    case "completed":
       return "bg-emerald-500/15 text-emerald-700 border-emerald-200";
-    case JobStatus.FAILED:
+    case "failed":
       return "bg-destructive/10 text-destructive border-destructive/30";
-    case JobStatus.PENDING:
+    case "processing":
       return "bg-amber-500/15 text-amber-700 border-amber-200";
     default:
       return "bg-muted text-muted-foreground border-border";
   }
 }
 
-function statusBadgeCopy(status?: JobStatus) {
-  switch (status) {
-    case JobStatus.SUCCEEDED:
-      return "Succeeded";
-    case JobStatus.FAILED:
+function getStateBadge(state: string) {
+  switch (state) {
+    case "completed":
+      return "Completed";
+    case "failed":
       return "Failed";
-    case JobStatus.PENDING:
-      return "In progress";
+    case "processing":
+      return "Processing";
+    case "not_started":
+      return "Starting";
     default:
-      return "Queued";
+      return "Unknown";
   }
 }
 
