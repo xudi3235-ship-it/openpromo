@@ -106,44 +106,58 @@ export class VideoGenerationWorkflow extends CoreWorkflowEntrypoint<VideoGenerat
               attempt: pollAttempt,
               state: response.state,
             });
-            return { done: false, response };
+            return { done: false as const };
           }
 
-          return { done: true, response };
+          // Extract only serializable fields (avoid BigInt from protobuf)
+          const payload = response.payload;
+          return {
+            done: true as const,
+            state: response.state,
+            errorMessage: response.errorMessage,
+            errorCode: response.errorCode,
+            payload:
+              payload.case === "agentVideo"
+                ? {
+                    case: "agentVideo" as const,
+                    videoUrl: payload.value.videoUrl,
+                    summary: payload.value.summary,
+                  }
+                : { case: payload.case as string },
+          };
         });
 
         if (result.done) {
           jobCompleted = true;
-          const response = result.response;
 
           await step.do("handle-result", async () => {
             const g = await EntVideoGeneration.fromID(generationId);
 
             const failureMessage =
-              response.errorMessage ?? response.errorCode ?? "Job failed";
+              result.errorMessage ?? result.errorCode ?? "Job failed";
 
-            if (response.state === JobState.FAILED) {
+            if (result.state === JobState.FAILED) {
               await g.setState("failed", failureMessage);
               await g.dispatchUpdateEvent();
               return;
             }
 
-            if (response.state !== JobState.SUCCEEDED) {
+            if (result.state !== JobState.SUCCEEDED) {
               await g.setState(
                 "failed",
-                `Unexpected job state: ${response.state}`,
+                `Unexpected job state: ${result.state}`,
               );
               await g.dispatchUpdateEvent();
               return;
             }
 
-            if (response.payload.case !== "agentVideo") {
+            if (result.payload.case !== "agentVideo") {
               await g.setState("failed", "Unexpected result payload");
               await g.dispatchUpdateEvent();
               return;
             }
 
-            const out = response.payload.value;
+            const out = result.payload;
 
             await g.update({
               state: "completed",
