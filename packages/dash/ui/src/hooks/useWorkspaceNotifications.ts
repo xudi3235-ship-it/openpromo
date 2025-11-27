@@ -32,20 +32,39 @@ type UseWorkspaceNotificationsResult = {
   isFetching: boolean;
 };
 
+// Reconnection config
+const INITIAL_RECONNECT_DELAY_MS = 1000;
+const MAX_RECONNECT_DELAY_MS = 30000;
+const RECONNECT_BACKOFF_MULTIPLIER = 2;
+const MAX_RECONNECT_ATTEMPTS = 10;
+
 export function useWorkspaceNotifications(
   workspaceSlug: string | undefined,
   options: UseWorkspaceNotificationsOptions = {},
 ): UseWorkspaceNotificationsResult {
-  const {
-    autoToast = true,
-    onNotification,
-    onEvent,
-    onUnparsedMessage,
-  } = options;
+  const { autoToast = true } = options;
+
+  // Store callbacks in refs to avoid re-triggering the effect
+  const onNotificationRef = useRef(options.onNotification);
+  const onEventRef = useRef(options.onEvent);
+  const onUnparsedMessageRef = useRef(options.onUnparsedMessage);
+
+  // Keep refs up to date
+  useEffect(() => {
+    onNotificationRef.current = options.onNotification;
+    onEventRef.current = options.onEvent;
+    onUnparsedMessageRef.current = options.onUnparsedMessage;
+  }, [options.onNotification, options.onEvent, options.onUnparsedMessage]);
 
   const socketRef = useRef<WebSocket | null>(null);
   const listenersRef = useRef<Set<MessageListener>>(new Set());
-  const [status, setStatus] = useState<ConnectionStatus>("connecting");
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const reconnectAttemptRef = useRef(0);
+  const isIntentionalCloseRef = useRef(false);
+
+  const [status, setStatus] = useState<ConnectionStatus>("closed");
   const [notifications, setNotifications] = useState<
     WorkspaceNotificationEnvelope[]
   >([]);
@@ -73,92 +92,207 @@ export function useWorkspaceNotifications(
     setNotifications([]);
   }, []);
 
+  // Reconnection logic with exponential backoff
+  const connectRef = useRef<((slug: string) => void) | null>(null);
+
+  const scheduleReconnect = useCallback((slug: string) => {
+    if (reconnectAttemptRef.current >= MAX_RECONNECT_ATTEMPTS) {
+      console.warn(
+        `[WS] Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Giving up.`,
+      );
+      setStatus("error");
+      return;
+    }
+
+    const delay = Math.min(
+      INITIAL_RECONNECT_DELAY_MS *
+        RECONNECT_BACKOFF_MULTIPLIER ** reconnectAttemptRef.current,
+      MAX_RECONNECT_DELAY_MS,
+    );
+
+    console.info(
+      `[WS] Scheduling reconnect attempt ${reconnectAttemptRef.current + 1} in ${delay}ms`,
+    );
+
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectAttemptRef.current += 1;
+      connectRef.current?.(slug);
+    }, delay);
+  }, []);
+
+  const connect = useCallback(
+    (slug: string) => {
+      // Cleanup existing socket
+      if (socketRef.current) {
+        isIntentionalCloseRef.current = true;
+        socketRef.current.close();
+        socketRef.current = null;
+      }
+
+      setStatus("connecting");
+      const socket = new WebSocket(`/api/workspaces/${slug}/pusher`);
+      socketRef.current = socket;
+      isIntentionalCloseRef.current = false;
+
+      socket.onopen = () => {
+        console.info("[WS] Connected");
+        setStatus("open");
+        reconnectAttemptRef.current = 0; // Reset on successful connection
+      };
+
+      socket.onclose = (event) => {
+        setStatus("closed");
+        socketRef.current = null;
+
+        // Only reconnect if it wasn't intentional (cleanup or user action)
+        if (!isIntentionalCloseRef.current) {
+          console.info(
+            `[WS] Connection closed (code: ${event.code}, reason: ${event.reason || "none"}). Will attempt reconnect.`,
+          );
+          scheduleReconnect(slug);
+        }
+      };
+
+      socket.onerror = (error) => {
+        console.error("[WS] Connection error:", error);
+        // Don't set status to error here - onclose will be called next
+        // and will handle reconnection
+      };
+
+      socket.onmessage = (event) => {
+        const receivedAt = Date.now();
+        let parsed: unknown;
+
+        try {
+          parsed = JSON.parse(event.data) as unknown;
+        } catch (_error) {
+          // Not JSON, treat as raw message
+          for (const listener of listenersRef.current) {
+            listener(event.data);
+          }
+          onUnparsedMessageRef.current?.(event.data);
+          return;
+        }
+
+        // Notify all raw listeners first
+        for (const listener of listenersRef.current) {
+          listener(parsed);
+        }
+
+        // Try to parse as WorkspaceNotificationEnvelope
+        const notificationResult =
+          WorkspaceNotificationEnvelopeSchema.safeParse(parsed);
+
+        if (notificationResult.success) {
+          const normalized: WorkspaceNotificationEnvelope = {
+            ...notificationResult.data,
+            timestamp: notificationResult.data.timestamp ?? receivedAt,
+          };
+
+          void invalidateNotifications();
+
+          if (autoToast) {
+            showNotificationToast(normalized.notification);
+          }
+
+          onNotificationRef.current?.(normalized);
+          return;
+        }
+
+        // Try to parse as WorkspaceEvent
+        const eventResult = WorkspaceEventSchema.safeParse(parsed);
+
+        if (eventResult.success) {
+          onEventRef.current?.(eventResult.data);
+          return;
+        }
+
+        // Unparsed message
+        onUnparsedMessageRef.current?.(parsed);
+      };
+    },
+    [
+      autoToast,
+      showNotificationToast,
+      invalidateNotifications,
+      scheduleReconnect,
+    ],
+  );
+
+  // Keep connectRef up to date
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
+
+  // Reconnect when tab becomes visible again
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (
+        document.visibilityState === "visible" &&
+        workspaceSlug &&
+        socketRef.current?.readyState !== WebSocket.OPEN &&
+        socketRef.current?.readyState !== WebSocket.CONNECTING
+      ) {
+        console.info("[WS] Tab became visible, reconnecting...");
+        reconnectAttemptRef.current = 0; // Reset backoff on visibility change
+        connect(workspaceSlug);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [workspaceSlug, connect]);
+
+  // Reconnect when coming back online
+  useEffect(() => {
+    const handleOnline = () => {
+      if (
+        workspaceSlug &&
+        socketRef.current?.readyState !== WebSocket.OPEN &&
+        socketRef.current?.readyState !== WebSocket.CONNECTING
+      ) {
+        console.info("[WS] Network back online, reconnecting...");
+        reconnectAttemptRef.current = 0; // Reset backoff
+        connect(workspaceSlug);
+      }
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [workspaceSlug, connect]);
+
+  // Main connection effect
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!workspaceSlug) return;
-
-    setStatus("connecting");
-    const socket = new WebSocket(`/api/workspaces/${workspaceSlug}/pusher`);
-    socketRef.current = socket;
-
-    socket.onopen = () => {
-      setStatus("open");
-    };
-
-    socket.onclose = () => {
+    if (!workspaceSlug) {
       setStatus("closed");
-    };
+      return;
+    }
 
-    socket.onerror = () => {
-      setStatus("error");
-    };
-
-    socket.onmessage = (event) => {
-      const receivedAt = Date.now();
-      let parsed: unknown;
-
-      try {
-        parsed = JSON.parse(event.data) as unknown;
-      } catch (_error) {
-        // Not JSON, treat as raw message
-        for (const listener of listenersRef.current) {
-          listener(event.data);
-        }
-        onUnparsedMessage?.(event.data);
-        return;
-      }
-
-      // Notify all raw listeners first
-      for (const listener of listenersRef.current) {
-        listener(parsed);
-      }
-
-      // Try to parse as WorkspaceNotificationEnvelope
-      const notificationResult =
-        WorkspaceNotificationEnvelopeSchema.safeParse(parsed);
-
-      if (notificationResult.success) {
-        const normalized: WorkspaceNotificationEnvelope = {
-          ...notificationResult.data,
-          timestamp: notificationResult.data.timestamp ?? receivedAt,
-        };
-
-        void invalidateNotifications();
-
-        if (autoToast) {
-          showNotificationToast(normalized.notification);
-        }
-
-        onNotification?.(normalized);
-        return;
-      }
-
-      // Try to parse as WorkspaceEvent
-      const eventResult = WorkspaceEventSchema.safeParse(parsed);
-
-      if (eventResult.success) {
-        onEvent?.(eventResult.data);
-        return;
-      }
-
-      // Unparsed message
-      onUnparsedMessage?.(parsed);
-    };
+    connect(workspaceSlug);
 
     return () => {
-      setStatus("closing");
-      socket.close();
-      socketRef.current = null;
+      // Cleanup
+      isIntentionalCloseRef.current = true;
+
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+
+      if (socketRef.current) {
+        setStatus("closing");
+        socketRef.current.close();
+        socketRef.current = null;
+      }
+
+      reconnectAttemptRef.current = 0;
     };
-  }, [
-    workspaceSlug,
-    autoToast,
-    onNotification,
-    onEvent,
-    onUnparsedMessage,
-    showNotificationToast,
-    invalidateNotifications,
-  ]);
+  }, [workspaceSlug, connect]);
 
   const subscribe = useCallback((listener: MessageListener) => {
     listenersRef.current.add(listener);
