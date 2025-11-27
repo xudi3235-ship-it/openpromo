@@ -9,6 +9,7 @@ from src.openai_agent.tools import run_gemini_nano_banana, shell_tool
 from src.openai_agent.tools.constants import PRIMARY_GOAL
 from src.openai_agent.tools.docs import StaticPrompts
 from src.openai_agent.tools.evaluation import evaluate_image
+from src.openai_agent.tools.sora2_storyboard import sora2_storyboard_generate
 from src.openai_agent.tools.veo31.tools import (
     veo31_reference_images_to_video,
     veo31_text_to_video,
@@ -183,6 +184,8 @@ def create_main_agent() -> Agent[RuntimeContext]:
             veo31_text_to_video,
             veo31_reference_images_to_video,
             veo31_video_extension,
+            # sora2
+            sora2_storyboard_generate,
         ],
     )
     return agent

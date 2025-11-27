@@ -23,7 +23,8 @@ async def evaluate_image(
     """
     try:
         resp = oai().responses.parse(
-            model="gpt-5.1",
+            # need something cheap & fast here
+            model="gpt-5-mini",
             reasoning={"effort": "none"},
             input=[
                 {
