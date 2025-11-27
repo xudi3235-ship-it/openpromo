@@ -1,5 +1,6 @@
 import {
   Calendar,
+  Film,
   Home,
   Image,
   Inbox,
@@ -114,6 +115,11 @@ export const useSidebarData = (): SidebarData => {
                 title: "Image Gen",
                 url: "/workspaces/$workspaceSlug/labs/image-gen",
                 icon: Image,
+              },
+              {
+                title: "Video Gen",
+                url: "/workspaces/$workspaceSlug/labs/video-gen",
+                icon: Film,
               },
               {
                 title: "API Testing",

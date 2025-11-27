@@ -1,13 +1,22 @@
 from pathlib import Path
-from attr import dataclass
-from fastapi import requests
+from typing import Any
 
-from src.routes.schemas import VideoEditRequest, VideoEditResponse
+import modal
+from attr import dataclass
+
 from src.common import s3_client, url_to_temp_path
 from src.infra import image, secret, vols
-import modal
+from src.logger import logger
+from src.routes.schemas import (
+    VideoEditRequest,
+    VideoEditResponse,
+    VideoGenFailResponse,
+    VideoGenRequest,
+    VideoGenResponse,
+    VideoGenSuccessResponse,
+)
 
-app = modal.App("video-backend", image=image, secrets=[secret], volumes=vols)
+app = modal.App("video-backend", image=image, secrets=[secret], volumes=vols)  # pyright: ignore[reportArgumentType]
 
 
 def to_int(v):
@@ -31,13 +40,13 @@ class VideoMetadata:
     duration: float | None
     bit_rate: int | None
     codec_name: str | None
-    raw: dict
+    raw: dict[str, Any]
     fps: float | None = None
 
 
 async def get_video_meta(path: Path) -> VideoMetadata:
-    import subprocess
     import json
+    import subprocess
 
     result = subprocess.run(
         [
@@ -171,13 +180,12 @@ class IgReelTranscoder:
             subprocess.run(cmd, capture_output=True, text=True, check=True)
         except subprocess.CalledProcessError as exc:
             output_path.unlink(missing_ok=True)
-            stderr = exc.stderr.strip() if exc.stderr else exc.stdout.strip()
+            stderr = exc.stderr.strip() if exc.stderr else exc.stdout.strip()  # pyright: ignore[reportAny]
             raise RuntimeError(f"ffmpeg failed: {stderr}") from exc
 
         self.path = output_path
         self.meta = await get_video_meta(output_path)
         return output_path
-
 
     def needs_transcode(self) -> bool:
         meta = self.meta
@@ -200,9 +208,10 @@ async def transcode_video_for_ig_reel(path: Path, *, max_width: int = 1080) -> P
 @app.function()
 async def edit_video(req: VideoEditRequest) -> VideoEditResponse:
     # 1. download video
-    import json
     import subprocess
     import tempfile
+
+    import requests
 
     res = requests.get(req.input_url)
     res.raise_for_status()
@@ -437,3 +446,62 @@ class FbReelTranscoder:
             return True
 
         return False
+
+
+@app.function()
+async def agent_video(req: VideoGenRequest) -> VideoGenResponse:
+    """
+    Modal function for async video generation using the AI agent.
+
+    This is spawned by the RPC service and runs asynchronously.
+    """
+    from agents import Runner
+
+    from src.openai_agent.agents.main_agent import AgentVideoGenOutput, main_agent
+    from src.openai_agent.hooks import ExampleHooks
+
+    logger.info(
+        "agent_video started",
+        extra={
+            "product": req.product,
+            "product_imgs": req.product_imgs,
+            "avatar_imgs": req.avatar_imgs,
+            "business": req.business,
+            "user_message": req.user_message,
+            "max_turns": req.max_turns,
+        },
+    )
+
+    try:
+        # Run the agent
+        result = await Runner.run(
+            main_agent,
+            max_turns=req.max_turns,
+            hooks=ExampleHooks(),
+            input=req.to_agent_input(),
+            context=req.to_agent_runtime_context(),
+        )
+        agent_output = result.final_output_as(AgentVideoGenOutput)
+
+        logger.info(
+            "agent_video succeeded",
+            extra={
+                "status": agent_output.status,
+            },
+        )
+
+        return VideoGenResponse(
+            data=VideoGenSuccessResponse(
+                status="success",
+                out=agent_output,
+            )
+        )
+
+    except Exception as e:
+        logger.exception("agent_video failed")
+        return VideoGenResponse(
+            data=VideoGenFailResponse(
+                status="failed",
+                error=str(e),
+            )
+        )
