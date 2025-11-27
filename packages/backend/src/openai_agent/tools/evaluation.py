@@ -1,9 +1,15 @@
 from agents import function_tool
+from pydantic import BaseModel, Field
 
 from src.core.shared import oai
 from src.openai_agent.helpers import to_img_inputs
 from src.openai_agent.tools.constants import PRIMARY_GOAL
 from src.openai_agent.tools.docs import StaticPrompts
+
+
+class EvaluateImageOutput(BaseModel):
+    approved: bool = Field(..., description="Whether the images are approved.")
+    feedback: str = Field(..., description="Feedback    on the images.")
 
 
 @function_tool
@@ -16,8 +22,8 @@ async def evaluate_image(
         image_paths: List of paths to the images to evaluate.
     """
     try:
-        resp = oai().responses.create(
-            model="gpt-5.1-mini",
+        resp = oai().responses.parse(
+            model="gpt-5.1",
             reasoning={"effort": "none"},
             input=[
                 {
@@ -32,6 +38,7 @@ async def evaluate_image(
                     * Focus on: analyzing the generated images, understanding product, selling points, and target audience.
                     * Evaluate how well the images align with the product, reference images, and overall goal.
                     * consider aspects like visual appeal, clarity of product representation, creativity, and suitability for social media platforms.
+                    * consider aspects like distortion of body, unwanted multiple weird fingers, etc.
                     * if good enough, then approve with a single sentence, else Provide constructive feedback *ONLY what could be improved to better meet the primary in concise 2-sentence acitonable terms.
                     """,
                 },
@@ -42,8 +49,9 @@ async def evaluate_image(
                     ],
                 },
             ],
+            text_format=EvaluateImageOutput,
         )
-        feedback = resp.output_text
+        feedback = resp.output_parsed
         print(f"Image evaluation feedback: {feedback}")
         return feedback
     except Exception as e:
