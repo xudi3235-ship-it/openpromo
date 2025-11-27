@@ -17,8 +17,8 @@ async def evaluate_image(
     """
     try:
         resp = oai().responses.create(
-            model="gpt-5.1",
-            reasoning={"effort": "medium"},
+            model="gpt-5.1-mini",
+            reasoning={"effort": "none"},
             input=[
                 {
                     "role": "system",

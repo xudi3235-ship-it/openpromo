@@ -6,8 +6,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "openpromo-dash",
   "main": "worker/src/index.ts",
-  // DO NOT bump this date, latest wrangler 4.37.0 +vite plugin has bug
-  "compatibility_date": "2025-10-17",
+  "compatibility_date": "2025-11-26",
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true,
@@ -54,6 +53,11 @@
       "class_name": "StyleComponentWorkflow",
       "binding": "StyleComponentWorkflow",
       "name": "StyleComponentWorkflow"
+    },
+    {
+      "class_name": "VideoGenerationWorkflow",
+      "binding": "VideoGenerationWorkflow",
+      "name": "VideoGenerationWorkflow"
     }
   ],
   "durable_objects": {
@@ -238,6 +242,11 @@
           "class_name": "StyleComponentWorkflow",
           "binding": "StyleComponentWorkflow",
           "name": "StyleComponentWorkflow"
+        },
+        {
+          "class_name": "VideoGenerationWorkflow",
+          "binding": "VideoGenerationWorkflow",
+          "name": "VideoGenerationWorkflow"
         }
       ],
       "triggers": {
@@ -333,6 +342,11 @@
           "class_name": "StyleComponentWorkflow",
           "binding": "StyleComponentWorkflow",
           "name": "StyleComponentWorkflowProd"
+        },
+        {
+          "class_name": "VideoGenerationWorkflow",
+          "binding": "VideoGenerationWorkflow",
+          "name": "VideoGenerationWorkflowProd"
         }
       ],
       "triggers": {

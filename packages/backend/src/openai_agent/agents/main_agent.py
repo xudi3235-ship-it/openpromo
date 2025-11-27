@@ -172,7 +172,7 @@ def create_main_agent() -> Agent[RuntimeContext]:
         name="Agent",
         model="gpt-5.1",
         model_settings=ModelSettings(
-            reasoning=Reasoning(effort="high"),
+            reasoning=Reasoning(effort="medium"),
             verbosity="medium",
         ),
         instructions=sys_prompt,
