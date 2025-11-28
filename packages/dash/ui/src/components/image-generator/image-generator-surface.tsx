@@ -1,16 +1,16 @@
 import { cn } from "@openpromo/ui/lib/utils";
 import type { UseMutationResult } from "@tanstack/react-query";
-import type { ImageGenListResponse } from "@/queries/image-gen";
+import { useCallback } from "react";
+import { ProductVisualsGallery } from "@/components/product-visuals/product-visuals-gallery";
+import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import type {
   ProductImageGenerateInput,
   ProductImageGenerateResponse,
 } from "@/queries/product";
-import { GeneratedImagesGallery } from "./generated-images-gallery";
+import { useProductVisualsFeedQuery } from "@/queries/product-visuals";
 import { InputsPanel } from "./inputs-panel";
 import type { ProductSelectItem } from "./product-select";
 import type { StyleGalleryItem } from "./style-gallery";
-
-type Generation = NonNullable<ImageGenListResponse["generations"]>[number];
 
 export interface ImageGeneratorSurfaceProps {
   products: ProductSelectItem[];
@@ -28,7 +28,6 @@ export interface ImageGeneratorSurfaceProps {
   onProductSearchChange: (value: string) => void;
   enableComposerActions?: boolean;
   className?: string;
-  onGenerationEditRequest?: (generation: Generation) => void;
   showGallery?: boolean;
   generationMode?: "images" | "video";
   onGenerationModeChange?: (mode: "images" | "video") => void;
@@ -45,11 +44,33 @@ export function ImageGeneratorSurface({
   onProductSearchChange,
   enableComposerActions = true,
   className,
-  onGenerationEditRequest,
   showGallery = true,
   generationMode,
   onGenerationModeChange,
 }: ImageGeneratorSurfaceProps) {
+  // Fetch product visuals feed (images + videos)
+  const {
+    data: feedData,
+    isPending: isFeedPending,
+    refetch: refetchFeed,
+  } = useProductVisualsFeedQuery({
+    page: 1,
+    pageSize: 18,
+  });
+
+  const handleFeedRefresh = useCallback(() => {
+    void refetchFeed();
+  }, [refetchFeed]);
+
+  useWorkspaceEvents({
+    handlers: {
+      "image_generation.updated": handleFeedRefresh,
+      "video_generation.updated": handleFeedRefresh,
+    },
+  });
+
+  const feedItems = feedData?.items ?? [];
+
   if (!showGallery) {
     return (
       <div className={cn("h-full", className)}>
@@ -87,14 +108,16 @@ export function ImageGeneratorSurface({
           generateMutation={generateMutation}
           productSearch={productSearch}
           onProductSearchChange={onProductSearchChange}
+          generationMode={generationMode}
+          onGenerationModeChange={onGenerationModeChange}
         />
       </div>
       <div className="min-h-0">
-        <GeneratedImagesGallery
-          generateMutation={generateMutation}
-          remainingSlots={remainingSlots}
+        <ProductVisualsGallery
+          items={feedItems}
+          isLoading={isFeedPending}
+          onRefetch={refetchFeed}
           enableComposerActions={enableComposerActions}
-          onEditGeneration={onGenerationEditRequest}
         />
       </div>
     </div>

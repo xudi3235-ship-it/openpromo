@@ -13,7 +13,7 @@ import type {
   ProductImageGenerateResponse,
 } from "@/queries/product";
 import { useProductListQuery } from "@/queries/product";
-import { useImageGeneratorStore } from "@/stores/image-generator-store";
+import { useProductVisualGeneratorStore } from "@/stores/product-visual-generator-store";
 
 interface MediaGeneratorDialogProps {
   styles: StyleGalleryItem[];
@@ -33,9 +33,17 @@ export function MediaGeneratorDialog({
   remainingSlots,
   generateMutation,
 }: MediaGeneratorDialogProps) {
-  const isOpen = useImageGeneratorStore((state) => state.isGeneratorDialogOpen);
-  const setOpen = useImageGeneratorStore(
+  const isOpen = useProductVisualGeneratorStore(
+    (state) => state.isGeneratorDialogOpen,
+  );
+  const setOpen = useProductVisualGeneratorStore(
     (state) => state.setGeneratorDialogOpen,
+  );
+  const generationType = useProductVisualGeneratorStore(
+    (state) => state.generationType,
+  );
+  const setGenerationType = useProductVisualGeneratorStore(
+    (state) => state.setGenerationType,
   );
 
   // Dialog has its own independent product search state
@@ -51,7 +59,7 @@ export function MediaGeneratorDialog({
     <Dialog open={isOpen} onOpenChange={setOpen}>
       <DialogContent className="!max-w-none w-full h-[90vh] p-0 gap-0 flex flex-col overflow-hidden sm:w-[95vw] md:w-[90vw] lg:w-[85vw] xl:w-[80vw] 2xl:w-[1200px]">
         <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
-          <DialogTitle>Create Product Image</DialogTitle>
+          <DialogTitle>Create Product Visuals</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 px-6 pb-6 overflow-hidden">
@@ -64,6 +72,9 @@ export function MediaGeneratorDialog({
             generateMutation={generateMutation}
             productSearch={productSearch}
             onProductSearchChange={setProductSearch}
+            generationMode={generationType}
+            onGenerationModeChange={setGenerationType}
+            enableComposerActions={false}
           />
         </div>
       </DialogContent>

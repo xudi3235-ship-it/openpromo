@@ -8,7 +8,7 @@ import { useImageGeneratorMutation } from "@/hooks/useImageGeneratorMutation";
 import { useProductListQuery } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles-queries";
 import { useComposerStore } from "@/stores/composer-store";
-import { useImageGeneratorStore } from "@/stores/image-generator-store";
+import { useProductVisualGeneratorStore } from "@/stores/product-visual-generator-store";
 import { MediaGeneratorDialog } from "./generator-dialog/media-generator-dialog";
 import { MEDIA_CONFIG } from "./media-section-config";
 import { MediaSectionGallery } from "./media-section-gallery";
@@ -20,26 +20,28 @@ import { MediaSectionGallery } from "./media-section-gallery";
  */
 export function MediaGenerateContent() {
   // Store state
-  const selectedProductId = useImageGeneratorStore(
+  const selectedProductId = useProductVisualGeneratorStore(
     (state) => state.selectedProductId,
   );
-  const selectedStyleId = useImageGeneratorStore(
+  const selectedStyleId = useProductVisualGeneratorStore(
     (state) => state.selectedStyleId,
   );
-  const batchCount = useImageGeneratorStore((state) => state.batchCount);
-  const prompt = useImageGeneratorStore((state) => state.prompt);
-  const referenceImageUrl = useImageGeneratorStore(
+  const batchCount = useProductVisualGeneratorStore(
+    (state) => state.batchCount,
+  );
+  const prompt = useProductVisualGeneratorStore((state) => state.prompt);
+  const referenceImageUrl = useProductVisualGeneratorStore(
     (state) => state.referenceImageUrl,
   );
-  const setGeneratorDialogOpen = useImageGeneratorStore(
+  const setGeneratorDialogOpen = useProductVisualGeneratorStore(
     (state) => state.setGeneratorDialogOpen,
   );
 
   // Store actions
-  const setSelectedProductId = useImageGeneratorStore(
+  const setSelectedProductId = useProductVisualGeneratorStore(
     (state) => state.setSelectedProductId,
   );
-  const setSelectedStyleId = useImageGeneratorStore(
+  const setSelectedStyleId = useProductVisualGeneratorStore(
     (state) => state.setSelectedStyleId,
   );
 

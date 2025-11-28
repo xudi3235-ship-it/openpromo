@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/noNonNullAssertion: ok */
 import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
 import { Checkbox } from "@openpromo/ui/components/checkbox";
@@ -38,6 +39,7 @@ interface ProductVisualsGalleryProps {
   items: FeedItem[];
   isLoading: boolean;
   onRefetch?: () => void;
+  enableComposerActions?: boolean;
 }
 
 const stateLabelMap: Record<FeedItem["state"], string> = {
@@ -52,6 +54,7 @@ export function ProductVisualsGallery({
   items,
   isLoading,
   onRefetch,
+  enableComposerActions = true,
 }: ProductVisualsGalleryProps) {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [gridCols, setGridCols] = useState(4);
@@ -214,14 +217,16 @@ export function ProductVisualsGallery({
             </div>
             {selectedItems.size > 0 && (
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCreatePostWithSelected}
-                >
-                  <FileText className="mr-1.5 h-3 w-3" />
-                  Create post
-                </Button>
+                {enableComposerActions && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCreatePostWithSelected}
+                  >
+                    <FileText className="mr-1.5 h-3 w-3" />
+                    Create post
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -283,6 +288,7 @@ export function ProductVisualsGallery({
                     onDelete={() => handleDeleteSingle(item)}
                     onPreview={() => setPreviewItem(item)}
                     isDeleting={isDeleting}
+                    enableComposerActions={enableComposerActions}
                   />
                 ))}
               </ImageGrid>
@@ -336,6 +342,7 @@ interface ProductVisualsCardProps {
   onDelete: () => void;
   onPreview: () => void;
   isDeleting: boolean;
+  enableComposerActions?: boolean;
 }
 
 function ProductVisualsCard({
@@ -345,6 +352,7 @@ function ProductVisualsCard({
   onDelete,
   onPreview,
   isDeleting,
+  enableComposerActions = true,
 }: ProductVisualsCardProps): ReactElement {
   const openComposer = useOpenComposer();
   const isVideo = item.type === "video";
@@ -440,15 +448,17 @@ function ProductVisualsCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCreatePost();
-                }}
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Create post
-              </DropdownMenuItem>
+              {enableComposerActions && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCreatePost();
+                  }}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Create post
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
