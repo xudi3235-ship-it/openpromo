@@ -329,7 +329,13 @@ export function ComposerFooter() {
         onConfirm={handleConfirmCancel}
       />
       {(import.meta.env.DEV || isInternal) && (
-        <div className="max-w-md mx-auto my-4 p-2 bg-muted rounded text-xs overflow-auto">
+        <div className="max-w-md mx-auto my-4 p-2 bg-muted rounded text-xs overflow-auto border border-dashed border-yellow-500">
+          <div className="flex items-center gap-1.5 mb-2 text-yellow-600 dark:text-yellow-500 font-medium">
+            <span className="px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 rounded text-[10px] uppercase tracking-wide">
+              {import.meta.env.DEV ? "Dev" : "Internal"}
+            </span>
+            <span>Debug Data</span>
+          </div>
           <pre>{JSON.stringify(data, null, 2)}</pre>
         </div>
       )}
