@@ -232,6 +232,7 @@ export class ProductImageGenerator {
     const externalImageUrl = await GenAI.runNanoBanana({
       prompt: generatedPrompt,
       image_input: inputImages,
+      use_pro: true,
     });
 
     return externalImageUrl;
