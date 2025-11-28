@@ -139,7 +139,7 @@ RULES:
 - image prompt is SINGLE paragraph!
 `;
     const { object } = await generateObject({
-      model: openai("gpt-5"),
+      model: openai("gpt-5-mini"),
       schema: z.object({
         styleId: z.string().min(1),
         imageGenPrompt: z
