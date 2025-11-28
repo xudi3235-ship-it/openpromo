@@ -2,6 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { replicate } from "@core/providers/replicate";
 import { env } from "@core/utils/env";
 import { generateObject, type ImagePart } from "ai";
+import type { FileOutput } from "replicate";
 import z from "zod";
 
 export namespace GenAI {
@@ -67,11 +68,10 @@ export namespace GenAI {
     };
     console.log("generating image with input", input);
 
-    const output = await replicate.run("ideogram-ai/ideogram-v3-turbo", {
+    const output = (await replicate.run("ideogram-ai/ideogram-v3-turbo", {
       input,
-    });
+    })) as FileOutput;
 
-    // @ts-expect-error,
     const imageUrl = output.url();
     return imageUrl ? String(imageUrl) : null;
   }
@@ -86,11 +86,10 @@ export namespace GenAI {
       aspect_ratio: "3:4",
     };
     console.log("generating image with input", input);
-    const output = await replicate.run("bytedance/seedream-4", {
+    const output = (await replicate.run("bytedance/seedream-4", {
       input,
-    });
+    })) as FileOutput[];
     console.log("seedream output", output);
-    // @ts-expect-error,
     const imageUrl = output[0].url();
     return imageUrl ? String(imageUrl) : null;
   }
@@ -108,10 +107,12 @@ export namespace GenAI {
         | "9:16"
         | "match_input_image";
       output_format?: "png" | "jpg";
+      use_pro?: boolean;
     } = {
       prompt: "",
       aspect_ratio: "match_input_image",
       output_format: "jpg",
+      use_pro: true,
     },
   ) {
     const input = {
@@ -120,13 +121,14 @@ export namespace GenAI {
       aspect_ratio: opts.aspect_ratio,
     };
     console.log("generating image with input", input);
-    const output = await replicate.run("google/nano-banana", {
+    const modelID = opts.use_pro
+      ? "google/nano-banana-pro"
+      : "google/nano-banana";
+    const output = (await replicate.run(modelID, {
       input,
-    });
+    })) as FileOutput;
     console.log("nanobanana output", output);
-    // @ts-expect-error,
     const imageUrl = output.url();
-    if (!imageUrl) throw new Error("No image URL returned from NanoBanana");
     return String(imageUrl);
   }
 
@@ -146,11 +148,10 @@ export namespace GenAI {
       openai_api_key: env.OPENAI_API_KEY,
     };
     console.log("generating image with input", input);
-    const output = await replicate.run("openai/gpt-image-1", {
+    const output = (await replicate.run("openai/gpt-image-1", {
       input,
-    });
+    })) as FileOutput[];
     console.log("gpt-image-1 output", output);
-    // @ts-expect-error,
     const imageUrl = output[0].url();
     if (!imageUrl) throw new Error("No image URL returned from GPT-Image-1");
     return String(imageUrl);
