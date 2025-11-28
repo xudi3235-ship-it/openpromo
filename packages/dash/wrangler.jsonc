@@ -374,7 +374,7 @@
       ],
       "kv_namespaces": [
         {
-          "binding": "HashtagSearchCache",
+          "binding": "KV",
           "id": "66945099c2b142c0bc7a46cc5664a67d"
         }
       ]
