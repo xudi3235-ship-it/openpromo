@@ -80,16 +80,8 @@ export function reduce<T, U>(
   return accumulator;
 }
 
-export function filterNulls<T>(
-  iterable: Iterable<T | null | undefined>,
-): Iterable<T> {
-  const result: T[] = [];
-  for (const item of iterable) {
-    if (item != null) {
-      result.push(item);
-    }
-  }
-  return result;
+export function filterNulls<T>(arr: (T | null | undefined)[]): T[] {
+  return arr.filter((item): item is T => item != null);
 }
 
 // lazy

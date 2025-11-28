@@ -6,7 +6,7 @@ import {
   type CoreWorkflowEvent,
   type CoreWorkflowStep,
 } from "@core/helpers/workflow";
-import { getOpenAIClient } from "@core/providers/openai";
+import { oai } from "@core/providers/openai";
 import { StyleContext } from "@core/schemas/style.sql";
 import { Log } from "@core/utils/log";
 import { createWorkspaceEvent, WorkspaceEventType } from "@shared/workspace";
@@ -119,14 +119,13 @@ export class StyleComponentWorkflow extends CoreWorkflowEntrypoint<StyleComponen
     // 4. generate image prompt from the img. this prompt should mostly reproduce the style from the inputs.
     await step.do("image-to-prompt", async () => {
       const s = await EntStyleComponent.fromID(styleComponentId);
-      const oai = getOpenAIClient();
       const imgs: ResponseInputImage[] = compressedImageUrls.map((url) => ({
         type: "input_image" as const,
         image_url: url,
         detail: "auto",
       }));
       // image to description prompt
-      const response = await oai.responses.create({
+      const response = await oai().responses.create({
         prompt: {
           id: "pmpt_68fc768167248193a63e7ee0a5fe36b9012003b5ef7b1359",
           variables: {},

@@ -11,7 +11,7 @@ import {
 import { Actor } from "@core/helpers/actor";
 import { Ent } from "@core/helpers/ent";
 import { Storage } from "@core/helpers/storage";
-import { getOpenAIClient } from "@core/providers/openai";
+import { oai } from "@core/providers/openai";
 import {
   ImageGenerationInsert,
   type ImageGenerationSelectType,
@@ -19,6 +19,7 @@ import {
   ImageGenerationUpdate,
   imageGenerationTable,
 } from "@core/schemas/image-generation.sql";
+import { filterNulls } from "@core/utils/common";
 import { fn } from "@core/utils/fn";
 import { createWorkspaceEvent, WorkspaceEventType } from "@shared/workspace";
 import type {
@@ -191,8 +192,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     ${JSON.stringify(product.data, null, 2)}
     ${customPrompt ? `\nAdditional instructions from user: ${customPrompt}` : ""}`;
 
-    const oai = getOpenAIClient();
-    const response = await oai.responses.create({
+    const response = await oai().responses.create({
       prompt: {
         id: "pmpt_68fc6f98ca3c819396a49fdfe133bb3d0d83a6a0c5c7ade9",
         variables: {
@@ -342,8 +342,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     }
 
     const user_input = `first img is the reference image. and rest imgs are my product. ${params.prompt}`;
-    const oai = getOpenAIClient();
-    const response = await oai.responses.create({
+    const response = await oai().responses.create({
       prompt: {
         id: "pmpt_68ff0d90439c8196be84f928d5f2546b0df830bb02f714b6",
         variables: {
@@ -359,10 +358,10 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     const image_prompt = response.output_text;
     console.log("Generated image prompt:", image_prompt);
 
-    const inputImages = [
+    const inputImages = filterNulls([
       ...resolveRefImageUrls(),
-      product.data.imgVariants?.noBg as string,
-    ];
+      product.data.imgVariants?.noBg,
+    ]);
 
     const externalImageUrl = await GenAI.runNanoBanana({
       prompt: image_prompt,
