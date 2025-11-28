@@ -62,12 +62,12 @@ export class VideoGenerationWorkflow extends CoreWorkflowEntrypoint<VideoGenerat
             workspaceId: g.data.workspaceId,
             clientJobId: generationId,
           },
-          product: metadata.prompt,
-          productImgs: metadata.productImages,
+          product: metadata.productContext ?? metadata.prompt,
+          productImgs: metadata.productImages ?? [],
           avatarImgs: metadata.avatarImages ?? [],
-          business: "", // TODO: add business context to metadata if needed
-          userMessage: metadata.prompt,
-          maxTurns: 100,
+          business: metadata.businessContext ?? "",
+          userMessage: metadata.instructions ?? metadata.prompt,
+          maxTurns: metadata.maxTurns ?? 60,
           waitForCompletion: false,
         });
 

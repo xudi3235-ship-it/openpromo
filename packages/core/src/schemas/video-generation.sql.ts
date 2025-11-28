@@ -23,7 +23,13 @@ export const VideoGenMetaSchema = z.object({
   // prompt
   prompt: z.string(),
   productImages: z.array(z.string()).min(1),
-  avatarImages: z.array(z.string()),
+  avatarImages: z.array(z.string()).default([]),
+  productContext: z.string().optional(),
+  businessContext: z.string().optional(),
+  instructions: z.string().optional(),
+  maxTurns: z.number().int().optional(),
+  productId: z.string().optional(),
+  styleComponentId: z.string().optional(),
 });
 export type VideoGenMeta = z.infer<typeof VideoGenMetaSchema>;
 

@@ -17,10 +17,6 @@ import { Slider } from "@openpromo/ui/components/slider";
 import { Spinner } from "@openpromo/ui/components/spinner";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { cn } from "@openpromo/ui/lib/utils";
-import {
-  type VideoGenerationUpdatedEvent,
-  WorkspaceEventType,
-} from "@shared/workspace";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -31,10 +27,17 @@ import {
   Sparkles,
   VideoIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useVideoGenerationJob } from "@/hooks/useVideoGenerationJob";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useWorkspaceEvents } from "@/hooks/useWorkspaceEvents";
+import {
+  formatElapsedTime,
+  getStateBadge,
+  getStateTone,
+  parseUrlList,
+  shortenId,
+} from "@/lib/video-generation";
 import { useProductListQuery } from "@/queries/product";
 import { useVideoGenStartMutation } from "@/queries/video-gen";
 
@@ -58,42 +61,27 @@ function VideoGenerationLab() {
   );
   const [customProductImageInput, setCustomProductImageInput] = useState("");
   const [avatarImageInput, setAvatarImageInput] = useState("");
-  const [activeGenerationId, setActiveGenerationId] = useState<string | null>(
-    null,
-  );
-  const [generationState, setGenerationState] = useState<{
-    state: string;
-    message?: string;
-    outputUrl?: string;
-  } | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const startTimeRef = useRef<number | null>(null);
 
-  // Handle video generation WebSocket events
-  const handleVideoGenEvent = useCallback(
-    (event: VideoGenerationUpdatedEvent) => {
-      if (event.jobId !== activeGenerationId) return;
+  const {
+    activeGenerationId,
+    generationState,
+    isProcessing,
+    elapsedSeconds,
+    startJob,
+    resetJobState,
+    videoUrl,
+    summary,
+    error,
+  } = useVideoGenerationJob(workspace.slug);
 
-      setGenerationState({
-        state: event.state,
-        message: event.message,
-        outputUrl: event.outputUrl,
-      });
-
-      if (event.state === "completed") {
-        toast.success("Video generation complete!");
-      } else if (event.state === "failed") {
-        toast.error(event.message ?? "Video generation failed");
-      }
-    },
-    [activeGenerationId],
-  );
-
-  useWorkspaceEvents(workspace.slug, {
-    handlers: {
-      [WorkspaceEventType.VideoGenerationUpdated]: handleVideoGenEvent,
-    },
-  });
+  useEffect(() => {
+    if (!generationState) return;
+    if (generationState.state === "completed") {
+      toast.success("Video generation complete!");
+    } else if (generationState.state === "failed") {
+      toast.error(generationState.message ?? "Video generation failed");
+    }
+  }, [generationState]);
 
   const defaultBusinessContext = workspace.name ?? workspace.slug ?? "";
 
@@ -176,39 +164,8 @@ function VideoGenerationLab() {
     productImagesPayload.length > 0;
 
   const startMutation = useVideoGenStartMutation((data) => {
-    setActiveGenerationId(data.generationId);
-    startTimeRef.current = Date.now();
-    setElapsedSeconds(0);
+    startJob(data.generationId);
   });
-
-  const isProcessing =
-    generationState?.state === "processing" ||
-    generationState?.state === "not_started";
-
-  // Update elapsed time while processing
-  useEffect(() => {
-    const startTime = startTimeRef.current;
-    if (!isProcessing || !startTime) return;
-
-    const interval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      setElapsedSeconds(elapsed);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isProcessing]);
-
-  const videoUrl = generationState?.outputUrl ?? null;
-  const summary = generationState?.message ?? null;
-  const error =
-    generationState?.state === "failed" ? generationState.message : null;
-
-  const resetJobState = () => {
-    setActiveGenerationId(null);
-    setGenerationState(null);
-    startTimeRef.current = null;
-    setElapsedSeconds(0);
-  };
 
   const handleSubmit = () => {
     if (!canSubmit || startMutation.isPending) {
@@ -594,51 +551,4 @@ function VideoGenerationLab() {
       </div>
     </div>
   );
-}
-
-function shortenId(id: string) {
-  if (id.length <= 24) return id;
-  return `${id.slice(0, 12)}…${id.slice(-8)}`;
-}
-
-function getStateTone(state: string) {
-  switch (state) {
-    case "completed":
-      return "bg-emerald-500/15 text-emerald-700 border-emerald-200";
-    case "failed":
-      return "bg-destructive/10 text-destructive border-destructive/30";
-    case "processing":
-      return "bg-amber-500/15 text-amber-700 border-amber-200";
-    default:
-      return "bg-muted text-muted-foreground border-border";
-  }
-}
-
-function getStateBadge(state: string) {
-  switch (state) {
-    case "completed":
-      return "Completed";
-    case "failed":
-      return "Failed";
-    case "processing":
-      return "Processing";
-    case "not_started":
-      return "Starting";
-    default:
-      return "Unknown";
-  }
-}
-
-function parseUrlList(value: string) {
-  return value
-    .split(/[\n,]/)
-    .map((url) => url.trim())
-    .filter((url) => url.length > 0);
-}
-
-function formatElapsedTime(seconds: number) {
-  if (seconds < 60) return `${seconds}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}m ${secs}s`;
 }
