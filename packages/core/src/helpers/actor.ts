@@ -101,7 +101,7 @@ export namespace Actor {
     );
   }
 
-  export function email(): string | import("drizzle-orm").SQLWrapper {
+  export function email(): string {
     const actor = Context.use();
     if ("email" in actor.properties) return actor.properties.email;
     throw new VisibleError(
