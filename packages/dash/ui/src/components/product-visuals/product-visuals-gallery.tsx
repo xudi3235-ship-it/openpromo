@@ -29,9 +29,8 @@ import { type ReactElement, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ImageGrid } from "@/components/common/ImageGrid";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
-import { useImageGenDeleteBatchMutation } from "@/queries/image-gen";
 import type { ProductVisualsFeedResponse } from "@/queries/product-visuals";
-import { useVideoGenDeleteBatchMutation } from "@/queries/video-gen";
+import { useProductVisualsBatchDeleteMutation } from "@/queries/product-visuals";
 
 type FeedItem = ProductVisualsFeedResponse["items"][number];
 
@@ -74,18 +73,12 @@ export function ProductVisualsGallery({
     }
   }, [gridCols]);
 
-  const imageDeleteMutation = useImageGenDeleteBatchMutation(() => {
+  const deleteMutation = useProductVisualsBatchDeleteMutation(() => {
     setSelectedItems(new Set());
     onRefetch?.();
   });
 
-  const videoDeleteMutation = useVideoGenDeleteBatchMutation(() => {
-    setSelectedItems(new Set());
-    onRefetch?.();
-  });
-
-  const isDeleting =
-    imageDeleteMutation.isPending || videoDeleteMutation.isPending;
+  const isDeleting = deleteMutation.isPending;
 
   const handleToggleSelection = (id: string) => {
     setSelectedItems((prev) => {
@@ -125,18 +118,8 @@ export function ProductVisualsGallery({
       }
     }
 
-    // Delete in parallel
-    const promises: Promise<unknown>[] = [];
-
-    if (imageIds.length > 0) {
-      promises.push(imageDeleteMutation.mutateAsync({ ids: imageIds }));
-    }
-    if (videoIds.length > 0) {
-      promises.push(videoDeleteMutation.mutateAsync({ ids: videoIds }));
-    }
-
     try {
-      await Promise.all(promises);
+      await deleteMutation.mutateAsync({ imageIds, videoIds });
     } catch {
       // Errors are handled by the mutation's onError
     }
@@ -144,9 +127,9 @@ export function ProductVisualsGallery({
 
   const handleDeleteSingle = async (item: FeedItem) => {
     if (item.type === "image") {
-      imageDeleteMutation.mutate({ ids: [item.id] });
+      deleteMutation.mutate({ imageIds: [item.id], videoIds: [] });
     } else {
-      videoDeleteMutation.mutate({ ids: [item.id] });
+      deleteMutation.mutate({ imageIds: [], videoIds: [item.id] });
     }
   };
 
