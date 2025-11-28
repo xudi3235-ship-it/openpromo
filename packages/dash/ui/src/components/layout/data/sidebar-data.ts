@@ -1,8 +1,7 @@
 import {
   Calendar,
-  Film,
   Home,
-  Image,
+  Image as ImageIcon,
   Inbox,
   LayoutList,
   Package,
@@ -81,7 +80,7 @@ export const useSidebarData = (): SidebarData => {
         {
           title: "Product Visuals",
           url: "/workspaces/$workspaceSlug/product-visuals",
-          icon: Image,
+          icon: ImageIcon,
         },
       ],
     },
@@ -110,16 +109,6 @@ export const useSidebarData = (): SidebarData => {
                 title: "Realtime Playground",
                 url: "/workspaces/$workspaceSlug/labs/playground",
                 icon: Settings,
-              },
-              {
-                title: "Image Gen",
-                url: "/workspaces/$workspaceSlug/labs/image-gen",
-                icon: Image,
-              },
-              {
-                title: "Video Gen",
-                url: "/workspaces/$workspaceSlug/labs/video-gen",
-                icon: Film,
               },
               {
                 title: "API Testing",
