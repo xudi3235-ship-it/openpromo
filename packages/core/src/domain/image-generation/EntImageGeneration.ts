@@ -224,10 +224,16 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     }
     const inputImages = [productImage];
 
-    const imageUrl = await GenAI.runNanoBanana({
+    const externalImageUrl = await GenAI.runNanoBanana({
       prompt: image_prompt,
       image_input: inputImages,
     });
+
+    // Copy the generated image to our internal R2 storage
+    const imageUrl = await EntImageGeneration.copyImageToStorage(
+      externalImageUrl,
+      generation.data.id,
+    );
 
     await generation.update({
       outputImages: [imageUrl],
@@ -358,10 +364,16 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       product.data.imgVariants?.noBg as string,
     ];
 
-    const imageUrl = await GenAI.runNanoBanana({
+    const externalImageUrl = await GenAI.runNanoBanana({
       prompt: image_prompt,
       image_input: inputImages,
     });
+
+    // Copy the generated image to our internal R2 storage
+    const imageUrl = await EntImageGeneration.copyImageToStorage(
+      externalImageUrl,
+      generation.data.id,
+    );
 
     await generation.update({
       outputImages: [imageUrl],
@@ -376,6 +388,38 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       },
     });
     return generation;
+  }
+
+  /**
+   * Copy an external image URL to our internal R2 storage
+   */
+  static async copyImageToStorage(
+    externalUrl: string,
+    generationId: string,
+  ): Promise<string> {
+    const response = await fetch(externalUrl);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch image from ${externalUrl}: ${response.status}`,
+      );
+    }
+
+    const contentType = response.headers.get("content-type") || "image/png";
+    const extension = contentType.includes("jpeg") ? "jpg" : "png";
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const key = Storage.Key.workspace(
+      Actor.workspaceID(),
+      "generations",
+      `${generationId}.${extension}`,
+    );
+
+    const { url } = await Storage.upload(key, buffer, Storage.PUBLIC_BUCKET, {
+      contentType,
+    });
+
+    return url;
   }
 
   static async fromID(id: string): Promise<EntImageGeneration> {
