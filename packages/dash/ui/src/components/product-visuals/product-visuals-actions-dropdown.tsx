@@ -10,6 +10,7 @@ import {
   Download,
   ExternalLink,
   FileText,
+  ImageIcon,
   MoreVertical,
   Trash2,
 } from "lucide-react";
@@ -21,15 +22,19 @@ type FeedItem = ProductVisualsFeedResponse["items"][number];
 interface ProductVisualsActionsDropdownProps {
   item: FeedItem;
   onDelete: () => void;
+  onViewVariations?: (item: FeedItem) => void;
   isDeleting: boolean;
   enableComposerActions?: boolean;
+  isVariationView?: boolean;
 }
 
 export function ProductVisualsActionsDropdown({
   item,
   onDelete,
+  onViewVariations,
   isDeleting,
   enableComposerActions = true,
+  isVariationView = false,
 }: ProductVisualsActionsDropdownProps) {
   const openComposer = useOpenComposer();
   const isVideo = item.type === "video";
@@ -87,6 +92,17 @@ export function ProductVisualsActionsDropdown({
             >
               <FileText className="mr-2 h-4 w-4" />
               Create post
+            </DropdownMenuItem>
+          )}
+          {!isVariationView && item.type === "image" && onViewVariations && (
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewVariations(item);
+              }}
+            >
+              <ImageIcon className="mr-2 h-4 w-4" />
+              View variations
             </DropdownMenuItem>
           )}
           <DropdownMenuItem

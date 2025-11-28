@@ -107,7 +107,7 @@ export namespace GenAI {
         | "9:16"
         | "match_input_image";
       output_format?: "png" | "jpg";
-      use_pro?: boolean;
+      use_pro: boolean;
     } = {
       prompt: "",
       aspect_ratio: "match_input_image",

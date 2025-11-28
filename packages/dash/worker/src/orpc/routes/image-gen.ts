@@ -107,14 +107,7 @@ export const refineImageGeneration = orpcBuilder
   .input(refineImageInput)
   .use(withWorkspaceRole, workspaceRoleMappers.editor)
   .handler(async ({ input }) => {
-    const {
-      generationId,
-      prompt,
-      styleId,
-      referenceImageUrl,
-      workspaceId: _workspaceId,
-      workspaceSlug: _workspaceSlug,
-    } = input;
+    const { generationId, prompt, styleId, referenceImageUrl } = input;
 
     const variation = await createVariationFromParent({
       parentGenerationId: generationId,

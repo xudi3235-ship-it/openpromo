@@ -17,7 +17,9 @@ import { withAuth } from "../../middleware/with-auth";
 
 /**
  * Connect RPC routes for internal service communication
- * Used by Modal Python backend to call the CF Worker
+ * Used by Modal Python backend to call the CF Worker。
+ * Sevice implementation. protos are located in
+ * ./packages/backend/proto/internal/v1/internal.proto
  */
 function routes(router: ConnectRouter) {
   router.service(InternalService, {

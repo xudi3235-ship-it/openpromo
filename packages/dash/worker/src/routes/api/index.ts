@@ -35,6 +35,8 @@ export const apiRoutes = new Hono<ApiEnv>()
 
     await next();
   })
+  // connect rpc -> our grpc-compatible handler that exposes protobuf api
+  // this is used by other internal services.
   .route("/connect", connectRoute)
   .route("/ping", pingRoute)
   .route("/examples", examplesRoute)

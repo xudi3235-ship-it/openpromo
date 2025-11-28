@@ -19,6 +19,8 @@ export interface StyleGalleryProps {
   selectedStyleId: string;
   onStyleSelect: (styleId: string) => void;
   isLoading?: boolean;
+  disabled?: boolean;
+  helperText?: string;
 }
 
 const getStyleImage = (style: StyleGalleryItem) => {
@@ -30,6 +32,8 @@ export function StyleGallery({
   selectedStyleId,
   onStyleSelect,
   isLoading = false,
+  disabled = false,
+  helperText,
 }: StyleGalleryProps) {
   if (isLoading) {
     return (
@@ -51,9 +55,16 @@ export function StyleGallery({
 
   return (
     <div className="space-y-3 flex-shrink-0">
-      <label className="text-xs font-medium text-muted-foreground block">
-        Choose a style
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-muted-foreground block">
+          Choose a style
+        </label>
+        {disabled && helperText && (
+          <span className="text-[11px] text-muted-foreground">
+            {helperText}
+          </span>
+        )}
+      </div>
 
       {/* Large preview of selected style */}
       {selectedStyle && (
@@ -98,10 +109,16 @@ export function StyleGallery({
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      onClick={() => onStyleSelect(style.id)}
+                      onClick={() => {
+                        if (disabled) return;
+                        onStyleSelect(style.id);
+                      }}
+                      disabled={disabled}
                       className={cn(
                         "relative aspect-square w-full rounded-md border-2 overflow-hidden transition-all group",
-                        "hover:border-primary/50",
+                        disabled
+                          ? "opacity-60 cursor-not-allowed"
+                          : "hover:border-primary/50",
                         isSelected
                           ? "border-primary ring-2 ring-primary/20"
                           : "border-border",

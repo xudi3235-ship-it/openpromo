@@ -25,6 +25,8 @@ export interface ProductSelectProps {
   selectedProductId: string;
   onProductChange: (productId: string) => void;
   isLoading?: boolean;
+  disabled?: boolean;
+  helperText?: string;
 }
 
 const getProductImage = (product: ProductSelectItem) => {
@@ -47,6 +49,8 @@ export function ProductSelect({
   selectedProductId,
   onProductChange,
   isLoading = false,
+  disabled = false,
+  helperText,
 }: ProductSelectProps) {
   const hasNoResults = !isLoading && products.length === 0;
 
@@ -69,14 +73,29 @@ export function ProductSelect({
 
   return (
     <div className="space-y-1.5">
-      <label
-        htmlFor="product-select"
-        className="text-xs font-medium text-muted-foreground"
+      <div className="flex items-center justify-between gap-2">
+        <label
+          htmlFor="product-select"
+          className="text-xs font-medium text-muted-foreground"
+        >
+          Product
+        </label>
+        {disabled && helperText && (
+          <span className="text-[11px] text-muted-foreground">
+            {helperText}
+          </span>
+        )}
+      </div>
+      <Select
+        value={selectedProductId}
+        onValueChange={onProductChange}
+        disabled={disabled}
       >
-        Product
-      </label>
-      <Select value={selectedProductId} onValueChange={onProductChange}>
-        <SelectTrigger id="product-select" className="w-full">
+        <SelectTrigger
+          id="product-select"
+          className="w-full"
+          disabled={disabled}
+        >
           <SelectValue placeholder="Select a product...">
             {selectedProductId &&
               (() => {

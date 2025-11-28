@@ -225,6 +225,7 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     const externalImageUrl = await GenAI.runNanoBanana({
       prompt: image_prompt,
       image_input: inputImages,
+      use_pro: true,
     });
 
     // Copy the generated image to our internal R2 storage
@@ -380,6 +381,9 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
   }
   productId() {
     return this.data.productId;
+  }
+  outputImages() {
+    return this.data.outputImages;
   }
 
   async product() {

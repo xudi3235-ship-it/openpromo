@@ -1,3 +1,4 @@
+import { Button } from "@openpromo/ui/components/button";
 import {
   Collapsible,
   CollapsibleContent,
@@ -6,11 +7,12 @@ import {
 import { Input } from "@openpromo/ui/components/input";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Slider } from "@openpromo/ui/components/slider";
+import { Spinner } from "@openpromo/ui/components/spinner";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { ChevronDown, Search, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDebounceValue } from "usehooks-ts";
 import type {
   ProductImageGenerateInput,
@@ -39,6 +41,9 @@ interface InputsPanelProps {
   className?: string;
   generationMode?: "images" | "video";
   onGenerationModeChange?: (mode: "images" | "video") => void;
+  isVariationPending?: boolean;
+  onConfirmVariation?: () => void;
+  onCancelVariation?: () => void;
 }
 
 export function InputsPanel({
@@ -53,6 +58,9 @@ export function InputsPanel({
   className,
   generationMode,
   onGenerationModeChange,
+  isVariationPending = false,
+  onConfirmVariation,
+  onCancelVariation,
 }: InputsPanelProps) {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState(productSearch);
@@ -107,6 +115,49 @@ export function InputsPanel({
   const setAvatarImageUrl = useProductVisualGeneratorStore(
     (state) => state.setAvatarImageUrl,
   );
+  const selectedItemForVariation = useProductVisualGeneratorStore(
+    (state) => state.selectedItemForVariation,
+  );
+  const variationPrompt = useProductVisualGeneratorStore(
+    (state) => state.variationPrompt,
+  );
+  const setVariationPrompt = useProductVisualGeneratorStore(
+    (state) => state.setVariationPrompt,
+  );
+  const isVariationMode = Boolean(selectedItemForVariation);
+  const variationPromptRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    if (isVariationMode) {
+      variationPromptRef.current?.focus();
+    }
+  }, [isVariationMode]);
+
+  const lockedProduct = selectedItemForVariation
+    ? products.find(
+        (product) => product.id === selectedItemForVariation.productId,
+      )
+    : undefined;
+  const lockedStyle = selectedItemForVariation
+    ? styles.find(
+        (style) => style.id === selectedItemForVariation.styleComponentId,
+      )
+    : undefined;
+  const variationProductLabel =
+    lockedProduct?.name ||
+    lockedProduct?.id ||
+    selectedItemForVariation?.productId;
+  const variationStyleLabel =
+    lockedStyle?.name ||
+    lockedStyle?.id ||
+    selectedItemForVariation?.styleComponentId;
+  const variationSourcePrompt =
+    selectedItemForVariation?.type === "image"
+      ? selectedItemForVariation.prompt
+      : undefined;
+  const helperText = isVariationMode
+    ? "Product and style locked while editing a variation"
+    : undefined;
 
   const videoStartMutation = useProductVisualsVideoStartMutation();
 
@@ -126,9 +177,11 @@ export function InputsPanel({
     ? videoStartMutation.isPending
     : generateMutation.isPending;
 
-  const canGenerate = isVideoMode
-    ? Boolean(selectedProductId) && Boolean(prompt.trim()) && !isPending
-    : Boolean(selectedProductId) && availableSlots > 0 && !isPending;
+  const canGenerate =
+    !isVariationMode &&
+    (isVideoMode
+      ? Boolean(selectedProductId) && Boolean(prompt.trim()) && !isPending
+      : Boolean(selectedProductId) && availableSlots > 0 && !isPending);
 
   const handleGenerate = () => {
     if (!selectedProductId || isPending) return;
@@ -219,6 +272,96 @@ export function InputsPanel({
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="px-4 py-4 space-y-4">
+            {isVariationMode && selectedItemForVariation && (
+              <div className="space-y-3 rounded-lg border border-primary/40 bg-background/90 p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                      Variation mode
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Product and style are locked while you edit this image.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid gap-3 md:grid-cols-[80px_1fr]">
+                  <div className="h-20 w-full overflow-hidden rounded-md bg-muted">
+                    {selectedItemForVariation.previewUrl ? (
+                      <img
+                        src={selectedItemForVariation.previewUrl}
+                        alt="Selected variation"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                        Preview unavailable
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                      Source image
+                    </p>
+                    <p className="font-medium">
+                      {variationProductLabel || "Unknown product"}
+                    </p>
+                    {variationStyleLabel && (
+                      <p className="text-xs text-muted-foreground">
+                        Style: {variationStyleLabel}
+                      </p>
+                    )}
+                    {variationSourcePrompt && (
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        "{variationSourcePrompt}"
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label
+                    htmlFor="variation-prompt-input"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Variation prompt
+                  </label>
+                  <Textarea
+                    id="variation-prompt-input"
+                    ref={variationPromptRef}
+                    value={variationPrompt}
+                    onChange={(event) => setVariationPrompt(event.target.value)}
+                    placeholder="Add additional guidance for this variation..."
+                    rows={3}
+                    className="resize-none"
+                  />
+                </div>
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onCancelVariation?.()}
+                    type="button"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => onConfirmVariation?.()}
+                    disabled={isVariationPending}
+                    type="button"
+                  >
+                    {isVariationPending ? (
+                      <span className="flex items-center gap-2">
+                        <Spinner className="h-3 w-3" />
+                        Creating variation…
+                      </span>
+                    ) : (
+                      "Create variation"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Product Search */}
             <div className="space-y-1.5">
               <div className="relative">
@@ -248,6 +391,8 @@ export function InputsPanel({
               selectedProductId={selectedProductId}
               onProductChange={setSelectedProductId}
               isLoading={isLoadingProducts}
+              disabled={isVariationMode}
+              helperText={helperText}
             />
 
             {/* Style Gallery with horizontal scroll */}
@@ -258,6 +403,8 @@ export function InputsPanel({
                 setSelectedStyleId(styleId === selectedStyleId ? "" : styleId)
               }
               isLoading={isLoadingStyles}
+              disabled={isVariationMode}
+              helperText={helperText}
             />
 
             {/* Avatar Image URL - only shown in video mode */}
@@ -284,34 +431,36 @@ export function InputsPanel({
             )}
 
             {/* Instructions/Prompt - required for video, optional for images */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="prompt-input"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                {isVideoMode ? "Instructions" : "Custom prompt"}
-                {!isVideoMode && (
-                  <span className="ml-1 font-normal text-muted-foreground/70">
-                    (optional)
-                  </span>
-                )}
-              </label>
-              <Textarea
-                id="prompt-input"
-                value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
-                placeholder={
-                  isVideoMode
-                    ? "Describe what the video should show..."
-                    : "Add additional instructions..."
-                }
-                rows={3}
-                className="resize-none"
-              />
-            </div>
+            {!isVariationMode && (
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="prompt-input"
+                  className="text-xs font-medium text-muted-foreground"
+                >
+                  {isVideoMode ? "Instructions" : "Custom prompt"}
+                  {!isVideoMode && (
+                    <span className="ml-1 font-normal text-muted-foreground/70">
+                      (optional)
+                    </span>
+                  )}
+                </label>
+                <Textarea
+                  id="prompt-input"
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  placeholder={
+                    isVideoMode
+                      ? "Describe what the video should show..."
+                      : "Add additional instructions..."
+                  }
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
+            )}
 
             {/* Advanced Options Collapsible - only for images */}
-            {!isVideoMode && (
+            {!isVideoMode && !isVariationMode && (
               <Collapsible
                 open={isAdvancedOpen}
                 onOpenChange={setIsAdvancedOpen}

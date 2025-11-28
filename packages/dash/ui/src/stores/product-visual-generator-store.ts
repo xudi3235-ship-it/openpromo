@@ -1,5 +1,8 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import type { ProductVisualsFeedResponse } from "@/queries/product-visuals";
+
+type FeedItem = ProductVisualsFeedResponse["items"][number];
 
 export type GeneratorMode = "generate" | "edit";
 export type GenerationType = "images" | "video";
@@ -23,6 +26,15 @@ export interface ProductVisualGeneratorState {
   mode: GeneratorMode;
   editingGenerationId: string | null;
 
+  // Gallery state
+  selectedGalleryItems: Set<string>;
+  galleryGridCols: number;
+  previewItem: FeedItem | null;
+  variationPrompt: string;
+  selectedItemForVariation: FeedItem | null;
+  selectedParentForVariations: string | null;
+  variationRefetch: (() => void) | null;
+
   // Actions
   setSelectedProductId: (productId: string) => void;
   setSelectedStyleId: (styleId: string) => void;
@@ -35,6 +47,19 @@ export interface ProductVisualGeneratorState {
   setMode: (mode: GeneratorMode) => void;
   setEditingGenerationId: (generationId: string | null) => void;
   resetForm: () => void;
+
+  // Gallery actions
+  setSelectedGalleryItems: (items: Set<string>) => void;
+  addSelectedGalleryItem: (itemId: string) => void;
+  removeSelectedGalleryItem: (itemId: string) => void;
+  clearSelectedGalleryItems: () => void;
+  setGalleryGridCols: (cols: number) => void;
+  setPreviewItem: (item: FeedItem | null) => void;
+  setVariationPrompt: (prompt: string) => void;
+  setSelectedItemForVariation: (item: FeedItem | null) => void;
+  setSelectedParentForVariations: (parentId: string | null) => void;
+  setVariationRefetch: (refetch: (() => void) | null) => void;
+  resetGalleryState: () => void;
 }
 
 const initialState = {
@@ -48,6 +73,13 @@ const initialState = {
   isGeneratorDialogOpen: false,
   mode: "generate" as GeneratorMode,
   editingGenerationId: null as string | null,
+  selectedGalleryItems: new Set<string>(),
+  galleryGridCols: 4,
+  previewItem: null as FeedItem | null,
+  variationPrompt: "",
+  selectedItemForVariation: null as FeedItem | null,
+  selectedParentForVariations: null as string | null,
+  variationRefetch: null as (() => void) | null,
 };
 
 export const useProductVisualGeneratorStore =
@@ -117,6 +149,74 @@ export const useProductVisualGeneratorStore =
           state.isGeneratorDialogOpen = initialState.isGeneratorDialogOpen;
           state.mode = initialState.mode;
           state.editingGenerationId = initialState.editingGenerationId;
+        }),
+
+      // Gallery actions
+      setSelectedGalleryItems: (items) =>
+        set((state) => {
+          state.selectedGalleryItems = items;
+        }),
+
+      addSelectedGalleryItem: (itemId) =>
+        set((state) => {
+          const next = new Set(state.selectedGalleryItems);
+          next.add(itemId);
+          state.selectedGalleryItems = next;
+        }),
+
+      removeSelectedGalleryItem: (itemId) =>
+        set((state) => {
+          const next = new Set(state.selectedGalleryItems);
+          next.delete(itemId);
+          state.selectedGalleryItems = next;
+        }),
+
+      clearSelectedGalleryItems: () =>
+        set((state) => {
+          state.selectedGalleryItems = new Set();
+        }),
+
+      setGalleryGridCols: (cols) =>
+        set((state) => {
+          state.galleryGridCols = cols;
+        }),
+
+      setPreviewItem: (item) =>
+        set((state) => {
+          state.previewItem = item;
+        }),
+
+      setVariationPrompt: (prompt) =>
+        set((state) => {
+          state.variationPrompt = prompt;
+        }),
+
+      setSelectedItemForVariation: (item) =>
+        set((state) => {
+          state.selectedItemForVariation = item;
+        }),
+
+      setSelectedParentForVariations: (parentId) =>
+        set((state) => {
+          state.selectedParentForVariations = parentId;
+        }),
+
+      setVariationRefetch: (refetch) =>
+        set((state) => {
+          state.variationRefetch = refetch;
+        }),
+
+      resetGalleryState: () =>
+        set((state) => {
+          state.selectedGalleryItems = initialState.selectedGalleryItems;
+          state.galleryGridCols = initialState.galleryGridCols;
+          state.previewItem = initialState.previewItem;
+          state.variationPrompt = initialState.variationPrompt;
+          state.selectedItemForVariation =
+            initialState.selectedItemForVariation;
+          state.selectedParentForVariations =
+            initialState.selectedParentForVariations;
+          state.variationRefetch = initialState.variationRefetch;
         }),
     })),
   );

@@ -184,7 +184,11 @@ async function processAttachments(step: CoreWorkflowStep, productId: string) {
       console.error(`no images to process for product ${p.data.id}`);
       return;
     }
-    const noBgUrl = await GenAI.runNanoBanana({ prompt, image_input: imgs });
+    const noBgUrl = await GenAI.runNanoBanana({
+      prompt,
+      image_input: imgs,
+      use_pro: false,
+    });
 
     // Copy to our own storage for persistence
     const response = await fetch(noBgUrl);

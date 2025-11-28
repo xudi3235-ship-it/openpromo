@@ -3,11 +3,13 @@ import type { UseMutationResult } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { ProductVisualsGallery } from "@/components/product-visuals/product-visuals-gallery";
 import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
+import { useImageGenRefineMutation } from "@/queries/image-gen";
 import type {
   ProductImageGenerateInput,
   ProductImageGenerateResponse,
 } from "@/queries/product";
 import { useProductVisualsFeedQuery } from "@/queries/product-visuals";
+import { useProductVisualGeneratorStore } from "@/stores/product-visual-generator-store";
 import { InputsPanel } from "./inputs-panel";
 import type { ProductSelectItem } from "./product-select";
 import type { StyleGalleryItem } from "./style-gallery";
@@ -58,6 +60,28 @@ export function ImageGeneratorSurface({
     pageSize: 18,
   });
 
+  const selectedItemForVariation = useProductVisualGeneratorStore(
+    (state) => state.selectedItemForVariation,
+  );
+  const variationPrompt = useProductVisualGeneratorStore(
+    (state) => state.variationPrompt,
+  );
+  const setVariationPrompt = useProductVisualGeneratorStore(
+    (state) => state.setVariationPrompt,
+  );
+  const setSelectedParentForVariations = useProductVisualGeneratorStore(
+    (state) => state.setSelectedParentForVariations,
+  );
+  const setSelectedItemForVariation = useProductVisualGeneratorStore(
+    (state) => state.setSelectedItemForVariation,
+  );
+  const clearSelectedGalleryItems = useProductVisualGeneratorStore(
+    (state) => state.clearSelectedGalleryItems,
+  );
+  const variationRefetch = useProductVisualGeneratorStore(
+    (state) => state.variationRefetch,
+  );
+
   const handleFeedRefresh = useCallback(() => {
     void refetchFeed();
   }, [refetchFeed]);
@@ -68,6 +92,33 @@ export function ImageGeneratorSurface({
       "video_generation.updated": handleFeedRefresh,
     },
   });
+
+  const refineMutation = useImageGenRefineMutation(() => {
+    void refetchFeed();
+    variationRefetch?.();
+  });
+
+  const handleConfirmVariation = () => {
+    if (!selectedItemForVariation) return;
+
+    const parentId = selectedItemForVariation.id;
+
+    refineMutation.mutate({
+      generationId: parentId,
+      prompt: variationPrompt.trim() || undefined,
+    });
+
+    setSelectedParentForVariations(parentId);
+    setSelectedItemForVariation(null);
+    setVariationPrompt("");
+    clearSelectedGalleryItems();
+  };
+
+  const handleCancelVariation = () => {
+    setSelectedItemForVariation(null);
+    setVariationPrompt("");
+    clearSelectedGalleryItems();
+  };
 
   const feedItems = feedData?.items ?? [];
 
@@ -83,6 +134,9 @@ export function ImageGeneratorSurface({
           generateMutation={generateMutation}
           productSearch={productSearch}
           onProductSearchChange={onProductSearchChange}
+          isVariationPending={refineMutation.isPending}
+          onConfirmVariation={handleConfirmVariation}
+          onCancelVariation={handleCancelVariation}
           className="h-full"
           generationMode={generationMode}
           onGenerationModeChange={onGenerationModeChange}
@@ -108,6 +162,9 @@ export function ImageGeneratorSurface({
           generateMutation={generateMutation}
           productSearch={productSearch}
           onProductSearchChange={onProductSearchChange}
+          isVariationPending={refineMutation.isPending}
+          onConfirmVariation={handleConfirmVariation}
+          onCancelVariation={handleCancelVariation}
           generationMode={generationMode}
           onGenerationModeChange={onGenerationModeChange}
         />

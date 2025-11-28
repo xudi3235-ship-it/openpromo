@@ -7,13 +7,22 @@ import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Slider } from "@openpromo/ui/components/slider";
 import { Spinner } from "@openpromo/ui/components/spinner";
 import { cn } from "@openpromo/ui/lib/utils";
-import { FileText, Film, Image as ImageIcon, Play, Trash2 } from "lucide-react";
-import { type ReactElement, useMemo, useState } from "react";
+import {
+  ArrowLeft,
+  FileText,
+  Film,
+  Image as ImageIcon,
+  Play,
+  Trash2,
+} from "lucide-react";
+import { type ReactElement, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { ImageGrid } from "@/components/common/ImageGrid";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
+import { useImageGenListQuery } from "@/queries/image-gen";
 import type { ProductVisualsFeedResponse } from "@/queries/product-visuals";
 import { useProductVisualsBatchDeleteMutation } from "@/queries/product-visuals";
+import { useProductVisualGeneratorStore } from "@/stores/product-visual-generator-store";
 import { ProductVisualsActionsDropdown } from "./product-visuals-actions-dropdown";
 import { ProductVisualsPreviewModal } from "./product-visuals-preview-modal";
 
@@ -40,10 +49,74 @@ export function ProductVisualsGallery({
   onRefetch,
   enableComposerActions = true,
 }: ProductVisualsGalleryProps) {
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-  const [gridCols, setGridCols] = useState(4);
-  const [previewItem, setPreviewItem] = useState<FeedItem | null>(null);
+  const selectedItems = useProductVisualGeneratorStore(
+    (state) => state.selectedGalleryItems,
+  );
+  const setSelectedItems = useProductVisualGeneratorStore(
+    (state) => state.setSelectedGalleryItems,
+  );
+  const clearSelectedGalleryItems = useProductVisualGeneratorStore(
+    (state) => state.clearSelectedGalleryItems,
+  );
+
+  const gridCols = useProductVisualGeneratorStore(
+    (state) => state.galleryGridCols,
+  );
+  const setGalleryGridCols = useProductVisualGeneratorStore(
+    (state) => state.setGalleryGridCols,
+  );
+
+  const previewItem = useProductVisualGeneratorStore(
+    (state) => state.previewItem,
+  );
+  const setPreviewItem = useProductVisualGeneratorStore(
+    (state) => state.setPreviewItem,
+  );
+
+  const setVariationPrompt = useProductVisualGeneratorStore(
+    (state) => state.setVariationPrompt,
+  );
+
+  const setSelectedItemForVariation = useProductVisualGeneratorStore(
+    (state) => state.setSelectedItemForVariation,
+  );
+
+  const selectedParentForVariations = useProductVisualGeneratorStore(
+    (state) => state.selectedParentForVariations,
+  );
+  const setSelectedParentForVariations = useProductVisualGeneratorStore(
+    (state) => state.setSelectedParentForVariations,
+  );
+  const setSelectedProductId = useProductVisualGeneratorStore(
+    (state) => state.setSelectedProductId,
+  );
+  const setSelectedStyleId = useProductVisualGeneratorStore(
+    (state) => state.setSelectedStyleId,
+  );
+  const setVariationRefetch = useProductVisualGeneratorStore(
+    (state) => state.setVariationRefetch,
+  );
+
   const openComposer = useOpenComposer();
+
+  const {
+    data: variationsData,
+    isPending: isVariationsLoading,
+    refetch: refetchVariations,
+  } = useImageGenListQuery(
+    {
+      parentGenerationId: selectedParentForVariations || undefined,
+      pageSize: 50,
+    },
+    {
+      enabled: !!selectedParentForVariations,
+    },
+  );
+
+  useEffect(() => {
+    setVariationRefetch(() => refetchVariations);
+    return () => setVariationRefetch(null);
+  }, [refetchVariations, setVariationRefetch]);
 
   const gridColsConfig = useMemo(() => {
     switch (gridCols) {
@@ -59,36 +132,66 @@ export function ProductVisualsGallery({
   }, [gridCols]);
 
   const deleteMutation = useProductVisualsBatchDeleteMutation(() => {
-    setSelectedItems(new Set());
+    clearSelectedGalleryItems();
     onRefetch?.();
   });
 
   const isDeleting = deleteMutation.isPending;
 
-  const handleToggleSelection = (id: string) => {
-    setSelectedItems((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
+  const displayItems = useMemo(() => {
+    if (selectedParentForVariations) {
+      if (variationsData) {
+        return variationsData.generations.map(
+          (gen): FeedItem => ({
+            id: gen.id,
+            type: "image" as const,
+            createdAt: gen.createdAt?.toISOString() ?? null,
+            productId: gen.productId ?? null,
+            styleComponentId: gen.styleComponentId ?? null,
+            previewUrl: gen.outputImages?.[0] ?? null,
+            outputUrl: gen.outputImages?.[0] ?? null,
+            state: gen.state,
+            stateMessage: gen.stateMessage ?? null,
+            prompt:
+              ((gen.metadata as Record<string, unknown>)
+                ?.variationPrompt as string) ||
+              ((gen.metadata as Record<string, unknown>)?.prompt as string) ||
+              null,
+          }),
+        );
       }
-      return newSet;
-    });
+      return [];
+    }
+    return items;
+  }, [selectedParentForVariations, variationsData, items]);
+
+  const isDisplayLoading = selectedParentForVariations
+    ? isVariationsLoading
+    : isLoading;
+
+  const handleToggleSelection = (id: string) => {
+    const next = new Set(selectedItems);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setSelectedItems(next);
   };
 
   const handleSelectAll = () => {
-    if (selectedItems.size === items.length) {
+    if (selectedItems.size === displayItems.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(items.map((item) => `${item.type}-${item.id}`)));
+      setSelectedItems(
+        new Set(displayItems.map((item) => `${item.type}-${item.id}`)),
+      );
     }
   };
 
   const handleDeleteSelected = async () => {
     if (selectedItems.size === 0) return;
 
-    // Split selected items by type
     const imageIds: string[] = [];
     const videoIds: string[] = [];
 
@@ -143,21 +246,82 @@ export function ProductVisualsGallery({
     }));
 
     openComposer({ attachments });
-    setSelectedItems(new Set());
+    clearSelectedGalleryItems();
+  };
+
+  const handleCreateVariationWithSelected = () => {
+    if (selectedItems.size === 0) return;
+
+    const selectedImages = items.filter(
+      (item) =>
+        selectedItems.has(`${item.type}-${item.id}`) &&
+        item.type === "image" &&
+        item.state === "completed" &&
+        item.outputUrl,
+    );
+
+    if (selectedImages.length === 0) {
+      toast.error("No completed images to create variations from");
+      return;
+    }
+
+    if (selectedImages.length > 1) {
+      toast.error("Please select only one image to create a variation");
+      return;
+    }
+
+    const selectedImage = selectedImages[0];
+    setSelectedItemForVariation(selectedImage);
+    setVariationPrompt("");
+
+    if (selectedImage.productId) {
+      setSelectedProductId(selectedImage.productId);
+    }
+    if (selectedImage.styleComponentId) {
+      setSelectedStyleId(selectedImage.styleComponentId);
+    }
+  };
+
+  const handleBackToMain = () => {
+    setSelectedParentForVariations(null);
+    clearSelectedGalleryItems();
+  };
+
+  const handleViewVariations = (item: FeedItem) => {
+    if (item.type === "image") {
+      setSelectedParentForVariations(item.id);
+      clearSelectedGalleryItems();
+    }
   };
 
   return (
     <div className="border rounded-lg flex flex-col h-full overflow-hidden">
       <div className="px-4 pt-4 pb-3 border-b bg-card/80 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">Generated images and videos</h3>
+          <div className="flex items-center gap-2">
+            {selectedParentForVariations && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToMain}
+                className="h-6 w-6 p-0"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <h3 className="text-sm font-medium">
+              {selectedParentForVariations
+                ? "Image Variations"
+                : "Generated images and videos"}
+            </h3>
+          </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground whitespace-nowrap">
               {gridCols} cols
             </span>
             <Slider
               value={[gridCols]}
-              onValueChange={(value) => setGridCols(value[0] || 4)}
+              onValueChange={(value) => setGalleryGridCols(value[0] || 4)}
               min={2}
               max={6}
               step={2}
@@ -166,13 +330,13 @@ export function ProductVisualsGallery({
           </div>
         </div>
 
-        {/* Selection Toolbar */}
-        {items.length > 0 && (
+        {displayItems.length > 0 && !selectedParentForVariations && (
           <div className="flex items-center justify-between p-2 border rounded-md bg-background">
             <div className="flex items-center gap-2">
               <Checkbox
                 checked={
-                  selectedItems.size === items.length && items.length > 0
+                  selectedItems.size === displayItems.length &&
+                  displayItems.length > 0
                 }
                 onCheckedChange={handleSelectAll}
                 aria-label="Select all"
@@ -195,6 +359,14 @@ export function ProductVisualsGallery({
                     Create post
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCreateVariationWithSelected}
+                >
+                  <ImageIcon className="mr-1.5 h-3 w-3" />
+                  Create variation
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -222,30 +394,44 @@ export function ProductVisualsGallery({
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
           <div className="p-4">
-            {isLoading ? (
+            {isDisplayLoading ? (
               <ImageGrid tight cols={gridColsConfig}>
-                {Array.from({ length: 8 }).map((_, index) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: placeholder skeletons
-                  <div key={`gallery-skeleton-${index}`} className="space-y-2">
+                {[
+                  "one",
+                  "two",
+                  "three",
+                  "four",
+                  "five",
+                  "six",
+                  "seven",
+                  "eight",
+                ].map((id) => (
+                  <div key={`gallery-skeleton-${id}`} className="space-y-2">
                     <Skeleton className="aspect-square w-full rounded-md" />
                     <Skeleton className="h-3 w-1/2" />
                     <Skeleton className="h-2 w-3/4" />
                   </div>
                 ))}
               </ImageGrid>
-            ) : items.length === 0 ? (
+            ) : displayItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-center py-16 text-muted-foreground gap-2">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                   <ImageIcon className="h-5 w-5" />
                 </div>
-                <p className="text-sm font-medium">No visuals yet</p>
+                <p className="text-sm font-medium">
+                  {selectedParentForVariations
+                    ? "No variations yet"
+                    : "No visuals yet"}
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  Generate images or videos to see them in one place.
+                  {selectedParentForVariations
+                    ? "Create variations to see them here."
+                    : "Generate images or videos to see them in one place."}
                 </p>
               </div>
             ) : (
               <ImageGrid tight cols={gridColsConfig}>
-                {items.map((item) => (
+                {displayItems.map((item) => (
                   <ProductVisualsCard
                     key={`${item.type}-${item.id}`}
                     item={item}
@@ -255,8 +441,14 @@ export function ProductVisualsGallery({
                     }
                     onDelete={() => handleDeleteSingle(item)}
                     onPreview={() => setPreviewItem(item)}
+                    onViewVariations={
+                      selectedParentForVariations
+                        ? undefined
+                        : handleViewVariations
+                    }
                     isDeleting={isDeleting}
                     enableComposerActions={enableComposerActions}
+                    isVariationView={!!selectedParentForVariations}
                   />
                 ))}
               </ImageGrid>
@@ -265,7 +457,6 @@ export function ProductVisualsGallery({
         </ScrollArea>
       </div>
 
-      {/* Preview Modal */}
       <ProductVisualsPreviewModal
         previewItem={previewItem}
         onClose={() => setPreviewItem(null)}
@@ -280,8 +471,10 @@ interface ProductVisualsCardProps {
   onToggleSelection: () => void;
   onDelete: () => void;
   onPreview: () => void;
+  onViewVariations?: (item: FeedItem) => void;
   isDeleting: boolean;
   enableComposerActions?: boolean;
+  isVariationView?: boolean;
 }
 
 function ProductVisualsCard({
@@ -290,8 +483,10 @@ function ProductVisualsCard({
   onToggleSelection,
   onDelete,
   onPreview,
+  onViewVariations,
   isDeleting,
   enableComposerActions = true,
+  isVariationView = false,
 }: ProductVisualsCardProps): ReactElement {
   const isVideo = item.type === "video";
   const preview = item.previewUrl ?? null;
@@ -317,7 +512,6 @@ function ProductVisualsCard({
       )}
       onClick={canOpen ? onPreview : undefined}
     >
-      {/* Checkbox overlay */}
       <div
         className="absolute top-2 left-2 z-10"
         onClick={(e) => e.stopPropagation()}
@@ -329,7 +523,6 @@ function ProductVisualsCard({
         />
       </div>
 
-      {/* Type badge overlay */}
       <div className="absolute top-2 left-9 z-10">
         <div className="flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium border shadow-sm">
           {isVideo ? (
@@ -341,17 +534,17 @@ function ProductVisualsCard({
         </div>
       </div>
 
-      {/* Actions dropdown - appears on hover */}
       {isCompleted && (
         <ProductVisualsActionsDropdown
           item={item}
           onDelete={onDelete}
+          onViewVariations={onViewVariations}
           isDeleting={isDeleting}
           enableComposerActions={enableComposerActions}
+          isVariationView={isVariationView}
         />
       )}
 
-      {/* Play button overlay for videos */}
       {isVideo && canOpen && (
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white">
