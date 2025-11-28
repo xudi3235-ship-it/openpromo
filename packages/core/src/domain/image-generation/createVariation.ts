@@ -27,25 +27,17 @@ export async function createVariationFromParent(params: {
   referenceImageUrl?: string;
 }) {
   const parent = await EntImageGeneration.fromID(params.parentGenerationId);
-  const productId = parent.data.productId;
+  const productId = parent.productId();
   if (!productId) {
     throw new Error("Parent generation missing product reference");
   }
 
-  const metadata = (parent.data.metadata ?? {}) as Record<string, unknown>;
-  const referenceImageUrl =
-    params.referenceImageUrl ||
-    (metadata.referenceImageUrl as string | undefined) ||
-    parent.data.outputImages?.[0];
+  const referenceImageUrl = parent.referenceImageUrl();
   if (!referenceImageUrl) {
     throw new Error("Parent generation missing reference image");
   }
 
-  const styleId =
-    params.styleId ??
-    (metadata.styleId as string | undefined) ??
-    parent.data.styleComponentId ??
-    undefined;
+  const styleId = params.styleId ?? parent.styleId() ?? undefined;
 
   const generation = await EntImageGeneration.create({
     state: "pending",
