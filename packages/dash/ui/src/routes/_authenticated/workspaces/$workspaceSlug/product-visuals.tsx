@@ -9,7 +9,7 @@ import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import { useProductListQuery } from "@/queries/product";
 import { useProductVisualsFeedQuery } from "@/queries/product-visuals";
 import { useStylesListQuery } from "@/queries/styles-queries";
-import { useImageGeneratorStore } from "@/stores/image-generator-store";
+import { useProductVisualGeneratorStore } from "@/stores/product-visual-generator-store";
 
 type ProductVisualsSearch = {
   styleId?: string;
@@ -30,15 +30,18 @@ export const Route = createFileRoute(
 
 function ProductVisualsPage() {
   const { styleId, productId } = Route.useSearch();
-  const [activeSurface, setActiveSurface] = useState<"images" | "video">(
-    "images",
-  );
   const [productSearch, setProductSearch] = useState("");
 
-  const setSelectedStyleId = useImageGeneratorStore(
+  const generationType = useProductVisualGeneratorStore(
+    (state) => state.generationType,
+  );
+  const setGenerationType = useProductVisualGeneratorStore(
+    (state) => state.setGenerationType,
+  );
+  const setSelectedStyleId = useProductVisualGeneratorStore(
     (state) => state.setSelectedStyleId,
   );
-  const setSelectedProductId = useImageGeneratorStore(
+  const setSelectedProductId = useProductVisualGeneratorStore(
     (state) => state.setSelectedProductId,
   );
 
@@ -150,8 +153,8 @@ function ProductVisualsPage() {
             enableComposerActions={false}
             className="h-full"
             showGallery={false}
-            generationMode={activeSurface}
-            onGenerationModeChange={setActiveSurface}
+            generationMode={generationType}
+            onGenerationModeChange={setGenerationType}
           />
 
           <ProductVisualsGallery

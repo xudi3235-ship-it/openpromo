@@ -23,7 +23,7 @@ import type {
   ProductImageGenerateResponse,
 } from "@/queries/product";
 import { useComposerStore } from "@/stores/composer-store";
-import { useImageGeneratorStore } from "@/stores/image-generator-store";
+import { useProductVisualGeneratorStore } from "@/stores/product-visual-generator-store";
 import { GenerationCardActions } from "./generation-card-actions";
 import { GenerationViewerModal } from "./generation-viewer-modal";
 
@@ -47,7 +47,9 @@ export function GeneratedImagesGallery({
   className,
   onEditGeneration,
 }: GeneratedImagesGalleryProps) {
-  const batchCount = useImageGeneratorStore((state) => state.batchCount);
+  const batchCount = useProductVisualGeneratorStore(
+    (state) => state.batchCount,
+  );
   const [gridCols, setGridCols] = useState(4);
   const [selectedGenerations, setSelectedGenerations] = useState<Set<string>>(
     new Set(),

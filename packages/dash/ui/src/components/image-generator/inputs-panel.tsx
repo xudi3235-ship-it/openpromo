@@ -17,7 +17,7 @@ import type {
   ProductImageGenerateResponse,
 } from "@/queries/product";
 import { useProductVisualsVideoStartMutation } from "@/queries/video-gen";
-import { useImageGeneratorStore } from "@/stores/image-generator-store";
+import { useProductVisualGeneratorStore } from "@/stores/product-visual-generator-store";
 import { GenerateButton } from "./generate-button";
 import { ProductSelect, type ProductSelectItem } from "./product-select";
 import { StyleGallery, type StyleGalleryItem } from "./style-gallery";
@@ -56,7 +56,6 @@ export function InputsPanel({
 }: InputsPanelProps) {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState(productSearch);
-  const [avatarImageUrl, setAvatarImageUrl] = useState("");
 
   // Debounce search to avoid excessive API calls
   const [debouncedSearch] = useDebounceValue(localSearch, 400);
@@ -71,31 +70,42 @@ export function InputsPanel({
     onProductSearchChange(debouncedSearch.trim());
   }, [debouncedSearch, onProductSearchChange]);
 
-  const selectedProductId = useImageGeneratorStore(
+  const selectedProductId = useProductVisualGeneratorStore(
     (state) => state.selectedProductId,
   );
-  const setSelectedProductId = useImageGeneratorStore(
+  const setSelectedProductId = useProductVisualGeneratorStore(
     (state) => state.setSelectedProductId,
   );
 
-  const selectedStyleId = useImageGeneratorStore(
+  const selectedStyleId = useProductVisualGeneratorStore(
     (state) => state.selectedStyleId,
   );
-  const setSelectedStyleId = useImageGeneratorStore(
+  const setSelectedStyleId = useProductVisualGeneratorStore(
     (state) => state.setSelectedStyleId,
   );
 
-  const batchCount = useImageGeneratorStore((state) => state.batchCount);
-  const setBatchCount = useImageGeneratorStore((state) => state.setBatchCount);
+  const batchCount = useProductVisualGeneratorStore(
+    (state) => state.batchCount,
+  );
+  const setBatchCount = useProductVisualGeneratorStore(
+    (state) => state.setBatchCount,
+  );
 
-  const prompt = useImageGeneratorStore((state) => state.prompt);
-  const setPrompt = useImageGeneratorStore((state) => state.setPrompt);
+  const prompt = useProductVisualGeneratorStore((state) => state.prompt);
+  const setPrompt = useProductVisualGeneratorStore((state) => state.setPrompt);
 
-  const referenceImageUrl = useImageGeneratorStore(
+  const referenceImageUrl = useProductVisualGeneratorStore(
     (state) => state.referenceImageUrl,
   );
-  const setReferenceImageUrl = useImageGeneratorStore(
+  const setReferenceImageUrl = useProductVisualGeneratorStore(
     (state) => state.setReferenceImageUrl,
+  );
+
+  const avatarImageUrl = useProductVisualGeneratorStore(
+    (state) => state.avatarImageUrl,
+  );
+  const setAvatarImageUrl = useProductVisualGeneratorStore(
+    (state) => state.setAvatarImageUrl,
   );
 
   const videoStartMutation = useProductVisualsVideoStartMutation();
