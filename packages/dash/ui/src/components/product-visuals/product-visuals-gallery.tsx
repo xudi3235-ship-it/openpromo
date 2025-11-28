@@ -2,35 +2,20 @@
 import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
 import { Checkbox } from "@openpromo/ui/components/checkbox";
-import { Dialog, DialogContent } from "@openpromo/ui/components/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@openpromo/ui/components/dropdown-menu";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Slider } from "@openpromo/ui/components/slider";
 import { Spinner } from "@openpromo/ui/components/spinner";
 import { cn } from "@openpromo/ui/lib/utils";
-import {
-  Download,
-  ExternalLink,
-  FileText,
-  Film,
-  Image as ImageIcon,
-  MoreVertical,
-  Play,
-  Trash2,
-} from "lucide-react";
+import { FileText, Film, Image as ImageIcon, Play, Trash2 } from "lucide-react";
 import { type ReactElement, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ImageGrid } from "@/components/common/ImageGrid";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
 import type { ProductVisualsFeedResponse } from "@/queries/product-visuals";
 import { useProductVisualsBatchDeleteMutation } from "@/queries/product-visuals";
+import { ProductVisualsActionsDropdown } from "./product-visuals-actions-dropdown";
+import { ProductVisualsPreviewModal } from "./product-visuals-preview-modal";
 
 type FeedItem = ProductVisualsFeedResponse["items"][number];
 
@@ -281,39 +266,10 @@ export function ProductVisualsGallery({
       </div>
 
       {/* Preview Modal */}
-      <Dialog
-        open={!!previewItem}
-        onOpenChange={(open) => !open && setPreviewItem(null)}
-      >
-        <DialogContent
-          className="max-w-4xl p-0 overflow-hidden bg-black/95 border-none"
-          showCloseButton={true}
-        >
-          {previewItem && (
-            <div className="flex flex-col items-center justify-center min-h-[300px]">
-              {previewItem.type === "video" && previewItem.outputUrl ? (
-                <video
-                  src={previewItem.outputUrl}
-                  autoPlay
-                  loop
-                  controls
-                  className="max-w-full max-h-[80vh] object-contain"
-                />
-              ) : previewItem.outputUrl ? (
-                <img
-                  src={previewItem.outputUrl}
-                  alt="Preview"
-                  className="max-w-full max-h-[80vh] object-contain"
-                />
-              ) : (
-                <div className="text-white/50 text-sm">
-                  No preview available
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ProductVisualsPreviewModal
+        previewItem={previewItem}
+        onClose={() => setPreviewItem(null)}
+      />
     </div>
   );
 }
@@ -337,7 +293,6 @@ function ProductVisualsCard({
   isDeleting,
   enableComposerActions = true,
 }: ProductVisualsCardProps): ReactElement {
-  const openComposer = useOpenComposer();
   const isVideo = item.type === "video";
   const preview = item.previewUrl ?? null;
   const createdLabel = item.createdAt
@@ -352,35 +307,6 @@ function ProductVisualsCard({
   const isPending = ["not_started", "pending", "generating"].includes(
     item.state,
   );
-
-  const handleOpen = () => {
-    if (canOpen && item.outputUrl) {
-      window.open(item.outputUrl, "_blank", "noopener,noreferrer");
-    }
-  };
-
-  const handleDownload = () => {
-    if (item.outputUrl) {
-      window.open(item.outputUrl, "_blank");
-    }
-  };
-
-  const handleCreatePost = () => {
-    if (!item.outputUrl) return;
-
-    openComposer({
-      attachments: [
-        {
-          id: item.id,
-          type: isVideo ? "video" : "photo",
-          publicUrl: item.outputUrl,
-          thumbnailUrl: item.previewUrl ?? item.outputUrl,
-          mimeType: isVideo ? "video/mp4" : "image/jpeg",
-          s3Key: item.id,
-        },
-      ],
-    });
-  };
 
   return (
     <div
@@ -417,64 +343,12 @@ function ProductVisualsCard({
 
       {/* Actions dropdown - appears on hover */}
       {isCompleted && (
-        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 bg-background/90 hover:bg-background backdrop-blur-sm shadow-sm"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="h-3.5 w-3.5" />
-                <span className="sr-only">Actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              {enableComposerActions && (
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCreatePost();
-                  }}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  Create post
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOpen();
-                }}
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Open in new tab
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDownload();
-                }}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-                disabled={isDeleting}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <ProductVisualsActionsDropdown
+          item={item}
+          onDelete={onDelete}
+          isDeleting={isDeleting}
+          enableComposerActions={enableComposerActions}
+        />
       )}
 
       {/* Play button overlay for videos */}
