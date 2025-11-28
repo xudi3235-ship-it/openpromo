@@ -55,7 +55,6 @@ export async function createVariationFromParent(params: {
     metadata: {
       prompt: params.prompt,
       referenceImageUrl,
-      styleId,
       parentGenerationId: parent.data.id,
     },
   });

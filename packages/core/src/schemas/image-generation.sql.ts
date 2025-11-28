@@ -25,7 +25,6 @@ export const ImageGenMetaSchema = z
     prompt: z.string().optional(),
     generatedPrompt: z.string().optional(),
     referenceImageUrl: z.string().optional(),
-    styleId: z.string().optional(),
     inputImages: z.array(z.string()).min(1).optional(),
     parentGenerationId: z.string().optional(),
     variationPrompt: z.string().optional(),

@@ -8,6 +8,7 @@ import {
 import { Log } from "@core/utils/log";
 import { z } from "zod";
 import { EntImageGeneration } from "../EntImageGeneration";
+import { ProductImageGenWorkflow } from "../product-image-gen-workflow";
 
 const ImageGenerationWorkflowParams = z.object({
   actor: Actor.WorkspaceUserSchema,
@@ -49,16 +50,12 @@ export class ImageGenerationWorkflow extends CoreWorkflowEntrypoint<ImageGenerat
         await g.dispatchUpdateEvent();
       });
 
-      // Generate image using the same logic as sync mode
-      await step.do("generate-image", async () => {
-        const g = await EntImageGeneration.fromID(generationId);
-        const metadata = g.data.metadata || {};
-        await EntImageGeneration.fulfillProductImageWithReference(g, {
-          prompt: (metadata.prompt as string | undefined) ?? "",
-          referenceImageUrl: metadata?.referenceImageUrl as string | undefined,
-          styleId: g.data.styleComponentId ?? metadata?.styleId,
-        });
-      });
+      // use our new ProductImageGenWorkflow to handle the rest
+      const productImageWorkflow = new ProductImageGenWorkflow(
+        step,
+        generationId,
+      );
+      await productImageWorkflow.run();
 
       // Dispatch completion event with refreshed data
       await step.do("mark-completed", async () => {

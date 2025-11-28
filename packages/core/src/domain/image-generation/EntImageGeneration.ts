@@ -19,19 +19,15 @@ import {
   ImageGenerationUpdate,
   imageGenerationTable,
 } from "@core/schemas/image-generation.sql";
-import { filterNulls } from "@core/utils/common";
 import { fn } from "@core/utils/fn";
 import { createWorkspaceEvent, WorkspaceEventType } from "@shared/workspace";
-import type {
-  ResponseInput,
-  ResponseInputItem,
-} from "openai/resources/responses/responses.mjs";
 import type z from "zod";
 import { ProductImageGen } from "../genai";
 import { GenAI } from "../genai/helpers";
 import { EntProduct } from "../product";
 import { EntStyleComponent } from "../style-component";
 import { dispatchWorkspaceEvent } from "../workspace/realtime";
+import { generateProductImage } from "./product-image-generator";
 
 export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
   static type = "image_generation";
@@ -134,10 +130,12 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
       styleComponentId: params.styleId ?? null,
       parentGenerationId: params.parentGenerationId ?? null,
     });
-    return EntImageGeneration.fulfillProductImageWithReference(generation, {
+    return generateProductImage({
+      generation,
+      productId: params.productId,
+      styleId: params.styleId,
       referenceImageUrl: params.referenceImageUrl,
       prompt: params.prompt,
-      styleId: params.styleId,
     });
   }
 
@@ -242,147 +240,6 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
         ...(generation.data.metadata ?? {}),
         prompt: customPrompt,
         generatedPrompt: image_prompt,
-        inputImages,
-      },
-    });
-    return generation;
-  }
-
-  static async fulfillProductImageWithReference(
-    generation: EntImageGeneration,
-    params: {
-      referenceImageUrl?: string;
-      prompt: string;
-      styleId?: string;
-      parentGenerationId?: string | null;
-    },
-  ) {
-    const productId = generation.data.productId;
-    if (!productId) throw new Error("Generation missing product reference");
-
-    const product = await EntProduct.fromID(productId);
-
-    const styleId =
-      params.styleId ?? generation.data.styleComponentId ?? undefined;
-
-    async function maybeGetStyleImage(): Promise<string[]> {
-      if (!styleId) return [];
-      const style = await EntStyleComponent.fromID(styleId);
-      return style.data.imageRefs;
-    }
-
-    const styleImageRefs = await maybeGetStyleImage();
-
-    function toResponseInput(): ResponseInput {
-      const productMsg = {
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: `and here are the product related img/context. product context: ${JSON.stringify(
-              product.data,
-              null,
-              2,
-            )}`,
-          },
-          {
-            type: "input_image",
-            image_url: product.data.imgVariants?.noBg as string,
-            detail: "auto",
-          },
-        ],
-      } as ResponseInputItem;
-      // case 1: style images exist
-      if (styleImageRefs.length > 0) {
-        return [
-          {
-            role: "user",
-            content: [
-              {
-                type: "input_text",
-                text: `here are the style reference images`,
-              },
-              ...styleImageRefs.map((url) => ({
-                type: "input_image",
-                image_url: url,
-                detail: "auto",
-              })),
-            ],
-          },
-          productMsg,
-        ] as ResponseInput;
-      }
-      // case 2: only reference image exist, ad hoc
-      return [
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: `here are the refernce images`,
-            },
-            {
-              type: "input_image",
-              image_url: params.referenceImageUrl,
-              detail: "auto",
-            },
-          ],
-        },
-        productMsg,
-      ] as ResponseInput;
-    }
-
-    function resolveRefImageUrls() {
-      if (styleImageRefs.length > 0) {
-        return [...styleImageRefs];
-      } else if (params.referenceImageUrl) {
-        return [params.referenceImageUrl];
-      }
-      throw new Error("No reference image URL or style images provided");
-    }
-
-    const user_input = `first img is the reference image. and rest imgs are my product. ${params.prompt}`;
-    const response = await oai().responses.create({
-      prompt: {
-        id: "pmpt_68ff0d90439c8196be84f928d5f2546b0df830bb02f714b6",
-        variables: {
-          user_input,
-        },
-      },
-      input: toResponseInput(),
-      reasoning: {
-        summary: "auto",
-      },
-      store: true,
-    });
-    const image_prompt = response.output_text;
-    console.log("Generated image prompt:", image_prompt);
-
-    const inputImages = filterNulls([
-      ...resolveRefImageUrls(),
-      product.data.imgVariants?.noBg,
-    ]);
-
-    const externalImageUrl = await GenAI.runNanoBanana({
-      prompt: image_prompt,
-      image_input: inputImages,
-    });
-
-    // Copy the generated image to our internal R2 storage
-    const imageUrl = await EntImageGeneration.copyImageToStorage(
-      externalImageUrl,
-      generation.data.id,
-    );
-
-    await generation.update({
-      outputImages: [imageUrl],
-      state: "completed",
-      metadata: {
-        ...(generation.data.metadata ?? {}),
-        prompt: params.prompt,
-        generatedPrompt: image_prompt,
-        referenceImageUrl: params.referenceImageUrl,
-        styleId,
         inputImages,
       },
     });
@@ -500,6 +357,45 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
         hasPreviousPage: page > 1,
       },
     };
+  }
+  // ------------------------------------------------------------------------
+  // wrappers around data
+  // ------------------------------------------------------------------------
+  meta() {
+    return this.data.metadata;
+  }
+  prompt() {
+    return this.meta().prompt;
+  }
+  referenceImageUrl() {
+    return this.meta().referenceImageUrl;
+  }
+  styleId() {
+    return this.data.styleComponentId;
+  }
+  async style() {
+    const id = this.data.styleComponentId;
+    if (!id) throw new Error("Generation has no associated style");
+    return await EntStyleComponent.fromID(id);
+  }
+  productId() {
+    return this.data.productId;
+  }
+
+  async product() {
+    const id = this.data.productId;
+    if (!id) throw new Error("Generation has no associated product");
+    return await EntProduct.fromID(id);
+  }
+
+  async productImages() {
+    const product = await this.product();
+    // flatten
+    return Object.values(product.data.imgVariants || {});
+  }
+  async styleImages() {
+    const style = await this.style();
+    return style.data.imageRefs;
   }
 
   static async listForStyle(

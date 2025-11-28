@@ -84,7 +84,6 @@ export async function generateImages({
         metadata: {
           prompt: resolvedPrompt,
           referenceImageUrl: resolvedReferenceImageUrl,
-          styleId: resolvedStyleId,
           parentGenerationId,
         },
       });
