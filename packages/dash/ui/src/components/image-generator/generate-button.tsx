@@ -8,6 +8,8 @@ interface GenerateButtonProps {
   disabled: boolean;
   isGenerating: boolean;
   className?: string;
+  idleLabel?: string;
+  generatingLabel?: string;
 }
 
 export function GenerateButton({
@@ -15,6 +17,8 @@ export function GenerateButton({
   disabled,
   isGenerating,
   className,
+  idleLabel = "Generate Image",
+  generatingLabel = "Generating...",
 }: GenerateButtonProps) {
   return (
     <Button
@@ -26,12 +30,12 @@ export function GenerateButton({
       {isGenerating ? (
         <>
           <Spinner className="mr-2 h-3.5 w-3.5" />
-          Generating...
+          {generatingLabel}
         </>
       ) : (
         <>
           <RiAiGenerate className="mr-2 h-3.5 w-3.5" />
-          Generate Image
+          {idleLabel}
         </>
       )}
     </Button>

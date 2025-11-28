@@ -1,16 +1,13 @@
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@openpromo/ui/components/tabs";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ImageGeneratorExperience } from "@/components/image-generator/image-generator-experience";
-import { ProductVideoGeneratorExperience } from "@/components/video-generator/product-video-generator-experience";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ImageGeneratorSurface } from "@/components/image-generator/image-generator-surface";
+import type { ProductSelectItem } from "@/components/image-generator/product-select";
+import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
+import { ProductVisualsGallery } from "@/components/product-visuals/product-visuals-gallery";
 import { useImageGeneratorMutation } from "@/hooks/useImageGeneratorMutation";
-import { useImageGenListQuery } from "@/queries/image-gen";
+import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import { useProductListQuery } from "@/queries/product";
+import { useProductVisualsFeedQuery } from "@/queries/product-visuals";
 import { useStylesListQuery } from "@/queries/styles-queries";
 import { useImageGeneratorStore } from "@/stores/image-generator-store";
 
@@ -37,12 +34,7 @@ function ProductVisualsPage() {
     "images",
   );
   const [productSearch, setProductSearch] = useState("");
-  const selectedProductId = useImageGeneratorStore(
-    (state) => state.selectedProductId,
-  );
-  const selectedStyleId = useImageGeneratorStore(
-    (state) => state.selectedStyleId,
-  );
+
   const setSelectedStyleId = useImageGeneratorStore(
     (state) => state.setSelectedStyleId,
   );
@@ -60,18 +52,63 @@ function ProductVisualsPage() {
     page: 1,
     officialOnly: true,
   });
-  const { data: generationsData, isPending: isPendingGenerations } =
-    useImageGenListQuery({
-      page: 1,
-      pageSize: 12,
-    });
+
+  const {
+    data: feedData,
+    isPending: isFeedPending,
+    refetch: refetchFeed,
+  } = useProductVisualsFeedQuery({
+    page: 1,
+    pageSize: 18,
+  });
+
+  const handleFeedRefresh = useCallback(() => {
+    void refetchFeed();
+  }, [refetchFeed]);
+
+  useWorkspaceEvents({
+    handlers: {
+      "image_generation.updated": handleFeedRefresh,
+      "video_generation.updated": handleFeedRefresh,
+    },
+  });
 
   // Don't add to composer in product visuals context
   const generateMutation = useImageGeneratorMutation({ addToComposer: false });
 
   const products = productsData?.products ?? [];
   const styles = stylesData?.styles ?? [];
-  const generations = generationsData?.generations ?? [];
+
+  const productSelectItems = useMemo<ProductSelectItem[]>(
+    () =>
+      products.map((product) => ({
+        id: product.id,
+        name: product.name ?? null,
+        primaryAttachmentId: product.primaryAttachmentId ?? null,
+        attachments:
+          product.attachments?.map((attachment) => ({
+            id: attachment.id,
+            type: attachment.type,
+            thumbnailUrl: attachment.thumbnailUrl ?? undefined,
+            publicUrl: attachment.publicUrl ?? undefined,
+            presignedUrl: attachment.presignedUrl ?? undefined,
+          })) ?? [],
+      })),
+    [products],
+  );
+
+  const styleGalleryItems = useMemo<StyleGalleryItem[]>(
+    () =>
+      styles.map((style) => ({
+        id: style.id,
+        name: style.name ?? null,
+        description: style.description ?? null,
+        imageRefs: style.imageRefs ?? [],
+      })),
+    [styles],
+  );
+
+  const feedItems = feedData?.items ?? [];
 
   // Pre-select style from URL param
   useEffect(() => {
@@ -88,13 +125,7 @@ function ProductVisualsPage() {
   }, [productId, setSelectedProductId]);
 
   return (
-    <Tabs
-      value={activeSurface}
-      onValueChange={(value) =>
-        setActiveSurface((value as "images" | "video") ?? "images")
-      }
-      className="flex h-full flex-col bg-background"
-    >
+    <div className="flex h-full flex-col bg-background">
       <div className="flex-shrink-0 px-6 pb-4">
         <h1 className="text-2xl font-semibold tracking-tight">
           Product Visuals
@@ -103,44 +134,33 @@ function ProductVisualsPage() {
           Generate ready-to-use product imagery and video concepts with styles,
           prompts, and batch control.
         </p>
-        <TabsList className="mt-4">
-          <TabsTrigger value="images">Images</TabsTrigger>
-          <TabsTrigger value="video">Video</TabsTrigger>
-        </TabsList>
       </div>
 
       <div className="flex-1 min-h-0 px-4 pb-4">
-        <TabsContent value="images" className="h-full">
-          <div className="h-full rounded-xl bg-card">
-            <ImageGeneratorExperience
-              products={products}
-              styles={styles}
-              isLoadingProducts={isPendingProducts}
-              isLoadingStyles={isPendingStyles}
-              remainingSlots={Number.POSITIVE_INFINITY}
-              generateMutation={generateMutation}
-              productSearch={productSearch}
-              onProductSearchChange={setProductSearch}
-              enableComposerActions={false}
-              className="h-full min-h-0"
-              generations={generations}
-              isLoadingGenerations={isPendingGenerations}
-            />
-          </div>
-        </TabsContent>
+        <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-[420px_1fr]">
+          <ImageGeneratorSurface
+            products={productSelectItems}
+            styles={styleGalleryItems}
+            isLoadingProducts={isPendingProducts}
+            isLoadingStyles={isPendingStyles}
+            remainingSlots={Number.POSITIVE_INFINITY}
+            generateMutation={generateMutation}
+            productSearch={productSearch}
+            onProductSearchChange={setProductSearch}
+            enableComposerActions={false}
+            className="h-full"
+            showGallery={false}
+            generationMode={activeSurface}
+            onGenerationModeChange={setActiveSurface}
+          />
 
-        <TabsContent value="video" className="h-full">
-          <div className="h-full rounded-xl bg-card p-4">
-            <ProductVideoGeneratorExperience
-              products={products}
-              isLoadingProducts={isPendingProducts}
-              selectedProductId={selectedProductId}
-              onSelectProductId={setSelectedProductId}
-              styleComponentId={selectedStyleId}
-            />
-          </div>
-        </TabsContent>
+          <ProductVisualsGallery
+            items={feedItems}
+            isLoading={isFeedPending}
+            onRefetch={refetchFeed}
+          />
+        </div>
       </div>
-    </Tabs>
+    </div>
   );
 }

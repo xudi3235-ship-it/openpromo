@@ -29,6 +29,9 @@ export interface ImageGeneratorSurfaceProps {
   enableComposerActions?: boolean;
   className?: string;
   onGenerationEditRequest?: (generation: Generation) => void;
+  showGallery?: boolean;
+  generationMode?: "images" | "video";
+  onGenerationModeChange?: (mode: "images" | "video") => void;
 }
 
 export function ImageGeneratorSurface({
@@ -43,7 +46,30 @@ export function ImageGeneratorSurface({
   enableComposerActions = true,
   className,
   onGenerationEditRequest,
+  showGallery = true,
+  generationMode,
+  onGenerationModeChange,
 }: ImageGeneratorSurfaceProps) {
+  if (!showGallery) {
+    return (
+      <div className={cn("h-full", className)}>
+        <InputsPanel
+          products={products}
+          styles={styles}
+          isLoadingProducts={isLoadingProducts}
+          isLoadingStyles={isLoadingStyles}
+          remainingSlots={remainingSlots}
+          generateMutation={generateMutation}
+          productSearch={productSearch}
+          onProductSearchChange={onProductSearchChange}
+          className="h-full"
+          generationMode={generationMode}
+          onGenerationModeChange={onGenerationModeChange}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(

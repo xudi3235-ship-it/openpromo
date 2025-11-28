@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { orpc } from "@/lib/orpc-client";
@@ -24,6 +24,12 @@ export type VideoGenGetInput = Omit<
   "workspaceId" | "workspaceSlug"
 >;
 export type VideoGenGetResponse = VideoGenRouterOutputs["get"];
+
+export type VideoGenDeleteBatchInput = Omit<
+  VideoGenRouterInputs["deleteBatch"],
+  "workspaceId" | "workspaceSlug"
+>;
+export type VideoGenDeleteBatchResponse = VideoGenRouterOutputs["deleteBatch"];
 
 export type ProductVisualsVideoStartInput = Omit<
   ProductVisualsVideoRouterInputs["start"],
@@ -85,6 +91,38 @@ export const useProductVisualsVideoStartMutation = (
     },
     onError: (error) => {
       toast.error(error.message || "Failed to start video generation");
+    },
+  });
+};
+
+/**
+ * Hook to delete video generations in batch.
+ */
+export const useVideoGenDeleteBatchMutation = (onSuccess?: () => void) => {
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    VideoGenDeleteBatchResponse,
+    Error,
+    VideoGenDeleteBatchInput
+  >({
+    mutationFn: async (variables) =>
+      orpc.videoGen.deleteBatch.call({
+        ...variables,
+        workspaceSlug: workspace.slug,
+      }),
+    onSuccess: async (data) => {
+      await queryClient.invalidateQueries({
+        queryKey: orpc.productVisuals.feed.key(),
+      });
+      toast.success(
+        `Deleted ${data.deletedCount} video${data.deletedCount !== 1 ? "s" : ""}`,
+      );
+      onSuccess?.();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to delete videos");
     },
   });
 };

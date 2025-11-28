@@ -12,6 +12,7 @@ export {
   listPlanet,
   planetRouter,
 } from "./routes/planet";
+export { productVisualsRouter } from "./routes/product-visuals";
 export { productVisualsVideoRouter } from "./routes/product-visuals-video";
 export { productsRouter } from "./routes/products";
 export { listStyles, stylesRouter } from "./routes/styles";
@@ -27,6 +28,7 @@ import { inboxRouter as inbox } from "./routes/inbox";
 import { insightsRouter as insights } from "./routes/insights";
 import { internalRouter as internal } from "./routes/internal";
 import { planetRouter as planet } from "./routes/planet";
+import { productVisualsRouter as productVisuals } from "./routes/product-visuals";
 import { productVisualsVideoRouter as productVisualsVideo } from "./routes/product-visuals-video";
 import { productsRouter as products } from "./routes/products";
 import { stylesRouter as styles } from "./routes/styles";
@@ -56,6 +58,7 @@ export const orpcRouter = orpcBuilder
     insights,
     imageGen,
     videoGen,
+    productVisuals,
     productVisualsVideo,
     styles,
     products,

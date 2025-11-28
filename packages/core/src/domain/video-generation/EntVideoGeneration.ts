@@ -1,4 +1,4 @@
-import { and, count, db, desc, eq } from "@core/database/db";
+import { and, count, db, desc, eq, inArray } from "@core/database/db";
 import { Actor } from "@core/helpers/actor";
 import { Ent } from "@core/helpers/ent";
 import {
@@ -178,6 +178,23 @@ export class EntVideoGeneration extends Ent<VideoGenerationSelectType> {
     if (!deleted) throw new Error(`Video generation ${this.data.id} not found`);
 
     return deleted;
+  }
+
+  static async deleteBatch(ids: string[]) {
+    if (ids.length === 0) return { deletedCount: 0 };
+
+    // Delete the database records (videos are stored in Cloudflare Stream, cleanup handled separately)
+    const deleted = await db()
+      .delete(videoGenerationTable)
+      .where(
+        and(
+          eq(videoGenerationTable.workspaceId, Actor.workspaceID()),
+          inArray(videoGenerationTable.id, ids),
+        ),
+      )
+      .returning({ id: videoGenerationTable.id });
+
+    return { deletedCount: deleted.length };
   }
 
   /**

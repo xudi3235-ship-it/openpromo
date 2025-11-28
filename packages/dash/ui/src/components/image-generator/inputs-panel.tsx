@@ -16,6 +16,7 @@ import type {
   ProductImageGenerateInput,
   ProductImageGenerateResponse,
 } from "@/queries/product";
+import { useProductVisualsVideoStartMutation } from "@/queries/video-gen";
 import { useImageGeneratorStore } from "@/stores/image-generator-store";
 import { GenerateButton } from "./generate-button";
 import { ProductSelect, type ProductSelectItem } from "./product-select";
@@ -36,6 +37,8 @@ interface InputsPanelProps {
   productSearch: string;
   onProductSearchChange: (search: string) => void;
   className?: string;
+  generationMode?: "images" | "video";
+  onGenerationModeChange?: (mode: "images" | "video") => void;
 }
 
 export function InputsPanel({
@@ -48,9 +51,12 @@ export function InputsPanel({
   productSearch,
   onProductSearchChange,
   className,
+  generationMode,
+  onGenerationModeChange,
 }: InputsPanelProps) {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState(productSearch);
+  const [avatarImageUrl, setAvatarImageUrl] = useState("");
 
   // Debounce search to avoid excessive API calls
   const [debouncedSearch] = useDebounceValue(localSearch, 400);
@@ -92,6 +98,8 @@ export function InputsPanel({
     (state) => state.setReferenceImageUrl,
   );
 
+  const videoStartMutation = useProductVisualsVideoStartMutation();
+
   const availableSlots = Math.max(remainingSlots, 0);
   const sliderMax = availableSlots > 0 ? Math.min(availableSlots, 4) : 1;
   const resolvedBatchCount =
@@ -103,36 +111,56 @@ export function InputsPanel({
     }
   }, [batchCount, resolvedBatchCount, setBatchCount]);
 
-  const canGenerate =
-    Boolean(selectedProductId) &&
-    availableSlots > 0 &&
-    !generateMutation.isPending;
+  const isVideoMode = generationMode === "video";
+  const isPending = isVideoMode
+    ? videoStartMutation.isPending
+    : generateMutation.isPending;
+
+  const canGenerate = isVideoMode
+    ? Boolean(selectedProductId) && Boolean(prompt.trim()) && !isPending
+    : Boolean(selectedProductId) && availableSlots > 0 && !isPending;
 
   const handleGenerate = () => {
-    if (!selectedProductId || generateMutation.isPending) return;
+    if (!selectedProductId || isPending) return;
 
-    const safeBatchCount =
-      availableSlots > 0
-        ? Math.min(batchCount, Math.min(availableSlots, 4))
-        : 0;
+    if (isVideoMode) {
+      // Video generation
+      const trimmedPrompt = prompt.trim();
+      if (!trimmedPrompt) return;
 
-    if (safeBatchCount <= 0) return;
+      videoStartMutation.mutate({
+        productId: selectedProductId,
+        styleComponentId: selectedStyleId || undefined,
+        instructions: trimmedPrompt,
+        avatarImageUrl: avatarImageUrl.trim() || undefined,
+      });
+    } else {
+      // Image generation
+      const safeBatchCount =
+        availableSlots > 0
+          ? Math.min(batchCount, Math.min(availableSlots, 4))
+          : 0;
 
-    if (safeBatchCount !== batchCount) {
-      setBatchCount(safeBatchCount);
+      if (safeBatchCount <= 0) return;
+
+      if (safeBatchCount !== batchCount) {
+        setBatchCount(safeBatchCount);
+      }
+
+      const trimmedPrompt = prompt.trim();
+      const trimmedReference = referenceImageUrl.trim();
+
+      generateMutation.mutate({
+        productId: selectedProductId,
+        styleId: selectedStyleId || undefined,
+        batchCount: safeBatchCount,
+        prompt: trimmedPrompt || undefined,
+        referenceImageUrl: trimmedReference || undefined,
+      });
     }
-
-    const trimmedPrompt = prompt.trim();
-    const trimmedReference = referenceImageUrl.trim();
-
-    generateMutation.mutate({
-      productId: selectedProductId,
-      styleId: selectedStyleId || undefined,
-      batchCount: safeBatchCount,
-      prompt: trimmedPrompt || undefined,
-      referenceImageUrl: trimmedReference || undefined,
-    });
   };
+
+  const showTabs = generationMode && onGenerationModeChange;
 
   return (
     <div
@@ -147,9 +175,37 @@ export function InputsPanel({
         <p className="text-xs text-muted-foreground">
           Choose a product, optional style, and customize the generation run.
         </p>
+        {showTabs && (
+          <div className="grid grid-cols-2 mt-3 h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+            <button
+              type="button"
+              onClick={() => onGenerationModeChange("images")}
+              className={cn(
+                "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                generationMode === "images"
+                  ? "bg-background text-foreground shadow"
+                  : "hover:bg-background/50",
+              )}
+            >
+              Images
+            </button>
+            <button
+              type="button"
+              onClick={() => onGenerationModeChange("video")}
+              className={cn(
+                "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                generationMode === "video"
+                  ? "bg-background text-foreground shadow"
+                  : "hover:bg-background/50",
+              )}
+            >
+              Video
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Scrollable Content */}
+      {/* Unified content for image and video */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="px-4 py-4 space-y-4">
@@ -194,99 +250,133 @@ export function InputsPanel({
               isLoading={isLoadingStyles}
             />
 
-            {/* Advanced Options Collapsible */}
-            <Collapsible
-              open={isAdvancedOpen}
-              onOpenChange={setIsAdvancedOpen}
-              className="space-y-2"
-            >
-              <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-                <span>Advanced options</span>
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 transition-transform",
-                    isAdvancedOpen && "rotate-180",
-                  )}
+            {/* Avatar Image URL - only shown in video mode */}
+            {isVideoMode && (
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="avatar-url-input"
+                  className="text-xs font-medium text-muted-foreground"
+                >
+                  Avatar image URL
+                  <span className="ml-1 font-normal text-muted-foreground/70">
+                    (optional)
+                  </span>
+                </label>
+                <Textarea
+                  id="avatar-url-input"
+                  value={avatarImageUrl}
+                  onChange={(event) => setAvatarImageUrl(event.target.value)}
+                  placeholder="Paste avatar image URL for video presenter..."
+                  rows={2}
+                  className="resize-none font-mono text-xs"
                 />
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4">
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="reference-url-input"
-                    className="text-xs font-medium text-muted-foreground"
-                  >
-                    Reference image URL
-                    <span className="ml-1 font-normal text-muted-foreground/70">
-                      (optional)
-                    </span>
-                  </label>
-                  <Textarea
-                    id="reference-url-input"
-                    value={referenceImageUrl}
-                    onChange={(event) =>
-                      setReferenceImageUrl(event.target.value)
-                    }
-                    placeholder="Paste a reference image URL..."
-                    rows={2}
-                    className="resize-none font-mono text-xs"
-                  />
-                </div>
+              </div>
+            )}
 
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="prompt-input"
-                    className="text-xs font-medium text-muted-foreground"
-                  >
-                    Custom prompt
-                    <span className="ml-1 font-normal text-muted-foreground/70">
-                      (optional)
-                    </span>
-                  </label>
-                  <Textarea
-                    id="prompt-input"
-                    value={prompt}
-                    onChange={(event) => setPrompt(event.target.value)}
-                    placeholder="Add additional instructions..."
-                    rows={3}
-                    className="resize-none"
-                  />
-                </div>
+            {/* Instructions/Prompt - required for video, optional for images */}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="prompt-input"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                {isVideoMode ? "Instructions" : "Custom prompt"}
+                {!isVideoMode && (
+                  <span className="ml-1 font-normal text-muted-foreground/70">
+                    (optional)
+                  </span>
+                )}
+              </label>
+              <Textarea
+                id="prompt-input"
+                value={prompt}
+                onChange={(event) => setPrompt(event.target.value)}
+                placeholder={
+                  isVideoMode
+                    ? "Describe what the video should show..."
+                    : "Add additional instructions..."
+                }
+                rows={3}
+                className="resize-none"
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Batch size
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {resolvedBatchCount}
-                    </span>
-                  </div>
-                  <Slider
-                    value={[resolvedBatchCount]}
-                    onValueChange={(value) => setBatchCount(value[0] || 1)}
-                    min={1}
-                    max={sliderMax}
-                    step={1}
-                    disabled={availableSlots <= 0}
-                    className="w-full"
+            {/* Advanced Options Collapsible - only for images */}
+            {!isVideoMode && (
+              <Collapsible
+                open={isAdvancedOpen}
+                onOpenChange={setIsAdvancedOpen}
+                className="space-y-2"
+              >
+                <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  <span>Advanced options</span>
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      isAdvancedOpen && "rotate-180",
+                    )}
                   />
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Slots remaining: {availableSlots}</span>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="reference-url-input"
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      Reference image URL
+                      <span className="ml-1 font-normal text-muted-foreground/70">
+                        (optional)
+                      </span>
+                    </label>
+                    <Textarea
+                      id="reference-url-input"
+                      value={referenceImageUrl}
+                      onChange={(event) =>
+                        setReferenceImageUrl(event.target.value)
+                      }
+                      placeholder="Paste a reference image URL..."
+                      rows={2}
+                      className="resize-none font-mono text-xs"
+                    />
                   </div>
-                  {availableSlots <= 0 && (
-                    <p className="text-xs text-destructive">
-                      Remove existing attachments to free up slots before
-                      generating more images.
-                    </p>
-                  )}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        Batch size
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {resolvedBatchCount}
+                      </span>
+                    </div>
+                    <Slider
+                      value={[resolvedBatchCount]}
+                      onValueChange={(value) => setBatchCount(value[0] || 1)}
+                      min={1}
+                      max={sliderMax}
+                      step={1}
+                      disabled={availableSlots <= 0}
+                      className="w-full"
+                    />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Slots remaining: {availableSlots}</span>
+                    </div>
+                    {availableSlots <= 0 && (
+                      <p className="text-xs text-destructive">
+                        Remove existing attachments to free up slots before
+                        generating more images.
+                      </p>
+                    )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
 
             <GenerateButton
               onClick={handleGenerate}
               disabled={!canGenerate}
-              isGenerating={generateMutation.isPending}
+              isGenerating={isPending}
+              idleLabel={isVideoMode ? "Generate Video" : "Generate Image"}
+              generatingLabel={isVideoMode ? "Generating..." : "Generating..."}
             />
           </div>
         </ScrollArea>

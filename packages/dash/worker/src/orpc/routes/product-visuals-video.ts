@@ -17,6 +17,7 @@ const productVisualsVideoInput = createWorkspaceInputSchema(
     styleComponentId: z.string().optional(),
     instructions: z.string().min(1, "Instructions are required"),
     maxTurns: z.number().int().min(20).max(120).default(60),
+    avatarImageUrl: z.string().url().optional(),
   }),
 );
 
@@ -54,7 +55,13 @@ export const startProductVisualsVideo = orpcBuilder
   .input(productVisualsVideoInput)
   .use(withWorkspaceRole, workspaceRoleMappers.editor)
   .handler(async ({ input }) => {
-    const { productId, instructions, maxTurns, styleComponentId } = input;
+    const {
+      productId,
+      instructions,
+      maxTurns,
+      styleComponentId,
+      avatarImageUrl,
+    } = input;
 
     const product = await EntProduct.fromID(productId);
     const productImages = getProductImageUrls(product);
@@ -66,6 +73,7 @@ export const startProductVisualsVideo = orpcBuilder
     }
 
     const prompt = buildPrompt({ product, instructions, maxTurns });
+    const avatarImages = avatarImageUrl ? [avatarImageUrl] : [];
 
     const generation = await EntVideoGeneration.create({
       state: "not_started",
@@ -76,7 +84,7 @@ export const startProductVisualsVideo = orpcBuilder
         instructions,
         maxTurns,
         productImages,
-        avatarImages: [],
+        avatarImages,
         productId,
         styleComponentId: styleComponentId ?? undefined,
       },

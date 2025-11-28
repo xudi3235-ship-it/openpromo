@@ -76,6 +76,12 @@ const getVideoGenInput = createWorkspaceInputSchema(
   }),
 );
 
+const deleteVideoGenInput = createWorkspaceInputSchema(
+  z.object({
+    ids: z.array(z.string().min(1)).min(1),
+  }),
+);
+
 /**
  * Get the status of a video generation.
  */
@@ -96,9 +102,21 @@ export const getVideoGeneration = orpcBuilder
     };
   });
 
+/**
+ * Delete video generations in batch.
+ */
+export const deleteVideoGenerationsBatch = orpcBuilder
+  .input(deleteVideoGenInput)
+  .use(withWorkspaceRole, workspaceRoleMappers.editor)
+  .handler(async ({ input }) => {
+    const { ids } = input;
+    return EntVideoGeneration.deleteBatch(ids);
+  });
+
 export const videoGenRouter = {
   start: startVideoGeneration,
   get: getVideoGeneration,
+  deleteBatch: deleteVideoGenerationsBatch,
 };
 
 export type VideoGenRouterOutputs = InferRouterOutputs<typeof videoGenRouter>;
