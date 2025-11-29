@@ -1,10 +1,10 @@
 import { openai } from "@ai-sdk/openai";
+import { Replicate } from "@core/providers/replicate/models";
 import { ProductIdentificationSchema } from "@shared/product";
 import { generateObject, type ModelMessage, type UserModelMessage } from "ai";
 import { z } from "zod";
 import type { EntProduct } from "../product";
 import type { EntStyleComponent } from "../style-component";
-import { GenAI } from "./helpers";
 
 export namespace ProductImageGen {
   export const DEFAULT_NEGATIVE_PROMPT =
@@ -81,9 +81,9 @@ export namespace ProductImageGen {
     ${opts.prompt}
     negative prompt: ${negativePrompt}
     `;
-    const imageUrl = await GenAI.runSeedreamV4({
+    const imageUrl = await Replicate.SeedreamV4.run({
       prompt: sysPrompt,
-      imageRefs: opts.style.data.imageRefs,
+      image_input: opts.style.data.imageRefs,
     });
 
     return {

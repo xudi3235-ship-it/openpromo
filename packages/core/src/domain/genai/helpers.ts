@@ -52,23 +52,6 @@ export namespace GenAI {
     }
   }
 
-  export async function runSeedreamV4(opts: {
-    prompt: string;
-    imageRefs?: string[];
-  }) {
-    const input = {
-      prompt: opts.prompt,
-      image_input: opts.imageRefs,
-      aspect_ratio: "3:4",
-    };
-    console.log("generating image with input", input);
-    const output = (await replicate.run("bytedance/seedream-4", {
-      input,
-    })) as FileOutput[];
-    console.log("seedream output", output);
-    const imageUrl = output[0].url();
-    return imageUrl ? String(imageUrl) : null;
-  }
   export async function runNanoBanana(
     opts: {
       prompt: string;
