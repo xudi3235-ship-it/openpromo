@@ -9,8 +9,8 @@ catalog:
   '@types/react': 19.2.7
   '@types/react-dom': 19.2.3
   '@workos-inc/node': ^7.66.0
-  agents: ^0.2.25
-  ai: ^5.0.102
+  agents: ^0.2.26
+  ai: ^5.0.104
   cloudflare: ^5.0.0
   drizzle-orm: ^0.44.7
   hono: ^4.10.7
