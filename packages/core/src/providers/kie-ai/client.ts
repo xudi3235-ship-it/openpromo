@@ -1,3 +1,4 @@
+import { omitUndefined } from "@core/utils/common";
 import type { ZodType } from "zod";
 import type {
   ApiResponse,
@@ -555,10 +556,4 @@ export class KieAIClient {
 
 function normalizeUploadPath(path: string) {
   return path.replace(/^\/+|\/+$/g, "");
-}
-
-function omitUndefined<T extends Record<string, unknown>>(obj: T) {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([, value]) => value !== undefined),
-  ) as T;
 }

@@ -129,6 +129,13 @@ export function objectFlatten(
 
   return result;
 }
+
+export function omitUndefined<T extends Record<string, unknown>>(obj: T) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, value]) => value !== undefined),
+  ) as T;
+}
+
 // queue
 export async function queue<T, R>(
   concurrency: number,
