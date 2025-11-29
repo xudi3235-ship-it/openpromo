@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useAgentChat } from "agents/ai-react";
 import { useAgent } from "agents/react";
 import type { UIMessage } from "ai";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaceWebSocket } from "@/hooks/useWorkspaceWebSocket";
 import { useHonoMutation } from "@/lib/hono-client";
@@ -249,7 +249,11 @@ function PlaygroundPage() {
         </>
       )}
 
-      {activeTab === "agent-chat" && <AgentChatPanel userId={user?.id} />}
+      {activeTab === "agent-chat" && (
+        <Suspense fallback={<div>Loading Agent Chat...</div>}>
+          <AgentChatPanel userId={user?.id} />
+        </Suspense>
+      )}
     </div>
   );
 }
