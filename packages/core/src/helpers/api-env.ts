@@ -1,4 +1,5 @@
 import type { ContainerBackend } from "@core/containers";
+import type { VideoGenAgent } from "@core/domain/agents/video-gen-agent";
 import type { ContentBackfillWorkflowParams } from "@core/domain/content/workflows/content-backfill-workflow";
 import type { PublishWorkflowParams } from "@core/domain/content/workflows/content-publish-workflow";
 import type { ImageGenerationWorkflowParams } from "@core/domain/image-generation";
@@ -15,6 +16,7 @@ import { createContext } from "@core/utils/context";
 import type { env as runtimeEnvVars } from "@core/utils/env";
 import type { OrganizationRole } from "@shared/workspace/auth";
 import type { User } from "@workos-inc/node";
+import type { AgentNamespace } from "agents";
 
 export type ApiEnv = {
   Variables: {
@@ -26,20 +28,26 @@ export type ApiEnv = {
   };
   Bindings: typeof runtimeEnvVars & {
     HYPERDRIVE: Hyperdrive;
+    // workflows
     WORKFLOW: Workflow<PublishWorkflowParams>;
     ContentBackfillWorkflow: Workflow<ContentBackfillWorkflowParams>;
     ProductProcessingWorkflow: Workflow<ProductProcessingWorkflowParams>;
     StyleComponentWorkflow: Workflow<StyleComponentWorkflowParams>;
     ImageGenerationWorkflow: Workflow<ImageGenerationWorkflowParams>;
     VideoGenerationWorkflow: Workflow<VideoGenerationWorkflowParams>;
+    // durable objects
     WorkspacePusher: DurableObjectNamespace<WorkspacePusher>;
     WorkspaceSyncCoordinator: DurableObjectNamespace<WorkspaceSyncCoordinator>;
     ApiRateLimitCoordinator: DurableObjectNamespace<ApiRateLimitCoordinator>;
     ContainerBackend: DurableObjectNamespace<ContainerBackend>;
+    // storage
     Bucket: R2Bucket;
     KV: KVNamespace;
     JobQueue: Queue<JobQueueMessage>;
+    // analytics
     WorkspaceInsightsAnalytics: AnalyticsEngineDataset;
+    // agents
+    VideoGenAgent: AgentNamespace<VideoGenAgent>;
   };
 };
 

@@ -41,6 +41,7 @@ export default {
 export type Routes = typeof app;
 export type ApiRoutes = typeof apiRoutes;
 
+export * from "@openpromo/core/agents";
 export * from "@openpromo/core/containers";
 export * from "@openpromo/core/durable-objects";
 export * from "@openpromo/core/workflows";

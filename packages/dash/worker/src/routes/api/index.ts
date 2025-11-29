@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import { onError } from "../../helpers/error";
 import { workOSAuth } from "../../middleware/workos-auth";
 import { type OrpcContext, orpcRouter } from "../../orpc";
+import { agentsRoute } from "./agents";
 import { connectRoute } from "./connect";
 import { connectedAccountsRoute } from "./connected-accounts";
 import { examplesRoute } from "./examples";
@@ -39,6 +40,7 @@ export const apiRoutes = new Hono<ApiEnv>()
   // this is used by other internal services.
   .route("/connect", connectRoute)
   .route("/ping", pingRoute)
+  .route("/agents", agentsRoute)
   .route("/examples", examplesRoute)
   .route("/hashtags", hashtagsRoute)
   .route("/internal", internalRoute)
