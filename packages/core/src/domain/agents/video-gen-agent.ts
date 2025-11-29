@@ -16,6 +16,7 @@ import {
 } from "ai";
 import { PRIMARY_GOAL, VIDEO_TYPES_REGISTRY } from "./constants";
 import type { VideoGenRunContext } from "./context";
+import { setupAgentHooks } from "./hooks";
 import { StaticPrompts } from "./prompts";
 import {
   evaluateImageTool,
@@ -227,6 +228,9 @@ export class VideoGenAgent extends AIChatAgent<ApiEnv> {
    */
   async runInternal(prompt: string, context: VideoGenRunContext) {
     const agent = createVideoGenAgent(context);
+
+    // Setup lifecycle hooks for logging
+    setupAgentHooks(agent, { verbose: true });
 
     const result = await run(agent, prompt, {
       context,
