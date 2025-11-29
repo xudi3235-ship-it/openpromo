@@ -62,6 +62,11 @@ export default defineConfig({
     react(),
     geistFontConfig,
     tailwindcss(),
-    cloudflare({ configPath: "./wrangler.jsonc" }),
+    cloudflare({
+      configPath: "./wrangler.jsonc",
+      auxiliaryWorkers: [
+        // https://developers.cloudflare.com/workers/development-testing/multi-workers/
+      ],
+    }),
   ],
 });
