@@ -1,0 +1,225 @@
+/**
+ * Sora 2 Pro Storyboard video generation tool.
+ * Ported from Python: src/openai_agent/tools/sora2_storyboard/
+ *
+ * Generates multi-scene storyboard videos up to 25 seconds using Kie AI provider.
+ */
+
+import { basename } from "node:path";
+import {
+  type FrameDuration,
+  KieAIClient,
+  KieAIError,
+  type StoryboardAspectRatio,
+} from "@core/providers/kie-ai";
+import { downloadVideo as downloadVideoBase } from "@core/utils/common";
+import { env } from "@core/utils/env";
+import { tool } from "@openai/agents";
+import { z } from "zod";
+
+/**
+ * Get KieAI client instance.
+ */
+function getKieAIClient(): KieAIClient {
+  return new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+}
+
+/**
+ * Upload local files to KieAI and return their URLs.
+ */
+async function uploadFiles(
+  client: KieAIClient,
+  filePaths: string[],
+): Promise<string[]> {
+  const { readFile } = await import("node:fs/promises");
+  const urls: string[] = [];
+
+  for (const filePath of filePaths) {
+    const fileBuffer = await readFile(filePath);
+    const fileName = basename(filePath);
+
+    console.log(`[sora2_storyboard] Uploading file: ${filePath}`);
+
+    const response = await client.uploadFileStream({
+      file: fileBuffer,
+      uploadPath: "sora2_storyboard/images",
+      fileName,
+    });
+
+    if (!response.data?.downloadUrl) {
+      throw new Error(`Failed to upload file: ${filePath}`);
+    }
+
+    console.log(
+      `[sora2_storyboard] Uploaded: ${filePath} -> ${response.data.downloadUrl}`,
+    );
+    urls.push(response.data.downloadUrl);
+  }
+
+  return urls;
+}
+
+/**
+ * Download video from URL and save to local path.
+ */
+async function downloadVideo(url: string, outputPath: string): Promise<void> {
+  await downloadVideoBase(url, outputPath, "sora2_storyboard");
+}
+
+/**
+ * Map duration string to Kie AI FrameDuration type.
+ */
+function mapDuration(duration: "10" | "15" | "25"): FrameDuration {
+  // FrameDuration is a union type of "10" | "15" | "25"
+  return duration;
+}
+
+/**
+ * Map aspect ratio string to Kie AI StoryboardAspectRatio type.
+ */
+function mapAspectRatio(
+  aspectRatio: "portrait" | "landscape",
+): StoryboardAspectRatio {
+  // StoryboardAspectRatio is a union type of "portrait" | "landscape"
+  return aspectRatio;
+}
+
+// Schema for a single storyboard shot
+const StoryboardShotSchema = z.object({
+  scene: z.string().describe("Scene description/prompt for this shot"),
+  duration: z
+    .number()
+    .min(0)
+    .default(7.5)
+    .describe("Duration in seconds (typically 7.5s per scene)"),
+});
+
+// Parameter schema for sora2 storyboard tool
+const Sora2StoryboardParamsSchema = z.object({
+  shots: z
+    .array(StoryboardShotSchema)
+    .min(1)
+    .describe(
+      'List of scenes with prompts and durations. Example: [{"scene": "A cat eating cake", "duration": 7.5}]',
+    ),
+  outputPath: z
+    .string()
+    .describe("Path where the generated video will be saved"),
+  duration: z
+    .enum(["10", "15", "25"])
+    .default("15")
+    .describe("Total video length in seconds"),
+  aspectRatio: z
+    .enum(["portrait", "landscape"])
+    .default("landscape")
+    .describe("Video aspect ratio"),
+  referenceImagePaths: z
+    .array(z.string())
+    .nullable()
+    .optional()
+    .describe("Optional start frame image paths for visual consistency"),
+});
+
+type Sora2StoryboardParams = z.infer<typeof Sora2StoryboardParamsSchema>;
+
+/**
+ * Sora 2 Pro Storyboard video generation tool.
+ * Creates multi-scene videos up to 25 seconds by combining multiple shots.
+ */
+export const sora2StoryboardTool = tool({
+  name: "sora2_storyboard_generate",
+  description: `Generate a multi-scene storyboard video using Sora 2 Pro.
+Creates videos up to 25 seconds long by combining multiple scenes into a cohesive storyboard.
+Each scene has its own prompt and duration. Shots don't have to be equal length, but total must not exceed duration param.
+
+Follow the same principles and guidelines for prompt generation as veo3.1 tools.
+Preferably use image gen tool to create image first, then use that along with the shots prompt to orchestrate the long video.
+
+Best for: longer narrative videos, multi-scene storytelling, complex sequences.
+NOTE: Provide local file paths for reference images - files will be uploaded automatically.`,
+  parameters: Sora2StoryboardParamsSchema,
+  async execute(params: Sora2StoryboardParams) {
+    const { shots, outputPath, duration, aspectRatio, referenceImagePaths } =
+      params;
+
+    // Validate total shot duration
+    const totalShotDuration = shots.reduce(
+      (sum, shot) => sum + shot.duration,
+      0,
+    );
+    const expectedDuration = Number.parseFloat(duration);
+
+    if (totalShotDuration > expectedDuration) {
+      return {
+        status: "error",
+        message: `Total shot durations (${totalShotDuration}s) exceed specified video duration (${expectedDuration}s)`,
+        errorType: "ValidationError",
+      };
+    }
+
+    try {
+      console.log(
+        `[sora2_storyboard] Creating storyboard: ${shots.length} shots, ${duration}s duration`,
+      );
+
+      const client = getKieAIClient();
+
+      // Upload reference images if provided
+      let imageUrls: string[] | undefined;
+      if (referenceImagePaths && referenceImagePaths.length > 0) {
+        imageUrls = await uploadFiles(client, referenceImagePaths);
+      }
+
+      // Convert shots to Kie AI format
+      const kieShots = shots.map((shot) => ({
+        scene: shot.scene,
+        Scene: shot.scene, // Kie AI uses capitalized Scene
+        duration: shot.duration,
+      }));
+
+      // Create storyboard task
+      const response = await client.createStoryboardTask({
+        shots: kieShots,
+        nFrames: mapDuration(duration),
+        aspectRatio: mapAspectRatio(aspectRatio),
+        imageUrls,
+      });
+
+      const taskId = response.data?.taskId;
+      if (!taskId) {
+        return {
+          status: "error",
+          message:
+            "Failed to start storyboard generation - no task ID returned",
+        };
+      }
+
+      console.log(`[sora2_storyboard] Task started: ${taskId}`);
+
+      // Poll until complete using client's typed method
+      const videoUrl = await client.pollTaskUntilComplete(taskId, {
+        logPrefix: "sora2_storyboard",
+      });
+
+      // Download and save
+      await downloadVideo(videoUrl, outputPath);
+
+      return {
+        status: "success",
+        message: `Storyboard video generated and saved to ${outputPath}`,
+        outputPath,
+        videoUrl,
+        taskId,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error(`[sora2_storyboard] Error:`, errorMessage);
+      return {
+        status: "error",
+        message: errorMessage,
+        errorType: error instanceof KieAIError ? "KieAIError" : "UnknownError",
+      };
+    }
+  },
+});

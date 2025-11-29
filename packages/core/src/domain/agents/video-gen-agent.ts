@@ -22,6 +22,7 @@ import {
   evaluateImageTool,
   evaluateVideoInputTool,
   nanoBananaTool,
+  sora2StoryboardTool,
   veo31ImageToVideoTool,
   veo31ReferenceImagesToVideoTool,
   veo31TextToVideoTool,
@@ -156,7 +157,7 @@ function buildSystemPrompt(context?: VideoGenRunContext): string {
 function createVideoGenAgent(context: VideoGenRunContext) {
   const agent = new Agent<VideoGenRunContext>({
     name: "VideoGenInternalAgent",
-    model: "gpt-4.1",
+    model: "gpt-5.1",
     instructions: buildSystemPrompt(context),
     tools: [
       videoGenShellTool,
@@ -167,8 +168,7 @@ function createVideoGenAgent(context: VideoGenRunContext) {
       veo31ImageToVideoTool,
       veo31ReferenceImagesToVideoTool,
       veo31VideoExtensionTool,
-      // TODO: Add more tools once ported
-      // sora2StoryboardGenerate, ...
+      sora2StoryboardTool,
     ],
   });
   return agent;

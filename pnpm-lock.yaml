@@ -72,9 +72,6 @@ importers:
 
   .:
     dependencies:
-      '@openai/agents':
-        specifier: ^0.3.3
-        version: 0.3.3(@cfworker/json-schema@4.1.1)(ws@8.18.3)(zod@4.1.13)
       ts-pattern:
         specifier: ^5.9.0
         version: 5.9.0

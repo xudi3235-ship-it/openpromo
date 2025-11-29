@@ -184,3 +184,79 @@ export function retrySync<T>(max: number, callback: () => T) {
   }
   console.error(final);
 }
+
+// filesystem / io stuff
+
+/**
+ * Download a file from URL and save to local path.
+ * Works for any binary content (images, videos, etc).
+ */
+export async function downloadFile(
+  url: string,
+  outputPath: string,
+  options?: {
+    /** Optional log prefix for console output */
+    logPrefix?: string;
+  },
+): Promise<string> {
+  const { writeFile, mkdir } = await import("node:fs/promises");
+  const { dirname } = await import("node:path");
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to download file: ${response.statusText}`);
+  }
+
+  // Ensure directory exists
+  await mkdir(dirname(outputPath), { recursive: true });
+
+  const arrayBuffer = await response.arrayBuffer();
+  await writeFile(outputPath, Buffer.from(arrayBuffer));
+
+  if (options?.logPrefix) {
+    console.log(`[${options.logPrefix}] File saved to ${outputPath}`);
+  }
+
+  return outputPath;
+}
+
+/**
+ * Download video from URL and save to local path.
+ * Convenience wrapper around downloadFile.
+ */
+export async function downloadVideo(
+  url: string,
+  outputPath: string,
+  logPrefix?: string,
+): Promise<string> {
+  return downloadFile(url, outputPath, { logPrefix });
+}
+
+/**
+ * Download image from URL and save to local path.
+ * Convenience wrapper around downloadFile.
+ */
+export async function downloadImage(
+  url: string,
+  outputPath: string,
+  logPrefix?: string,
+): Promise<string> {
+  return downloadFile(url, outputPath, { logPrefix });
+}
+
+/**
+ * Upload a local file to a service and return the URL.
+ * Generic helper for file upload patterns.
+ */
+export async function uploadLocalFile(
+  filePath: string,
+  uploader: (buffer: Buffer, fileName: string) => Promise<string>,
+): Promise<string> {
+  const { readFile } = await import("node:fs/promises");
+  const { basename } = await import("node:path");
+
+  const fileBuffer = await readFile(filePath);
+  const fileName = basename(filePath);
+
+  return uploader(fileBuffer, fileName);
+}

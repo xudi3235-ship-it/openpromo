@@ -12,6 +12,8 @@ export { nanoBananaTool } from "./nano-banana";
 
 // Shell tool
 export { createShellTool, VideoGenShell, videoGenShellTool } from "./shell";
+// Sora 2 Pro tools
+export { sora2StoryboardTool } from "./sora2-storyboard";
 export { veo31ImageToVideoTool } from "./veo31-image-to-video";
 export { veo31ReferenceImagesToVideoTool } from "./veo31-reference-images-to-video";
 // VEO 3.1 tools

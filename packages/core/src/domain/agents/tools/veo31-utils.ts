@@ -7,9 +7,10 @@
  * which is not supported by the API". Always use `.nullable().optional()` for optional fields.
  */
 
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { KieAIClient } from "@core/providers/kie-ai";
+import { downloadVideo as downloadVideoBase } from "@core/utils/common";
 import { env } from "@core/utils/env";
 import { z } from "zod";
 
@@ -69,13 +70,7 @@ export async function downloadVideo(
   url: string,
   outputPath: string,
 ): Promise<void> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download video: ${response.statusText}`);
-  }
-  const arrayBuffer = await response.arrayBuffer();
-  await writeFile(outputPath, Buffer.from(arrayBuffer));
-  console.log(`[veo31] Video saved to ${outputPath}`);
+  await downloadVideoBase(url, outputPath, "veo31");
 }
 
 /**

@@ -10,9 +10,10 @@
  * See: https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses#all-fields-must-be-required
  */
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { Replicate } from "@core/providers/replicate/models";
+import { downloadImage as downloadImageBase } from "@core/utils/common";
 import { tool } from "@openai/agents";
 import { z } from "zod";
 
@@ -22,14 +23,7 @@ const OUTPUT_DIR = "./tmp/nanobana_output";
  * Download image from URL and save to local path.
  */
 async function downloadImage(url: string, outputPath: string): Promise<string> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download image: ${response.statusText}`);
-  }
-  const arrayBuffer = await response.arrayBuffer();
-  await writeFile(outputPath, Buffer.from(arrayBuffer));
-  console.log(`[nanoBanana] Image saved to ${outputPath}`);
-  return outputPath;
+  return downloadImageBase(url, outputPath, "nanoBanana");
 }
 
 // Define schema separately for better type inference

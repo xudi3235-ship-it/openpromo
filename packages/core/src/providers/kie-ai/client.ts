@@ -604,11 +604,14 @@ export class KieAIClient {
    * @param taskId - Task ID to poll
    * @param pollIntervalMs - Polling interval in milliseconds (default: 10000)
    * @param maxAttempts - Maximum polling attempts (default: 60)
+   * @param sleepFn - Custom sleep function (e.g., Cloudflare Workflows step.sleep)
    */
   async veo31PollUntilComplete(
     taskId: string,
     pollIntervalMs = 10000,
     maxAttempts = 60,
+    sleepFn: (ms: number) => Promise<void> = (ms) =>
+      new Promise((resolve) => setTimeout(resolve, ms)),
   ): Promise<string> {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const details = await this.veo31GetVideoDetails(taskId);
@@ -637,7 +640,73 @@ export class KieAIClient {
 
       // Still generating, wait and retry
       console.log(`[veo31] Polling attempt ${attempt + 1}/${maxAttempts}...`);
-      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+      await sleepFn(pollIntervalMs);
+    }
+
+    throw new KieAIError(
+      408,
+      `Polling timed out after ${maxAttempts} attempts`,
+    );
+  }
+
+  /**
+   * Generic poll task until complete.
+   * Works with any task type that uses the standard getTaskDetails endpoint.
+   * Returns the first result URL when done or throws on failure.
+   *
+   * @param taskId - Task ID to poll
+   * @param options - Polling options
+   */
+  async pollTaskUntilComplete(
+    taskId: string,
+    options?: {
+      pollIntervalMs?: number;
+      maxAttempts?: number;
+      logPrefix?: string;
+      /** Custom sleep function (e.g., Cloudflare Workflows step.sleep) */
+      sleepFn?: (ms: number) => Promise<void>;
+    },
+  ): Promise<string> {
+    const pollIntervalMs = options?.pollIntervalMs ?? 10000;
+    const maxAttempts = options?.maxAttempts ?? 180; // 30 min default for longer tasks
+    const logPrefix = options?.logPrefix ?? "kie-ai";
+    const sleepFn =
+      options?.sleepFn ??
+      ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const details = await this.getTaskDetails(taskId);
+      const data = details.data;
+
+      if (!data) {
+        throw new KieAIError(500, "No data in task details response");
+      }
+
+      if (data.state === "success") {
+        // Parse resultJson to get URLs
+        if (data.resultJson) {
+          const resultJson = data.resultJson;
+          const result =
+            typeof resultJson === "string"
+              ? (JSON.parse(resultJson) as { resultUrls?: string[] })
+              : (resultJson as { resultUrls?: string[] });
+          const urls = result.resultUrls ?? [];
+          if (urls.length > 0) {
+            return urls[0];
+          }
+        }
+        throw new KieAIError(500, "Task succeeded but no result URLs found");
+      }
+
+      if (data.state === "fail") {
+        throw new KieAIError(500, data.failMsg ?? "Task failed");
+      }
+
+      // Still processing, wait and retry
+      console.log(
+        `[${logPrefix}] Polling attempt ${attempt + 1}/${maxAttempts}...`,
+      );
+      await sleepFn(pollIntervalMs);
     }
 
     throw new KieAIError(
