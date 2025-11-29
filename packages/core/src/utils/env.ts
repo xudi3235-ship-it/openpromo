@@ -35,6 +35,7 @@ export const env = createEnv({
     OPENAI_API_KEY: z.string().min(1),
     GEMINI_API_KEY: z.string().min(1),
     REPLICATE_API_TOKEN: z.string().min(1),
+    KIE_AI_API_KEY: z.string().min(1),
     // R2
     CLOUDFLARE_R2_ACCESS_KEY_ID: z.string().min(1),
     CLOUDFLARE_R2_SECRET_ACCESS_KEY: z.string().min(1),

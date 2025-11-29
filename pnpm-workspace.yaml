@@ -20,6 +20,7 @@ catalog:
   vite: ^7.2.4
   wrangler: 4.51.0
   zod: 4.1.13
+  '@openai/agents': "^0.3.3"
 
 onlyBuiltDependencies:
   - '@parcel/watcher'

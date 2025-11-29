@@ -88,6 +88,21 @@ export type NanoBananaOutputFormat = z.infer<
   typeof NanoBananaOutputFormatSchema
 >;
 
+// ===== VEO 3.1 SCHEMAS (enums only, response schemas below after ApiResponseSchema) =====
+
+export const Veo31AspectRatioSchema = z.enum(["16:9", "9:16", "Auto"]);
+export type Veo31AspectRatio = z.infer<typeof Veo31AspectRatioSchema>;
+
+export const Veo31ModelSchema = z.enum(["veo3", "veo3_fast"]);
+export type Veo31Model = z.infer<typeof Veo31ModelSchema>;
+
+export const Veo31GenerationTypeSchema = z.enum([
+  "TEXT_2_VIDEO",
+  "FIRST_AND_LAST_FRAMES_2_VIDEO",
+  "REFERENCE_2_VIDEO",
+]);
+export type Veo31GenerationType = z.infer<typeof Veo31GenerationTypeSchema>;
+
 export const TaskResultPayloadSchema = z.object({
   resultUrls: z.array(z.string()).optional(),
   originUrls: z.array(z.string()).optional(),
@@ -155,6 +170,55 @@ export const FileUploadResponseSchema = ApiResponseSchema.extend({
   data: FileUploadDataSchema,
 });
 export type FileUploadResponse = z.infer<typeof FileUploadResponseSchema>;
+
+// ===== VEO 3.1 RESPONSE SCHEMAS =====
+
+const Veo31VideoResponseSchema = z.object({
+  taskId: z.string(),
+  resultUrls: z.array(z.string()).optional(),
+  originUrls: z.array(z.string()).optional().nullable(),
+  resolution: z.string().optional().nullable(),
+});
+
+const Veo31VideoDetailsDataSchema = z.object({
+  taskId: z.string(),
+  paramJson: z.string().optional().nullable(),
+  completeTime: z.union([z.string(), z.number()]).optional().nullable(),
+  response: Veo31VideoResponseSchema.optional().nullable(),
+  successFlag: z.number(),
+  errorCode: z.string().optional().nullable(),
+  errorMessage: z.string().optional().nullable(),
+  createTime: z.union([z.string(), z.number()]).optional().nullable(),
+  fallbackFlag: z.boolean().optional(),
+});
+
+export const Veo31GenerateVideoResponseSchema = ApiResponseSchema.extend({
+  data: z.object({ taskId: z.string() }).optional(),
+});
+export type Veo31GenerateVideoResponse = z.infer<
+  typeof Veo31GenerateVideoResponseSchema
+>;
+
+export const Veo31ExtendVideoResponseSchema = ApiResponseSchema.extend({
+  data: z.object({ taskId: z.string() }).optional(),
+});
+export type Veo31ExtendVideoResponse = z.infer<
+  typeof Veo31ExtendVideoResponseSchema
+>;
+
+export const Veo31VideoDetailsResponseSchema = ApiResponseSchema.extend({
+  data: Veo31VideoDetailsDataSchema.optional(),
+});
+export type Veo31VideoDetailsResponse = z.infer<
+  typeof Veo31VideoDetailsResponseSchema
+>;
+
+export const Veo31Video1080pResponseSchema = ApiResponseSchema.extend({
+  data: z.object({ resultUrl: z.string() }).optional(),
+});
+export type Veo31Video1080pResponse = z.infer<
+  typeof Veo31Video1080pResponseSchema
+>;
 
 export function parseTaskResultPayload(
   raw: string | Record<string, unknown> | undefined | null,

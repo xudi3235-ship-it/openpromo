@@ -19,12 +19,23 @@ import type {
   StoryboardAspectRatio,
   TaskDetailsResponse,
   TaskResultPayload,
+  Veo31AspectRatio,
+  Veo31ExtendVideoResponse,
+  Veo31GenerateVideoResponse,
+  Veo31GenerationType,
+  Veo31Model,
+  Veo31Video1080pResponse,
+  Veo31VideoDetailsResponse,
 } from "./schemas";
 import {
   CreateTaskResponseSchema,
   FileUploadResponseSchema,
   parseTaskResultPayload,
   TaskDetailsResponseSchema,
+  Veo31ExtendVideoResponseSchema,
+  Veo31GenerateVideoResponseSchema,
+  Veo31Video1080pResponseSchema,
+  Veo31VideoDetailsResponseSchema,
 } from "./schemas";
 
 type SchemaOutput<T extends ZodType> = T["_output"];
@@ -158,6 +169,28 @@ export interface UploadFileStreamParams {
   file: Blob | BufferSource;
   uploadPath: string;
   fileName?: string;
+}
+
+// ===== VEO 3.1 INTERFACES =====
+
+export interface Veo31GenerateVideoParams {
+  prompt: string;
+  imageUrls?: string[];
+  model?: Veo31Model;
+  generationType?: Veo31GenerationType;
+  aspectRatio?: Veo31AspectRatio;
+  seeds?: number;
+  callbackUrl?: string;
+  enableTranslation?: boolean;
+  watermark?: string;
+}
+
+export interface Veo31ExtendVideoParams {
+  taskId: string;
+  prompt: string;
+  seeds?: number;
+  watermark?: string;
+  callbackUrl?: string;
 }
 
 export class KieAIError extends Error {
@@ -459,6 +492,158 @@ export class KieAIClient {
     details: TaskDetailsResponse,
   ): Promise<TaskResultPayload | null> {
     return parseTaskResultPayload(details.data?.resultJson ?? null);
+  }
+
+  // ===== VEO 3.1 METHODS =====
+
+  /**
+   * Generate a video using Veo 3.1.
+   *
+   * @param params - Video generation parameters
+   * @returns Task response with taskId for tracking
+   */
+  async veo31GenerateVideo(
+    params: Veo31GenerateVideoParams,
+  ): Promise<Veo31GenerateVideoResponse> {
+    const payload = omitUndefined({
+      prompt: params.prompt,
+      imageUrls: params.imageUrls,
+      model: params.model ?? "veo3_fast",
+      generationType: params.generationType,
+      aspectRatio: params.aspectRatio ?? "9:16",
+      seeds: params.seeds,
+      callBackUrl: params.callbackUrl,
+      enableTranslation: params.enableTranslation ?? true,
+      watermark: params.watermark,
+    });
+
+    return this.request(
+      `${this.baseUrl}/api/v1/veo/generate`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+      Veo31GenerateVideoResponseSchema,
+    );
+  }
+
+  /**
+   * Extend an existing Veo 3.1 video.
+   *
+   * @param params - Video extension parameters
+   * @returns Task response with taskId for tracking
+   */
+  async veo31ExtendVideo(
+    params: Veo31ExtendVideoParams,
+  ): Promise<Veo31ExtendVideoResponse> {
+    const payload = omitUndefined({
+      taskId: params.taskId,
+      prompt: params.prompt,
+      seeds: params.seeds,
+      watermark: params.watermark,
+      callBackUrl: params.callbackUrl,
+    });
+
+    return this.request(
+      `${this.baseUrl}/api/v1/veo/extend`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+      Veo31ExtendVideoResponseSchema,
+    );
+  }
+
+  /**
+   * Get video generation task details and status.
+   *
+   * @param taskId - Task ID from video generation
+   * @returns Video details including status and result URLs
+   */
+  async veo31GetVideoDetails(
+    taskId: string,
+  ): Promise<Veo31VideoDetailsResponse> {
+    const url = new URL(`${this.baseUrl}/api/v1/veo/record-info`);
+    url.searchParams.set("taskId", taskId);
+
+    return this.request(
+      url.toString(),
+      { method: "GET" },
+      Veo31VideoDetailsResponseSchema,
+    );
+  }
+
+  /**
+   * Get the 1080P version of a generated video.
+   *
+   * @param taskId - Task ID from video generation
+   * @param index - Optional video index
+   * @returns 1080P video URL
+   */
+  async veo31Get1080pVideo(
+    taskId: string,
+    index?: number,
+  ): Promise<Veo31Video1080pResponse> {
+    const url = new URL(`${this.baseUrl}/api/v1/veo/get-1080p-video`);
+    url.searchParams.set("taskId", taskId);
+    if (index !== undefined) {
+      url.searchParams.set("index", String(index));
+    }
+
+    return this.request(
+      url.toString(),
+      { method: "GET" },
+      Veo31Video1080pResponseSchema,
+    );
+  }
+
+  /**
+   * Poll Veo 3.1 task until complete.
+   * Returns the video URL when done or throws on failure.
+   *
+   * @param taskId - Task ID to poll
+   * @param pollIntervalMs - Polling interval in milliseconds (default: 10000)
+   * @param maxAttempts - Maximum polling attempts (default: 60)
+   */
+  async veo31PollUntilComplete(
+    taskId: string,
+    pollIntervalMs = 10000,
+    maxAttempts = 60,
+  ): Promise<string> {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const details = await this.veo31GetVideoDetails(taskId);
+      const data = details.data;
+
+      if (!data) {
+        throw new KieAIError(500, "No data in task details response");
+      }
+
+      // successFlag: 0=generating, 1=success, 2=failed, 3=generation_failed
+      if (data.successFlag === 1) {
+        const resultUrls = data.response?.resultUrls;
+        if (resultUrls && resultUrls.length > 0) {
+          return resultUrls[0];
+        }
+        throw new KieAIError(500, "Task succeeded but no result URLs found");
+      }
+
+      if (data.successFlag === 2 || data.successFlag === 3) {
+        throw new KieAIError(
+          500,
+          data.errorMessage ??
+            `Video generation failed (flag=${data.successFlag})`,
+        );
+      }
+
+      // Still generating, wait and retry
+      console.log(`[veo31] Polling attempt ${attempt + 1}/${maxAttempts}...`);
+      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+    }
+
+    throw new KieAIError(
+      408,
+      `Polling timed out after ${maxAttempts} attempts`,
+    );
   }
 
   private async createTask(

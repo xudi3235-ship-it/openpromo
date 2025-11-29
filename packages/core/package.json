@@ -54,7 +54,8 @@
     "stripe": "^20.0.0",
     "ulid": "^3.0.1",
     "vite": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@openai/agents": "catalog:"
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.61.0",
