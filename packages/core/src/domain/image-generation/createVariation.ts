@@ -1,5 +1,5 @@
+import { Replicate } from "@core/providers/replicate/models";
 import { filterNulls } from "@core/utils/common";
-import { GenAI } from "../genai/helpers";
 import { EntImageGeneration } from "./EntImageGeneration";
 import { ProductImageGenerator } from "./product-image-generator";
 
@@ -82,11 +82,11 @@ export async function generateVariationImage(params: {
     );
   }
 
-  const imageUrl = await GenAI.runNanoBanana({
+  const imageUrl = await Replicate.NanoBanana.run({
     prompt: optimizedPrompt,
     image_input: inputImages,
     aspect_ratio: "match_input_image",
-    use_pro: true,
+    pro: true,
   });
 
   console.log("Generated variation image URL:", imageUrl);

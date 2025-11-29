@@ -1,10 +1,10 @@
 import { oai } from "@core/providers/openai";
+import { Replicate } from "@core/providers/replicate/models";
 import { filterNulls } from "@core/utils/common";
 import type {
   ResponseInput,
   ResponseInputItem,
 } from "openai/resources/responses/responses.mjs";
-import { GenAI } from "../genai/helpers";
 import { EntProduct } from "../product";
 import { EntStyleComponent } from "../style-component";
 import { EntImageGeneration } from "./EntImageGeneration";
@@ -229,10 +229,10 @@ export class ProductImageGenerator {
 
     const inputImages = filterNulls([...refImages, ...productImages]);
 
-    const externalImageUrl = await GenAI.runNanoBanana({
+    const externalImageUrl = await Replicate.NanoBanana.run({
       prompt: generatedPrompt,
       image_input: inputImages,
-      use_pro: true,
+      pro: true,
     });
 
     return externalImageUrl;

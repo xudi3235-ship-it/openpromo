@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { ProductImageGen } from "@core/domain/genai";
-import { GenAI } from "@core/domain/genai/helpers";
 import { Actor } from "@core/helpers/actor";
 import { Storage } from "@core/helpers/storage";
 import {
@@ -9,6 +8,7 @@ import {
   type CoreWorkflowEvent,
   type CoreWorkflowStep,
 } from "@core/helpers/workflow";
+import { Replicate } from "@core/providers/replicate/models";
 import { Log } from "@core/utils/log";
 import type { SharedAttachmentSpec } from "@shared/content";
 import type { ProductMetadata } from "@shared/product";
@@ -184,10 +184,10 @@ async function processAttachments(step: CoreWorkflowStep, productId: string) {
       console.error(`no images to process for product ${p.data.id}`);
       return;
     }
-    const noBgUrl = await GenAI.runNanoBanana({
+    const noBgUrl = await Replicate.NanoBanana.run({
       prompt,
       image_input: imgs,
-      use_pro: false,
+      pro: false,
     });
 
     // Copy to our own storage for persistence

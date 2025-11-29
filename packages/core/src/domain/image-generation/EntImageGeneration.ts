@@ -12,6 +12,7 @@ import { Actor } from "@core/helpers/actor";
 import { Ent } from "@core/helpers/ent";
 import { Storage } from "@core/helpers/storage";
 import { oai } from "@core/providers/openai";
+import { Replicate } from "@core/providers/replicate/models";
 import {
   ImageGenerationInsert,
   type ImageGenerationSelectType,
@@ -23,7 +24,6 @@ import { fn } from "@core/utils/fn";
 import { createWorkspaceEvent, WorkspaceEventType } from "@shared/workspace";
 import type z from "zod";
 import { ProductImageGen } from "../genai";
-import { GenAI } from "../genai/helpers";
 import { EntProduct } from "../product";
 import { EntStyleComponent } from "../style-component";
 import { dispatchWorkspaceEvent } from "../workspace/realtime";
@@ -222,10 +222,10 @@ export class EntImageGeneration extends Ent<ImageGenerationSelectType> {
     }
     const inputImages = [productImage];
 
-    const externalImageUrl = await GenAI.runNanoBanana({
+    const externalImageUrl = await Replicate.NanoBanana.run({
       prompt: image_prompt,
       image_input: inputImages,
-      use_pro: true,
+      pro: true,
     });
 
     // Copy the generated image to our internal R2 storage
