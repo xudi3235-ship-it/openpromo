@@ -155,7 +155,10 @@ export namespace VideoGenMessageEvent {
     type: K,
     data: EventDataMap[K],
   ): Extract<Event, { type: K }> {
-    return { type, data } as Extract<Event, { type: K }>;
+    return { type, data, namespace: "op_video_gen" } as Extract<
+      Event,
+      { type: K }
+    >;
   }
 
   export function sendEvent<K extends Event["type"]>(
