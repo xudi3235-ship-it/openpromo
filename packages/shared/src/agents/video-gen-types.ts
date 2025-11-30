@@ -155,6 +155,7 @@ export namespace VideoGenMessageEvent {
     type: K,
     data: EventDataMap[K],
   ): Extract<Event, { type: K }> {
+    // enforce namespace
     return { type, data, namespace: "op_video_gen" } as Extract<
       Event,
       { type: K }
