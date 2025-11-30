@@ -1,10 +1,11 @@
+/** biome-ignore-all lint/suspicious/noConsole: test */
 import { Button } from "@openpromo/ui/components/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { useAgentChat } from "agents/ai-react";
-import { useAgent } from "agents/react";
 import type { UIMessage } from "ai";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
 import { useWorkspaceWebSocket } from "@/hooks/useWorkspaceWebSocket";
 import { useHonoMutation } from "@/lib/hono-client";
 
@@ -259,24 +260,23 @@ function PlaygroundPage() {
 }
 
 function AgentChatPanel({ userId }: { userId: string | undefined }) {
-  const [isConnected, setIsConnected] = useState(false);
   const [input, setInput] = useState("");
 
-  // Only create the agent connection when we have a userId
-  const agentConnection = useAgent({
-    agent: "video-gen-agent",
-    name: userId || "default",
-    host: `${window.location.origin}/api/agents`,
-    onOpen: () => {
-      setIsConnected(true);
-    },
-    onClose: () => {
-      setIsConnected(false);
+  const { agent, isConnected, sendEvent } = useVideoGenAgent({
+    userId: userId || "guest",
+    onEvent: {
+      echo: (data) => {
+        console.log("[AgentChatPanel] Echo received:", data.message);
+        alert(`Echo received: ${data.message}`);
+      },
+      status_update: (data) => {
+        console.log("[AgentChatPanel] Status update:", data.status);
+      },
     },
   });
 
   const { messages, sendMessage, status, error, clearHistory } = useAgentChat({
-    agent: agentConnection,
+    agent,
   });
 
   const isLoading = status === "streaming" || status === "submitted";
@@ -293,15 +293,33 @@ function AgentChatPanel({ userId }: { userId: string | undefined }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h4 className="text-lg font-semibold">Agent Chat</h4>
-        <span
-          className={`px-2 py-1 rounded text-sm ${
-            isConnected
-              ? "bg-green-100 text-green-800"
-              : "bg-yellow-100 text-yellow-800"
-          }`}
-        >
-          {isConnected ? "Connected" : "Connecting..."}
-        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              sendEvent({
+                namespace: "op_video_gen",
+                type: "echo",
+                data: {
+                  message: `Hello from client at ${new Date().toISOString()}`,
+                },
+              });
+            }}
+            disabled={!isConnected}
+          >
+            Test Echo
+          </Button>
+          <span
+            className={`px-2 py-1 rounded text-sm ${
+              isConnected
+                ? "bg-green-100 text-green-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            {isConnected ? "Connected" : "Connecting..."}
+          </span>
+        </div>
       </div>
 
       <div className="border rounded-lg p-4 h-96 overflow-y-auto bg-gray-50 space-y-4">

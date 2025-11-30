@@ -4,6 +4,13 @@ import type { ApiEnv } from "@core/helpers/api-env";
 // import { routeAgentRequest } from "agents";
 
 import { Agent, type AgentInputItem, run } from "@openai/agents";
+import { VideoGenMessageEvent } from "@shared/agents";
+import type {
+  AgentContext,
+  Connection,
+  ConnectionContext,
+  WSMessage,
+} from "agents";
 import { AIChatAgent } from "agents/ai-chat-agent";
 import {
   convertToModelMessages,
@@ -191,12 +198,19 @@ function createVideoGenAgent(context: VideoGenRunContext) {
  * Main entrypoint for video generation agent.
  * Ported from Python main_agent.py
  *
- * Uses Cloudflare Agents framework (AIChatAgent) instead of OpenAI Agents SDK.
+ * Uses Cloudflare Agents framework (AIChatAgent) with OpenAI Agents SDK.
+ * Cloudflare provides durable lifecycles, websockets, etc.
+ * OpenAI Agents sdk is used for business logic, orchestration, etc.
+ *
  */
 export class VideoGenAgent extends AIChatAgent<ApiEnv> {
   /**
    * internal states
    */
+
+  constructor(ctx: AgentContext, env: ApiEnv) {
+    super(ctx, env);
+  }
 
   /**
    * Handles incoming chat messages and manages the response stream
@@ -206,9 +220,6 @@ export class VideoGenAgent extends AIChatAgent<ApiEnv> {
     _options?: { abortSignal?: AbortSignal },
   ) {
     console.log(`[VideoGenAgent] onChatMessage called`);
-    console.log(`[VideoGenAgent] Messages count: ${this.messages.length}`);
-    console.log(`[VideoGenAgent] Current messages:`, this.messages);
-
     // TODO: Extract runtime context from messages or agent state
     const runtimeContext: VideoGenRunContext = {
       product: "Example Product",
@@ -240,11 +251,54 @@ export class VideoGenAgent extends AIChatAgent<ApiEnv> {
       },
     });
 
-    const finalOutput = await this.runInternal(runtimeContext);
-    console.log({ finalOutput });
+    // const finalOutput = await this.runInternal(runtimeContext);
+    // console.log({ finalOutput });
 
     console.log(`[VideoGenAgent] Returning response stream`);
     return createUIMessageStreamResponse({ stream });
+  }
+
+  // https://developers.cloudflare.com/agents/api-reference/websockets/
+  // for websocket features
+  async onConnect(connection: Connection, ctx: ConnectionContext) {
+    // Connections are automatically accepted by the SDK.
+    // You can also explicitly close a connection here with connection.close()
+    // Access the Request on ctx.request to inspect headers, cookies and the URL
+    return super.onConnect(connection, ctx);
+  }
+
+  /**
+   * handles incoming ws message, we will provide our custom message types here.
+   */
+  async onMessage(connection: Connection, message: WSMessage) {
+    console.log(`[VideoGenAgent] onMessage called with:`, message);
+    // 1. handle internal events first
+    await this._onWsMessage(connection, message);
+  }
+
+  /**
+   * internal handelrs for typesafe ws message events
+   */
+  async _onWsMessage(connection: Connection, message: WSMessage) {
+    await VideoGenMessageEvent.onEvent(message, {
+      error: async (data) => {
+        console.log(
+          `[VideoGenAgent] Received video gen error:`,
+          data,
+          connection,
+        );
+      },
+      echo: async (data) => {
+        console.log(`[VideoGenAgent] Received echo message:`, data, connection);
+        connection.send(
+          JSON.stringify(
+            VideoGenMessageEvent.sendEvent(connection, "echo", {
+              message: `Echo: ${data.message}`,
+            }),
+          ),
+        );
+      },
+    });
   }
 
   /**
@@ -256,7 +310,7 @@ export class VideoGenAgent extends AIChatAgent<ApiEnv> {
    * @returns Run result with final output
    */
 
-  private async runInternal(context: VideoGenRunContext) {
+  async runInternal(context: VideoGenRunContext) {
     const agent = createVideoGenAgent(context);
     // print cwd
     console.log(`[VideoGenAgent] Current working directory: ${process.cwd()}`);
