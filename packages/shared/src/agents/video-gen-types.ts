@@ -45,7 +45,38 @@ export namespace VideoGenMessageEvent {
     }),
   });
 
+  // -- Application State --
+
+  export type VideoGenState = {
+    status:
+      | "idle"
+      | "generating_keyframes"
+      | "waiting_for_review"
+      | "generating_video"
+      | "completed"
+      | "failed";
+    prompt: string | null;
+    productID: string | null;
+    avatarImageUrl: string | null;
+    generatedKeyframes: Array<{
+      id: string;
+      url: string;
+      prompt: string;
+      status: "pending" | "approved" | "rejected";
+    }>;
+    finalVideoUrl: string | null;
+    error: string | null;
+  };
+
   // -- Server Events --
+
+  // sync state from server to client
+  export const SyncState = base.extend({
+    type: z.literal("sync_state"),
+    data: z.object({
+      state: z.custom<VideoGenState>(),
+    }),
+  });
 
   // status update
   export const StatusUpdate = base.extend({
@@ -103,6 +134,7 @@ export namespace VideoGenMessageEvent {
     SetInput,
     ReviewKeyframe,
     StartVideoGeneration,
+    SyncState,
     StatusUpdate,
     KeyframeGenerated,
     VideoGenerated,
@@ -128,14 +160,14 @@ export namespace VideoGenMessageEvent {
     let parsed: unknown;
     try {
       parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-    } catch (e) {
-      console.error("Failed to parse raw message:", e);
+    } catch (_e) {
+      // fallback, might not be our event
       return;
     }
 
     const result = Event.safeParse(parsed);
     if (!result.success) {
-      console.error("Failed to parse VideoGenMessageEvent:", raw, result.error);
+      // fallback, might not be our event
       return;
     }
 

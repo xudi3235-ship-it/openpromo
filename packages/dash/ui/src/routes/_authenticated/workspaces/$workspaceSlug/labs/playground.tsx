@@ -1,7 +1,6 @@
 /** biome-ignore-all lint/suspicious/noConsole: test */
 import { Button } from "@openpromo/ui/components/button";
 import { createFileRoute } from "@tanstack/react-router";
-import { useAgentChat } from "agents/ai-react";
 import type { UIMessage } from "ai";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -262,7 +261,11 @@ function PlaygroundPage() {
 function AgentChatPanel({ userId }: { userId: string | undefined }) {
   const [input, setInput] = useState("");
 
-  const { agent, isConnected, sendEvent } = useVideoGenAgent({
+  const {
+    isConnected,
+    sendEvent,
+    chat: { messages, sendMessage, status, error, clearHistory },
+  } = useVideoGenAgent({
     userId: userId || "guest",
     onEvent: {
       echo: (data) => {
@@ -273,10 +276,6 @@ function AgentChatPanel({ userId }: { userId: string | undefined }) {
         console.log("[AgentChatPanel] Status update:", data.status);
       },
     },
-  });
-
-  const { messages, sendMessage, status, error, clearHistory } = useAgentChat({
-    agent,
   });
 
   const isLoading = status === "streaming" || status === "submitted";
@@ -298,12 +297,8 @@ function AgentChatPanel({ userId }: { userId: string | undefined }) {
             variant="secondary"
             size="sm"
             onClick={() => {
-              sendEvent({
-                namespace: "op_video_gen",
-                type: "echo",
-                data: {
-                  message: `Hello from client at ${new Date().toISOString()}`,
-                },
+              sendEvent("echo", {
+                message: `Hello from client at ${new Date().toISOString()}`,
               });
             }}
             disabled={!isConnected}

@@ -12,6 +12,7 @@ import type {
   WSMessage,
 } from "agents";
 import { AIChatAgent } from "agents/ai-chat-agent";
+import { MessageType as CfAgentMessageType } from "agents/ai-types";
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -20,6 +21,7 @@ import {
   stepCountIs,
   streamText,
   type ToolSet,
+  type UIMessage,
 } from "ai";
 import { PRIMARY_GOAL, VIDEO_TYPES_REGISTRY } from "./constants";
 import type { VideoGenRunContext } from "./context";
@@ -203,13 +205,32 @@ function createVideoGenAgent(context: VideoGenRunContext) {
  * OpenAI Agents sdk is used for business logic, orchestration, etc.
  *
  */
-export class VideoGenAgent extends AIChatAgent<ApiEnv> {
-  /**
-   * internal states
-   */
-
+export class VideoGenAgent extends AIChatAgent<
+  ApiEnv,
+  VideoGenMessageEvent.VideoGenState
+> {
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
+    // state is persisted automatically using setState
+  }
+  /**
+   * triggered when app state is updated
+   */
+  async onStateUpdate(
+    state: VideoGenMessageEvent.VideoGenState | undefined,
+    source: Connection | "server",
+  ): Promise<void> {
+    console.log(`[VideoGenAgent] onStateUpdate called from`, source, state);
+    this.broadcastState();
+  }
+
+  private broadcastState() {
+    const connections = this.ctx.getWebSockets();
+    for (const conn of connections) {
+      VideoGenMessageEvent.sendEvent(conn, "sync_state", {
+        state: this.state,
+      });
+    }
   }
 
   /**
@@ -264,7 +285,28 @@ export class VideoGenAgent extends AIChatAgent<ApiEnv> {
     // Connections are automatically accepted by the SDK.
     // You can also explicitly close a connection here with connection.close()
     // Access the Request on ctx.request to inspect headers, cookies and the URL
-    return super.onConnect(connection, ctx);
+    await super.onConnect(connection, ctx);
+
+    // Manually sync messages to client on connection
+    this.syncChatMessages(connection);
+
+    // Sync application state
+    VideoGenMessageEvent.sendEvent(connection, "sync_state", {
+      state: this.state,
+    });
+  }
+
+  private syncChatMessages(connection: Connection) {
+    if (this.messages.length === 0) return;
+    console.log(
+      `[VideoGenAgent] Syncing ${this.messages.length} messages to connection`,
+    );
+    connection.send(
+      JSON.stringify({
+        type: CfAgentMessageType.CF_AGENT_CHAT_MESSAGES,
+        messages: this.messages as UIMessage[],
+      }),
+    );
   }
 
   /**
@@ -272,7 +314,7 @@ export class VideoGenAgent extends AIChatAgent<ApiEnv> {
    */
   async onMessage(connection: Connection, message: WSMessage) {
     console.log(`[VideoGenAgent] onMessage called with:`, message);
-    // 1. handle internal events first
+    // 2. Then handle our custom video gen events
     await this._onWsMessage(connection, message);
   }
 
@@ -280,23 +322,19 @@ export class VideoGenAgent extends AIChatAgent<ApiEnv> {
    * internal handelrs for typesafe ws message events
    */
   async _onWsMessage(connection: Connection, message: WSMessage) {
+    if (typeof message !== "string") {
+      console.warn(
+        `[VideoGenAgent] Received non-string message, ignoring:`,
+        message,
+      );
+      return;
+    }
     await VideoGenMessageEvent.onEvent(message, {
-      error: async (data) => {
-        console.log(
-          `[VideoGenAgent] Received video gen error:`,
-          data,
-          connection,
-        );
-      },
       echo: async (data) => {
         console.log(`[VideoGenAgent] Received echo message:`, data, connection);
-        connection.send(
-          JSON.stringify(
-            VideoGenMessageEvent.sendEvent(connection, "echo", {
-              message: `Echo: ${data.message}`,
-            }),
-          ),
-        );
+        VideoGenMessageEvent.sendEvent(connection, "echo", {
+          message: `Echo: ${data.message}`,
+        });
       },
     });
   }
