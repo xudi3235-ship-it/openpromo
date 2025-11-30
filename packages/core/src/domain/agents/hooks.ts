@@ -6,6 +6,7 @@
  */
 
 import type { Agent, RunContext } from "@openai/agents";
+import type { AgentOutput } from "./agent-types";
 import type { VideoGenRunContext } from "./context";
 
 /**
@@ -27,7 +28,7 @@ interface ToolCallDetails {
  * Call this after creating the agent to attach event handlers.
  */
 export function setupAgentHooks(
-  agent: Agent<VideoGenRunContext>,
+  agent: Agent<VideoGenRunContext, AgentOutput>,
   options?: {
     /** Enable verbose logging */
     verbose?: boolean;
@@ -36,7 +37,7 @@ export function setupAgentHooks(
     /** Callback when agent starts */
     onAgentStart?: (
       ctx: RunContext<VideoGenRunContext>,
-      agent: Agent<VideoGenRunContext>,
+      agent: Agent<VideoGenRunContext, AgentOutput>,
     ) => void;
     /** Callback when agent ends */
     onAgentEnd?: (ctx: RunContext<VideoGenRunContext>, output: string) => void;

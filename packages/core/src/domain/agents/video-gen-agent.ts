@@ -23,6 +23,7 @@ import {
   type ToolSet,
   type UIMessage,
 } from "ai";
+import { AgentOutput } from "./agent-types";
 import { PRIMARY_GOAL, VIDEO_TYPES_REGISTRY } from "./constants";
 import type { VideoGenRunContext } from "./context";
 import { setupAgentHooks } from "./hooks";
@@ -171,7 +172,7 @@ function buildSystemPrompt(context?: VideoGenRunContext): string {
  * limited compared to Modal runtime.
  */
 function createVideoGenAgent(context: VideoGenRunContext) {
-  const agent = new Agent<VideoGenRunContext>({
+  const agent = new Agent<VideoGenRunContext, AgentOutput>({
     name: "VideoGenInternalAgent",
     model: "gpt-5.1",
     instructions: buildSystemPrompt(context),
@@ -192,6 +193,8 @@ function createVideoGenAgent(context: VideoGenRunContext) {
         summary: "auto",
       },
     },
+    // @ts-expect-error weird zod typing issue
+    outputType: AgentOutput,
   });
   return agent;
 }
@@ -348,7 +351,7 @@ export class VideoGenAgent extends AIChatAgent<
    * @returns Run result with final output
    */
 
-  async runInternal(context: VideoGenRunContext) {
+  async startVideoGen(context: VideoGenRunContext): Promise<AgentOutput> {
     const agent = createVideoGenAgent(context);
     // print cwd
     console.log(`[VideoGenAgent] Current working directory: ${process.cwd()}`);
@@ -387,7 +390,7 @@ export class VideoGenAgent extends AIChatAgent<
     });
 
     console.log(`[VideoGenAgent] Run completed:`, result.finalOutput);
-    return result;
+    return result.finalOutput;
   }
 
   private createRunInput(
