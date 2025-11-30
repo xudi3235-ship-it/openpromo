@@ -5,6 +5,7 @@ import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
 
 export function AgentChatPanel({ userId }: { userId: string | undefined }) {
   const [input, setInput] = useState("");
+  const [_msgs, setMsgs] = useState<MessageEvent[]>([]);
 
   const {
     isConnected,
@@ -20,6 +21,10 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
         // Status update received; handle as needed
       },
     },
+    // debugging
+    _onMessage: async (evt) => {
+      setMsgs((prev) => [...prev, evt]);
+    },
   });
 
   const isLoading = status === "streaming" || status === "submitted";
@@ -31,6 +36,13 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
       </div>
     );
   }
+
+  const productImageUrls = [
+    "https://i.pinimg.com/1200x/1e/63/b8/1e63b8168a25c2a2a4127971514d97e2.jpg",
+  ];
+  const avatarImageUrls = [
+    "https://i.pinimg.com/1200x/04/9a/65/049a6564d158084703960383df8de897.jpg",
+  ];
 
   return (
     <div className="space-y-4">
@@ -48,6 +60,23 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
             disabled={!isConnected}
           >
             Test Echo
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              sendEvent("start_image_gen", {
+                input: {
+                  productImages: productImageUrls,
+                  avatarImages: avatarImageUrls,
+                  prompt:
+                    "create a 8s tiktok ugc video. first create a image first",
+                },
+              });
+            }}
+            disabled={!isConnected}
+          >
+            Start Image Gen
           </Button>
           <span
             className={`px-2 py-1 rounded text-sm ${
@@ -141,6 +170,7 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
           Clear Chat
         </Button>
       </form>
+      <div>Events: {JSON.stringify(_msgs)}</div>
     </div>
   );
 }

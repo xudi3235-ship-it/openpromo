@@ -8,20 +8,27 @@ type UseVideoGenAgentProps = {
   userId: string;
   // Optional: Additional handlers for custom logic alongside state updates
   onEvent?: VideoGenMessageEvent.Handlers;
+  // internal
+  _onMessage?: (event: MessageEvent) => Promise<void>;
 };
 
-export function useVideoGenAgent({ userId, onEvent }: UseVideoGenAgentProps) {
+export function useVideoGenAgent({
+  userId,
+  onEvent,
+  _onMessage,
+}: UseVideoGenAgentProps) {
   const [isConnected, setIsConnected] = useState(false);
   // server app state synchronized via ws
   const [serverState, setServerState] =
-    useState<VideoGenMessageEvent.VideoGenState>({
+    useState<VideoGenMessageEvent.ServerAppState>({
       status: "idle",
       error: null,
-      prompt: null,
-      generatedKeyframes: [],
+      input: {
+        productImages: [],
+        avatarImages: [],
+        prompt: "empty prompt",
+      },
       finalVideoUrl: null,
-      productID: null,
-      avatarImageUrl: null,
     });
 
   const agent = useAgent({
@@ -37,6 +44,7 @@ export function useVideoGenAgent({ userId, onEvent }: UseVideoGenAgentProps) {
       setIsConnected(false);
     },
     onMessage: async (event) => {
+      _onMessage?.(event);
       if (!onEvent) throw new Error("onEvent handler is not defined");
       console.log("[useVideoGenAgent] Received message:", event.data);
       // Use the shared helper to handle type-safe events

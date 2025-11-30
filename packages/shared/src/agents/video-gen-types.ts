@@ -20,9 +20,16 @@ export namespace VideoGenMessageEvent {
     type: z.literal("set_input"),
     data: z.object({
       prompt: z.string(),
-      productID: z.string(),
-      avatarImageUrl: z.string().optional(),
+      productImages: z.string().array(),
+      avatarImages: z.string().array(),
       additionalAssetUrls: z.array(z.string()).optional(),
+    }),
+  });
+
+  export const StartImageGen = base.extend({
+    type: z.literal("start_image_gen"),
+    data: z.object({
+      input: SetInput.shape.data,
     }),
   });
 
@@ -46,27 +53,21 @@ export namespace VideoGenMessageEvent {
   });
 
   // -- Application State --
+  const serverAppStateBase = z.object({
+    status: z.enum([
+      "idle",
+      "generating_keyframes",
+      "waiting_for_review",
+      "generating_video",
+      "completed",
+      "failed",
+    ]),
+    input: SetInput.shape.data,
+    finalVideoUrl: z.string().nullable(),
+    error: z.string().nullable(),
+  });
 
-  export type VideoGenState = {
-    status:
-      | "idle"
-      | "generating_keyframes"
-      | "waiting_for_review"
-      | "generating_video"
-      | "completed"
-      | "failed";
-    prompt: string | null;
-    productID: string | null;
-    avatarImageUrl: string | null;
-    generatedKeyframes: Array<{
-      id: string;
-      url: string;
-      prompt: string;
-      status: "pending" | "approved" | "rejected";
-    }>;
-    finalVideoUrl: string | null;
-    error: string | null;
-  };
+  export type ServerAppState = z.infer<typeof serverAppStateBase>;
 
   // -- Server Events --
 
@@ -74,7 +75,7 @@ export namespace VideoGenMessageEvent {
   export const SyncState = base.extend({
     type: z.literal("sync_state"),
     data: z.object({
-      state: z.custom<VideoGenState>(),
+      state: z.custom<ServerAppState>(),
     }),
   });
 
@@ -132,6 +133,7 @@ export namespace VideoGenMessageEvent {
   // union of all event types
   export const Event = z.union([
     SetInput,
+    StartImageGen,
     ReviewKeyframe,
     StartVideoGeneration,
     SyncState,

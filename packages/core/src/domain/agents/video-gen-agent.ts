@@ -210,7 +210,7 @@ function createVideoGenAgent(context: VideoGenRunContext) {
  */
 export class VideoGenAgent extends AIChatAgent<
   ApiEnv,
-  VideoGenMessageEvent.VideoGenState
+  VideoGenMessageEvent.ServerAppState
 > {
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
@@ -220,7 +220,7 @@ export class VideoGenAgent extends AIChatAgent<
    * triggered when app state is updated
    */
   async onStateUpdate(
-    state: VideoGenMessageEvent.VideoGenState | undefined,
+    state: VideoGenMessageEvent.ServerAppState | undefined,
     source: Connection | "server",
   ): Promise<void> {
     console.log(`[VideoGenAgent] onStateUpdate called from`, source, state);
@@ -339,16 +339,51 @@ export class VideoGenAgent extends AIChatAgent<
           message: `Echo: ${data.message}`,
         });
       },
+      set_input: async (data) => {
+        this.setState({
+          ...this.state,
+          ...data,
+        });
+      },
+      start_image_gen: async (data) => {
+        console.log(
+          `[VideoGenAgent] start_image_gen event received:`,
+          data,
+          connection,
+        );
+        // 1. set input
+        this.setState({
+          ...this.state,
+          ...data.input,
+        });
+        // 2. start video gen
+        const runResult = await this.startVideoGen({
+          product: "Example Product",
+          business: "Example Business",
+        });
+        console.log(
+          `[VideoGenAgent] Video generation run completed:`,
+          runResult,
+        );
+      },
     });
+  }
+  // helpers for accessing state props
+  get productImages() {
+    return this.state.input.productImages;
+  }
+
+  get avatarImages() {
+    return this.state.input.avatarImages;
   }
 
   /**
-   * Run video generation agent using OpenAI Agents SDK.
-   * This is the internal implementation that uses typed context.
-   *
-   * @param prompt - The user prompt/request for video generation
-   * @param context - Runtime context with product and business info
-   * @returns Run result with final output
+   * lifecycle of video gen:
+   * 0. c->s, set inputs, product image and avatar images
+   * 1. s, create keyframe image using inputs
+   * 2. s, render image, approval from client.
+   * 3. s, create video using keyframe image,
+   * 4. rener
    */
 
   async startVideoGen(context: VideoGenRunContext): Promise<AgentOutput> {
@@ -383,8 +418,22 @@ export class VideoGenAgent extends AIChatAgent<
     const inputItems = this.createRunInput(productImagePaths, avatarImagePaths);
 
     // Setup lifecycle hooks for logging
-    setupAgentHooks(agent, { verbose: true });
-
+    setupAgentHooks(agent, {
+      verbose: true,
+      onAgentStart: (ctx) => {
+        console.log(`[VideoGenAgent] Agent started with context:`, ctx);
+        // update state
+      },
+      onAgentEnd(_ctx, output) {
+        console.log(`[VideoGenAgent] Agent ended with output:`, output);
+      },
+      onToolStart(_ctx, toolName, details) {
+        console.log(`[VideoGenAgent] Tool started: ${toolName}`, details);
+      },
+      onToolEnd(_ctx, toolName, result) {
+        console.log(`[VideoGenAgent] Tool ended: ${toolName}`, result);
+      },
+    });
     const result = await run(agent, inputItems, {
       context,
     });
