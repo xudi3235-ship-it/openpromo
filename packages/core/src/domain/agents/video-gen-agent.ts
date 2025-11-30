@@ -23,7 +23,7 @@ import {
   type ToolSet,
   type UIMessage,
 } from "ai";
-import { AgentOutput } from "./agent-types";
+import { AgentOutput, onToolOutput } from "./agent-types";
 import { PRIMARY_GOAL, VIDEO_TYPES_REGISTRY } from "./constants";
 import type { VideoGenRunContext } from "./context";
 import { setupAgentHooks } from "./hooks";
@@ -432,6 +432,14 @@ export class VideoGenAgent extends AIChatAgent<
       },
       onToolEnd(_ctx, toolName, result) {
         console.log(`[VideoGenAgent] Tool ended: ${toolName}`, result);
+        onToolOutput(result, "video_gen", {
+          onSuccess(output) {
+            console.log(`[VideoGenAgent] Image generation successful:`, output);
+          },
+          onError(error) {
+            console.error(`[VideoGenAgent] Image generation failed:`, error);
+          },
+        });
       },
     });
     const result = await run(agent, inputItems, {

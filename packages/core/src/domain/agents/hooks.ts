@@ -5,7 +5,7 @@
  * Based on OpenAI Agents SDK hooks pattern.
  */
 
-import type { Agent, RunContext } from "@openai/agents";
+import type { Agent, RunContext, Tool } from "@openai/agents";
 import type { AgentOutput } from "./agent-types";
 import type { VideoGenRunContext } from "./context";
 
@@ -44,13 +44,13 @@ export function setupAgentHooks(
     /** Callback when tool starts */
     onToolStart?: (
       ctx: RunContext<VideoGenRunContext>,
-      toolName: string,
+      tool: Tool<VideoGenRunContext>,
       details: ToolCallDetails,
     ) => void;
     /** Callback when tool ends */
     onToolEnd?: (
       ctx: RunContext<VideoGenRunContext>,
-      toolName: string,
+      tool: Tool<VideoGenRunContext>,
       result: string,
       details: ToolCallDetails,
     ) => void;
@@ -88,27 +88,23 @@ export function setupAgentHooks(
 
   // Tool start event
   agent.on("agent_tool_start", (ctx, tool, details) => {
-    const toolName =
-      typeof tool === "object" && "name" in tool ? tool.name : String(tool);
-    log(`[${agent.name}] [>] Tool started: ${toolName}`);
+    log(`[${agent.name}] [>] Tool started: ${tool.name}`);
     if (verbose) {
       const toolCall = details.toolCall as ToolCallDetails["toolCall"];
       log(`[${agent.name}] Tool args:`, toolCall.function?.arguments);
     }
-    options?.onToolStart?.(ctx, toolName, details as ToolCallDetails);
+    options?.onToolStart?.(ctx, tool, details as ToolCallDetails);
   });
 
   // Tool end event
   agent.on("agent_tool_end", (ctx, tool, result, details) => {
-    const toolName =
-      typeof tool === "object" && "name" in tool ? tool.name : String(tool);
     const resultPreview =
       result.length > 500 ? result.slice(0, 500) + "..." : result;
-    log(`[${agent.name}] [x] Tool completed: ${toolName}`);
+    log(`[${agent.name}] [x] Tool completed: ${tool.name}`);
     if (verbose) {
       log(`[${agent.name}] Tool result:`, resultPreview);
     }
-    options?.onToolEnd?.(ctx, toolName, result, details as ToolCallDetails);
+    options?.onToolEnd?.(ctx, tool, result, details as ToolCallDetails);
   });
 }
 
