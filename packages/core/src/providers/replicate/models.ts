@@ -72,7 +72,9 @@ export namespace Replicate {
   export namespace NanoBanana {
     export const schema = z.object({
       prompt: z.string(),
-      image_input: z.array(z.string()).optional(),
+      image_input: z
+        .array(z.union([z.string(), z.instanceof(Buffer)]))
+        .optional(),
       aspect_ratio: z
         .enum([
           "1:1",

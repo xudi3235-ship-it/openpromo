@@ -8,6 +8,13 @@
   "main": "worker/src/index.ts",
   "compatibility_date": "2025-11-26",
   "compatibility_flags": ["nodejs_compat"],
+  // "rules": [
+  //   {
+  //     "type": "Data",
+  //     "globs": ["./tmp/**/*"],
+  //     "fallthrough": true
+  //   }
+  // ],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1

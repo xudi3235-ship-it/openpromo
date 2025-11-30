@@ -3,7 +3,7 @@ import type { ApiEnv } from "@core/helpers/api-env";
 
 // import { routeAgentRequest } from "agents";
 
-import { Agent, run } from "@openai/agents";
+import { Agent, type AgentInputItem, run } from "@openai/agents";
 import { AIChatAgent } from "agents/ai-chat-agent";
 import {
   convertToModelMessages,
@@ -20,7 +20,7 @@ import { setupAgentHooks } from "./hooks";
 import { StaticPrompts } from "./prompts";
 import {
   evaluateImageTool,
-  evaluateVideoInputTool,
+  // evaluateVideoInputTool,
   nanoBananaTool,
   sora2StoryboardTool,
   veo31ImageToVideoTool,
@@ -29,6 +29,11 @@ import {
   veo31VideoExtensionTool,
   videoGenShellTool,
 } from "./tools";
+import {
+  type AgentInputImage,
+  toAgentImageInputs,
+} from "./tools/evaluation-utils";
+import { buildTreeString, downloadImagesToTmp } from "./utils";
 
 /**
  * Build the system prompt for video generation agent.
@@ -51,7 +56,7 @@ function buildSystemPrompt(context?: VideoGenRunContext): string {
     ${PRIMARY_GOAL}
     2. SCOPE
     * Focus on: exploring connection between product, reference image, and ideas from the docs/guide, good examples to craft good product-centric images, and later use those create videos, suited for fast paced social media shorts, duration 15-30s, target platform is Tiktok, IG reels, and FB reels. Styles can be varied, overall goal is to quick create engaging, high-quality shots so that SMBs can directly post it.
-    * shell tool runs in ./tmp directory by default. Product image inputs are in the ./products folder (relative to cwd). Use relative paths from ./tmp.
+    * shell tool runs in /tmp directory by default. Product image inputs are in the ./products folder (relative to cwd). Use relative paths from /tmp.
     * nano_banana is used for image generation. it can take image inputs with great accuracy, details, follow docs/guide.
     * veo3.1 is used for video generation. We have specific tools for different modes. closely follow each tools' guide, pros/cons and other supplementary docs to best utilize them. we almost never use text to video directly. 
     * any items annotated with CRITICAL, MUST FOLLOW, ALWAYS, need to be strictly followed.
@@ -153,6 +158,8 @@ function buildSystemPrompt(context?: VideoGenRunContext): string {
 /**
  * Create the OpenAI Agents SDK agent with typed context.
  * Tools will be added here once ported.
+ * WIP: not ready, still figuring out how th fs works in CF worker, it's pretty
+ * limited compared to Modal runtime.
  */
 function createVideoGenAgent(context: VideoGenRunContext) {
   const agent = new Agent<VideoGenRunContext>({
@@ -162,7 +169,7 @@ function createVideoGenAgent(context: VideoGenRunContext) {
     tools: [
       videoGenShellTool,
       evaluateImageTool,
-      evaluateVideoInputTool,
+      // evaluateVideoInputTool, // not good yet
       nanoBananaTool,
       veo31TextToVideoTool,
       veo31ImageToVideoTool,
@@ -170,6 +177,12 @@ function createVideoGenAgent(context: VideoGenRunContext) {
       veo31VideoExtensionTool,
       sora2StoryboardTool,
     ],
+    modelSettings: {
+      reasoning: {
+        effort: "medium",
+        summary: "auto",
+      },
+    },
   });
   return agent;
 }
@@ -182,6 +195,10 @@ function createVideoGenAgent(context: VideoGenRunContext) {
  */
 export class VideoGenAgent extends AIChatAgent<ApiEnv> {
   /**
+   * internal states
+   */
+
+  /**
    * Handles incoming chat messages and manages the response stream
    */
   async onChatMessage(
@@ -193,8 +210,17 @@ export class VideoGenAgent extends AIChatAgent<ApiEnv> {
     console.log(`[VideoGenAgent] Current messages:`, this.messages);
 
     // TODO: Extract runtime context from messages or agent state
-    const runtimeContext: VideoGenRunContext | undefined = undefined;
+    const runtimeContext: VideoGenRunContext = {
+      product: "Example Product",
+      business: "Example Business",
+    };
     const systemPrompt = buildSystemPrompt(runtimeContext);
+    const messages = this.messages;
+
+    console.log(
+      `[VideoGenAgent] messages for streamText:`,
+      JSON.stringify(messages),
+    );
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
@@ -214,6 +240,9 @@ export class VideoGenAgent extends AIChatAgent<ApiEnv> {
       },
     });
 
+    const finalOutput = await this.runInternal(runtimeContext);
+    console.log({ finalOutput });
+
     console.log(`[VideoGenAgent] Returning response stream`);
     return createUIMessageStreamResponse({ stream });
   }
@@ -226,17 +255,124 @@ export class VideoGenAgent extends AIChatAgent<ApiEnv> {
    * @param context - Runtime context with product and business info
    * @returns Run result with final output
    */
-  async runInternal(prompt: string, context: VideoGenRunContext) {
+
+  private async runInternal(context: VideoGenRunContext) {
     const agent = createVideoGenAgent(context);
+    // print cwd
+    console.log(`[VideoGenAgent] Current working directory: ${process.cwd()}`);
+
+    // Image URLs to download
+    const productImageUrls = [
+      "https://i.pinimg.com/1200x/1e/63/b8/1e63b8168a25c2a2a4127971514d97e2.jpg",
+    ];
+    const avatarImageUrls = [
+      "https://i.pinimg.com/1200x/04/9a/65/049a6564d158084703960383df8de897.jpg",
+    ];
+
+    // Download images to /tmp
+    console.log(`[VideoGenAgent] Downloading images to /tmp...`);
+    const productImagePaths = await downloadImagesToTmp(
+      productImageUrls,
+      "/tmp/products",
+    );
+    const avatarImagePaths = await downloadImagesToTmp(
+      avatarImageUrls,
+      "/tmp/avatar",
+    );
+    console.log(`[VideoGenAgent] Product images:`, productImagePaths);
+    console.log(`[VideoGenAgent] Avatar images:`, avatarImagePaths);
+
+    // Show tmp structure
+    console.log(`[VideoGenAgent] /tmp structure:\n${VideoGenAgent.tmpDirStr}`);
+
+    const inputItems = this.createRunInput(productImagePaths, avatarImagePaths);
 
     // Setup lifecycle hooks for logging
     setupAgentHooks(agent, { verbose: true });
 
-    const result = await run(agent, prompt, {
+    const result = await run(agent, inputItems, {
       context,
     });
 
     console.log(`[VideoGenAgent] Run completed:`, result.finalOutput);
     return result;
+  }
+
+  private createRunInput(
+    productImagePaths: string[],
+    avatarImagePaths: string[],
+  ): AgentInputItem[] {
+    // Convert paths to image inputs using Agents SDK format
+    const productImages = toAgentImageInputs(productImagePaths);
+    const avatarImages = toAgentImageInputs(avatarImagePaths);
+
+    // Log image inputs (truncate base64 for readability)
+    const truncateBase64 = (img: AgentInputImage) => ({
+      ...img,
+      image: img.image?.startsWith("data:")
+        ? `${img.image.slice(0, 50)}...[truncated]`
+        : img.image,
+    });
+    console.log(
+      `[VideoGenAgent] Product image inputs:`,
+      JSON.stringify(productImages.map(truncateBase64), null, 2),
+    );
+    console.log(
+      `[VideoGenAgent] Avatar image inputs:`,
+      JSON.stringify(avatarImages.map(truncateBase64), null, 2),
+    );
+
+    // Build user message content using Agents SDK types
+    // UserMessageItem expects content with input_text and input_image types
+    const userContent = [
+      // 1. product images
+      {
+        type: "input_text" as const,
+        text: "here are the product images that we're focusing on:",
+      },
+      ...productImages,
+      // 2. avatar reference images
+      {
+        type: "input_text" as const,
+        text: "here is the avatar i'd like to use",
+      },
+      ...avatarImages,
+      // 3. tmp dir structure
+      {
+        type: "input_text" as const,
+        text: `here is the current, latest tmp dir structure. no need to run shell tool to inspect it for now.\n${VideoGenAgent.tmpDirStr}. Your cwd is /tmp`,
+      },
+      // 4. customer prompt
+      {
+        type: "input_text" as const,
+        text: `customer request: create a 8s tiktok style ugc video for the product, focusing on its key features and benefits. use the avatar image provided as the main character in the video.`,
+      },
+    ];
+
+    console.log(
+      `[VideoGenAgent] User content length: ${userContent.length} items`,
+    );
+
+    // Build the user message item using Agents SDK format
+    const userMessage: AgentInputItem = {
+      role: "user",
+      content: userContent,
+    };
+
+    return [userMessage];
+  }
+
+  /**
+   * Get the current structure of the tmp directory as a string.
+   * Uses node:fs which is available in Cloudflare Workers VFS.
+   */
+  static get tmpDirStr(): string {
+    try {
+      // Use the VFS tmp path where we symlink/copy files
+      const tmpBasePath = "/tmp";
+      return `${tmpBasePath}/\n${buildTreeString(tmpBasePath, "")}`;
+    } catch {
+      return "Unable to read tmp directory structure";
+    }
   }
 }

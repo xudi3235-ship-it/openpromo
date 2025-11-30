@@ -260,3 +260,8 @@ export async function uploadLocalFile(
 
   return uploader(fileBuffer, fileName);
 }
+
+// string
+export function isStringUrl(str: string): boolean {
+  return str.startsWith("http://") || str.startsWith("https://");
+}

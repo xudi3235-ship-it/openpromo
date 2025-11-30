@@ -15,9 +15,9 @@ import {
 
 /**
  * Default working directory for shell commands.
- * All commands should run inside ./tmp to ensure isolation.
+ * All commands should run inside /tmp to ensure isolation.
  */
-const DEFAULT_CWD = "./tmp";
+const DEFAULT_CWD = "/tmp"; // cloudflare worker vfs. it does NOT access local fs
 
 /**
  * Maximum output length to prevent context overflow.

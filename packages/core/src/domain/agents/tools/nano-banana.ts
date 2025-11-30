@@ -10,14 +10,18 @@
  * See: https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses#all-fields-must-be-required
  */
 
+import { readFileSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { Replicate } from "@core/providers/replicate/models";
-import { downloadImage as downloadImageBase } from "@core/utils/common";
+import {
+  downloadImage as downloadImageBase,
+  isStringUrl,
+} from "@core/utils/common";
 import { tool } from "@openai/agents";
 import { z } from "zod";
 
-const OUTPUT_DIR = "./tmp/nanobana_output";
+const OUTPUT_DIR = "/tmp/nanobana_output";
 
 /**
  * Download image from URL and save to local path.
@@ -64,6 +68,21 @@ const NanoBananaParamsSchema = z.object({
 type NanoBananaParams = z.infer<typeof NanoBananaParamsSchema>;
 
 /**
+ * handles transforming file inputs for replicate api calls
+ * @param inputs
+ * @returns
+ */
+function transformFileInputs(inputs: string[]): (string | Buffer)[] {
+  return inputs.map((input) => {
+    // 1. if url string, use as is
+    if (isStringUrl(input)) return input;
+    // 2. else if local path, read and pass in blob/File/buffer
+    // replicate client will upload it
+    return readFileSync(input);
+  });
+}
+
+/**
  * Nano Banana image generation tool.
  * Generates images using Google's Nano Banana model via Replicate.
  */
@@ -74,18 +93,13 @@ Can take up to 14 input images for style reference, editing, or composition.
 Auto-saves generated images and returns the URL.`,
   parameters: NanoBananaParamsSchema,
   async execute(params: NanoBananaParams) {
+    console.log(
+      `[nanoBanana] Tool invoked with params:`,
+      JSON.stringify(params),
+    );
     const { prompt, imageInputPaths, aspectRatio, outputFormat } = params;
     try {
-      console.log(
-        `[nanoBanana] Generating image with prompt: ${prompt.slice(0, 100)}...`,
-      );
-      console.log(`[nanoBanana] Input images: ${imageInputPaths?.length ?? 0}`);
-      console.log(
-        `[nanoBanana] Config: aspect=${aspectRatio}, format=${outputFormat}`,
-      );
-
-      // Convert null to undefined for the API
-      const inputImages = imageInputPaths ?? undefined;
+      const inputImages = transformFileInputs(imageInputPaths ?? []);
 
       const imageUrl = await Replicate.NanoBanana.run({
         prompt,

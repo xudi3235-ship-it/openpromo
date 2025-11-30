@@ -9,11 +9,11 @@ export const agentsRoute = new Hono<ApiEnv>()
     const agentName = c.req.param("agentName");
     const instanceId = c.req.param("instanceId");
     const method = c.req.method;
-    const url = new URL(c.req.url);
+    // const url = new URL(c.req.url);
 
-    console.log(`[agents] ${method} /${agentName}/${instanceId}`);
-    console.log(`[agents] Full path: ${url.pathname}`);
-    console.log(`[agents] Query: ${url.search}`);
+    // console.log(`[agents] ${method} /${agentName}/${instanceId}`);
+    // console.log(`[agents] Full path: ${url.pathname}`);
+    // console.log(`[agents] Query: ${url.search}`);
 
     try {
       // Get the agent instance using the VideoGenAgent binding
@@ -22,14 +22,14 @@ export const agentsRoute = new Hono<ApiEnv>()
         c.env.VideoGenAgent,
         instanceId,
       );
-      console.log(`[agents] Agent stub retrieved`);
+      // console.log(`[agents] Agent stub retrieved`);
 
       // Pass the request to the agent
-      console.log(`[agents] Forwarding request to agent...`);
+      // console.log(`[agents] Forwarding request to agent...`);
       const response = await (await agent).fetch(c.req.raw);
-      console.log(
-        `[agents] ${method} /${agentName}/${instanceId} -> ${response.status}`,
-      );
+      // console.log(
+      //   `[agents] ${method} /${agentName}/${instanceId} -> ${response.status}`,
+      // );
       return response;
     } catch (error) {
       console.error(

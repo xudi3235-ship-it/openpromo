@@ -16,9 +16,8 @@ const ImageEvalOutputSchema = z.object({
   feedback: z
     .string()
     .describe(
-      "if not approved, Constructive feedback on improvements, single sentence, concise effective",
-    )
-    .optional(),
+      "Constructive feedback on improvements, single sentence, concise effective",
+    ),
 });
 
 // Parameter schema for evaluate image tool
