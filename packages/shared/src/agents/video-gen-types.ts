@@ -14,54 +14,12 @@ export namespace VideoGenMessageEvent {
     .strict();
 
   const PipelineStatus = z.enum([
-    "idle",
-    "collecting_input",
-    "generating_keyframes",
-    "waiting_for_review",
-    "generating_video",
-    "completed",
+    "not_started",
+    "running",
+    "succeeded",
     "failed",
+    "canceled",
   ]);
-
-  const AssetKind = z.enum(["image", "video"]);
-  const AssetStatus = z.enum(["pending", "ready", "failed"]);
-  const AssetDecision = z.enum([
-    "pending",
-    "approved",
-    "rejected",
-    "regenerate",
-  ]);
-
-  export const GeneratedAsset = z.object({
-    id: z.string(),
-    kind: AssetKind,
-    status: AssetStatus,
-    url: z.string().url().nullable(),
-    thumbnailUrl: z.string().url().nullable(),
-    label: z.string().optional(),
-    decision: AssetDecision.optional(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-  });
-
-  export type GeneratedAsset = z.infer<typeof GeneratedAsset>;
-
-  const PendingActionType = z.enum([
-    "confirm_keyframes",
-    "confirm_video",
-    "retry_required",
-  ]);
-
-  export const PendingAction = z.object({
-    id: z.string().optional(),
-    type: PendingActionType,
-    assetIds: z.array(z.string()).min(1),
-    title: z.string(),
-    description: z.string().optional(),
-    metadata: z.record(z.string(), z.unknown()).optional(),
-  });
-
-  export type PendingAction = z.infer<typeof PendingAction>;
 
   // -- Client Events --
   const SetInputData = z.object({
@@ -80,83 +38,19 @@ export namespace VideoGenMessageEvent {
   export const StartPipeline = base.extend({
     type: z.literal("start_pipeline"),
     data: z.object({
-      resumeFromAssetId: z.string().optional(),
-    }),
-  });
-
-  export const SubmitAction = base.extend({
-    type: z.literal("submit_action"),
-    data: z.object({
-      action: z.enum([
-        "approve_keyframe",
-        "reject_keyframe",
-        "regenerate_keyframe",
-        "continue_with_asset",
-        "approve_video",
-        "reject_video",
-        "retry_video_generation",
-        "dismiss_action",
-      ]),
-      assetIds: z.array(z.string()).min(1),
-      feedback: z.string().optional(),
-    }),
-  });
-
-  export type SubmitActionPayload = z.infer<typeof SubmitAction>["data"];
-
-  export const CancelRun = base.extend({
-    type: z.literal("cancel_run"),
-    data: z.object({ reason: z.string().optional() }).optional(),
-  });
-
-  export const RequestHistory = base.extend({
-    type: z.literal("request_history"),
-    data: z.object({ limit: z.number().min(1).max(25).optional() }),
-  });
-
-  // Legacy compatibility events
-  export const StartImageGen = base.extend({
-    type: z.literal("start_image_gen"),
-    data: z.object({
-      input: SetInputData,
-    }),
-  });
-
-  export const ReviewKeyframe = base.extend({
-    type: z.literal("review_keyframe"),
-    data: z.object({
-      keyframeUrl: z.string(),
-      action: z.enum(["approve", "reject", "regenerate"]),
-      feedback: z.string().optional(),
-    }),
-  });
-
-  export const StartVideoGeneration = base.extend({
-    type: z.literal("start_video"),
-    data: z.object({
-      selectedKeyframeUrl: z.string(),
-      motionPrompt: z.string().optional(),
+      input: SetInputData.optional(),
     }),
   });
 
   // -- Application State --
-  const StageSnapshot = z.enum(["image_gen", "video_gen"]);
-
   const serverAppStateBase = z.object({
     _internal: z.object({
       serializedRunState: z.string().optional(),
       runId: z.string().optional(),
-      imageRunState: z.string().optional(),
-      videoRunState: z.string().optional(),
-      lastStage: StageSnapshot.optional(),
-      selectedKeyframeIds: z.array(z.string()).optional(),
     }),
     status: PipelineStatus,
-    currentStep: z.string(),
     lastUpdated: z.string(),
-    pendingAction: PendingAction.nullable(),
     input: SetInputData,
-    assets: z.array(GeneratedAsset),
     finalVideoUrl: z.string().nullable(),
     error: z.string().nullable(),
   });
@@ -180,35 +74,6 @@ export namespace VideoGenMessageEvent {
     }),
   });
 
-  export const AssetAdded = base.extend({
-    type: z.literal("asset_added"),
-    data: z.object({ asset: GeneratedAsset }),
-  });
-
-  export const AssetUpdated = base.extend({
-    type: z.literal("asset_updated"),
-    data: z.object({ asset: GeneratedAsset }),
-  });
-
-  export const AssetProgress = base.extend({
-    type: z.literal("asset_progress"),
-    data: z.object({
-      assetId: z.string(),
-      status: AssetStatus.optional(),
-      message: z.string().optional(),
-    }),
-  });
-
-  export const ActionRequired = base.extend({
-    type: z.literal("action_required"),
-    data: z.object({ action: PendingAction }),
-  });
-
-  export const HistorySnapshot = base.extend({
-    type: z.literal("history_snapshot"),
-    data: z.object({ assets: z.array(GeneratedAsset) }),
-  });
-
   export const VideoGenerated = base.extend({
     type: z.literal("video_generated"),
     data: z.object({
@@ -225,28 +90,9 @@ export namespace VideoGenMessageEvent {
     }),
   });
 
-  const ClientEvents = z.union([
-    SetInput,
-    StartPipeline,
-    SubmitAction,
-    CancelRun,
-    RequestHistory,
-    StartImageGen,
-    ReviewKeyframe,
-    StartVideoGeneration,
-  ]);
+  const ClientEvents = z.union([SetInput, StartPipeline]);
 
-  const ServerEvents = z.union([
-    SyncState,
-    StatusUpdate,
-    AssetAdded,
-    AssetUpdated,
-    AssetProgress,
-    ActionRequired,
-    HistorySnapshot,
-    VideoGenerated,
-    Echo,
-  ]);
+  const ServerEvents = z.union([SyncState, StatusUpdate, VideoGenerated, Echo]);
 
   export const Event = z.union([ClientEvents, ServerEvents]);
   export type Event = z.infer<typeof Event>;

@@ -19,12 +19,9 @@ export function useVideoGenAgent({
   const [serverState, setServerState] =
     useState<VideoGenMessageEvent.ServerAppState>({
       _internal: {},
-      status: "idle",
-      currentStep: "idle",
+      status: "not_started",
       lastUpdated: new Date().toISOString(),
-      pendingAction: null,
       error: null,
-      assets: [],
       input: {
         productImages: [],
         avatarImages: [],
@@ -44,23 +41,6 @@ export function useVideoGenAgent({
       }
     },
     [onEvent],
-  );
-
-  const upsertAsset = useCallback(
-    (asset: VideoGenMessageEvent.GeneratedAsset) => {
-      setServerState((prev) => {
-        const exists = prev.assets.some((a) => a.id === asset.id);
-        const assets = exists
-          ? prev.assets.map((a) => (a.id === asset.id ? asset : a))
-          : [...prev.assets, asset];
-        return {
-          ...prev,
-          assets,
-          lastUpdated: new Date().toISOString(),
-        };
-      });
-    },
-    [],
   );
 
   const agent = useAgent({
@@ -91,53 +71,13 @@ export function useVideoGenAgent({
           });
           await callUserHandler("sync_state", data);
         },
-        asset_added: async (data) => {
-          upsertAsset(data.asset);
-          await callUserHandler("asset_added", data);
-        },
-        asset_updated: async (data) => {
-          upsertAsset(data.asset);
-          await callUserHandler("asset_updated", data);
-        },
-        asset_progress: async (data) => {
-          setServerState((prev) => ({
-            ...prev,
-            assets: prev.assets.map((asset) =>
-              asset.id === data.assetId
-                ? {
-                    ...asset,
-                    status: data.status ?? asset.status,
-                    updatedAt: new Date().toISOString(),
-                  }
-                : asset,
-            ),
-          }));
-          await callUserHandler("asset_progress", data);
-        },
         status_update: async (data) => {
           setServerState((prev) => ({
             ...prev,
             status: data.status,
-            currentStep: data.currentStep,
             lastUpdated: new Date().toISOString(),
           }));
           await callUserHandler("status_update", data);
-        },
-        action_required: async (data) => {
-          setServerState((prev) => ({
-            ...prev,
-            pendingAction: data.action,
-            lastUpdated: new Date().toISOString(),
-          }));
-          await callUserHandler("action_required", data);
-        },
-        history_snapshot: async (data) => {
-          setServerState((prev) => ({
-            ...prev,
-            assets: data.assets,
-            lastUpdated: new Date().toISOString(),
-          }));
-          await callUserHandler("history_snapshot", data);
         },
         video_generated: async (data) => {
           setServerState((prev) => ({
@@ -178,13 +118,6 @@ export function useVideoGenAgent({
     [agent],
   );
 
-  const submitAction = useCallback(
-    (payload: VideoGenMessageEvent.SubmitActionPayload) => {
-      sendEvent("submit_action", payload);
-    },
-    [sendEvent],
-  );
-
   return {
     // Connection
     isConnected,
@@ -193,7 +126,6 @@ export function useVideoGenAgent({
     state: serverState,
     // Custom Event Sender
     sendEvent,
-    submitAction,
     // chat integration
     chat,
     // server state
