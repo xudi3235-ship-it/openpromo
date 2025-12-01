@@ -3,9 +3,8 @@
  * Ported from Python: src/openai_agent/tools/veo31.py
  */
 
-import { KieAIError } from "@core/providers/kie-ai";
-import { tool } from "@openai/agents";
 import { z } from "zod";
+import { toolBuilder } from "../tool-builder";
 import {
   defaultVeo31Config,
   downloadVideo,
@@ -36,7 +35,7 @@ type TextToVideoParams = z.infer<typeof TextToVideoParamsSchema>;
  * VEO 3.1 Text-to-Video tool.
  * Generate a video from a text prompt.
  */
-export const veo31TextToVideoTool = tool({
+export const veo31TextToVideoTool = toolBuilder({
   name: "veo31_text_to_video",
   description: `Generate a video from a text prompt using VEO 3.1.
 Creates up to 8 second videos from detailed text descriptions.
@@ -47,54 +46,47 @@ Note: For product consistency, prefer veo31_reference_images_to_video instead.`,
     const { prompt, outputPath, config } = params;
     const cfg = config ?? defaultVeo31Config;
 
-    try {
-      console.log(
-        `[veo31_text_to_video] Generating video with prompt: ${prompt.slice(0, 100)}...`,
-      );
-      console.log(`[veo31_text_to_video] Config: ${JSON.stringify(cfg)}`);
+    console.log(
+      `[veo31_text_to_video] Generating video with prompt: ${prompt.slice(0, 100)}...`,
+    );
+    console.log(`[veo31_text_to_video] Config: ${JSON.stringify(cfg)}`);
 
-      const client = getKieAIClient();
+    const client = getKieAIClient();
 
-      // Start video generation
-      const generateResult = await client.veo31GenerateVideo({
-        prompt,
-        aspectRatio: cfg.aspectRatio === "16:9" ? "16:9" : "9:16",
-        model: "veo3_fast",
-        enableTranslation: true,
-      });
+    // Start video generation
+    const generateResult = await client.veo31GenerateVideo({
+      prompt,
+      aspectRatio: cfg.aspectRatio === "16:9" ? "16:9" : "9:16",
+      model: "veo3_fast",
+      enableTranslation: true,
+    });
 
-      const taskId = generateResult.data?.taskId;
-      if (!taskId) {
-        return {
-          status: "error",
-          message: "Failed to start video generation - no task ID returned",
-        };
-      }
-
-      console.log(`[veo31_text_to_video] Task started: ${taskId}`);
-
-      // Poll until complete
-      const videoUrl = await client.veo31PollUntilComplete(taskId);
-
-      // Download and save
-      await downloadVideo(videoUrl, outputPath);
-
-      return {
-        status: "success",
-        message: `Video generated and saved to ${outputPath}`,
-        outputPath,
-        videoUrl,
-        taskId,
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      console.error(`[veo31_text_to_video] Error:`, errorMessage);
+    const taskId = generateResult.data?.taskId;
+    if (!taskId) {
       return {
         status: "error",
-        message: errorMessage,
-        errorType: error instanceof KieAIError ? "KieAIError" : "UnknownError",
+        tool: "veo31_text_to_video",
+        error: "Failed to start video generation - no task ID returned",
       };
     }
+
+    console.log(`[veo31_text_to_video] Task started: ${taskId}`);
+
+    // Poll until complete
+    const videoUrl = await client.veo31PollUntilComplete(taskId);
+
+    // Download and save
+    await downloadVideo(videoUrl, outputPath);
+
+    return {
+      status: "success",
+      tool: "veo31_text_to_video",
+      output: {
+        videoUrl,
+        outputPath,
+        taskId,
+        prompt,
+      },
+    };
   },
 });

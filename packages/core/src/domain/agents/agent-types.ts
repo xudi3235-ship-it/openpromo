@@ -5,20 +5,26 @@ import z from "zod";
  */
 export const AgentOutput = z.object({
   status: z.enum(["success", "error"]),
-  finalVideoUrl: z.string().url().nullable().optional(),
+  finalVideoUrl: z.string().nullable().optional(),
   error: z.string().nullable().optional(),
   summary: z.string().nullable().optional(),
 });
 
 export type AgentOutput = z.infer<typeof AgentOutput>;
 
+export type { ToolNameType } from "@shared/agents/tool-outputs";
 export {
   EchoToolOutput,
   ImageEvalToolOutput,
-  ImageGenToolOutput,
   maybeParseToolOutput,
   NanoBananaToolOutput,
   onToolOutput,
+  SoraStoryboardToolOutput,
+  TmpFsToolOutput,
   ToolOutputs,
-  VideoGenToolOutput,
+  Veo31ImageToVideoToolOutput,
+  Veo31ReferenceImagesToVideoToolOutput,
+  Veo31TextToVideoToolOutput,
+  Veo31VideoExtensionToolOutput,
+  VirtualShellToolOutput,
 } from "@shared/agents/tool-outputs";

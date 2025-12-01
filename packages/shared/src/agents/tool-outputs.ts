@@ -1,11 +1,16 @@
 import z from "zod";
 
 const ToolName = z.enum([
-  "image_gen",
-  "video_gen",
   "image_eval",
   "echo",
   "nano_banana",
+  "veo31_text_to_video",
+  "veo31_image_to_video",
+  "veo31_reference_images_to_video",
+  "veo31_video_extension",
+  "sora2_storyboard_generate",
+  "tmp_fs",
+  "virtual_shell",
 ]);
 
 type ToolNameType = z.infer<typeof ToolName>;
@@ -29,14 +34,168 @@ function makeToolOutput<const T extends string, S extends z.ZodTypeAny>(
   return z.discriminatedUnion("status", [success, error]);
 }
 
-export const ImageGenToolOutput = makeToolOutput(
-  "image_gen",
-  z.object({ imageUrls: z.array(z.string().url()) }),
+const Veo31BaseVideoOutput = z.object({
+  videoUrl: z.string().url(),
+  outputPath: z.string(),
+  taskId: z.string(),
+});
+
+const Veo31PromptVideoOutput = Veo31BaseVideoOutput.extend({
+  prompt: z.string(),
+});
+
+export const Veo31TextToVideoToolOutput = makeToolOutput(
+  "veo31_text_to_video",
+  Veo31PromptVideoOutput,
 );
 
-export const VideoGenToolOutput = makeToolOutput(
-  "video_gen",
-  z.object({ videoUrl: z.string().url() }),
+export const Veo31ImageToVideoToolOutput = makeToolOutput(
+  "veo31_image_to_video",
+  Veo31PromptVideoOutput.extend({
+    inputImagePath: z.string(),
+    inputLastFramePath: z.string().nullable().optional(),
+  }),
+);
+
+export const Veo31ReferenceImagesToVideoToolOutput = makeToolOutput(
+  "veo31_reference_images_to_video",
+  Veo31PromptVideoOutput.extend({
+    referenceImagePaths: z.array(z.string()).min(1),
+  }),
+);
+
+export const Veo31VideoExtensionToolOutput = makeToolOutput(
+  "veo31_video_extension",
+  Veo31PromptVideoOutput.extend({
+    originalTaskId: z.string(),
+  }),
+);
+
+export const SoraStoryboardToolOutput = makeToolOutput(
+  "sora2_storyboard_generate",
+  z.object({
+    videoUrl: z.string().url(),
+    outputPath: z.string(),
+    taskId: z.string(),
+  }),
+);
+
+const TmpFsListOutput = z.object({
+  action: z.literal("list"),
+  path: z.string(),
+  entries: z.array(
+    z.object({
+      name: z.string(),
+      type: z.enum(["file", "directory", "other"]),
+      size: z.number().nullable(),
+    }),
+  ),
+});
+
+const TmpFsReadOutput = z.object({
+  action: z.literal("read"),
+  path: z.string(),
+  encoding: z.enum(["utf8", "base64"]),
+  content: z.string(),
+  byteLength: z.number(),
+});
+
+const TmpFsWriteOutput = z.object({
+  action: z.literal("write"),
+  path: z.string(),
+  bytesWritten: z.number(),
+});
+
+const TmpFsDeleteOutput = z.object({
+  action: z.literal("delete"),
+  path: z.string(),
+});
+
+const TmpFsStatOutput = z.object({
+  action: z.literal("stat"),
+  path: z.string(),
+  size: z.number(),
+  isFile: z.boolean(),
+  isDirectory: z.boolean(),
+  modifiedAt: z.string(),
+});
+
+export const TmpFsToolOutput = makeToolOutput(
+  "tmp_fs",
+  z.union([
+    TmpFsListOutput,
+    TmpFsReadOutput,
+    TmpFsWriteOutput,
+    TmpFsDeleteOutput,
+    TmpFsStatOutput,
+  ]),
+);
+
+const VirtualShellEntrySchema = z.object({
+  name: z.string(),
+  type: z.enum(["file", "directory", "other"]),
+  size: z.number().nullable(),
+});
+
+const VirtualShellLsOutput = z.object({
+  command: z.literal("ls"),
+  path: z.string(),
+  entries: z.array(VirtualShellEntrySchema),
+});
+
+const VirtualShellCatOutput = z.object({
+  command: z.literal("cat"),
+  path: z.string(),
+  encoding: z.enum(["utf8", "base64"]),
+  content: z.string(),
+  byteLength: z.number(),
+});
+
+const VirtualShellWriteOutput = z.object({
+  command: z.literal("write"),
+  path: z.string(),
+  bytesWritten: z.number(),
+  append: z.boolean(),
+  encoding: z.enum(["utf8", "base64"]),
+});
+
+const VirtualShellRmOutput = z.object({
+  command: z.literal("rm"),
+  path: z.string(),
+  recursive: z.boolean(),
+});
+
+const VirtualShellMkdirOutput = z.object({
+  command: z.literal("mkdir"),
+  path: z.string(),
+  recursive: z.boolean(),
+});
+
+const VirtualShellStatOutput = z.object({
+  command: z.literal("stat"),
+  path: z.string(),
+  size: z.number(),
+  isFile: z.boolean(),
+  isDirectory: z.boolean(),
+  modifiedAt: z.string(),
+});
+
+const VirtualShellPwdOutput = z.object({
+  command: z.literal("pwd"),
+  cwd: z.string(),
+});
+
+export const VirtualShellToolOutput = makeToolOutput(
+  "virtual_shell",
+  z.union([
+    VirtualShellLsOutput,
+    VirtualShellCatOutput,
+    VirtualShellWriteOutput,
+    VirtualShellRmOutput,
+    VirtualShellMkdirOutput,
+    VirtualShellStatOutput,
+    VirtualShellPwdOutput,
+  ]),
 );
 
 export const EchoToolOutput = makeToolOutput(
@@ -64,8 +223,13 @@ export const NanoBananaToolOutput = makeToolOutput(
 );
 
 export const ToolOutputs = z.union([
-  ImageGenToolOutput,
-  VideoGenToolOutput,
+  Veo31TextToVideoToolOutput,
+  Veo31ImageToVideoToolOutput,
+  Veo31ReferenceImagesToVideoToolOutput,
+  Veo31VideoExtensionToolOutput,
+  SoraStoryboardToolOutput,
+  TmpFsToolOutput,
+  VirtualShellToolOutput,
   ImageEvalToolOutput,
   EchoToolOutput,
   NanoBananaToolOutput,

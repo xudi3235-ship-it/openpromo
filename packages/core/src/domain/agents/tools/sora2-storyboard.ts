@@ -9,13 +9,12 @@ import { basename } from "node:path";
 import {
   type FrameDuration,
   KieAIClient,
-  KieAIError,
   type StoryboardAspectRatio,
 } from "@core/providers/kie-ai";
 import { downloadVideo as downloadVideoBase } from "@core/utils/common";
 import { env } from "@core/utils/env";
-import { tool } from "@openai/agents";
 import { z } from "zod";
+import { toolBuilder } from "../tool-builder";
 
 /**
  * Get KieAI client instance.
@@ -126,7 +125,7 @@ type Sora2StoryboardParams = z.infer<typeof Sora2StoryboardParamsSchema>;
  * Sora 2 Pro Storyboard video generation tool.
  * Creates multi-scene videos up to 25 seconds by combining multiple shots.
  */
-export const sora2StoryboardTool = tool({
+export const sora2StoryboardTool = toolBuilder({
   name: "sora2_storyboard_generate",
   description: `Generate a multi-scene storyboard video using Sora 2 Pro.
 Creates videos up to 25 seconds long by combining multiple scenes into a cohesive storyboard.
@@ -152,74 +151,69 @@ NOTE: Provide local file paths for reference images - files will be uploaded aut
     if (totalShotDuration > expectedDuration) {
       return {
         status: "error",
-        message: `Total shot durations (${totalShotDuration}s) exceed specified video duration (${expectedDuration}s)`,
-        errorType: "ValidationError",
+        tool: "sora2_storyboard_generate",
+        error: `Total shot durations (${totalShotDuration}s) exceed specified video duration (${expectedDuration}s)`,
       };
     }
 
-    try {
-      console.log(
-        `[sora2_storyboard] Creating storyboard: ${shots.length} shots, ${duration}s duration`,
-      );
+    console.log(
+      `[sora2_storyboard] Creating storyboard: ${shots.length} shots, ${duration}s duration`,
+    );
 
-      const client = getKieAIClient();
+    const client = getKieAIClient();
 
-      // Upload reference images if provided
-      let imageUrls: string[] | undefined;
-      if (referenceImagePaths && referenceImagePaths.length > 0) {
-        imageUrls = await uploadFiles(client, referenceImagePaths);
-      }
+    // Upload reference images if provided
+    let imageUrls: string[] | undefined;
+    if (referenceImagePaths && referenceImagePaths.length > 0) {
+      imageUrls = await uploadFiles(client, referenceImagePaths);
+    }
 
-      // Convert shots to Kie AI format
-      const kieShots = shots.map((shot) => ({
-        scene: shot.scene,
-        Scene: shot.scene, // Kie AI uses capitalized Scene
-        duration: shot.duration,
-      }));
+    // Convert shots to Kie AI format
+    const kieShots = shots.map((shot) => ({
+      scene: shot.scene,
+      Scene: shot.scene, // Kie AI uses capitalized Scene
+      duration: shot.duration,
+    }));
 
-      // Create storyboard task
-      const response = await client.createStoryboardTask({
-        shots: kieShots,
-        nFrames: mapDuration(duration),
-        aspectRatio: mapAspectRatio(aspectRatio),
-        imageUrls,
-      });
+    // Create storyboard task
+    const response = await client.createStoryboardTask({
+      shots: kieShots,
+      nFrames: mapDuration(duration),
+      aspectRatio: mapAspectRatio(aspectRatio),
+      imageUrls,
+    });
 
-      const taskId = response.data?.taskId;
-      if (!taskId) {
-        return {
-          status: "error",
-          message:
-            "Failed to start storyboard generation - no task ID returned",
-        };
-      }
-
-      console.log(`[sora2_storyboard] Task started: ${taskId}`);
-
-      // Poll until complete using client's typed method
-      const videoUrl = await client.pollTaskUntilComplete(taskId, {
-        logPrefix: "sora2_storyboard",
-      });
-
-      // Download and save
-      await downloadVideo(videoUrl, outputPath);
-
-      return {
-        status: "success",
-        message: `Storyboard video generated and saved to ${outputPath}`,
-        outputPath,
-        videoUrl,
-        taskId,
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      console.error(`[sora2_storyboard] Error:`, errorMessage);
+    const taskId = response.data?.taskId;
+    if (!taskId) {
       return {
         status: "error",
-        message: errorMessage,
-        errorType: error instanceof KieAIError ? "KieAIError" : "UnknownError",
+        tool: "sora2_storyboard_generate",
+        error: "Failed to start storyboard generation - no task ID returned",
       };
     }
+
+    console.log(`[sora2_storyboard] Task started: ${taskId}`);
+
+    // Poll until complete using client's typed method
+    const videoUrl = await client.pollTaskUntilComplete(taskId, {
+      logPrefix: "sora2_storyboard",
+    });
+
+    // Download and save
+    await downloadVideo(videoUrl, outputPath);
+
+    return {
+      status: "success",
+      tool: "sora2_storyboard_generate",
+      output: {
+        videoUrl,
+        outputPath,
+        taskId,
+        shots,
+        duration,
+        aspectRatio,
+        referenceImagePaths: referenceImagePaths ?? undefined,
+      },
+    };
   },
 });

@@ -3,9 +3,8 @@
  * Ported from Python: src/openai_agent/tools/veo31.py
  */
 
-import { KieAIError } from "@core/providers/kie-ai";
-import { tool } from "@openai/agents";
 import { z } from "zod";
+import { toolBuilder } from "../tool-builder";
 import {
   downloadVideo,
   getKieAIClient,
@@ -41,7 +40,7 @@ type ReferenceImagesToVideoParams = z.infer<
  * VEO 3.1 Reference Images to Video tool.
  * Generate a video using reference images (assets) for strong visual consistency.
  */
-export const veo31ReferenceImagesToVideoTool = tool({
+export const veo31ReferenceImagesToVideoTool = toolBuilder({
   name: "veo31_reference_images_to_video",
   description: `Generate a video using reference images (assets) for strong visual consistency using VEO 3.1.
 Use this for "ingredients to video" generation - the reference images guide the video's content.
@@ -58,63 +57,59 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
       durationSeconds: config?.durationSeconds ?? "8",
       aspectRatio: "16:9" as const,
     };
+    console.log(
+      `[veo31_reference_images_to_video] Using forced aspect ratio: ${cfg.aspectRatio}`,
+    );
 
-    try {
-      console.log(
-        `[veo31_reference_images_to_video] Reference images: ${referenceImagePaths.length}`,
-      );
-      console.log(
-        `[veo31_reference_images_to_video] Prompt: ${prompt.slice(0, 100)}...`,
-      );
+    console.log(
+      `[veo31_reference_images_to_video] Reference images: ${referenceImagePaths.length}`,
+    );
+    console.log(
+      `[veo31_reference_images_to_video] Prompt: ${prompt.slice(0, 100)}...`,
+    );
 
-      const client = getKieAIClient();
+    const client = getKieAIClient();
 
-      // Upload all reference images and get URLs
-      const referenceImageUrls = await uploadFiles(client, referenceImagePaths);
+    // Upload all reference images and get URLs
+    const referenceImageUrls = await uploadFiles(client, referenceImagePaths);
 
-      // Start video generation with reference images
-      const generateResult = await client.veo31GenerateVideo({
-        prompt,
-        imageUrls: referenceImageUrls,
-        generationType: "REFERENCE_2_VIDEO",
-        aspectRatio: "16:9", // REQUIRED for reference images
-        model: "veo3_fast",
-        enableTranslation: true,
-      });
+    // Start video generation with reference images
+    const generateResult = await client.veo31GenerateVideo({
+      prompt,
+      imageUrls: referenceImageUrls,
+      generationType: "REFERENCE_2_VIDEO",
+      aspectRatio: "16:9", // REQUIRED for reference images
+      model: "veo3_fast",
+      enableTranslation: true,
+    });
 
-      const taskId = generateResult.data?.taskId;
-      if (!taskId) {
-        return {
-          status: "error",
-          message: "Failed to start video generation - no task ID returned",
-        };
-      }
-
-      console.log(`[veo31_reference_images_to_video] Task started: ${taskId}`);
-
-      // Poll until complete
-      const videoUrl = await client.veo31PollUntilComplete(taskId);
-
-      // Download and save
-      await downloadVideo(videoUrl, outputPath);
-
-      return {
-        status: "success",
-        message: `Video generated and saved to ${outputPath}`,
-        outputPath,
-        videoUrl,
-        taskId,
-        config: cfg,
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      console.error(`[veo31_reference_images_to_video] Error:`, errorMessage);
+    const taskId = generateResult.data?.taskId;
+    if (!taskId) {
       return {
         status: "error",
-        message: errorMessage,
-        errorType: error instanceof KieAIError ? "KieAIError" : "UnknownError",
+        tool: "veo31_reference_images_to_video",
+        error: "Failed to start video generation - no task ID returned",
       };
     }
+
+    console.log(`[veo31_reference_images_to_video] Task started: ${taskId}`);
+
+    // Poll until complete
+    const videoUrl = await client.veo31PollUntilComplete(taskId);
+
+    // Download and save
+    await downloadVideo(videoUrl, outputPath);
+
+    return {
+      status: "success",
+      tool: "veo31_reference_images_to_video",
+      output: {
+        videoUrl,
+        outputPath,
+        taskId,
+        prompt,
+        referenceImagePaths,
+      },
+    };
   },
 });

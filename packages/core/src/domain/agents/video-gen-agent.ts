@@ -23,13 +23,25 @@ import {
   type ToolSet,
   type UIMessage,
 } from "ai";
-import { type AgentOutput, onToolOutput } from "./agent-types";
+import {
+  type AgentOutput,
+  onToolOutput,
+  type ToolNameType,
+} from "./agent-types";
 import type { VideoGenAgentContext } from "./context";
 import { buildSystemPrompt, createVideoGenAgent } from "./create-agent";
 import { setupAgentHooks } from "./hooks";
 
 import { toAgentImageInputs } from "./tools/evaluation-utils";
 import { buildTreeString, downloadImagesToTmp } from "./utils";
+
+const VIDEO_ASSET_TOOL_NAMES: ToolNameType[] = [
+  "veo31_text_to_video",
+  "veo31_image_to_video",
+  "veo31_reference_images_to_video",
+  "veo31_video_extension",
+  "sora2_storyboard_generate",
+];
 
 /**
  * Main entrypoint for video generation agent.
@@ -104,16 +116,18 @@ export class VideoGenAgent extends AIChatAgent<
       },
       onToolEnd: (_ctx, toolName, result) => {
         console.log(`[VideoGenAgent] Tool ended: ${toolName}`, result);
-        onToolOutput(result, "video_gen", {
-          onSuccess: (output) => {
-            console.log(`[VideoGenAgent] Received video asset output:`, output);
-          },
-        });
-        onToolOutput(result, "image_gen", {
-          onSuccess: (output) => {
-            console.log(`[VideoGenAgent] Received image asset output:`, output);
-          },
-        });
+
+        for (const assetTool of VIDEO_ASSET_TOOL_NAMES) {
+          onToolOutput(result, assetTool, {
+            onSuccess: (output) => {
+              console.log(
+                `[VideoGenAgent] Received ${assetTool} asset output:`,
+                output,
+              );
+            },
+          });
+        }
+
         onToolOutput(result, "nano_banana", {
           onSuccess: (output) => {
             console.log(
@@ -165,7 +179,6 @@ export class VideoGenAgent extends AIChatAgent<
       },
       _internal: {
         serializedRunState: undefined,
-        runId: undefined,
       },
       finalVideoUrl: null,
       error: null,
@@ -223,11 +236,6 @@ export class VideoGenAgent extends AIChatAgent<
         writer.merge(result.toUIMessageStream());
       },
     });
-
-    // const finalOutput = await this.runInternal(runtimeContext);
-    // console.log({ finalOutput });
-
-    console.log(`[VideoGenAgent] Returning response stream`);
     return createUIMessageStreamResponse({ stream });
   }
 

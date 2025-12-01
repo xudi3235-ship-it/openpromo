@@ -16,8 +16,7 @@ const sampleAvatarImageUrls = [
   "https://i.pinimg.com/1200x/04/9a/65/049a6564d158084703960383df8de897.jpg",
 ];
 
-const samplePrompt =
-  "Create an 8s TikTok-style UGC video. Start by generating multiple hero keyframes before attempting video.";
+const samplePrompt = "Create an 8s TikTok-style UGC video.";
 
 type InputFormState = {
   prompt: string;

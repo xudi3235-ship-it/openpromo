@@ -3,9 +3,8 @@
  * Ported from Python: src/openai_agent/tools/veo31.py
  */
 
-import { KieAIError } from "@core/providers/kie-ai";
-import { tool } from "@openai/agents";
 import { z } from "zod";
+import { toolBuilder } from "../tool-builder";
 import {
   defaultVeo31Config,
   downloadVideo,
@@ -41,7 +40,7 @@ type ImageToVideoParams = z.infer<typeof ImageToVideoParamsSchema>;
  * VEO 3.1 Image-to-Video tool.
  * Generate a video from an image (first frame) using VEO 3.1.
  */
-export const veo31ImageToVideoTool = tool({
+export const veo31ImageToVideoTool = toolBuilder({
   name: "veo31_image_to_video",
   description: `Generate a video from an image using VEO 3.1.
 The input image is used as the first frame to guide generation.
@@ -92,7 +91,8 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
       if (!taskId) {
         return {
           status: "error",
-          message: "Failed to start video generation - no task ID returned",
+          tool: "veo31_image_to_video",
+          error: "Failed to start video generation - no task ID returned",
         };
       }
 
@@ -106,10 +106,16 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
 
       return {
         status: "success",
-        message: `Video generated and saved to ${outputPath}`,
-        outputPath,
-        videoUrl,
-        taskId,
+        tool: "veo31_image_to_video",
+        output: {
+          videoUrl,
+          outputPath,
+          taskId,
+          prompt,
+          inputImagePath,
+          inputLastFramePath: inputLastFramePath ?? null,
+          config: cfg,
+        },
       };
     } catch (error) {
       const errorMessage =
@@ -117,8 +123,8 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
       console.error(`[veo31_image_to_video] Error:`, errorMessage);
       return {
         status: "error",
-        message: errorMessage,
-        errorType: error instanceof KieAIError ? "KieAIError" : "UnknownError",
+        tool: "veo31_image_to_video",
+        error: errorMessage,
       };
     }
   },

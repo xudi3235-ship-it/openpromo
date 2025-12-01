@@ -11,7 +11,7 @@ import {
   veo31ReferenceImagesToVideoTool,
   veo31TextToVideoTool,
   veo31VideoExtensionTool,
-  videoGenShellTool,
+  virtualShellTool,
 } from "./tools";
 
 /**
@@ -144,7 +144,8 @@ export function createVideoGenAgent(context: VideoGenAgentContext) {
     model: "gpt-5.1",
     instructions: buildSystemPrompt(context),
     tools: [
-      videoGenShellTool,
+      // videoGenShellTool, // worker runtime does not allow spawning processes currently
+      virtualShellTool,
       evaluateImageTool,
       // evaluateVideoInputTool, // not good yet
       nanoBananaTool,

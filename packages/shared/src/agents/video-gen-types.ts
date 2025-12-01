@@ -44,7 +44,6 @@ export namespace VideoGenMessageEvent {
   const serverAppStateBase = z.object({
     _internal: z.object({
       serializedRunState: z.string().optional(),
-      runId: z.string().optional(),
     }),
     status: PipelineStatus,
     lastUpdated: z.string(),
