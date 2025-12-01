@@ -101,11 +101,7 @@ export class VideoGenAgent extends AIChatAgent<
       status: "running",
     });
     const context: VideoGenAgentContext = {
-      input: {
-        product: "Example Product",
-        productImages: this.state.input.productImages,
-        business: "small business",
-      },
+      input: this.state.input,
     };
     // 1. create agent with context
     const agent = createVideoGenAgent(context);
@@ -222,11 +218,7 @@ export class VideoGenAgent extends AIChatAgent<
     console.log(`[VideoGenAgent] onChatMessage called`);
     // TODO: Extract runtime context from messages or agent state
     const runtimeContext: VideoGenAgentContext = {
-      input: {
-        product: "Example Product",
-        productImages: [],
-        business: "Example Business",
-      },
+      input: this.state.input,
     };
     const systemPrompt = buildSystemPrompt(runtimeContext);
     const messages = this.messages;

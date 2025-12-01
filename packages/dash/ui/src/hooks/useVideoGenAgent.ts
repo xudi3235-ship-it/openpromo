@@ -34,7 +34,7 @@ export function useVideoGenAgent({
     [onEvent],
   );
 
-  const agent = useAgent({
+  const agent = useAgent<VideoGenRealtime.ServerAppState>({
     agent: "video-gen-agent",
     name: userId,
     host: `${window.location.origin}/api/agents`,

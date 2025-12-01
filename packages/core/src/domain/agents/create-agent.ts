@@ -9,7 +9,6 @@ import {
   sora2StoryboardTool,
   veo31ImageToVideoTool,
   veo31ReferenceImagesToVideoTool,
-  veo31TextToVideoTool,
   veo31VideoExtensionTool,
   virtualShellTool,
 } from "./tools";
@@ -37,7 +36,7 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     * nano_banana is used for image generation. it can take image inputs with great accuracy, details, follow docs/guide.
     * veo3.1 is used for video generation. Prefer image/reference-driven flows; only fall back to pure text-to-video if you cannot reasonably craft a grounded frame.
     * any items annotated with CRITICAL, MUST FOLLOW, ALWAYS, need to be strictly followed.
-    * pipeline remains image-first (create or source frames, then animate). Stitching or direct text-to-video is a fallback and must be justified.
+    * pipeline remains image-first (create or source frames, then videos). Stitching or direct text-to-video is a fallback and must be justified.
 
     ## HARD LIMITS (CRITICAL / MUST FOLLOW)
     - Operate only inside /tmp; treat /tmp/products as the source of product inputs. Never read/write outside repo sandbox.
@@ -83,7 +82,6 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
 
     4.2.1 TOOL QUICK REFERENCE
     - nano_banana: Prompt plus input images. Pros: fast keyframes, accurate product depiction. Cons: needs strong prompt and grounded image. Use whenever you need a clean start frame or product variation. Extremely powerful, can take up to 14 input images for composability.
-    - veo31_text_to_video: Prompt only (<=8s). Pros: rapid ideation without prep frames. Cons: lowest fidelity to specific products. Reserve for cases where no reference frame is available.
     - veo31_image_to_video: Start frame (optional last frame) plus prompt (<=8s). Pros: preserves product accuracy from the keyframe. Cons: requires polished keyframe and continuity is limited across clips. Best for feature demos or hooks needing exact shot control.
     - veo31_reference_images_to_video: Multiple reference images plus prompt (16:9 required, <=8s). Pros: strongest accuracy for ingredients or packaging. Cons: composition is harder and prep cost is higher. Use for ingredient callouts, packaging close-ups, or regulated visuals.
     - veo31_video_extension: Prior video plus prompt (<=8s per extension). Pros: smooth continuity when the previous clip already works. Cons: can drift away from logos or precise visuals. Use to extend an approved shot or maintain motion continuity.
@@ -174,7 +172,7 @@ export function createVideoGenAgent(context: VideoGenAgentContext) {
       evaluateImageTool,
       // evaluateVideoInputTool, // not good yet
       nanoBananaTool,
-      veo31TextToVideoTool,
+      // veo31TextToVideoTool, // never use pure text-to-video for product-centric videos
       veo31ImageToVideoTool,
       veo31ReferenceImagesToVideoTool,
       veo31VideoExtensionTool,
