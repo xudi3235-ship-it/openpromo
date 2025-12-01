@@ -42,6 +42,17 @@ import {
 import { toAgentImageInputs } from "./tools/evaluation-utils";
 import { buildTreeString, downloadImagesToTmp } from "./utils";
 
+type AssetDecision = NonNullable<
+  VideoGenMessageEvent.GeneratedAsset["decision"]
+>;
+
+type AgentStage = "image_gen" | "video_gen";
+
+type StageOptions = {
+  resume?: boolean;
+  assetIds?: string[];
+};
+
 /**
  * Build the system prompt for video generation agent.
  * Ported from Python main_agent.py create_main_agent()
@@ -209,7 +220,327 @@ export class VideoGenAgent extends AIChatAgent<
 > {
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
+    this.resetState();
   }
+
+  private patchState(partial: Partial<VideoGenMessageEvent.ServerAppState>) {
+    this.setState({
+      ...this.state,
+      ...partial,
+      _internal: {
+        ...this.state._internal,
+        ...(partial._internal ?? {}),
+      },
+      lastUpdated: partial.lastUpdated ?? new Date().toISOString(),
+    });
+  }
+
+  private broadcastEvent<K extends VideoGenMessageEvent.Event["type"]>(
+    type: K,
+    data: VideoGenMessageEvent.EventDataMap[K],
+  ) {
+    const connections = this.ctx.getWebSockets();
+    for (const conn of connections) {
+      VideoGenMessageEvent.sendEvent(conn as unknown as WebSocket, type, data);
+    }
+  }
+
+  private updateStatus(
+    status: VideoGenMessageEvent.EventDataMap["status_update"]["status"],
+    currentStep: string,
+    message?: string,
+  ) {
+    this.patchState({ status, currentStep });
+    this.broadcastEvent("status_update", { status, currentStep, message });
+  }
+
+  private setPendingAction(
+    action: VideoGenMessageEvent.PendingAction | null,
+  ): void {
+    this.patchState({ pendingAction: action });
+    if (action) {
+      this.broadcastEvent("action_required", { action });
+    }
+  }
+
+  private upsertAsset(asset: VideoGenMessageEvent.GeneratedAsset): void {
+    const exists = this.state.assets.some((a) => a.id === asset.id);
+    const assets = exists
+      ? this.state.assets.map((a) => (a.id === asset.id ? asset : a))
+      : [...this.state.assets, asset];
+    this.patchState({ assets });
+    this.broadcastEvent(exists ? "asset_updated" : "asset_added", { asset });
+  }
+
+  private handleImageAssets(urls: string[]): void {
+    if (!urls.length) return;
+    const timestamp = new Date().toISOString();
+    const assetIds: string[] = [];
+    urls.forEach((url, index) => {
+      const id =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `image-${Date.now()}-${index}`;
+      assetIds.push(id);
+      const asset: VideoGenMessageEvent.GeneratedAsset = {
+        id,
+        kind: "image",
+        status: "ready",
+        url,
+        thumbnailUrl: url,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        decision: "pending",
+      };
+      this.upsertAsset(asset);
+    });
+    this.updateStatus("waiting_for_review", "awaiting_keyframe_feedback");
+    this.setPendingAction({
+      id: `pa-${Date.now()}`,
+      type: "confirm_keyframes",
+      assetIds,
+      title: "Review generated keyframes",
+      description: "Approve a keyframe to continue to video generation.",
+    });
+  }
+
+  private handleVideoAsset(videoUrl: string): void {
+    const timestamp = new Date().toISOString();
+    const id =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `video-${Date.now()}`;
+    const asset: VideoGenMessageEvent.GeneratedAsset = {
+      id,
+      kind: "video",
+      status: "ready",
+      url: videoUrl,
+      thumbnailUrl: videoUrl,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    this.upsertAsset(asset);
+    this.patchState({ finalVideoUrl: videoUrl });
+    this.updateStatus("completed", "video_ready");
+    this.broadcastEvent("video_generated", {
+      assetId: id,
+      videoUrl,
+      thumbnailUrl: videoUrl,
+    });
+    this.setPendingAction({
+      id: `pa-${Date.now()}`,
+      type: "confirm_video",
+      assetIds: [id],
+      title: "Review generated video",
+      description: "Approve the rendered cut or retry for improvements.",
+    });
+  }
+
+  private async startImageGeneration(options?: { resume?: boolean }) {
+    this.setPendingAction(null);
+    this.updateStatus("generating_keyframes", "preparing_keyframes");
+    try {
+      await this.executeStage("image_gen", { resume: options?.resume });
+    } catch (error) {
+      console.error("[VideoGenAgent] image generation failed", error);
+      this.patchState({
+        error: error instanceof Error ? error.message : String(error),
+      });
+      this.updateStatus("failed", "image_stage_error");
+    }
+  }
+
+  private async startVideoGeneration(options?: StageOptions) {
+    const selectedAssets = this.resolveKeyframeSelection(options?.assetIds);
+    if (!selectedAssets.length) {
+      console.warn(
+        "[VideoGenAgent] No approved keyframes to start video stage",
+      );
+      return;
+    }
+    const selectedIds = selectedAssets.map((asset) => asset.id);
+    this.patchState({
+      _internal: {
+        ...this.state._internal,
+        selectedKeyframeIds: selectedIds,
+      },
+    });
+    this.setPendingAction(null);
+    this.updateStatus("generating_video", "rendering_video");
+    try {
+      await this.executeStage("video_gen", {
+        ...options,
+        assetIds: selectedIds,
+      });
+    } catch (error) {
+      console.error("[VideoGenAgent] video generation failed", error);
+      this.patchState({
+        error: error instanceof Error ? error.message : String(error),
+      });
+      this.updateStatus("failed", "video_stage_error");
+    }
+  }
+
+  private resolveKeyframeSelection(assetIds?: string[]) {
+    const explicitIds = assetIds?.length
+      ? assetIds
+      : (this.state._internal.selectedKeyframeIds ?? []);
+    const candidates = explicitIds.length
+      ? this.state.assets.filter(
+          (asset) => explicitIds.includes(asset.id) && asset.kind === "image",
+        )
+      : this.state.assets.filter(
+          (asset) => asset.kind === "image" && asset.status === "ready",
+        );
+    return candidates;
+  }
+
+  private async executeStage(stage: AgentStage, options?: StageOptions) {
+    const context: VideoGenAgentContext = {
+      input: {
+        product: "Example Product",
+        productImages: this.state.input.productImages,
+        business: "small business",
+      },
+    };
+
+    const agent = createVideoGenAgent(context);
+    const resumeKey = stage === "image_gen" ? "imageRunState" : "videoRunState";
+    const resumeState = this.state._internal[resumeKey];
+    const shouldResume = Boolean(options?.resume && resumeState);
+    const runnerInput = shouldResume
+      ? await RunState.fromString(agent, resumeState as string)
+      : await this.createStageInput(stage, options);
+
+    setupAgentHooks(agent, {
+      verbose: true,
+      onAgentStart: (ctx) => {
+        console.log(`[VideoGenAgent] ${stage} stage started`, ctx);
+      },
+      onAgentEnd: (_ctx, output) => {
+        console.log(`[VideoGenAgent] ${stage} stage ended`, output);
+      },
+      onToolStart: (_ctx, toolName, details) => {
+        console.log(`[VideoGenAgent] Tool started: ${toolName}`, details);
+      },
+      onToolEnd: (_ctx, toolName, result) => {
+        console.log(`[VideoGenAgent] Tool ended: ${toolName}`, result);
+        onToolOutput(result, "video_gen", {
+          onSuccess: (output) => {
+            this.handleVideoAsset(output.videoUrl);
+          },
+        });
+        onToolOutput(result, "image_gen", {
+          onSuccess: (output) => {
+            this.handleImageAssets(output.imageUrls);
+          },
+        });
+        onToolOutput(result, "nano_banana", {
+          onSuccess: (output) => {
+            this.handleImageAssets([output.imageUrl]);
+          },
+        });
+      },
+    });
+
+    const result = await run(agent, runnerInput, {
+      context,
+    });
+    const serialized = result.state.toString();
+    const updatedInternal = {
+      ...this.state._internal,
+      serializedRunState: serialized,
+      lastStage: stage,
+    } as typeof this.state._internal;
+    if (stage === "image_gen") {
+      updatedInternal.imageRunState = serialized;
+    } else {
+      updatedInternal.videoRunState = serialized;
+    }
+    this.patchState({ _internal: updatedInternal });
+
+    console.log(`[VideoGenAgent] ${stage} run completed:`, result.finalOutput);
+  }
+
+  private async handleSubmitAction(
+    data: VideoGenMessageEvent.SubmitActionPayload,
+  ): Promise<void> {
+    const now = new Date().toISOString();
+    const assets = this.state.assets.map((asset) => {
+      if (!data.assetIds.includes(asset.id)) return asset;
+      let decision: AssetDecision | undefined;
+      switch (data.action) {
+        case "approve_keyframe":
+        case "continue_with_asset":
+          decision = "approved";
+          break;
+        case "reject_keyframe":
+          decision = "rejected";
+          break;
+        case "regenerate_keyframe":
+          decision = "regenerate";
+          break;
+        default:
+          decision = undefined;
+      }
+      if (!decision) return asset;
+      return {
+        ...asset,
+        decision,
+        updatedAt: now,
+      };
+    });
+    this.patchState({ assets });
+
+    switch (data.action) {
+      case "approve_keyframe":
+      case "continue_with_asset":
+        await this.startVideoGeneration({ assetIds: data.assetIds });
+        break;
+      case "regenerate_keyframe":
+        await this.startImageGeneration({ resume: false });
+        break;
+      case "approve_video":
+        this.updateStatus("completed", "video_ready");
+        this.setPendingAction(null);
+        break;
+      case "reject_video":
+        this.updateStatus("failed", "video_rejected");
+        break;
+      case "retry_video_generation":
+        await this.startVideoGeneration({
+          assetIds:
+            data.assetIds.length > 0
+              ? data.assetIds
+              : this.state._internal.selectedKeyframeIds,
+          resume: Boolean(this.state._internal.videoRunState),
+        });
+        break;
+      case "dismiss_action":
+        this.setPendingAction(null);
+        break;
+      case "reject_keyframe":
+        this.setPendingAction(null);
+        break;
+      default:
+        break;
+    }
+  }
+
+  private sendHistorySnapshot(connection: Connection, limit?: number): void {
+    const assets =
+      typeof limit === "number"
+        ? this.state.assets.slice(-limit)
+        : this.state.assets;
+    VideoGenMessageEvent.sendEvent(
+      connection as unknown as WebSocket,
+      "history_snapshot",
+      {
+        assets,
+      },
+    );
+  }
+
   /**
    * triggered when app state is updated
    */
@@ -225,6 +556,10 @@ export class VideoGenAgent extends AIChatAgent<
   resetState() {
     this.setState({
       status: "idle",
+      currentStep: "idle",
+      lastUpdated: new Date().toISOString(),
+      pendingAction: null,
+      assets: [],
       input: {
         prompt: "empty_prompt",
         productImages: [],
@@ -232,6 +567,11 @@ export class VideoGenAgent extends AIChatAgent<
       },
       _internal: {
         serializedRunState: undefined,
+        runId: undefined,
+        imageRunState: undefined,
+        videoRunState: undefined,
+        lastStage: undefined,
+        selectedKeyframeIds: [],
       },
       finalVideoUrl: null,
       error: null,
@@ -355,129 +695,86 @@ export class VideoGenAgent extends AIChatAgent<
         });
       },
       set_input: async (data) => {
-        this.setState({
-          ...this.state,
+        this.patchState({
           input: {
             ...data,
           },
+          status: "collecting_input",
+          currentStep: "input_ready",
+          pendingAction: null,
+          error: null,
         });
       },
+      start_pipeline: async () => {
+        await this.startImageGeneration();
+      },
       start_image_gen: async (data) => {
-        console.log(
-          `[VideoGenAgent] start_image_gen event received:`,
-          data,
-          connection,
-        );
-        // 1. set input
-        this.setState({
-          ...this.state,
-          ...data.input,
+        this.patchState({ input: data.input });
+        await this.startImageGeneration();
+      },
+      start_video: async (data) => {
+        const selectedUrl = data.selectedKeyframeUrl;
+        const selectedAsset = selectedUrl
+          ? this.state.assets.find(
+              (asset) => asset.kind === "image" && asset.url === selectedUrl,
+            )
+          : undefined;
+
+        if (data.motionPrompt) {
+          this.patchState({
+            input: {
+              ...this.state.input,
+              motionPrompt: data.motionPrompt,
+            },
+          });
+        }
+
+        await this.startVideoGeneration({
+          assetIds: selectedAsset ? [selectedAsset.id] : undefined,
         });
-        // 2. start video gen
-        const runResult = await this.startVideoGen({
-          input: {
-            product: "Example Product",
-            productImages: data.input.productImages,
-            business: "small business",
-          },
-        });
-        console.log(
-          `[VideoGenAgent] Video generation run completed:`,
-          runResult,
-        );
-        // 3. send event
-        VideoGenMessageEvent.sendEvent(connection, "video_generated", {
-          videoUrl: runResult.finalVideoUrl as string,
+      },
+      submit_action: async (data) => {
+        await this.handleSubmitAction(data);
+      },
+      cancel_run: async () => {
+        this.resetState();
+      },
+      request_history: async (data) => {
+        this.sendHistorySnapshot(connection, data.limit);
+      },
+      review_keyframe: async (data) => {
+        const imageAssets = this.state.assets
+          .filter((asset) => asset.kind === "image")
+          .map((asset) => asset.id);
+        if (!imageAssets.length) return;
+        const actionMap: Record<
+          typeof data.action,
+          VideoGenMessageEvent.SubmitActionPayload["action"]
+        > = {
+          approve: "approve_keyframe",
+          reject: "reject_keyframe",
+          regenerate: "regenerate_keyframe",
+        };
+        await this.handleSubmitAction({
+          action: actionMap[data.action],
+          assetIds: imageAssets,
+          feedback: data.feedback,
         });
       },
     });
   }
 
   /**
-   * lifecycle of video gen:
-   * 0. c->s, set inputs, product image and avatar images
-   * 1. s, create keyframe image using inputs
-   * 2. s, render image, approval from client.
-   * 3. s, create video using keyframe image,
-   * 4. rener
+   * create initial run input items
    */
-
-  async startVideoGen(context: VideoGenAgentContext): Promise<AgentOutput> {
-    const agent = createVideoGenAgent(context);
-    // print cwd
-    console.log(`[VideoGenAgent] Current working directory: ${process.cwd()}`);
-
-    // Image URLs to download
-    const productImageUrls = [
-      "https://i.pinimg.com/1200x/1e/63/b8/1e63b8168a25c2a2a4127971514d97e2.jpg",
-    ];
-    const avatarImageUrls = [
-      "https://i.pinimg.com/1200x/04/9a/65/049a6564d158084703960383df8de897.jpg",
-    ];
-
-    // Download images to /tmp
-    console.log(`[VideoGenAgent] Downloading images to /tmp...`);
-    const productImagePaths = await downloadImagesToTmp(
-      productImageUrls,
-      "/tmp/products",
+  private async createStageInput(
+    stage: AgentStage,
+    options?: StageOptions,
+  ): Promise<AgentInputItem[]> {
+    console.log(
+      `[VideoGenAgent] Creating ${stage} input from state`,
+      this.state,
     );
-    const avatarImagePaths = await downloadImagesToTmp(
-      avatarImageUrls,
-      "/tmp/avatar",
-    );
-    console.log(`[VideoGenAgent] Product images:`, productImagePaths);
-    console.log(`[VideoGenAgent] Avatar images:`, avatarImagePaths);
-
-    // Show tmp structure
-    console.log(`[VideoGenAgent] /tmp structure:\n${VideoGenAgent.tmpDirStr}`);
-
-    const input = this.state._internal.serializedRunState
-      ? await RunState.fromString(
-          agent,
-          this.state._internal.serializedRunState,
-        )
-      : await this.createRunInput();
-    // Setup lifecycle hooks for logging
-    setupAgentHooks(agent, {
-      verbose: true,
-      onAgentStart: (ctx) => {
-        console.log(`[VideoGenAgent] Agent started with context:`, ctx);
-        // update state
-      },
-      onAgentEnd(_ctx, output) {
-        console.log(`[VideoGenAgent] Agent ended with output:`, output);
-      },
-      onToolStart(_ctx, toolName, details) {
-        console.log(`[VideoGenAgent] Tool started: ${toolName}`, details);
-      },
-      onToolEnd(_ctx, toolName, result) {
-        console.log(`[VideoGenAgent] Tool ended: ${toolName}`, result);
-        onToolOutput(result, "video_gen", {
-          onSuccess(output) {
-            console.log(`[VideoGenAgent] Image generation successful:`, output);
-          },
-        });
-      },
-    });
-    // if initial run, create items, else, serialize it and store from prev run
-    const result = await run(agent, input, {
-      context,
-    });
-    // save run state
-    this.setState({
-      ...this.state,
-      _internal: {
-        ...this.state._internal,
-        serializedRunState: result.state.toString(),
-      },
-    });
-
-    console.log(`[VideoGenAgent] Run completed:`, result.finalOutput);
-    return result.finalOutput;
-  }
-
-  private async createRunInput(): Promise<AgentInputItem[]> {
-    console.log(`[VideoGenAgent] Creating run input from state:`, this.state);
 
     const productImagePaths = await downloadImagesToTmp(
       this.state.input.productImages,
@@ -487,44 +784,56 @@ export class VideoGenAgent extends AIChatAgent<
       this.state.input.avatarImages,
       "/tmp/avatar",
     );
-    // Convert paths to image inputs using Agents SDK format
+    const productImages = toAgentImageInputs(this.state.input.productImages);
+    const avatarImages = toAgentImageInputs(this.state.input.avatarImages);
 
-    const productImages = toAgentImageInputs(productImagePaths);
-    const avatarImages = toAgentImageInputs(avatarImagePaths);
-    console.log(`[VideoGenAgent] Converted product images:`, productImages);
-    console.log(`[VideoGenAgent] Converted avatar images:`, avatarImages);
-    // Build user message content using Agents SDK types
-    // UserMessageItem expects content with input_text and input_image types
-    const userContent = [
-      // 1. product images
+    const userContent: AgentInputItem["content"] = [
       {
         type: "input_text" as const,
-        text: "here are the product images that we're focusing on:",
+        text: `Product reference files stored under /tmp/products. Local paths: ${productImagePaths.join(", ")}.\nAvatar references stored under /tmp/avatar. Local paths: ${avatarImagePaths.join(", ")}.`,
       },
       ...productImages,
-      // 2. avatar reference images
       {
         type: "input_text" as const,
-        text: "here is the avatar i'd like to use",
+        text: "Avatar reference selection:",
       },
       ...avatarImages,
-      // 3. tmp dir structure
       {
         type: "input_text" as const,
-        text: `here is the current, latest tmp dir structure. no need to run shell tool to inspect it for now.\n${VideoGenAgent.tmpDirStr}. Your cwd is /tmp`,
+        text: `Latest tmp dir snapshot (cwd=/tmp):\n${VideoGenAgent.tmpDirStr}`,
       },
-      // 4. customer prompt
       {
         type: "input_text" as const,
-        text: this.state.input.prompt,
+        text: `Customer brief: ${this.state.input.prompt}`,
       },
     ];
 
-    console.log(
-      `[VideoGenAgent] User content length: ${userContent.length} items`,
-    );
+    if (stage === "image_gen") {
+      userContent.push({
+        type: "input_text" as const,
+        text: "STAGE DIRECTIVE: Generate 2-3 high quality keyframes focused on the product. Do not begin video generation yet. Provide diverse framing and lighting options while keeping the hero product clearly visible.",
+      });
+    } else {
+      const selectedAssets = this.resolveKeyframeSelection(options?.assetIds);
+      const keyframeUrls = selectedAssets
+        .map((asset) => asset.url)
+        .filter((url): url is string => Boolean(url));
+      if (keyframeUrls.length) {
+        userContent.push({
+          type: "input_text" as const,
+          text: `Approved keyframes to reference: ${keyframeUrls.join(", ")}`,
+        });
+        userContent.push(...toAgentImageInputs(keyframeUrls));
+      }
+      const motionPrompt = this.state.input.motionPrompt
+        ? `User motion prompt: ${this.state.input.motionPrompt}`
+        : "";
+      userContent.push({
+        type: "input_text" as const,
+        text: `STAGE DIRECTIVE: Convert the approved keyframes into a smooth 6-8 second short-form video. Prioritize continuity, natural camera motion, and product clarity. ${motionPrompt}`,
+      });
+    }
 
-    // Build the user message item using Agents SDK format
     const userMessage: AgentInputItem = {
       role: "user",
       content: userContent,
