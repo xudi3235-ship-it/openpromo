@@ -24,7 +24,6 @@ type InputFormState = {
   productImages: string;
   avatarImages: string;
   additionalAssetUrls: string;
-  motionPrompt: string;
 };
 
 const defaultInputForm: InputFormState = {
@@ -32,7 +31,6 @@ const defaultInputForm: InputFormState = {
   productImages: sampleProductImageUrls.join("\n"),
   avatarImages: sampleAvatarImageUrls.join("\n"),
   additionalAssetUrls: "",
-  motionPrompt: "",
 };
 
 const parseMultilineList = (value: string) =>
@@ -81,21 +79,12 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
     if (!isConnected) return;
     const productImages = parseMultilineList(inputForm.productImages);
     const avatarImages = parseMultilineList(inputForm.avatarImages);
-    const additionalAssetUrls = parseMultilineList(
-      inputForm.additionalAssetUrls,
-    );
+
     const payload: VideoGenMessageEvent.EventDataMap["set_input"] = {
       prompt: inputForm.prompt.trim() || samplePrompt,
       productImages,
       avatarImages,
     };
-    if (additionalAssetUrls.length) {
-      payload.additionalAssetUrls = additionalAssetUrls;
-    }
-    const motionPromptValue = inputForm.motionPrompt.trim();
-    if (motionPromptValue) {
-      payload.motionPrompt = motionPromptValue;
-    }
     sendEvent("set_input", payload);
   };
 
@@ -170,32 +159,6 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
                   handleFormChange("avatarImages", e.target.value)
                 }
                 rows={3}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="additional-assets">
-                Additional Asset URLs (optional, one per line)
-              </Label>
-              <Textarea
-                id="additional-assets"
-                value={inputForm.additionalAssetUrls}
-                onChange={(e) =>
-                  handleFormChange("additionalAssetUrls", e.target.value)
-                }
-                rows={2}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="motion-prompt">Motion Prompt (optional)</Label>
-              <Input
-                id="motion-prompt"
-                value={inputForm.motionPrompt}
-                onChange={(e) =>
-                  handleFormChange("motionPrompt", e.target.value)
-                }
-                placeholder="Describe camera motion, transitions..."
               />
             </div>
           </div>

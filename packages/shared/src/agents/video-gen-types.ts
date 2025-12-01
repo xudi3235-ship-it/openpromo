@@ -26,8 +26,6 @@ export namespace VideoGenMessageEvent {
     prompt: z.string(),
     productImages: z.string().array(),
     avatarImages: z.string().array(),
-    additionalAssetUrls: z.array(z.string()).optional(),
-    motionPrompt: z.string().optional(),
   });
 
   export const SetInput = base.extend({
