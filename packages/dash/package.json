@@ -52,7 +52,7 @@
     "framer-motion": "^12.23.12",
     "hono": "catalog:",
     "hono-openapi": "^1.0.8",
-    "immer": "^11.0.1",
+    "immer": "catalog:",
     "lucide-react": "catalog:",
     "nanoid": "^5.1.5",
     "posthog-js": "^1.282.0",

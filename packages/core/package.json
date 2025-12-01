@@ -45,6 +45,7 @@
     "drizzle-orm": "catalog:",
     "drizzle-zod": "^0.8.3",
     "hono": "catalog:",
+    "immer": "catalog:",
     "nanoid": "^5.1.5",
     "openai": "^6.7.0",
     "openpromo-backend": "latest",
