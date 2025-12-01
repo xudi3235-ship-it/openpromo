@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import type { ApiEnv } from "@core/helpers/api-env";
+import { produce } from "immer";
 
 // import { routeAgentRequest } from "agents";
 
@@ -64,12 +65,15 @@ export class VideoGenAgent extends AIChatAgent<
   /**
    * Patch the application state with partial updates.
    */
-  private patchState(partial: Partial<VideoGenRealtime.ServerAppState>) {
-    this.setState({
-      ...this.state,
-      ...partial,
-      lastUpdated: partial.lastUpdated ?? new Date().toISOString(),
-    });
+  private patchState(
+    updater: (draft: VideoGenRealtime.ServerAppState) => void,
+  ) {
+    this.setState(
+      produce(this.state, (draft) => {
+        updater(draft);
+        draft.lastUpdated = new Date().toISOString();
+      }),
+    );
   }
 
   /**
@@ -89,16 +93,16 @@ export class VideoGenAgent extends AIChatAgent<
       console.error(
         "[VideoGenAgent] runPipeline called but no product images provided",
       );
-      this.patchState({
-        status: "failed",
-        error: "No product images or prompt provided in input.",
+      this.patchState((draft) => {
+        draft.status = "failed";
+        draft.error = "No product images or prompt provided in input.";
       });
       return;
     }
 
     // 0. mark as running
-    this.patchState({
-      status: "running",
+    this.patchState((draft) => {
+      draft.status = "running";
     });
     const context: VideoGenAgentContext = {
       input: this.state.input,
@@ -131,17 +135,14 @@ export class VideoGenAgent extends AIChatAgent<
                 `[VideoGenAgent] Received ${assetTool} asset output:`,
                 output.videoUrl,
               );
-              this.patchState({
-                artifacts: {
-                  ...this.state.artifacts,
-                  videos: [
-                    ...(this.state.artifacts.videos ?? []),
-                    {
-                      id: `${assetTool}_${Date.now()}`,
-                      url: output.videoUrl,
-                    },
-                  ],
-                },
+              this.patchState((draft) => {
+                if (!draft.artifacts.videos) {
+                  draft.artifacts.videos = [];
+                }
+                draft.artifacts.videos.push({
+                  id: `${assetTool}_${Date.now()}`,
+                  url: output.videoUrl,
+                });
               });
             },
           });
@@ -153,17 +154,14 @@ export class VideoGenAgent extends AIChatAgent<
               `[VideoGenAgent] Received nano banana asset output:`,
               output,
             );
-            this.patchState({
-              artifacts: {
-                ...this.state.artifacts,
-                images: [
-                  ...(this.state.artifacts.images ?? []),
-                  {
-                    id: `nano_banana_${Date.now()}`,
-                    url: output.imageUrl,
-                  },
-                ],
-              },
+            this.patchState((draft) => {
+              if (!draft.artifacts.images) {
+                draft.artifacts.images = [];
+              }
+              draft.artifacts.images.push({
+                id: `nano_banana_${Date.now()}`,
+                url: output.imageUrl,
+              });
             });
           },
         });
@@ -175,9 +173,9 @@ export class VideoGenAgent extends AIChatAgent<
     });
     const finalOutput = result.finalOutput as AgentOutput;
     // 3. update state with serialized run and final output
-    this.patchState({
-      status: "succeeded",
-      finalVideoUrl: finalOutput.finalVideoUrl,
+    this.patchState((draft) => {
+      draft.status = "succeeded";
+      draft.finalVideoUrl = finalOutput.finalVideoUrl ?? null;
     });
 
     console.log(`[VideoGenAgent] run completed:`, result.finalOutput);
@@ -309,8 +307,8 @@ export class VideoGenAgent extends AIChatAgent<
         });
       },
       set_input: async (data) => {
-        this.patchState({
-          input: data,
+        this.patchState((draft) => {
+          draft.input = data;
         });
       },
       start_pipeline: async () => {
