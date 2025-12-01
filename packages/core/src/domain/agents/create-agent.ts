@@ -180,7 +180,7 @@ export function createVideoGenAgent(context: VideoGenAgentContext) {
     ],
     modelSettings: {
       reasoning: {
-        effort: "medium",
+        effort: "high",
         summary: "auto",
       },
     },

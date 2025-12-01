@@ -76,34 +76,16 @@ export class VideoGenAgent extends AIChatAgent<
     );
   }
 
+  private async runPipeline() {
+    return this.withStateMgmt(async () => {
+      await this.runPipelineImpl();
+    });
+  }
+
   /**
    * core entrypoint to run the video generation pipeline.
    */
-  private async runPipeline() {
-    // if already running, do not start another
-    if (this.state.status === "running") {
-      console.warn("[VideoGenAgent] runPipeline called but already running");
-      return;
-    }
-    // if no valid input or images, error out
-    if (
-      this.state.input.productImages.length === 0 ||
-      this.state.input.prompt.length === 0
-    ) {
-      console.error(
-        "[VideoGenAgent] runPipeline called but no product images provided",
-      );
-      this.patchState((draft) => {
-        draft.status = "failed";
-        draft.error = "No product images or prompt provided in input.";
-      });
-      return;
-    }
-
-    // 0. mark as running
-    this.patchState((draft) => {
-      draft.status = "running";
-    });
+  private async runPipelineImpl() {
     const context: VideoGenAgentContext = {
       input: this.state.input,
     };
@@ -179,6 +161,49 @@ export class VideoGenAgent extends AIChatAgent<
     });
 
     console.log(`[VideoGenAgent] run completed:`, result.finalOutput);
+  }
+
+  private async withStateMgmt<T>(fn: () => Promise<T>) {
+    // if already running, no-op
+    if (this.state.status === "running") {
+      console.warn("[VideoGenAgent] withStateMgmt called but already running");
+      return;
+    }
+
+    // if no valid input or images, error out
+    if (
+      this.state.input.productImages.length === 0 ||
+      this.state.input.prompt.length === 0
+    ) {
+      console.error(
+        "[VideoGenAgent] runPipeline called but no product images provided",
+      );
+      this.patchState((draft) => {
+        draft.status = "failed";
+        draft.error = "No product images or prompt provided in input.";
+      });
+      return;
+    }
+    // 0. mark as running
+    this.patchState((draft) => {
+      draft.status = "running";
+    });
+    try {
+      // 1. run the fn
+      const result = await fn();
+      // 2. mark as succeeded?
+      this.patchState((draft) => {
+        draft.status = "succeeded";
+      });
+      return result;
+    } catch (error) {
+      // 3. failed
+      this.patchState((draft) => {
+        draft.status = "failed";
+        draft.error = (error as Error).message;
+      });
+      throw error;
+    }
   }
 
   /**
