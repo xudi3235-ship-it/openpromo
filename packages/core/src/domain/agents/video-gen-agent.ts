@@ -23,11 +23,7 @@ import {
   type ToolSet,
   type UIMessage,
 } from "ai";
-import {
-  type AgentOutput,
-  onToolOutput,
-  type ToolNameType,
-} from "./agent-types";
+import { type AgentOutput, onToolOutput } from "./agent-types";
 import type { VideoGenAgentContext } from "./context";
 import { buildSystemPrompt, createVideoGenAgent } from "./create-agent";
 import { setupAgentHooks } from "./hooks";
@@ -35,13 +31,13 @@ import { setupAgentHooks } from "./hooks";
 import { toAgentImageInputs } from "./tools/evaluation-utils";
 import { buildTreeString, downloadImagesToTmp } from "./utils";
 
-const VIDEO_ASSET_TOOL_NAMES: ToolNameType[] = [
+const VIDEO_ASSET_TOOL_NAMES = [
   "veo31_text_to_video",
   "veo31_image_to_video",
   "veo31_reference_images_to_video",
   "veo31_video_extension",
   "sora2_storyboard_generate",
-];
+] as const;
 
 /**
  * Main entrypoint for video generation agent.
@@ -122,7 +118,7 @@ export class VideoGenAgent extends AIChatAgent<
             onSuccess: (output) => {
               console.log(
                 `[VideoGenAgent] Received ${assetTool} asset output:`,
-                output,
+                output.videoUrl,
               );
             },
           });
@@ -160,10 +156,10 @@ export class VideoGenAgent extends AIChatAgent<
    * triggered when app state is updated
    */
   async onStateUpdate(
-    state: VideoGenMessageEvent.ServerAppState | undefined,
+    _state: VideoGenMessageEvent.ServerAppState | undefined,
     source: Connection | "server",
   ): Promise<void> {
-    console.log(`[VideoGenAgent] onStateUpdate called from`, source, state);
+    console.log(`[VideoGenAgent] onStateUpdate called from`, source);
     this.broadcastState();
   }
 
