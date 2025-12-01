@@ -13,6 +13,7 @@ import {
 } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { z } from "zod";
+import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import { direntType, resolveTmpPath, TMP_ROOT } from "./tmp-fs-helpers";
 
@@ -326,7 +327,11 @@ function executePwd() {
   });
 }
 
-export const virtualShellTool = toolBuilder({
+export const virtualShellTool = toolBuilder<
+  "virtual_shell",
+  typeof VirtualShellParamsSchema,
+  VideoGenAgentContext
+>({
   name: "virtual_shell",
   description:
     "Execute limited shell-like commands (pwd, ls, cat, write, rm, mkdir, stat) scoped to /tmp. Used in Cloudflare Worker runtime.",

@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import {
   downloadVideo,
@@ -31,7 +32,11 @@ type VideoExtensionParams = z.infer<typeof VideoExtensionParamsSchema>;
  * VEO 3.1 Video Extension tool.
  * Extend an existing VEO 3.1 video.
  */
-export const veo31VideoExtensionTool = toolBuilder({
+export const veo31VideoExtensionTool = toolBuilder<
+  "veo31_video_extension",
+  typeof VideoExtensionParamsSchema,
+  VideoGenAgentContext
+>({
   name: "veo31_video_extension",
   description: `Extend an existing VEO 3.1 video by 7 seconds.
 The input must be a previous VEO 3.1 generated video (via task ID).

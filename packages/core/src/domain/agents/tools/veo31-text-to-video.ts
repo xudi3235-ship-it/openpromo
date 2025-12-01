@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import {
   defaultVeo31Config,
@@ -35,7 +36,11 @@ type TextToVideoParams = z.infer<typeof TextToVideoParamsSchema>;
  * VEO 3.1 Text-to-Video tool.
  * Generate a video from a text prompt.
  */
-export const veo31TextToVideoTool = toolBuilder({
+export const veo31TextToVideoTool = toolBuilder<
+  "veo31_text_to_video",
+  typeof TextToVideoParamsSchema,
+  VideoGenAgentContext
+>({
   name: "veo31_text_to_video",
   description: `Generate a video from a text prompt using VEO 3.1.
 Creates up to 8 second videos from detailed text descriptions.

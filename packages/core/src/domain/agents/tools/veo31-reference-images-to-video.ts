@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import {
   defaultVeo31Config,
@@ -41,7 +42,11 @@ type ReferenceImagesToVideoParams = z.infer<
  * VEO 3.1 Reference Images to Video tool.
  * Generate a video using reference images (assets) for strong visual consistency.
  */
-export const veo31ReferenceImagesToVideoTool = toolBuilder({
+export const veo31ReferenceImagesToVideoTool = toolBuilder<
+  "veo31_reference_images_to_video",
+  typeof ReferenceImagesToVideoParamsSchema,
+  VideoGenAgentContext
+>({
   name: "veo31_reference_images_to_video",
   description: `Generate a video using reference images (assets) for strong visual consistency using VEO 3.1.
 Use this for "ingredients to video" generation - the reference images guide the video's content.

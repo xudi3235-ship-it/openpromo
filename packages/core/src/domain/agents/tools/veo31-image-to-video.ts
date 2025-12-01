@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import {
   defaultVeo31Config,
@@ -40,7 +41,11 @@ type ImageToVideoParams = z.infer<typeof ImageToVideoParamsSchema>;
  * VEO 3.1 Image-to-Video tool.
  * Generate a video from an image (first frame) using VEO 3.1.
  */
-export const veo31ImageToVideoTool = toolBuilder({
+export const veo31ImageToVideoTool = toolBuilder<
+  "veo31_image_to_video",
+  typeof ImageToVideoParamsSchema,
+  VideoGenAgentContext
+>({
   name: "veo31_image_to_video",
   description: `Generate a video from an image using VEO 3.1.
 The input image is used as the first frame to guide generation.

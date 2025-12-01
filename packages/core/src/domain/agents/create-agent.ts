@@ -161,11 +161,14 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
  * WIP: not ready, still figuring out how th fs works in CF worker, it's pretty
  * limited compared to Modal runtime.
  */
-export function createVideoGenAgent(context: VideoGenAgentContext) {
+export function createVideoGenAgent() {
   const agent = new Agent<VideoGenAgentContext, AgentOutput>({
     name: "VideoGenInternalAgent",
     model: "gpt-5.1",
-    instructions: buildSystemPrompt(context),
+    instructions: (runCtx, _agent) => {
+      return buildSystemPrompt(runCtx.context);
+    },
+    handoffs: [],
     tools: [
       // videoGenShellTool, // worker runtime does not allow spawning processes currently
       virtualShellTool,

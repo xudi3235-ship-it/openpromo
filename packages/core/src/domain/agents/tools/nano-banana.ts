@@ -19,6 +19,7 @@ import {
   isStringUrl,
 } from "@core/utils/common";
 import { z } from "zod";
+import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolSuccess } from "../tool-builder";
 
 const OUTPUT_DIR = "/tmp/nanobana_output";
@@ -86,7 +87,11 @@ function transformFileInputs(inputs: string[]): (string | Buffer)[] {
  * Nano Banana image generation tool.
  * Generates images using Google's Nano Banana model via Replicate.
  */
-export const nanoBananaTool = toolBuilder({
+export const nanoBananaTool = toolBuilder<
+  "nano_banana",
+  typeof NanoBananaParamsSchema,
+  VideoGenAgentContext
+>({
   name: "nano_banana",
   description: `Run the Nano Banana model for high-quality text-to-image or image-to-image generation.
 Can take up to 14 input images for style reference, editing, or composition.

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { VideoGenAgentContext } from "../context";
 import { toolBuilder } from "../tool-builder";
 
 // Echo tool schema
@@ -7,7 +8,11 @@ const EchoParams = z.object({
 });
 
 // testing our tool builder
-export const echoTool = toolBuilder({
+export const echoTool = toolBuilder<
+  "echo",
+  typeof EchoParams,
+  VideoGenAgentContext
+>({
   name: "echo",
   description: "Echoes back the input message.",
   parameters: EchoParams,

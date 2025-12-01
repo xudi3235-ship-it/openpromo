@@ -1,14 +1,24 @@
+import type {
+  FunctionCallItem,
+  RunContext,
+  UnknownContext,
+} from "@openai/agents";
 import { tool } from "@openai/agents";
-import { type ToolNameType, ToolOutputs } from "./agent-types";
-// zod import removed, not used
 
 /**
  * Higher-order tool builder that wraps a tool definition and enforces standard output.
  * Automatically wraps the execute function in try/catch and returns a standard output shape.
  */
 import type { z } from "zod";
+import { type ToolNameType, ToolOutputs } from "./agent-types";
 
 type InferZodType<T extends z.ZodTypeAny> = z.infer<T>;
+type RawToolOptions = Parameters<typeof tool>[0];
+type AdditionalToolOptions = Omit<
+  RawToolOptions,
+  "name" | "description" | "parameters" | "execute"
+>;
+type ToolExecuteDetails = { toolCall: FunctionCallItem };
 
 export type ToolResultFor<Name extends ToolNameType> = Extract<
   ToolOutputs,
@@ -50,30 +60,42 @@ export function toolError<Name extends ToolNameType>(
 interface ToolBuilderOptions<
   Name extends ToolNameType,
   Schema extends z.ZodTypeAny,
-> {
+  Context = UnknownContext,
+> extends AdditionalToolOptions {
   name: Name;
   description: string;
   parameters: Schema;
-  execute: (params: InferZodType<Schema>) => Promise<ToolResultFor<Name>>;
+  execute: (
+    params: InferZodType<Schema>,
+    context?: RunContext<Context>,
+    details?: ToolExecuteDetails,
+  ) => Promise<ToolResultFor<Name>>;
 }
 
 export function toolBuilder<
   Name extends ToolNameType,
   Schema extends z.ZodTypeAny,
+  Context = UnknownContext,
 >({
   name,
   description,
   parameters,
   execute,
-}: ToolBuilderOptions<Name, Schema>) {
+  ...rest
+}: ToolBuilderOptions<Name, Schema, Context>) {
   return tool({
+    ...rest,
     name,
     description,
     parameters,
-    async execute(params) {
+    async execute(
+      params: unknown,
+      context?: RunContext<Context>,
+      details?: ToolExecuteDetails,
+    ) {
       try {
         const parsedParams = parameters.parse(params);
-        const result = await execute(parsedParams);
+        const result = await execute(parsedParams, context, details);
         // Validate and return using ToolOutputs
         const parsed = ToolOutputs.safeParse(result);
         if (parsed.success) {

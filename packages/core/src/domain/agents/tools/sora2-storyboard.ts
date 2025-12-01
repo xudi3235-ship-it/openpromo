@@ -14,6 +14,7 @@ import {
 import { downloadVideo as downloadVideoBase } from "@core/utils/common";
 import { env } from "@core/utils/env";
 import { z } from "zod";
+import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 
 /**
@@ -125,7 +126,11 @@ type Sora2StoryboardParams = z.infer<typeof Sora2StoryboardParamsSchema>;
  * Sora 2 Pro Storyboard video generation tool.
  * Creates multi-scene videos up to 25 seconds by combining multiple shots.
  */
-export const sora2StoryboardTool = toolBuilder({
+export const sora2StoryboardTool = toolBuilder<
+  "sora2_storyboard_generate",
+  typeof Sora2StoryboardParamsSchema,
+  VideoGenAgentContext
+>({
   name: "sora2_storyboard_generate",
   description: `Generate a multi-scene storyboard video using Sora 2 Pro.
 Creates videos up to 25 seconds long by combining multiple scenes into a cohesive storyboard.

@@ -58,7 +58,6 @@ export class VideoGenAgent extends AIChatAgent<
 
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
-    this.resetState();
     this.runStateSerialized = null;
   }
 
@@ -90,7 +89,7 @@ export class VideoGenAgent extends AIChatAgent<
       input: this.state.input,
     };
     // 1. create agent with context
-    const agent = createVideoGenAgent(context);
+    const agent = createVideoGenAgent();
     const runnerInput = this.runStateSerialized
       ? await RunState.fromString(agent, this.runStateSerialized)
       : await this.createRunnerInput();
