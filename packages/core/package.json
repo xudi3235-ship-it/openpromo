@@ -30,8 +30,10 @@
     "@cloudflare/containers": "^0.0.30",
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",
+    "@fal-ai/client": "^1.7.2",
     "@mendable/firecrawl-js": "^4.4.1",
     "@neondatabase/serverless": "^1.0.1",
+    "@openai/agents": "catalog:",
     "@openpromo/shared": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/server": "catalog:",
@@ -55,8 +57,7 @@
     "stripe": "^20.0.0",
     "ulid": "^3.0.1",
     "vite": "catalog:",
-    "zod": "catalog:",
-    "@openai/agents": "catalog:"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.61.0",

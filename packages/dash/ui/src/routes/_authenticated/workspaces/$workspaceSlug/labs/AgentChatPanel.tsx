@@ -5,7 +5,8 @@ import { Label } from "@openpromo/ui/components/label";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import type { VideoGenRealtime } from "@shared";
 import type { UIMessage } from "ai";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDebounceCallback } from "usehooks-ts";
 import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
 
 const sampleProductImageUrls = [
@@ -60,7 +61,64 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
       setMsgs((prev) => [...prev, evt.data]);
     },
   });
+  const isFirstAutoSend = useRef(true);
+  const lastSentRef = useRef<string | null>(null);
 
+  const debouncedSend = useDebounceCallback((form: InputFormState) => {
+    if (!isConnected) return;
+
+    const productImages = parseMultilineList(form.productImages);
+    const avatarImages = parseMultilineList(form.avatarImages);
+
+    const payloadObj: VideoGenRealtime.EventDataMap["set_input"] = {
+      prompt: form.prompt.trim() || samplePrompt,
+      productImages,
+      avatarImages,
+    };
+
+    const payloadJson = JSON.stringify(payloadObj);
+    // Skip sending if payload hasn't changed since last send
+    if (lastSentRef.current === payloadJson) return;
+
+    sendEvent("set_input", payloadObj);
+    lastSentRef.current = payloadJson;
+  }, 10_000);
+
+  useEffect(() => {
+    // Only send on input changes after initialization.
+    // We send immediately once when we become connected (see separate effect below),
+    // so skip the very first run of this effect to avoid duplicating that initial send.
+    if (isFirstAutoSend.current) {
+      isFirstAutoSend.current = false;
+      return;
+    }
+
+    if (!isConnected) return;
+
+    debouncedSend(inputForm);
+    return () => debouncedSend.cancel();
+  }, [inputForm, debouncedSend, isConnected]);
+
+  // Send once on init (when we become connected). This guarantees an initial
+  // `set_input` is sent as soon as the socket/connection is ready.
+  const initialSentRef = useRef(false);
+  useEffect(() => {
+    if (!isConnected) return;
+    if (initialSentRef.current) return;
+
+    const productImages = parseMultilineList(inputForm.productImages);
+    const avatarImages = parseMultilineList(inputForm.avatarImages);
+
+    const payload: VideoGenRealtime.EventDataMap["set_input"] = {
+      prompt: inputForm.prompt.trim() || samplePrompt,
+      productImages,
+      avatarImages,
+    };
+
+    sendEvent("set_input", payload);
+    lastSentRef.current = JSON.stringify(payload);
+    initialSentRef.current = true;
+  }, [isConnected, inputForm, sendEvent]);
   const isLoading = status === "streaming" || status === "submitted";
 
   if (!userId) {
@@ -73,19 +131,6 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
 
   const handleFormChange = (field: keyof InputFormState, value: string) => {
     setInputForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleApplyInputs = () => {
-    if (!isConnected) return;
-    const productImages = parseMultilineList(inputForm.productImages);
-    const avatarImages = parseMultilineList(inputForm.avatarImages);
-
-    const payload: VideoGenRealtime.EventDataMap["set_input"] = {
-      prompt: inputForm.prompt.trim() || samplePrompt,
-      productImages,
-      avatarImages,
-    };
-    sendEvent("set_input", payload);
   };
 
   const handleStartPipeline = () => {
@@ -164,9 +209,6 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleApplyInputs} disabled={!isConnected}>
-              Apply Inputs
-            </Button>
             <Button
               onClick={handleStartPipeline}
               variant="default"

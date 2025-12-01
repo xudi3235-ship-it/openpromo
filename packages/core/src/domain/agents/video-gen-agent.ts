@@ -210,9 +210,8 @@ export class VideoGenAgent extends AIChatAgent<
    */
   async onStateUpdate(
     _state: VideoGenRealtime.ServerAppState | undefined,
-    source: Connection | "server",
+    _source: Connection | "server",
   ): Promise<void> {
-    console.log(`[VideoGenAgent] onStateUpdate called from`, source);
     this.broadcastState();
   }
 
