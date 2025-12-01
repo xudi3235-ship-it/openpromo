@@ -14,7 +14,7 @@ import {
 import { downloadVideo as downloadVideoBase } from "@core/utils/common";
 import { env } from "@core/utils/env";
 import { z } from "zod";
-import { toolBuilder } from "../tool-builder";
+import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 
 /**
  * Get KieAI client instance.
@@ -149,11 +149,10 @@ NOTE: Provide local file paths for reference images - files will be uploaded aut
     const expectedDuration = Number.parseFloat(duration);
 
     if (totalShotDuration > expectedDuration) {
-      return {
-        status: "error",
-        tool: "sora2_storyboard_generate",
-        error: `Total shot durations (${totalShotDuration}s) exceed specified video duration (${expectedDuration}s)`,
-      };
+      return toolError(
+        "sora2_storyboard_generate",
+        `Total shot durations (${totalShotDuration}s) exceed specified video duration (${expectedDuration}s)`,
+      );
     }
 
     console.log(
@@ -185,11 +184,10 @@ NOTE: Provide local file paths for reference images - files will be uploaded aut
 
     const taskId = response.data?.taskId;
     if (!taskId) {
-      return {
-        status: "error",
-        tool: "sora2_storyboard_generate",
-        error: "Failed to start storyboard generation - no task ID returned",
-      };
+      return toolError(
+        "sora2_storyboard_generate",
+        "Failed to start storyboard generation - no task ID returned",
+      );
     }
 
     console.log(`[sora2_storyboard] Task started: ${taskId}`);
@@ -202,18 +200,10 @@ NOTE: Provide local file paths for reference images - files will be uploaded aut
     // Download and save
     await downloadVideo(videoUrl, outputPath);
 
-    return {
-      status: "success",
-      tool: "sora2_storyboard_generate",
-      output: {
-        videoUrl,
-        outputPath,
-        taskId,
-        shots,
-        duration,
-        aspectRatio,
-        referenceImagePaths: referenceImagePaths ?? undefined,
-      },
-    };
+    return toolSuccess("sora2_storyboard_generate", {
+      videoUrl,
+      outputPath,
+      taskId,
+    });
   },
 });

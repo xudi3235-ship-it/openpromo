@@ -19,7 +19,7 @@ import {
   isStringUrl,
 } from "@core/utils/common";
 import { z } from "zod";
-import { toolBuilder } from "../tool-builder";
+import { toolBuilder, toolSuccess } from "../tool-builder";
 
 const OUTPUT_DIR = "/tmp/nanobana_output";
 
@@ -120,14 +120,9 @@ Auto-saves generated images and returns the URL.`,
     // Download and save the image
     await downloadImage(imageUrl, outputPath);
 
-    return {
-      status: "success",
-      tool: "nano_banana",
-      output: {
-        imageUrl,
-        outputPath,
-        prompt,
-      },
-    };
+    return toolSuccess("nano_banana", {
+      imageUrl,
+      outputPath,
+    });
   },
 });

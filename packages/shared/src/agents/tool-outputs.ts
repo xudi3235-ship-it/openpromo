@@ -218,9 +218,10 @@ export const NanoBananaToolOutput = makeToolOutput(
   z.object({
     imageUrl: z.string().url(),
     outputPath: z.string(),
-    prompt: z.string(),
   }),
 );
+
+export type NanoBananaToolOutput = z.infer<typeof NanoBananaToolOutput>;
 
 export const ToolOutputs = z.union([
   Veo31TextToVideoToolOutput,

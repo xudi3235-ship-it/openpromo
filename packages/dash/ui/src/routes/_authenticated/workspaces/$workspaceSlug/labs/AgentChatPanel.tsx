@@ -16,7 +16,8 @@ const sampleAvatarImageUrls = [
   "https://i.pinimg.com/1200x/04/9a/65/049a6564d158084703960383df8de897.jpg",
 ];
 
-const samplePrompt = "Create an 8s TikTok-style UGC video.";
+const samplePrompt =
+  "Create an 8s TikTok style UGC ad video. using both avatar and product image";
 
 type InputFormState = {
   prompt: string;

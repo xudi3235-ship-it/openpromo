@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { toolBuilder } from "../tool-builder";
+import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import {
   downloadVideo,
   getKieAIClient,
@@ -56,11 +56,10 @@ Best for: making longer videos, continuing a scene, seamless extensions.`,
 
     const taskId = extendResult.data?.taskId;
     if (!taskId) {
-      return {
-        status: "error",
-        tool: "veo31_video_extension",
-        error: "Failed to start video extension - no task ID returned",
-      };
+      return toolError(
+        "veo31_video_extension",
+        "Failed to start video extension - no task ID returned",
+      );
     }
 
     console.log(`[veo31_video_extension] Extension task started: ${taskId}`);
@@ -71,16 +70,12 @@ Best for: making longer videos, continuing a scene, seamless extensions.`,
     // Download and save
     await downloadVideo(videoUrl, outputPath);
 
-    return {
-      status: "success",
-      tool: "veo31_video_extension",
-      output: {
-        videoUrl,
-        outputPath,
-        taskId,
-        prompt,
-        originalTaskId: inputVideoTaskId,
-      },
-    };
+    return toolSuccess("veo31_video_extension", {
+      videoUrl,
+      outputPath,
+      taskId,
+      prompt,
+      originalTaskId: inputVideoTaskId,
+    });
   },
 });

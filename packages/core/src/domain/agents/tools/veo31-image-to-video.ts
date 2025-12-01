@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { toolBuilder } from "../tool-builder";
+import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import {
   defaultVeo31Config,
   downloadVideo,
@@ -53,79 +53,62 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
       params;
     const cfg = config ?? defaultVeo31Config;
 
-    try {
-      console.log(
-        `[veo31_image_to_video] Generating from image: ${inputImagePath}`,
+    console.log(
+      `[veo31_image_to_video] Generating from image: ${inputImagePath}`,
+    );
+    console.log(`[veo31_image_to_video] Prompt: ${prompt.slice(0, 100)}...`);
+
+    const client = getKieAIClient();
+
+    // Upload images and get URLs
+    const inputImageUrl = await uploadFile(client, inputImagePath);
+    const inputLastFrameUrl = inputLastFramePath
+      ? await uploadFile(client, inputLastFramePath)
+      : undefined;
+
+    // Build image URLs array (first frame, optionally last frame)
+    const imageUrls = inputLastFrameUrl
+      ? [inputImageUrl, inputLastFrameUrl]
+      : [inputImageUrl];
+
+    // Determine generation type
+    const generationType = inputLastFrameUrl
+      ? ("FIRST_AND_LAST_FRAMES_2_VIDEO" as const)
+      : undefined;
+
+    // Start video generation
+    const generateResult = await client.veo31GenerateVideo({
+      prompt,
+      imageUrls,
+      generationType,
+      aspectRatio: cfg.aspectRatio === "16:9" ? "16:9" : "9:16",
+      model: "veo3_fast",
+      enableTranslation: true,
+    });
+
+    const taskId = generateResult.data?.taskId;
+    if (!taskId) {
+      return toolError(
+        "veo31_image_to_video",
+        "Failed to start video generation - no task ID returned",
       );
-      console.log(`[veo31_image_to_video] Prompt: ${prompt.slice(0, 100)}...`);
-
-      const client = getKieAIClient();
-
-      // Upload images and get URLs
-      const inputImageUrl = await uploadFile(client, inputImagePath);
-      const inputLastFrameUrl = inputLastFramePath
-        ? await uploadFile(client, inputLastFramePath)
-        : undefined;
-
-      // Build image URLs array (first frame, optionally last frame)
-      const imageUrls = inputLastFrameUrl
-        ? [inputImageUrl, inputLastFrameUrl]
-        : [inputImageUrl];
-
-      // Determine generation type
-      const generationType = inputLastFrameUrl
-        ? ("FIRST_AND_LAST_FRAMES_2_VIDEO" as const)
-        : undefined;
-
-      // Start video generation
-      const generateResult = await client.veo31GenerateVideo({
-        prompt,
-        imageUrls,
-        generationType,
-        aspectRatio: cfg.aspectRatio === "16:9" ? "16:9" : "9:16",
-        model: "veo3_fast",
-        enableTranslation: true,
-      });
-
-      const taskId = generateResult.data?.taskId;
-      if (!taskId) {
-        return {
-          status: "error",
-          tool: "veo31_image_to_video",
-          error: "Failed to start video generation - no task ID returned",
-        };
-      }
-
-      console.log(`[veo31_image_to_video] Task started: ${taskId}`);
-
-      // Poll until complete
-      const videoUrl = await client.veo31PollUntilComplete(taskId);
-
-      // Download and save
-      await downloadVideo(videoUrl, outputPath);
-
-      return {
-        status: "success",
-        tool: "veo31_image_to_video",
-        output: {
-          videoUrl,
-          outputPath,
-          taskId,
-          prompt,
-          inputImagePath,
-          inputLastFramePath: inputLastFramePath ?? null,
-          config: cfg,
-        },
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      console.error(`[veo31_image_to_video] Error:`, errorMessage);
-      return {
-        status: "error",
-        tool: "veo31_image_to_video",
-        error: errorMessage,
-      };
     }
+
+    console.log(`[veo31_image_to_video] Task started: ${taskId}`);
+
+    // Poll until complete
+    const videoUrl = await client.veo31PollUntilComplete(taskId);
+
+    // Download and save
+    await downloadVideo(videoUrl, outputPath);
+
+    return toolSuccess("veo31_image_to_video", {
+      videoUrl,
+      outputPath,
+      taskId,
+      prompt,
+      inputImagePath,
+      inputLastFramePath: inputLastFramePath ?? null,
+    });
   },
 });

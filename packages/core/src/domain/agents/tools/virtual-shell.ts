@@ -13,7 +13,7 @@ import {
 } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { z } from "zod";
-import { toolBuilder } from "../tool-builder";
+import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import { direntType, resolveTmpPath, TMP_ROOT } from "./tmp-fs-helpers";
 
 type CommandOptionValue = string | boolean;
@@ -194,15 +194,11 @@ async function describeDirectory(absolutePath: string) {
 async function executeLs(args: string[]) {
   const { display, absolute } = resolveDisplayPath(args[0]);
   const entries = await describeDirectory(absolute);
-  return {
-    status: "success" as const,
-    tool: "virtual_shell" as const,
-    output: {
-      command: "ls" as const,
-      path: display,
-      entries,
-    },
-  };
+  return toolSuccess("virtual_shell", {
+    command: "ls",
+    path: display,
+    entries,
+  });
 }
 
 async function executeCat(
@@ -221,17 +217,13 @@ async function executeCat(
   const buffer = await readFile(absolute);
   const content =
     encoding === "utf8" ? buffer.toString("utf8") : buffer.toString("base64");
-  return {
-    status: "success" as const,
-    tool: "virtual_shell" as const,
-    output: {
-      command: "cat" as const,
-      path: display,
-      encoding,
-      content,
-      byteLength: buffer.byteLength,
-    },
-  };
+  return toolSuccess("virtual_shell", {
+    command: "cat",
+    path: display,
+    encoding,
+    content,
+    byteLength: buffer.byteLength,
+  });
 }
 
 async function executeWrite(
@@ -264,17 +256,13 @@ async function executeWrite(
       ? Buffer.from(dataValue, "utf8")
       : Buffer.from(dataValue, "base64");
   await writeFile(absolute, buffer, { flag: append ? "a" : "w" });
-  return {
-    status: "success" as const,
-    tool: "virtual_shell" as const,
-    output: {
-      command: "write" as const,
-      path: display,
-      bytesWritten: buffer.byteLength,
-      append,
-      encoding,
-    },
-  };
+  return toolSuccess("virtual_shell", {
+    command: "write",
+    path: display,
+    bytesWritten: buffer.byteLength,
+    append,
+    encoding,
+  });
 }
 type SupportedEncoding = "utf8" | "base64";
 
@@ -288,15 +276,11 @@ async function executeRm(
   const recursive = boolOption(options.recursive ?? options.r, false);
   const { display, absolute } = resolveDisplayPath(args[0]);
   await rm(absolute, { recursive, force: true });
-  return {
-    status: "success" as const,
-    tool: "virtual_shell" as const,
-    output: {
-      command: "rm" as const,
-      path: display,
-      recursive,
-    },
-  };
+  return toolSuccess("virtual_shell", {
+    command: "rm",
+    path: display,
+    recursive,
+  });
 }
 
 async function executeMkdir(
@@ -312,15 +296,11 @@ async function executeMkdir(
   );
   const { display, absolute } = resolveDisplayPath(args[0]);
   await mkdir(absolute, { recursive });
-  return {
-    status: "success" as const,
-    tool: "virtual_shell" as const,
-    output: {
-      command: "mkdir" as const,
-      path: display,
-      recursive,
-    },
-  };
+  return toolSuccess("virtual_shell", {
+    command: "mkdir",
+    path: display,
+    recursive,
+  });
 }
 
 async function executeStat(args: string[]) {
@@ -329,29 +309,21 @@ async function executeStat(args: string[]) {
   }
   const { display, absolute } = resolveDisplayPath(args[0]);
   const stats = await stat(absolute);
-  return {
-    status: "success" as const,
-    tool: "virtual_shell" as const,
-    output: {
-      command: "stat" as const,
-      path: display,
-      size: stats.size,
-      isFile: stats.isFile(),
-      isDirectory: stats.isDirectory(),
-      modifiedAt: stats.mtime.toISOString(),
-    },
-  };
+  return toolSuccess("virtual_shell", {
+    command: "stat",
+    path: display,
+    size: stats.size,
+    isFile: stats.isFile(),
+    isDirectory: stats.isDirectory(),
+    modifiedAt: stats.mtime.toISOString(),
+  });
 }
 
 function executePwd() {
-  return {
-    status: "success" as const,
-    tool: "virtual_shell" as const,
-    output: {
-      command: "pwd" as const,
-      cwd: TMP_ROOT,
-    },
-  };
+  return toolSuccess("virtual_shell", {
+    command: "pwd",
+    cwd: TMP_ROOT,
+  });
 }
 
 export const virtualShellTool = toolBuilder({
@@ -360,36 +332,27 @@ export const virtualShellTool = toolBuilder({
     "Execute limited shell-like commands (pwd, ls, cat, write, rm, mkdir, stat) scoped to /tmp. Used in Cloudflare Worker runtime.",
   parameters: VirtualShellParamsSchema,
   async execute(params: VirtualShellParams) {
-    try {
-      const parsed = parseInstruction(params.instruction);
-      switch (parsed.command) {
-        case "pwd":
-          return executePwd();
-        case "ls":
-          return await executeLs(parsed.args);
-        case "cat":
-          return await executeCat(parsed.args, parsed.options);
-        case "write":
-          return await executeWrite(parsed.args, parsed.options);
-        case "rm":
-          return await executeRm(parsed.args, parsed.options);
-        case "mkdir":
-          return await executeMkdir(parsed.args, parsed.options);
-        case "stat":
-          return await executeStat(parsed.args);
-        default:
-          return {
-            status: "error" as const,
-            tool: "virtual_shell" as const,
-            error: `Unsupported command ${parsed.command}`,
-          };
-      }
-    } catch (error) {
-      return {
-        status: "error" as const,
-        tool: "virtual_shell" as const,
-        error: error instanceof Error ? error.message : String(error),
-      };
+    const parsed = parseInstruction(params.instruction);
+    switch (parsed.command) {
+      case "pwd":
+        return executePwd();
+      case "ls":
+        return await executeLs(parsed.args);
+      case "cat":
+        return await executeCat(parsed.args, parsed.options);
+      case "write":
+        return await executeWrite(parsed.args, parsed.options);
+      case "rm":
+        return await executeRm(parsed.args, parsed.options);
+      case "mkdir":
+        return await executeMkdir(parsed.args, parsed.options);
+      case "stat":
+        return await executeStat(parsed.args);
+      default:
+        return toolError(
+          "virtual_shell",
+          `Unsupported command ${parsed.command}`,
+        );
     }
   },
 });

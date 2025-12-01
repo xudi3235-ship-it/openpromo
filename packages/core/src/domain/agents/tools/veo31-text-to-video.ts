@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { toolBuilder } from "../tool-builder";
+import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import {
   defaultVeo31Config,
   downloadVideo,
@@ -63,11 +63,10 @@ Note: For product consistency, prefer veo31_reference_images_to_video instead.`,
 
     const taskId = generateResult.data?.taskId;
     if (!taskId) {
-      return {
-        status: "error",
-        tool: "veo31_text_to_video",
-        error: "Failed to start video generation - no task ID returned",
-      };
+      return toolError(
+        "veo31_text_to_video",
+        "Failed to start video generation - no task ID returned",
+      );
     }
 
     console.log(`[veo31_text_to_video] Task started: ${taskId}`);
@@ -78,15 +77,11 @@ Note: For product consistency, prefer veo31_reference_images_to_video instead.`,
     // Download and save
     await downloadVideo(videoUrl, outputPath);
 
-    return {
-      status: "success",
-      tool: "veo31_text_to_video",
-      output: {
-        videoUrl,
-        outputPath,
-        taskId,
-        prompt,
-      },
-    };
+    return toolSuccess("veo31_text_to_video", {
+      videoUrl,
+      outputPath,
+      taskId,
+      prompt,
+    });
   },
 });

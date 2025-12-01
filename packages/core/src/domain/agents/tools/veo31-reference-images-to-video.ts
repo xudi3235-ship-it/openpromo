@@ -4,8 +4,9 @@
  */
 
 import { z } from "zod";
-import { toolBuilder } from "../tool-builder";
+import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import {
+  defaultVeo31Config,
   downloadVideo,
   getKieAIClient,
   uploadFiles,
@@ -53,8 +54,7 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
 
     // Force 16:9 aspect ratio for reference images
     const cfg = {
-      resolution: config?.resolution ?? "720p",
-      durationSeconds: config?.durationSeconds ?? "8",
+      ...(config ?? defaultVeo31Config),
       aspectRatio: "16:9" as const,
     };
     console.log(
@@ -85,11 +85,10 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
 
     const taskId = generateResult.data?.taskId;
     if (!taskId) {
-      return {
-        status: "error",
-        tool: "veo31_reference_images_to_video",
-        error: "Failed to start video generation - no task ID returned",
-      };
+      return toolError(
+        "veo31_reference_images_to_video",
+        "Failed to start video generation - no task ID returned",
+      );
     }
 
     console.log(`[veo31_reference_images_to_video] Task started: ${taskId}`);
@@ -100,16 +99,12 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
     // Download and save
     await downloadVideo(videoUrl, outputPath);
 
-    return {
-      status: "success",
-      tool: "veo31_reference_images_to_video",
-      output: {
-        videoUrl,
-        outputPath,
-        taskId,
-        prompt,
-        referenceImagePaths,
-      },
-    };
+    return toolSuccess("veo31_reference_images_to_video", {
+      videoUrl,
+      outputPath,
+      taskId,
+      prompt,
+      referenceImagePaths,
+    });
   },
 });
