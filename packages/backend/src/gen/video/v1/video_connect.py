@@ -20,6 +20,9 @@ class VideoService(Protocol):
     async def transcode(self, request: video_dot_v1_dot_video__pb2.TranscodeRequest, ctx: RequestContext) -> video_dot_v1_dot_video__pb2.TranscodeResponse:
         raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
 
+    async def run_ffmpeg(self, request: video_dot_v1_dot_video__pb2.RunFfmpegRequest, ctx: RequestContext) -> video_dot_v1_dot_video__pb2.RunFfmpegResponse:
+        raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
+
 
 class VideoServiceASGIApplication(ConnectASGIApplication):
     def __init__(self, service: VideoService, *, interceptors: Iterable[Interceptor]=(), read_max_bytes: int | None = None) -> None:
@@ -34,6 +37,16 @@ class VideoServiceASGIApplication(ConnectASGIApplication):
                         idempotency_level=IdempotencyLevel.UNKNOWN,
                     ),
                     function=service.transcode,
+                ),
+                "/video.v1.VideoService/RunFfmpeg": Endpoint.unary(
+                    method=MethodInfo(
+                        name="RunFfmpeg",
+                        service_name="video.v1.VideoService",
+                        input=video_dot_v1_dot_video__pb2.RunFfmpegRequest,
+                        output=video_dot_v1_dot_video__pb2.RunFfmpegResponse,
+                        idempotency_level=IdempotencyLevel.UNKNOWN,
+                    ),
+                    function=service.run_ffmpeg,
                 ),
             },
             interceptors=interceptors,
@@ -67,9 +80,31 @@ class VideoServiceClient(ConnectClient):
             timeout_ms=timeout_ms,
         )
 
+    async def run_ffmpeg(
+        self,
+        request: video_dot_v1_dot_video__pb2.RunFfmpegRequest,
+        *,
+        headers: Headers | Mapping[str, str] | None = None,
+        timeout_ms: int | None = None,
+    ) -> video_dot_v1_dot_video__pb2.RunFfmpegResponse:
+        return await self.execute_unary(
+            request=request,
+            method=MethodInfo(
+                name="RunFfmpeg",
+                service_name="video.v1.VideoService",
+                input=video_dot_v1_dot_video__pb2.RunFfmpegRequest,
+                output=video_dot_v1_dot_video__pb2.RunFfmpegResponse,
+                idempotency_level=IdempotencyLevel.UNKNOWN,
+            ),
+            headers=headers,
+            timeout_ms=timeout_ms,
+        )
+
 
 class VideoServiceSync(Protocol):
     def transcode(self, request: video_dot_v1_dot_video__pb2.TranscodeRequest, ctx: RequestContext) -> video_dot_v1_dot_video__pb2.TranscodeResponse:
+        raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
+    def run_ffmpeg(self, request: video_dot_v1_dot_video__pb2.RunFfmpegRequest, ctx: RequestContext) -> video_dot_v1_dot_video__pb2.RunFfmpegResponse:
         raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
 
 
@@ -86,6 +121,16 @@ class VideoServiceWSGIApplication(ConnectWSGIApplication):
                         idempotency_level=IdempotencyLevel.UNKNOWN,
                     ),
                     function=service.transcode,
+                ),
+                "/video.v1.VideoService/RunFfmpeg": EndpointSync.unary(
+                    method=MethodInfo(
+                        name="RunFfmpeg",
+                        service_name="video.v1.VideoService",
+                        input=video_dot_v1_dot_video__pb2.RunFfmpegRequest,
+                        output=video_dot_v1_dot_video__pb2.RunFfmpegResponse,
+                        idempotency_level=IdempotencyLevel.UNKNOWN,
+                    ),
+                    function=service.run_ffmpeg,
                 ),
             },
             interceptors=interceptors,
@@ -113,6 +158,26 @@ class VideoServiceClientSync(ConnectClientSync):
                 service_name="video.v1.VideoService",
                 input=video_dot_v1_dot_video__pb2.TranscodeRequest,
                 output=video_dot_v1_dot_video__pb2.TranscodeResponse,
+                idempotency_level=IdempotencyLevel.UNKNOWN,
+            ),
+            headers=headers,
+            timeout_ms=timeout_ms,
+        )
+
+    def run_ffmpeg(
+        self,
+        request: video_dot_v1_dot_video__pb2.RunFfmpegRequest,
+        *,
+        headers: Headers | Mapping[str, str] | None = None,
+        timeout_ms: int | None = None,
+    ) -> video_dot_v1_dot_video__pb2.RunFfmpegResponse:
+        return self.execute_unary(
+            request=request,
+            method=MethodInfo(
+                name="RunFfmpeg",
+                service_name="video.v1.VideoService",
+                input=video_dot_v1_dot_video__pb2.RunFfmpegRequest,
+                output=video_dot_v1_dot_video__pb2.RunFfmpegResponse,
                 idempotency_level=IdempotencyLevel.UNKNOWN,
             ),
             headers=headers,

@@ -117,6 +117,35 @@ export interface JobSubmitResponse {
   call_id: string;
 }
 
+export type RunFfmpegRequestOutputFilename = string | null;
+
+/**
+ * Execute an `ffmpeg` command on the server.
+
+Fields:
+- `input_urls`: list of URLs for input media. They will be downloaded
+  and available as placeholders `{in0}`, `{in1}`, ... in `command`.
+- `command`: array of ffmpeg argv tokens. Use placeholders `{in0}`, `{in1}`,
+  ... and `{out}` for the output path. Example:
+    ["-i", "{in0}", "-vf", "scale=720:-2", "{out}"]
+- `output_filename`: optional desired filename for the produced artifact.
+ */
+export interface RunFfmpegRequest {
+  input_urls: string[];
+  command: string[];
+  output_filename?: RunFfmpegRequestOutputFilename;
+}
+
+export type RunFfmpegResponseOutputUrl = string | null;
+
+export type RunFfmpegResponseError = string | null;
+
+export interface RunFfmpegResponse {
+  output_url?: RunFfmpegResponseOutputUrl;
+  success?: boolean;
+  error?: RunFfmpegResponseError;
+}
+
 export type TranscodeVideoRequestPlatform =
   (typeof TranscodeVideoRequestPlatform)[keyof typeof TranscodeVideoRequestPlatform];
 
@@ -382,6 +411,53 @@ export const transcodeVideoVideoTranscodePost = async (
       method: "POST",
       headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(transcodeVideoRequest),
+    },
+  );
+};
+
+/**
+ * Download inputs, run ffmpeg with provided argv (placeholders allowed),
+upload result to R2 and return a presigned URL.
+ * @summary Run Ffmpeg
+ */
+export type runFfmpegVideoFfmpegPostResponse200 = {
+  data: RunFfmpegResponse;
+  status: 200;
+};
+
+export type runFfmpegVideoFfmpegPostResponse422 = {
+  data: HTTPValidationError;
+  status: 422;
+};
+
+export type runFfmpegVideoFfmpegPostResponseSuccess =
+  runFfmpegVideoFfmpegPostResponse200 & {
+    headers: Headers;
+  };
+export type runFfmpegVideoFfmpegPostResponseError =
+  runFfmpegVideoFfmpegPostResponse422 & {
+    headers: Headers;
+  };
+
+export type runFfmpegVideoFfmpegPostResponse =
+  | runFfmpegVideoFfmpegPostResponseSuccess
+  | runFfmpegVideoFfmpegPostResponseError;
+
+export const getRunFfmpegVideoFfmpegPostUrl = () => {
+  return `https://promobase--openpromo-backend-api.modal.run/video/ffmpeg`;
+};
+
+export const runFfmpegVideoFfmpegPost = async (
+  runFfmpegRequest: RunFfmpegRequest,
+  options?: RequestInit,
+): Promise<runFfmpegVideoFfmpegPostResponse> => {
+  return modalFetch<runFfmpegVideoFfmpegPostResponse>(
+    getRunFfmpegVideoFfmpegPostUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(runFfmpegRequest),
     },
   );
 };

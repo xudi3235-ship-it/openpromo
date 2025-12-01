@@ -20,7 +20,7 @@ import {
 export const file_video_v1_video: GenFile =
   /*@__PURE__*/
   fileDesc(
-    "ChR2aWRlby92MS92aWRlby5wcm90bxIIdmlkZW8udjEiNwoQVHJhbnNjb2RlUmVxdWVzdBIRCglpbnB1dF91cmwYASABKAkSEAoIcGxhdGZvcm0YAiABKAkiWQoRVHJhbnNjb2RlUmVzcG9uc2USEgoKb3V0cHV0X3VybBgBIAEoCRISCgp0cmFuc2NvZGVkGAIgASgIEhIKBWVycm9yGAMgASgJSACIAQFCCAoGX2Vycm9yMlYKDFZpZGVvU2VydmljZRJGCglUcmFuc2NvZGUSGi52aWRlby52MS5UcmFuc2NvZGVSZXF1ZXN0GhsudmlkZW8udjEuVHJhbnNjb2RlUmVzcG9uc2UiAGIGcHJvdG8z",
+    "ChR2aWRlby92MS92aWRlby5wcm90bxIIdmlkZW8udjEiNwoQVHJhbnNjb2RlUmVxdWVzdBIRCglpbnB1dF91cmwYASABKAkSEAoIcGxhdGZvcm0YAiABKAkiWQoRVHJhbnNjb2RlUmVzcG9uc2USEgoKb3V0cHV0X3VybBgBIAEoCRISCgp0cmFuc2NvZGVkGAIgASgIEhIKBWVycm9yGAMgASgJSACIAQFCCAoGX2Vycm9yIlAKEFJ1bkZmbXBlZ1JlcXVlc3QSEgoKaW5wdXRfdXJscxgBIAMoCRIPCgdjb21tYW5kGAIgAygJEhcKD291dHB1dF9maWxlbmFtZRgDIAEoCSJHChFSdW5GZm1wZWdSZXNwb25zZRISCgpvdXRwdXRfdXJsGAEgASgJEg8KB3N1Y2Nlc3MYAiABKAgSDQoFZXJyb3IYAyABKAkyngEKDFZpZGVvU2VydmljZRJGCglUcmFuc2NvZGUSGi52aWRlby52MS5UcmFuc2NvZGVSZXF1ZXN0GhsudmlkZW8udjEuVHJhbnNjb2RlUmVzcG9uc2UiABJGCglSdW5GZm1wZWcSGi52aWRlby52MS5SdW5GZm1wZWdSZXF1ZXN0GhsudmlkZW8udjEuUnVuRmZtcGVnUmVzcG9uc2UiAGIGcHJvdG8z",
   );
 
 /**
@@ -89,6 +89,64 @@ export const TranscodeResponseSchema: GenMessage<TranscodeResponse> =
   messageDesc(file_video_v1_video, 1);
 
 /**
+ * Request to run ffmpeg with placeholders for inputs/outputs
+ *
+ * @generated from message video.v1.RunFfmpegRequest
+ */
+export type RunFfmpegRequest = Message<"video.v1.RunFfmpegRequest"> & {
+  /**
+   * @generated from field: repeated string input_urls = 1;
+   */
+  inputUrls: string[];
+
+  /**
+   * @generated from field: repeated string command = 2;
+   */
+  command: string[];
+
+  /**
+   * @generated from field: string output_filename = 3;
+   */
+  outputFilename: string;
+};
+
+/**
+ * Describes the message video.v1.RunFfmpegRequest.
+ * Use `create(RunFfmpegRequestSchema)` to create a new message.
+ */
+export const RunFfmpegRequestSchema: GenMessage<RunFfmpegRequest> =
+  /*@__PURE__*/
+  messageDesc(file_video_v1_video, 2);
+
+/**
+ * @generated from message video.v1.RunFfmpegResponse
+ */
+export type RunFfmpegResponse = Message<"video.v1.RunFfmpegResponse"> & {
+  /**
+   * @generated from field: string output_url = 1;
+   */
+  outputUrl: string;
+
+  /**
+   * @generated from field: bool success = 2;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string error = 3;
+   */
+  error: string;
+};
+
+/**
+ * Describes the message video.v1.RunFfmpegResponse.
+ * Use `create(RunFfmpegResponseSchema)` to create a new message.
+ */
+export const RunFfmpegResponseSchema: GenMessage<RunFfmpegResponse> =
+  /*@__PURE__*/
+  messageDesc(file_video_v1_video, 3);
+
+/**
  * Video service for transcoding and processing videos
  *
  * @generated from service video.v1.VideoService
@@ -103,5 +161,19 @@ export const VideoService: GenService<{
     methodKind: "unary";
     input: typeof TranscodeRequestSchema;
     output: typeof TranscodeResponseSchema;
+  };
+  /**
+   * Execute an ffmpeg command on the server. Inputs are downloaded from
+   * `input_urls` and made available as `{in0}`, `{in1}`, ... placeholders
+   * in the `command` tokens. The `{out}` placeholder is replaced with the
+   * server-side output path. The server uploads the resulting artifact to
+   * R2 and returns a presigned `output_url`.
+   *
+   * @generated from rpc video.v1.VideoService.RunFfmpeg
+   */
+  runFfmpeg: {
+    methodKind: "unary";
+    input: typeof RunFfmpegRequestSchema;
+    output: typeof RunFfmpegResponseSchema;
   };
 }> = /*@__PURE__*/ serviceDesc(file_video_v1_video, 0);

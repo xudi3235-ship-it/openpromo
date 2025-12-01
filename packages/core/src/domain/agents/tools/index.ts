@@ -6,10 +6,9 @@
 // Evaluation tools
 export { evaluateImageTool } from "./evaluate-image";
 export { evaluateVideoInputTool } from "./evaluate-video-input";
-
+export { ffmpegTool } from "./ffmpeg";
 // Image generation tools
 export { nanoBananaTool } from "./nano-banana";
-
 // Shell tool
 export { createShellTool, VideoGenShell, videoGenShellTool } from "./shell";
 // Sora 2 Pro tools

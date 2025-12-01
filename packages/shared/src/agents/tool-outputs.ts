@@ -11,6 +11,7 @@ const ToolName = z.enum([
   "sora2_storyboard_generate",
   "tmp_fs",
   "virtual_shell",
+  "run_ffmpeg",
 ]);
 
 type ToolNameType = z.infer<typeof ToolName>;
@@ -203,6 +204,11 @@ export const EchoToolOutput = makeToolOutput(
   z.object({ message: z.string() }),
 );
 
+export const RunFfmpegToolOutput = makeToolOutput(
+  "run_ffmpeg",
+  z.object({ output_url: z.string().url() }),
+);
+
 export const ImageEvalToolOutput = makeToolOutput(
   "image_eval",
   z.object({
@@ -234,6 +240,7 @@ export const ToolOutputs = z.union([
   ImageEvalToolOutput,
   EchoToolOutput,
   NanoBananaToolOutput,
+  RunFfmpegToolOutput,
 ]);
 
 export type ToolOutputs = z.infer<typeof ToolOutputs>;

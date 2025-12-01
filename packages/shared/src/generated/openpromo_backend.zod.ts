@@ -37,6 +37,26 @@ export const transcodeVideoVideoTranscodePostResponse = zod.object({
 
 
 /**
+ * Download inputs, run ffmpeg with provided argv (placeholders allowed),
+upload result to R2 and return a presigned URL.
+ * @summary Run Ffmpeg
+ */
+export const runFfmpegVideoFfmpegPostBody = zod.object({
+  "input_urls": zod.array(zod.string()),
+  "command": zod.array(zod.string()),
+  "output_filename": zod.union([zod.string(),zod.null()]).optional()
+}).strict().describe('Execute an `ffmpeg` command on the server.\n\nFields:\n- `input_urls`: list of URLs for input media. They will be downloaded\n  and available as placeholders `{in0}`, `{in1}`, ... in `command`.\n- `command`: array of ffmpeg argv tokens. Use placeholders `{in0}`, `{in1}`,\n  ... and `{out}` for the output path. Example:\n    [\"-i\", \"{in0}\", \"-vf\", \"scale=720:-2\", \"{out}\"]\n- `output_filename`: optional desired filename for the produced artifact.')
+
+export const runFfmpegVideoFfmpegPostResponseSuccessDefault = true;
+
+export const runFfmpegVideoFfmpegPostResponse = zod.object({
+  "output_url": zod.union([zod.string(),zod.null()]).optional(),
+  "success": zod.boolean().default(runFfmpegVideoFfmpegPostResponseSuccessDefault),
+  "error": zod.union([zod.string(),zod.null()]).optional()
+}).strict()
+
+
+/**
  * @summary Run Ffprobe
  */
 export const runFfprobeFfprobePostBodyInputUrlDefault = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";

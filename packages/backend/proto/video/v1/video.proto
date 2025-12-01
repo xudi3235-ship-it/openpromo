@@ -20,8 +20,28 @@ message TranscodeResponse {
   optional string error = 3;
 }
 
+// Request to run ffmpeg with placeholders for inputs/outputs
+message RunFfmpegRequest {
+  repeated string input_urls = 1;
+  repeated string command = 2;
+  string output_filename = 3;
+}
+
+message RunFfmpegResponse {
+  string output_url = 1;
+  bool success = 2;
+  string error = 3;
+}
+
 // Video service for transcoding and processing videos
 service VideoService {
   // Transcode a video for a specific platform (Instagram Reels, Facebook Reels)
   rpc Transcode(TranscodeRequest) returns (TranscodeResponse) {}
+
+  // Execute an ffmpeg command on the server. Inputs are downloaded from
+  // `input_urls` and made available as `{in0}`, `{in1}`, ... placeholders
+  // in the `command` tokens. The `{out}` placeholder is replaced with the
+  // server-side output path. The server uploads the resulting artifact to
+  // R2 and returns a presigned `output_url`.
+  rpc RunFfmpeg(RunFfmpegRequest) returns (RunFfmpegResponse) {}
 }

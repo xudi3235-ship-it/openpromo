@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14video/v1/video.proto\x12\x08video.v1\"K\n\x10TranscodeRequest\x12\x1b\n\tinput_url\x18\x01 \x01(\tR\x08inputUrl\x12\x1a\n\x08platform\x18\x02 \x01(\tR\x08platform\"w\n\x11TranscodeResponse\x12\x1d\n\noutput_url\x18\x01 \x01(\tR\toutputUrl\x12\x1e\n\ntranscoded\x18\x02 \x01(\x08R\ntranscoded\x12\x19\n\x05\x65rror\x18\x03 \x01(\tH\x00R\x05\x65rror\x88\x01\x01\x42\x08\n\x06_error2V\n\x0cVideoService\x12\x46\n\tTranscode\x12\x1a.video.v1.TranscodeRequest\x1a\x1b.video.v1.TranscodeResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14video/v1/video.proto\x12\x08video.v1\"K\n\x10TranscodeRequest\x12\x1b\n\tinput_url\x18\x01 \x01(\tR\x08inputUrl\x12\x1a\n\x08platform\x18\x02 \x01(\tR\x08platform\"w\n\x11TranscodeResponse\x12\x1d\n\noutput_url\x18\x01 \x01(\tR\toutputUrl\x12\x1e\n\ntranscoded\x18\x02 \x01(\x08R\ntranscoded\x12\x19\n\x05\x65rror\x18\x03 \x01(\tH\x00R\x05\x65rror\x88\x01\x01\x42\x08\n\x06_error\"t\n\x10RunFfmpegRequest\x12\x1d\n\ninput_urls\x18\x01 \x03(\tR\tinputUrls\x12\x18\n\x07\x63ommand\x18\x02 \x03(\tR\x07\x63ommand\x12\'\n\x0foutput_filename\x18\x03 \x01(\tR\x0eoutputFilename\"b\n\x11RunFfmpegResponse\x12\x1d\n\noutput_url\x18\x01 \x01(\tR\toutputUrl\x12\x18\n\x07success\x18\x02 \x01(\x08R\x07success\x12\x14\n\x05\x65rror\x18\x03 \x01(\tR\x05\x65rror2\x9e\x01\n\x0cVideoService\x12\x46\n\tTranscode\x12\x1a.video.v1.TranscodeRequest\x1a\x1b.video.v1.TranscodeResponse\"\x00\x12\x46\n\tRunFfmpeg\x12\x1a.video.v1.RunFfmpegRequest\x1a\x1b.video.v1.RunFfmpegResponse\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -35,6 +35,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_TRANSCODEREQUEST']._serialized_end=109
   _globals['_TRANSCODERESPONSE']._serialized_start=111
   _globals['_TRANSCODERESPONSE']._serialized_end=230
-  _globals['_VIDEOSERVICE']._serialized_start=232
-  _globals['_VIDEOSERVICE']._serialized_end=318
+  _globals['_RUNFFMPEGREQUEST']._serialized_start=232
+  _globals['_RUNFFMPEGREQUEST']._serialized_end=348
+  _globals['_RUNFFMPEGRESPONSE']._serialized_start=350
+  _globals['_RUNFFMPEGRESPONSE']._serialized_end=448
+  _globals['_VIDEOSERVICE']._serialized_start=451
+  _globals['_VIDEOSERVICE']._serialized_end=609
 # @@protoc_insertion_point(module_scope)

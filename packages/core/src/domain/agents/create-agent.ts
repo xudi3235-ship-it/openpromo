@@ -5,6 +5,7 @@ import type { VideoGenAgentContext } from "./context";
 import { StaticPrompts } from "./prompts";
 import {
   evaluateImageTool,
+  ffmpegTool,
   nanoBananaTool,
   sora2StoryboardTool,
   veo31ImageToVideoTool,
@@ -180,6 +181,8 @@ export function createVideoGenAgent() {
       veo31ReferenceImagesToVideoTool,
       veo31VideoExtensionTool,
       sora2StoryboardTool,
+      // other stuff
+      ffmpegTool,
     ],
     modelSettings: {
       reasoning: {

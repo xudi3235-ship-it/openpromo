@@ -65,6 +65,8 @@ export type {
 export { JobsService } from "@shared/gen/jobs/v1/jobs_pb";
 // Video types
 export type {
+  RunFfmpegRequest,
+  RunFfmpegResponse,
   TranscodeRequest,
   TranscodeResponse,
 } from "@shared/gen/video/v1/video_pb";

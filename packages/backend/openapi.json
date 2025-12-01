@@ -67,6 +67,40 @@
         }
       }
     },
+    "/video/ffmpeg": {
+      "post": {
+        "tags": ["video"],
+        "summary": "Run Ffmpeg",
+        "description": "Download inputs, run ffmpeg with provided argv (placeholders allowed),\nupload result to R2 and return a presigned URL.",
+        "operationId": "run_ffmpeg_video_ffmpeg_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RunFfmpegRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RunFfmpegResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ffprobe": {
       "post": {
         "tags": ["ffprobe"],
@@ -434,6 +468,43 @@
         "type": "object",
         "required": ["call_id"],
         "title": "JobSubmitResponse"
+      },
+      "RunFfmpegRequest": {
+        "properties": {
+          "input_urls": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Input Urls"
+          },
+          "command": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Command"
+          },
+          "output_filename": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Output Filename"
+          }
+        },
+        "type": "object",
+        "required": ["input_urls", "command"],
+        "title": "RunFfmpegRequest",
+        "description": "Execute an `ffmpeg` command on the server.\n\nFields:\n- `input_urls`: list of URLs for input media. They will be downloaded\n  and available as placeholders `{in0}`, `{in1}`, ... in `command`.\n- `command`: array of ffmpeg argv tokens. Use placeholders `{in0}`, `{in1}`,\n  ... and `{out}` for the output path. Example:\n    [\"-i\", \"{in0}\", \"-vf\", \"scale=720:-2\", \"{out}\"]\n- `output_filename`: optional desired filename for the produced artifact."
+      },
+      "RunFfmpegResponse": {
+        "properties": {
+          "output_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Output Url"
+          },
+          "success": { "type": "boolean", "title": "Success", "default": true },
+          "error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "title": "RunFfmpegResponse"
       },
       "TranscodeVideoRequest": {
         "properties": {
