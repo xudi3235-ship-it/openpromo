@@ -3,7 +3,7 @@ import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
 import { Label } from "@openpromo/ui/components/label";
 import { Textarea } from "@openpromo/ui/components/textarea";
-import type { VideoGenMessageEvent } from "@shared";
+import type { VideoGenRealtime } from "@shared";
 import type { UIMessage } from "ai";
 import { useState } from "react";
 import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
@@ -80,7 +80,7 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
     const productImages = parseMultilineList(inputForm.productImages);
     const avatarImages = parseMultilineList(inputForm.avatarImages);
 
-    const payload: VideoGenMessageEvent.EventDataMap["set_input"] = {
+    const payload: VideoGenRealtime.EventDataMap["set_input"] = {
       prompt: inputForm.prompt.trim() || samplePrompt,
       productImages,
       avatarImages,
@@ -290,7 +290,7 @@ function StatusBanner({
   status,
   finalVideoUrl,
 }: {
-  status: VideoGenMessageEvent.ServerAppState["status"];
+  status: VideoGenRealtime.ServerAppState["status"];
   finalVideoUrl: string | null;
 }) {
   const statusVariants: Record<

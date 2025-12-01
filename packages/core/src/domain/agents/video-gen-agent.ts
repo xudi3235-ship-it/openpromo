@@ -4,7 +4,7 @@ import type { ApiEnv } from "@core/helpers/api-env";
 // import { routeAgentRequest } from "agents";
 
 import { type AgentInputItem, RunState, run } from "@openai/agents";
-import { VideoGenMessageEvent } from "@shared/agents";
+import { VideoGenRealtime } from "@shared/agents";
 import type {
   AgentContext,
   Connection,
@@ -50,24 +50,24 @@ const VIDEO_ASSET_TOOL_NAMES = [
  */
 export class VideoGenAgent extends AIChatAgent<
   ApiEnv,
-  VideoGenMessageEvent.ServerAppState
+  VideoGenRealtime.ServerAppState
 > {
+  // internal states
+  private runStateSerialized: string | null = null;
+
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
     this.resetState();
+    this.runStateSerialized = null;
   }
 
   /**
    * Patch the application state with partial updates.
    */
-  private patchState(partial: Partial<VideoGenMessageEvent.ServerAppState>) {
+  private patchState(partial: Partial<VideoGenRealtime.ServerAppState>) {
     this.setState({
       ...this.state,
       ...partial,
-      _internal: {
-        ...this.state._internal,
-        ...(partial._internal ?? {}),
-      },
       lastUpdated: partial.lastUpdated ?? new Date().toISOString(),
     });
   }
@@ -77,6 +77,24 @@ export class VideoGenAgent extends AIChatAgent<
    */
   private async runPipeline() {
     // if already running, do not start another
+    if (this.state.status === "running") {
+      console.warn("[VideoGenAgent] runPipeline called but already running");
+      return;
+    }
+    // if no valid input or images, error out
+    if (
+      this.state.input.productImages.length === 0 ||
+      this.state.input.prompt.length === 0
+    ) {
+      console.error(
+        "[VideoGenAgent] runPipeline called but no product images provided",
+      );
+      this.patchState({
+        status: "failed",
+        error: "No product images or prompt provided in input.",
+      });
+      return;
+    }
 
     // 0. mark as running
     this.patchState({
@@ -91,18 +109,15 @@ export class VideoGenAgent extends AIChatAgent<
     };
     // 1. create agent with context
     const agent = createVideoGenAgent(context);
-    const runnerInput = this.state._internal.serializedRunState
-      ? await RunState.fromString(
-          agent,
-          this.state._internal.serializedRunState,
-        )
+    const runnerInput = this.runStateSerialized
+      ? await RunState.fromString(agent, this.runStateSerialized)
       : await this.createRunnerInput();
 
     // 2. setup hooks
     setupAgentHooks(agent, {
       verbose: true,
-      onAgentStart: (ctx) => {
-        console.log(`[VideoGenAgent] started`, ctx);
+      onAgentStart: (_ctx) => {
+        console.log(`[VideoGenAgent] started`);
       },
       onAgentEnd: (_ctx, output) => {
         console.log(`[VideoGenAgent] ended`, output);
@@ -120,6 +135,18 @@ export class VideoGenAgent extends AIChatAgent<
                 `[VideoGenAgent] Received ${assetTool} asset output:`,
                 output.videoUrl,
               );
+              this.patchState({
+                artifacts: {
+                  ...this.state.artifacts,
+                  videos: [
+                    ...(this.state.artifacts.videos ?? []),
+                    {
+                      id: `${assetTool}_${Date.now()}`,
+                      url: output.videoUrl,
+                    },
+                  ],
+                },
+              });
             },
           });
         }
@@ -130,6 +157,18 @@ export class VideoGenAgent extends AIChatAgent<
               `[VideoGenAgent] Received nano banana asset output:`,
               output,
             );
+            this.patchState({
+              artifacts: {
+                ...this.state.artifacts,
+                images: [
+                  ...(this.state.artifacts.images ?? []),
+                  {
+                    id: `nano_banana_${Date.now()}`,
+                    url: output.imageUrl,
+                  },
+                ],
+              },
+            });
           },
         });
       },
@@ -143,10 +182,6 @@ export class VideoGenAgent extends AIChatAgent<
     this.patchState({
       status: "succeeded",
       finalVideoUrl: finalOutput.finalVideoUrl,
-      _internal: {
-        ...this.state._internal,
-        serializedRunState: result.state.toString(),
-      },
     });
 
     console.log(`[VideoGenAgent] run completed:`, result.finalOutput);
@@ -156,7 +191,7 @@ export class VideoGenAgent extends AIChatAgent<
    * triggered when app state is updated
    */
   async onStateUpdate(
-    _state: VideoGenMessageEvent.ServerAppState | undefined,
+    _state: VideoGenRealtime.ServerAppState | undefined,
     source: Connection | "server",
   ): Promise<void> {
     console.log(`[VideoGenAgent] onStateUpdate called from`, source);
@@ -165,28 +200,14 @@ export class VideoGenAgent extends AIChatAgent<
 
   // clears stuff
   resetState() {
-    this.setState({
-      status: "not_started",
-      lastUpdated: new Date().toISOString(),
-      input: {
-        prompt: "empty_prompt",
-        productImages: [],
-        avatarImages: [],
-      },
-      _internal: {
-        serializedRunState: undefined,
-      },
-      finalVideoUrl: null,
-      error: null,
-    });
+    this.setState(VideoGenRealtime.initialServerAppState);
   }
 
   private broadcastState() {
-    const { _internal, ...rest } = this.state;
     const connections = this.ctx.getWebSockets();
     for (const conn of connections) {
-      VideoGenMessageEvent.sendEvent(conn, "sync_state", {
-        state: rest,
+      VideoGenRealtime.sendEvent(conn, "sync_state", {
+        state: this.state,
       });
     }
   }
@@ -247,7 +268,7 @@ export class VideoGenAgent extends AIChatAgent<
     this.syncChatMessages(connection);
 
     // Sync application state
-    VideoGenMessageEvent.sendEvent(connection, "sync_state", {
+    VideoGenRealtime.sendEvent(connection, "sync_state", {
       state: this.state,
     });
   }
@@ -288,18 +309,16 @@ export class VideoGenAgent extends AIChatAgent<
       );
       return;
     }
-    await VideoGenMessageEvent.onEvent(message, {
+    await VideoGenRealtime.onEvent(message, {
       echo: async (data) => {
         console.log(`[VideoGenAgent] Received echo message:`, data);
-        VideoGenMessageEvent.sendEvent(connection, "echo", {
+        VideoGenRealtime.sendEvent(connection, "echo", {
           message: `Echo: ${data.message}`,
         });
       },
       set_input: async (data) => {
         this.patchState({
-          input: {
-            ...data,
-          },
+          input: data,
         });
       },
       start_pipeline: async () => {

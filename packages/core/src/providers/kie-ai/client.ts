@@ -28,6 +28,7 @@ import type {
   Veo31VideoDetailsResponse,
 } from "./schemas";
 import {
+  ApiResponseSchema,
   CreateTaskResponseSchema,
   FileUploadResponseSchema,
   parseTaskResultPayload,
@@ -763,11 +764,22 @@ export class KieAIClient {
 
     const parsed = schema.safeParse(parsedJson);
     if (!parsed.success) {
-      throw new KieAIError(
-        response.status,
-        "Unexpected response schema",
-        parsed.error.format(),
+      const fallback = ApiResponseSchema.safeParse(
+        buildFallbackApiResponse(parsedJson, response.status, raw),
       );
+
+      if (fallback.success) {
+        throw new KieAIError(fallback.data.code, fallback.data.msg, {
+          ...fallback.data,
+          zodIssues: parsed.error.format(),
+        });
+      }
+
+      throw new KieAIError(response.status, "Unexpected response schema", {
+        raw,
+        status: response.status,
+        zodIssues: parsed.error.format(),
+      });
     }
 
     const parsedResponse = parsed.data as ApiResponse;
@@ -810,4 +822,34 @@ export class KieAIClient {
 
 function normalizeUploadPath(path: string) {
   return path.replace(/^\/+|\/+$/g, "");
+}
+
+function buildFallbackApiResponse(
+  payload: unknown,
+  status: number,
+  raw: string,
+): ApiResponse {
+  if (payload && typeof payload === "object") {
+    const maybeApi = payload as Partial<ApiResponse>;
+    const fallbackData = Object.hasOwn(maybeApi, "data")
+      ? maybeApi.data
+      : payload;
+
+    return {
+      code: typeof maybeApi.code === "number" ? maybeApi.code : status,
+      msg:
+        typeof maybeApi.msg === "string"
+          ? maybeApi.msg
+          : `Unexpected response schema (HTTP ${status})`,
+      data: fallbackData,
+      rawData: payload,
+    } as ApiResponse;
+  }
+
+  return {
+    code: status,
+    msg: `Unexpected response schema (HTTP ${status})`,
+    data: payload,
+    rawData: raw,
+  } as ApiResponse;
 }

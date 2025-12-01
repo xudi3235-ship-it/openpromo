@@ -113,6 +113,7 @@ export const ApiResponseSchema = z.object({
   code: z.number(),
   msg: z.string(),
   data: z.any().nullable().optional(),
+  rawData: z.unknown().optional(),
 });
 
 export type ApiResponse = z.infer<typeof ApiResponseSchema>;

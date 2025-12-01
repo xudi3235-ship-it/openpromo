@@ -6,7 +6,7 @@ import z from "zod";
  *
  * added op_ prefix to avoid collision.
  */
-export namespace VideoGenMessageEvent {
+export namespace VideoGenRealtime {
   const base = z
     .object({
       namespace: z.literal("op_video_gen"),
@@ -41,24 +41,51 @@ export namespace VideoGenMessageEvent {
   });
 
   // -- Application State --
-  const serverAppStateBase = z.object({
-    _internal: z.object({
-      serializedRunState: z.string().optional(),
-    }),
+  const serverAppState = z.object({
     status: PipelineStatus,
     lastUpdated: z.string(),
     input: SetInputData,
+    // intermediate artifacts generated in the pipeline
+    artifacts: z.object({
+      images: z
+        .object({
+          id: z.string(),
+          url: z.url(),
+        })
+        .array()
+        .optional(),
+      videos: z
+        .object({
+          id: z.string(),
+          url: z.url(),
+        })
+        .array()
+        .optional(),
+    }),
     finalVideoUrl: z.string().nullable(),
     error: z.string().nullable(),
   });
 
-  export type ServerAppState = z.infer<typeof serverAppStateBase>;
+  export type ServerAppState = z.infer<typeof serverAppState>;
+
+  export const initialServerAppState: ServerAppState = {
+    status: "not_started",
+    lastUpdated: new Date().toISOString(),
+    input: {
+      prompt: "empty prompt",
+      productImages: [],
+      avatarImages: [],
+    },
+    artifacts: {},
+    finalVideoUrl: null,
+    error: null,
+  };
 
   // -- Server Events --
   export const SyncState = base.extend({
     type: z.literal("sync_state"),
     data: z.object({
-      state: serverAppStateBase.omit({ _internal: true }),
+      state: serverAppState,
     }),
   });
 

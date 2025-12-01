@@ -1,12 +1,12 @@
 /** biome-ignore-all lint/suspicious/noConsole: test */
-import { VideoGenMessageEvent } from "@shared";
+import { VideoGenRealtime } from "@shared";
 import { useAgentChat } from "agents/ai-react";
 import { useAgent } from "agents/react";
 import { useCallback, useState } from "react";
 
 type UseVideoGenAgentProps = {
   userId: string;
-  onEvent?: VideoGenMessageEvent.Handlers;
+  onEvent?: VideoGenRealtime.Handlers;
   _onMessage?: (event: MessageEvent) => Promise<void>;
 };
 
@@ -17,23 +17,14 @@ export function useVideoGenAgent({
 }: UseVideoGenAgentProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [serverState, setServerState] =
-    useState<VideoGenMessageEvent.ServerAppState>({
-      _internal: {},
-      status: "not_started",
-      lastUpdated: new Date().toISOString(),
-      error: null,
-      input: {
-        productImages: [],
-        avatarImages: [],
-        prompt: "empty prompt",
-      },
-      finalVideoUrl: null,
-    });
+    useState<VideoGenRealtime.ServerAppState>(
+      VideoGenRealtime.initialServerAppState,
+    );
 
   const callUserHandler = useCallback(
-    async <T extends VideoGenMessageEvent.Event["type"]>(
+    async <T extends VideoGenRealtime.Event["type"]>(
       type: T,
-      data: VideoGenMessageEvent.EventDataMap[T],
+      data: VideoGenRealtime.EventDataMap[T],
     ) => {
       const handler = onEvent?.[type];
       if (handler) {
@@ -58,17 +49,14 @@ export function useVideoGenAgent({
     onMessage: async (event) => {
       _onMessage?.(event);
       console.log("[useVideoGenAgent] Received message:", event.data);
-      const handlers: VideoGenMessageEvent.Handlers = {
+      const handlers: VideoGenRealtime.Handlers = {
         ...onEvent,
         sync_state: async (data) => {
           console.log(
             "[useVideoGenAgent] sync_state event received:",
             data.state,
           );
-          setServerState({
-            ...data.state,
-            _internal: {},
-          });
+          setServerState(data.state);
           await callUserHandler("sync_state", data);
         },
         status_update: async (data) => {
@@ -89,7 +77,7 @@ export function useVideoGenAgent({
         },
       };
 
-      await VideoGenMessageEvent.onEvent(event.data, {
+      await VideoGenRealtime.onEvent(event.data, {
         ...handlers,
       });
     },
@@ -104,16 +92,16 @@ export function useVideoGenAgent({
 
   // 3. ws event sender
   const sendEvent = useCallback(
-    <K extends VideoGenMessageEvent.Event["type"]>(
+    <K extends VideoGenRealtime.Event["type"]>(
       type: K,
-      data: VideoGenMessageEvent.EventDataMap[K],
+      data: VideoGenRealtime.EventDataMap[K],
     ) => {
       if (!agent) {
         console.warn("[useVideoGenAgent] Agent not connected");
         return;
       }
       // Use the shared helper to send type-safe events
-      VideoGenMessageEvent.sendEvent(agent as unknown as WebSocket, type, data);
+      VideoGenRealtime.sendEvent(agent as unknown as WebSocket, type, data);
     },
     [agent],
   );
