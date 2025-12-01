@@ -4,13 +4,6 @@ export {
   VIDEO_TYPES_REGISTRY,
 } from "@core/domain/agents/constants";
 
-// Re-export all agent-related types and constants
-export type {
-  VideoGenErrorOutput,
-  VideoGenOutput,
-  VideoGenRunContext as VideoGenRuntimeContext,
-  VideoGenSuccessOutput,
-} from "@core/domain/agents/context";
 export {
   GOOD_VEO31_PROMPT_EXAMPLES,
   IMAGE_PROMPT_GUIDE_GENERAL,

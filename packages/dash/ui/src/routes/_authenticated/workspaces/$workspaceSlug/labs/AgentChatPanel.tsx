@@ -23,7 +23,7 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
     },
     // debugging
     _onMessage: async (evt) => {
-      setMsgs((prev) => [...prev, evt]);
+      setMsgs((prev) => [...prev, evt.data]);
     },
   });
 
@@ -65,12 +65,27 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
             variant="secondary"
             size="sm"
             onClick={() => {
+              sendEvent("set_input", {
+                productImages: productImageUrls,
+                avatarImages: avatarImageUrls,
+                prompt:
+                  "create a 8s tiktok ugc video. first create a image first!! do not create video!!",
+              });
+            }}
+            disabled={!isConnected}
+          >
+            set input
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
               sendEvent("start_image_gen", {
                 input: {
                   productImages: productImageUrls,
                   avatarImages: avatarImageUrls,
                   prompt:
-                    "create a 8s tiktok ugc video. first create a image first",
+                    "create a 8s tiktok ugc video. first create a image first!! do not create video!!",
                 },
               });
             }}

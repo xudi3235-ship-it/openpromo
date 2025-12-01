@@ -54,6 +54,10 @@ export namespace VideoGenMessageEvent {
 
   // -- Application State --
   const serverAppStateBase = z.object({
+    // server only
+    _internal: z.object({
+      serializedRunState: z.string().optional(),
+    }),
     status: z.enum([
       "idle",
       "generating_keyframes",
@@ -75,7 +79,8 @@ export namespace VideoGenMessageEvent {
   export const SyncState = base.extend({
     type: z.literal("sync_state"),
     data: z.object({
-      state: z.custom<ServerAppState>(),
+      // exclude _internal from being sent to client
+      state: serverAppStateBase.omit({ _internal: true }),
     }),
   });
 

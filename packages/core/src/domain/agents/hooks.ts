@@ -7,7 +7,7 @@
 
 import type { Agent, RunContext, Tool } from "@openai/agents";
 import type { AgentOutput } from "./agent-types";
-import type { VideoGenRunContext } from "./context";
+import type { VideoGenAgentContext } from "./context";
 
 /**
  * Tool call details for hook events.
@@ -28,7 +28,7 @@ interface ToolCallDetails {
  * Call this after creating the agent to attach event handlers.
  */
 export function setupAgentHooks(
-  agent: Agent<VideoGenRunContext, AgentOutput>,
+  agent: Agent<VideoGenAgentContext, AgentOutput>,
   options?: {
     /** Enable verbose logging */
     verbose?: boolean;
@@ -36,21 +36,24 @@ export function setupAgentHooks(
     logger?: (message: string, ...args: unknown[]) => void;
     /** Callback when agent starts */
     onAgentStart?: (
-      ctx: RunContext<VideoGenRunContext>,
-      agent: Agent<VideoGenRunContext, AgentOutput>,
+      ctx: RunContext<VideoGenAgentContext>,
+      agent: Agent<VideoGenAgentContext, AgentOutput>,
     ) => void;
     /** Callback when agent ends */
-    onAgentEnd?: (ctx: RunContext<VideoGenRunContext>, output: string) => void;
+    onAgentEnd?: (
+      ctx: RunContext<VideoGenAgentContext>,
+      output: string,
+    ) => void;
     /** Callback when tool starts */
     onToolStart?: (
-      ctx: RunContext<VideoGenRunContext>,
-      tool: Tool<VideoGenRunContext>,
+      ctx: RunContext<VideoGenAgentContext>,
+      tool: Tool<VideoGenAgentContext>,
       details: ToolCallDetails,
     ) => void;
     /** Callback when tool ends */
     onToolEnd?: (
-      ctx: RunContext<VideoGenRunContext>,
-      tool: Tool<VideoGenRunContext>,
+      ctx: RunContext<VideoGenAgentContext>,
+      tool: Tool<VideoGenAgentContext>,
       result: string,
       details: ToolCallDetails,
     ) => void;
@@ -63,10 +66,7 @@ export function setupAgentHooks(
   agent.on("agent_start", (ctx, agentInstance) => {
     log(`[${agentInstance.name}] >> Agent started`);
     if (verbose && ctx.context) {
-      log(`[${agentInstance.name}] Context:`, {
-        product: ctx.context.product,
-        business: ctx.context.business,
-      });
+      log(`[${agentInstance.name}] Context:`, ctx.context);
     }
     options?.onAgentStart?.(ctx, agentInstance);
   });

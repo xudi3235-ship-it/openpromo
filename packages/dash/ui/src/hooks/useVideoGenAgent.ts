@@ -21,6 +21,7 @@ export function useVideoGenAgent({
   // server app state synchronized via ws
   const [serverState, setServerState] =
     useState<VideoGenMessageEvent.ServerAppState>({
+      _internal: {},
       status: "idle",
       error: null,
       input: {
@@ -55,7 +56,10 @@ export function useVideoGenAgent({
             "[useVideoGenAgent] sync_state event received:",
             data.state,
           );
-          setServerState(data.state);
+          setServerState({
+            ...data.state,
+            _internal: {},
+          });
         },
       });
     },

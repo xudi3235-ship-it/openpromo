@@ -18,8 +18,8 @@ import {
   downloadImage as downloadImageBase,
   isStringUrl,
 } from "@core/utils/common";
-import { tool } from "@openai/agents";
 import { z } from "zod";
+import { toolBuilder } from "../tool-builder";
 
 const OUTPUT_DIR = "/tmp/nanobana_output";
 
@@ -86,7 +86,7 @@ function transformFileInputs(inputs: string[]): (string | Buffer)[] {
  * Nano Banana image generation tool.
  * Generates images using Google's Nano Banana model via Replicate.
  */
-export const nanoBananaTool = tool({
+export const nanoBananaTool = toolBuilder({
   name: "nano_banana",
   description: `Run the Nano Banana model for high-quality text-to-image or image-to-image generation.
 Can take up to 14 input images for style reference, editing, or composition.
@@ -98,49 +98,36 @@ Auto-saves generated images and returns the URL.`,
       JSON.stringify(params),
     );
     const { prompt, imageInputPaths, aspectRatio, outputFormat } = params;
-    try {
-      const inputImages = transformFileInputs(imageInputPaths ?? []);
+    const inputImages = transformFileInputs(imageInputPaths ?? []);
 
-      const imageUrl = await Replicate.NanoBanana.run({
-        prompt,
-        image_input: inputImages,
-        aspect_ratio: aspectRatio,
-        output_format: outputFormat,
-      });
+    const imageUrl = await Replicate.NanoBanana.run({
+      prompt,
+      image_input: inputImages,
+      aspect_ratio: aspectRatio,
+      output_format: outputFormat,
+    });
 
-      console.log(`[nanoBanana] Generated image URL: ${imageUrl}`);
+    console.log(`[nanoBanana] Generated image URL: ${imageUrl}`);
 
-      // Ensure output directory exists
-      await mkdir(OUTPUT_DIR, { recursive: true });
+    // Ensure output directory exists
+    await mkdir(OUTPUT_DIR, { recursive: true });
 
-      // Generate unique filename with timestamp
-      const timestamp = Date.now();
-      const fileName = `nanobana_${timestamp}.${outputFormat}`;
-      const outputPath = join(OUTPUT_DIR, fileName);
+    // Generate unique filename with timestamp
+    const timestamp = Date.now();
+    const fileName = `nanobana_${timestamp}.${outputFormat}`;
+    const outputPath = join(OUTPUT_DIR, fileName);
 
-      // Download and save the image
-      await downloadImage(imageUrl, outputPath);
+    // Download and save the image
+    await downloadImage(imageUrl, outputPath);
 
-      return {
-        success: true,
+    return {
+      status: "success",
+      tool: "nano_banana",
+      output: {
         imageUrl,
         outputPath,
         prompt,
-        config: {
-          aspectRatio,
-          outputFormat,
-          inputImageCount: inputImages?.length ?? 0,
-        },
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      console.error(`[nanoBanana] Error:`, errorMessage);
-      return {
-        success: false,
-        error: errorMessage,
-        prompt,
-      };
-    }
+      },
+    };
   },
 });

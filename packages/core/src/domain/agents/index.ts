@@ -9,13 +9,7 @@ export {
   TIKTOK_STYLE_HOOKS_EXAMPLES,
   VIDEO_TYPES_REGISTRY,
 } from "./constants";
-// Context & Types
-export type {
-  VideoGenErrorOutput,
-  VideoGenOutput,
-  VideoGenRunContext,
-  VideoGenSuccessOutput,
-} from "./context";
+
 // Prompts
 export {
   GOOD_VEO31_PROMPT_EXAMPLES,

@@ -2,6 +2,8 @@ import z from "zod";
 
 /**
  * defines structued output for our videogen agent
+ *
+ * agent is staged. we have multiple steps and pipelines. For each step, we'd like to define the outptut shapes here
  */
 export const AgentOutput = z.object({
   finalVideoUrl: z.string().url().optional(),
@@ -10,7 +12,13 @@ export const AgentOutput = z.object({
 export type AgentOutput = z.infer<typeof AgentOutput>;
 
 // helpers for standardizing tool output
-const ToolName = z.enum(["image_gen", "video_gen", "image_eval", "echo"]);
+const ToolName = z.enum([
+  "image_gen",
+  "video_gen",
+  "image_eval",
+  "echo",
+  "nano_banana",
+]);
 
 /**
  * Helper to create a discriminated tool output schema for a given tool name
@@ -64,6 +72,16 @@ export const ImageEvalToolOutput = makeToolOutput(
   }),
 );
 
+// nano-banana tool output
+export const NanoBananaToolOutput = makeToolOutput(
+  "nano_banana",
+  z.object({
+    imageUrl: z.string().url(),
+    outputPath: z.string(),
+    prompt: z.string(),
+  }),
+);
+
 // all tool outputs
 // Specific tool outputs (exclude the generic base) — used for deriving strict TS types
 export const ToolOutputs = z.union([
@@ -71,6 +89,7 @@ export const ToolOutputs = z.union([
   VideoGenToolOutput,
   ImageEvalToolOutput,
   EchoToolOutput,
+  NanoBananaToolOutput,
 ]);
 
 // Strict compile-time type: only the specific, known tool outputs (no `unknown`)
@@ -122,12 +141,7 @@ export function onToolOutput<T extends ToolNameType>(
     return;
   }
   // Ensure the output refers to the requested tool
-  if (parsedOutput.tool !== toolName) {
-    handlers.onError?.(
-      `Mismatched tool: expected ${toolName}, got ${parsedOutput.tool}`,
-    );
-    return;
-  }
+  if (parsedOutput.tool !== toolName) return;
   // Narrow to the success variant for the requested tool using a type guard so
   // we avoid any `unknown` casts.
   function isSuccessFor<U extends ToolNameType>(

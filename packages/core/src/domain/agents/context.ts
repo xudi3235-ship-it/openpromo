@@ -3,27 +3,17 @@
  * Ported from Python: src/openai_agent/context.py
  */
 
-export interface VideoGenRunContext {
-  product: string;
-  business: string;
-  avatarReferenceImageUrl?: string | null;
-}
+import z from "zod";
 
-/**
- * Output types for video generation agent.
- * Ported from Python: src/openai_agent/agents/main_agent.py
- */
-export interface VideoGenSuccessOutput {
-  localVideoPath: string;
-  videoUrl: string;
-  summary: string;
-}
+// context for agent
+// passed to tool, and
+export const VideoGenAgentContext = z.object({
+  // initial input for video gen
+  input: z.object({
+    product: z.string().describe("product ctx"),
+    productImages: z.array(z.url()).describe("URLs of product images"),
+    business: z.string().describe("business ctx"),
+  }),
+});
 
-export interface VideoGenErrorOutput {
-  errorMessage: string;
-  errorType: string;
-}
-
-export type VideoGenOutput =
-  | { status: "success"; data: VideoGenSuccessOutput }
-  | { status: "error"; data: VideoGenErrorOutput };
+export type VideoGenAgentContext = z.infer<typeof VideoGenAgentContext>;

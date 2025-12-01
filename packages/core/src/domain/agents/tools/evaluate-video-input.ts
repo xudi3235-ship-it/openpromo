@@ -8,7 +8,7 @@ import { type RunContext, tool } from "@openai/agents";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { PRIMARY_GOAL } from "../constants";
-import type { VideoGenRunContext } from "../context";
+import type { VideoGenAgentContext } from "../context";
 import { StaticPrompts } from "../prompts";
 import { toImageInputs } from "./evaluation-utils";
 
@@ -43,7 +43,7 @@ export const evaluateVideoInputTool = tool({
   parameters: EvaluateVideoInputParamsSchema,
   async execute(
     params: EvaluateVideoInputParams,
-    _runContext?: RunContext<VideoGenRunContext>,
+    _runContext?: RunContext<VideoGenAgentContext>,
   ) {
     const { imagePaths, prompt } = params;
 

@@ -3,7 +3,7 @@ import type { ApiEnv } from "@core/helpers/api-env";
 
 // import { routeAgentRequest } from "agents";
 
-import { Agent, type AgentInputItem, run } from "@openai/agents";
+import { Agent, type AgentInputItem, RunState, run } from "@openai/agents";
 import { VideoGenMessageEvent } from "@shared/agents";
 import type {
   AgentContext,
@@ -25,7 +25,7 @@ import {
 } from "ai";
 import { AgentOutput, onToolOutput } from "./agent-types";
 import { PRIMARY_GOAL, VIDEO_TYPES_REGISTRY } from "./constants";
-import type { VideoGenRunContext } from "./context";
+import type { VideoGenAgentContext } from "./context";
 import { setupAgentHooks } from "./hooks";
 import { StaticPrompts } from "./prompts";
 import {
@@ -39,23 +39,18 @@ import {
   veo31VideoExtensionTool,
   videoGenShellTool,
 } from "./tools";
-import {
-  type AgentInputImage,
-  toAgentImageInputs,
-} from "./tools/evaluation-utils";
+import { toAgentImageInputs } from "./tools/evaluation-utils";
 import { buildTreeString, downloadImagesToTmp } from "./utils";
 
 /**
  * Build the system prompt for video generation agent.
  * Ported from Python main_agent.py create_main_agent()
  */
-function buildSystemPrompt(context?: VideoGenRunContext): string {
+function buildSystemPrompt(context?: VideoGenAgentContext): string {
   const contextSection = context
     ? `
     ## CURRENT CONTEXT
-    - Product: ${context.product}
-    - Business: ${context.business}
-    ${context.avatarReferenceImageUrl ? `- Avatar Reference Image: ${context.avatarReferenceImageUrl}` : ""}
+    ${JSON.stringify(context, null, 2)}
     `
     : "";
 
@@ -66,7 +61,7 @@ function buildSystemPrompt(context?: VideoGenRunContext): string {
     ${PRIMARY_GOAL}
     2. SCOPE
     * Focus on: exploring connection between product, reference image, and ideas from the docs/guide, good examples to craft good product-centric images, and later use those create videos, suited for fast paced social media shorts, duration 15-30s, target platform is Tiktok, IG reels, and FB reels. Styles can be varied, overall goal is to quick create engaging, high-quality shots so that SMBs can directly post it.
-    * shell tool runs in /tmp directory by default. Product image inputs are in the ./products folder (relative to cwd). Use relative paths from /tmp.
+    * shell tool runs in /tmp directory by default. Product image inputs are in the /tmp/products folder (relative to cwd). You *must* use paths from /tmp dir since it's writable and ephemeral to our worker runtime. Due to worker limit, shell cmd might not be implemented fully. 
     * nano_banana is used for image generation. it can take image inputs with great accuracy, details, follow docs/guide.
     * veo3.1 is used for video generation. We have specific tools for different modes. closely follow each tools' guide, pros/cons and other supplementary docs to best utilize them. we almost never use text to video directly. 
     * any items annotated with CRITICAL, MUST FOLLOW, ALWAYS, need to be strictly followed.
@@ -171,8 +166,8 @@ function buildSystemPrompt(context?: VideoGenRunContext): string {
  * WIP: not ready, still figuring out how th fs works in CF worker, it's pretty
  * limited compared to Modal runtime.
  */
-function createVideoGenAgent(context: VideoGenRunContext) {
-  const agent = new Agent<VideoGenRunContext, AgentOutput>({
+function createVideoGenAgent(context: VideoGenAgentContext) {
+  const agent = new Agent<VideoGenAgentContext, AgentOutput>({
     name: "VideoGenInternalAgent",
     model: "gpt-5.1",
     instructions: buildSystemPrompt(context),
@@ -214,7 +209,6 @@ export class VideoGenAgent extends AIChatAgent<
 > {
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
-    // state is persisted automatically using setState
   }
   /**
    * triggered when app state is updated
@@ -227,11 +221,29 @@ export class VideoGenAgent extends AIChatAgent<
     this.broadcastState();
   }
 
+  // clears stuff
+  resetState() {
+    this.setState({
+      status: "idle",
+      input: {
+        prompt: "empty_prompt",
+        productImages: [],
+        avatarImages: [],
+      },
+      _internal: {
+        serializedRunState: undefined,
+      },
+      finalVideoUrl: null,
+      error: null,
+    });
+  }
+
   private broadcastState() {
+    const { _internal, ...rest } = this.state;
     const connections = this.ctx.getWebSockets();
     for (const conn of connections) {
       VideoGenMessageEvent.sendEvent(conn, "sync_state", {
-        state: this.state,
+        state: rest,
       });
     }
   }
@@ -245,9 +257,12 @@ export class VideoGenAgent extends AIChatAgent<
   ) {
     console.log(`[VideoGenAgent] onChatMessage called`);
     // TODO: Extract runtime context from messages or agent state
-    const runtimeContext: VideoGenRunContext = {
-      product: "Example Product",
-      business: "Example Business",
+    const runtimeContext: VideoGenAgentContext = {
+      input: {
+        product: "Example Product",
+        productImages: [],
+        business: "Example Business",
+      },
     };
     const systemPrompt = buildSystemPrompt(runtimeContext);
     const messages = this.messages;
@@ -334,7 +349,7 @@ export class VideoGenAgent extends AIChatAgent<
     }
     await VideoGenMessageEvent.onEvent(message, {
       echo: async (data) => {
-        console.log(`[VideoGenAgent] Received echo message:`, data, connection);
+        console.log(`[VideoGenAgent] Received echo message:`, data);
         VideoGenMessageEvent.sendEvent(connection, "echo", {
           message: `Echo: ${data.message}`,
         });
@@ -342,7 +357,9 @@ export class VideoGenAgent extends AIChatAgent<
       set_input: async (data) => {
         this.setState({
           ...this.state,
-          ...data,
+          input: {
+            ...data,
+          },
         });
       },
       start_image_gen: async (data) => {
@@ -358,23 +375,22 @@ export class VideoGenAgent extends AIChatAgent<
         });
         // 2. start video gen
         const runResult = await this.startVideoGen({
-          product: "Example Product",
-          business: "Example Business",
+          input: {
+            product: "Example Product",
+            productImages: data.input.productImages,
+            business: "small business",
+          },
         });
         console.log(
           `[VideoGenAgent] Video generation run completed:`,
           runResult,
         );
+        // 3. send event
+        VideoGenMessageEvent.sendEvent(connection, "video_generated", {
+          videoUrl: runResult.finalVideoUrl as string,
+        });
       },
     });
-  }
-  // helpers for accessing state props
-  get productImages() {
-    return this.state.input.productImages;
-  }
-
-  get avatarImages() {
-    return this.state.input.avatarImages;
   }
 
   /**
@@ -386,7 +402,7 @@ export class VideoGenAgent extends AIChatAgent<
    * 4. rener
    */
 
-  async startVideoGen(context: VideoGenRunContext): Promise<AgentOutput> {
+  async startVideoGen(context: VideoGenAgentContext): Promise<AgentOutput> {
     const agent = createVideoGenAgent(context);
     // print cwd
     console.log(`[VideoGenAgent] Current working directory: ${process.cwd()}`);
@@ -415,8 +431,12 @@ export class VideoGenAgent extends AIChatAgent<
     // Show tmp structure
     console.log(`[VideoGenAgent] /tmp structure:\n${VideoGenAgent.tmpDirStr}`);
 
-    const inputItems = this.createRunInput(productImagePaths, avatarImagePaths);
-
+    const input = this.state._internal.serializedRunState
+      ? await RunState.fromString(
+          agent,
+          this.state._internal.serializedRunState,
+        )
+      : await this.createRunInput();
     // Setup lifecycle hooks for logging
     setupAgentHooks(agent, {
       verbose: true,
@@ -436,44 +456,43 @@ export class VideoGenAgent extends AIChatAgent<
           onSuccess(output) {
             console.log(`[VideoGenAgent] Image generation successful:`, output);
           },
-          onError(error) {
-            console.error(`[VideoGenAgent] Image generation failed:`, error);
-          },
         });
       },
     });
-    const result = await run(agent, inputItems, {
+    // if initial run, create items, else, serialize it and store from prev run
+    const result = await run(agent, input, {
       context,
+    });
+    // save run state
+    this.setState({
+      ...this.state,
+      _internal: {
+        ...this.state._internal,
+        serializedRunState: result.state.toString(),
+      },
     });
 
     console.log(`[VideoGenAgent] Run completed:`, result.finalOutput);
     return result.finalOutput;
   }
 
-  private createRunInput(
-    productImagePaths: string[],
-    avatarImagePaths: string[],
-  ): AgentInputItem[] {
+  private async createRunInput(): Promise<AgentInputItem[]> {
+    console.log(`[VideoGenAgent] Creating run input from state:`, this.state);
+
+    const productImagePaths = await downloadImagesToTmp(
+      this.state.input.productImages,
+      "/tmp/products",
+    );
+    const avatarImagePaths = await downloadImagesToTmp(
+      this.state.input.avatarImages,
+      "/tmp/avatar",
+    );
     // Convert paths to image inputs using Agents SDK format
+
     const productImages = toAgentImageInputs(productImagePaths);
     const avatarImages = toAgentImageInputs(avatarImagePaths);
-
-    // Log image inputs (truncate base64 for readability)
-    const truncateBase64 = (img: AgentInputImage) => ({
-      ...img,
-      image: img.image?.startsWith("data:")
-        ? `${img.image.slice(0, 50)}...[truncated]`
-        : img.image,
-    });
-    console.log(
-      `[VideoGenAgent] Product image inputs:`,
-      JSON.stringify(productImages.map(truncateBase64), null, 2),
-    );
-    console.log(
-      `[VideoGenAgent] Avatar image inputs:`,
-      JSON.stringify(avatarImages.map(truncateBase64), null, 2),
-    );
-
+    console.log(`[VideoGenAgent] Converted product images:`, productImages);
+    console.log(`[VideoGenAgent] Converted avatar images:`, avatarImages);
     // Build user message content using Agents SDK types
     // UserMessageItem expects content with input_text and input_image types
     const userContent = [
@@ -497,7 +516,7 @@ export class VideoGenAgent extends AIChatAgent<
       // 4. customer prompt
       {
         type: "input_text" as const,
-        text: `customer request: create a 8s tiktok style ugc video for the product, focusing on its key features and benefits. use the avatar image provided as the main character in the video.`,
+        text: this.state.input.prompt,
       },
     ];
 
