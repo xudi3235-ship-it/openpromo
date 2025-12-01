@@ -131,6 +131,8 @@ export const sora2StoryboardTool = toolBuilder({
 Creates videos up to 25 seconds long by combining multiple scenes into a cohesive storyboard.
 Each scene has its own prompt and duration. Shots don't have to be equal length, but total must not exceed duration param.
 
+CRITICAL: Sora2 excels at creativity, so it's preferred to not be extremely detailed prompt, but rather leave room for the model to interpret and create dynamic scenes, especially for social media style videos.
+
 Follow the same principles and guidelines for prompt generation as veo3.1 tools.
 Preferably use image gen tool to create image first, then use that along with the shots prompt to orchestrate the long video.
 
