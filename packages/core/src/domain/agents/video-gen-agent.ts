@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { type ApiEnv, Binding } from "@core/helpers/api-env";
+import type { ApiEnv } from "@core/helpers/api-env";
 import { produce } from "immer";
 
 // import { routeAgentRequest } from "agents";
@@ -59,8 +59,6 @@ export class VideoGenAgent extends AIChatAgent<
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
     this.runStateSerialized = null;
-    // set the async local storage, noop
-    Binding.provide(env.Bindings, () => {});
   }
 
   /**

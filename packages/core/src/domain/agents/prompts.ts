@@ -324,7 +324,7 @@ export const GOOD_VEO31_PROMPT_EXAMPLES = `
 `;
 
 export const NANO_BANANA_GOOD_PROMPT_EXAMPLES = `
-    Key Nano Banana Prompt Patterns:
+    Key Nano Banana Prompt Patterns: CRITICAL to use json format
 
     1. 3D Action Figure:
     "create a 1/7 scale commercialized figure of the character in the illustration, in a realistic style and environment. Place the figure on a computer desk, using a circular transparent acrylic base without any text."
@@ -349,6 +349,362 @@ export const NANO_BANANA_GOOD_PROMPT_EXAMPLES = `
 
     8. Object Extraction:
     "Extract the clothing from [Image1] and present it as a clean e-commerce product photo. Remove the model's body completely. Keep the outfit in natural 3D shape."
+
+    9. realism, iphone 17 pro photography prompt example. NOTE: the following is a prompt template for generating ultra-realistic images simulating iPhone 17 Pro photography. Follow the structure and principles outlined to create your own prompts.
+
+    <role>
+    You're specialized in computational photography, specifically the optical characteristics of the iPhone 16/17 Pro Max sensor system. You translate human concepts into mathematically precise image generation prompts.
+    </role>
+
+    <cognitive_framework>
+    <principle name="Context Hunger">
+    If the user provides a vague concept (e.g., "girl at a cafe"), you must explicitly invent the missing environmental, lighting, and styling details to ensure a complete image.
+    </principle>
+    <principle name="The iPhone Aesthetic">
+    All outputs must strictly simulate high-end mobile photography.
+    - Focal Lengths: 24mm (Main), 13mm (Ultra Wide), or 77mm (Telephoto).
+    - Characteristics: "Apple ProRAW" color science, sharp details (Deep Fusion), computational bokeh (Portrait Mode), and Smart HDR dynamic range.
+    - Avoid: Anamorphic lens flares, exaggerated "cinema" bokeh, or vintage film grain (unless specified as a filter).
+    </principle>
+    <principle name="Imperfection is Realism">
+    To achieve "ultra-realism," you must inject terms describing unpolished reality: digital noise (not film grain), skin texture, slightly blown-out highlights (common in mobile), and natural "snapshot" framing.
+    </principle>
+    <principle name="JSON Precision">
+    Your output is a strict JSON object designed for programmatic use.
+    </principle>
+    </cognitive_framework>
+
+    <visual_analysis_reference>
+    The "Influencer Aesthetic" is defined by:
+    - Vibe: "Plandid" (planned candid), effortlessness, aspirational lifestyle.
+    - Lighting: Natural window light, golden hour, or "flash photography" (hard flash) for night shots.
+    - Framing: Vertical (9:16) native mobile aspect ratio, often selfies or point-of-view (POV).
+    </visual_analysis_reference>
+
+    <instructions>
+    1. Analyze the user's request for subject and mood.
+    2. Enrich the request using "iPhone Photography" constraints.
+    3. Format the output strictly as a JSON object with the following schema.
+    </instructions>
+
+    <json_schema>
+    {
+      "meta_data": {
+        "style": "iPhone Pro Max Photography",
+        "aspect_ratio": "9:16"
+      },
+      "prompt_components": {
+        "subject": "Detailed description of person, styling, pose (mirror selfie, 0.5x angle, etc.)",
+        "environment": "Detailed background, location, social setting",
+        "lighting": "Smart HDR lighting, natural source, or direct flash",
+        "camera_gear": "iPhone 16 Pro Max, Main Camera 24mm f/1.78, or Ultra Wide 13mm",
+        "processing": "Apple ProRAW, Deep Fusion, Shot on iPhone",
+        "imperfections": "Digital noise, motion blur, authentic skin texture, screen reflection (if mirror)"
+      },
+      "full_prompt_string": "The combined, comma-separated string optimized for realistic mobile generation",
+      "negative_prompt": "Standard negatives + 'professional camera, DSLR, bokeh balls, anamorphic, cinema lighting, studio lighting'"
+    }
+    </json_schema>
+
+    <task>
+    Await user description of the scene. Generate the JSON output immediately.
+    </task>
+
+    10. direct flash photography prompt example
+    {
+  "label": "direct-flash-gamer-girl",
+  "tags": [
+    "direct-flash",
+    "retro-gamer-room",
+    "90s-photography",
+    "film-aesthetic",
+    "gamer-girl",
+    "collectibles-shelf",
+    "low-angle",
+    "sitting-pose"
+  ],
+  "CompositionalPortrait": 1,
+  "Style": [
+    "direct-flash-photography-3",
+    "80s-90s-club-photo-2",
+    "warm-film-tone-2",
+    "documentary-candid-style-2"
+  ],
+  "Subject": [
+    "young woman in her early 20s with fair skin and soft natural features",
+    "long dark hair styled in two loose braids with subtle flyaways for realism",
+    "wearing a fitted white cotton camisole top with thin straps and matching high-waisted white shorts",
+    "minimal natural makeup with a soft pink tint on cheeks and lips",
+    "eyes looking directly into the camera with a calm, intimate, slightly teasing expression",
+    "seated cross-legged on a couch, holding a game controller naturally in both hands"
+  ],
+  "MadeOutOf": [
+    "white cotton camisole top",
+    "white high-waisted shorts",
+    "black over-ear gaming headphones",
+    "black wireless controller",
+    "small plush Pikachu toy placed beside her on the couch",
+    "red textured pillow behind her"
+  ],
+  "Arrangement": "subject sits centered on a worn retro couch in a relaxed cross-leg position, holding the controller naturally with both hands; direct flash highlights her face and the texture of her outfit, while the surrounding collectible shelves create depth and visual clutter in the background.",
+  "Accessories": [
+    "retro gaming consoles stacked on shelves",
+    "boxed action figures and collectible toys in various sizes",
+    "soft plush Pikachu next to the subject",
+    "gaming headset cable draped naturally across her shoulder"
+  ],
+  "Background": "a dimly lit retro gamer room filled with densely packed shelves of action figures, boxed toys, handheld consoles, and vintage game cases; warm tungsten floor lamp providing ambient background glow; slight shadow falloff caused by the direct flash illuminating the foreground more prominently.",
+  "RoomObjects": [
+    "crowded black shelving full of collectible action figures",
+    "vintage CRT monitor partially visible on lower shelf",
+    "floor lamp with soft warm bulb",
+    "stuffed toys in the corner of the couch",
+    "assorted retro controllers scattered near the subject"
+  ],
+  "ColorRestriction": [
+    "overall palette grounded in warm tungsten tones",
+    "subject outfit remains clean white for contrast",
+    "background shelves maintain mixed reds, blacks, and muted neons from toy packaging",
+    "flash introduces slightly cooler highlights on skin and fabric"
+  ],
+  "Lighting": "strong direct on-camera flash aimed straight at the subject, creating bold highlights on the face and clothing; shadows cast sharply behind objects; ambient tungsten lamp in the background adds warm separation light; overall high contrast with slight film-like grain.",
+  "Camera": {
+    "type": "digital rangefinder or compact mirrorless emulating film aesthetic",
+    "lens": "35mm equivalent prime lens",
+    "aperture": "f/2.0",
+    "iso": "400–800",
+    "shutter_speed": "1/125–1/200",
+    "flash": "direct on-camera flash, high intensity",
+    "angle": "slightly low eye-level perspective",
+    "focus": "sharp on face and upper torso, background clearly readable but secondary"
+  },
+  "OutputStyle": "photorealistic direct-flash snapshot with bold contrast, visible texture on skin and hair, subtle film grain, warm shadows, slightly saturated toy packaging, and a nostalgic 80s–90s indoor photo aesthetic.",
+  "Mood": "intimate, playful, nostalgic, confidently casual with a strong gamer-at-home vibe"
+}
+
+11. {
+  "subject": {
+    "type": "woman",
+    "pose": "seated, facing camera, hands holding the front edges of her jacket",
+    "expression": "neutral to slight confident smile",
+    "hair": {
+      "length": "long",
+      "style": "loose curls",
+      "color": "dark brown with lighter highlights"
+    },
+    "makeup": {
+      "eyes": "defined eyeliner and lashes",
+      "lips": "matte pink lipstick",
+      "skin": "smooth, even-toned"
+    },
+    "clothing": {
+      "top_layer": {
+        "type": "black textured jacket",
+        "fit": "partially opened at the front",
+        "details": "subtle stitched edges"
+      },
+      "inner_layer": {
+        "type": "black bra",
+        "material": "sheer mesh sections",
+        "visibility": "partially visible beneath jacket"
+      },
+      "bottom_layer": {
+        "type": "black underwear",
+        "material": "semi-sheer"
+      }
+    }
+  },
+  "scene": {
+    "location": "indoor modern living room",
+    "lighting": "bright, soft daylight from the left side",
+    "background": {
+      "elements": [
+        "white shuttered windows on the left",
+        "large flat-screen TV mounted on the wall",
+        "beige textured wall",
+        "green indoor plant in a round beige vase",
+        "white or cream sofa cushions"
+      ]
+    }
+  },
+  "camera": {
+    "framing": "medium close-up",
+    "angle": "straight-on",
+    "focus": "sharp on subject",
+    "depth_of_field": "moderate, background slightly softened"
+  },
+  "aesthetic": {
+    "mood": "polished, posed, glamorous",
+    "color_palette": "neutral tones with black clothing and warm skin tones"
+  }
+}
+
+12. {
+  "detailed_structured_prompt": {
+    "meta_instructions": {
+      "reference_adherence": {
+        "instruction": "Create a 100% authentic portrait based closely on the provided reference photo."
+      }
+    },
+    "subject_definition": {
+      "demographic": "Young woman",
+      "anatomy_and_features": {
+        "head": {
+          "hair": {
+            "length": "Mid-back",
+            "texture": "Natural loose curls",
+            "cut": "Layered bangs",
+            "dynamic_state": "Windswept, blowing through face with wisps"
+          },
+          "eyes": {
+            "color": "Burgundy",
+            "shape": "Large, round",
+            "details": "Long curled eyelashes"
+          },
+          "mouth": {
+            "lip_shape": "Full, plump",
+            "lip_makeup": {
+              "product": "Lip gloss",
+              "color_style": "Gradient pink",
+              "finish": "Dewy"
+            }
+          },
+          "skin_and_makeup": {
+            "base_finish": "Dewy makeup",
+            "blush_details": {
+              "color": "Light pink",
+              "placement": ["Cheeks", "Tip of the nose"]
+            }
+          }
+        },
+        "hands": {
+          "nails": {
+            "shape": "Coffin-shaped",
+            "length": "Long",
+            "design": "Pink and silver marble"
+          }
+        }
+      },
+      "attire": {
+        "upper_body": {
+          "garment": "Bodysuit",
+          "color": "Black",
+          "style_details": ["Strapless", "Low back"]
+        },
+        "lower_body": {
+          "garment": "Denim shorts",
+          "color_options": ["Olive-green", "Light-brown"]
+        }
+      },
+      "pose_and_orientation": {
+        "placement": "Sitting on a large rock near the base of the waterfall",
+        "gaze_direction": "Looking directly at the front (camera)"
+      }
+    },
+    "environment_context": {
+      "scene_type": "Beautiful outdoor setting",
+      "primary_feature": {
+        "type": "Waterfall",
+        "description": "Cascading down a dark rocky cliff"
+      },
+      "atmospheric_elements": ["Foamy water", "Misty air surrounding subject"]
+    },
+    "photographic_specifications": {
+      "genre": "Authentic outdoor portrait",
+      "resolution_target": "8k quality",
+      "lighting_condition": "Natural outdoor light",
+      "aspect_ratio": "9:16"
+    }
+  }
+}
+
+13. {
+  "pipeline_configuration": {
+    "job_type": "img2img_transformation",
+    "meta_tags": ["macro", "beauty", "soft_focus", "realism"],
+    
+    "input_reference_handling": {
+      "preservation_rules": {
+        "facial_identity": {
+          "strength": 1.0,
+          "instruction": "Strict 100% preservation of facial geometry and features.",
+          "technique": "FaceID / IP-Adapter Strong"
+        },
+        "color_palette": {
+          "target": "Hair Color",
+          "mode": "inherit_from_source",
+          "instruction": "Do not hallucinate new hair color. Map source color to new hair texture."
+        }
+      }
+    },
+
+    "generative_parameters": {
+      "subject_definition": {
+        "hair_morphology": {
+          "length": "Short",
+          "texture_type": "Wavy",
+          "styling_aesthetic": "Intentionally messy, artfully disheveled",
+          "micro_details": "Fine strands falling across forehead and near eyes",
+          "color_override": null
+        },
+        "facial_details": {
+          "expression": "Serene, gentle",
+          "makeup_style": "Natural, soft-beauty approach",
+          "surface_texture": "Ultra-clean skin with visible macro pores"
+        }
+      },
+
+      "scene_composition": {
+        "camera_settings": {
+          "proximity": "Extreme Close-Up (Macro)",
+          "depth_of_field": "Ultra-shallow",
+          "focus_target": "Eyes",
+          "lens_character": "Soft beauty lens"
+        },
+        "foreground_layers": {
+          "element": "Hand",
+          "state": "Partially blurred",
+          "purpose": "Framing effect, adding depth and intimacy"
+        },
+        "background_layers": {
+          "state": "Fully out of focus",
+          "visuals": "Pastel, soft tones",
+          "bokeh_quality": "Strong, smooth, creamy"
+        }
+      },
+
+      "lighting_and_atmosphere": {
+        "style": "Soft-beauty photography",
+        "dynamic_range": "High (HDR)",
+        "quality": "Airy, bright, diffused",
+        "reflections": {
+          "eyes": "Crisp, sharp catchlights",
+          "lips": "Soft, natural shine"
+        }
+      }
+    },
+
+    "text_prompts": {
+      "weighted_positive": {
+        "(Masterpiece, Best Quality, 8k, Macro Photo)": 1.5,
+        "Extreme close-up of young woman with serene gentle expression": 1.3,
+        "Short wavy messy hair with stray wisps over eyes": 1.2,
+        "Hand in foreground partially blurred framing the face": 1.2,
+        "Macro skin texture, pores visible, individual hair strands": 1.4,
+        "Ultra-sharp eyes with crisp reflections": 1.3,
+        "Soft pastel bokeh background": 1.1,
+        "Soft diffused lighting, airy aesthetic": 1.0
+      },
+      "weighted_negative": {
+        "alteration of face, new hair color, long hair": 1.5,
+        "plastic skin, airbrushed, smooth": 1.4,
+        "cartoon, 3d render, illustration": 1.3,
+        "deep focus, sharp background, clutter": 1.2,
+        "deformed hand, bad anatomy": 1.4
+      }
+    }
+  }
+}
 `;
 
 const SORA2_PROMPT_GUIDE = `

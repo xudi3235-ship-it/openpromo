@@ -5,7 +5,10 @@ import { createConnectTransport } from "@connectrpc/connect-web";
 import {
   ContainerService,
   type PingResponse,
+  type ResizeVideoRequest,
   type ResizeVideoResponse,
+  type RunFfmpegRequest,
+  type RunFfmpegResponse,
 } from "./containers/gen/containers/v1/container_pb";
 
 // WIP: not ready yet for production
@@ -59,45 +62,24 @@ export class ContainerBackend extends Container {
     return this.client;
   }
 
-  async resizeVideo({
-    videoUrl,
-    width,
-    height,
-  }: {
-    videoUrl: string;
-    width: number;
-    height: number;
-  }): Promise<ResizeVideoResponse> {
+  async resizeVideo(
+    req: Omit<ResizeVideoRequest, "$typeName">,
+  ): Promise<ResizeVideoResponse> {
     const client = await this.getClient();
     return await client.resizeVideo({
-      videoUrl,
-      width,
-      height,
+      ...req,
+      $typeName: "containers.v1.ResizeVideoRequest", // optional
     });
   }
 
-  async runFfmpeg({
-    inputUrls,
-    command,
-    outputFilename,
-  }: {
-    inputUrls: string[];
-    command: string[];
-    outputFilename?: string | null;
-  }): Promise<{
-    r2Url: string;
-    r2Key?: string;
-    contentType?: string;
-    filename?: string;
-  }> {
+  async runFfmpeg(
+    req: Omit<RunFfmpegRequest, "$typeName">,
+  ): Promise<RunFfmpegResponse> {
     const client = await this.getClient();
-    const resp = await client.runFfmpeg({
-      inputUrls,
-      command,
-      outputFilename: outputFilename ?? undefined,
+    return await client.runFfmpeg({
+      ...req,
+      $typeName: "containers.v1.RunFfmpegRequest", // optional
     });
-
-    return resp;
   }
 
   async probeMedia(url: string) {

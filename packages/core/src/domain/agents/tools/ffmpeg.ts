@@ -74,7 +74,7 @@ export const ffmpegTool = toolBuilder<
     const resp = await stub.runFfmpeg({
       inputUrls: params.input_urls,
       command: params.command,
-      outputFilename: params.output_filename ?? undefined,
+      outputFilename: params.output_filename ?? `/tmp/output_${Date.now()}.mp4`,
     });
 
     return toolSuccess("run_ffmpeg", {
