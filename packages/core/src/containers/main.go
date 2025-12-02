@@ -1,39 +1,50 @@
 package main
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 	"os"
-
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
-	e := echo.New()
-	e.HideBanner = true
-	e.Use(middleware.Recover())
+	mux := http.NewServeMux()
 
-	e.GET("/", func(c echo.Context) error {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("healthz %s %s", r.Method, r.URL.Path)
 		message := os.Getenv("MESSAGE")
 		if message == "" {
-			message = "Hello from Echo"
+			message = "Hello from Connect RPC container"
 		}
 		instanceID := os.Getenv("CLOUDFLARE_DEPLOYMENT_ID")
-		return c.JSON(http.StatusOK, map[string]string{
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"message":     message,
 			"instance_id": instanceID,
 		})
 	})
 
-	e.POST("/video/resize", handleVideoResize)
+	connectPath, connectHandler := newConnectHandler()
+	log.Printf("registering connect handler at %s", connectPath)
+	// Path from connect-go ends with '/', so ServeMux will match all subpaths.
+	mux.Handle(connectPath, loggingMiddleware(connectHandler))
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	e.Logger.Infof("starting server on :%s", port)
-	if err := e.Start(":" + port); err != nil && err != http.ErrServerClosed {
-		e.Logger.Fatalf("server failed: %v", err)
+	addr := ":" + port
+	log.Printf("starting server on %s", addr)
+
+	if err := http.ListenAndServe(addr, mux); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("server failed: %v", err)
 	}
+}
+
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s", r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+	})
 }

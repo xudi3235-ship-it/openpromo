@@ -6,7 +6,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "openpromo-dash",
   "main": "worker/src/index.ts",
-  "compatibility_date": "2025-11-26",
+  "compatibility_date": "2025-11-25",
   "compatibility_flags": ["nodejs_compat"],
   // "rules": [
   //   {
@@ -98,12 +98,12 @@
     }
   ],
   "containers": [
-    // {
-    //   "max_instances": 2,
-    //   "class_name": "ContainerBackend",
-    //   "image": "../core/src/containers/Dockerfile",
-    //   "image_build_context": "../core/src/containers"
-    // }
+    {
+      "max_instances": 2,
+      "class_name": "ContainerBackend",
+      "image": "../core/src/containers/Dockerfile",
+      "image_build_context": "../core/src/containers"
+    }
   ],
   // https://developers.cloudflare.com/workers/development-testing/wrangler-vs-vite/#when-to-use-wrangler
   // R2 does not work locally since vite plugin does not support.

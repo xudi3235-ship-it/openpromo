@@ -1,10 +1,19 @@
 import { Container } from "@cloudflare/containers";
+import type { Client } from "@connectrpc/connect";
+import { createClient } from "@connectrpc/connect";
+import { createConnectTransport } from "@connectrpc/connect-web";
+import {
+  ContainerService,
+  type PingResponse,
+  type ResizeVideoResponse,
+} from "./containers/gen/containers/v1/container_pb";
 
 // WIP: not ready yet for production
 // turns out we really need more ergonomic stuff like modal
 // to manage ffmpeg, etc.
 export class ContainerBackend extends Container {
   defaultPort = 8080;
+  requiredPorts = [8080];
   sleepAfter = "60s";
   envVars = {
     MESSAGE: "I was passed in via the container class!",
@@ -22,10 +31,34 @@ export class ContainerBackend extends Container {
   override onError(error: unknown) {
     console.log("Container error:", JSON.stringify(error));
   }
-
-  async ping(): Promise<Response> {
-    return await this.containerFetch("http://localhost:8080/");
+  /**
+   * RPC calls via connect-rpc to our go backend
+   */
+  async ping(): Promise<PingResponse> {
+    const c = await this.getClient();
+    return await c.ping({});
   }
+
+  private client?: Client<typeof ContainerService>;
+
+  private async getClient() {
+    if (!this.client) {
+      const transport = createConnectTransport({
+        baseUrl: "http://localhost:8080",
+        // Worker fetch is provided by the container runtime
+        fetch: (input, init) =>
+          this.containerFetch(input, {
+            ...init,
+            redirect: "manual",
+          }),
+        useBinaryFormat: false,
+      });
+      this.client = createClient(ContainerService, transport);
+    }
+    await this.startAndWaitForPorts(this.defaultPort);
+    return this.client;
+  }
+
   async resizeVideo({
     videoUrl,
     width,
@@ -34,62 +67,12 @@ export class ContainerBackend extends Container {
     videoUrl: string;
     width: number;
     height: number;
-  }): Promise<{
-    stream: ReadableStream<Uint8Array>;
-    contentType: string;
-    contentLength?: number;
-    filename?: string;
-  }> {
-    const response = await this.containerFetch(
-      "http://localhost:8080/video/resize",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ videoUrl, width, height }),
-      },
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      throw new Error(
-        `Container resize failed (${response.status} ${response.statusText})${
-          errorText ? ` - ${errorText}` : ""
-        }`,
-      );
-    }
-
-    const stream = response.body;
-    if (!stream) {
-      throw new Error(
-        "Container resize response did not include a body stream",
-      );
-    }
-
-    const contentType =
-      response.headers.get("content-type") ?? "application/octet-stream";
-    const contentLengthHeader = response.headers.get("content-length");
-    const parsedLength = contentLengthHeader
-      ? Number.parseInt(contentLengthHeader, 10)
-      : undefined;
-    const contentLength = Number.isFinite(parsedLength ?? NaN)
-      ? parsedLength
-      : undefined;
-
-    const disposition = response.headers.get("content-disposition") ?? "";
-    const filenameMatch = disposition.match(
-      /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i,
-    );
-    const filename = filenameMatch
-      ? decodeURIComponent(filenameMatch[1] ?? filenameMatch[2] ?? "")
-      : undefined;
-
-    return {
-      stream,
-      contentType,
-      contentLength,
-      filename,
-    };
+  }): Promise<ResizeVideoResponse> {
+    const client = await this.getClient();
+    return await client.resizeVideo({
+      videoUrl,
+      width,
+      height,
+    });
   }
 }

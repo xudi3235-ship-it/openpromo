@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package containers.v1;
+
+option go_package = "main/gen/containers/v1;containersv1";
+
+// ContainerService exposes RPCs from the Worker to the container runtime.
+service ContainerService {
+  // Simple health check.
+  rpc Ping(PingRequest) returns (PingResponse);
+
+  // Resize a video and return the processed bytes.
+  rpc ResizeVideo(ResizeVideoRequest) returns (ResizeVideoResponse);
+}
+
+message PingRequest {}
+
+message PingResponse {
+  string message = 1;
+  string instance_id = 2;
+}
+
+message ResizeVideoRequest {
+  string video_url = 1;
+  int32 width = 2;
+  int32 height = 3;
+}
+
+message ResizeVideoResponse {
+  string content_type = 1;
+  string filename = 2;
+  string r2_url = 3;
+  string r2_key = 4;
+}

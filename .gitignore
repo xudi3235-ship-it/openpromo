@@ -20,3 +20,4 @@ node_modules
 
 # wip stuff
 infra/wrangler
+.gocache

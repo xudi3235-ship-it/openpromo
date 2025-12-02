@@ -1,13 +1,9 @@
-from collections.abc import Iterable as _Iterable
-from collections.abc import Mapping as _Mapping
-from typing import ClassVar as _ClassVar
-from typing import Optional as _Optional
-from typing import Union as _Union
-
-from google.protobuf import descriptor as _descriptor
-from google.protobuf import message as _message
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from collections.abc import Iterable as _Iterable, Mapping as _Mapping
+from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -38,7 +34,6 @@ class JobState(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     JOB_STATE_IN_PROGRESS: _ClassVar[JobState]
     JOB_STATE_SUCCEEDED: _ClassVar[JobState]
     JOB_STATE_FAILED: _ClassVar[JobState]
-
 ASPECT_RATIO_UNSPECIFIED: AspectRatio
 ASPECT_RATIO_16_9: AspectRatio
 ASPECT_RATIO_4_3: AspectRatio
@@ -64,12 +59,7 @@ class JobEnvelope(_message.Message):
     fn: JobFunction
     workspace_id: str
     client_job_id: str
-    def __init__(
-        self,
-        fn: _Optional[_Union[JobFunction, str]] = ...,
-        workspace_id: _Optional[str] = ...,
-        client_job_id: _Optional[str] = ...,
-    ) -> None: ...
+    def __init__(self, fn: _Optional[_Union[JobFunction, str]] = ..., workspace_id: _Optional[str] = ..., client_job_id: _Optional[str] = ...) -> None: ...
 
 class JobMetadata(_message.Message):
     __slots__ = ()
@@ -83,14 +73,7 @@ class JobMetadata(_message.Message):
     workspace_id: str
     created_at_epoch_ms: int
     updated_at_epoch_ms: int
-    def __init__(
-        self,
-        call_id: _Optional[str] = ...,
-        fn: _Optional[_Union[JobFunction, str]] = ...,
-        workspace_id: _Optional[str] = ...,
-        created_at_epoch_ms: _Optional[int] = ...,
-        updated_at_epoch_ms: _Optional[int] = ...,
-    ) -> None: ...
+    def __init__(self, call_id: _Optional[str] = ..., fn: _Optional[_Union[JobFunction, str]] = ..., workspace_id: _Optional[str] = ..., created_at_epoch_ms: _Optional[int] = ..., updated_at_epoch_ms: _Optional[int] = ...) -> None: ...
 
 class EditVideoJobRequest(_message.Message):
     __slots__ = ()
@@ -104,14 +87,7 @@ class EditVideoJobRequest(_message.Message):
     aspect_ratio: AspectRatio
     cadence: Cadence
     wait_for_completion: bool
-    def __init__(
-        self,
-        envelope: _Optional[_Union[JobEnvelope, _Mapping]] = ...,
-        input_url: _Optional[str] = ...,
-        aspect_ratio: _Optional[_Union[AspectRatio, str]] = ...,
-        cadence: _Optional[_Union[Cadence, str]] = ...,
-        wait_for_completion: _Optional[bool] = ...,
-    ) -> None: ...
+    def __init__(self, envelope: _Optional[_Union[JobEnvelope, _Mapping]] = ..., input_url: _Optional[str] = ..., aspect_ratio: _Optional[_Union[AspectRatio, str]] = ..., cadence: _Optional[_Union[Cadence, str]] = ..., wait_for_completion: _Optional[bool] = ...) -> None: ...
 
 class AgentVideoJobRequest(_message.Message):
     __slots__ = ()
@@ -131,17 +107,7 @@ class AgentVideoJobRequest(_message.Message):
     user_message: str
     max_turns: int
     wait_for_completion: bool
-    def __init__(
-        self,
-        envelope: _Optional[_Union[JobEnvelope, _Mapping]] = ...,
-        product: _Optional[str] = ...,
-        product_imgs: _Optional[_Iterable[str]] = ...,
-        avatar_imgs: _Optional[_Iterable[str]] = ...,
-        business: _Optional[str] = ...,
-        user_message: _Optional[str] = ...,
-        max_turns: _Optional[int] = ...,
-        wait_for_completion: _Optional[bool] = ...,
-    ) -> None: ...
+    def __init__(self, envelope: _Optional[_Union[JobEnvelope, _Mapping]] = ..., product: _Optional[str] = ..., product_imgs: _Optional[_Iterable[str]] = ..., avatar_imgs: _Optional[_Iterable[str]] = ..., business: _Optional[str] = ..., user_message: _Optional[str] = ..., max_turns: _Optional[int] = ..., wait_for_completion: _Optional[bool] = ...) -> None: ...
 
 class JobSubmitResponse(_message.Message):
     __slots__ = ()
@@ -163,12 +129,7 @@ class EditVideoJobPayload(_message.Message):
     output_url: str
     progress: float
     progress_message: str
-    def __init__(
-        self,
-        output_url: _Optional[str] = ...,
-        progress: _Optional[float] = ...,
-        progress_message: _Optional[str] = ...,
-    ) -> None: ...
+    def __init__(self, output_url: _Optional[str] = ..., progress: _Optional[float] = ..., progress_message: _Optional[str] = ...) -> None: ...
 
 class AgentVideoJobPayload(_message.Message):
     __slots__ = ()
@@ -180,13 +141,7 @@ class AgentVideoJobPayload(_message.Message):
     summary: str
     progress: float
     progress_message: str
-    def __init__(
-        self,
-        video_url: _Optional[str] = ...,
-        summary: _Optional[str] = ...,
-        progress: _Optional[float] = ...,
-        progress_message: _Optional[str] = ...,
-    ) -> None: ...
+    def __init__(self, video_url: _Optional[str] = ..., summary: _Optional[str] = ..., progress: _Optional[float] = ..., progress_message: _Optional[str] = ...) -> None: ...
 
 class JobResultResponse(_message.Message):
     __slots__ = ()
@@ -202,12 +157,4 @@ class JobResultResponse(_message.Message):
     error_message: str
     edit_video: EditVideoJobPayload
     agent_video: AgentVideoJobPayload
-    def __init__(
-        self,
-        metadata: _Optional[_Union[JobMetadata, _Mapping]] = ...,
-        state: _Optional[_Union[JobState, str]] = ...,
-        error_code: _Optional[str] = ...,
-        error_message: _Optional[str] = ...,
-        edit_video: _Optional[_Union[EditVideoJobPayload, _Mapping]] = ...,
-        agent_video: _Optional[_Union[AgentVideoJobPayload, _Mapping]] = ...,
-    ) -> None: ...
+    def __init__(self, metadata: _Optional[_Union[JobMetadata, _Mapping]] = ..., state: _Optional[_Union[JobState, str]] = ..., error_code: _Optional[str] = ..., error_message: _Optional[str] = ..., edit_video: _Optional[_Union[EditVideoJobPayload, _Mapping]] = ..., agent_video: _Optional[_Union[AgentVideoJobPayload, _Mapping]] = ...) -> None: ...

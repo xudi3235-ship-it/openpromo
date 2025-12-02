@@ -133,6 +133,9 @@ importers:
       '@cloudflare/containers':
         specifier: ^0.0.30
         version: 0.0.30
+      '@cloudflare/sandbox':
+        specifier: ^0.6.0
+        version: 0.6.0(@openai/agents@0.3.3(@cfworker/json-schema@4.1.1)(ws@8.18.3)(zod@4.1.13))
       '@connectrpc/connect':
         specifier: ^2.1.1
         version: 2.1.1(@bufbuild/protobuf@2.10.1)
@@ -1479,6 +1482,14 @@ packages:
   '@cloudflare/kv-asset-handler@0.4.1':
     resolution: {integrity: sha512-Nu8ahitGFFJztxUml9oD/DLb7Z28C8cd8F46IVQ7y5Btz575pvMY8AqZsXkX7Gds29eCKdMgIHjIvzskHgPSFg==}
     engines: {node: '>=18.0.0'}
+
+  '@cloudflare/sandbox@0.6.0':
+    resolution: {integrity: sha512-rx/opgDSrXszk5rGqvjahwM6vjHF04KGdjNv7emjO+9S8QeOuB3Z0rKHsYjblPUkDRCZxNc5JIO4mqFs+DQPEw==}
+    peerDependencies:
+      '@openai/agents': ^0.3.3
+    peerDependenciesMeta:
+      '@openai/agents':
+        optional: true
 
   '@cloudflare/stream-react@1.9.3':
     resolution: {integrity: sha512-ocr7B+zHk/jq0r/wgtFeyoz7Hr+v3Qn0Ho6yUBkWT07ahr/0GU1dhliYJESwNXMuMYCU1sZ02sFH9pW5r1/BIA==}
@@ -9325,6 +9336,12 @@ snapshots:
   '@cloudflare/kv-asset-handler@0.4.1':
     dependencies:
       mime: 3.0.0
+
+  '@cloudflare/sandbox@0.6.0(@openai/agents@0.3.3(@cfworker/json-schema@4.1.1)(ws@8.18.3)(zod@4.1.13))':
+    dependencies:
+      '@cloudflare/containers': 0.0.30
+    optionalDependencies:
+      '@openai/agents': 0.3.3(@cfworker/json-schema@4.1.1)(ws@8.18.3)(zod@4.1.13)
 
   '@cloudflare/stream-react@1.9.3(react@19.2.0)':
     dependencies:

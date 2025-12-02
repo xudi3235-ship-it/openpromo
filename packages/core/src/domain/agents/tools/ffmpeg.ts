@@ -117,23 +117,7 @@ COMMON EXAMPLES:
    input_urls: ["<video1_url>", "<video2_url>"]
    command: ["-i", "{in0}", "-i", "{in1}", "-filter_complex", "[0:v][0:a][1:v][1:a]concat=n=2:v=1:a=1[outv][outa]", "-map", "[outv]", "-map", "[outa]", "{out}"]
 
-4) Overlay watermark:
-   input_urls: ["<video_url>", "<logo_url>"]
-   command: ["-i", "{in0}", "-i", "{in1}", "-filter_complex", "overlay=W-w-10:H-h-10", "{out}"]
-
-5) Extract audio:
-   input_urls: ["<video_url>"]
-   command: ["-i", "{in0}", "-vn", "-acodec", "libmp3lame", "{out}"]
-   output_filename: "audio.mp3"
-
-6) Add audio to video:
-   input_urls: ["<video_url>", "<audio_url>"]
-   command: ["-i", "{in0}", "-i", "{in1}", "-c:v", "copy", "-c:a", "aac", "-shortest", "{out}"]
-
-7) Pad to 9:16 vertical:
-   input_urls: ["<video_url>"]
-   command: ["-i", "{in0}", "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2", "{out}"]
-
+   ...
 Returns: { output_url: "<presigned_r2_url>" } on success.
 `;
 
