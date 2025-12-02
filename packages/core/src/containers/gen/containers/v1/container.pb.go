@@ -237,6 +237,135 @@ func (x *ResizeVideoResponse) GetR2Key() string {
 	return ""
 }
 
+type RunFfmpegRequest struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	InputUrls []string               `protobuf:"bytes,1,rep,name=input_urls,json=inputUrls,proto3" json:"input_urls,omitempty"`
+	// ffmpeg argv tokens; placeholders {in0}, {in1}, ... map to input files; {out} is replaced with the output path.
+	Command        []string `protobuf:"bytes,2,rep,name=command,proto3" json:"command,omitempty"`
+	OutputFilename string   `protobuf:"bytes,3,opt,name=output_filename,json=outputFilename,proto3" json:"output_filename,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *RunFfmpegRequest) Reset() {
+	*x = RunFfmpegRequest{}
+	mi := &file_containers_v1_container_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RunFfmpegRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RunFfmpegRequest) ProtoMessage() {}
+
+func (x *RunFfmpegRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_containers_v1_container_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RunFfmpegRequest.ProtoReflect.Descriptor instead.
+func (*RunFfmpegRequest) Descriptor() ([]byte, []int) {
+	return file_containers_v1_container_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *RunFfmpegRequest) GetInputUrls() []string {
+	if x != nil {
+		return x.InputUrls
+	}
+	return nil
+}
+
+func (x *RunFfmpegRequest) GetCommand() []string {
+	if x != nil {
+		return x.Command
+	}
+	return nil
+}
+
+func (x *RunFfmpegRequest) GetOutputFilename() string {
+	if x != nil {
+		return x.OutputFilename
+	}
+	return ""
+}
+
+type RunFfmpegResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	R2Url         string                 `protobuf:"bytes,1,opt,name=r2_url,json=r2Url,proto3" json:"r2_url,omitempty"`
+	R2Key         string                 `protobuf:"bytes,2,opt,name=r2_key,json=r2Key,proto3" json:"r2_key,omitempty"`
+	ContentType   string                 `protobuf:"bytes,3,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
+	Filename      string                 `protobuf:"bytes,4,opt,name=filename,proto3" json:"filename,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RunFfmpegResponse) Reset() {
+	*x = RunFfmpegResponse{}
+	mi := &file_containers_v1_container_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RunFfmpegResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RunFfmpegResponse) ProtoMessage() {}
+
+func (x *RunFfmpegResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_containers_v1_container_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RunFfmpegResponse.ProtoReflect.Descriptor instead.
+func (*RunFfmpegResponse) Descriptor() ([]byte, []int) {
+	return file_containers_v1_container_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *RunFfmpegResponse) GetR2Url() string {
+	if x != nil {
+		return x.R2Url
+	}
+	return ""
+}
+
+func (x *RunFfmpegResponse) GetR2Key() string {
+	if x != nil {
+		return x.R2Key
+	}
+	return ""
+}
+
+func (x *RunFfmpegResponse) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+func (x *RunFfmpegResponse) GetFilename() string {
+	if x != nil {
+		return x.Filename
+	}
+	return ""
+}
+
 var File_containers_v1_container_proto protoreflect.FileDescriptor
 
 const file_containers_v1_container_proto_rawDesc = "" +
@@ -255,10 +384,21 @@ const file_containers_v1_container_proto_rawDesc = "" +
 	"\fcontent_type\x18\x01 \x01(\tR\vcontentType\x12\x1a\n" +
 	"\bfilename\x18\x02 \x01(\tR\bfilename\x12\x15\n" +
 	"\x06r2_url\x18\x03 \x01(\tR\x05r2Url\x12\x15\n" +
-	"\x06r2_key\x18\x04 \x01(\tR\x05r2Key2\xa9\x01\n" +
+	"\x06r2_key\x18\x04 \x01(\tR\x05r2Key\"t\n" +
+	"\x10RunFfmpegRequest\x12\x1d\n" +
+	"\n" +
+	"input_urls\x18\x01 \x03(\tR\tinputUrls\x12\x18\n" +
+	"\acommand\x18\x02 \x03(\tR\acommand\x12'\n" +
+	"\x0foutput_filename\x18\x03 \x01(\tR\x0eoutputFilename\"\x80\x01\n" +
+	"\x11RunFfmpegResponse\x12\x15\n" +
+	"\x06r2_url\x18\x01 \x01(\tR\x05r2Url\x12\x15\n" +
+	"\x06r2_key\x18\x02 \x01(\tR\x05r2Key\x12!\n" +
+	"\fcontent_type\x18\x03 \x01(\tR\vcontentType\x12\x1a\n" +
+	"\bfilename\x18\x04 \x01(\tR\bfilename2\xf9\x01\n" +
 	"\x10ContainerService\x12?\n" +
 	"\x04Ping\x12\x1a.containers.v1.PingRequest\x1a\x1b.containers.v1.PingResponse\x12T\n" +
-	"\vResizeVideo\x12!.containers.v1.ResizeVideoRequest\x1a\".containers.v1.ResizeVideoResponseB%Z#main/gen/containers/v1;containersv1b\x06proto3"
+	"\vResizeVideo\x12!.containers.v1.ResizeVideoRequest\x1a\".containers.v1.ResizeVideoResponse\x12N\n" +
+	"\tRunFfmpeg\x12\x1f.containers.v1.RunFfmpegRequest\x1a .containers.v1.RunFfmpegResponseB%Z#main/gen/containers/v1;containersv1b\x06proto3"
 
 var (
 	file_containers_v1_container_proto_rawDescOnce sync.Once
@@ -272,20 +412,24 @@ func file_containers_v1_container_proto_rawDescGZIP() []byte {
 	return file_containers_v1_container_proto_rawDescData
 }
 
-var file_containers_v1_container_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_containers_v1_container_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_containers_v1_container_proto_goTypes = []any{
 	(*PingRequest)(nil),         // 0: containers.v1.PingRequest
 	(*PingResponse)(nil),        // 1: containers.v1.PingResponse
 	(*ResizeVideoRequest)(nil),  // 2: containers.v1.ResizeVideoRequest
 	(*ResizeVideoResponse)(nil), // 3: containers.v1.ResizeVideoResponse
+	(*RunFfmpegRequest)(nil),    // 4: containers.v1.RunFfmpegRequest
+	(*RunFfmpegResponse)(nil),   // 5: containers.v1.RunFfmpegResponse
 }
 var file_containers_v1_container_proto_depIdxs = []int32{
 	0, // 0: containers.v1.ContainerService.Ping:input_type -> containers.v1.PingRequest
 	2, // 1: containers.v1.ContainerService.ResizeVideo:input_type -> containers.v1.ResizeVideoRequest
-	1, // 2: containers.v1.ContainerService.Ping:output_type -> containers.v1.PingResponse
-	3, // 3: containers.v1.ContainerService.ResizeVideo:output_type -> containers.v1.ResizeVideoResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	4, // 2: containers.v1.ContainerService.RunFfmpeg:input_type -> containers.v1.RunFfmpegRequest
+	1, // 3: containers.v1.ContainerService.Ping:output_type -> containers.v1.PingResponse
+	3, // 4: containers.v1.ContainerService.ResizeVideo:output_type -> containers.v1.ResizeVideoResponse
+	5, // 5: containers.v1.ContainerService.RunFfmpeg:output_type -> containers.v1.RunFfmpegResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -302,7 +446,7 @@ func file_containers_v1_container_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_containers_v1_container_proto_rawDesc), len(file_containers_v1_container_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

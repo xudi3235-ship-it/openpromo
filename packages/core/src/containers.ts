@@ -75,4 +75,28 @@ export class ContainerBackend extends Container {
       height,
     });
   }
+
+  async runFfmpeg({
+    inputUrls,
+    command,
+    outputFilename,
+  }: {
+    inputUrls: string[];
+    command: string[];
+    outputFilename?: string | null;
+  }): Promise<{
+    r2Url: string;
+    r2Key?: string;
+    contentType?: string;
+    filename?: string;
+  }> {
+    const client = await this.getClient();
+    const resp = await client.runFfmpeg({
+      inputUrls,
+      command,
+      outputFilename: outputFilename ?? undefined,
+    });
+
+    return resp;
+  }
 }

@@ -20,7 +20,7 @@ import {
 export const file_containers_v1_container: GenFile =
   /*@__PURE__*/
   fileDesc(
-    "Ch1jb250YWluZXJzL3YxL2NvbnRhaW5lci5wcm90bxINY29udGFpbmVycy52MSINCgtQaW5nUmVxdWVzdCI0CgxQaW5nUmVzcG9uc2USDwoHbWVzc2FnZRgBIAEoCRITCgtpbnN0YW5jZV9pZBgCIAEoCSJGChJSZXNpemVWaWRlb1JlcXVlc3QSEQoJdmlkZW9fdXJsGAEgASgJEg0KBXdpZHRoGAIgASgFEg4KBmhlaWdodBgDIAEoBSJdChNSZXNpemVWaWRlb1Jlc3BvbnNlEhQKDGNvbnRlbnRfdHlwZRgBIAEoCRIQCghmaWxlbmFtZRgCIAEoCRIOCgZyMl91cmwYAyABKAkSDgoGcjJfa2V5GAQgASgJMqkBChBDb250YWluZXJTZXJ2aWNlEj8KBFBpbmcSGi5jb250YWluZXJzLnYxLlBpbmdSZXF1ZXN0GhsuY29udGFpbmVycy52MS5QaW5nUmVzcG9uc2USVAoLUmVzaXplVmlkZW8SIS5jb250YWluZXJzLnYxLlJlc2l6ZVZpZGVvUmVxdWVzdBoiLmNvbnRhaW5lcnMudjEuUmVzaXplVmlkZW9SZXNwb25zZUIlWiNtYWluL2dlbi9jb250YWluZXJzL3YxO2NvbnRhaW5lcnN2MWIGcHJvdG8z",
+    "Ch1jb250YWluZXJzL3YxL2NvbnRhaW5lci5wcm90bxINY29udGFpbmVycy52MSINCgtQaW5nUmVxdWVzdCI0CgxQaW5nUmVzcG9uc2USDwoHbWVzc2FnZRgBIAEoCRITCgtpbnN0YW5jZV9pZBgCIAEoCSJGChJSZXNpemVWaWRlb1JlcXVlc3QSEQoJdmlkZW9fdXJsGAEgASgJEg0KBXdpZHRoGAIgASgFEg4KBmhlaWdodBgDIAEoBSJdChNSZXNpemVWaWRlb1Jlc3BvbnNlEhQKDGNvbnRlbnRfdHlwZRgBIAEoCRIQCghmaWxlbmFtZRgCIAEoCRIOCgZyMl91cmwYAyABKAkSDgoGcjJfa2V5GAQgASgJIlAKEFJ1bkZmbXBlZ1JlcXVlc3QSEgoKaW5wdXRfdXJscxgBIAMoCRIPCgdjb21tYW5kGAIgAygJEhcKD291dHB1dF9maWxlbmFtZRgDIAEoCSJbChFSdW5GZm1wZWdSZXNwb25zZRIOCgZyMl91cmwYASABKAkSDgoGcjJfa2V5GAIgASgJEhQKDGNvbnRlbnRfdHlwZRgDIAEoCRIQCghmaWxlbmFtZRgEIAEoCTL5AQoQQ29udGFpbmVyU2VydmljZRI/CgRQaW5nEhouY29udGFpbmVycy52MS5QaW5nUmVxdWVzdBobLmNvbnRhaW5lcnMudjEuUGluZ1Jlc3BvbnNlElQKC1Jlc2l6ZVZpZGVvEiEuY29udGFpbmVycy52MS5SZXNpemVWaWRlb1JlcXVlc3QaIi5jb250YWluZXJzLnYxLlJlc2l6ZVZpZGVvUmVzcG9uc2USTgoJUnVuRmZtcGVnEh8uY29udGFpbmVycy52MS5SdW5GZm1wZWdSZXF1ZXN0GiAuY29udGFpbmVycy52MS5SdW5GZm1wZWdSZXNwb25zZUIlWiNtYWluL2dlbi9jb250YWluZXJzL3YxO2NvbnRhaW5lcnN2MWIGcHJvdG8z",
   );
 
 /**
@@ -122,6 +122,69 @@ export const ResizeVideoResponseSchema: GenMessage<ResizeVideoResponse> =
   messageDesc(file_containers_v1_container, 3);
 
 /**
+ * @generated from message containers.v1.RunFfmpegRequest
+ */
+export type RunFfmpegRequest = Message<"containers.v1.RunFfmpegRequest"> & {
+  /**
+   * @generated from field: repeated string input_urls = 1;
+   */
+  inputUrls: string[];
+
+  /**
+   * ffmpeg argv tokens; placeholders {in0}, {in1}, ... map to input files; {out} is replaced with the output path.
+   *
+   * @generated from field: repeated string command = 2;
+   */
+  command: string[];
+
+  /**
+   * @generated from field: string output_filename = 3;
+   */
+  outputFilename: string;
+};
+
+/**
+ * Describes the message containers.v1.RunFfmpegRequest.
+ * Use `create(RunFfmpegRequestSchema)` to create a new message.
+ */
+export const RunFfmpegRequestSchema: GenMessage<RunFfmpegRequest> =
+  /*@__PURE__*/
+  messageDesc(file_containers_v1_container, 4);
+
+/**
+ * @generated from message containers.v1.RunFfmpegResponse
+ */
+export type RunFfmpegResponse = Message<"containers.v1.RunFfmpegResponse"> & {
+  /**
+   * @generated from field: string r2_url = 1;
+   */
+  r2Url: string;
+
+  /**
+   * @generated from field: string r2_key = 2;
+   */
+  r2Key: string;
+
+  /**
+   * @generated from field: string content_type = 3;
+   */
+  contentType: string;
+
+  /**
+   * @generated from field: string filename = 4;
+   */
+  filename: string;
+};
+
+/**
+ * Describes the message containers.v1.RunFfmpegResponse.
+ * Use `create(RunFfmpegResponseSchema)` to create a new message.
+ */
+export const RunFfmpegResponseSchema: GenMessage<RunFfmpegResponse> =
+  /*@__PURE__*/
+  messageDesc(file_containers_v1_container, 5);
+
+/**
  * ContainerService exposes RPCs from the Worker to the container runtime.
  *
  * @generated from service containers.v1.ContainerService
@@ -146,5 +209,15 @@ export const ContainerService: GenService<{
     methodKind: "unary";
     input: typeof ResizeVideoRequestSchema;
     output: typeof ResizeVideoResponseSchema;
+  };
+  /**
+   * Run an arbitrary ffmpeg command against downloaded inputs, upload output to R2, and return a presigned URL.
+   *
+   * @generated from rpc containers.v1.ContainerService.RunFfmpeg
+   */
+  runFfmpeg: {
+    methodKind: "unary";
+    input: typeof RunFfmpegRequestSchema;
+    output: typeof RunFfmpegResponseSchema;
   };
 }> = /*@__PURE__*/ serviceDesc(file_containers_v1_container, 0);

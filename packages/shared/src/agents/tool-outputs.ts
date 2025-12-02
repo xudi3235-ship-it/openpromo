@@ -206,7 +206,14 @@ export const EchoToolOutput = makeToolOutput(
 
 export const RunFfmpegToolOutput = makeToolOutput(
   "run_ffmpeg",
-  z.object({ output_url: z.string().url() }),
+  z.object({
+    output_url: z.string().url(),
+    key: z.string().optional(),
+    r2_url: z.string().url().optional(), // proto field name
+    r2_key: z.string().optional(),
+    filename: z.string().optional(),
+    content_type: z.string().optional(),
+  }),
 );
 
 export const ImageEvalToolOutput = makeToolOutput(

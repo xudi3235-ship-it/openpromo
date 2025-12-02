@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"connectrpc.com/connect"
 	containersv1 "main/gen/containers/v1"
@@ -54,6 +55,33 @@ func (containerServiceServer) ResizeVideo(ctx context.Context, req *connect.Requ
 		R2Key:       uploadRes.Key,
 	})
 
+	return resp, nil
+}
+
+func (containerServiceServer) RunFfmpeg(ctx context.Context, req *connect.Request[containersv1.RunFfmpegRequest]) (*connect.Response[containersv1.RunFfmpegResponse], error) {
+	result, err := runFfmpeg(ctx, req.Msg.GetInputUrls(), req.Msg.GetCommand(), req.Msg.GetOutputFilename())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("ffmpeg failed: %w", err))
+	}
+
+	uploader, err := newR2Uploader(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 init failed: %w", err))
+	}
+
+	key := filepath.Join("ffmpeg", buildR2Key(result.filename))
+	uploadRes, err := uploader.uploadFile(ctx, result.outputPath, key, result.contentType)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 upload failed: %w", err))
+	}
+	_ = os.Remove(result.outputPath)
+
+	resp := connect.NewResponse(&containersv1.RunFfmpegResponse{
+		R2Url:       sanitizeURL(uploadRes.URL),
+		R2Key:       uploadRes.Key,
+		ContentType: result.contentType,
+		Filename:    result.filename,
+	})
 	return resp, nil
 }
 

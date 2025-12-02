@@ -38,6 +38,9 @@ const (
 	// ContainerServiceResizeVideoProcedure is the fully-qualified name of the ContainerService's
 	// ResizeVideo RPC.
 	ContainerServiceResizeVideoProcedure = "/containers.v1.ContainerService/ResizeVideo"
+	// ContainerServiceRunFfmpegProcedure is the fully-qualified name of the ContainerService's
+	// RunFfmpeg RPC.
+	ContainerServiceRunFfmpegProcedure = "/containers.v1.ContainerService/RunFfmpeg"
 )
 
 // ContainerServiceClient is a client for the containers.v1.ContainerService service.
@@ -46,6 +49,8 @@ type ContainerServiceClient interface {
 	Ping(context.Context, *connect.Request[v1.PingRequest]) (*connect.Response[v1.PingResponse], error)
 	// Resize a video and return the processed bytes.
 	ResizeVideo(context.Context, *connect.Request[v1.ResizeVideoRequest]) (*connect.Response[v1.ResizeVideoResponse], error)
+	// Run an arbitrary ffmpeg command against downloaded inputs, upload output to R2, and return a presigned URL.
+	RunFfmpeg(context.Context, *connect.Request[v1.RunFfmpegRequest]) (*connect.Response[v1.RunFfmpegResponse], error)
 }
 
 // NewContainerServiceClient constructs a client for the containers.v1.ContainerService service. By
@@ -71,6 +76,12 @@ func NewContainerServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(containerServiceMethods.ByName("ResizeVideo")),
 			connect.WithClientOptions(opts...),
 		),
+		runFfmpeg: connect.NewClient[v1.RunFfmpegRequest, v1.RunFfmpegResponse](
+			httpClient,
+			baseURL+ContainerServiceRunFfmpegProcedure,
+			connect.WithSchema(containerServiceMethods.ByName("RunFfmpeg")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -78,6 +89,7 @@ func NewContainerServiceClient(httpClient connect.HTTPClient, baseURL string, op
 type containerServiceClient struct {
 	ping        *connect.Client[v1.PingRequest, v1.PingResponse]
 	resizeVideo *connect.Client[v1.ResizeVideoRequest, v1.ResizeVideoResponse]
+	runFfmpeg   *connect.Client[v1.RunFfmpegRequest, v1.RunFfmpegResponse]
 }
 
 // Ping calls containers.v1.ContainerService.Ping.
@@ -90,12 +102,19 @@ func (c *containerServiceClient) ResizeVideo(ctx context.Context, req *connect.R
 	return c.resizeVideo.CallUnary(ctx, req)
 }
 
+// RunFfmpeg calls containers.v1.ContainerService.RunFfmpeg.
+func (c *containerServiceClient) RunFfmpeg(ctx context.Context, req *connect.Request[v1.RunFfmpegRequest]) (*connect.Response[v1.RunFfmpegResponse], error) {
+	return c.runFfmpeg.CallUnary(ctx, req)
+}
+
 // ContainerServiceHandler is an implementation of the containers.v1.ContainerService service.
 type ContainerServiceHandler interface {
 	// Simple health check.
 	Ping(context.Context, *connect.Request[v1.PingRequest]) (*connect.Response[v1.PingResponse], error)
 	// Resize a video and return the processed bytes.
 	ResizeVideo(context.Context, *connect.Request[v1.ResizeVideoRequest]) (*connect.Response[v1.ResizeVideoResponse], error)
+	// Run an arbitrary ffmpeg command against downloaded inputs, upload output to R2, and return a presigned URL.
+	RunFfmpeg(context.Context, *connect.Request[v1.RunFfmpegRequest]) (*connect.Response[v1.RunFfmpegResponse], error)
 }
 
 // NewContainerServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -117,12 +136,20 @@ func NewContainerServiceHandler(svc ContainerServiceHandler, opts ...connect.Han
 		connect.WithSchema(containerServiceMethods.ByName("ResizeVideo")),
 		connect.WithHandlerOptions(opts...),
 	)
+	containerServiceRunFfmpegHandler := connect.NewUnaryHandler(
+		ContainerServiceRunFfmpegProcedure,
+		svc.RunFfmpeg,
+		connect.WithSchema(containerServiceMethods.ByName("RunFfmpeg")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/containers.v1.ContainerService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ContainerServicePingProcedure:
 			containerServicePingHandler.ServeHTTP(w, r)
 		case ContainerServiceResizeVideoProcedure:
 			containerServiceResizeVideoHandler.ServeHTTP(w, r)
+		case ContainerServiceRunFfmpegProcedure:
+			containerServiceRunFfmpegHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -138,4 +165,8 @@ func (UnimplementedContainerServiceHandler) Ping(context.Context, *connect.Reque
 
 func (UnimplementedContainerServiceHandler) ResizeVideo(context.Context, *connect.Request[v1.ResizeVideoRequest]) (*connect.Response[v1.ResizeVideoResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("containers.v1.ContainerService.ResizeVideo is not implemented"))
+}
+
+func (UnimplementedContainerServiceHandler) RunFfmpeg(context.Context, *connect.Request[v1.RunFfmpegRequest]) (*connect.Response[v1.RunFfmpegResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("containers.v1.ContainerService.RunFfmpeg is not implemented"))
 }

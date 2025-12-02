@@ -11,6 +11,9 @@ service ContainerService {
 
   // Resize a video and return the processed bytes.
   rpc ResizeVideo(ResizeVideoRequest) returns (ResizeVideoResponse);
+
+  // Run an arbitrary ffmpeg command against downloaded inputs, upload output to R2, and return a presigned URL.
+  rpc RunFfmpeg(RunFfmpegRequest) returns (RunFfmpegResponse);
 }
 
 message PingRequest {}
@@ -31,4 +34,18 @@ message ResizeVideoResponse {
   string filename = 2;
   string r2_url = 3;
   string r2_key = 4;
+}
+
+message RunFfmpegRequest {
+  repeated string input_urls = 1;
+  // ffmpeg argv tokens; placeholders {in0}, {in1}, ... map to input files; {out} is replaced with the output path.
+  repeated string command = 2;
+  string output_filename = 3;
+}
+
+message RunFfmpegResponse {
+  string r2_url = 1;
+  string r2_key = 2;
+  string content_type = 3;
+  string filename = 4;
 }
