@@ -1,3 +1,4 @@
+import { env as cfEnv } from "cloudflare:workers";
 import type { ContainerBackend } from "@core/containers";
 import type { VideoGenAgent } from "@core/domain/agents/video-gen-agent";
 import type { ContentBackfillWorkflowParams } from "@core/domain/content/workflows/content-backfill-workflow";
@@ -53,13 +54,20 @@ export type ApiEnv = {
 
 export type Bindings = ApiEnv["Bindings"];
 
+/**
+ * async local storage for worker bindings, includes env var and
+ * other service bindings, e.g. DO, KV, R2, etc.
+ */
 export namespace Binding {
   export const Context = createContext<Bindings>();
   export function use(): Bindings {
     try {
       return Context.use();
     } catch {
-      throw new Error("No runtime bindings found in context");
+      // provide from worker runtime global env
+      // this should always exist
+      console.warn("[Binding] Context not found, falling back to global env");
+      return provide(cfEnv as unknown as Bindings, () => use());
     }
   }
   export function provide<
