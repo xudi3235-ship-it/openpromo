@@ -39,6 +39,7 @@ const Veo31BaseVideoOutput = z.object({
   videoUrl: z.string().url(),
   outputPath: z.string(),
   taskId: z.string(),
+  durationMs: z.number().optional(),
 });
 
 const Veo31PromptVideoOutput = Veo31BaseVideoOutput.extend({

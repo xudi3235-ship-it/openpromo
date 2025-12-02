@@ -40,6 +40,11 @@ export namespace VideoGenRealtime {
     }),
   });
 
+  export const ResetState = base.extend({
+    type: z.literal("reset_state"),
+    data: z.object({}).strict(),
+  });
+
   // -- Application State --
   const serverAppState = z.object({
     status: PipelineStatus,
@@ -114,7 +119,7 @@ export namespace VideoGenRealtime {
     }),
   });
 
-  const ClientEvents = z.union([SetInput, StartPipeline]);
+  const ClientEvents = z.union([SetInput, StartPipeline, ResetState]);
 
   const ServerEvents = z.union([SyncState, StatusUpdate, VideoGenerated, Echo]);
 

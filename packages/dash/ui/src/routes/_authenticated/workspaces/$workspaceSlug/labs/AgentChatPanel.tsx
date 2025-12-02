@@ -148,6 +148,11 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
     setInputForm(defaultInputForm);
   };
 
+  const handleHardReset = () => {
+    clearHistory();
+    sendEvent("reset_state", {});
+  };
+
   return (
     <div className="flex flex-col gap-4 lg:flex-row">
       <div className="space-y-4 lg:w-2/3">
@@ -221,6 +226,14 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
             </Button>
             <Button onClick={handleEcho} variant="outline" size="sm">
               Test Echo
+            </Button>
+            <Button
+              onClick={handleHardReset}
+              variant="destructive"
+              size="sm"
+              disabled={!isConnected}
+            >
+              Hard Reset
             </Button>
           </div>
 

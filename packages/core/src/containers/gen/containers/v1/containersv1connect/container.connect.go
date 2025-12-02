@@ -41,6 +41,9 @@ const (
 	// ContainerServiceRunFfmpegProcedure is the fully-qualified name of the ContainerService's
 	// RunFfmpeg RPC.
 	ContainerServiceRunFfmpegProcedure = "/containers.v1.ContainerService/RunFfmpeg"
+	// ContainerServiceProbeMediaProcedure is the fully-qualified name of the ContainerService's
+	// ProbeMedia RPC.
+	ContainerServiceProbeMediaProcedure = "/containers.v1.ContainerService/ProbeMedia"
 )
 
 // ContainerServiceClient is a client for the containers.v1.ContainerService service.
@@ -51,6 +54,8 @@ type ContainerServiceClient interface {
 	ResizeVideo(context.Context, *connect.Request[v1.ResizeVideoRequest]) (*connect.Response[v1.ResizeVideoResponse], error)
 	// Run an arbitrary ffmpeg command against downloaded inputs, upload output to R2, and return a presigned URL.
 	RunFfmpeg(context.Context, *connect.Request[v1.RunFfmpegRequest]) (*connect.Response[v1.RunFfmpegResponse], error)
+	// Probe media metadata (duration, dimensions) using ffprobe.
+	ProbeMedia(context.Context, *connect.Request[v1.ProbeMediaRequest]) (*connect.Response[v1.ProbeMediaResponse], error)
 }
 
 // NewContainerServiceClient constructs a client for the containers.v1.ContainerService service. By
@@ -82,6 +87,12 @@ func NewContainerServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(containerServiceMethods.ByName("RunFfmpeg")),
 			connect.WithClientOptions(opts...),
 		),
+		probeMedia: connect.NewClient[v1.ProbeMediaRequest, v1.ProbeMediaResponse](
+			httpClient,
+			baseURL+ContainerServiceProbeMediaProcedure,
+			connect.WithSchema(containerServiceMethods.ByName("ProbeMedia")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -90,6 +101,7 @@ type containerServiceClient struct {
 	ping        *connect.Client[v1.PingRequest, v1.PingResponse]
 	resizeVideo *connect.Client[v1.ResizeVideoRequest, v1.ResizeVideoResponse]
 	runFfmpeg   *connect.Client[v1.RunFfmpegRequest, v1.RunFfmpegResponse]
+	probeMedia  *connect.Client[v1.ProbeMediaRequest, v1.ProbeMediaResponse]
 }
 
 // Ping calls containers.v1.ContainerService.Ping.
@@ -107,6 +119,11 @@ func (c *containerServiceClient) RunFfmpeg(ctx context.Context, req *connect.Req
 	return c.runFfmpeg.CallUnary(ctx, req)
 }
 
+// ProbeMedia calls containers.v1.ContainerService.ProbeMedia.
+func (c *containerServiceClient) ProbeMedia(ctx context.Context, req *connect.Request[v1.ProbeMediaRequest]) (*connect.Response[v1.ProbeMediaResponse], error) {
+	return c.probeMedia.CallUnary(ctx, req)
+}
+
 // ContainerServiceHandler is an implementation of the containers.v1.ContainerService service.
 type ContainerServiceHandler interface {
 	// Simple health check.
@@ -115,6 +132,8 @@ type ContainerServiceHandler interface {
 	ResizeVideo(context.Context, *connect.Request[v1.ResizeVideoRequest]) (*connect.Response[v1.ResizeVideoResponse], error)
 	// Run an arbitrary ffmpeg command against downloaded inputs, upload output to R2, and return a presigned URL.
 	RunFfmpeg(context.Context, *connect.Request[v1.RunFfmpegRequest]) (*connect.Response[v1.RunFfmpegResponse], error)
+	// Probe media metadata (duration, dimensions) using ffprobe.
+	ProbeMedia(context.Context, *connect.Request[v1.ProbeMediaRequest]) (*connect.Response[v1.ProbeMediaResponse], error)
 }
 
 // NewContainerServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -142,6 +161,12 @@ func NewContainerServiceHandler(svc ContainerServiceHandler, opts ...connect.Han
 		connect.WithSchema(containerServiceMethods.ByName("RunFfmpeg")),
 		connect.WithHandlerOptions(opts...),
 	)
+	containerServiceProbeMediaHandler := connect.NewUnaryHandler(
+		ContainerServiceProbeMediaProcedure,
+		svc.ProbeMedia,
+		connect.WithSchema(containerServiceMethods.ByName("ProbeMedia")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/containers.v1.ContainerService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ContainerServicePingProcedure:
@@ -150,6 +175,8 @@ func NewContainerServiceHandler(svc ContainerServiceHandler, opts ...connect.Han
 			containerServiceResizeVideoHandler.ServeHTTP(w, r)
 		case ContainerServiceRunFfmpegProcedure:
 			containerServiceRunFfmpegHandler.ServeHTTP(w, r)
+		case ContainerServiceProbeMediaProcedure:
+			containerServiceProbeMediaHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -169,4 +196,8 @@ func (UnimplementedContainerServiceHandler) ResizeVideo(context.Context, *connec
 
 func (UnimplementedContainerServiceHandler) RunFfmpeg(context.Context, *connect.Request[v1.RunFfmpegRequest]) (*connect.Response[v1.RunFfmpegResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("containers.v1.ContainerService.RunFfmpeg is not implemented"))
+}
+
+func (UnimplementedContainerServiceHandler) ProbeMedia(context.Context, *connect.Request[v1.ProbeMediaRequest]) (*connect.Response[v1.ProbeMediaResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("containers.v1.ContainerService.ProbeMedia is not implemented"))
 }

@@ -85,6 +85,21 @@ func (containerServiceServer) RunFfmpeg(ctx context.Context, req *connect.Reques
 	return resp, nil
 }
 
+func (containerServiceServer) ProbeMedia(ctx context.Context, req *connect.Request[containersv1.ProbeMediaRequest]) (*connect.Response[containersv1.ProbeMediaResponse], error) {
+	probe, err := probeMedia(ctx, req.Msg.GetUrl())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("probe failed: %w", err))
+	}
+
+	resp := connect.NewResponse(&containersv1.ProbeMediaResponse{
+		DurationMs: probe.DurationMs,
+		Width:      probe.Width,
+		Height:     probe.Height,
+		Format:     probe.Format,
+	})
+	return resp, nil
+}
+
 func newConnectHandler() (string, http.Handler) {
 	return containersv1connect.NewContainerServiceHandler(containerServiceServer{})
 }

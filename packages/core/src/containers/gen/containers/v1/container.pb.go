@@ -366,6 +366,120 @@ func (x *RunFfmpegResponse) GetFilename() string {
 	return ""
 }
 
+type ProbeMediaRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProbeMediaRequest) Reset() {
+	*x = ProbeMediaRequest{}
+	mi := &file_containers_v1_container_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProbeMediaRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProbeMediaRequest) ProtoMessage() {}
+
+func (x *ProbeMediaRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_containers_v1_container_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProbeMediaRequest.ProtoReflect.Descriptor instead.
+func (*ProbeMediaRequest) Descriptor() ([]byte, []int) {
+	return file_containers_v1_container_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ProbeMediaRequest) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+type ProbeMediaResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Duration in milliseconds, if available.
+	DurationMs uint64 `protobuf:"varint,1,opt,name=duration_ms,json=durationMs,proto3" json:"duration_ms,omitempty"`
+	// First video stream width/height if present.
+	Width         uint32 `protobuf:"varint,2,opt,name=width,proto3" json:"width,omitempty"`
+	Height        uint32 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
+	Format        string `protobuf:"bytes,4,opt,name=format,proto3" json:"format,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProbeMediaResponse) Reset() {
+	*x = ProbeMediaResponse{}
+	mi := &file_containers_v1_container_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProbeMediaResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProbeMediaResponse) ProtoMessage() {}
+
+func (x *ProbeMediaResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_containers_v1_container_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProbeMediaResponse.ProtoReflect.Descriptor instead.
+func (*ProbeMediaResponse) Descriptor() ([]byte, []int) {
+	return file_containers_v1_container_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ProbeMediaResponse) GetDurationMs() uint64 {
+	if x != nil {
+		return x.DurationMs
+	}
+	return 0
+}
+
+func (x *ProbeMediaResponse) GetWidth() uint32 {
+	if x != nil {
+		return x.Width
+	}
+	return 0
+}
+
+func (x *ProbeMediaResponse) GetHeight() uint32 {
+	if x != nil {
+		return x.Height
+	}
+	return 0
+}
+
+func (x *ProbeMediaResponse) GetFormat() string {
+	if x != nil {
+		return x.Format
+	}
+	return ""
+}
+
 var File_containers_v1_container_proto protoreflect.FileDescriptor
 
 const file_containers_v1_container_proto_rawDesc = "" +
@@ -394,11 +508,21 @@ const file_containers_v1_container_proto_rawDesc = "" +
 	"\x06r2_url\x18\x01 \x01(\tR\x05r2Url\x12\x15\n" +
 	"\x06r2_key\x18\x02 \x01(\tR\x05r2Key\x12!\n" +
 	"\fcontent_type\x18\x03 \x01(\tR\vcontentType\x12\x1a\n" +
-	"\bfilename\x18\x04 \x01(\tR\bfilename2\xf9\x01\n" +
+	"\bfilename\x18\x04 \x01(\tR\bfilename\"%\n" +
+	"\x11ProbeMediaRequest\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\"{\n" +
+	"\x12ProbeMediaResponse\x12\x1f\n" +
+	"\vduration_ms\x18\x01 \x01(\x04R\n" +
+	"durationMs\x12\x14\n" +
+	"\x05width\x18\x02 \x01(\rR\x05width\x12\x16\n" +
+	"\x06height\x18\x03 \x01(\rR\x06height\x12\x16\n" +
+	"\x06format\x18\x04 \x01(\tR\x06format2\xcc\x02\n" +
 	"\x10ContainerService\x12?\n" +
 	"\x04Ping\x12\x1a.containers.v1.PingRequest\x1a\x1b.containers.v1.PingResponse\x12T\n" +
 	"\vResizeVideo\x12!.containers.v1.ResizeVideoRequest\x1a\".containers.v1.ResizeVideoResponse\x12N\n" +
-	"\tRunFfmpeg\x12\x1f.containers.v1.RunFfmpegRequest\x1a .containers.v1.RunFfmpegResponseB%Z#main/gen/containers/v1;containersv1b\x06proto3"
+	"\tRunFfmpeg\x12\x1f.containers.v1.RunFfmpegRequest\x1a .containers.v1.RunFfmpegResponse\x12Q\n" +
+	"\n" +
+	"ProbeMedia\x12 .containers.v1.ProbeMediaRequest\x1a!.containers.v1.ProbeMediaResponseB%Z#main/gen/containers/v1;containersv1b\x06proto3"
 
 var (
 	file_containers_v1_container_proto_rawDescOnce sync.Once
@@ -412,7 +536,7 @@ func file_containers_v1_container_proto_rawDescGZIP() []byte {
 	return file_containers_v1_container_proto_rawDescData
 }
 
-var file_containers_v1_container_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_containers_v1_container_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_containers_v1_container_proto_goTypes = []any{
 	(*PingRequest)(nil),         // 0: containers.v1.PingRequest
 	(*PingResponse)(nil),        // 1: containers.v1.PingResponse
@@ -420,16 +544,20 @@ var file_containers_v1_container_proto_goTypes = []any{
 	(*ResizeVideoResponse)(nil), // 3: containers.v1.ResizeVideoResponse
 	(*RunFfmpegRequest)(nil),    // 4: containers.v1.RunFfmpegRequest
 	(*RunFfmpegResponse)(nil),   // 5: containers.v1.RunFfmpegResponse
+	(*ProbeMediaRequest)(nil),   // 6: containers.v1.ProbeMediaRequest
+	(*ProbeMediaResponse)(nil),  // 7: containers.v1.ProbeMediaResponse
 }
 var file_containers_v1_container_proto_depIdxs = []int32{
 	0, // 0: containers.v1.ContainerService.Ping:input_type -> containers.v1.PingRequest
 	2, // 1: containers.v1.ContainerService.ResizeVideo:input_type -> containers.v1.ResizeVideoRequest
 	4, // 2: containers.v1.ContainerService.RunFfmpeg:input_type -> containers.v1.RunFfmpegRequest
-	1, // 3: containers.v1.ContainerService.Ping:output_type -> containers.v1.PingResponse
-	3, // 4: containers.v1.ContainerService.ResizeVideo:output_type -> containers.v1.ResizeVideoResponse
-	5, // 5: containers.v1.ContainerService.RunFfmpeg:output_type -> containers.v1.RunFfmpegResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	6, // 3: containers.v1.ContainerService.ProbeMedia:input_type -> containers.v1.ProbeMediaRequest
+	1, // 4: containers.v1.ContainerService.Ping:output_type -> containers.v1.PingResponse
+	3, // 5: containers.v1.ContainerService.ResizeVideo:output_type -> containers.v1.ResizeVideoResponse
+	5, // 6: containers.v1.ContainerService.RunFfmpeg:output_type -> containers.v1.RunFfmpegResponse
+	7, // 7: containers.v1.ContainerService.ProbeMedia:output_type -> containers.v1.ProbeMediaResponse
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -446,7 +574,7 @@ func file_containers_v1_container_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_containers_v1_container_proto_rawDesc), len(file_containers_v1_container_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

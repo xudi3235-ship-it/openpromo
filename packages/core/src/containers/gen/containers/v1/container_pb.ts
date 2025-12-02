@@ -20,7 +20,7 @@ import {
 export const file_containers_v1_container: GenFile =
   /*@__PURE__*/
   fileDesc(
-    "Ch1jb250YWluZXJzL3YxL2NvbnRhaW5lci5wcm90bxINY29udGFpbmVycy52MSINCgtQaW5nUmVxdWVzdCI0CgxQaW5nUmVzcG9uc2USDwoHbWVzc2FnZRgBIAEoCRITCgtpbnN0YW5jZV9pZBgCIAEoCSJGChJSZXNpemVWaWRlb1JlcXVlc3QSEQoJdmlkZW9fdXJsGAEgASgJEg0KBXdpZHRoGAIgASgFEg4KBmhlaWdodBgDIAEoBSJdChNSZXNpemVWaWRlb1Jlc3BvbnNlEhQKDGNvbnRlbnRfdHlwZRgBIAEoCRIQCghmaWxlbmFtZRgCIAEoCRIOCgZyMl91cmwYAyABKAkSDgoGcjJfa2V5GAQgASgJIlAKEFJ1bkZmbXBlZ1JlcXVlc3QSEgoKaW5wdXRfdXJscxgBIAMoCRIPCgdjb21tYW5kGAIgAygJEhcKD291dHB1dF9maWxlbmFtZRgDIAEoCSJbChFSdW5GZm1wZWdSZXNwb25zZRIOCgZyMl91cmwYASABKAkSDgoGcjJfa2V5GAIgASgJEhQKDGNvbnRlbnRfdHlwZRgDIAEoCRIQCghmaWxlbmFtZRgEIAEoCTL5AQoQQ29udGFpbmVyU2VydmljZRI/CgRQaW5nEhouY29udGFpbmVycy52MS5QaW5nUmVxdWVzdBobLmNvbnRhaW5lcnMudjEuUGluZ1Jlc3BvbnNlElQKC1Jlc2l6ZVZpZGVvEiEuY29udGFpbmVycy52MS5SZXNpemVWaWRlb1JlcXVlc3QaIi5jb250YWluZXJzLnYxLlJlc2l6ZVZpZGVvUmVzcG9uc2USTgoJUnVuRmZtcGVnEh8uY29udGFpbmVycy52MS5SdW5GZm1wZWdSZXF1ZXN0GiAuY29udGFpbmVycy52MS5SdW5GZm1wZWdSZXNwb25zZUIlWiNtYWluL2dlbi9jb250YWluZXJzL3YxO2NvbnRhaW5lcnN2MWIGcHJvdG8z",
+    "Ch1jb250YWluZXJzL3YxL2NvbnRhaW5lci5wcm90bxINY29udGFpbmVycy52MSINCgtQaW5nUmVxdWVzdCI0CgxQaW5nUmVzcG9uc2USDwoHbWVzc2FnZRgBIAEoCRITCgtpbnN0YW5jZV9pZBgCIAEoCSJGChJSZXNpemVWaWRlb1JlcXVlc3QSEQoJdmlkZW9fdXJsGAEgASgJEg0KBXdpZHRoGAIgASgFEg4KBmhlaWdodBgDIAEoBSJdChNSZXNpemVWaWRlb1Jlc3BvbnNlEhQKDGNvbnRlbnRfdHlwZRgBIAEoCRIQCghmaWxlbmFtZRgCIAEoCRIOCgZyMl91cmwYAyABKAkSDgoGcjJfa2V5GAQgASgJIlAKEFJ1bkZmbXBlZ1JlcXVlc3QSEgoKaW5wdXRfdXJscxgBIAMoCRIPCgdjb21tYW5kGAIgAygJEhcKD291dHB1dF9maWxlbmFtZRgDIAEoCSJbChFSdW5GZm1wZWdSZXNwb25zZRIOCgZyMl91cmwYASABKAkSDgoGcjJfa2V5GAIgASgJEhQKDGNvbnRlbnRfdHlwZRgDIAEoCRIQCghmaWxlbmFtZRgEIAEoCSIgChFQcm9iZU1lZGlhUmVxdWVzdBILCgN1cmwYASABKAkiWAoSUHJvYmVNZWRpYVJlc3BvbnNlEhMKC2R1cmF0aW9uX21zGAEgASgEEg0KBXdpZHRoGAIgASgNEg4KBmhlaWdodBgDIAEoDRIOCgZmb3JtYXQYBCABKAkyzAIKEENvbnRhaW5lclNlcnZpY2USPwoEUGluZxIaLmNvbnRhaW5lcnMudjEuUGluZ1JlcXVlc3QaGy5jb250YWluZXJzLnYxLlBpbmdSZXNwb25zZRJUCgtSZXNpemVWaWRlbxIhLmNvbnRhaW5lcnMudjEuUmVzaXplVmlkZW9SZXF1ZXN0GiIuY29udGFpbmVycy52MS5SZXNpemVWaWRlb1Jlc3BvbnNlEk4KCVJ1bkZmbXBlZxIfLmNvbnRhaW5lcnMudjEuUnVuRmZtcGVnUmVxdWVzdBogLmNvbnRhaW5lcnMudjEuUnVuRmZtcGVnUmVzcG9uc2USUQoKUHJvYmVNZWRpYRIgLmNvbnRhaW5lcnMudjEuUHJvYmVNZWRpYVJlcXVlc3QaIS5jb250YWluZXJzLnYxLlByb2JlTWVkaWFSZXNwb25zZUIlWiNtYWluL2dlbi9jb250YWluZXJzL3YxO2NvbnRhaW5lcnN2MWIGcHJvdG8z",
   );
 
 /**
@@ -185,6 +185,61 @@ export const RunFfmpegResponseSchema: GenMessage<RunFfmpegResponse> =
   messageDesc(file_containers_v1_container, 5);
 
 /**
+ * @generated from message containers.v1.ProbeMediaRequest
+ */
+export type ProbeMediaRequest = Message<"containers.v1.ProbeMediaRequest"> & {
+  /**
+   * @generated from field: string url = 1;
+   */
+  url: string;
+};
+
+/**
+ * Describes the message containers.v1.ProbeMediaRequest.
+ * Use `create(ProbeMediaRequestSchema)` to create a new message.
+ */
+export const ProbeMediaRequestSchema: GenMessage<ProbeMediaRequest> =
+  /*@__PURE__*/
+  messageDesc(file_containers_v1_container, 6);
+
+/**
+ * @generated from message containers.v1.ProbeMediaResponse
+ */
+export type ProbeMediaResponse = Message<"containers.v1.ProbeMediaResponse"> & {
+  /**
+   * Duration in milliseconds, if available.
+   *
+   * @generated from field: uint64 duration_ms = 1;
+   */
+  durationMs: bigint;
+
+  /**
+   * First video stream width/height if present.
+   *
+   * @generated from field: uint32 width = 2;
+   */
+  width: number;
+
+  /**
+   * @generated from field: uint32 height = 3;
+   */
+  height: number;
+
+  /**
+   * @generated from field: string format = 4;
+   */
+  format: string;
+};
+
+/**
+ * Describes the message containers.v1.ProbeMediaResponse.
+ * Use `create(ProbeMediaResponseSchema)` to create a new message.
+ */
+export const ProbeMediaResponseSchema: GenMessage<ProbeMediaResponse> =
+  /*@__PURE__*/
+  messageDesc(file_containers_v1_container, 7);
+
+/**
  * ContainerService exposes RPCs from the Worker to the container runtime.
  *
  * @generated from service containers.v1.ContainerService
@@ -219,5 +274,15 @@ export const ContainerService: GenService<{
     methodKind: "unary";
     input: typeof RunFfmpegRequestSchema;
     output: typeof RunFfmpegResponseSchema;
+  };
+  /**
+   * Probe media metadata (duration, dimensions) using ffprobe.
+   *
+   * @generated from rpc containers.v1.ContainerService.ProbeMedia
+   */
+  probeMedia: {
+    methodKind: "unary";
+    input: typeof ProbeMediaRequestSchema;
+    output: typeof ProbeMediaResponseSchema;
   };
 }> = /*@__PURE__*/ serviceDesc(file_containers_v1_container, 0);

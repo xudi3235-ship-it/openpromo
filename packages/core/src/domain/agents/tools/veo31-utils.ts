@@ -13,6 +13,7 @@ import { KieAIClient } from "@core/providers/kie-ai";
 import { downloadVideo as downloadVideoBase } from "@core/utils/common";
 import { env } from "@core/utils/env";
 import { z } from "zod";
+import { Binding } from "../../../helpers/api-env";
 
 /**
  * Get KieAI client instance.
@@ -71,6 +72,15 @@ export async function downloadVideo(
   outputPath: string,
 ): Promise<void> {
   await downloadVideoBase(url, outputPath, "veo31");
+}
+
+// FIXME: how do we ensure the binding ctx exists when this is called?
+export async function probeDurationMs(
+  url: string,
+): Promise<number | undefined> {
+  const stub = Binding.use().ContainerBackend.getByName("default");
+  const probe = await stub.probeMedia(url);
+  return probe.durationMs ? Number(probe.durationMs) : undefined;
 }
 
 /**

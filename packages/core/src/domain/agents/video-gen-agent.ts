@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import type { ApiEnv } from "@core/helpers/api-env";
+import { type ApiEnv, Binding } from "@core/helpers/api-env";
 import { produce } from "immer";
 
 // import { routeAgentRequest } from "agents";
@@ -59,6 +59,8 @@ export class VideoGenAgent extends AIChatAgent<
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
     this.runStateSerialized = null;
+    // set the async local storage, noop
+    Binding.provide(env.Bindings, () => {});
   }
 
   /**
@@ -81,6 +83,24 @@ export class VideoGenAgent extends AIChatAgent<
     });
   }
 
+  // either from serialize state or create new
+  private async createRunnerInput(): Promise<AgentInputItem[]> {
+    if (!this.runStateSerialized) {
+      // new
+      return await this.createRunnerInitialInput();
+    }
+    // from serialized
+    const state = await RunState.fromString(
+      createVideoGenAgent(),
+      this.runStateSerialized,
+    );
+    return [
+      ...state.history,
+      // captures latest msg
+      await this.createRunnerInitialInput(),
+    ];
+  }
+
   /**
    * core entrypoint to run the video generation pipeline.
    */
@@ -90,9 +110,8 @@ export class VideoGenAgent extends AIChatAgent<
     };
     // 1. create agent with context
     const agent = createVideoGenAgent();
-    const runnerInput = this.runStateSerialized
-      ? await RunState.fromString(agent, this.runStateSerialized)
-      : await this.createRunnerInput();
+    // finalized input items
+    const runnerInput = await this.createRunnerInput();
 
     // 2. setup hooks
     setupAgentHooks(agent, {
@@ -152,6 +171,8 @@ export class VideoGenAgent extends AIChatAgent<
     const result = await run(agent, runnerInput, {
       context,
     });
+    // serialize run state
+    this.runStateSerialized = result.state.toString();
     const finalOutput = result.finalOutput as AgentOutput;
     // 3. update state with serialized run and final output
     this.patchState((draft) => {
@@ -217,7 +238,11 @@ export class VideoGenAgent extends AIChatAgent<
 
   // clears stuff
   resetState() {
+    this.runStateSerialized = null;
+    // Reset chat history and app state
+    this.messages = [];
     this.setState(VideoGenRealtime.initialServerAppState);
+    this.broadcastState();
   }
 
   private broadcastState() {
@@ -337,6 +362,10 @@ export class VideoGenAgent extends AIChatAgent<
       start_pipeline: async () => {
         await this.runPipeline();
       },
+      reset_state: async () => {
+        console.log(`[VideoGenAgent] reset_state requested`);
+        this.resetState();
+      },
     });
   }
 
@@ -353,7 +382,7 @@ export class VideoGenAgent extends AIChatAgent<
   /**
    * create initial run input items
    */
-  private async createRunnerInput(): Promise<AgentInputItem[]> {
+  private async createRunnerInitialInput(): Promise<AgentInputItem[]> {
     console.log(`[VideoGenAgent] Creating input from state`, this.state);
 
     const [productImagePaths, avatarImagePaths] =

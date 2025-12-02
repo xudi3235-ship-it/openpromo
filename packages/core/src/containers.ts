@@ -99,4 +99,9 @@ export class ContainerBackend extends Container {
 
     return resp;
   }
+
+  async probeMedia(url: string) {
+    const client = await this.getClient();
+    return await client.probeMedia({ url });
+  }
 }

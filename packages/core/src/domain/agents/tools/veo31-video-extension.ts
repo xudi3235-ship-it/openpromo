@@ -9,6 +9,7 @@ import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import {
   downloadVideo,
   getKieAIClient,
+  probeDurationMs,
   Veo31ConfigSchema,
 } from "./veo31-utils";
 
@@ -73,7 +74,10 @@ Best for: making longer videos, continuing a scene, seamless extensions.`,
     const videoUrl = await client.veo31PollUntilComplete(taskId);
 
     // Download and save
-    await downloadVideo(videoUrl, outputPath);
+    const [_, durationMs] = await Promise.all([
+      downloadVideo(videoUrl, outputPath),
+      probeDurationMs(videoUrl),
+    ]);
 
     return toolSuccess("veo31_video_extension", {
       videoUrl,
@@ -81,6 +85,7 @@ Best for: making longer videos, continuing a scene, seamless extensions.`,
       taskId,
       prompt,
       originalTaskId: inputVideoTaskId,
+      durationMs,
     });
   },
 });
