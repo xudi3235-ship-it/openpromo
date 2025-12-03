@@ -63,6 +63,7 @@ func (containerServiceServer) RunFfmpeg(ctx context.Context, req *connect.Reques
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("ffmpeg failed: %w", err))
 	}
+	defer os.RemoveAll(result.workspaceDir)
 
 	uploader, err := newR2Uploader(ctx)
 	if err != nil {
@@ -74,7 +75,6 @@ func (containerServiceServer) RunFfmpeg(ctx context.Context, req *connect.Reques
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 upload failed: %w", err))
 	}
-	_ = os.Remove(result.outputPath)
 
 	resp := connect.NewResponse(&containersv1.RunFfmpegResponse{
 		R2Url:       sanitizeURL(uploadRes.URL),

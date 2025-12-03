@@ -38,7 +38,7 @@ INPUTS:
     input_urls[0] → {in0}
     input_urls[1] → {in1}
     ...
-- command: Array of ffmpeg argv tokens. Use {in0}, {in1}, ... for inputs and {out} for the output path. The server automatically prepends "ffmpeg -y".
+- command: Array of ffmpeg argv tokens. Use {in0}, {in1}, ... for inputs. {out} is optional; if omitted, the server appends the output path automatically. The server prepends "ffmpeg -y".
 - output_filename: Optional filename for the result (e.g. "merged.mp4").
 
 COMMON EXAMPLES:
