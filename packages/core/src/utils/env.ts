@@ -52,6 +52,8 @@ export const env = createEnv({
     TIKHUB_API_TOKEN: z.string().min(1),
     // firecrawl provider
     FIRE_CRAWL_API_KEY: z.string().min(1),
+    // serper.dev
+    SERPER_API_KEY: z.string().min(1),
 
     // debug flag
     DEBUG: z.string().optional().default("false"),
