@@ -63,23 +63,3 @@ These are the ones I come back to again and again because they seem to grab atte
 
 "When you..."
 `;
-
-export const VIDEO_TYPES_REGISTRY = `
-CRITICAL.
-choose from the following video types, these are battle-tested high performing templates that work well for social media shorts ads for SMBs:
-
-Some of the shared/common rules apply to all types, e.g. strong hook, clear value prop, engaging dialogue, ultra-detailed prompts, etc.
-
-1. Base tiktok style UGC video, pure pov style shots, long voiceover. Decide on a avatar first, settings, BG, props, movements, etc. Ultra-detailed. w/ product.
-2. Extended tiktok style UGC, multi-scene cuts, mix of pov shots, and product demo B-roll shots. Strong hook, clear value prop, engaging dialogue. Ultra-detailed. w/ product. Slightly more difficult. requires a mix of differnt tools. Key is to ensure the consistency of the product across shots.
-3. Base product demo video. studio lit, clean BG, different angles, close-ups, panning shots, slow motion, etc. Focus on features, details, texture. Ultra-detailed. w/ product. duration wise it can be shorter.
-4. Lifestyle video, product in use in real life scenarios, e.g. kitchen, outdoors, gym, etc. mix of wide shots, close-ups, different angles. Ultra-detailed. w/ product.
-5. problem-then-solution style UGC video. avatar presents a common problem, then introduces the product as the solution, demonstrating its benefits. A good variant is: no-dialogue, just visually show the problem and solution through actions and expressions. Ultra-detailed. w/ product.
-6. caption-overlay focused UGC. these videos doesn't really have much content. main video is just avatar doing some simple aciton, or just aesthetic, life-style shots, while the captions overlay does the heavy lifting of conveying the message. Some templates to reuse/adapt:
-    - 6 BRUTAL [...] about [...] e.g. 6 brutal truths about being an INFJ that no one talks about, 5 hidden strengths ENFPs dont realize they have, etc.
-    - (if the image is gym related), captions can be : 90 percent of the stuff i tried to get fit was pointless, here's the truth..; 5 things i dont do anymore as a gym girlie; exposing gym tips that honestly did nothing for me
-    - 5 things that can [..]. this is generic, can be adapted freely
-    - Depending on specific types, e.g. for tiktok hooks, here are some examples/ideas for your ref, use creativity to adapt and enhance:
-    ${TIKTOK_STYLE_HOOKS_EXAMPLES}
-7. comparsion video, a variation of UGC video, typically feature it as "other solution" vs our product,
-`;

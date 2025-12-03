@@ -7,7 +7,6 @@
 export {
   PRIMARY_GOAL,
   TIKTOK_STYLE_HOOKS_EXAMPLES,
-  VIDEO_TYPES_REGISTRY,
 } from "./constants";
 
 // Prompts
