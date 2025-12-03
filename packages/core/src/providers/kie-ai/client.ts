@@ -26,6 +26,8 @@ import type {
   Veo31Model,
   Veo31Video1080pResponse,
   Veo31VideoDetailsResponse,
+  Wan25Duration,
+  Wan25Resolution,
 } from "./schemas";
 import {
   ApiResponseSchema,
@@ -105,6 +107,17 @@ export interface GrokTextToImageTaskParams {
 
 export interface GrokUpscaleTaskParams {
   taskId: string;
+  callbackUrl?: string;
+}
+
+export interface Wan25ImageToVideoParams {
+  prompt: string;
+  imageUrl: string;
+  duration?: Wan25Duration;
+  resolution?: Wan25Resolution;
+  negativePrompt?: string;
+  enablePromptExpansion?: boolean;
+  seed?: number;
   callbackUrl?: string;
 }
 
@@ -327,6 +340,22 @@ export class KieAIClient {
       { video_url: params.videoUrl },
       params.callbackUrl,
     );
+  }
+
+  async createWan25ImageToVideoTask(
+    params: Wan25ImageToVideoParams,
+  ): Promise<CreateTaskResponse> {
+    const input = omitUndefined({
+      prompt: params.prompt,
+      image_url: params.imageUrl,
+      duration: params.duration,
+      resolution: params.resolution,
+      negative_prompt: params.negativePrompt,
+      enable_prompt_expansion: params.enablePromptExpansion,
+      seed: params.seed,
+    });
+
+    return this.createTask("wan/2-5-image-to-video", input, params.callbackUrl);
   }
 
   async createIdeogramCharacterEditTask(

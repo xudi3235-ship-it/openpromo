@@ -35,6 +35,13 @@ export type ByteDanceResolution = z.infer<typeof ByteDanceResolutionSchema>;
 export const ByteDanceDurationSchema = z.enum(["5", "10"]);
 export type ByteDanceDuration = z.infer<typeof ByteDanceDurationSchema>;
 
+// WAN 2.5 image-to-video
+export const Wan25ResolutionSchema = z.enum(["720p", "1080p"]);
+export type Wan25Resolution = z.infer<typeof Wan25ResolutionSchema>;
+
+export const Wan25DurationSchema = z.enum(["5", "10"]);
+export type Wan25Duration = z.infer<typeof Wan25DurationSchema>;
+
 export const GrokAspectRatioSchema = z.enum(["1:1", "2:3", "3:2"]);
 export type GrokAspectRatio = z.infer<typeof GrokAspectRatioSchema>;
 
