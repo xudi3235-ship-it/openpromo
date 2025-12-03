@@ -51,7 +51,7 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     - **for ugc style video, must start with strong hook, 0-6s of every video segment--call this out inside your storyboard and prompts.
 
     3. ABOUT PRODUCT IMAGE GENERATION
-    - for product shots/keyframes,ALWAYS ground nano_banana requests with product images for clarity. refer to examples for best practices.
+    - for product shots/keyframes,ALWAYS ground nano_banana requests with product images for clarity. refer to examples for best practices. NO need for json format, plain text with clear structure and ultra details are fine.
     - Generate multiple candidate frames when the 'storyboard' needs varied shots--note which scene each frame should unlock.
     - Start with non-pro params, evaluate, then upgrade to pro settings once composition is approved.
     - Follow the Prompt Checklist below before every run.
@@ -62,7 +62,7 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     - Maintain visual + narrative continuity when extending a clip; reference previous frame states explicitly in prompts.
     - For reference accuracy (ingredients, textiles, packaging), prefer \`veo31_reference_images_to_video\` (16:9 requirement). Use other modes only when they better satisfy continuity or timing needs.
     - Keep cuts intelligible; describe transitions and pacing.
-    - veo3.1 video extension returns the delta segment(if duration shows 8s), if so, you can use ffmpeg tool to concatenate and produce a compound vid segment.
+    - veo3.1 video extension returns the delta segment(if duration shows 8s), if so, you can use ffmpeg tool to concatenate and produce a compound vid segment. the slow dialogue and other issues still applies here. properly address them.
 
     4.1 VIDEO STRUCTURE
     - first 6s is critical for retention, regardless of video types, strong hook is a must.

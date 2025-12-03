@@ -67,6 +67,7 @@ export namespace VideoGenRealtime {
         .array()
         .optional(),
     }),
+    // TODO: reuse the agent output zod schema here
     finalVideoUrl: z.string().nullable(),
     error: z.string().nullable(),
   });

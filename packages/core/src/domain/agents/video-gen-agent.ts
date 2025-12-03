@@ -1,9 +1,10 @@
 import { openai } from "@ai-sdk/openai";
-import type { ApiEnv } from "@core/helpers/api-env";
+import { type ApiEnv, Binding } from "@core/helpers/api-env";
 import { produce } from "immer";
 
 // import { routeAgentRequest } from "agents";
 
+import { Actor } from "@core/helpers/actor";
 import { type AgentInputItem, RunState, run } from "@openai/agents";
 import { VideoGenRealtime } from "@shared/agents";
 import type {
@@ -28,7 +29,6 @@ import { type AgentOutput, onToolOutput } from "./agent-types";
 import type { VideoGenAgentContext } from "./context";
 import { buildSystemPrompt, createVideoGenAgent } from "./create-agent";
 import { setupAgentHooks } from "./hooks";
-
 import { toAgentImageInputs } from "./tools/evaluation-utils";
 import { buildTreeString, downloadImagesToTmp } from "./utils";
 
@@ -442,5 +442,17 @@ export class VideoGenAgent extends AIChatAgent<
     } catch {
       return "Unable to read tmp directory structure";
     }
+  }
+
+  // wip
+  async startImageGenWorkflow() {
+    this.ctx.id; // current durable object id
+    const workflow = await Binding.use().ImageGenerationWorkflow.create({
+      params: {
+        actor: Actor.assert("workspace_user"),
+        generationId: "TODO",
+      },
+    });
+    return workflow;
   }
 }
