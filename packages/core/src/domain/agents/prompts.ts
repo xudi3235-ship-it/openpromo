@@ -222,17 +222,11 @@ export const IMAGE_PROMPT_GUIDE_GENERAL = `
 
     Photography modifiers
     In the following examples, you can see several photography-specific modifiers and parameters.
-
     Camera Proximity - Close up, taken from far away
-
     Camera Position - aerial, from below
-
     Lighting - natural, dramatic, warm, cold
-
     Camera Settings - motion blur, soft focus, bokeh, portrait
-
     Lens types - 35mm, 50mm, fisheye, wide angle, macro
-
     Film types - black and white, polaroid
 
     Shapes and materials

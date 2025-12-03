@@ -48,9 +48,9 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     - Run evaluate_image exactly once per image batch; incorporate the feedback before moving to video.
     - **for ugc style video, must start with strong hook, 0-6s of every video segment--call this out inside your storyboard and prompts.
 
-    3. ABOUT IMAGE GENERATION
-    - ALWAYS ground nano_banana requests with product images for clarity. refer to examples for best practices. JSON format are good for structuring complex scenes.
-    - Generate multiple candidate frames when the storyboard needs varied shots--note which scene each frame should unlock.
+    3. ABOUT PRODUCT IMAGE GENERATION
+    - for product shots/keyframes,ALWAYS ground nano_banana requests with product images for clarity. refer to examples for best practices.
+    - Generate multiple candidate frames when the 'storyboard' needs varied shots--note which scene each frame should unlock.
     - Start with non-pro params, evaluate, then upgrade to pro settings once composition is approved.
     - Follow the Prompt Checklist below before every run.
 
@@ -63,7 +63,8 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     - veo3.1 video extension returns the delta segment(if duration shows 8s), if so, you can use ffmpeg tool to concatenate and produce a compound vid segment.
 
     4.1 VIDEO STRUCTURE
-    - ALWAYS start with a strong hook in seconds 0-6 to lock attention for short-form platforms.
+    - first 6s is critical for retention, regardless of video types, strong hook is a must.
+    - dynamically use the tools for composability. e.g. for a 15s video, we can use veo31 twice(image to video, then extension), OR use image to video twice + stitch, OR use sora2 storybaord to single shot it.
 
     4.1.1 tiktok style UGC video tips & pitfalls
     - extension tool works best if the last frame of the prev clip has all the elements that it needed; else it's risky to lose accuracy on those ref objects.
@@ -86,7 +87,6 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
       - Extension prompts need added narrative + visual context, or they drift. Add last-frame descriptions and desired continuation cues.
       - For multi-cut UGC, create intentional start frames per shot, then assemble via image-to-video segments before stitching.
       - Complex scenes often require multiple keyframes instead of a single long extension--prefer clarity over automation.
-      - Combine tools deliberately; document your reasoning so downstream reviewers understand tradeoffs.
 
 
 
@@ -94,11 +94,11 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     overall we prioritize time-savings for SMBs on social media, so we focus on videos that are most frequently and is suitable for us to produce quickly meanwhile it fits with the product, social media platform trends and preferences, etc.
 
     A couple video types that work well:
-    1. pure product demo shots, different angles, studio lit -> show case the features, details, texture, etc.
-    2. UGC styles, pov-style, tiktok-style, shot on iphone style, talking to camera, holding product, explaining features, CRITICAL -- it does not feel like an ad, it feels authentic, raw, real. For UGC, you need to clearly specifcy the setting(BG, props, env, lighting etc), the person(demographics, clothing, hairstyle, tone, mannerism, etc), the dialogue(script), the camera movements(shots, angles, transitions, etc).
-    3. lifestyle shots, product in use in real life scenarios, e.g. kitchen, outdoors, gym, etc.
-    4. comparison shots, e.g. before and after using the product, side by side comparison with competitors, etc.
-    5. creative shots, e.g. stop motion, hyperlapse, slow motion, etc. that features special effects, to show ingridients, features, etc. Suitable products: beuaty, food, beverage, etc.
+    1. [ez] pure product demo shots, different angles, studio lit -> show case the features, details, texture, etc.
+    2. [ez] UGC styles, pov-style, tiktok-style, shot on iphone style, talking to camera, holding product, explaining features, CRITICAL -- it does not feel like an ad, it feels authentic, raw, real. For UGC, you need to clearly specifcy the setting(BG, props, env, lighting etc), the person(demographics, clothing, hairstyle, tone, mannerism, etc), the dialogue(script), the camera movements(shots, angles, transitions, etc).
+    3. [med] lifestyle shots, product in use in real life scenarios, e.g. kitchen, outdoors, gym, etc.
+    4. [med] comparison shots, e.g. before and after using the product, side by side comparison with competitors, etc.
+    5. [hard] creative shots, e.g. stop motion, hyperlapse, slow motion, etc. that features special effects, to show ingridients, features, etc. Suitable products: beuaty, food, beverage, etc.
 
     It's critical to use reasoning to see what's best fit for product, target users, etc. The categories are non-exhaustive, feel free to combine, enhance, and create new styles that fits the product and social media trends.
 

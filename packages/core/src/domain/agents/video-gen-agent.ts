@@ -55,10 +55,12 @@ export class VideoGenAgent extends AIChatAgent<
 > {
   // internal states
   private runStateSerialized: string | null = null;
+  private _logs: string = "";
 
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
     this.runStateSerialized = null;
+    this._logs = "";
   }
 
   /**
@@ -79,6 +81,12 @@ export class VideoGenAgent extends AIChatAgent<
     return this.withStateMgmt(async () => {
       await this.runPipelineImpl();
     });
+  }
+  // biome-ignore lint/suspicious/noExplicitAny: ok
+  private log(msg: string, ...args: any[]) {
+    const formattedMsg = `[${VideoGenAgent.name}] ${msg} ${JSON.stringify(args)}`;
+    console.log(formattedMsg, ...args);
+    this._logs += `${formattedMsg}\n`;
   }
 
   // either from serialize state or create new
@@ -115,24 +123,21 @@ export class VideoGenAgent extends AIChatAgent<
     setupAgentHooks(agent, {
       verbose: true,
       onAgentStart: (_ctx) => {
-        console.log(`[VideoGenAgent] started`);
+        this.log(`started`);
       },
       onAgentEnd: (_ctx, output) => {
-        console.log(`[VideoGenAgent] ended`, output);
+        this.log(`ended`, output);
       },
       onToolStart: (_ctx, toolName, details) => {
-        console.log(`[VideoGenAgent] Tool started: ${toolName}`, details);
+        this.log(`Tool started: ${toolName}`, details);
       },
       onToolEnd: (_ctx, toolName, result) => {
-        console.log(`[VideoGenAgent] Tool ended: ${toolName}`, result);
+        this.log(`Tool ended: ${toolName}`, result);
 
         for (const assetTool of VIDEO_ASSET_TOOL_NAMES) {
           onToolOutput(result, assetTool, {
             onSuccess: (output) => {
-              console.log(
-                `[VideoGenAgent] Received ${assetTool} asset output:`,
-                output.videoUrl,
-              );
+              this.log(`Received ${assetTool} asset output:`, output.videoUrl);
               this.patchState((draft) => {
                 if (!draft.artifacts.videos) {
                   draft.artifacts.videos = [];
@@ -148,10 +153,7 @@ export class VideoGenAgent extends AIChatAgent<
 
         onToolOutput(result, "nano_banana", {
           onSuccess: (output) => {
-            console.log(
-              `[VideoGenAgent] Received nano banana asset output:`,
-              output,
-            );
+            this.log(`Received nano banana asset output:`, output);
             this.patchState((draft) => {
               if (!draft.artifacts.images) {
                 draft.artifacts.images = [];
@@ -178,7 +180,9 @@ export class VideoGenAgent extends AIChatAgent<
       draft.finalVideoUrl = finalOutput.finalVideoUrl ?? null;
     });
 
-    console.log(`[VideoGenAgent] run completed:`, result.finalOutput);
+    this.log(`run completed:`, result.finalOutput);
+
+    console.log(`logs:\n${this._logs}`);
   }
 
   private async withStateMgmt<T>(fn: () => Promise<T>) {
@@ -237,6 +241,7 @@ export class VideoGenAgent extends AIChatAgent<
   // clears stuff
   resetState() {
     this.runStateSerialized = null;
+    this._logs = "";
     // Reset chat history and app state
     this.messages = [];
     this.setState(VideoGenRealtime.initialServerAppState);
