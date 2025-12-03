@@ -7,6 +7,7 @@ import {
   evaluateImageTool,
   ffmpegTool,
   nanoBananaTool,
+  searchImageTool,
   sora2StoryboardTool,
   veo31ImageToVideoTool,
   veo31ReferenceImagesToVideoTool,
@@ -161,6 +162,8 @@ export function createVideoGenAgent() {
     tools: [
       // videoGenShellTool, // worker runtime does not allow spawning processes currently
       virtualShellTool,
+      searchImageTool,
+      // webSearchTool(),
       evaluateImageTool,
       // evaluateVideoInputTool, // not good yet
       nanoBananaTool,
