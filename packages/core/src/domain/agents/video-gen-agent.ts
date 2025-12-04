@@ -84,6 +84,10 @@ export class VideoGenAgent extends AIChatAgent<
     super(ctx, env);
     this.runStateSerialized = null;
     this._logs = "";
+    // if not initialized, init
+    if (!this.state) {
+      this.setState(VideoGenRealtime.initialServerAppState);
+    }
   }
 
   /**
