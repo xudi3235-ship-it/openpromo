@@ -1,5 +1,3 @@
-# CLAUDE.md
-
 This file provides guidance for AI Agents working on OpenPromo codebase
 
 # dev setup
@@ -18,9 +16,8 @@ pnpm lint # runs both tasks, ALWAYS run this to verify your changes are safe
 
 ## Architecture Overview
 
-`packages/core` contains all business logic. `packages/www` is astro, hosting `openpromo.app`. `packages/dash` is our main react SPA app using `tanstack router`, as well as hono api running on cloudflare worker. Dash contains both static assets and hono api, details can be found in `wrangler.jsonc` config.
+`packages/core` contains all business logic. `packages/www` is astro, hosting `openpromo.app`. `packages/dash` is our main react SPA app using `tanstack router`, as well as hono api and `orpc` running on cloudflare worker. Dash contains both static assets and hono api, details can be found in `wrangler.jsonc` config.
 
-remaining packages are not in active use, details TBD yet.
 
 ## Infra Architecture
 
@@ -61,18 +58,20 @@ We heavily build on top of Cloudflare's Durable Objects(DO), which powers Queue,
 
 hosted on `dash.openpromo.app`, main dashboard for using app. react SPA using tanstack router.
 `worker`contains our hono api, importing core buisness logic, with routes, middlewares, etc.
+NOTE: we use both hono as web api server, but we also use `orpc`, which proivdes great e2e typesafety and good integrations with react query.
 `ui` contains front end code, which uses hono RPC along with react query for type safety, see `ui/src/lib/hono-client.ts` for details.
 
 #### Rules for www developments:
 
 1. using tailwind css, ensure all color works for dark mode.
 2. ensure you run `pnpm check && pnpm typecheck` to ensure type checks are passing after changes
-3. when designing UI, use mimal, optimzied for UX, elegant, flat design principles.
+3. when designing UI, use mimal, optimzied for UX, elegant, flat design principles. If patterns starts to repeat, refactor to 
 4. backend we use Entity class, e.g. EntAttachment, EntPendingContentGroup, which encapsulates business logic. API layer we use hono, each file be its own handelr, and use .route(..., subRoute) to chain them. Then, for the shared zod / JS types, define them in `packages/shared` so to reuse across fullstack. After api is ready, we define queries which uses react query + hono RPC features. then we are ready to use them in the UI.
 5. in backend dev, use `console.log([1.])` statements to add debugging / tracing for the flow so that we can understand what's going wrong.
 6. in our dashboard, we have labs internal route, which has api testing route that can quickly test api.
 7. for any hono api routes, we integrate with react query, place them under `queries` dir, so that we can have fully typsafety. When in doubt, read existing routes for code examples.
 8. for the filenaming, it has to be very specific, e.g. `instagram-backfiller.ts` this is to ensure uniqueness and easier for global code search.
+
 
 
 ### `package/ui`
