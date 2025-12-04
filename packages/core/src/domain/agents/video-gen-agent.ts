@@ -5,7 +5,13 @@ import { produce } from "immer";
 // import { routeAgentRequest } from "agents";
 
 import { Actor } from "@core/helpers/actor";
-import { type AgentInputItem, RunState, run } from "@openai/agents";
+import {
+  type Agent,
+  type AgentInputItem,
+  RunState,
+  run,
+  withTrace,
+} from "@openai/agents";
 import { VideoGenRealtime } from "@shared/agents";
 import type {
   AgentContext,
@@ -25,10 +31,11 @@ import {
   type ToolSet,
   type UIMessage,
 } from "ai";
-import { type AgentOutput, onToolOutput } from "./agent-types";
+import { onToolOutput } from "./agent-types";
 import type { VideoGenAgentContext } from "./context";
 import { buildSystemPrompt, createVideoGenAgent } from "./create-agent";
 import { setupAgentHooks } from "./hooks";
+import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
 import { toAgentImageInputs } from "./tools/evaluation-utils";
 import { buildTreeString, downloadImagesToTmp } from "./utils";
 
@@ -39,6 +46,22 @@ const VIDEO_ASSET_TOOL_NAMES = [
   "veo31_video_extension",
   "sora2_storyboard_generate",
 ] as const;
+
+/**
+ * core design of the video gen agent
+ * Input: product images, avatar images, prompt
+ *
+ * Internally, it runs the pipeline to
+ * 1. create image keyframes using the assets(product, brand, etc.).
+ * 2. generate video segments from keyframes. Either sora2 long video one shot, or image-to-video short clips, extension or stitching.
+ * 3. compose final video
+ *
+ * Image Gen workflow
+ * Input: product images, reference images, prompt, ...(optionally more assets, style reference, etc)
+ * 1. asset lib, gather, select assets
+ * 2. create image, might be batch
+ *
+ */
 
 /**
  * Main entrypoint for video generation agent.
@@ -77,9 +100,11 @@ export class VideoGenAgent extends AIChatAgent<
     );
   }
 
-  private async runPipeline() {
-    return this.withStateMgmt(async () => {
-      await this.runPipelineImpl();
+  private async runPipeline(params: { agent: VideoGenRealtime.AgentName }) {
+    await withTrace(VideoGenAgent.name, async () => {
+      return this.withStateMgmt(async () => {
+        await this.runPipelineImpl(params);
+      });
     });
   }
   // biome-ignore lint/suspicious/noExplicitAny: ok
@@ -90,16 +115,15 @@ export class VideoGenAgent extends AIChatAgent<
   }
 
   // either from serialize state or create new
-  private async createRunnerInput(): Promise<AgentInputItem[]> {
+  private async createRunnerInput(
+    agent: Agent<VideoGenAgentContext, VideoGenRealtime.AgentOutput>,
+  ): Promise<AgentInputItem[]> {
     if (!this.runStateSerialized) {
       // new
       return await this.createRunnerInitialInput();
     }
     // from serialized
-    const state = await RunState.fromString(
-      createVideoGenAgent(),
-      this.runStateSerialized,
-    );
+    const state = await RunState.fromString(agent, this.runStateSerialized);
     return [
       ...state.history,
       // captures latest msg
@@ -110,14 +134,17 @@ export class VideoGenAgent extends AIChatAgent<
   /**
    * core entrypoint to run the video generation pipeline.
    */
-  private async runPipelineImpl() {
+  private async runPipelineImpl(params: { agent: VideoGenRealtime.AgentName }) {
     const context: VideoGenAgentContext = {
       input: this.state.input,
     };
     // 1. create agent with context
-    const agent = createVideoGenAgent();
+    const agent =
+      params.agent === "video_gen_agent"
+        ? createVideoGenAgent()
+        : createImageGenWithRefAgent();
     // finalized input items
-    const runnerInput = await this.createRunnerInput();
+    const runnerInput = await this.createRunnerInput(agent);
 
     // 2. setup hooks
     setupAgentHooks(agent, {
@@ -144,7 +171,7 @@ export class VideoGenAgent extends AIChatAgent<
                 }
                 draft.artifacts.videos.push({
                   id: `${assetTool}_${Date.now()}`,
-                  url: output.videoUrl,
+                  videoUrl: output.videoUrl,
                 });
               });
             },
@@ -160,7 +187,7 @@ export class VideoGenAgent extends AIChatAgent<
               }
               draft.artifacts.images.push({
                 id: `nano_banana_${Date.now()}`,
-                url: output.imageUrl,
+                imageUrl: output.imageUrl,
               });
             });
           },
@@ -173,11 +200,12 @@ export class VideoGenAgent extends AIChatAgent<
     });
     // serialize run state
     this.runStateSerialized = result.state.toString();
-    const finalOutput = result.finalOutput as AgentOutput;
+    const finalOutput = result.finalOutput as VideoGenRealtime.AgentOutput;
     // 3. update state with serialized run and final output
     this.patchState((draft) => {
       draft.status = "succeeded";
-      draft.finalVideoUrl = finalOutput.finalVideoUrl ?? null;
+      draft.output = finalOutput;
+      draft.logs = this._logs;
     });
 
     this.log(`run completed:`, result.finalOutput);
@@ -363,7 +391,9 @@ export class VideoGenAgent extends AIChatAgent<
         });
       },
       start_pipeline: async () => {
-        await this.runPipeline();
+        await this.runPipeline({
+          agent: this.state.agent,
+        });
       },
       reset_state: async () => {
         console.log(`[VideoGenAgent] reset_state requested`);
@@ -374,16 +404,16 @@ export class VideoGenAgent extends AIChatAgent<
 
   private async ensureFilesExists() {
     return await Promise.all([
-      await downloadImagesToTmp(
-        this.state.input.productImages,
-        "/tmp/products",
-      ),
-      await downloadImagesToTmp(this.state.input.avatarImages, "/tmp/avatar"),
+      downloadImagesToTmp(this.state.input.productImages, "/tmp/products"),
+      downloadImagesToTmp(this.state.input.avatarImages, "/tmp/avatar"),
+      downloadImagesToTmp(this.state.input.referenceImages, "/tmp/reference"),
+      downloadImagesToTmp(this.state.input.brandAssets, "/tmp/brand"),
     ]);
   }
 
   /**
-   * create initial run input items
+   * shared logic to tranform input to agent input items.
+   * used for both video gen and image gen agents
    */
   private async createRunnerInitialInput(): Promise<AgentInputItem[]> {
     console.log(`[VideoGenAgent] Creating input from state`, this.state);
@@ -401,33 +431,86 @@ export class VideoGenAgent extends AIChatAgent<
 
     const productImages = toAgentImageInputs(this.state.input.productImages);
     const avatarImages = toAgentImageInputs(this.state.input.avatarImages);
+    const referenceImages = toAgentImageInputs(
+      this.state.input.referenceImages,
+    );
+    const brandAssets = toAgentImageInputs(this.state.input.brandAssets);
 
-    const userContent: AgentInputItem["content"] = [
-      {
-        type: "input_text" as const,
-        text: `Product reference files stored under /tmp/products. Local paths: ${productImagePaths.join(", ")}.\nAvatar references stored under /tmp/avatar. Local paths: ${avatarImagePaths.join(", ")}.`,
-      },
-      ...productImages,
-      {
-        type: "input_text" as const,
-        text: "Avatar reference selection:",
-      },
-      ...avatarImages,
-      {
-        type: "input_text" as const,
-        text: `Latest tmp dir snapshot (cwd=/tmp):\n${VideoGenAgent.tmpDirStr}`,
-      },
-      {
-        type: "input_text" as const,
-        text: `user input: ${this.state.input.prompt}`,
-      },
-    ];
-    const userMessage: AgentInputItem = {
+    const messages: AgentInputItem[] = [];
+
+    if (productImages.length > 0) {
+      messages.push({
+        role: "user",
+        content: [
+          {
+            type: "input_text" as const,
+            text: `Product reference files stored under /tmp/products. Local paths: ${productImagePaths.join(", ")}`,
+          },
+          ...productImages,
+        ],
+      });
+    }
+
+    if (avatarImages.length > 0) {
+      messages.push({
+        role: "user",
+        content: [
+          {
+            type: "input_text" as const,
+            text: `Avatar references stored under /tmp/avatar. Local paths: ${avatarImagePaths.join(", ")}`,
+          },
+          ...avatarImages,
+        ],
+      });
+    }
+
+    if (referenceImages.length > 0) {
+      messages.push({
+        role: "user",
+        content: [
+          {
+            type: "input_text" as const,
+            text: "Additional reference images:",
+          },
+          ...referenceImages,
+        ],
+      });
+    }
+
+    if (brandAssets.length > 0) {
+      messages.push({
+        role: "user",
+        content: [
+          {
+            type: "input_text" as const,
+            text: "Brand assets:",
+          },
+          ...brandAssets,
+        ],
+      });
+    }
+
+    messages.push({
       role: "user",
-      content: userContent,
-    };
+      content: [
+        {
+          type: "input_text" as const,
+          text: `Latest tmp dir snapshot (cwd=/tmp):\n${VideoGenAgent.tmpDirStr}`,
+        },
+      ],
+    });
 
-    return [userMessage];
+    messages.push({
+      role: "user",
+      content: [
+        {
+          type: "input_text" as const,
+          text: `user input: ${this.state.input.prompt}`,
+        },
+      ],
+    });
+
+    return messages;
   }
 
   /**
@@ -455,4 +538,18 @@ export class VideoGenAgent extends AIChatAgent<
     });
     return workflow;
   }
+  // async _runImageGenPipeline() {
+  //   const context: VideoGenAgentContext = {
+  //     input: this.state.input,
+  //   };
+  //   const agent = createImageGenWithRefAgent();
+  //   const input = await this.createRunnerInput(agent);
+
+  //   const _output = await run(agent, input, {
+  //     context,
+  //   });
+  //   console.log(`Image gen output:`, _output);
+  //   const output = _output.finalOutput as VideoGenRealtime.AgentOutput;
+  //   console.log(`Image gen final output:`, output);
+  // }
 }

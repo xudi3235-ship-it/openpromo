@@ -73,7 +73,8 @@
     "usehooks-ts": "^3.1.1",
     "web-vitals": "^5.1.0",
     "zod": "catalog:",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "@openai/agents": "catalog:"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.15.3",

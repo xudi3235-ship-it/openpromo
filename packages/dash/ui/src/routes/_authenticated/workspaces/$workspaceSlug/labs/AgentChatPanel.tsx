@@ -72,6 +72,8 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
       prompt: inputForm.prompt.trim() || samplePrompt,
       productImages,
       avatarImages,
+      referenceImages: [],
+      brandAssets: [],
     };
 
     const payloadJson = JSON.stringify(payload);

@@ -1,4 +1,5 @@
 import type { ApiEnv } from "@core/helpers/api-env";
+import { getGlobalTraceProvider } from "@openai/agents";
 import type { VideoGenAgent } from "@openpromo/core/domain/agents/video-gen-agent";
 import { getAgentByName } from "agents";
 import { Hono } from "hono";
@@ -40,5 +41,9 @@ export const agentsRoute = new Hono<ApiEnv>()
         { error: "Failed to route to agent", details: String(error) },
         500,
       );
+    } finally {
+      // ensure traces are flushed for worker runtime
+      // https://openai.github.io/openai-agents-js/guides/tracing/#export-loop-lifecycle
+      c.executionCtx.waitUntil(getGlobalTraceProvider().forceFlush());
     }
   });

@@ -1,5 +1,5 @@
 import { Agent } from "@openai/agents";
-import { AgentOutput } from "./agent-types";
+import type { VideoGenRealtime } from "@shared/agents";
 import { PRIMARY_GOAL } from "./constants";
 import type { VideoGenAgentContext } from "./context";
 import { StaticPrompts } from "./prompts";
@@ -152,7 +152,7 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
  * limited compared to Modal runtime.
  */
 export function createVideoGenAgent() {
-  const agent = new Agent<VideoGenAgentContext, AgentOutput>({
+  const agent = new Agent<VideoGenAgentContext, VideoGenRealtime.AgentOutput>({
     name: "VideoGenInternalAgent",
     model: "gpt-5.1",
     instructions: (runCtx, _agent) => {
@@ -182,7 +182,7 @@ export function createVideoGenAgent() {
       },
     },
     // @ts-expect-error weird zod typing issue
-    outputType: AgentOutput,
+    outputType: VideoGenRealtime.AgentOutput,
   });
   return agent;
 }
