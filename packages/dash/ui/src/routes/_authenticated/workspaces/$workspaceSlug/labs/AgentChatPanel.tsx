@@ -2,10 +2,17 @@ import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
 import { Label } from "@openpromo/ui/components/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@openpromo/ui/components/select";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import type { VideoGenRealtime } from "@shared";
 import type { UIMessage } from "ai";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
 
 const sampleProductImageUrls = [
@@ -43,10 +50,13 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
   const [chatInput, setChatInput] = useState("");
   const [inputForm, setInputForm] = useState<InputFormState>(defaultInputForm);
   const [_msgs, setMsgs] = useState<unknown[]>([]);
+  const [selectedAgent, setSelectedAgent] =
+    useState<VideoGenRealtime.AgentName>("video_gen_agent");
 
   const {
     isConnected,
     sendEvent,
+    setAgent,
     chat: { messages, sendMessage, status, error, clearHistory },
     serverState,
   } = useVideoGenAgent({
@@ -62,9 +72,7 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
   });
   const lastSentRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (!isConnected) return;
-
+  const buildInputPayload = useMemo(() => {
     const productImages = parseMultilineList(inputForm.productImages);
     const avatarImages = parseMultilineList(inputForm.avatarImages);
 
@@ -76,12 +84,24 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
       brandAssets: [],
     };
 
+    return payload;
+  }, [inputForm]);
+
+  useEffect(() => {
+    setSelectedAgent(serverState.agent);
+  }, [serverState.agent]);
+
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const payload = buildInputPayload;
+
     const payloadJson = JSON.stringify(payload);
     if (lastSentRef.current === payloadJson) return;
 
     sendEvent("set_input", payload);
     lastSentRef.current = payloadJson;
-  }, [inputForm, isConnected, sendEvent]);
+  }, [isConnected, sendEvent, buildInputPayload]);
   const isLoading = status === "streaming" || status === "submitted";
 
   if (!userId) {
@@ -116,6 +136,23 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
     sendEvent("reset_state", {});
   };
 
+  const handleAgentChange = (agentName: VideoGenRealtime.AgentName) => {
+    setSelectedAgent(agentName);
+    const payload = buildInputPayload;
+    lastSentRef.current = JSON.stringify(payload);
+    setAgent(agentName, payload);
+  };
+
+  const videos = dedupeById([
+    ...(serverState.artifacts.videos ?? []),
+    ...(serverState.output.output.videos ?? []),
+  ]);
+
+  const images = dedupeById([
+    ...(serverState.artifacts.images ?? []),
+    ...(serverState.output.output.images ?? []),
+  ]);
+
   return (
     <div className="flex flex-col gap-4 lg:flex-row">
       <div className="space-y-4 lg:w-2/3">
@@ -136,6 +173,28 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
           </div>
 
           <div className="grid gap-3">
+            <div>
+              <Label htmlFor="agent">Agent</Label>
+              <Select
+                value={selectedAgent}
+                onValueChange={(value) =>
+                  handleAgentChange(value as VideoGenRealtime.AgentName)
+                }
+                disabled={!isConnected}
+              >
+                <SelectTrigger id="agent" className="w-full">
+                  <SelectValue placeholder="Select agent" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="video_gen_agent">
+                    Video Generation
+                  </SelectItem>
+                  <SelectItem value="image_gen_agent">
+                    Image Generation
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label htmlFor="prompt">Prompt</Label>
               <Textarea
@@ -202,8 +261,10 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
 
           <StatusBanner
             status={serverState.status}
-            finalVideoUrl={serverState.finalVideoUrl}
+            hasVideo={videos.length > 0}
           />
+
+          <GeneratedAssets videos={videos} images={images} />
         </section>
 
         {/* Chat Section */}
@@ -280,36 +341,94 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
             {JSON.stringify(serverState, null, 2)}
           </pre>
         </section>
-
-        {serverState.finalVideoUrl && (
-          <section className="rounded-lg border bg-white p-4 shadow-sm">
-            <h4 className="mb-2 font-semibold">Final Video</h4>
-            <video
-              src={serverState.finalVideoUrl}
-              controls
-              className="w-full rounded"
-            />
-            <a
-              href={serverState.finalVideoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 block text-sm text-blue-600 hover:underline"
-            >
-              Open in new tab
-            </a>
-          </section>
-        )}
       </aside>
     </div>
   );
 }
 
+function GeneratedAssets({
+  videos,
+  images,
+}: {
+  videos: Array<{ id: string; videoUrl: string }>;
+  images: Array<{ id: string; imageUrl: string }>;
+}) {
+  const hasAssets = videos.length > 0 || images.length > 0;
+
+  return (
+    <section className="space-y-3 rounded-lg border bg-gray-50 p-3">
+      <h5 className="text-sm font-semibold">Generated Assets</h5>
+      {!hasAssets && (
+        <p className="text-xs text-gray-500">
+          No assets yet — run the pipeline to see outputs.
+        </p>
+      )}
+
+      {videos.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-gray-700">Videos</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {videos.map((video) => (
+              <div
+                key={video.id}
+                className="space-y-2 rounded border bg-white p-2 shadow-sm"
+              >
+                <video
+                  src={video.videoUrl}
+                  controls
+                  className="aspect-video w-full rounded"
+                />
+                <a
+                  href={video.videoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block truncate text-xs text-blue-600 hover:underline"
+                >
+                  {video.videoUrl}
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {images.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-gray-700">Images</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {images.map((image) => (
+              <div
+                key={image.id}
+                className="space-y-1 rounded border bg-white p-2 shadow-sm"
+              >
+                <img
+                  src={image.imageUrl}
+                  alt={image.id}
+                  className="h-32 w-full rounded object-cover"
+                />
+                <a
+                  href={image.imageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block truncate text-xs text-blue-600 hover:underline"
+                >
+                  {image.imageUrl}
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function StatusBanner({
   status,
-  finalVideoUrl,
+  hasVideo,
 }: {
   status: VideoGenRealtime.ServerAppState["status"];
-  finalVideoUrl: string | null;
+  hasVideo: boolean;
 }) {
   const statusVariants: Record<
     typeof status,
@@ -331,9 +450,18 @@ function StatusBanner({
         <span className="text-sm font-medium">Status: </span>
         <Badge variant={variant as never}>{label}</Badge>
       </div>
-      {finalVideoUrl && (
+      {hasVideo && (
         <span className="text-xs text-green-600">✓ Video Ready</span>
       )}
     </div>
   );
+}
+
+function dedupeById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
 }

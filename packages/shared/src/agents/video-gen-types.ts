@@ -21,6 +21,9 @@ export namespace VideoGenRealtime {
     "canceled",
   ]);
 
+  export const AgentName = z.enum(["video_gen_agent", "image_gen_agent"]);
+  export type AgentName = z.infer<typeof AgentName>;
+
   // -- Client Events --
   /**
    * core input data schema, powering the video gen as well as
@@ -49,6 +52,13 @@ export namespace VideoGenRealtime {
     type: z.literal("start_pipeline"),
     data: z.object({
       input: SetInputData.optional(),
+    }),
+  });
+
+  export const SetAgent = base.extend({
+    type: z.literal("set_agent"),
+    data: z.object({
+      agent: AgentName,
     }),
   });
 
@@ -81,9 +91,6 @@ export namespace VideoGenRealtime {
     }),
   });
 
-  export const AgentName = z.enum(["video_gen_agent", "image_gen_agent"]);
-  export type AgentName = z.infer<typeof AgentName>;
-
   export type AgentOutput = z.infer<typeof AgentOutput>;
 
   // -- Application State --
@@ -100,9 +107,7 @@ export namespace VideoGenRealtime {
       videos: Video.array().optional(),
     }),
     // agent output
-    output: AgentOutput.optional(),
-    // TODO: reuse the agent output zod schema here
-    finalVideoUrl: z.string().nullable(),
+    output: AgentOutput,
     error: z.string().nullable(),
   });
 
@@ -129,7 +134,6 @@ export namespace VideoGenRealtime {
       message: "",
     },
     artifacts: {},
-    finalVideoUrl: null,
     error: null,
   };
 
@@ -166,7 +170,7 @@ export namespace VideoGenRealtime {
     }),
   });
 
-  const ClientEvents = z.union([SetInput, StartPipeline, ResetState]);
+  const ClientEvents = z.union([SetInput, SetAgent, StartPipeline, ResetState]);
 
   const ServerEvents = z.union([SyncState, StatusUpdate, VideoGenerated, Echo]);
 

@@ -54,6 +54,12 @@ export function createImageGenWithRefAgent() {
   const agent = new Agent<VideoGenAgentContext, VideoGenRealtime.AgentOutput>({
     name: "ImageGenWithRefAgent",
     model: "gpt-5.1",
+    modelSettings: {
+      reasoning: {
+        effort: "high",
+        summary: "auto",
+      },
+    },
     instructions: sysPrompt,
     tools: [nanoBananaTool],
     // @ts-expect-error weird zod typing issue

@@ -1,5 +1,5 @@
 import { Agent } from "@openai/agents";
-import type { VideoGenRealtime } from "@shared/agents";
+import { VideoGenRealtime } from "@shared/agents";
 import { PRIMARY_GOAL } from "./constants";
 import type { VideoGenAgentContext } from "./context";
 import { StaticPrompts } from "./prompts";
@@ -181,7 +181,7 @@ export function createVideoGenAgent() {
         summary: "auto",
       },
     },
-    // @ts-expect-error weird zod typing issue
+    // @ts-expect-error zod version mismatch
     outputType: VideoGenRealtime.AgentOutput,
   });
   return agent;

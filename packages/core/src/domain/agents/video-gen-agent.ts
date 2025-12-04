@@ -390,6 +390,14 @@ export class VideoGenAgent extends AIChatAgent<
           draft.input = data;
         });
       },
+      set_agent: async (data) => {
+        this.log(`[VideoGenAgent] switching agent to ${data.agent}`);
+        this.runStateSerialized = null;
+        this.patchState((draft) => {
+          Object.assign(draft, VideoGenRealtime.initialServerAppState);
+          draft.agent = data.agent;
+        });
+      },
       start_pipeline: async () => {
         await this.runPipeline({
           agent: this.state.agent,

@@ -70,7 +70,13 @@ export function useVideoGenAgent({
         video_generated: async (data) => {
           setServerState((prev) => ({
             ...prev,
-            finalVideoUrl: data.videoUrl,
+            artifacts: {
+              ...prev.artifacts,
+              videos: [
+                ...(prev.artifacts.videos ?? []),
+                { id: data.assetId, videoUrl: data.videoUrl },
+              ],
+            },
             lastUpdated: new Date().toISOString(),
           }));
           await callUserHandler("video_generated", data);
@@ -112,11 +118,22 @@ export function useVideoGenAgent({
     agent,
     // Application State
     state: serverState,
-    // Custom Event Sender
+    setAgent: (
+      agentName: VideoGenRealtime.AgentName,
+      input?: VideoGenRealtime.EventDataMap["set_input"],
+    ) => {
+      sendEvent("set_agent", { agent: agentName });
+      if (input) {
+        sendEvent("set_input", input);
+      }
+    },
+    // low level event sender on ws
     sendEvent,
     // chat integration
     chat,
     // server state
     serverState,
+    // rpc wrappers around sendEvent for operations
+    // ...
   };
 }

@@ -106,11 +106,32 @@ export function toolBuilder<
           `Invalid tool output: ${JSON.stringify(parsed.error)}`,
         );
       } catch (error) {
-        return toolError(
-          name,
-          error instanceof Error ? error.message : String(error),
-        );
+        return toolError(name, formatToolError(error));
       }
     },
   });
+}
+
+function formatToolError(error: unknown): string {
+  if (error instanceof Error) {
+    const parts = [error.message];
+    const maybeCode = (error as { code?: unknown }).code;
+    if (maybeCode !== undefined) {
+      parts.push(`code=${maybeCode as string}`);
+    }
+    const details = (error as { details?: unknown }).details;
+    if (details !== undefined) {
+      parts.push(`details=${safeStringify(details)}`);
+    }
+    return parts.join(" | ");
+  }
+  return safeStringify(error);
+}
+
+function safeStringify(value: unknown): string {
+  try {
+    return typeof value === "string" ? value : JSON.stringify(value);
+  } catch (_err) {
+    return String(value);
+  }
 }

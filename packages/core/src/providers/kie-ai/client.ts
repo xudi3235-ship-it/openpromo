@@ -661,11 +661,7 @@ export class KieAIClient {
       }
 
       if (data.successFlag === 2 || data.successFlag === 3) {
-        throw new KieAIError(
-          500,
-          data.errorMessage ??
-            `Video generation failed (flag=${data.successFlag})`,
-        );
+        throw new KieAIError(500, JSON.stringify(data));
       }
 
       // Still generating, wait and retry
