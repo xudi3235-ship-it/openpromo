@@ -2,6 +2,8 @@
 // Style components
 // ---------------------------------------------------------------------------
 
+// NOTE: This legacy style_component schema is slated for deprecation in favor of the generic asset/asset_link model.
+// New work should use assets + links to attach style references/covers instead of adding fields here.
 import { id, timestamps } from "@core/database/types";
 import { StyleState } from "@shared/style";
 import {

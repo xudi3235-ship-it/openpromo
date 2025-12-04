@@ -1,3 +1,5 @@
+// NOTE: Legacy image_generation schema; planned to be superseded by the generic agent_run + asset/asset_link model.
+// Prefer new work to persist generation outputs via agent_run and assets.
 import { id, timestamps, ulid } from "@core/database/types";
 import {
   type AnyPgColumn,

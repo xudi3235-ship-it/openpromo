@@ -1,3 +1,5 @@
+// NOTE: Legacy video_generation schema; planned to be superseded by the generic agent_run + asset/asset_link model.
+// Prefer persisting new generation outputs via agent_run and assets.
 import { id, timestamps, ulid } from "@core/database/types";
 import {
   index,

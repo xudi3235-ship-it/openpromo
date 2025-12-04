@@ -1,6 +1,11 @@
 export type { OrpcContext, OrpcWorkspaceContext } from "./context";
 export { orpcBuilder } from "./context";
 export { withWorkspaceRole } from "./middleware";
+export type {
+  AgentRunsRouterInputs,
+  AgentRunsRouterOutputs,
+} from "./routes/agent-runs";
+export { agentRunsRouter } from "./routes/agent-runs";
 export { contentRouter } from "./routes/content/index";
 export { imageGenRouter } from "./routes/image-gen";
 export { inboxRouter } from "./routes/inbox";
@@ -22,6 +27,7 @@ export { workspacesRouter } from "./routes/workspaces";
 import { getPostHogClient } from "@core/providers/posthog";
 import { onError } from "@orpc/server";
 import { orpcBuilder } from "./context";
+import { agentRunsRouter as agentRuns } from "./routes/agent-runs";
 import { contentRouter as content } from "./routes/content/index";
 import { imageGenRouter as imageGen } from "./routes/image-gen";
 import { inboxRouter as inbox } from "./routes/inbox";
@@ -53,6 +59,7 @@ export const orpcRouter = orpcBuilder
   )
   .router({
     content,
+    agentRuns,
     planet,
     inbox,
     insights,

@@ -372,6 +372,20 @@
       "when": 1764217039338,
       "tag": "0052_tense_the_executioner",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1764823949824,
+      "tag": "0053_elite_whistler",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1764825892728,
+      "tag": "0054_far_selene",
+      "breakpoints": true
     }
   ]
 }

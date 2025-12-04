@@ -13,22 +13,27 @@ export namespace VideoGenRealtime {
     })
     .strict();
 
-  const PipelineStatus = z.enum([
+  export const RunStatus = [
     "not_started",
     "running",
     "succeeded",
     "failed",
     "canceled",
-  ]);
+  ] as const;
 
-  export const AgentName = z.enum(["video_gen_agent", "image_gen_agent"]);
-  export type AgentName = z.infer<typeof AgentName>;
+  export const RunStatusZod = z.enum(RunStatus);
+  export type RunStatus = z.infer<typeof RunStatusZod>;
+
+  export const AgentName = ["video_gen_agent", "image_gen_agent"] as const;
+  export type AgentName = z.infer<typeof AgentNameZod>;
+
+  export const AgentNameZod = z.enum(AgentName);
 
   // -- Client Events --
   /**
    * core input data schema, powering the video gen as well as
    */
-  const SetInputData = z.object({
+  export const InputSchema = z.object({
     prompt: z.string(),
     // brand assets, e.g. logo
     brandAssets: z.string().array(),
@@ -42,23 +47,32 @@ export namespace VideoGenRealtime {
       .array()
       .describe("optional style/reference images"),
   });
+  export type Input = z.infer<typeof InputSchema>;
+
+  export const defaultInput: Input = {
+    prompt: "empty prompt",
+    productImages: [],
+    avatarImages: [],
+    referenceImages: [],
+    brandAssets: [],
+  };
 
   export const SetInput = base.extend({
     type: z.literal("set_input"),
-    data: SetInputData,
+    data: InputSchema,
   });
 
   export const StartPipeline = base.extend({
     type: z.literal("start_pipeline"),
     data: z.object({
-      input: SetInputData.optional(),
+      input: InputSchema.optional(),
     }),
   });
 
   export const SetAgent = base.extend({
     type: z.literal("set_agent"),
     data: z.object({
-      agent: AgentName,
+      agent: AgentNameZod,
     }),
   });
 
@@ -76,6 +90,10 @@ export namespace VideoGenRealtime {
     id: z.string(),
     imageUrl: z.string(),
   });
+  export const defaultArtifacts = {
+    images: [] as z.infer<typeof Image>[],
+    videos: [] as z.infer<typeof Video>[],
+  };
   // -- agent output schema --
   // used for agent run
   export const AgentOutput = z.object({
@@ -92,13 +110,19 @@ export namespace VideoGenRealtime {
   });
 
   export type AgentOutput = z.infer<typeof AgentOutput>;
+  export const defaultAgentOutput: AgentOutput = {
+    done: false,
+    message: "",
+    output: defaultArtifacts,
+    error: null,
+  };
 
   // -- Application State --
-  const serverAppState = z.object({
-    agent: AgentName,
-    status: PipelineStatus,
+  export const serverAppState = z.object({
+    agent: AgentNameZod,
+    status: RunStatusZod,
     lastUpdated: z.string(),
-    input: SetInputData,
+    input: InputSchema,
     logs: z.string().describe("optional logs from agent run"),
     // intermediate artifacts generated in the pipeline
     // during agent run
@@ -118,22 +142,9 @@ export namespace VideoGenRealtime {
     status: "not_started",
     logs: "",
     lastUpdated: new Date().toISOString(),
-    input: {
-      prompt: "empty prompt",
-      productImages: [],
-      avatarImages: [],
-      referenceImages: [],
-      brandAssets: [],
-    },
-    output: {
-      output: {
-        videos: [],
-        images: [],
-      },
-      done: false,
-      message: "",
-    },
-    artifacts: {},
+    input: defaultInput,
+    output: defaultAgentOutput,
+    artifacts: defaultArtifacts,
     error: null,
   };
 
@@ -148,7 +159,7 @@ export namespace VideoGenRealtime {
   export const StatusUpdate = base.extend({
     type: z.literal("status_update"),
     data: z.object({
-      status: PipelineStatus,
+      status: RunStatusZod,
       currentStep: z.string(),
       message: z.string().optional(),
     }),
