@@ -1,6 +1,7 @@
 import type { ApiEnv } from "@core/helpers/api-env";
 import { Hono } from "hono";
 import { withAuth } from "../../../middleware/with-auth";
+import { agentsRoute } from "../agents";
 import { connectedAccountsRoute } from "./connected-accounts";
 import { contentRoute } from "./content";
 import { inboxRoute } from "./inbox";
@@ -29,4 +30,5 @@ export const workspacesRoute = new Hono<ApiEnv>()
   .route("/:workspaceSlug/media", mediaRoute)
   .route("/:workspaceSlug/storage", storageRoute)
   .route("/:workspaceSlug/team", workspaceTeamRoute)
-  .route("/:workspaceSlug/content", contentRoute);
+  .route("/:workspaceSlug/content", contentRoute)
+  .route("/:workspaceSlug/agents", agentsRoute);

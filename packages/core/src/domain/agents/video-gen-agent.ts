@@ -79,6 +79,7 @@ export class VideoGenAgent extends AIChatAgent<
   // internal states
   private runStateSerialized: string | null = null;
   private _logs: string = "";
+  private actor: Actor.WorkspaceUser | null = null;
 
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
@@ -88,6 +89,7 @@ export class VideoGenAgent extends AIChatAgent<
     if (!this.state) {
       this.setState(VideoGenRealtime.initialServerAppState);
     }
+    console.log(`[VideoGenAgent] initialized with state:`);
   }
 
   /**
@@ -102,6 +104,20 @@ export class VideoGenAgent extends AIChatAgent<
         draft.lastUpdated = new Date().toISOString();
       }),
     );
+  }
+
+  // sets the actor ctx for DO execution
+  setActor(actor: Actor.WorkspaceUser) {
+    this.actor = actor;
+    console.log(`[VideoGenAgent] Actor set:`, actor);
+    // noop, provide actor ctx.
+    this.withActor(() => Promise.resolve());
+  }
+
+  private withActor<T>(fn: () => Promise<T>): Promise<T> {
+    if (!this.actor) throw new Error("Actor not set on VideoGenAgent");
+
+    return Actor.provide("workspace_user", this.actor.properties, fn);
   }
 
   private async runPipeline(params: { agent: VideoGenRealtime.AgentName }) {
@@ -332,6 +348,7 @@ export class VideoGenAgent extends AIChatAgent<
   // https://developers.cloudflare.com/agents/api-reference/websockets/
   // for websocket features
   async onConnect(connection: Connection, ctx: ConnectionContext) {
+    console.log({ connection, ctx });
     // Connections are automatically accepted by the SDK.
     // You can also explicitly close a connection here with connection.close()
     // Access the Request on ctx.request to inspect headers, cookies and the URL

@@ -3,6 +3,7 @@ import { VideoGenRealtime } from "@shared";
 import { useAgentChat } from "agents/ai-react";
 import { useAgent } from "agents/react";
 import { useCallback, useState } from "react";
+import { useWorkspace } from "./useWorkspace";
 
 type UseVideoGenAgentProps = {
   userId: string;
@@ -15,6 +16,7 @@ export function useVideoGenAgent({
   onEvent,
   _onMessage,
 }: UseVideoGenAgentProps) {
+  const { workspace } = useWorkspace();
   const [isConnected, setIsConnected] = useState(false);
   const [serverState, setServerState] =
     useState<VideoGenRealtime.ServerAppState>(
@@ -37,7 +39,7 @@ export function useVideoGenAgent({
   const agent = useAgent<VideoGenRealtime.ServerAppState>({
     agent: "video-gen-agent",
     name: userId,
-    host: `${window.location.origin}/api/agents`,
+    host: `${window.location.origin}/api/workspaces/${workspace.slug}/agents`,
     onOpen: () => {
       console.log("[useVideoGenAgent] Connected");
       setIsConnected(true);

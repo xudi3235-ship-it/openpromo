@@ -1,10 +1,13 @@
+import { Actor } from "@core/helpers/actor";
 import type { ApiEnv } from "@core/helpers/api-env";
 import { getGlobalTraceProvider } from "@openai/agents";
 import type { VideoGenAgent } from "@openpromo/core/domain/agents/video-gen-agent";
 import { getAgentByName } from "agents";
 import { Hono } from "hono";
+import { withWorkspaceRole } from "../../middleware/with-workspace-role";
 
 export const agentsRoute = new Hono<ApiEnv>()
+  .use(withWorkspaceRole("workspace_editor"))
   // Handle dynamic agent paths: /agents/:agentName/:instanceId/*
   .all("/:agentName/:instanceId{.*}", async (c) => {
     const agentName = c.req.param("agentName");
@@ -19,18 +22,20 @@ export const agentsRoute = new Hono<ApiEnv>()
     try {
       // Get the agent instance using the VideoGenAgent binding
       console.log(`[agents] Getting agent instance: ${instanceId}`);
-      const agent = getAgentByName<ApiEnv, VideoGenAgent>(
+      const agent = await getAgentByName<ApiEnv, VideoGenAgent>(
         c.env.VideoGenAgent,
         instanceId,
+        {
+          // props: {
+          //   foo: "bar",
+          // },
+        },
       );
-      // console.log(`[agents] Agent stub retrieved`);
-
+      // set actor ctx
+      await agent.setActor(Actor.assert("workspace_user"));
       // Pass the request to the agent
       // console.log(`[agents] Forwarding request to agent...`);
-      const response = await (await agent).fetch(c.req.raw);
-      // console.log(
-      //   `[agents] ${method} /${agentName}/${instanceId} -> ${response.status}`,
-      // );
+      const response = await agent.fetch(c.req.raw);
       return response;
     } catch (error) {
       console.error(
