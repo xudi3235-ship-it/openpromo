@@ -72,8 +72,8 @@ function ProductVisualsV2Page() {
   });
 
   useEffect(() => {
-    setSelectedAgent(serverState.agent);
-  }, [serverState.agent]);
+    setSelectedAgent(serverState.agentName);
+  }, [serverState.agentName]);
 
   const buildInputPayload = useMemo(() => {
     return () => {

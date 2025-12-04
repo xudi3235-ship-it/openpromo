@@ -119,16 +119,17 @@ export namespace VideoGenRealtime {
 
   // -- Application State --
   export const serverAppState = z.object({
-    agent: AgentNameZod,
+    agentName: AgentNameZod,
     status: RunStatusZod,
+    runId: z.string().nullable(),
     lastUpdated: z.string(),
     input: InputSchema,
     logs: z.string().describe("optional logs from agent run"),
     // intermediate artifacts generated in the pipeline
     // during agent run
     artifacts: z.object({
-      images: Image.array().optional(),
-      videos: Video.array().optional(),
+      images: Image.array(),
+      videos: Video.array(),
     }),
     // agent output
     output: AgentOutput,
@@ -138,8 +139,9 @@ export namespace VideoGenRealtime {
   export type ServerAppState = z.infer<typeof serverAppState>;
 
   export const initialServerAppState: ServerAppState = {
-    agent: "video_gen_agent",
+    agentName: "video_gen_agent",
     status: "not_started",
+    runId: null,
     logs: "",
     lastUpdated: new Date().toISOString(),
     input: defaultInput,

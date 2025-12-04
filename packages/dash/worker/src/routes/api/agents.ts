@@ -20,19 +20,20 @@ export const agentsRoute = new Hono<ApiEnv>()
     // console.log(`[agents] Query: ${url.search}`);
 
     try {
+      const actor = Actor.assert("workspace_user");
       // Get the agent instance using the VideoGenAgent binding
       console.log(`[agents] Getting agent instance: ${instanceId}`);
       const agent = await getAgentByName<ApiEnv, VideoGenAgent>(
         c.env.VideoGenAgent,
         instanceId,
         {
-          // props: {
-          //   foo: "bar",
-          // },
+          props: {
+            actor,
+          },
         },
       );
       // set actor ctx
-      await agent.setActor(Actor.assert("workspace_user"));
+      await agent.setActor(actor);
       // Pass the request to the agent
       // console.log(`[agents] Forwarding request to agent...`);
       const response = await agent.fetch(c.req.raw);

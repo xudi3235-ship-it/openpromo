@@ -9,6 +9,7 @@ import {
   AgentRunUpdate,
   agentRunTable,
 } from "@core/schemas/agent-run.sql";
+import type { VideoGenRealtime } from "@shared/agents";
 import type z from "zod";
 
 export class EntAgentRun extends Ent<AgentRunSelectType> {
@@ -34,6 +35,12 @@ export class EntAgentRun extends Ent<AgentRunSelectType> {
       }),
       update: AgentRunUpdate.partial(),
     };
+  }
+
+  static async createFromState(state: VideoGenRealtime.ServerAppState) {
+    return await EntAgentRun.create({
+      ...state,
+    });
   }
 
   static async create(
@@ -175,5 +182,11 @@ export class EntAgentRun extends Ent<AgentRunSelectType> {
       .returning({ id: agentRunTable.id });
 
     return { deletedCount: deleted.length };
+  }
+
+  async persistState(state: VideoGenRealtime.ServerAppState) {
+    return await this.update({
+      ...state,
+    });
   }
 }

@@ -35,6 +35,7 @@ think thoroughly & chain the steps, since it's sequential, former steps needs to
 - be creative & adhere to the styles for maximum quality output, optimized for stylish, high engagement, conversion rates for social visuals & ads. Your target users are ads agency & businesses owners, and this is crucial for their time saving & vital to biz outcomes. THINK about how to make this stand OUT.
 - depends on the scenario & context.  if the refernce img is good fit with the product, then the variance can be low when we trynna put the product it. otherwise, if there's no good fit for the reference and the product image, then use your own creative thinking to come up with a very ads-creative / social-media good fit visual
 - make sure to make swaps of the elements so that we ensure the output image does NOT look alike as the style reference. we dont want people can tell that we used the style ref img. So it needs to be differentiated enough while still keeping the core style elements.
+- NO need for JSON prompt format. plain text works just fine.
 
 5. docs/guides
 ### general prompt guide for image gen

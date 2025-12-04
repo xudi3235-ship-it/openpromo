@@ -31,6 +31,7 @@ import {
   type ToolSet,
   type UIMessage,
 } from "ai";
+import { EntAgentRun } from "../agent-run";
 import { onToolOutput } from "./agent-types";
 import type { VideoGenAgentContext } from "./context";
 import { buildSystemPrompt, createVideoGenAgent } from "./create-agent";
@@ -46,6 +47,37 @@ const VIDEO_ASSET_TOOL_NAMES = [
   "veo31_video_extension",
   "sora2_storyboard_generate",
 ] as const;
+
+class ActorStore {
+  private cache: Actor.WorkspaceUser | null = null;
+  private readonly key = "actor";
+
+  constructor(private ctx: AgentContext) {}
+
+  async get(): Promise<Actor.WorkspaceUser | null> {
+    if (this.cache) return this.cache;
+    const storedActor = await this.ctx.storage.get(this.key);
+    if (!storedActor) return null;
+    this.cache = storedActor as Actor.WorkspaceUser;
+    return this.cache;
+  }
+
+  async set(actor: Actor.WorkspaceUser) {
+    this.cache = actor;
+    await this.ctx.storage.put(this.key, actor);
+  }
+
+  async withContext<T>(fn: () => Promise<T>): Promise<T> {
+    const actor = await this.get();
+    if (!actor) throw new Error("Actor not set on VideoGenAgent");
+    return Actor.provide("workspace_user", actor.properties, fn);
+  }
+}
+
+// extra props for agent instantiation.
+export interface VideoGenAgentProps {
+  actor: Actor.WorkspaceUser;
+}
 
 /**
  * core design of the video gen agent
@@ -77,19 +109,35 @@ export class VideoGenAgent extends AIChatAgent<
   VideoGenRealtime.ServerAppState
 > {
   // internal states
-  private runStateSerialized: string | null = null;
-  private _logs: string = "";
-  private actor: Actor.WorkspaceUser | null = null;
+  private runStateSerialized: string | null;
+  private _logs: string;
+  private actorStore: ActorStore;
 
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
     this.runStateSerialized = null;
     this._logs = "";
+    this.actorStore = new ActorStore(ctx);
     // if not initialized, init
     if (!this.state) {
       this.setState(VideoGenRealtime.initialServerAppState);
     }
-    console.log(`[VideoGenAgent] initialized with state:`);
+    this.ctx.blockConcurrencyWhile(async () => {
+      const actor = await this.actorStore.get();
+      console.log(`[VideoGenAgent] actor resolved:`, actor);
+    });
+  }
+
+  // sets the actor ctx for DO execution
+  // DO has in memory api as well as storage, we persist actor in storage
+  async setActor(actor: Actor.WorkspaceUser) {
+    await this.actorStore.set(actor);
+    console.log(`[VideoGenAgent] Actor set:`, actor);
+    await this.withActor(() => Promise.resolve());
+  }
+
+  private async withActor<T>(fn: () => Promise<T>): Promise<T> {
+    return this.actorStore.withContext(fn);
   }
 
   /**
@@ -98,34 +146,39 @@ export class VideoGenAgent extends AIChatAgent<
   private patchState(
     updater: (draft: VideoGenRealtime.ServerAppState) => void,
   ) {
-    this.setState(
-      produce(this.state, (draft) => {
-        updater(draft);
-        draft.lastUpdated = new Date().toISOString();
+    const newState = produce(this.state, (draft) => {
+      updater(draft);
+      draft.lastUpdated = new Date().toISOString();
+    });
+    this.setState(newState);
+    if (!this.state.runId) return;
+    // persist state
+    EntAgentRun.fromID(this.state.runId).then((run) => {
+      run.persistState(newState);
+    });
+  }
+
+  private async runPipeline(params: { agent: VideoGenRealtime.AgentName }) {
+    await this.withActor(() =>
+      withTrace(VideoGenAgent.name, async () => {
+        return this.withStateMgmt(async () => {
+          await this.runPipelineImpl(params);
+        });
       }),
     );
   }
 
-  // sets the actor ctx for DO execution
-  setActor(actor: Actor.WorkspaceUser) {
-    this.actor = actor;
-    console.log(`[VideoGenAgent] Actor set:`, actor);
-    // noop, provide actor ctx.
-    this.withActor(() => Promise.resolve());
+  private castProps(_props?: Record<string, unknown>): VideoGenAgentProps {
+    const props = _props as unknown as VideoGenAgentProps;
+    return props;
   }
 
-  private withActor<T>(fn: () => Promise<T>): Promise<T> {
-    if (!this.actor) throw new Error("Actor not set on VideoGenAgent");
-
-    return Actor.provide("workspace_user", this.actor.properties, fn);
-  }
-
-  private async runPipeline(params: { agent: VideoGenRealtime.AgentName }) {
-    await withTrace(VideoGenAgent.name, async () => {
-      return this.withStateMgmt(async () => {
-        await this.runPipelineImpl(params);
-      });
-    });
+  onStart(_props?: Record<string, unknown> | undefined) {
+    const props = this.castProps(_props);
+    console.log(`[VideoGenAgent] onStart called with props:`, props);
+    if (props?.actor) {
+      this.setActor(props.actor);
+    }
   }
   // biome-ignore lint/suspicious/noExplicitAny: ok
   private log(msg: string, ...args: any[]) {
@@ -255,8 +308,10 @@ export class VideoGenAgent extends AIChatAgent<
       return;
     }
     // 0. mark as running
+    const run = await EntAgentRun.createFromState(this.state);
     this.patchState((draft) => {
       draft.status = "running";
+      draft.runId = run.data.id;
     });
     try {
       // 1. run the fn
@@ -348,7 +403,7 @@ export class VideoGenAgent extends AIChatAgent<
   // https://developers.cloudflare.com/agents/api-reference/websockets/
   // for websocket features
   async onConnect(connection: Connection, ctx: ConnectionContext) {
-    console.log({ connection, ctx });
+    console.log(`[VideoGenAgent] onConnect called`);
     // Connections are automatically accepted by the SDK.
     // You can also explicitly close a connection here with connection.close()
     // Access the Request on ctx.request to inspect headers, cookies and the URL
@@ -416,12 +471,12 @@ export class VideoGenAgent extends AIChatAgent<
         this.runStateSerialized = null;
         this.patchState((draft) => {
           Object.assign(draft, VideoGenRealtime.initialServerAppState);
-          draft.agent = data.agent;
+          draft.agentName = data.agent;
         });
       },
       start_pipeline: async () => {
         await this.runPipeline({
-          agent: this.state.agent,
+          agent: this.state.agentName,
         });
       },
       reset_state: async () => {
@@ -567,18 +622,4 @@ export class VideoGenAgent extends AIChatAgent<
     });
     return workflow;
   }
-  // async _runImageGenPipeline() {
-  //   const context: VideoGenAgentContext = {
-  //     input: this.state.input,
-  //   };
-  //   const agent = createImageGenWithRefAgent();
-  //   const input = await this.createRunnerInput(agent);
-
-  //   const _output = await run(agent, input, {
-  //     context,
-  //   });
-  //   console.log(`Image gen output:`, _output);
-  //   const output = _output.finalOutput as VideoGenRealtime.AgentOutput;
-  //   console.log(`Image gen final output:`, output);
-  // }
 }

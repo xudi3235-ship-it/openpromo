@@ -88,8 +88,8 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
   }, [inputForm]);
 
   useEffect(() => {
-    setSelectedAgent(serverState.agent);
-  }, [serverState.agent]);
+    setSelectedAgent(serverState.agentName);
+  }, [serverState.agentName]);
 
   useEffect(() => {
     if (!isConnected) return;
