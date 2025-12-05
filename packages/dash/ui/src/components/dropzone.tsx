@@ -32,6 +32,7 @@ const DropzoneContext = createContext<DropzoneContextType | undefined>(
 export type DropzoneProps = Omit<DropzoneOptions, "onDrop"> & {
   src?: File[];
   className?: string;
+  variant?: "default" | "compact";
   onDrop?: (
     acceptedFiles: File[],
     fileRejections: FileRejection[],
@@ -51,6 +52,7 @@ export const Dropzone = ({
   src,
   className,
   children,
+  variant = "default",
   ...props
 }: DropzoneProps) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -78,13 +80,17 @@ export const Dropzone = ({
     >
       <Button
         className={cn(
-          "relative h-auto w-full flex-col overflow-hidden p-8",
+          "relative overflow-hidden",
+          variant === "default"
+            ? "h-auto w-full flex-col p-8"
+            : "inline-flex items-center justify-center border-dashed p-0",
           isDragActive && "outline-none ring-1 ring-ring",
           className,
         )}
         disabled={disabled}
         type="button"
         variant="outline"
+        size={variant === "compact" ? "icon" : undefined}
         {...getRootProps()}
       >
         <input {...getInputProps()} disabled={disabled} />

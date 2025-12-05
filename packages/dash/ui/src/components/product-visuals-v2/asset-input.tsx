@@ -1,9 +1,9 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
 import { Label } from "@openpromo/ui/components/label";
-import { X } from "lucide-react";
-import { useRef } from "react";
-import { Dropzone, DropzoneEmptyState } from "@/components/dropzone";
+import { Plus, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { Dropzone } from "@/components/dropzone";
 import type { AssetItem } from "@/features/product-visuals-v2/product-visuals-types";
 import { useStorageUpload } from "@/hooks/useStorageUpload";
 
@@ -22,6 +22,7 @@ export function AssetInput({
 }) {
   const { uploadFile, isUploading } = useStorageUpload();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [showUrlInput, setShowUrlInput] = useState(false);
 
   const handleUrlAdd = () => {
     const value = inputRef.current?.value?.trim();
@@ -36,44 +37,60 @@ export function AssetInput({
         <Label>{label}</Label>
         {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
       </div>
-      <Dropzone
-        accept={{ "image/*": [], "video/*": [] }}
-        maxFiles={3}
-        disabled={isUploading}
-        onDrop={async (files) => {
-          try {
-            const uploaded = await Promise.all(
-              files.map((file) => uploadFile(file)),
-            );
-            uploaded.forEach((file) => {
-              onAdd({
-                id: file.key,
-                url: file.publicUrl,
+      <div className="flex items-start gap-3">
+        <Dropzone
+          accept={{ "image/*": [], "video/*": [] }}
+          maxFiles={3}
+          disabled={isUploading}
+          variant="compact"
+          onDrop={async (files) => {
+            try {
+              const uploaded = await Promise.all(
+                files.map((file) => uploadFile(file)),
+              );
+              uploaded.forEach((file) => {
+                onAdd({
+                  id: file.key,
+                  url: file.publicUrl,
+                });
               });
-            });
-          } catch {
-            // errors handled in hook
-          }
-        }}
-        className="border-dashed"
-      >
-        <DropzoneEmptyState />
-      </Dropzone>
-      <div className="flex items-center gap-2">
-        <Input
-          ref={inputRef}
-          placeholder="Paste URL"
-          className="font-mono text-xs"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleUrlAdd();
+            } catch {
+              // errors handled in hook
             }
           }}
-        />
-        <Button variant="outline" size="sm" onClick={handleUrlAdd}>
-          Add
-        </Button>
+          className="border-dashed shrink-0"
+        >
+          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+            <Plus className="h-4 w-4" />
+          </div>
+        </Dropzone>
+        <div className="flex-1 space-y-2">
+          <button
+            type="button"
+            onClick={() => setShowUrlInput((prev) => !prev)}
+            className="text-xs font-medium text-foreground hover:underline"
+          >
+            {showUrlInput ? "Hide URL input" : "Paste URL (optional)"}
+          </button>
+          {showUrlInput && (
+            <div className="flex items-center gap-2">
+              <Input
+                ref={inputRef}
+                placeholder="Paste URL"
+                className="font-mono text-xs"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleUrlAdd();
+                  }
+                }}
+              />
+              <Button variant="outline" size="sm" onClick={handleUrlAdd}>
+                Add
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
       {assets.length > 0 && (
         <div className="flex flex-wrap gap-2">
