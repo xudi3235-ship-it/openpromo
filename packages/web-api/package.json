@@ -7,14 +7,13 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@hono/zod-validator": "^0.7.2",
+    "@hono/zod-validator": "^0.7.5",
     "@openpromo/core": "workspace:*",
     "@workos-inc/node": "catalog:",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
-    "nanoid": "^5.1.5",
+    "nanoid": "^5.1.6",
     "slugify": "^1.6.6",
     "zod": "catalog:"
-  },
-  "devDependencies": {}
+  }
 }
