@@ -23,6 +23,7 @@ import {
 import { useProductListQuery } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles-queries";
 import { useComposerStore } from "@/stores/composer-store";
+import { useOptimisticRuns } from "./useOptimisticRuns";
 
 const sampleProductImageUrls = [
   "https://i.pinimg.com/1200x/1e/63/b8/1e63b8168a25c2a2a4127971514d97e2.jpg",
@@ -114,6 +115,13 @@ function ProductVisualsV2Page() {
     }
   }, [serverState.runId, refetchRuns]);
 
+  // Merge optimistic runs with server data
+  const mergedRuns = useOptimisticRuns(
+    feedData?.items,
+    serverState,
+    workspace.id,
+  );
+
   const handleGenerate = useCallback(() => {
     if (!isConnected) {
       toast.error("Not connected yet");
@@ -140,13 +148,13 @@ function ProductVisualsV2Page() {
     });
   };
 
-  const handleSelectAll = () => {
-    if (selectedRunIds.size === (feedData?.items.length ?? 0)) {
+  const handleSelectAll = useCallback(() => {
+    if (selectedRunIds.size === mergedRuns.length) {
       setSelectedRunIds(new Set());
     } else {
-      setSelectedRunIds(new Set(feedData?.items.map((run) => run.id) ?? []));
+      setSelectedRunIds(new Set(mergedRuns.map((run) => run.id)));
     }
-  };
+  }, [selectedRunIds.size, mergedRuns]);
 
   const handleBatchDelete = () => {
     if (selectedRunIds.size === 0) return;
@@ -158,9 +166,7 @@ function ProductVisualsV2Page() {
     if (selectedRunIds.size === 0) return;
 
     // Get selected run objects
-    const selectedRuns = (feedData?.items ?? []).filter((run) =>
-      selectedRunIds.has(run.id),
-    );
+    const selectedRuns = mergedRuns.filter((run) => selectedRunIds.has(run.id));
 
     // Extract media specs from selected runs
     const attachments = selectedRuns
@@ -383,7 +389,7 @@ function ProductVisualsV2Page() {
                       onClick={handleSelectAll}
                       className="h-7 text-xs"
                     >
-                      {selectedRunIds.size === (feedData?.items.length ?? 0)
+                      {selectedRunIds.size === mergedRuns.length
                         ? "Deselect all"
                         : "Select all"}
                     </Button>
@@ -422,7 +428,7 @@ function ProductVisualsV2Page() {
                     ))}
                   </div>
                 )}
-                {!isFeedPending && (feedData?.items.length ?? 0) === 0 && (
+                {!isFeedPending && mergedRuns.length === 0 && (
                   <div className="flex flex-col items-center justify-center text-center py-16 text-muted-foreground gap-2">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                       <ImageIcon className="h-5 w-5" />
@@ -433,9 +439,9 @@ function ProductVisualsV2Page() {
                     </p>
                   </div>
                 )}
-                {!isFeedPending && (feedData?.items.length ?? 0) > 0 && (
+                {!isFeedPending && mergedRuns.length > 0 && (
                   <div className={`grid gap-3 ${getGridClass(columnCount)}`}>
-                    {feedData?.items.map((run) => (
+                    {mergedRuns.map((run) => (
                       <ResultCard
                         key={run.id}
                         run={run}
