@@ -14,6 +14,7 @@ import { ResultCard } from "@/components/product-visuals-v2/result-card";
 import { RunModal } from "@/components/product-visuals-v2/run-modal";
 import { useProductVisualsStore } from "@/features/product-visuals-v2/product-visuals-store";
 import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import { useOptimisticRuns } from "@/hooks/useOptimisticRuns";
 import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import {
@@ -23,7 +24,6 @@ import {
 import { useProductListQuery } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles-queries";
 import { useComposerStore } from "@/stores/composer-store";
-import { useOptimisticRuns } from "./useOptimisticRuns";
 
 const sampleProductImageUrls = [
   "https://i.pinimg.com/1200x/1e/63/b8/1e63b8168a25c2a2a4127971514d97e2.jpg",
@@ -35,10 +35,10 @@ const samplePrompt =
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/product-visuals-v2/",
 )({
-  component: ProductVisualsV2Page,
+  component: ProductVisualsPage,
 });
 
-function ProductVisualsV2Page() {
+function ProductVisualsPage() {
   const { data: productsData, isPending: isLoadingProducts } =
     useProductListQuery({ pageSize: 50 });
 
