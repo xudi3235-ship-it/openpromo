@@ -72,15 +72,7 @@ function ProductVisualsV2Page() {
   const [selectedRun, setSelectedRun] = useState<RunFeedItem | null>(null);
   const [selectedStyleId, setSelectedStyleId] = useState<string>("");
   const lastSentRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const newMode =
-      serverState.agentName === "image_gen_agent" ? "image" : "video";
-    // Only call setMode if the mode actually changed
-    if (newMode !== mode) {
-      setMode(newMode);
-    }
-  }, [serverState.agentName, mode, setMode]);
+  const lastAgentRef = useRef<string | null>(null);
 
   const buildInput = useMemo(
     (): VideoGenRealtime.EventDataMap["set_input"] => ({
@@ -98,9 +90,15 @@ function ProductVisualsV2Page() {
     const agentName = mode === "image" ? "image_gen_agent" : "video_gen_agent";
     const payload = buildInput;
     const payloadJson = JSON.stringify(payload);
-    // Only send if payload has actually changed
-    if (lastSentRef.current === payloadJson) return;
+
+    // Send if agent changed OR payload changed
+    if (
+      lastSentRef.current === payloadJson &&
+      lastAgentRef.current === agentName
+    )
+      return;
     lastSentRef.current = payloadJson;
+    lastAgentRef.current = agentName;
     setAgent(agentName, payload);
   }, [buildInput, isConnected, mode, setAgent]);
 
@@ -210,7 +208,9 @@ function ProductVisualsV2Page() {
             onAddBrandAsset={addBrandAsset}
             onRemoveBrandAsset={removeBrandAsset}
             onGenerate={handleGenerate}
-            isGenerateDisabled={!isConnected}
+            isGenerateDisabled={
+              !isConnected || serverState.status === "running"
+            }
             error={error}
           />
 
