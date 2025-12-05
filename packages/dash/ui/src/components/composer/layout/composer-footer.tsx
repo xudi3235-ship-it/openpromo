@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MdPublish, MdSaveAlt, MdSchedule } from "react-icons/md";
 import { toast } from "sonner";
 import { ValidationErrors } from "@/components/composer/controls/validation-errors";
+import { ContentConfirmationDialog } from "@/components/composer/dialogs/content-confirmation-dialog";
 import { PublishingOverlay } from "@/components/composer/layout/publishing-overlay";
 import { useComposerPublishHandlers } from "@/hooks/composer/useComposerHooks";
 import { useInternal } from "@/hooks/useActor";
@@ -115,6 +116,9 @@ export function ComposerFooter() {
     status: "loading" | "success" | "error";
   }>({ isVisible: false, status: "loading" });
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showContentConfirm, setShowContentConfirm] = useState<
+    "draft" | "publish" | "schedule" | null
+  >(null);
 
   const composerStore = useComposerStore();
   const {
@@ -263,12 +267,26 @@ export function ComposerFooter() {
   };
 
   const handleSaveDraft = () => {
+    setShowContentConfirm("draft");
+  };
+
+  const handleConfirmSaveDraft = () => {
     setPublishingStatus("DRAFT");
     setPublishingState({ isVisible: true, status: "loading" });
+    setShowContentConfirm(null);
     triggerMutation();
   };
 
   const handlePublish = () => {
+    // Determine which dialog to show based on scheduling
+    if (contentCreateData.base.publishingStatus === "SCHEDULED") {
+      setShowContentConfirm("schedule");
+    } else {
+      setShowContentConfirm("publish");
+    }
+  };
+
+  const handleConfirmPublish = () => {
     // Only set to PUBLISH_NOW if not already scheduled
     if (contentCreateData.base.publishingStatus !== "SCHEDULED") {
       setPublishingStatus("PUBLISH_NOW");
@@ -281,6 +299,7 @@ export function ComposerFooter() {
       action: "publish_click",
     });
     setPublishingState({ isVisible: true, status: "loading" });
+    setShowContentConfirm(null);
     triggerMutation();
   };
 
@@ -328,6 +347,33 @@ export function ComposerFooter() {
         onOpenChange={setShowCancelConfirm}
         onConfirm={handleConfirmCancel}
       />
+      {showContentConfirm === "draft" && (
+        <ContentConfirmationDialog
+          open={true}
+          onOpenChange={(open) => !open && setShowContentConfirm(null)}
+          onConfirm={handleConfirmSaveDraft}
+          actionType="draft"
+          isPending={isPending}
+        />
+      )}
+      {showContentConfirm === "schedule" && (
+        <ContentConfirmationDialog
+          open={true}
+          onOpenChange={(open) => !open && setShowContentConfirm(null)}
+          onConfirm={handleConfirmPublish}
+          actionType="schedule"
+          isPending={isPending}
+        />
+      )}
+      {showContentConfirm === "publish" && (
+        <ContentConfirmationDialog
+          open={true}
+          onOpenChange={(open) => !open && setShowContentConfirm(null)}
+          onConfirm={handleConfirmPublish}
+          actionType="publish"
+          isPending={isPending}
+        />
+      )}
       {(import.meta.env.DEV || isInternal) && (
         <div className="max-w-md mx-auto my-4 p-2 bg-muted rounded text-xs overflow-auto border border-dashed border-yellow-500">
           <div className="flex items-center gap-1.5 mb-2 text-yellow-600 dark:text-yellow-500 font-medium">
