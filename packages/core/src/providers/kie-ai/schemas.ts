@@ -95,6 +95,33 @@ export type NanoBananaOutputFormat = z.infer<
   typeof NanoBananaOutputFormatSchema
 >;
 
+export const ZImageAspectRatioSchema = z.enum([
+  "1:1",
+  "4:3",
+  "3:4",
+  "16:9",
+  "9:16",
+]);
+export type ZImageAspectRatio = z.infer<typeof ZImageAspectRatioSchema>;
+
+export const Kling26DurationSchema = z.enum(["5", "10"]);
+export type Kling26Duration = z.infer<typeof Kling26DurationSchema>;
+
+export const SeeDreamAspectRatioSchema = z.enum([
+  "1:1",
+  "4:3",
+  "3:4",
+  "16:9",
+  "9:16",
+  "2:3",
+  "3:2",
+  "21:9",
+]);
+export type SeeDreamAspectRatio = z.infer<typeof SeeDreamAspectRatioSchema>;
+
+export const SeeDreamQualitySchema = z.enum(["basic", "high"]);
+export type SeeDreamQuality = z.infer<typeof SeeDreamQualitySchema>;
+
 // ===== VEO 3.1 SCHEMAS (enums only, response schemas below after ApiResponseSchema) =====
 
 export const Veo31AspectRatioSchema = z.enum(["16:9", "9:16", "Auto"]);

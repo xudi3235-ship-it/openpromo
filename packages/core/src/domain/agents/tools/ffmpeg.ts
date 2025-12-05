@@ -68,8 +68,8 @@ export const ffmpegTool = toolBuilder<
   description: FFMPEG_TOOL_DESCRIPTION,
   parameters: FfmpegParamsSchema,
   async execute(params: FfmpegParams) {
-    const bindings = Binding.use();
-    const stub = bindings.ContainerBackend.getByName("default");
+    // TODO: handle scaling and routing
+    const stub = Binding.use().ContainerBackend.getByName("default");
 
     const resp = await stub.runFfmpeg({
       inputUrls: params.input_urls,

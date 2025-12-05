@@ -13,9 +13,12 @@ import type {
   IdeogramNumImages,
   IdeogramRenderingSpeed,
   IdeogramStyle,
+  Kling26Duration,
   NanoBananaAspectRatio,
   NanoBananaOutputFormat,
   NanoBananaResolution,
+  SeeDreamAspectRatio,
+  SeeDreamQuality,
   StoryboardAspectRatio,
   TaskDetailsResponse,
   TaskResultPayload,
@@ -28,6 +31,7 @@ import type {
   Veo31VideoDetailsResponse,
   Wan25Duration,
   Wan25Resolution,
+  ZImageAspectRatio,
 } from "./schemas";
 import {
   ApiResponseSchema,
@@ -185,6 +189,35 @@ export interface UploadFileStreamParams {
   fileName?: string;
 }
 
+export interface CreateZImageTaskParams {
+  prompt: string;
+  aspectRatio?: ZImageAspectRatio;
+  callbackUrl?: string;
+}
+
+export interface CreateKling26ImageToVideoTaskParams {
+  prompt: string;
+  imageUrls: string[];
+  sound?: boolean;
+  duration?: Kling26Duration;
+  callbackUrl?: string;
+}
+
+export interface CreateSeeDream45TextToImageTaskParams {
+  prompt: string;
+  aspectRatio?: SeeDreamAspectRatio;
+  quality?: SeeDreamQuality;
+  callbackUrl?: string;
+}
+
+export interface CreateSeeDream45EditTaskParams {
+  prompt: string;
+  imageUrls: string[];
+  aspectRatio?: SeeDreamAspectRatio;
+  quality?: SeeDreamQuality;
+  callbackUrl?: string;
+}
+
 // ===== VEO 3.1 INTERFACES =====
 
 export interface Veo31GenerateVideoParams {
@@ -237,6 +270,63 @@ export class KieAIClient {
     });
 
     return this.createTask("nano-banana-pro", input, params.callbackUrl);
+  }
+
+  async createZImageTask(
+    params: CreateZImageTaskParams,
+  ): Promise<CreateTaskResponse> {
+    const input = omitUndefined({
+      prompt: params.prompt,
+      aspect_ratio: params.aspectRatio ?? "1:1",
+    });
+
+    return this.createTask("z-image", input, params.callbackUrl);
+  }
+
+  async createKling26ImageToVideoTask(
+    params: CreateKling26ImageToVideoTaskParams,
+  ): Promise<CreateTaskResponse> {
+    const input = omitUndefined({
+      prompt: params.prompt,
+      image_urls: params.imageUrls,
+      sound: params.sound,
+      duration: params.duration,
+    });
+
+    return this.createTask(
+      "kling-2.6/image-to-video",
+      input,
+      params.callbackUrl,
+    );
+  }
+
+  async createSeeDream45TextToImageTask(
+    params: CreateSeeDream45TextToImageTaskParams,
+  ): Promise<CreateTaskResponse> {
+    const input = omitUndefined({
+      prompt: params.prompt,
+      aspect_ratio: params.aspectRatio ?? "1:1",
+      quality: params.quality ?? "basic",
+    });
+
+    return this.createTask(
+      "seedream/4.5-text-to-image",
+      input,
+      params.callbackUrl,
+    );
+  }
+
+  async createSeeDream45EditTask(
+    params: CreateSeeDream45EditTaskParams,
+  ): Promise<CreateTaskResponse> {
+    const input = omitUndefined({
+      prompt: params.prompt,
+      image_urls: params.imageUrls,
+      aspect_ratio: params.aspectRatio ?? "1:1",
+      quality: params.quality ?? "basic",
+    });
+
+    return this.createTask("seedream/4.5-edit", input, params.callbackUrl);
   }
 
   async createStoryboardTask(

@@ -4,7 +4,7 @@ This file provides guidance for AI Agents working on OpenPromo codebase
 
 - mono repo using pnpm workspace, deployed on cloudflare using wrangler.
 - Runtime: nodejs v24+
-- toolings: `biomejs` for linting, `drizzle` for ORM
+- stack: `biomejs` for linting, `drizzle` for ORM, cf container, Durable Object, queue, KV, connect-rpc, CF container
 
 ## dev tasks
 
@@ -35,7 +35,7 @@ pnpm lint # runs both tasks, ALWAYS run this to verify your changes are safe
 │   │   ├── public
 │   │   ├── ui // ---> hono api
 │   │   └── worker// ---> react SPA, main dashboard
-│   ├── python (NOT IN USE yet)
+│   ├── python (NOT IN USE)
 │   ├── scripts
 │   │   └── src
 │   ├── ui // ----> UI library, react, shadcn
@@ -63,14 +63,12 @@ NOTE: we use both hono as web api server, but we also use `orpc`, which proivdes
 
 #### Rules for www developments:
 
-1. using tailwind css, ensure all color works for dark mode.
-2. ensure you run `pnpm check && pnpm typecheck` to ensure type checks are passing after changes
+1. using tailwind css.
+2. ensure you run `pnpm lint` to ensure type checks are passing after changes
 3. when designing UI, use mimal, optimzied for UX, elegant, flat design principles. If patterns starts to repeat, refactor to 
-4. backend we use Entity class, e.g. EntAttachment, EntPendingContentGroup, which encapsulates business logic. API layer we use hono, each file be its own handelr, and use .route(..., subRoute) to chain them. Then, for the shared zod / JS types, define them in `packages/shared` so to reuse across fullstack. After api is ready, we define queries which uses react query + hono RPC features. then we are ready to use them in the UI.
-5. in backend dev, use `console.log([1.])` statements to add debugging / tracing for the flow so that we can understand what's going wrong.
-6. in our dashboard, we have labs internal route, which has api testing route that can quickly test api.
-7. for any hono api routes, we integrate with react query, place them under `queries` dir, so that we can have fully typsafety. When in doubt, read existing routes for code examples.
-8. for the filenaming, it has to be very specific, e.g. `instagram-backfiller.ts` this is to ensure uniqueness and easier for global code search.
+4. backend we use Entity class, e.g. EntAttachment, EntPendingContentGroup, which encapsulates business logic. API layer we use hono + orpc(preferred), each file be its own handelr, and use .route(..., subRoute) to chain them. Then, for the shared zod / JS types, define them in `packages/shared` so to reuse across fullstack. After api is ready, we define queries which uses react query + hono RPC features. then we are ready to use them in the UI.
+5. in our dashboard, we have labs internal route, which has api testing route that can quickly test api.
+6. for the filenaming, it has to be very specific, e.g. `instagram-backfiller.ts` this is to ensure uniqueness and easier for global code search in IDE.
 
 
 
@@ -119,86 +117,18 @@ Below are the packages that are no longer in use, only kept in monorepo for futu
 
 ## Connect RPC Architecture
 
-We use [Connect RPC](https://connectrpc.com/) for type-safe RPC communication between Modal Python backend and CF Worker.
+We use [Connect RPC](https://connectrpc.com/) for type-safe RPC communication between Modal Python backend and CF Worker. We have cf worker(v8), cf container(`containers.ts`) in go, and modal python (`packages/backend`). NOTE that modal is not currently used in production bc cf container works for us already.
 
-### Overview
-
-```
-Modal Python Backend          CF Worker (Hono)           Dashboard
-       │                            │                        │
-       │  Connect RPC (protobuf)    │                        │
-       │──InternalService.VideoJobUpdate──►│                 │
-       │                            │──dispatchWorkspaceEvent──►│
-       │◄──success response─────────│     (WebSocket via DO)  │
-```
-
-### Proto Files
-
-- **Location**: `packages/backend/proto/`
-- **Internal service**: `internal/v1/internal.proto` - Modal → CF Worker callbacks
-- **Video service**: `video/v1/video.proto` - Video processing RPCs
-
-### Generated Code
-
-- **Python (server/client)**: `packages/backend/src/gen/`
-- **TypeScript (client)**: `packages/shared/src/gen/`
-
-### Key Files
-
-- `packages/dash/worker/src/routes/api/connect.ts` - Connect RPC server handler in CF Worker
-- `packages/backend/src/rpc/internal_client.py` - Python Connect RPC client
-- `packages/backend/src/core/callbacks.py` - Python utilities for pushing job updates
-- `packages/shared/src/workspace/events.ts` - Zod schemas derived from proto enums
-
-### Adding New RPCs
-
-1. Define the RPC in proto file (`packages/backend/proto/`)
-2. Run `pnpm meerkat` to generate code
-3. Implement the handler in `connect.ts` (CF Worker side)
-4. Use the generated client in Python
-
-## Meerkat - Codegen Orchestrator
+## Meerkat - Codegen script
 
 `meerkat` is our codegen orchestrator that runs all code generation in the correct order.
-
-### Usage
 
 ```bash
 # Run all codegen steps
 pnpm meerkat
-
-# Skip Modal OpenAPI generation (use existing openapi.json)
-pnpm meerkat --skip-modal
-
-# Skip legacy Python SDK generation (using Connect RPC instead)
-pnpm meerkat --skip-sdk
-
-# Skip both
-pnpm meerkat --skip-modal --skip-sdk
 ```
 
-### Steps
 
-1. **Generate Python OpenAPI spec** from Modal/FastAPI (source of truth for callbacks)
-2. **Generate Protobuf/Connect RPC code** for backend (Python) and client (TypeScript)
-3. **Generate TypeScript Zod schemas** from Python OpenAPI via orval
-4. **Generate Internal API OpenAPI spec** from ORPC routes
-5. **Generate Python SDK** for Internal API (legacy, optional)
+## Roadmap, MVP
 
-### Proto → Zod Type Derivation
-
-The Zod schemas in `@shared/workspace/events.ts` are derived directly from proto enums:
-
-```typescript
-// VideoGenerationStateSchema is derived from proto VideoJobState enum
-const VIDEO_JOB_STATE_MAP = {
-  [VideoJobState.PROCESSING]: "processing",
-  [VideoJobState.COMPLETED]: "completed",
-  [VideoJobState.FAILED]: "failed",
-} as const;
-
-export const VideoGenerationStateSchema = z.enum([...]);
-export function mapVideoJobState(protoState: VideoJobState): VideoGenerationState;
-```
-
-This ensures type consistency between proto definitions and Zod validation.
+check for `docs/mvp_progress.md` for more detailed instructions about OpenPromo MVP progress, long term roadmap, and immediate action items. It has more detailed instructions for overall context, technical details, and navigation for different types

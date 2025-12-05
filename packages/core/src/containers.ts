@@ -11,9 +11,10 @@ import {
   type RunFfmpegResponse,
 } from "./containers/gen/containers/v1/container_pb";
 
-// WIP: not ready yet for production
-// turns out we really need more ergonomic stuff like modal
-// to manage ffmpeg, etc.
+/**
+ * our Golang container backend. lightweight processor that has ffmpeg, r2 mounted via FUSE,
+ * and can be extended to other tasks. type safe RPC via connect-rpc.
+ */
 export class ContainerBackend extends Container {
   defaultPort = 8080;
   requiredPorts = [8080];
