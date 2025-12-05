@@ -1,5 +1,7 @@
+import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
+import { Slider } from "@openpromo/ui/components/slider";
 import type { VideoGenRealtime } from "@shared";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Image as ImageIcon } from "lucide-react";
@@ -93,6 +95,7 @@ function ProductVisualsV2Page() {
   const [selectedRun, setSelectedRun] = useState<RunFeedItem | null>(null);
   const [selectedStyleId, setSelectedStyleId] = useState<string>("");
   const [selectedRunIds, setSelectedRunIds] = useState<Set<string>>(new Set());
+  const [columnCount, setColumnCount] = useState<number>(4);
   const lastSentRef = useRef<string | null>(null);
   const lastAgentRef = useRef<string | null>(null);
 
@@ -278,6 +281,15 @@ function ProductVisualsV2Page() {
     }
   }, [productSelectItems, productId, handleProductSelect]);
 
+  const getGridClass = (cols: number) => {
+    const gridClasses: Record<number, string> = {
+      2: "grid-cols-2",
+      4: "grid-cols-4",
+      6: "grid-cols-6",
+    };
+    return gridClasses[cols] || "grid-cols-4";
+  };
+
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="flex-shrink-0 px-6 pb-4">
@@ -324,47 +336,72 @@ function ProductVisualsV2Page() {
           />
 
           <section className="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border bg-white">
-            <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+            <div className="flex items-center justify-between gap-4 border-b px-4 py-3 bg-white">
               <div>
                 <h4 className="text-sm font-medium">Generated Results</h4>
                 <p className="text-xs text-muted-foreground">
                   View and manage all generated visuals.
                 </p>
               </div>
-              {selectedRunIds.size > 0 && (
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="font-medium">
-                    {selectedRunIds.size} selected
+
+              <div className="flex items-center gap-4 flex-shrink-0">
+                {/* Slider */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {columnCount} cols
                   </span>
-                  <button
-                    onClick={handleSelectAll}
-                    className="text-xs text-foreground/60 hover:text-foreground underline"
-                  >
-                    {selectedRunIds.size === (feedData?.items.length ?? 0)
-                      ? "Deselect all"
-                      : "Select all"}
-                  </button>
-                  <button
-                    onClick={handleBatchCreatePost}
-                    className="text-xs font-medium text-foreground hover:text-foreground/80"
-                  >
-                    Create posts
-                  </button>
-                  <button
-                    onClick={handleBatchDelete}
-                    disabled={deleteRunsMutation.isPending}
-                    className="text-xs font-medium text-destructive hover:text-destructive/80 disabled:opacity-50"
-                  >
-                    Delete selected
-                  </button>
+                  <Slider
+                    value={[columnCount]}
+                    onValueChange={(value) => setColumnCount(value[0] || 4)}
+                    min={2}
+                    max={6}
+                    step={2}
+                    className="w-20"
+                  />
                 </div>
-              )}
+
+                {/* Batch actions */}
+                {selectedRunIds.size > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                      {selectedRunIds.size} selected
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSelectAll}
+                      className="h-7 text-xs"
+                    >
+                      {selectedRunIds.size === (feedData?.items.length ?? 0)
+                        ? "Deselect all"
+                        : "Select all"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleBatchCreatePost}
+                      className="h-7 text-xs"
+                    >
+                      Create posts
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleBatchDelete}
+                      disabled={deleteRunsMutation.isPending}
+                      className="h-7 text-xs"
+                    >
+                      Delete selected
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <ScrollArea className="min-h-0 flex-1">
               <div className="space-y-4 p-4">
                 {isFeedPending && (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className={`grid gap-3 ${getGridClass(columnCount)}`}>
                     {[1, 2, 3, 4, 5, 6].map((i) => (
                       <div key={i} className="space-y-2">
                         <Skeleton className="aspect-square w-full rounded-md" />
@@ -386,7 +423,7 @@ function ProductVisualsV2Page() {
                   </div>
                 )}
                 {!isFeedPending && (feedData?.items.length ?? 0) > 0 && (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className={`grid gap-3 ${getGridClass(columnCount)}`}>
                     {feedData?.items.map((run) => (
                       <ResultCard
                         key={run.id}
