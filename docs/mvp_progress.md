@@ -27,7 +27,7 @@ that's it. all our features below are centered aroudn these platforms. Some feat
 - check the access token, might need some periodic jobs to renew per workspace if possible.
 - tiktok biz access token is a bit unclear for how long it lasts until expiration
 - encrypt, ensure the access token is not returned anywhere to client side.
-
+- current oauth flow uses typescript, not zod schema, should we enforce the schemas here? also needs more observability maybe using posthog.
 
 ### Composer
 core content publishing
@@ -52,13 +52,19 @@ content infra, providesr crud on the source platforms, backfills, fetches metric
 - audit the current state for backfill. for backfilled one, check their lifecycle,s what actions can be taken, etc.
 - a detail view when click on specific published posts
 - table view's metrics needs to be set up and refreshed nightly.
-- 
+- planner's week view might need some re-work, mayeb the vertical timeline we need to slice it to X min of interval, so that scheduling for specific timeblock is easier, e.g. 20min interval? but need to consider how to render when multiple posts collide.
 
 ### Image-genAI, video-genAI
 working product visuals page, powered by DO, for image/video gen w/ product image inputs.
 
+*Done
+- product image, avatar url, brand asset url, etc. input -> DO -> image gen.
+- similarly, for video gen. powered by veo3.1 and sora2 storyboard.
+
 *Missing
 - add presets in the ui & DO. is it the same as style? maybe not, i want presets to be even more high level, abstracted, higher quality handpicked one that can reduce the uncercaintiy in output.
+- tune the prompt to address the slow dialogue issue for specific UGC video types.
+- we have to double down in this cloning path, it has to be stunning, by finding the best ads, etiher from visuals, creative ideas, etc. reverse-eng the top-performing ads, breakdown the visuals, structure, framework, and apply the treatment to user's brand
 
 ### Inbox -> DM + Comments
 support basic functionaltiy for engaging with inbox related, including btoh DMs as well as comments features.
@@ -81,7 +87,7 @@ TBD, not sure to go with stripe or polar.sh. latter is MoR, but needs 4% cut.
 - not started at all. need to figure out a pricing first compared to other products and our pmf.
 
 ### notification/emails
-TBD, gonna use resend for emails
+TBD, gonna use resend for marketing emails.
 
 ### Nux, onboarding
 for new users onboarding flow and ramp up, not implemented at all.
@@ -95,6 +101,14 @@ landing site, key marketing, will do this after features are ready.
 *missing
 - revamped landing design
 - SEOs
+
+### telemetry, observaibility
+
+*Done
+- added posthog in both dashboard and www. Haven't fully verified e2e flows yet.
+
+*Missing
+- might need to add sentry?
 
 ### social media runs
 before we launch, we will internally test and run our own social channels using our platform to dogfood.
@@ -126,10 +140,21 @@ we register at `scripts/meerkat.sh` which is a single script to run codegen acro
 ## Longterm roadmaps
 here are the longterm roadmap items. eventually we wanna build a solid platform product, but our key driver is to bring ads growth/revenue conversion for SMBs.
 
-// TODO, fill this out
+### roadmap: Q1'26
+
+- consolidate design principles; add them as skills/docs, to provide a foundation, extract reusable building blocks to speed up DevEx
+- linkedin support, critical for SMBs, especially for certain sector.
+- establish a solid foundation for our core features, e.g. content, genai, insights, inbox! ensure performance, uptime, reliability.
+
+### roadmap: backlog, longterm
+- wip, `unified-ad` table, for L1, L2, L3 structure across meta, google, tt ad; this will build the foundation for automating ads creation and optiomization.
+- integrate to clickhouse for all the metrics, events logging; or evaluate if cloudflare analytics is a good option.. or stream to r2 logs
+- support ai-agents for inbox-related automation, understands business context, and is able to automate & drive outcomes for handling DM, posts comments properly. 
+
 
 
 
 <!-- ------------------------------------------------ -->
-<!-- section: execution todos.  -->
+<!-- section: execution todos. for AI Agents, use this section to capture the TODOs, updates, etc.
+ -->
 <!-- ------------------------------------------------ -->

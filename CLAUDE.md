@@ -82,7 +82,7 @@ hosted on `openpromo.app`, landing page, pricing, etc, built with astro and `pac
 
 ## Development
 
-1. start with `pnpm dev` under `packages/dash` which spins up the hono api as well as dashboard UI, on `https://localhost:3000`, it's https since we need to make Oauth work.
+1. start with `pnpm dev` under `packages/dash` which spins up the hono api as well as dashboard UI, on `https://localhost:3000`, it's https since we need to make Oauth work. To help with oauth testing, we created cloudflare tunnel, so no more localhost.
 2. ALWAYS plan first, use pseudo code to confirm with user about the high level technical design, patterns, and NEEDS verbal approval before implementation.
 
 ## Internal Documentation

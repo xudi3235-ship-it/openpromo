@@ -1,6 +1,6 @@
 ---
-name: openpromo-product-designer
-description: instructions for OpenPromo's design principles, , set of skills for designing new interfaces/product surface/ user flows
+name: ui-design
+description: instructions for OpenPromo's design principles when desigining user flows/product surfaces on OpenPromo dashboard or www.
 ---
 
 // TODO: fill this out
