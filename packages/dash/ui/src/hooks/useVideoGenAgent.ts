@@ -36,6 +36,44 @@ export function useVideoGenAgent({
     [onEvent],
   );
 
+  // Memoize the internal handlers to prevent recreation on every message
+  const handlers = useCallback(
+    (): VideoGenRealtime.Handlers => ({
+      ...onEvent,
+      sync_state: async (data) => {
+        console.log(
+          "[useVideoGenAgent] sync_state event received:",
+          data.state,
+        );
+        setServerState(data.state);
+        await callUserHandler("sync_state", data);
+      },
+      status_update: async (data) => {
+        setServerState((prev) => ({
+          ...prev,
+          status: data.status,
+          lastUpdated: new Date().toISOString(),
+        }));
+        await callUserHandler("status_update", data);
+      },
+      video_generated: async (data) => {
+        setServerState((prev) => ({
+          ...prev,
+          artifacts: {
+            ...prev.artifacts,
+            videos: [
+              ...(prev.artifacts.videos ?? []),
+              { id: data.assetId, videoUrl: data.videoUrl },
+            ],
+          },
+          lastUpdated: new Date().toISOString(),
+        }));
+        await callUserHandler("video_generated", data);
+      },
+    }),
+    [onEvent, callUserHandler],
+  );
+
   const agent = useAgent<VideoGenRealtime.ServerAppState>({
     agent: "video-gen-agent",
     name: userId,
@@ -51,43 +89,7 @@ export function useVideoGenAgent({
     onMessage: async (event) => {
       _onMessage?.(event);
       console.log("[useVideoGenAgent] Received message:", event.data);
-      const handlers: VideoGenRealtime.Handlers = {
-        ...onEvent,
-        sync_state: async (data) => {
-          console.log(
-            "[useVideoGenAgent] sync_state event received:",
-            data.state,
-          );
-          setServerState(data.state);
-          await callUserHandler("sync_state", data);
-        },
-        status_update: async (data) => {
-          setServerState((prev) => ({
-            ...prev,
-            status: data.status,
-            lastUpdated: new Date().toISOString(),
-          }));
-          await callUserHandler("status_update", data);
-        },
-        video_generated: async (data) => {
-          setServerState((prev) => ({
-            ...prev,
-            artifacts: {
-              ...prev.artifacts,
-              videos: [
-                ...(prev.artifacts.videos ?? []),
-                { id: data.assetId, videoUrl: data.videoUrl },
-              ],
-            },
-            lastUpdated: new Date().toISOString(),
-          }));
-          await callUserHandler("video_generated", data);
-        },
-      };
-
-      await VideoGenRealtime.onEvent(event.data, {
-        ...handlers,
-      });
+      await VideoGenRealtime.onEvent(event.data, handlers());
     },
   });
 

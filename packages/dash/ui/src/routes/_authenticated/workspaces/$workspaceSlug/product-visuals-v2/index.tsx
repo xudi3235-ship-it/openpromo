@@ -74,8 +74,13 @@ function ProductVisualsV2Page() {
   const lastSentRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setMode(serverState.agentName === "image_gen_agent" ? "image" : "video");
-  }, [serverState.agentName, setMode]);
+    const newMode =
+      serverState.agentName === "image_gen_agent" ? "image" : "video";
+    // Only call setMode if the mode actually changed
+    if (newMode !== mode) {
+      setMode(newMode);
+    }
+  }, [serverState.agentName, mode, setMode]);
 
   const buildInput = useMemo(
     (): VideoGenRealtime.EventDataMap["set_input"] => ({
@@ -92,18 +97,12 @@ function ProductVisualsV2Page() {
     if (!isConnected) return;
     const agentName = mode === "image" ? "image_gen_agent" : "video_gen_agent";
     const payload = buildInput;
-    lastSentRef.current = JSON.stringify(payload);
+    const payloadJson = JSON.stringify(payload);
+    // Only send if payload has actually changed
+    if (lastSentRef.current === payloadJson) return;
+    lastSentRef.current = payloadJson;
     setAgent(agentName, payload);
   }, [buildInput, isConnected, mode, setAgent]);
-
-  useEffect(() => {
-    if (!isConnected) return;
-    const payload = buildInput;
-    const payloadJson = JSON.stringify(payload);
-    if (lastSentRef.current === payloadJson) return;
-    sendEvent("set_input", payload);
-    lastSentRef.current = payloadJson;
-  }, [buildInput, isConnected, sendEvent]);
 
   const handleGenerate = () => {
     if (!isConnected) {
