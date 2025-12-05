@@ -4,7 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 export const categoryColumn: ColumnDef<ProductSelectType> = {
   accessorKey: "category",
   header: "Category",
-  size: 120,
+  size: 20,
   cell: ({ row }) => {
     const category = row.original.category;
     return category ? (

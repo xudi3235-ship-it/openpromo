@@ -5,7 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 export const tagsColumn: ColumnDef<ProductSelectType> = {
   accessorKey: "tags",
   header: "Tags",
-  size: 180,
+  size: 120,
   cell: ({ row }) => {
     const tags = row.original.tags || [];
 

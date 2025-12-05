@@ -47,9 +47,9 @@ function ProductThumbnail({
 
 export const productColumn: ColumnDef<ProductSelectType> = {
   accessorKey: "name",
-  size: 250,
-  minSize: 150,
-  maxSize: 400,
+  size: 20,
+  minSize: 20,
+  maxSize: 20,
   header: "Product",
   cell: ({ row }) => {
     const product = row.original;

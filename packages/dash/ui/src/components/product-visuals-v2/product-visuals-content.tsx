@@ -1,11 +1,7 @@
-import { Button } from "@openpromo/ui/components/button";
-import { ScrollArea } from "@openpromo/ui/components/scroll-area";
-import { Skeleton } from "@openpromo/ui/components/skeleton";
-import { Slider } from "@openpromo/ui/components/slider";
 import type { VideoGenRealtime } from "@shared";
-import { Image as ImageIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { DataGrid } from "@/components/common";
 import type { ProductSelectItem } from "@/components/image-generator/product-select";
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
 import { useProductVisualsStore } from "@/features/product-visuals-v2/product-visuals-store";
@@ -97,7 +93,6 @@ export function ProductVisualsContent({
   // State
   const [selectedRun, setSelectedRun] = useState<RunFeedItem | null>(null);
   const [selectedRunIds, setSelectedRunIds] = useState<Set<string>>(new Set());
-  const [columnCount, setColumnCount] = useState<number>(4);
   const [selectedStyleId, setSelectedStyleId] = useState<string>("");
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -125,14 +120,7 @@ export function ProductVisualsContent({
     if (!container) return;
 
     const observer = new ResizeObserver(() => {
-      const width = container.offsetWidth;
-      if (width < 900) {
-        setColumnCount(2);
-      } else if (width < 1400) {
-        setColumnCount(4);
-      } else {
-        setColumnCount(6);
-      }
+      // DataGrid handles its own column sizing now
     });
 
     observer.observe(container);
@@ -301,15 +289,6 @@ export function ProductVisualsContent({
     }
   }, [productSelectItems, productId, handleProductSelect]);
 
-  const getGridClass = (cols: number) => {
-    const gridClasses: Record<number, string> = {
-      2: "grid-cols-2",
-      4: "grid-cols-4",
-      6: "grid-cols-6",
-    };
-    return gridClasses[cols] || "grid-cols-4";
-  };
-
   const inputPanelProps = useMemo(
     () => ({
       mode,
@@ -376,110 +355,48 @@ export function ProductVisualsContent({
           <InputPanel {...inputPanelProps} />
         </div>
 
-        <section className="flex flex-1 min-w-0 flex-col overflow-hidden rounded-lg border bg-white">
-          <div className="flex flex-col gap-3 border-b px-4 py-3 flex-shrink-0">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h4 className="text-sm font-medium">Generated Results</h4>
-                <p className="text-xs text-muted-foreground">
-                  View and manage all generated visuals.
-                </p>
-              </div>
-
-              {/* Slider - always visible */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {columnCount} cols
-                </span>
-                <Slider
-                  value={[columnCount]}
-                  onValueChange={(value) => setColumnCount(value[0] || 4)}
-                  min={2}
-                  max={6}
-                  step={2}
-                  className="w-20"
-                />
-              </div>
-            </div>
-
-            {/* Batch actions - wraps below on small screens */}
-            {selectedRunIds.size > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                  {selectedRunIds.size} selected
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSelectAll}
-                  className="h-7 text-xs"
-                >
-                  {selectedRunIds.size === mergedRuns.length
-                    ? "Deselect all"
-                    : "Select all"}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBatchCreatePost}
-                  className="h-7 text-xs"
-                >
-                  Create posts
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBatchDelete}
-                  disabled={deleteRunsMutation.isPending}
-                  className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  Delete selected
-                </Button>
-              </div>
+        <section className="flex flex-1 min-w-0 flex-col overflow-hidden">
+          <DataGrid<RunFeedItem>
+            items={mergedRuns}
+            isLoading={isFeedPending}
+            isEmpty={mergedRuns.length === 0}
+            renderItem={(run) => (
+              <ResultCard
+                key={run.id}
+                run={run}
+                onSelect={() => setSelectedRun(run)}
+                onDelete={handleDeleteRun}
+                isDeleting={deleteRunsMutation.isPending}
+                isSelected={selectedRunIds.has(run.id)}
+                onToggleSelect={handleToggleRunSelection}
+              />
             )}
-          </div>
-
-          <ScrollArea className="min-h-0 flex-1">
-            <div className="space-y-4 p-4">
-              {isFeedPending && (
-                <div className={`grid gap-3 ${getGridClass(columnCount)}`}>
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="space-y-2">
-                      <Skeleton className="aspect-square w-full rounded-md" />
-                      <Skeleton className="h-3 w-1/2" />
-                      <Skeleton className="h-2 w-3/4" />
-                    </div>
-                  ))}
-                </div>
-              )}
-              {!isFeedPending && mergedRuns.length === 0 && (
-                <div className="flex flex-col items-center justify-center text-center py-16 text-muted-foreground gap-2">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                    <ImageIcon className="h-5 w-5" />
-                  </div>
-                  <p className="text-sm font-medium">No results yet</p>
-                  <p className="text-xs text-muted-foreground">
-                    Generate visuals to see them in one place.
-                  </p>
-                </div>
-              )}
-              {!isFeedPending && mergedRuns.length > 0 && (
-                <div className={`grid gap-3 ${getGridClass(columnCount)}`}>
-                  {mergedRuns.map((run) => (
-                    <ResultCard
-                      key={run.id}
-                      run={run}
-                      onSelect={() => setSelectedRun(run)}
-                      onDelete={handleDeleteRun}
-                      isDeleting={deleteRunsMutation.isPending}
-                      isSelected={selectedRunIds.has(run.id)}
-                      onToggleSelect={handleToggleRunSelection}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+            header={{
+              title: "Generated Results",
+              description: "View and manage all generated visuals.",
+            }}
+            showColumnControl={true}
+            defaultColumns={4}
+            minColumns={2}
+            maxColumns={6}
+            columnStep={2}
+            selectedCount={selectedRunIds.size}
+            showSelectAllBtn={true}
+            onSelectAllToggle={handleSelectAll}
+            batchActions={[
+              {
+                label: "Create posts",
+                onClick: handleBatchCreatePost,
+              },
+              {
+                label: "Delete selected",
+                variant: "destructive",
+                onClick: handleBatchDelete,
+                disabled: deleteRunsMutation.isPending,
+              },
+            ]}
+            className="flex flex-1 min-w-0 flex-col overflow-hidden rounded-lg border bg-white"
+          />
         </section>
       </div>
 

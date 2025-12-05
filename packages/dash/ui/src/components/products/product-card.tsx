@@ -18,7 +18,15 @@ import {
   Trash,
 } from "lucide-react";
 import * as React from "react";
-import { ImageGridCard } from "@/components/common/ImageGrid";
+import {
+  GridCard,
+  GridCardActions,
+  GridCardBadges,
+  GridCardHoverOverlay,
+  GridCardMedia,
+  GridCardStateOverlay,
+  GridCardTypeBadge,
+} from "@/components/common";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useProductModalStore } from "@/stores/product-modal-store";
 import { DeleteProductDialog } from "./delete-product-dialog";
@@ -133,54 +141,33 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <ImageGridCard
+      <GridCard
         onClick={handleCardClick}
         onKeyDown={handleKeyDown}
-        aspectRatio="square"
         className="bg-muted"
       >
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-            <span className="text-6xl opacity-30">📦</span>
-          </div>
-        )}
-
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/30 to-transparent transition-opacity duration-300 group-hover:opacity-100" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-60" />
-
-        <div className="absolute left-3 top-3 z-20 flex flex-wrap items-center gap-2">
-          <span
+        <GridCardBadges>
+          <GridCardTypeBadge
+            label={product.source?.toLowerCase() ?? "unknown"}
             className={cn(
-              "rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide backdrop-blur-sm",
+              "uppercase tracking-wide text-[11px] font-semibold",
               product.source
                 ? sourceStyles[product.source]?.badge
                 : "bg-zinc-500/80 text-white",
             )}
-          >
-            {product.source?.toLowerCase() ?? "unknown"}
-          </span>
-
-          {/* Only show state badge if not ready */}
+          />
           {currentState && product.state !== "ready" && (
-            <span
+            <GridCardTypeBadge
+              label={currentState.label}
               className={cn(
-                "rounded-full px-2.5 py-1 text-[11px] font-semibold backdrop-blur-sm",
+                "text-[11px] font-semibold",
                 currentState.className,
               )}
-            >
-              {currentState.label}
-            </span>
+            />
           )}
-        </div>
+        </GridCardBadges>
 
-        <div className="absolute right-3 top-3 z-20 flex items-center gap-2">
+        <GridCardActions>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -226,56 +213,83 @@ export function ProductCard({ product }: ProductCardProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </GridCardActions>
 
-        <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-end p-4">
-          <div className="translate-y-3 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-            <div className="space-y-2 text-white">
-              <div className="space-y-1">
-                <h3 className="text-base font-semibold leading-tight line-clamp-2">
-                  {product.name}
-                </h3>
-                {product.description && (
-                  <p className="text-sm text-white/80 line-clamp-2">
-                    {product.description}
-                  </p>
-                )}
-              </div>
-
-              {product.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {product.tags.slice(0, 3).map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="border border-white/25 bg-white/15 px-2 py-0 text-[11px] font-medium text-white/90 backdrop-blur-sm hover:bg-white/25"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                  {product.tags.length > 3 && (
-                    <Badge
-                      variant="secondary"
-                      className="border border-white/25 bg-white/10 px-2 py-0 text-[11px] font-medium text-white/80 backdrop-blur-sm"
-                    >
-                      +{product.tags.length - 3}
-                    </Badge>
-                  )}
-                </div>
-              )}
-
-              {(product.category || createdDate) && (
-                <div className="flex items-center justify-between text-xs text-white/70">
-                  {product.category && (
-                    <span className="truncate">{product.category}</span>
-                  )}
-                  {createdDate && <span>{createdDate}</span>}
-                </div>
-              )}
+        <GridCardMedia>
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={product.name}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+              <span className="text-6xl opacity-30">📦</span>
             </div>
-          </div>
-        </div>
-      </ImageGridCard>
+          )}
+
+          <GridCardHoverOverlay>
+            <div className="pointer-events-none flex h-full flex-col justify-end p-4">
+              <div className="translate-y-3 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                <div className="space-y-2 text-white">
+                  <div className="space-y-1">
+                    <h3 className="text-base font-semibold leading-tight line-clamp-2">
+                      {product.name}
+                    </h3>
+                    {product.description && (
+                      <p className="text-sm text-white/80 line-clamp-2">
+                        {product.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {product.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {product.tags.slice(0, 3).map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="border border-white/25 bg-white/15 px-2 py-0 text-[11px] font-medium text-white/90 backdrop-blur-sm hover:bg-white/25"
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                      {product.tags.length > 3 && (
+                        <Badge
+                          variant="secondary"
+                          className="border border-white/25 bg-white/10 px-2 py-0 text-[11px] font-medium text-white/80 backdrop-blur-sm"
+                        >
+                          +{product.tags.length - 3}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
+                  {(product.category || createdDate) && (
+                    <div className="flex items-center justify-between text-xs text-white/70">
+                      {product.category && (
+                        <span className="truncate">{product.category}</span>
+                      )}
+                      {createdDate && <span>{createdDate}</span>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </GridCardHoverOverlay>
+
+          {product.state === "pending" && (
+            <GridCardStateOverlay state="processing" message="Pending" />
+          )}
+          {product.state === "processing" && (
+            <GridCardStateOverlay state="processing" message="Processing" />
+          )}
+          {product.state === "failed" && (
+            <GridCardStateOverlay state="failed" />
+          )}
+        </GridCardMedia>
+      </GridCard>
 
       <DeleteProductDialog
         product={product}

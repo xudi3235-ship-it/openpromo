@@ -48,36 +48,45 @@ export function ProductGridView({
     );
   }
 
+  const containerClass =
+    "flex flex-1 min-w-0 items-stretch justify-center overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800";
+
   if (products.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <ProductsEmptyState
-          hasFilters={Boolean(searchQuery)}
-          onAddProduct={onAddProduct}
-        />
+        <div className={containerClass}>
+          <div className="flex flex-1 items-center justify-center p-6">
+            <ProductsEmptyState
+              hasFilters={Boolean(searchQuery)}
+              onAddProduct={onAddProduct}
+            />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex flex-1">
-      <ImageGrid
-        tight
-        cols={{ sm: 2, md: 3, lg: 4, xl: 5 }}
-        className="w-full content-start"
-      >
-        {/* Add Product Card */}
-        <AddProductCard onAddProduct={onAddProduct} />
+      <div className={containerClass}>
+        <ImageGrid
+          tight
+          cols={{ sm: 2, md: 3, lg: 4, xl: 5 }}
+          className="w-full content-start"
+        >
+          {/* Add Product Card */}
+          <AddProductCard onAddProduct={onAddProduct} />
 
-        {/* Product Cards */}
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            // TODO: bad idea, need to fix the types here
-            product={product as unknown as ProductSelectType}
-          />
-        ))}
-      </ImageGrid>
+          {/* Product Cards */}
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              // TODO: bad idea, need to fix the types here
+              product={product as unknown as ProductSelectType}
+            />
+          ))}
+        </ImageGrid>
+      </div>
     </div>
   );
 }

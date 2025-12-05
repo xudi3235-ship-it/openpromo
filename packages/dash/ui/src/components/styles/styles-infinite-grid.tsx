@@ -1,10 +1,9 @@
-import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { ReactNode } from "react";
-import { Fragment, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useIntersectionObserver } from "usehooks-ts";
+import { DataGrid } from "@/components/common";
 import { ImageGrid } from "@/components/common/ImageGrid";
-// icons removed to keep empty states minimal and on-brand
 import {
   type StyleResponse,
   type StylesListParams,
@@ -27,8 +26,6 @@ interface StylesInfiniteGridProps {
   skeletonCount?: number;
   renderStyle?: (style: StyleItem) => ReactNode;
   renderEmpty?: (context: { hasFilters: boolean }) => ReactNode;
-  renderLoading?: () => ReactNode;
-  renderLoadMore?: () => ReactNode;
   renderError?: (error: unknown) => ReactNode;
   observerRootMargin?: string;
   observerThreshold?: number | number[];
@@ -42,8 +39,6 @@ export function StylesInfiniteGrid({
   skeletonCount = 5,
   renderStyle,
   renderEmpty,
-  renderLoading,
-  renderLoadMore,
   renderError,
   observerRootMargin = "100px",
   observerThreshold = 0.1,
@@ -96,21 +91,6 @@ export function StylesInfiniteGrid({
       <StylesEmptyState hasFilters={context.hasFilters} />
     ));
 
-  const renderLoadingContent =
-    renderLoading ??
-    (() => (
-      <StylesLoadingState skeletonCount={10} gridClassName={gridClassName} />
-    ));
-
-  const renderLoadMoreContent =
-    renderLoadMore ??
-    (() => (
-      <StylesLoadingState
-        skeletonCount={skeletonCount}
-        gridClassName={gridClassName}
-      />
-    ));
-
   const renderErrorContent =
     renderError ??
     ((err: unknown) => (
@@ -123,28 +103,54 @@ export function StylesInfiniteGrid({
     ));
 
   if (error) {
-    return <>{renderErrorContent(error)}</>;
+    return (
+      <div className={cn("flex flex-col", className)}>
+        {renderErrorContent(error)}
+      </div>
+    );
   }
 
   if (isPending) {
-    return <>{renderLoadingContent()}</>;
+    return (
+      <DataGrid
+        items={[]}
+        isEmpty={true}
+        isLoading={true}
+        renderItem={() => null}
+        showColumnControl={false}
+        gridClassName={gridClassName}
+        className={className}
+        skeletonCount={10}
+      />
+    );
   }
 
   if (styles.length === 0) {
-    return <>{renderEmptyContent({ hasFilters: computedHasFilters })}</>;
+    return (
+      <div className={cn("flex flex-col", className)}>
+        {renderEmptyContent({ hasFilters: computedHasFilters })}
+      </div>
+    );
   }
 
   return (
-    <div className={cn("flex flex-col", className)}>
+    <div className={cn("flex flex-col gap-4", className)}>
       <ImageGrid tight className={gridClassName}>
         {styles.map((style) => (
-          <Fragment key={style.id}>{renderStyleItem(style)}</Fragment>
+          <div key={style.id}>{renderStyleItem(style)}</div>
         ))}
       </ImageGrid>
 
       <div ref={observerRef} className="h-4" />
 
-      {isFetchingNextPage && renderLoadMoreContent()}
+      {isFetchingNextPage && (
+        <ImageGrid tight className={gridClassName}>
+          {Array.from({ length: skeletonCount }).map((_, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: Loading skeleton placeholder
+            <CardSkeleton key={index} />
+          ))}
+        </ImageGrid>
+      )}
     </div>
   );
 }
@@ -176,29 +182,8 @@ export function StylesEmptyState({ hasFilters }: StylesEmptyStateProps) {
   );
 }
 
-interface StylesLoadingStateProps {
-  skeletonCount?: number;
-  gridClassName?: string;
-}
-
-export function StylesLoadingState({
-  skeletonCount = 10,
-  gridClassName,
-}: StylesLoadingStateProps) {
-  return (
-    <ImageGrid tight className={gridClassName}>
-      {Array.from({ length: skeletonCount }).map((_, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: Loading skeleton placeholder
-        <CardSkeleton key={index} />
-      ))}
-    </ImageGrid>
-  );
-}
-
 export function CardSkeleton() {
   return (
-    <div className="group relative aspect-square overflow-hidden border border-gray-200 dark:border-gray-800">
-      <Skeleton className="h-full w-full" />
-    </div>
+    <div className="group relative aspect-square overflow-hidden border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-800 animate-pulse" />
   );
 }
