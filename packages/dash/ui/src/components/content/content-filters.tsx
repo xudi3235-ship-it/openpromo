@@ -99,7 +99,7 @@ export function ContentFilters({
           value={filters.publishingStatus || "all"}
           onValueChange={updatePublishingStatus}
         >
-          <SelectTrigger className="w-32 h-8 text-xs">
+          <SelectTrigger className="w-36 h-9 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -107,7 +107,7 @@ export function ContentFilters({
             {PUBLISHING_STATUS_OPTIONS.map(({ value, label, icon: Icon }) => (
               <SelectItem key={value} value={value}>
                 <span className="flex items-center gap-2">
-                  <Icon className="h-3 w-3" />
+                  <Icon className="h-4 w-4" />
                   {label}
                 </span>
               </SelectItem>
@@ -122,7 +122,7 @@ export function ContentFilters({
           value={filters.platform || "all"}
           onValueChange={updatePlatform}
         >
-          <SelectTrigger className="w-32 h-8 text-xs">
+          <SelectTrigger className="w-36 h-9 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -146,7 +146,7 @@ export function ContentFilters({
             date={filters.dateRange}
             onDateChange={updateDateRange}
             placeholder="Select date range..."
-            className="w-56"
+            className="w-64"
           />
         </div>
       )}
@@ -157,9 +157,9 @@ export function ContentFilters({
           variant="ghost"
           size="sm"
           onClick={clearFilters}
-          className="text-muted-foreground hover:text-foreground h-8 px-2"
+          className="text-muted-foreground hover:text-foreground h-9 px-3"
         >
-          <X className="h-3 w-3 mr-1" />
+          <X className="h-4 w-4 mr-1" />
           Clear
         </Button>
       )}

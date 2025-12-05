@@ -300,13 +300,9 @@ export function ContentCalendar({
       <CalendarDndProvider onEventUpdate={handleEventUpdate}>
         <header className="px-4 pt-3 pb-2 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-semibold text-foreground">
-              Calendar
-            </h1>
-            <span className="text-xs text-muted-foreground hidden sm:inline">
-              •
-            </span>
-            <p className="text-xs text-muted-foreground hidden sm:inline">
+            <h1 className="text-xl font-semibold text-foreground">Calendar</h1>
+            <span className="text-muted-foreground hidden sm:inline">•</span>
+            <p className="text-sm text-muted-foreground hidden sm:inline">
               Plan upcoming content across your social accounts.
             </p>
           </div>
@@ -330,56 +326,55 @@ export function ContentCalendar({
                 <ToggleGroupItem
                   value="week"
                   aria-label="Week view"
-                  className="px-2 py-1 text-xs"
+                  className="px-3 py-1.5 text-sm"
                 >
-                  <Calendar className="w-3.5 h-3.5 mr-1" />
+                  <Calendar className="w-4 h-4 mr-2" />
                   Week
                 </ToggleGroupItem>
                 <ToggleGroupItem
                   value="month"
                   aria-label="Month view"
-                  className="px-2 py-1 text-xs"
+                  className="px-3 py-1.5 text-sm"
                 >
-                  <CalendarCheck className="w-3.5 h-3.5 mr-1" />
+                  <CalendarCheck className="w-4 h-4 mr-2" />
                   Month
                 </ToggleGroupItem>
               </ToggleGroup>
 
               <Button
                 variant="outline"
-                size="sm"
                 className="max-[479px]:aspect-square max-[479px]:p-0!"
                 onClick={handleToday}
               >
-                <CalendarCheck className="min-[480px]:hidden" size={14} />
-                <span className="max-[479px]:sr-only text-xs">Today</span>
+                <CalendarCheck className="min-[480px]:hidden" size={16} />
+                <span className="max-[479px]:sr-only">Today</span>
               </Button>
               <div className="flex items-center gap-0.5">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-9 w-9"
                   onClick={handlePrevious}
                   aria-label="Previous"
                 >
-                  <ChevronLeftIcon size={14} aria-hidden="true" />
+                  <ChevronLeftIcon size={16} aria-hidden="true" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-9 w-9"
                   onClick={handleNext}
                   aria-label="Next"
                 >
-                  <ChevronRightIcon size={14} aria-hidden="true" />
+                  <ChevronRightIcon size={16} aria-hidden="true" />
                 </Button>
               </div>
-              <h2 className="text-sm font-semibold sm:text-base md:text-lg truncate">
+              <h2 className="text-base font-semibold sm:text-lg md:text-xl truncate">
                 {viewTitle}
               </h2>
 
               {/* Separator */}
-              <div className="h-6 w-px bg-border/50 mx-1 hidden sm:block" />
+              <div className="h-8 w-px bg-border/50 mx-1 hidden sm:block" />
 
               {/* Filters - inline */}
               <ContentFilters
