@@ -13,7 +13,9 @@ import {
   MoreVertical,
   Trash2,
 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
 
 interface ResultCardActionsProps {
@@ -27,6 +29,8 @@ export function ResultCardActions({
   onDelete,
   isDeleting,
 }: ResultCardActionsProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
   const firstUrl =
     run.output.output?.videos?.[0]?.videoUrl ||
     run.output.output?.images?.[0]?.imageUrl ||
@@ -52,7 +56,7 @@ export function ResultCardActions({
 
   const handleDelete = () => {
     if (!onDelete) return;
-    onDelete(run);
+    setDeleteDialogOpen(true);
   };
 
   if (!firstUrl && !onDelete) {
@@ -60,56 +64,73 @@ export function ResultCardActions({
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <MoreVertical className="h-4 w-4" />
-          <span className="sr-only">Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        {firstUrl && (
-          <>
-            <DropdownMenuItem asChild>
-              <a
-                href={firstUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex cursor-pointer items-center gap-2"
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreVertical className="h-4 w-4" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          {firstUrl && (
+            <>
+              <DropdownMenuItem asChild>
+                <a
+                  href={firstUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex cursor-pointer items-center gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Open in new tab</span>
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleCopyLink}>
+                <Copy className="h-4 w-4" />
+                <span>Copy link</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownload}>
+                <Download className="h-4 w-4" />
+                <span>Download</span>
+              </DropdownMenuItem>
+            </>
+          )}
+          {onDelete && (
+            <>
+              {firstUrl && <DropdownMenuSeparator />}
+              <DropdownMenuItem
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="text-destructive focus:text-destructive"
               >
-                <ExternalLink className="h-4 w-4" />
-                <span>Open in new tab</span>
-              </a>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleCopyLink}>
-              <Copy className="h-4 w-4" />
-              <span>Copy link</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleDownload}>
-              <Download className="h-4 w-4" />
-              <span>Download</span>
-            </DropdownMenuItem>
-          </>
-        )}
-        {onDelete && (
-          <>
-            {firstUrl && <DropdownMenuSeparator />}
-            <DropdownMenuItem
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>Delete</span>
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+                <Trash2 className="h-4 w-4" />
+                <span>Delete</span>
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Run"
+        desc="Are you sure you want to delete this generated output? This action cannot be undone."
+        confirmText="Delete"
+        destructive
+        handleConfirm={() => {
+          onDelete?.(run);
+          setDeleteDialogOpen(false);
+        }}
+        isLoading={isDeleting}
+      />
+    </>
   );
 }
