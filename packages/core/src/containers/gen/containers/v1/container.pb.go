@@ -21,6 +21,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type Platform int32
+
+const (
+	Platform_PLATFORM_UNSPECIFIED Platform = 0
+	Platform_PLATFORM_IG_REEL     Platform = 1
+	Platform_PLATFORM_FB_REEL     Platform = 2
+	Platform_PLATFORM_TIKTOK      Platform = 3
+)
+
+// Enum value maps for Platform.
+var (
+	Platform_name = map[int32]string{
+		0: "PLATFORM_UNSPECIFIED",
+		1: "PLATFORM_IG_REEL",
+		2: "PLATFORM_FB_REEL",
+		3: "PLATFORM_TIKTOK",
+	}
+	Platform_value = map[string]int32{
+		"PLATFORM_UNSPECIFIED": 0,
+		"PLATFORM_IG_REEL":     1,
+		"PLATFORM_FB_REEL":     2,
+		"PLATFORM_TIKTOK":      3,
+	}
+)
+
+func (x Platform) Enum() *Platform {
+	p := new(Platform)
+	*p = x
+	return p
+}
+
+func (x Platform) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Platform) Descriptor() protoreflect.EnumDescriptor {
+	return file_containers_v1_container_proto_enumTypes[0].Descriptor()
+}
+
+func (Platform) Type() protoreflect.EnumType {
+	return &file_containers_v1_container_proto_enumTypes[0]
+}
+
+func (x Platform) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Platform.Descriptor instead.
+func (Platform) EnumDescriptor() ([]byte, []int) {
+	return file_containers_v1_container_proto_rawDescGZIP(), []int{0}
+}
+
 type PingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -480,6 +532,118 @@ func (x *ProbeMediaResponse) GetFormat() string {
 	return ""
 }
 
+type TranscodeVideoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	InputUrl      string                 `protobuf:"bytes,1,opt,name=input_url,json=inputUrl,proto3" json:"input_url,omitempty"`
+	Platform      Platform               `protobuf:"varint,2,opt,name=platform,proto3,enum=containers.v1.Platform" json:"platform,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TranscodeVideoRequest) Reset() {
+	*x = TranscodeVideoRequest{}
+	mi := &file_containers_v1_container_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TranscodeVideoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TranscodeVideoRequest) ProtoMessage() {}
+
+func (x *TranscodeVideoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_containers_v1_container_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TranscodeVideoRequest.ProtoReflect.Descriptor instead.
+func (*TranscodeVideoRequest) Descriptor() ([]byte, []int) {
+	return file_containers_v1_container_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *TranscodeVideoRequest) GetInputUrl() string {
+	if x != nil {
+		return x.InputUrl
+	}
+	return ""
+}
+
+func (x *TranscodeVideoRequest) GetPlatform() Platform {
+	if x != nil {
+		return x.Platform
+	}
+	return Platform_PLATFORM_UNSPECIFIED
+}
+
+type TranscodeVideoResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OutputUrl     string                 `protobuf:"bytes,1,opt,name=output_url,json=outputUrl,proto3" json:"output_url,omitempty"`
+	Transcoded    bool                   `protobuf:"varint,2,opt,name=transcoded,proto3" json:"transcoded,omitempty"`
+	Error         *string                `protobuf:"bytes,3,opt,name=error,proto3,oneof" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TranscodeVideoResponse) Reset() {
+	*x = TranscodeVideoResponse{}
+	mi := &file_containers_v1_container_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TranscodeVideoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TranscodeVideoResponse) ProtoMessage() {}
+
+func (x *TranscodeVideoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_containers_v1_container_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TranscodeVideoResponse.ProtoReflect.Descriptor instead.
+func (*TranscodeVideoResponse) Descriptor() ([]byte, []int) {
+	return file_containers_v1_container_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *TranscodeVideoResponse) GetOutputUrl() string {
+	if x != nil {
+		return x.OutputUrl
+	}
+	return ""
+}
+
+func (x *TranscodeVideoResponse) GetTranscoded() bool {
+	if x != nil {
+		return x.Transcoded
+	}
+	return false
+}
+
+func (x *TranscodeVideoResponse) GetError() string {
+	if x != nil && x.Error != nil {
+		return *x.Error
+	}
+	return ""
+}
+
 var File_containers_v1_container_proto protoreflect.FileDescriptor
 
 const file_containers_v1_container_proto_rawDesc = "" +
@@ -516,13 +680,30 @@ const file_containers_v1_container_proto_rawDesc = "" +
 	"durationMs\x12\x14\n" +
 	"\x05width\x18\x02 \x01(\rR\x05width\x12\x16\n" +
 	"\x06height\x18\x03 \x01(\rR\x06height\x12\x16\n" +
-	"\x06format\x18\x04 \x01(\tR\x06format2\xcc\x02\n" +
+	"\x06format\x18\x04 \x01(\tR\x06format\"i\n" +
+	"\x15TranscodeVideoRequest\x12\x1b\n" +
+	"\tinput_url\x18\x01 \x01(\tR\binputUrl\x123\n" +
+	"\bplatform\x18\x02 \x01(\x0e2\x17.containers.v1.PlatformR\bplatform\"|\n" +
+	"\x16TranscodeVideoResponse\x12\x1d\n" +
+	"\n" +
+	"output_url\x18\x01 \x01(\tR\toutputUrl\x12\x1e\n" +
+	"\n" +
+	"transcoded\x18\x02 \x01(\bR\n" +
+	"transcoded\x12\x19\n" +
+	"\x05error\x18\x03 \x01(\tH\x00R\x05error\x88\x01\x01B\b\n" +
+	"\x06_error*e\n" +
+	"\bPlatform\x12\x18\n" +
+	"\x14PLATFORM_UNSPECIFIED\x10\x00\x12\x14\n" +
+	"\x10PLATFORM_IG_REEL\x10\x01\x12\x14\n" +
+	"\x10PLATFORM_FB_REEL\x10\x02\x12\x13\n" +
+	"\x0fPLATFORM_TIKTOK\x10\x032\xab\x03\n" +
 	"\x10ContainerService\x12?\n" +
 	"\x04Ping\x12\x1a.containers.v1.PingRequest\x1a\x1b.containers.v1.PingResponse\x12T\n" +
 	"\vResizeVideo\x12!.containers.v1.ResizeVideoRequest\x1a\".containers.v1.ResizeVideoResponse\x12N\n" +
 	"\tRunFfmpeg\x12\x1f.containers.v1.RunFfmpegRequest\x1a .containers.v1.RunFfmpegResponse\x12Q\n" +
 	"\n" +
-	"ProbeMedia\x12 .containers.v1.ProbeMediaRequest\x1a!.containers.v1.ProbeMediaResponseB%Z#main/gen/containers/v1;containersv1b\x06proto3"
+	"ProbeMedia\x12 .containers.v1.ProbeMediaRequest\x1a!.containers.v1.ProbeMediaResponse\x12]\n" +
+	"\x0eTranscodeVideo\x12$.containers.v1.TranscodeVideoRequest\x1a%.containers.v1.TranscodeVideoResponseB%Z#main/gen/containers/v1;containersv1b\x06proto3"
 
 var (
 	file_containers_v1_container_proto_rawDescOnce sync.Once
@@ -536,31 +717,38 @@ func file_containers_v1_container_proto_rawDescGZIP() []byte {
 	return file_containers_v1_container_proto_rawDescData
 }
 
-var file_containers_v1_container_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_containers_v1_container_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_containers_v1_container_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_containers_v1_container_proto_goTypes = []any{
-	(*PingRequest)(nil),         // 0: containers.v1.PingRequest
-	(*PingResponse)(nil),        // 1: containers.v1.PingResponse
-	(*ResizeVideoRequest)(nil),  // 2: containers.v1.ResizeVideoRequest
-	(*ResizeVideoResponse)(nil), // 3: containers.v1.ResizeVideoResponse
-	(*RunFfmpegRequest)(nil),    // 4: containers.v1.RunFfmpegRequest
-	(*RunFfmpegResponse)(nil),   // 5: containers.v1.RunFfmpegResponse
-	(*ProbeMediaRequest)(nil),   // 6: containers.v1.ProbeMediaRequest
-	(*ProbeMediaResponse)(nil),  // 7: containers.v1.ProbeMediaResponse
+	(Platform)(0),                  // 0: containers.v1.Platform
+	(*PingRequest)(nil),            // 1: containers.v1.PingRequest
+	(*PingResponse)(nil),           // 2: containers.v1.PingResponse
+	(*ResizeVideoRequest)(nil),     // 3: containers.v1.ResizeVideoRequest
+	(*ResizeVideoResponse)(nil),    // 4: containers.v1.ResizeVideoResponse
+	(*RunFfmpegRequest)(nil),       // 5: containers.v1.RunFfmpegRequest
+	(*RunFfmpegResponse)(nil),      // 6: containers.v1.RunFfmpegResponse
+	(*ProbeMediaRequest)(nil),      // 7: containers.v1.ProbeMediaRequest
+	(*ProbeMediaResponse)(nil),     // 8: containers.v1.ProbeMediaResponse
+	(*TranscodeVideoRequest)(nil),  // 9: containers.v1.TranscodeVideoRequest
+	(*TranscodeVideoResponse)(nil), // 10: containers.v1.TranscodeVideoResponse
 }
 var file_containers_v1_container_proto_depIdxs = []int32{
-	0, // 0: containers.v1.ContainerService.Ping:input_type -> containers.v1.PingRequest
-	2, // 1: containers.v1.ContainerService.ResizeVideo:input_type -> containers.v1.ResizeVideoRequest
-	4, // 2: containers.v1.ContainerService.RunFfmpeg:input_type -> containers.v1.RunFfmpegRequest
-	6, // 3: containers.v1.ContainerService.ProbeMedia:input_type -> containers.v1.ProbeMediaRequest
-	1, // 4: containers.v1.ContainerService.Ping:output_type -> containers.v1.PingResponse
-	3, // 5: containers.v1.ContainerService.ResizeVideo:output_type -> containers.v1.ResizeVideoResponse
-	5, // 6: containers.v1.ContainerService.RunFfmpeg:output_type -> containers.v1.RunFfmpegResponse
-	7, // 7: containers.v1.ContainerService.ProbeMedia:output_type -> containers.v1.ProbeMediaResponse
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: containers.v1.TranscodeVideoRequest.platform:type_name -> containers.v1.Platform
+	1,  // 1: containers.v1.ContainerService.Ping:input_type -> containers.v1.PingRequest
+	3,  // 2: containers.v1.ContainerService.ResizeVideo:input_type -> containers.v1.ResizeVideoRequest
+	5,  // 3: containers.v1.ContainerService.RunFfmpeg:input_type -> containers.v1.RunFfmpegRequest
+	7,  // 4: containers.v1.ContainerService.ProbeMedia:input_type -> containers.v1.ProbeMediaRequest
+	9,  // 5: containers.v1.ContainerService.TranscodeVideo:input_type -> containers.v1.TranscodeVideoRequest
+	2,  // 6: containers.v1.ContainerService.Ping:output_type -> containers.v1.PingResponse
+	4,  // 7: containers.v1.ContainerService.ResizeVideo:output_type -> containers.v1.ResizeVideoResponse
+	6,  // 8: containers.v1.ContainerService.RunFfmpeg:output_type -> containers.v1.RunFfmpegResponse
+	8,  // 9: containers.v1.ContainerService.ProbeMedia:output_type -> containers.v1.ProbeMediaResponse
+	10, // 10: containers.v1.ContainerService.TranscodeVideo:output_type -> containers.v1.TranscodeVideoResponse
+	6,  // [6:11] is the sub-list for method output_type
+	1,  // [1:6] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_containers_v1_container_proto_init() }
@@ -568,18 +756,20 @@ func file_containers_v1_container_proto_init() {
 	if File_containers_v1_container_proto != nil {
 		return
 	}
+	file_containers_v1_container_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_containers_v1_container_proto_rawDesc), len(file_containers_v1_container_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   8,
+			NumEnums:      1,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_containers_v1_container_proto_goTypes,
 		DependencyIndexes: file_containers_v1_container_proto_depIdxs,
+		EnumInfos:         file_containers_v1_container_proto_enumTypes,
 		MessageInfos:      file_containers_v1_container_proto_msgTypes,
 	}.Build()
 	File_containers_v1_container_proto = out.File

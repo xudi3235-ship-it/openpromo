@@ -100,6 +100,33 @@ func (containerServiceServer) ProbeMedia(ctx context.Context, req *connect.Reque
 	return resp, nil
 }
 
+func (containerServiceServer) TranscodeVideo(ctx context.Context, req *connect.Request[containersv1.TranscodeVideoRequest]) (*connect.Response[containersv1.TranscodeVideoResponse], error) {
+	result, err := transcodeVideo(ctx, req.Msg.GetInputUrl(), req.Msg.GetPlatform())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("transcode failed: %w", err))
+	}
+
+	uploader, err := newR2Uploader(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 init failed: %w", err))
+	}
+
+	key := buildR2Key(result.filename)
+	uploadRes, err := uploader.uploadFile(ctx, result.outputPath, key, result.contentType)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 upload failed: %w", err))
+	}
+	// Best-effort cleanup of the temp output file now that it is uploaded.
+	_ = os.Remove(result.outputPath)
+
+	resp := connect.NewResponse(&containersv1.TranscodeVideoResponse{
+		OutputUrl:  sanitizeURL(uploadRes.URL),
+		Transcoded: result.transcoded,
+	})
+
+	return resp, nil
+}
+
 func newConnectHandler() (string, http.Handler) {
 	return containersv1connect.NewContainerServiceHandler(containerServiceServer{})
 }

@@ -1,10 +1,11 @@
+import { Platform } from "@core/containers";
 import { and, db, eq } from "@core/database/db";
 import { Actor } from "@core/helpers/actor";
+import { Binding } from "@core/helpers/api-env";
 import type {
   CoreWorkflowContext,
   CoreWorkflowStep,
 } from "@core/helpers/workflow";
-import opClient from "@core/providers/backend";
 import { unifiedContentTable } from "@core/schemas/content.sql";
 import { onlyOrThrow } from "@core/utils/common";
 import { Log } from "@core/utils/log";
@@ -26,22 +27,23 @@ export async function publishSingleVideoReel(
     if (!presignedUrl) throw new Error(`no presigned URL for video ${id}`);
     // B. transcode to IG reel format if needed
     console.log("transcoding video for IG reel", { presignedUrl });
-    const { transcoded, output_url } = await opClient.video.transcode({
-      platform: "ig_reel",
-      input_url: presignedUrl,
+    const container = await Binding.use().ContainerBackend.getByName("default");
+    const { transcoded, outputUrl } = await container.transcodeVideo({
+      inputUrl: presignedUrl,
+      platform: Platform.IG_REEL,
     });
-    console.log("transcoding result", { transcoded, output_url });
+    console.log("transcoding result", { transcoded, outputUrl });
 
     if (!transcoded) {
       log.info("video does not need transcoding", { presignedUrl });
       return;
     }
-    if (!output_url) throw new Error("no output URL from transcoding");
-    log.info("video transcoded", { presignedUrl, output_url });
+    if (!outputUrl) throw new Error("no output URL from transcoding");
+    log.info("video transcoded", { presignedUrl, outputUrl });
     // C. update the attachment to point to the new URL
     const attachments = c.videoAttachments().map((att) =>
       // use presigned url
-      att.id === id ? { ...att, presignedUrl: output_url } : att,
+      att.id === id ? { ...att, presignedUrl: outputUrl } : att,
     );
     if (attachments.length !== 1)
       throw new Error("expected exactly one video attachment");

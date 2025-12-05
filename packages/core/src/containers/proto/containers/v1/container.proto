@@ -4,6 +4,13 @@ package containers.v1;
 
 option go_package = "main/gen/containers/v1;containersv1";
 
+enum Platform {
+  PLATFORM_UNSPECIFIED = 0;
+  PLATFORM_IG_REEL = 1;
+  PLATFORM_FB_REEL = 2;
+  PLATFORM_TIKTOK = 3;
+}
+
 // ContainerService exposes RPCs from the Worker to the container runtime.
 service ContainerService {
   // Simple health check.
@@ -17,6 +24,9 @@ service ContainerService {
 
   // Probe media metadata (duration, dimensions) using ffprobe.
   rpc ProbeMedia(ProbeMediaRequest) returns (ProbeMediaResponse);
+
+  // Transcode video for social media platforms (IG Reel, FB Reel, etc.).
+  rpc TranscodeVideo(TranscodeVideoRequest) returns (TranscodeVideoResponse);
 }
 
 message PingRequest {}
@@ -64,4 +74,15 @@ message ProbeMediaResponse {
   uint32 width = 2;
   uint32 height = 3;
   string format = 4;
+}
+
+message TranscodeVideoRequest {
+  string input_url = 1;
+  Platform platform = 2;
+}
+
+message TranscodeVideoResponse {
+  string output_url = 1;
+  bool transcoded = 2;
+  optional string error = 3;
 }

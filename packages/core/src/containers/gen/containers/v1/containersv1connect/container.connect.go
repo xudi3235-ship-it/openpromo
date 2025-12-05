@@ -44,6 +44,9 @@ const (
 	// ContainerServiceProbeMediaProcedure is the fully-qualified name of the ContainerService's
 	// ProbeMedia RPC.
 	ContainerServiceProbeMediaProcedure = "/containers.v1.ContainerService/ProbeMedia"
+	// ContainerServiceTranscodeVideoProcedure is the fully-qualified name of the ContainerService's
+	// TranscodeVideo RPC.
+	ContainerServiceTranscodeVideoProcedure = "/containers.v1.ContainerService/TranscodeVideo"
 )
 
 // ContainerServiceClient is a client for the containers.v1.ContainerService service.
@@ -56,6 +59,8 @@ type ContainerServiceClient interface {
 	RunFfmpeg(context.Context, *connect.Request[v1.RunFfmpegRequest]) (*connect.Response[v1.RunFfmpegResponse], error)
 	// Probe media metadata (duration, dimensions) using ffprobe.
 	ProbeMedia(context.Context, *connect.Request[v1.ProbeMediaRequest]) (*connect.Response[v1.ProbeMediaResponse], error)
+	// Transcode video for social media platforms (IG Reel, FB Reel, etc.).
+	TranscodeVideo(context.Context, *connect.Request[v1.TranscodeVideoRequest]) (*connect.Response[v1.TranscodeVideoResponse], error)
 }
 
 // NewContainerServiceClient constructs a client for the containers.v1.ContainerService service. By
@@ -93,15 +98,22 @@ func NewContainerServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(containerServiceMethods.ByName("ProbeMedia")),
 			connect.WithClientOptions(opts...),
 		),
+		transcodeVideo: connect.NewClient[v1.TranscodeVideoRequest, v1.TranscodeVideoResponse](
+			httpClient,
+			baseURL+ContainerServiceTranscodeVideoProcedure,
+			connect.WithSchema(containerServiceMethods.ByName("TranscodeVideo")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // containerServiceClient implements ContainerServiceClient.
 type containerServiceClient struct {
-	ping        *connect.Client[v1.PingRequest, v1.PingResponse]
-	resizeVideo *connect.Client[v1.ResizeVideoRequest, v1.ResizeVideoResponse]
-	runFfmpeg   *connect.Client[v1.RunFfmpegRequest, v1.RunFfmpegResponse]
-	probeMedia  *connect.Client[v1.ProbeMediaRequest, v1.ProbeMediaResponse]
+	ping           *connect.Client[v1.PingRequest, v1.PingResponse]
+	resizeVideo    *connect.Client[v1.ResizeVideoRequest, v1.ResizeVideoResponse]
+	runFfmpeg      *connect.Client[v1.RunFfmpegRequest, v1.RunFfmpegResponse]
+	probeMedia     *connect.Client[v1.ProbeMediaRequest, v1.ProbeMediaResponse]
+	transcodeVideo *connect.Client[v1.TranscodeVideoRequest, v1.TranscodeVideoResponse]
 }
 
 // Ping calls containers.v1.ContainerService.Ping.
@@ -124,6 +136,11 @@ func (c *containerServiceClient) ProbeMedia(ctx context.Context, req *connect.Re
 	return c.probeMedia.CallUnary(ctx, req)
 }
 
+// TranscodeVideo calls containers.v1.ContainerService.TranscodeVideo.
+func (c *containerServiceClient) TranscodeVideo(ctx context.Context, req *connect.Request[v1.TranscodeVideoRequest]) (*connect.Response[v1.TranscodeVideoResponse], error) {
+	return c.transcodeVideo.CallUnary(ctx, req)
+}
+
 // ContainerServiceHandler is an implementation of the containers.v1.ContainerService service.
 type ContainerServiceHandler interface {
 	// Simple health check.
@@ -134,6 +151,8 @@ type ContainerServiceHandler interface {
 	RunFfmpeg(context.Context, *connect.Request[v1.RunFfmpegRequest]) (*connect.Response[v1.RunFfmpegResponse], error)
 	// Probe media metadata (duration, dimensions) using ffprobe.
 	ProbeMedia(context.Context, *connect.Request[v1.ProbeMediaRequest]) (*connect.Response[v1.ProbeMediaResponse], error)
+	// Transcode video for social media platforms (IG Reel, FB Reel, etc.).
+	TranscodeVideo(context.Context, *connect.Request[v1.TranscodeVideoRequest]) (*connect.Response[v1.TranscodeVideoResponse], error)
 }
 
 // NewContainerServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -167,6 +186,12 @@ func NewContainerServiceHandler(svc ContainerServiceHandler, opts ...connect.Han
 		connect.WithSchema(containerServiceMethods.ByName("ProbeMedia")),
 		connect.WithHandlerOptions(opts...),
 	)
+	containerServiceTranscodeVideoHandler := connect.NewUnaryHandler(
+		ContainerServiceTranscodeVideoProcedure,
+		svc.TranscodeVideo,
+		connect.WithSchema(containerServiceMethods.ByName("TranscodeVideo")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/containers.v1.ContainerService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ContainerServicePingProcedure:
@@ -177,6 +202,8 @@ func NewContainerServiceHandler(svc ContainerServiceHandler, opts ...connect.Han
 			containerServiceRunFfmpegHandler.ServeHTTP(w, r)
 		case ContainerServiceProbeMediaProcedure:
 			containerServiceProbeMediaHandler.ServeHTTP(w, r)
+		case ContainerServiceTranscodeVideoProcedure:
+			containerServiceTranscodeVideoHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -200,4 +227,8 @@ func (UnimplementedContainerServiceHandler) RunFfmpeg(context.Context, *connect.
 
 func (UnimplementedContainerServiceHandler) ProbeMedia(context.Context, *connect.Request[v1.ProbeMediaRequest]) (*connect.Response[v1.ProbeMediaResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("containers.v1.ContainerService.ProbeMedia is not implemented"))
+}
+
+func (UnimplementedContainerServiceHandler) TranscodeVideo(context.Context, *connect.Request[v1.TranscodeVideoRequest]) (*connect.Response[v1.TranscodeVideoResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("containers.v1.ContainerService.TranscodeVideo is not implemented"))
 }

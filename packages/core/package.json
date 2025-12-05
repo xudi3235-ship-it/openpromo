@@ -51,7 +51,6 @@
     "immer": "catalog:",
     "nanoid": "^5.1.6",
     "openai": "^6.10.0",
-    "openpromo-backend": "latest",
     "postgres": "^3.4.7",
     "posthog-node": "^5.17.2",
     "replicate": "^1.4.0",

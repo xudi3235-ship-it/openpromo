@@ -4,11 +4,13 @@
 
 import type { Message } from "@bufbuild/protobuf";
 import type {
+  GenEnum,
   GenFile,
   GenMessage,
   GenService,
 } from "@bufbuild/protobuf/codegenv2";
 import {
+  enumDesc,
   fileDesc,
   messageDesc,
   serviceDesc,
@@ -20,7 +22,7 @@ import {
 export const file_containers_v1_container: GenFile =
   /*@__PURE__*/
   fileDesc(
-    "Ch1jb250YWluZXJzL3YxL2NvbnRhaW5lci5wcm90bxINY29udGFpbmVycy52MSINCgtQaW5nUmVxdWVzdCI0CgxQaW5nUmVzcG9uc2USDwoHbWVzc2FnZRgBIAEoCRITCgtpbnN0YW5jZV9pZBgCIAEoCSJGChJSZXNpemVWaWRlb1JlcXVlc3QSEQoJdmlkZW9fdXJsGAEgASgJEg0KBXdpZHRoGAIgASgFEg4KBmhlaWdodBgDIAEoBSJdChNSZXNpemVWaWRlb1Jlc3BvbnNlEhQKDGNvbnRlbnRfdHlwZRgBIAEoCRIQCghmaWxlbmFtZRgCIAEoCRIOCgZyMl91cmwYAyABKAkSDgoGcjJfa2V5GAQgASgJIlAKEFJ1bkZmbXBlZ1JlcXVlc3QSEgoKaW5wdXRfdXJscxgBIAMoCRIPCgdjb21tYW5kGAIgAygJEhcKD291dHB1dF9maWxlbmFtZRgDIAEoCSJbChFSdW5GZm1wZWdSZXNwb25zZRIOCgZyMl91cmwYASABKAkSDgoGcjJfa2V5GAIgASgJEhQKDGNvbnRlbnRfdHlwZRgDIAEoCRIQCghmaWxlbmFtZRgEIAEoCSIgChFQcm9iZU1lZGlhUmVxdWVzdBILCgN1cmwYASABKAkiWAoSUHJvYmVNZWRpYVJlc3BvbnNlEhMKC2R1cmF0aW9uX21zGAEgASgEEg0KBXdpZHRoGAIgASgNEg4KBmhlaWdodBgDIAEoDRIOCgZmb3JtYXQYBCABKAkyzAIKEENvbnRhaW5lclNlcnZpY2USPwoEUGluZxIaLmNvbnRhaW5lcnMudjEuUGluZ1JlcXVlc3QaGy5jb250YWluZXJzLnYxLlBpbmdSZXNwb25zZRJUCgtSZXNpemVWaWRlbxIhLmNvbnRhaW5lcnMudjEuUmVzaXplVmlkZW9SZXF1ZXN0GiIuY29udGFpbmVycy52MS5SZXNpemVWaWRlb1Jlc3BvbnNlEk4KCVJ1bkZmbXBlZxIfLmNvbnRhaW5lcnMudjEuUnVuRmZtcGVnUmVxdWVzdBogLmNvbnRhaW5lcnMudjEuUnVuRmZtcGVnUmVzcG9uc2USUQoKUHJvYmVNZWRpYRIgLmNvbnRhaW5lcnMudjEuUHJvYmVNZWRpYVJlcXVlc3QaIS5jb250YWluZXJzLnYxLlByb2JlTWVkaWFSZXNwb25zZUIlWiNtYWluL2dlbi9jb250YWluZXJzL3YxO2NvbnRhaW5lcnN2MWIGcHJvdG8z",
+    "Ch1jb250YWluZXJzL3YxL2NvbnRhaW5lci5wcm90bxINY29udGFpbmVycy52MSINCgtQaW5nUmVxdWVzdCI0CgxQaW5nUmVzcG9uc2USDwoHbWVzc2FnZRgBIAEoCRITCgtpbnN0YW5jZV9pZBgCIAEoCSJGChJSZXNpemVWaWRlb1JlcXVlc3QSEQoJdmlkZW9fdXJsGAEgASgJEg0KBXdpZHRoGAIgASgFEg4KBmhlaWdodBgDIAEoBSJdChNSZXNpemVWaWRlb1Jlc3BvbnNlEhQKDGNvbnRlbnRfdHlwZRgBIAEoCRIQCghmaWxlbmFtZRgCIAEoCRIOCgZyMl91cmwYAyABKAkSDgoGcjJfa2V5GAQgASgJIlAKEFJ1bkZmbXBlZ1JlcXVlc3QSEgoKaW5wdXRfdXJscxgBIAMoCRIPCgdjb21tYW5kGAIgAygJEhcKD291dHB1dF9maWxlbmFtZRgDIAEoCSJbChFSdW5GZm1wZWdSZXNwb25zZRIOCgZyMl91cmwYASABKAkSDgoGcjJfa2V5GAIgASgJEhQKDGNvbnRlbnRfdHlwZRgDIAEoCRIQCghmaWxlbmFtZRgEIAEoCSIgChFQcm9iZU1lZGlhUmVxdWVzdBILCgN1cmwYASABKAkiWAoSUHJvYmVNZWRpYVJlc3BvbnNlEhMKC2R1cmF0aW9uX21zGAEgASgEEg0KBXdpZHRoGAIgASgNEg4KBmhlaWdodBgDIAEoDRIOCgZmb3JtYXQYBCABKAkiVQoVVHJhbnNjb2RlVmlkZW9SZXF1ZXN0EhEKCWlucHV0X3VybBgBIAEoCRIpCghwbGF0Zm9ybRgCIAEoDjIXLmNvbnRhaW5lcnMudjEuUGxhdGZvcm0iXgoWVHJhbnNjb2RlVmlkZW9SZXNwb25zZRISCgpvdXRwdXRfdXJsGAEgASgJEhIKCnRyYW5zY29kZWQYAiABKAgSEgoFZXJyb3IYAyABKAlIAIgBAUIICgZfZXJyb3IqZQoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5TUEVDSUZJRUQQABIUChBQTEFURk9STV9JR19SRUVMEAESFAoQUExBVEZPUk1fRkJfUkVFTBACEhMKD1BMQVRGT1JNX1RJS1RPSxADMqsDChBDb250YWluZXJTZXJ2aWNlEj8KBFBpbmcSGi5jb250YWluZXJzLnYxLlBpbmdSZXF1ZXN0GhsuY29udGFpbmVycy52MS5QaW5nUmVzcG9uc2USVAoLUmVzaXplVmlkZW8SIS5jb250YWluZXJzLnYxLlJlc2l6ZVZpZGVvUmVxdWVzdBoiLmNvbnRhaW5lcnMudjEuUmVzaXplVmlkZW9SZXNwb25zZRJOCglSdW5GZm1wZWcSHy5jb250YWluZXJzLnYxLlJ1bkZmbXBlZ1JlcXVlc3QaIC5jb250YWluZXJzLnYxLlJ1bkZmbXBlZ1Jlc3BvbnNlElEKClByb2JlTWVkaWESIC5jb250YWluZXJzLnYxLlByb2JlTWVkaWFSZXF1ZXN0GiEuY29udGFpbmVycy52MS5Qcm9iZU1lZGlhUmVzcG9uc2USXQoOVHJhbnNjb2RlVmlkZW8SJC5jb250YWluZXJzLnYxLlRyYW5zY29kZVZpZGVvUmVxdWVzdBolLmNvbnRhaW5lcnMudjEuVHJhbnNjb2RlVmlkZW9SZXNwb25zZUIlWiNtYWluL2dlbi9jb250YWluZXJzL3YxO2NvbnRhaW5lcnN2MWIGcHJvdG8z",
   );
 
 /**
@@ -240,6 +242,91 @@ export const ProbeMediaResponseSchema: GenMessage<ProbeMediaResponse> =
   messageDesc(file_containers_v1_container, 7);
 
 /**
+ * @generated from message containers.v1.TranscodeVideoRequest
+ */
+export type TranscodeVideoRequest =
+  Message<"containers.v1.TranscodeVideoRequest"> & {
+    /**
+     * @generated from field: string input_url = 1;
+     */
+    inputUrl: string;
+
+    /**
+     * @generated from field: containers.v1.Platform platform = 2;
+     */
+    platform: Platform;
+  };
+
+/**
+ * Describes the message containers.v1.TranscodeVideoRequest.
+ * Use `create(TranscodeVideoRequestSchema)` to create a new message.
+ */
+export const TranscodeVideoRequestSchema: GenMessage<TranscodeVideoRequest> =
+  /*@__PURE__*/
+  messageDesc(file_containers_v1_container, 8);
+
+/**
+ * @generated from message containers.v1.TranscodeVideoResponse
+ */
+export type TranscodeVideoResponse =
+  Message<"containers.v1.TranscodeVideoResponse"> & {
+    /**
+     * @generated from field: string output_url = 1;
+     */
+    outputUrl: string;
+
+    /**
+     * @generated from field: bool transcoded = 2;
+     */
+    transcoded: boolean;
+
+    /**
+     * @generated from field: optional string error = 3;
+     */
+    error?: string;
+  };
+
+/**
+ * Describes the message containers.v1.TranscodeVideoResponse.
+ * Use `create(TranscodeVideoResponseSchema)` to create a new message.
+ */
+export const TranscodeVideoResponseSchema: GenMessage<TranscodeVideoResponse> =
+  /*@__PURE__*/
+  messageDesc(file_containers_v1_container, 9);
+
+/**
+ * @generated from enum containers.v1.Platform
+ */
+export enum Platform {
+  /**
+   * @generated from enum value: PLATFORM_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: PLATFORM_IG_REEL = 1;
+   */
+  IG_REEL = 1,
+
+  /**
+   * @generated from enum value: PLATFORM_FB_REEL = 2;
+   */
+  FB_REEL = 2,
+
+  /**
+   * @generated from enum value: PLATFORM_TIKTOK = 3;
+   */
+  TIKTOK = 3,
+}
+
+/**
+ * Describes the enum containers.v1.Platform.
+ */
+export const PlatformSchema: GenEnum<Platform> =
+  /*@__PURE__*/
+  enumDesc(file_containers_v1_container, 0);
+
+/**
  * ContainerService exposes RPCs from the Worker to the container runtime.
  *
  * @generated from service containers.v1.ContainerService
@@ -284,5 +371,15 @@ export const ContainerService: GenService<{
     methodKind: "unary";
     input: typeof ProbeMediaRequestSchema;
     output: typeof ProbeMediaResponseSchema;
+  };
+  /**
+   * Transcode video for social media platforms (IG Reel, FB Reel, etc.).
+   *
+   * @generated from rpc containers.v1.ContainerService.TranscodeVideo
+   */
+  transcodeVideo: {
+    methodKind: "unary";
+    input: typeof TranscodeVideoRequestSchema;
+    output: typeof TranscodeVideoResponseSchema;
   };
 }> = /*@__PURE__*/ serviceDesc(file_containers_v1_container, 0);

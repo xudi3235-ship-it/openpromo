@@ -9,6 +9,8 @@ import {
   type ResizeVideoResponse,
   type RunFfmpegRequest,
   type RunFfmpegResponse,
+  type TranscodeVideoRequest,
+  type TranscodeVideoResponse,
 } from "./containers/gen/containers/v1/container_pb";
 
 /**
@@ -87,4 +89,17 @@ export class ContainerBackend extends Container {
     const client = await this.getClient();
     return await client.probeMedia({ url });
   }
+
+  async transcodeVideo(
+    req: Omit<TranscodeVideoRequest, "$typeName">,
+  ): Promise<TranscodeVideoResponse> {
+    const client = await this.getClient();
+    return await client.transcodeVideo({
+      ...req,
+      $typeName: "containers.v1.TranscodeVideoRequest",
+    });
+  }
 }
+
+// Re-export Platform enum for use in workflows
+export { Platform } from "./containers/gen/containers/v1/container_pb";
