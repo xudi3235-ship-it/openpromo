@@ -32,17 +32,16 @@ export function AssetInput({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div>
         <Label>{label}</Label>
         {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
       </div>
-      <div className="flex items-start gap-3">
+      <div className="space-y-2">
         <Dropzone
           accept={{ "image/*": [], "video/*": [] }}
           maxFiles={Math.max(0, 3 - assets.length)}
           disabled={isUploading || assets.length >= 3}
-          variant="compact"
           onDrop={async (files) => {
             try {
               const uploaded = await Promise.all(
@@ -60,46 +59,45 @@ export function AssetInput({
               // errors handled in hook
             }
           }}
-          className="border-dashed shrink-0"
+          className="w-full h-32 p-4"
         >
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <Plus className="h-4 w-4" />
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+            <Plus className="h-6 w-6" />
+            <p className="text-xs font-medium">Drop here or click</p>
           </div>
         </Dropzone>
-        <div className="flex-1 space-y-2">
-          <button
-            type="button"
-            onClick={() => setShowUrlInput((prev) => !prev)}
-            disabled={assets.length >= 3}
-            className="text-xs font-medium text-foreground hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {showUrlInput ? "Hide URL input" : "Paste URL (optional)"}
-          </button>
-          {showUrlInput && (
-            <div className="flex items-center gap-2">
-              <Input
-                ref={inputRef}
-                placeholder="Paste URL"
-                disabled={assets.length >= 3}
-                className="font-mono text-xs"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleUrlAdd();
-                  }
-                }}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleUrlAdd}
-                disabled={assets.length >= 3}
-              >
-                Add
-              </Button>
-            </div>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={() => setShowUrlInput((prev) => !prev)}
+          disabled={assets.length >= 3}
+          className="text-xs font-medium text-foreground hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {showUrlInput ? "Hide URL input" : "Paste URL (optional)"}
+        </button>
+        {showUrlInput && (
+          <div className="flex items-center gap-2">
+            <Input
+              ref={inputRef}
+              placeholder="Paste URL"
+              disabled={assets.length >= 3}
+              className="font-mono text-xs"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleUrlAdd();
+                }
+              }}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleUrlAdd}
+              disabled={assets.length >= 3}
+            >
+              Add
+            </Button>
+          </div>
+        )}
       </div>
       {assets.length > 0 && (
         <div className="grid grid-cols-3 gap-2">

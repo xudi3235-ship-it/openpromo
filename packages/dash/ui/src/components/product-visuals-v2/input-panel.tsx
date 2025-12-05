@@ -100,7 +100,7 @@ export function InputPanel({
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
-        <div className="space-y-5 p-4">
+        <div className="space-y-6 p-4">
           <div>
             <Label htmlFor="prompt" className="text-sm font-medium">
               Prompt
@@ -175,7 +175,7 @@ export function InputPanel({
             </button>
 
             {isAssetsOpen && (
-              <div className="mt-3 space-y-4 animate-in fade-in-50 duration-200">
+              <div className="mt-4 space-y-5 animate-in fade-in-50 duration-200">
                 <AssetInput
                   label="Avatar assets"
                   helper="Reference images for characters or models."
