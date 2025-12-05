@@ -13,7 +13,10 @@ import { RunModal } from "@/components/product-visuals-v2/run-modal";
 import { useProductVisualsStore } from "@/features/product-visuals-v2/product-visuals-store";
 import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
 import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
-import { useAgentRunsListQuery } from "@/queries/agent-runs";
+import {
+  useAgentRunsListQuery,
+  useDeleteAgentRunsMutation,
+} from "@/queries/agent-runs";
 import { useProductListQuery } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles-queries";
 
@@ -69,6 +72,17 @@ function ProductVisualsV2Page() {
     userId: "product-visuals-v2",
   });
 
+  const {
+    data: feedData,
+    isPending: isFeedPending,
+    refetch: refetchRuns,
+  } = useAgentRunsListQuery({
+    page: 1,
+    pageSize: 24,
+  });
+
+  const deleteRunsMutation = useDeleteAgentRunsMutation();
+
   const [selectedRun, setSelectedRun] = useState<RunFeedItem | null>(null);
   const [selectedStyleId, setSelectedStyleId] = useState<string>("");
   const lastSentRef = useRef<string | null>(null);
@@ -102,6 +116,13 @@ function ProductVisualsV2Page() {
     setAgent(agentName, payload);
   }, [buildInput, isConnected, mode, setAgent]);
 
+  // Refetch runs when a new run is created (sync_state received with runId)
+  useEffect(() => {
+    if (serverState.runId) {
+      refetchRuns();
+    }
+  }, [serverState.runId, refetchRuns]);
+
   const handleGenerate = () => {
     if (!isConnected) {
       toast.error("Not connected yet");
@@ -114,10 +135,9 @@ function ProductVisualsV2Page() {
     sendEvent("start_pipeline", {});
   };
 
-  const { data: feedData, isPending: isFeedPending } = useAgentRunsListQuery({
-    page: 1,
-    pageSize: 24,
-  });
+  const handleDeleteRun = (run: RunFeedItem) => {
+    deleteRunsMutation.mutate({ ids: [run.id] });
+  };
 
   const productSelectItems: ProductSelectItem[] =
     productsData?.products.map((product) => ({
@@ -255,6 +275,8 @@ function ProductVisualsV2Page() {
                         key={run.id}
                         run={run}
                         onSelect={() => setSelectedRun(run)}
+                        onDelete={handleDeleteRun}
+                        isDeleting={deleteRunsMutation.isPending}
                       />
                     ))}
                   </div>

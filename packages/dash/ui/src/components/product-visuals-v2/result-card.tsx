@@ -1,12 +1,20 @@
 import { Badge } from "@openpromo/ui/components/badge";
 import { cn } from "@openpromo/ui/lib/utils";
-import { Film, ImageIcon } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Film,
+  ImageIcon,
+  Loader2,
+} from "lucide-react";
 import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
 import { ResultCardActions } from "./result-card-actions";
 
 interface ResultCardProps {
   run: RunFeedItem;
   onSelect: () => void;
+  onDelete?: (run: RunFeedItem) => void;
+  isDeleting?: boolean;
 }
 
 const stateLabelMap: Record<RunFeedItem["status"], string> = {
@@ -17,7 +25,12 @@ const stateLabelMap: Record<RunFeedItem["status"], string> = {
   canceled: "Canceled",
 };
 
-export function ResultCard({ run, onSelect }: ResultCardProps) {
+export function ResultCard({
+  run,
+  onSelect,
+  onDelete,
+  isDeleting,
+}: ResultCardProps) {
   const coverVideo =
     run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
   const coverImage =
@@ -38,10 +51,14 @@ export function ResultCard({ run, onSelect }: ResultCardProps) {
   return (
     <div
       className={cn(
-        "border overflow-hidden hover:border-foreground/50 transition-colors group relative border-gray-200 dark:border-gray-800",
-        preview && "cursor-pointer hover:shadow-md",
+        "border overflow-hidden transition-all group relative rounded-lg border-gray-200 dark:border-gray-800",
+        isPending && "border-gray-300 dark:border-gray-600",
+        !isPending &&
+          !isFailed &&
+          preview &&
+          "cursor-pointer hover:border-foreground/50 hover:shadow-md",
       )}
-      onClick={preview ? onSelect : undefined}
+      onClick={!isPending && preview ? onSelect : undefined}
     >
       <div className="absolute top-2 left-9 z-10">
         <div className="flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium border shadow-sm">
@@ -55,7 +72,11 @@ export function ResultCard({ run, onSelect }: ResultCardProps) {
       </div>
 
       <div className="absolute top-2 right-2 z-10">
-        <ResultCardActions run={run} />
+        <ResultCardActions
+          run={run}
+          onDelete={onDelete}
+          isDeleting={isDeleting}
+        />
       </div>
 
       {isVideo && preview && (
@@ -69,7 +90,7 @@ export function ResultCard({ run, onSelect }: ResultCardProps) {
       )}
 
       <div className="aspect-square bg-muted relative overflow-hidden">
-        {preview ? (
+        {preview && !isPending ? (
           isVideo ? (
             <video
               src={preview}
@@ -88,13 +109,28 @@ export function ResultCard({ run, onSelect }: ResultCardProps) {
           )
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="text-xs text-muted-foreground">
-              {isVideo ? (
-                <Film className="h-8 w-8" />
-              ) : (
-                <ImageIcon className="h-8 w-8" />
-              )}
-            </span>
+            {isPending ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 animate-spin text-foreground/60" />
+                <span className="text-xs font-medium text-foreground/60">
+                  {run.status === "running" ? "Processing" : "Queued"}
+                </span>
+              </div>
+            ) : isFailed ? (
+              <div className="flex flex-col items-center gap-2">
+                <AlertCircle className="h-8 w-8 text-foreground/60" />
+                <span className="text-xs font-medium text-foreground/60">
+                  Failed
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <CheckCircle2 className="h-8 w-8 text-foreground/60" />
+                <span className="text-xs font-medium text-foreground/60">
+                  Completed
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -115,6 +151,14 @@ export function ResultCard({ run, onSelect }: ResultCardProps) {
               className="px-1.5 py-0 text-[10px] h-auto"
             >
               Failed
+            </Badge>
+          )}
+          {!isPending && !isFailed && (
+            <Badge
+              variant="secondary"
+              className="px-1.5 py-0 text-[10px] h-auto"
+            >
+              Completed
             </Badge>
           )}
           {createdLabel && <span className="text-[10px]">{createdLabel}</span>}
