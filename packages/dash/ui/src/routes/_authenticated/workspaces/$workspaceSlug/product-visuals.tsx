@@ -1,15 +1,25 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { z } from "zod";
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
 import { ProductVisualsContent } from "@/components/product-visuals-v2/product-visuals-content";
 import { useStylesListQuery } from "@/queries/styles-queries";
 
+const productVisualsSearchSchema = z.object({
+  styleId: z.string().optional(),
+  productId: z.string().optional(),
+});
+
 export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/product-visuals",
 )({
+  validateSearch: (search) => productVisualsSearchSchema.parse(search),
   component: ProductVisualsPage,
 });
 
 function ProductVisualsPage() {
+  const { styleId } = useSearch({
+    from: "/_authenticated/workspaces/$workspaceSlug/product-visuals",
+  });
   const { data: stylesData, isPending: isLoadingStyles } = useStylesListQuery({
     page: 1,
     officialOnly: true,
@@ -34,6 +44,7 @@ function ProductVisualsPage() {
           styles={styleGalleryItems}
           isLoadingStyles={isLoadingStyles}
           userId="product-visuals"
+          preselectedStyleId={styleId}
         />
       </div>
     </div>

@@ -28,6 +28,7 @@ interface ProductVisualsContentProps {
   isLoadingStyles: boolean;
   userId?: string;
   onBatchAddedToComposer?: () => void;
+  preselectedStyleId?: string;
 }
 
 const sampleProductImageUrls = [
@@ -42,6 +43,7 @@ export function ProductVisualsContent({
   isLoadingStyles,
   userId = "product-visuals",
   onBatchAddedToComposer,
+  preselectedStyleId,
 }: ProductVisualsContentProps) {
   const { workspace } = useWorkspace();
   const openComposer = useOpenComposer();
@@ -96,8 +98,26 @@ export function ProductVisualsContent({
   const [selectedRun, setSelectedRun] = useState<RunFeedItem | null>(null);
   const [selectedRunIds, setSelectedRunIds] = useState<Set<string>>(new Set());
   const [columnCount, setColumnCount] = useState<number>(4);
+  const [selectedStyleId, setSelectedStyleId] = useState<string>("");
 
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Preset style on mount if preselectedStyleId is provided
+  useEffect(() => {
+    if (preselectedStyleId && styles.length > 0) {
+      const selectedStyle = styles.find((s) => s.id === preselectedStyleId);
+      if (selectedStyle) {
+        // Add style images to reference assets
+        const styleImages = selectedStyle.imageRefs.filter(
+          (url): url is string => Boolean(url),
+        );
+        styleImages.forEach((url) => {
+          addReferenceAsset({ id: url, url });
+        });
+        setSelectedStyleId(preselectedStyleId);
+      }
+    }
+  }, [preselectedStyleId, styles, addReferenceAsset]);
 
   // Auto-size columns based on container width using ResizeObserver
   useEffect(() => {
@@ -248,6 +268,7 @@ export function ProductVisualsContent({
 
   const handleStyleSelect = useCallback(
     (styleId: string) => {
+      setSelectedStyleId(styleId);
       const style = styleGalleryItems.find((s) => s.id === styleId);
       if (!style) return;
       const styleImages = style.imageRefs.filter((url): url is string =>
@@ -303,7 +324,7 @@ export function ProductVisualsContent({
       productImageUrls,
       styles: styleGalleryItems,
       isLoadingStyles,
-      selectedStyleId: "",
+      selectedStyleId,
       onStyleSelect: handleStyleSelect,
       avatarAssets,
       onAddAvatarAsset: addAvatarAsset,
@@ -327,6 +348,7 @@ export function ProductVisualsContent({
       productImageUrls,
       styleGalleryItems,
       isLoadingStyles,
+      selectedStyleId,
       avatarAssets,
       referenceAssets,
       brandAssets,
