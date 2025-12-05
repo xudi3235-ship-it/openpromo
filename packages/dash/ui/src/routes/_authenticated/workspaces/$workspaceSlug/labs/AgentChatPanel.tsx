@@ -118,7 +118,9 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
 
   const handleStartPipeline = () => {
     if (!isConnected) return;
-    sendEvent("start_pipeline", {});
+    sendEvent("start_pipeline", {
+      input: buildInputPayload,
+    });
   };
 
   const handleEcho = () => {

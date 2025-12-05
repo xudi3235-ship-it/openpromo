@@ -51,6 +51,43 @@ export function RunModal({
               </div>
             </div>
 
+            {/* Summary/Message */}
+            {run.output.message && (
+              <div className="space-y-2 border-t pt-4">
+                <h3 className="text-sm font-medium">Summary</h3>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {run.output.message}
+                </p>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {run.output.error && (
+              <div className="space-y-2 border-t pt-4">
+                <h3 className="text-sm font-medium text-destructive">Error</h3>
+                <p className="text-sm text-destructive/80 whitespace-pre-wrap font-mono text-xs bg-destructive/10 p-2 rounded">
+                  {run.output.error}
+                </p>
+              </div>
+            )}
+
+            {/* Logs */}
+            {run.logs && (
+              <Collapsible defaultOpen={false}>
+                <CollapsibleTrigger asChild>
+                  <button className="flex w-full items-center justify-between py-3 text-sm font-semibold hover:bg-muted/50 rounded px-2 transition-colors">
+                    <span>Logs</span>
+                    <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2">
+                  <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-64 text-muted-foreground font-mono whitespace-pre-wrap break-words">
+                    {run.logs}
+                  </pre>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
             {/* Final Output */}
             {(finalVideos.length > 0 || finalImages.length > 0) && (
               <div className="space-y-3">

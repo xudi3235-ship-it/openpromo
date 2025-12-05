@@ -26,7 +26,7 @@ export function AssetInput({
 
   const handleUrlAdd = () => {
     const value = inputRef.current?.value?.trim();
-    if (!value) return;
+    if (!value || assets.length >= 3) return;
     onAdd({ id: `${value}-${Date.now()}`, url: value });
     if (inputRef.current) inputRef.current.value = "";
   };
@@ -40,8 +40,8 @@ export function AssetInput({
       <div className="flex items-start gap-3">
         <Dropzone
           accept={{ "image/*": [], "video/*": [] }}
-          maxFiles={3}
-          disabled={isUploading}
+          maxFiles={Math.max(0, 3 - assets.length)}
+          disabled={isUploading || assets.length >= 3}
           variant="compact"
           onDrop={async (files) => {
             try {
@@ -49,10 +49,12 @@ export function AssetInput({
                 files.map((file) => uploadFile(file)),
               );
               uploaded.forEach((file) => {
-                onAdd({
-                  id: file.key,
-                  url: file.publicUrl,
-                });
+                if (assets.length < 3) {
+                  onAdd({
+                    id: file.key,
+                    url: file.publicUrl,
+                  });
+                }
               });
             } catch {
               // errors handled in hook
@@ -68,7 +70,8 @@ export function AssetInput({
           <button
             type="button"
             onClick={() => setShowUrlInput((prev) => !prev)}
-            className="text-xs font-medium text-foreground hover:underline"
+            disabled={assets.length >= 3}
+            className="text-xs font-medium text-foreground hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {showUrlInput ? "Hide URL input" : "Paste URL (optional)"}
           </button>
@@ -77,6 +80,7 @@ export function AssetInput({
               <Input
                 ref={inputRef}
                 placeholder="Paste URL"
+                disabled={assets.length >= 3}
                 className="font-mono text-xs"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -85,7 +89,12 @@ export function AssetInput({
                   }
                 }}
               />
-              <Button variant="outline" size="sm" onClick={handleUrlAdd}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleUrlAdd}
+                disabled={assets.length >= 3}
+              >
                 Add
               </Button>
             </div>

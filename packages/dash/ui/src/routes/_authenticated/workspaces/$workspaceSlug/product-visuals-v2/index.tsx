@@ -5,7 +5,7 @@ import { Slider } from "@openpromo/ui/components/slider";
 import type { VideoGenRealtime } from "@shared";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Image as ImageIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { ProductSelectItem } from "@/components/image-generator/product-select";
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
@@ -68,8 +68,7 @@ function ProductVisualsV2Page() {
 
   const {
     isConnected,
-    sendEvent,
-    setAgent,
+    startGeneration,
     serverState,
     chat: { error },
   } = useVideoGenAgent({
@@ -96,36 +95,17 @@ function ProductVisualsV2Page() {
   const [selectedStyleId, setSelectedStyleId] = useState<string>("");
   const [selectedRunIds, setSelectedRunIds] = useState<Set<string>>(new Set());
   const [columnCount, setColumnCount] = useState<number>(4);
-  const lastSentRef = useRef<string | null>(null);
-  const lastAgentRef = useRef<string | null>(null);
 
   const buildInput = useMemo(
     (): VideoGenRealtime.EventDataMap["set_input"] => ({
       prompt: prompt.trim() || samplePrompt,
-      productImages: productImageUrls.filter(Boolean),
-      avatarImages: avatarAssets.map((a) => a.url),
-      referenceImages: referenceAssets.map((a) => a.url),
-      brandAssets: brandAssets.map((a) => a.url),
+      productImages: productImageUrls.filter(Boolean).slice(0, 3),
+      avatarImages: avatarAssets.map((a) => a.url).slice(0, 3),
+      referenceImages: referenceAssets.map((a) => a.url).slice(0, 3),
+      brandAssets: brandAssets.map((a) => a.url).slice(0, 3),
     }),
     [avatarAssets, brandAssets, productImageUrls, prompt, referenceAssets],
   );
-
-  useEffect(() => {
-    if (!isConnected) return;
-    const agentName = mode === "image" ? "image_gen_agent" : "video_gen_agent";
-    const payload = buildInput;
-    const payloadJson = JSON.stringify(payload);
-
-    // Send if agent changed OR payload changed
-    if (
-      lastSentRef.current === payloadJson &&
-      lastAgentRef.current === agentName
-    )
-      return;
-    lastSentRef.current = payloadJson;
-    lastAgentRef.current = agentName;
-    setAgent(agentName, payload);
-  }, [buildInput, isConnected, mode, setAgent]);
 
   // Refetch runs when a new run is created (sync_state received with runId)
   useEffect(() => {
@@ -141,10 +121,8 @@ function ProductVisualsV2Page() {
     }
     const agentName = mode === "image" ? "image_gen_agent" : "video_gen_agent";
     const payload = buildInput;
-    lastSentRef.current = JSON.stringify(payload);
-    setAgent(agentName, payload);
-    sendEvent("start_pipeline", {});
-  }, [isConnected, mode, buildInput, setAgent, sendEvent]);
+    startGeneration(agentName, payload);
+  }, [isConnected, mode, buildInput, startGeneration]);
 
   const handleDeleteRun = (run: RunFeedItem) => {
     deleteRunsMutation.mutate({ ids: [run.id] });

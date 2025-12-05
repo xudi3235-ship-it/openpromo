@@ -132,7 +132,7 @@ export class VideoGenAgent extends AIChatAgent<
   // DO has in memory api as well as storage, we persist actor in storage
   async setActor(actor: Actor.WorkspaceUser) {
     await this.actorStore.set(actor);
-    console.log(`[VideoGenAgent] Actor set:`, actor);
+    // console.log(`[VideoGenAgent] Actor set:`, actor);
     await this.withActor(() => Promise.resolve());
   }
 
@@ -482,7 +482,11 @@ export class VideoGenAgent extends AIChatAgent<
           draft.agentName = data.agent;
         });
       },
-      start_pipeline: async () => {
+      start_pipeline: async (data) => {
+        // Input is now required in start_pipeline
+        this.patchState((draft) => {
+          draft.input = data.input;
+        });
         await this.runPipeline({
           agent: this.state.agentName,
         });

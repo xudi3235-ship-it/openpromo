@@ -65,7 +65,7 @@ export namespace VideoGenRealtime {
   export const StartPipeline = base.extend({
     type: z.literal("start_pipeline"),
     data: z.object({
-      input: InputSchema.optional(),
+      input: InputSchema,
     }),
   });
 
