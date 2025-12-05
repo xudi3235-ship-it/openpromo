@@ -153,9 +153,17 @@ export class VideoGenAgent extends AIChatAgent<
     this.setState(newState);
     if (!this.state.runId) return;
     // persist state
-    EntAgentRun.fromID(this.state.runId).then((run) => {
-      run.persistState(newState);
-    });
+    EntAgentRun.fromID(this.state.runId)
+      .then((run) => {
+        run.persistState(newState);
+      })
+      .catch((err) => {
+        // might be deleted
+        console.error(
+          `[VideoGenAgent] Failed to persist state for run ${this.state.runId}:`,
+          err,
+        );
+      });
   }
 
   private async runPipeline(params: { agent: VideoGenRealtime.AgentName }) {

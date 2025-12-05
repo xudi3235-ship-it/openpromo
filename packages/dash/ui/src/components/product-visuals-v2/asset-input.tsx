@@ -93,21 +93,25 @@ export function AssetInput({
         </div>
       </div>
       {assets.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {assets.map((asset) => (
-            <span
+            <div
               key={asset.id}
-              className="inline-flex items-center gap-2 rounded-full border px-2 py-1 text-xs"
+              className="relative aspect-square overflow-hidden rounded border bg-gray-100"
             >
-              <span className="max-w-[200px] truncate">{asset.url}</span>
+              <img
+                src={asset.url}
+                alt="Asset"
+                className="h-full w-full object-cover"
+              />
               <button
                 type="button"
                 onClick={() => onRemove(asset.id)}
-                className="text-muted-foreground hover:text-foreground"
+                className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 transition-colors"
               >
                 <X className="h-3 w-3" />
               </button>
-            </span>
+            </div>
           ))}
         </div>
       )}

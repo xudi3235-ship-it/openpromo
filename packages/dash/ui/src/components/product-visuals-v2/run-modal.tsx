@@ -1,9 +1,15 @@
 import { Badge } from "@openpromo/ui/components/badge";
 import { Button } from "@openpromo/ui/components/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@openpromo/ui/components/collapsible";
 import { Dialog, DialogContent } from "@openpromo/ui/components/dialog";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { formatDistanceToNow } from "date-fns";
-import { ExternalLink } from "lucide-react";
+import { ChevronDown, ExternalLink } from "lucide-react";
+import { useState } from "react";
 import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
 import { StatusPill } from "./status-pill";
 
@@ -14,6 +20,8 @@ export function RunModal({
   run: RunFeedItem;
   onClose: () => void;
 }) {
+  const [artifactsOpen, setArtifactsOpen] = useState(false);
+
   const finalVideos = run.output.output?.videos ?? [];
   const finalImages = run.output.output?.images ?? [];
   const artifactVideos = run.artifacts?.videos ?? [];
@@ -83,42 +91,52 @@ export function RunModal({
 
             {/* Artifacts */}
             {(artifactVideos.length > 0 || artifactImages.length > 0) && (
-              <div className="space-y-3">
-                <div>
-                  <h4 className="text-sm font-semibold">
-                    Intermediate Outputs
-                  </h4>
+              <Collapsible open={artifactsOpen} onOpenChange={setArtifactsOpen}>
+                <CollapsibleTrigger asChild>
+                  <button className="flex w-full items-center justify-between py-3 text-sm font-semibold hover:bg-muted/50 rounded px-2 transition-colors">
+                    <span>Intermediate Outputs</span>
+                    <ChevronDown
+                      className="h-4 w-4 transition-transform"
+                      style={{
+                        transform: artifactsOpen
+                          ? "rotate(180deg)"
+                          : "rotate(0deg)",
+                      }}
+                    />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3">
                   <p className="text-xs text-muted-foreground">
                     Processing artifacts and intermediate steps.
                   </p>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {artifactVideos.map((v) => (
-                    <div
-                      key={v.id}
-                      className="overflow-hidden rounded-lg border bg-muted"
-                    >
-                      <video
-                        src={v.videoUrl}
-                        controls
-                        className="w-full h-auto"
-                      />
-                    </div>
-                  ))}
-                  {artifactImages.map((img) => (
-                    <div
-                      key={img.id}
-                      className="overflow-hidden rounded-lg border bg-muted"
-                    >
-                      <img
-                        src={img.imageUrl}
-                        alt={img.id}
-                        className="w-full h-auto"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {artifactVideos.map((v) => (
+                      <div
+                        key={v.id}
+                        className="overflow-hidden rounded-lg border bg-muted"
+                      >
+                        <video
+                          src={v.videoUrl}
+                          controls
+                          className="w-full h-auto"
+                        />
+                      </div>
+                    ))}
+                    {artifactImages.map((img) => (
+                      <div
+                        key={img.id}
+                        className="overflow-hidden rounded-lg border bg-muted"
+                      >
+                        <img
+                          src={img.imageUrl}
+                          alt={img.id}
+                          className="w-full h-auto"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
 
             {finalVideos.length === 0 &&
