@@ -1,10 +1,10 @@
-import { Badge } from "@openpromo/ui/components/badge";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import type { VideoGenRealtime } from "@shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { ProductSelectItem } from "@/components/image-generator/product-select";
+import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
 import { InputPanel } from "@/components/product-visuals-v2/input-panel";
 import { LiveArtifactsGrid } from "@/components/product-visuals-v2/live-artifacts-grid";
 import { RunCard } from "@/components/product-visuals-v2/run-card";
@@ -14,6 +14,7 @@ import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-
 import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
 import { useAgentRunsListQuery } from "@/queries/agent-runs";
 import { useProductListQuery } from "@/queries/product";
+import { useStylesListQuery } from "@/queries/styles-queries";
 
 const sampleProductImageUrls = [
   "https://i.pinimg.com/1200x/1e/63/b8/1e63b8168a25c2a2a4127971514d97e2.jpg",
@@ -31,6 +32,11 @@ export const Route = createFileRoute(
 function ProductVisualsV2Page() {
   const { data: productsData, isPending: isLoadingProducts } =
     useProductListQuery({ pageSize: 50 });
+
+  const { data: stylesData, isPending: isLoadingStyles } = useStylesListQuery({
+    page: 1,
+    officialOnly: true,
+  });
 
   const {
     mode,
@@ -63,6 +69,7 @@ function ProductVisualsV2Page() {
   });
 
   const [selectedRun, setSelectedRun] = useState<RunFeedItem | null>(null);
+  const [selectedStyleId, setSelectedStyleId] = useState<string>("");
   const lastSentRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -148,6 +155,30 @@ function ProductVisualsV2Page() {
         })) ?? [],
     })) ?? [];
 
+  const styleGalleryItems: StyleGalleryItem[] = useMemo(
+    () =>
+      stylesData?.styles.map((style) => ({
+        id: style.id,
+        name: style.name ?? null,
+        description: style.description ?? null,
+        imageRefs: style.imageRefs ?? [],
+      })) ?? [],
+    [stylesData?.styles],
+  );
+
+  const handleStyleSelect = (styleId: string) => {
+    setSelectedStyleId(styleId);
+    const style = styleGalleryItems.find((s) => s.id === styleId);
+    if (!style) return;
+    // Add style images to reference assets
+    const styleImages = style.imageRefs.filter((url): url is string =>
+      Boolean(url),
+    );
+    styleImages.forEach((url) => {
+      addReferenceAsset({ id: url, url });
+    });
+  };
+
   const handleProductSelect = (id: string) => {
     setProductId(id);
     const product = productSelectItems.find((p) => p.id === id);
@@ -160,84 +191,88 @@ function ProductVisualsV2Page() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-background px-4 pb-6 pt-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Product Visuals
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Create product imagery or short videos with your assets and prompt.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={isConnected ? "success" : "warning"}>
-            {isConnected ? "Connected" : "Connecting"}
-          </Badge>
-        </div>
+    <div className="flex h-full flex-col bg-background">
+      <div className="flex-shrink-0 px-6 pb-4">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Product Visuals
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Generate ready-to-use product imagery and video concepts with custom
+          prompts and assets.
+        </p>
       </div>
 
-      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-[420px_1fr] lg:grid-rows-[minmax(0,1fr)]">
-        <InputPanel
-          mode={mode}
-          onModeChange={setMode}
-          status={serverState.status}
-          prompt={prompt}
-          onPromptChange={setPrompt}
-          products={productSelectItems}
-          selectedProductId={productId}
-          onProductChange={handleProductSelect}
-          isLoadingProducts={isLoadingProducts}
-          productImageUrls={productImageUrls}
-          avatarAssets={avatarAssets}
-          onAddAvatarAsset={addAvatarAsset}
-          onRemoveAvatarAsset={removeAvatarAsset}
-          referenceAssets={referenceAssets}
-          onAddReferenceAsset={addReferenceAsset}
-          onRemoveReferenceAsset={removeReferenceAsset}
-          brandAssets={brandAssets}
-          onAddBrandAsset={addBrandAsset}
-          onRemoveBrandAsset={removeBrandAsset}
-          onGenerate={handleGenerate}
-          isGenerateDisabled={!isConnected}
-          error={error}
-        />
+      <div className="flex-1 min-h-0 px-4 pb-4">
+        <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-[420px_1fr]">
+          <InputPanel
+            mode={mode}
+            onModeChange={setMode}
+            status={serverState.status}
+            prompt={prompt}
+            onPromptChange={setPrompt}
+            products={productSelectItems}
+            selectedProductId={productId}
+            onProductChange={handleProductSelect}
+            isLoadingProducts={isLoadingProducts}
+            productImageUrls={productImageUrls}
+            styles={styleGalleryItems}
+            isLoadingStyles={isLoadingStyles}
+            selectedStyleId={selectedStyleId}
+            onStyleSelect={handleStyleSelect}
+            avatarAssets={avatarAssets}
+            onAddAvatarAsset={addAvatarAsset}
+            onRemoveAvatarAsset={removeAvatarAsset}
+            referenceAssets={referenceAssets}
+            onAddReferenceAsset={addReferenceAsset}
+            onRemoveReferenceAsset={removeReferenceAsset}
+            brandAssets={brandAssets}
+            onAddBrandAsset={addBrandAsset}
+            onRemoveBrandAsset={removeBrandAsset}
+            onGenerate={handleGenerate}
+            isGenerateDisabled={!isConnected}
+            error={error}
+          />
 
-        <section className="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border bg-white">
-          <ScrollArea className="flex-1">
-            <div className="space-y-3 p-4">
-              <div className="mb-1">
-                <h4 className="text-base font-semibold">Outputs</h4>
-                <p className="text-xs text-muted-foreground">
-                  Live artifacts and saved runs.
-                </p>
-              </div>
+          <section className="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border bg-white">
+            <ScrollArea className="flex-1">
+              <div className="space-y-4 p-4">
+                <div>
+                  <h4 className="text-base font-semibold">Generated Results</h4>
+                  <p className="text-xs text-muted-foreground">
+                    View and manage all generated visuals.
+                  </p>
+                </div>
 
-              <LiveArtifactsGrid artifacts={liveArtifacts} />
-
-              <div className="space-y-2">
                 {isFeedPending && (
-                  <p className="text-sm text-muted-foreground">Loading…</p>
+                  <div className="flex items-center justify-center py-8">
+                    <p className="text-sm text-muted-foreground">Loading…</p>
+                  </div>
                 )}
                 {!isFeedPending && (feedData?.items.length ?? 0) === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    No runs yet. Kick off a generation to see results here.
-                  </p>
+                  <div className="flex items-center justify-center py-12">
+                    <p className="text-sm text-muted-foreground">
+                      No results yet. Generate visuals to see them here.
+                    </p>
+                  </div>
                 )}
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {feedData?.items.map((run) => (
-                    <RunCard
-                      key={run.id}
-                      run={run}
-                      onSelect={() => setSelectedRun(run)}
-                    />
-                  ))}
-                </div>
+                <LiveArtifactsGrid artifacts={liveArtifacts} />
+
+                {(feedData?.items.length ?? 0) > 0 && (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {feedData?.items.map((run) => (
+                      <RunCard
+                        key={run.id}
+                        run={run}
+                        onSelect={() => setSelectedRun(run)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          </ScrollArea>
-        </section>
+            </ScrollArea>
+          </section>
+        </div>
       </div>
 
       {selectedRun && (
