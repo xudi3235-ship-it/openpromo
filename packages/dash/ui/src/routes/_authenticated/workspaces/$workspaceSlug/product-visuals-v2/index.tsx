@@ -134,7 +134,7 @@ function ProductVisualsV2Page() {
     }
   }, [serverState.runId, refetchRuns]);
 
-  const handleGenerate = () => {
+  const handleGenerate = useCallback(() => {
     if (!isConnected) {
       toast.error("Not connected yet");
       return;
@@ -144,7 +144,7 @@ function ProductVisualsV2Page() {
     lastSentRef.current = JSON.stringify(payload);
     setAgent(agentName, payload);
     sendEvent("start_pipeline", {});
-  };
+  }, [isConnected, mode, buildInput, setAgent, sendEvent]);
 
   const handleDeleteRun = (run: RunFeedItem) => {
     deleteRunsMutation.mutate({ ids: [run.id] });
@@ -247,18 +247,21 @@ function ProductVisualsV2Page() {
     [stylesData?.styles],
   );
 
-  const handleStyleSelect = (styleId: string) => {
-    setSelectedStyleId(styleId);
-    const style = styleGalleryItems.find((s) => s.id === styleId);
-    if (!style) return;
-    // Add style images to reference assets
-    const styleImages = style.imageRefs.filter((url): url is string =>
-      Boolean(url),
-    );
-    styleImages.forEach((url) => {
-      addReferenceAsset({ id: url, url });
-    });
-  };
+  const handleStyleSelect = useCallback(
+    (styleId: string) => {
+      setSelectedStyleId(styleId);
+      const style = styleGalleryItems.find((s) => s.id === styleId);
+      if (!style) return;
+      // Add style images to reference assets
+      const styleImages = style.imageRefs.filter((url): url is string =>
+        Boolean(url),
+      );
+      styleImages.forEach((url) => {
+        addReferenceAsset({ id: url, url });
+      });
+    },
+    [styleGalleryItems, addReferenceAsset],
+  );
 
   const handleProductSelect = useCallback(
     (id: string) => {
@@ -290,6 +293,65 @@ function ProductVisualsV2Page() {
     return gridClasses[cols] || "grid-cols-4";
   };
 
+  const inputPanelProps = useMemo(
+    () => ({
+      mode,
+      onModeChange: setMode,
+      status: serverState.status,
+      prompt,
+      onPromptChange: setPrompt,
+      products: productSelectItems,
+      selectedProductId: productId,
+      onProductChange: handleProductSelect,
+      isLoadingProducts,
+      productImageUrls,
+      styles: styleGalleryItems,
+      isLoadingStyles,
+      selectedStyleId,
+      onStyleSelect: handleStyleSelect,
+      avatarAssets,
+      onAddAvatarAsset: addAvatarAsset,
+      onRemoveAvatarAsset: removeAvatarAsset,
+      referenceAssets,
+      onAddReferenceAsset: addReferenceAsset,
+      onRemoveReferenceAsset: removeReferenceAsset,
+      brandAssets,
+      onAddBrandAsset: addBrandAsset,
+      onRemoveBrandAsset: removeBrandAsset,
+      onGenerate: handleGenerate,
+      isGenerateDisabled: !isConnected || serverState.status === "running",
+      error,
+    }),
+    [
+      mode,
+      prompt,
+      productSelectItems,
+      productId,
+      isLoadingProducts,
+      productImageUrls,
+      styleGalleryItems,
+      isLoadingStyles,
+      selectedStyleId,
+      avatarAssets,
+      referenceAssets,
+      brandAssets,
+      serverState.status,
+      isConnected,
+      error,
+      setMode,
+      setPrompt,
+      handleProductSelect,
+      handleStyleSelect,
+      addAvatarAsset,
+      removeAvatarAsset,
+      addReferenceAsset,
+      removeReferenceAsset,
+      addBrandAsset,
+      removeBrandAsset,
+      handleGenerate,
+    ],
+  );
+
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="flex-shrink-0 px-6 pb-4">
@@ -304,36 +366,7 @@ function ProductVisualsV2Page() {
 
       <div className="flex-1 min-h-0 px-4 pb-4">
         <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-[420px_1fr]">
-          <InputPanel
-            mode={mode}
-            onModeChange={setMode}
-            status={serverState.status}
-            prompt={prompt}
-            onPromptChange={setPrompt}
-            products={productSelectItems}
-            selectedProductId={productId}
-            onProductChange={handleProductSelect}
-            isLoadingProducts={isLoadingProducts}
-            productImageUrls={productImageUrls}
-            styles={styleGalleryItems}
-            isLoadingStyles={isLoadingStyles}
-            selectedStyleId={selectedStyleId}
-            onStyleSelect={handleStyleSelect}
-            avatarAssets={avatarAssets}
-            onAddAvatarAsset={addAvatarAsset}
-            onRemoveAvatarAsset={removeAvatarAsset}
-            referenceAssets={referenceAssets}
-            onAddReferenceAsset={addReferenceAsset}
-            onRemoveReferenceAsset={removeReferenceAsset}
-            brandAssets={brandAssets}
-            onAddBrandAsset={addBrandAsset}
-            onRemoveBrandAsset={removeBrandAsset}
-            onGenerate={handleGenerate}
-            isGenerateDisabled={
-              !isConnected || serverState.status === "running"
-            }
-            error={error}
-          />
+          <InputPanel {...inputPanelProps} />
 
           <section className="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border bg-white">
             <div className="flex items-center justify-between gap-4 border-b px-4 py-3 bg-white">
