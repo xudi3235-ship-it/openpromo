@@ -36,11 +36,15 @@ export function ResultCard({
   isSelected,
   onToggleSelect,
 }: ResultCardProps) {
+  // Determine if this is a video or image based on agent name
+  const isVideo = run.agentName === "video_gen_agent";
+
+  // Get preview based on what's available
   const coverVideo =
     run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
   const coverImage =
     run.output.output?.images?.[0] || run.artifacts?.images?.[0];
-  const preview = coverImage?.imageUrl || coverVideo?.videoUrl || null;
+  const preview = coverVideo?.videoUrl || coverImage?.imageUrl || null;
 
   const createdLabel = run.createdAt
     ? new Date(run.createdAt).toLocaleDateString(undefined, {
@@ -51,19 +55,19 @@ export function ResultCard({
 
   const isFailed = run.status === "failed";
   const isPending = run.status === "running" || run.status === "not_started";
-  const isVideo = !!coverVideo;
 
   return (
     <div
       className={cn(
         "border overflow-hidden transition-all group relative rounded-lg border-gray-200 dark:border-gray-800",
-        isPending && "border-gray-300 dark:border-gray-600",
+        isPending &&
+          "border-gray-300 dark:border-gray-600 cursor-pointer hover:border-foreground/50 hover:shadow-md",
         !isPending &&
           !isFailed &&
           preview &&
           "cursor-pointer hover:border-foreground/50 hover:shadow-md",
       )}
-      onClick={!isPending && preview ? onSelect : undefined}
+      onClick={onSelect}
     >
       <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
         {onToggleSelect && (
@@ -92,21 +96,11 @@ export function ResultCard({
         />
       </div>
 
-      {isVideo && preview && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white">
-            <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </span>
-        </div>
-      )}
-
       <div className="aspect-square bg-muted relative overflow-hidden">
         {preview && !isPending ? (
           isVideo ? (
             <video
-              src={preview}
+              src={coverVideo?.videoUrl}
               autoPlay
               muted
               loop
@@ -115,7 +109,7 @@ export function ResultCard({
             />
           ) : (
             <img
-              src={preview}
+              src={coverImage?.imageUrl}
               alt="Generated"
               className="w-full h-full object-cover"
             />

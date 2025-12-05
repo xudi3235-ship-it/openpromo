@@ -22,7 +22,8 @@ export function RunModal({
   run: RunFeedItem;
   onClose: () => void;
 }) {
-  const [artifactsOpen, setArtifactsOpen] = useState(false);
+  const isGenerating = run.status === "running" || run.status === "not_started";
+  const [artifactsOpen, setArtifactsOpen] = useState(isGenerating);
   const openComposer = useOpenComposer();
 
   const finalVideos = run.output.output?.videos ?? [];
@@ -158,11 +159,34 @@ export function RunModal({
             )}
 
             {/* Artifacts */}
-            {(artifactVideos.length > 0 || artifactImages.length > 0) && (
+            {(artifactVideos.length > 0 ||
+              artifactImages.length > 0 ||
+              isGenerating) && (
               <Collapsible open={artifactsOpen} onOpenChange={setArtifactsOpen}>
                 <CollapsibleTrigger asChild>
                   <button className="flex w-full items-center justify-between py-3 text-sm font-semibold hover:bg-muted/50 rounded px-2 transition-colors">
-                    <span>Intermediate Outputs</span>
+                    <div className="flex items-center gap-2">
+                      <span>Generation Progress</span>
+                      {isGenerating && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs px-1.5 py-0 h-auto animate-pulse"
+                        >
+                          In Progress
+                        </Badge>
+                      )}
+                      {!isGenerating &&
+                        (artifactVideos.length > 0 ||
+                          artifactImages.length > 0) && (
+                          <Badge
+                            variant="secondary"
+                            className="text-xs px-1.5 py-0 h-auto"
+                          >
+                            {artifactVideos.length + artifactImages.length}{" "}
+                            steps
+                          </Badge>
+                        )}
+                    </div>
                     <ChevronDown
                       className="h-4 w-4 transition-transform"
                       style={{
@@ -174,35 +198,50 @@ export function RunModal({
                   </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="space-y-3">
-                  <p className="text-xs text-muted-foreground">
-                    Processing artifacts and intermediate steps.
-                  </p>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {artifactVideos.map((v) => (
-                      <div
-                        key={v.id}
-                        className="overflow-hidden rounded-lg border bg-muted"
-                      >
-                        <video
-                          src={v.videoUrl}
-                          controls
-                          className="w-full h-auto"
-                        />
+                  {artifactVideos.length === 0 &&
+                    artifactImages.length === 0 &&
+                    isGenerating && (
+                      <p className="text-xs text-muted-foreground">
+                        Waiting for intermediate outputs...
+                      </p>
+                    )}
+                  {(artifactVideos.length > 0 || artifactImages.length > 0) && (
+                    <>
+                      <p className="text-xs text-muted-foreground">
+                        {artifactVideos.length + artifactImages.length}{" "}
+                        intermediate output
+                        {artifactVideos.length + artifactImages.length !== 1
+                          ? "s"
+                          : ""}
+                      </p>
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {artifactVideos.map((v) => (
+                          <div
+                            key={v.id}
+                            className="overflow-hidden rounded-lg border bg-muted"
+                          >
+                            <video
+                              src={v.videoUrl}
+                              controls
+                              className="w-full h-auto"
+                            />
+                          </div>
+                        ))}
+                        {artifactImages.map((img) => (
+                          <div
+                            key={img.id}
+                            className="overflow-hidden rounded-lg border bg-muted"
+                          >
+                            <img
+                              src={img.imageUrl}
+                              alt={img.id}
+                              className="w-full h-auto"
+                            />
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                    {artifactImages.map((img) => (
-                      <div
-                        key={img.id}
-                        className="overflow-hidden rounded-lg border bg-muted"
-                      >
-                        <img
-                          src={img.imageUrl}
-                          alt={img.id}
-                          className="w-full h-auto"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                    </>
+                  )}
                 </CollapsibleContent>
               </Collapsible>
             )}
