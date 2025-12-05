@@ -264,14 +264,8 @@ export function RunModal({
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          {firstUrl && (
-            <Button onClick={handleCreatePost} size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create post
-            </Button>
-          )}
           {finalVideos[0]?.videoUrl && (
-            <Button asChild variant="default" size="sm">
+            <Button asChild variant="outline" size="sm">
               <a
                 href={finalVideos[0].videoUrl}
                 target="_blank"
@@ -284,7 +278,7 @@ export function RunModal({
             </Button>
           )}
           {finalImages[0]?.imageUrl && (
-            <Button asChild variant="default" size="sm">
+            <Button asChild variant="outline" size="sm">
               <a
                 href={finalImages[0].imageUrl}
                 target="_blank"
@@ -294,6 +288,12 @@ export function RunModal({
                 <ExternalLink className="h-4 w-4" />
                 Open image
               </a>
+            </Button>
+          )}
+          {firstUrl && (
+            <Button onClick={handleCreatePost} size="sm" className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create post
             </Button>
           )}
         </div>

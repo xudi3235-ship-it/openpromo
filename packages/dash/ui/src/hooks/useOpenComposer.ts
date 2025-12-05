@@ -47,6 +47,8 @@ export function useOpenComposer() {
   const initializeComposer = useComposerStore(
     (state) => state.initializeComposer,
   );
+  const currentAccounts = useComposerStore((state) => state.accounts);
+  const selectedAccounts = useComposerStore((state) => state.selectedAccounts);
 
   return useCallback(
     (options: OpenComposerOptions = {}) => {
@@ -66,10 +68,13 @@ export function useOpenComposer() {
           : undefined;
 
       // Initialize composer with the content
+      // Preserve currently selected accounts to avoid resetting them
       if (initContentCreateData || contentGroupID) {
         initializeComposer({
           initContentCreateData,
           contentGroupID,
+          initialAccounts:
+            selectedAccounts.length > 0 ? currentAccounts : undefined,
         });
       }
 
@@ -79,6 +84,12 @@ export function useOpenComposer() {
         params: { workspaceSlug: workspace.slug },
       });
     },
-    [navigate, workspace.slug, initializeComposer],
+    [
+      navigate,
+      workspace.slug,
+      initializeComposer,
+      currentAccounts,
+      selectedAccounts,
+    ],
   );
 }

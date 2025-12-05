@@ -157,12 +157,7 @@ export function MediaGenerateContent() {
       {/* Gallery - Shows all attachments (uploaded + generated) */}
       <MediaSectionGallery />
 
-      <MediaGeneratorDialog
-        styles={styles}
-        isLoadingStyles={isPendingStyles}
-        remainingSlots={remainingSlots}
-        generateMutation={generateMutation}
-      />
+      <MediaGeneratorDialog styles={styles} isLoadingStyles={isPendingStyles} />
     </div>
   );
 }
