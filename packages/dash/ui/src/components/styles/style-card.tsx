@@ -1,8 +1,6 @@
 import { cn } from "@openpromo/ui/lib/utils";
-import { useNavigate } from "@tanstack/react-router";
 import { CheckCircle2 } from "lucide-react";
 import { ImageGridCard } from "@/components/common/ImageGrid";
-import { useWorkspace } from "@/hooks/useWorkspace";
 import type { StyleResponse } from "@/queries/styles-queries";
 import { StyleCardActions } from "./style-card-actions";
 
@@ -11,8 +9,6 @@ interface StyleCardProps {
 }
 
 export function StyleCard({ style }: StyleCardProps) {
-  const navigate = useNavigate();
-  const { workspace } = useWorkspace();
   const [primaryImage] = style.imageRefs;
   const imageCount = style.imageRefs.length;
 
@@ -20,30 +16,8 @@ export function StyleCard({ style }: StyleCardProps) {
     style.state === "pending" || style.state === "processing";
   const isFailed = style.state === "failed";
 
-  const handleOpen = () => {
-    navigate({
-      to: "/workspaces/$workspaceSlug/styles/$styleId",
-      params: {
-        workspaceSlug: workspace.slug,
-        styleId: style.id,
-      },
-    });
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      handleOpen();
-    }
-  };
-
   return (
-    <ImageGridCard
-      onClick={handleOpen}
-      onKeyDown={handleKeyDown}
-      aspectRatio="square"
-      className="bg-muted/30"
-    >
+    <ImageGridCard aspectRatio="square" className="bg-muted/30">
       {/* Main Image */}
       {primaryImage ? (
         <img
@@ -99,7 +73,7 @@ export function StyleCard({ style }: StyleCardProps) {
         <StyleCardActions style={style} />
       </div>
 
-      {/* Hover Overlay with Metadata */}
+      {/* Hover Overlay with Metadata and Action */}
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100">
         <div className="flex h-full flex-col justify-end p-4">
           {/* Title */}
@@ -121,6 +95,11 @@ export function StyleCard({ style }: StyleCardProps) {
                 {imageCount} {imageCount === 1 ? "image" : "images"}
               </span>
             )}
+          </div>
+
+          {/* Primary Action Button */}
+          <div className="mt-3 -mx-4 -mb-4 px-4 py-3 bg-gradient-to-t from-black/60 to-transparent">
+            <StyleCardActions style={style} showUseButton />
           </div>
         </div>
       </div>

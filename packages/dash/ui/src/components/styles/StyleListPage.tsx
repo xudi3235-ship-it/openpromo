@@ -99,17 +99,17 @@ export function StyleListPage() {
         <Stack gap="xs">
           <h1 className="text-xl font-bold tracking-tight">Style References</h1>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Select a style reference to create stunning product visuals for your
-            posts
+            Browse and use style references to create stunning product visuals
+            for your posts
           </p>
         </Stack>
       </PageHeader>
 
-      <div className="flex items-start justify-start gap-3 flex-wrap px-4">
-        <div className="relative w-64 min-w-[220px] sm:w-80">
+      <div className="flex items-center justify-start gap-3 flex-nowrap overflow-x-auto">
+        <div className="relative w-64 min-w-[260px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by name, description, or aesthetic..."
+            placeholder="Search styles by name or description..."
             value={searchValue}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
               setSearchValue(event.target.value)
@@ -122,29 +122,18 @@ export function StyleListPage() {
           type="single"
           value={sort}
           onValueChange={(value) => handleSortChange(value ?? "")}
-          className="rounded-md border bg-background"
+          variant="outline"
+          size="sm"
         >
-          <ToggleGroupItem
-            value="latest"
-            aria-label="Sort by latest"
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
-          >
+          <ToggleGroupItem value="latest" aria-label="Sort by latest">
             <Clock3 className="h-4 w-4" />
             Latest
           </ToggleGroupItem>
-          <ToggleGroupItem
-            value="oldest"
-            aria-label="Sort by oldest"
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
-          >
+          <ToggleGroupItem value="oldest" aria-label="Sort by oldest">
             <History className="h-4 w-4" />
             Oldest
           </ToggleGroupItem>
-          <ToggleGroupItem
-            value="most_used"
-            aria-label="Sort by most used"
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium data-[state=on]:bg-primary/10 data-[state=on]:text-primary sm:text-sm"
-          >
+          <ToggleGroupItem value="most_used" aria-label="Sort by most used">
             <TrendingUp className="h-4 w-4" />
             Most used
           </ToggleGroupItem>
@@ -155,7 +144,7 @@ export function StyleListPage() {
           variant="outline"
           size="sm"
           className={cn(
-            "gap-2",
+            "gap-2 whitespace-nowrap",
             officialOnly &&
               "border-emerald-500/60 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20",
           )}

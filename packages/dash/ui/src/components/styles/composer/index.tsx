@@ -1,6 +1,7 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Input } from "@openpromo/ui/components/input";
 import { cn } from "@openpromo/ui/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ImagePlus,
   Link,
@@ -219,207 +220,281 @@ export function StyleComposer({ onSuccess }: StyleComposerProps) {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex flex-col items-center gap-2 px-4">
-      {!showExpanded && (
-        <button
-          type="button"
-          className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/15 bg-background/75 px-4 py-2.5 text-sm font-medium text-foreground shadow-lg backdrop-blur-xl transition-colors hover:border-white/30"
-          onClick={() => setIsExpanded(true)}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              setIsExpanded(true);
-            }
-          }}
-        >
-          <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <ImagePlus className="h-4 w-4" />
-          </div>
-          <div className="flex flex-col items-start">
-            <span>Create style</span>
-            <span className="text-xs font-normal text-muted-foreground">
-              Drop 1-3 reference images
-            </span>
-          </div>
-        </button>
-      )}
-
-      {showExpanded && (
-        <div
-          className={cn(
-            "pointer-events-auto w-full max-w-xl rounded-2xl border border-white/10 bg-background/80 shadow-[0_10px_35px_-20px_rgba(15,23,42,0.6)] backdrop-blur-2xl transition-[transform,opacity]",
-            isDragging
-              ? "ring-1 ring-primary/50 ring-offset-[3px] ring-offset-background"
-              : "",
-          )}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onPaste={handlePaste}
-          role="region"
-        >
-          <div className="flex flex-col gap-3 px-4 py-4 sm:px-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                New Style
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-6 text-muted-foreground hover:text-foreground"
-                onClick={() => {
-                  setIsExpanded(false);
-                  setIsDragging(false);
-                }}
-                disabled={isProcessing}
-              >
-                <Minimize2 className="h-3.5 w-3.5" />
-                <span className="sr-only">Collapse composer</span>
-              </Button>
-            </div>
-
-            {previews.length > 0 && (
-              <div className="flex flex-wrap justify-center gap-2 pt-1">
-                {previews.map((preview) => (
-                  <figure
-                    key={preview.id}
-                    className="group relative flex h-16 w-16 overflow-hidden rounded-lg border border-white/20 bg-white/5"
-                  >
-                    <img
-                      src={preview.url}
-                      alt="Style reference"
-                      className="h-full w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-black/80 text-white opacity-0 shadow group-hover:opacity-100"
-                      onClick={() => removeImage(preview.id)}
-                      aria-label="Remove reference image"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </figure>
-                ))}
-              </div>
-            )}
-
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => fileInputRef.current?.click()}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  fileInputRef.current?.click();
-                }
-              }}
-              className={cn(
-                "flex cursor-pointer flex-col items-center gap-3 rounded-2xl border border-white/20 bg-white/5 px-4 py-5 text-center transition-colors sm:flex-row sm:justify-between sm:text-left",
-                isDragging
-                  ? "border-primary/50 bg-primary/10"
-                  : "hover:border-white/40 hover:bg-white/10",
-              )}
+      <AnimatePresence mode="wait">
+        {!showExpanded && (
+          <motion.button
+            key="collapsed"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+            }}
+            type="button"
+            className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/15 bg-background/75 px-4 py-2.5 text-sm font-medium text-foreground shadow-lg backdrop-blur-xl transition-colors hover:border-white/30"
+            onClick={() => setIsExpanded(true)}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setIsExpanded(true);
+              }
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <motion.div
+              className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary"
+              animate={{ rotate: isDragging ? 360 : 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
             >
-              <div className="flex size-11 items-center justify-center rounded-full bg-white/10 sm:size-10">
-                {isProcessing ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                ) : (
-                  <UploadCloud className="h-5 w-5 text-muted-foreground" />
-                )}
-              </div>
-              <div className="space-y-0.5 sm:flex-1 sm:px-3">
-                <p className="text-sm font-medium text-foreground sm:text-base">
-                  Drop 1-3 reference images here
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {selectionCopy} · Supports PNG, JPG, GIF, WebP
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs text-muted-foreground">
-                <ImagePlus className="h-3 w-3" />
-                Add references
-              </div>
+              <ImagePlus className="h-4 w-4" />
+            </motion.div>
+            <div className="flex flex-col items-start">
+              <span>Create style</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                Drop 1-3 reference images
+              </span>
             </div>
+          </motion.button>
+        )}
 
-            {/* URL Input Section */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Link className="h-3 w-3" />
-                <span>Or add from URL</span>
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddUrl();
-                    }
-                  }}
-                  className="flex-1 text-sm"
-                  disabled={isProcessing}
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleAddUrl}
-                  disabled={!urlInput.trim() || isProcessing}
-                >
-                  Add
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground sm:text-xs">
-              <span>Tip: Paste images directly (Ctrl/Cmd+V)</span>
-              <div className="flex items-center gap-2">
+        {showExpanded && (
+          <motion.div
+            key="expanded"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+            }}
+            className={cn(
+              "pointer-events-auto w-full max-w-xl rounded-2xl border border-white/10 bg-background/80 shadow-[0_10px_35px_-20px_rgba(15,23,42,0.6)] backdrop-blur-2xl transition-[transform,opacity]",
+              isDragging
+                ? "ring-1 ring-primary/50 ring-offset-[3px] ring-offset-background"
+                : "",
+            )}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onPaste={handlePaste}
+            role="region"
+          >
+            <div className="flex flex-col gap-3 px-4 py-4 sm:px-5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  New Style
+                </span>
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  size="icon"
+                  className="size-6 text-muted-foreground hover:text-foreground"
                   onClick={() => {
-                    if (previews.length === 0) return;
-                    resetComposer();
                     setIsExpanded(false);
+                    setIsDragging(false);
                   }}
-                  disabled={previews.length === 0 || isProcessing}
+                  disabled={isProcessing}
                 >
-                  <X className="h-3 w-3" />
-                  Clear
-                </Button>
-                <Button
-                  size="sm"
-                  className="gap-2"
-                  onClick={handleSubmit}
-                  disabled={
-                    isProcessing ||
-                    previews.length < minImages ||
-                    previews.length > maxImages
-                  }
-                >
-                  {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Create Style
+                  <Minimize2 className="h-3.5 w-3.5" />
+                  <span className="sr-only">Collapse composer</span>
                 </Button>
               </div>
-            </div>
-          </div>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            hidden
-            onChange={handleInputChange}
-          />
-        </div>
-      )}
+              <motion.div layout>
+                {previews.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex flex-wrap justify-center gap-2 pb-1"
+                  >
+                    <AnimatePresence>
+                      {previews.map((preview) => (
+                        <motion.figure
+                          key={preview.id}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.15 }}
+                          className="group relative flex h-16 w-16 overflow-hidden rounded-lg border border-white/20 bg-white/5"
+                        >
+                          <img
+                            src={preview.url}
+                            alt="Style reference"
+                            className="h-full w-full object-cover"
+                          />
+                          <motion.button
+                            type="button"
+                            className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-black/80 text-white opacity-0 shadow group-hover:opacity-100"
+                            onClick={() => removeImage(preview.id)}
+                            aria-label="Remove reference image"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <X className="h-3 w-3" />
+                          </motion.button>
+                        </motion.figure>
+                      ))}
+                    </AnimatePresence>
+                  </motion.div>
+                )}
+              </motion.div>
+
+              <motion.div
+                role="button"
+                tabIndex={0}
+                onClick={() => fileInputRef.current?.click()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
+                animate={{
+                  borderColor: isDragging
+                    ? "rgb(59, 130, 246, 0.5)"
+                    : "rgb(255, 255, 255, 0.2)",
+                  backgroundColor: isDragging
+                    ? "rgb(59, 130, 246, 0.1)"
+                    : "rgb(255, 255, 255, 0.05)",
+                }}
+                className={cn(
+                  "flex cursor-pointer flex-col items-center gap-3 rounded-2xl border px-4 py-5 text-center transition-colors sm:flex-row sm:justify-between sm:text-left",
+                )}
+              >
+                <motion.div
+                  className="flex size-11 items-center justify-center rounded-full bg-white/10 sm:size-10"
+                  animate={{ scale: isProcessing ? [1, 1.05, 1] : 1 }}
+                  transition={{
+                    duration: 0.3,
+                    repeat: isProcessing ? Infinity : 0,
+                  }}
+                >
+                  {isProcessing ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  ) : (
+                    <UploadCloud className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </motion.div>
+                <div className="space-y-0.5 sm:flex-1 sm:px-3">
+                  <p className="text-sm font-medium text-foreground sm:text-base">
+                    Drop 1-3 reference images here
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectionCopy} · Supports PNG, JPG, GIF, WebP
+                  </p>
+                </div>
+                <motion.div
+                  className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs text-muted-foreground"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <ImagePlus className="h-3 w-3" />
+                  Add references
+                </motion.div>
+              </motion.div>
+
+              {/* URL Input Section */}
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="space-y-2"
+              >
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Link className="h-3 w-3" />
+                  <span>Or add from URL</span>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    type="url"
+                    placeholder="https://example.com/image.jpg"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddUrl();
+                      }
+                    }}
+                    className="flex-1 text-sm"
+                    disabled={isProcessing}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleAddUrl}
+                    disabled={!urlInput.trim() || isProcessing}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.15 }}
+                className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground sm:text-xs"
+              >
+                <span>Tip: Paste images directly (Ctrl/Cmd+V)</span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      if (previews.length === 0) return;
+                      resetComposer();
+                      setIsExpanded(false);
+                    }}
+                    disabled={previews.length === 0 || isProcessing}
+                  >
+                    <X className="h-3 w-3" />
+                    Clear
+                  </Button>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Button
+                      size="sm"
+                      className="gap-2"
+                      onClick={handleSubmit}
+                      disabled={
+                        isProcessing ||
+                        previews.length < minImages ||
+                        previews.length > maxImages
+                      }
+                    >
+                      {isProcessing && (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )}
+                      Create Style
+                    </Button>
+                  </motion.div>
+                </div>
+              </motion.div>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              onChange={handleInputChange}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
