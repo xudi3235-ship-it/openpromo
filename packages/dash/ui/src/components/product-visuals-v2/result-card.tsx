@@ -2,6 +2,7 @@ import { Badge } from "@openpromo/ui/components/badge";
 import { cn } from "@openpromo/ui/lib/utils";
 import { Film, ImageIcon } from "lucide-react";
 import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import { ResultCardActions } from "./result-card-actions";
 
 interface ResultCardProps {
   run: RunFeedItem;
@@ -51,6 +52,10 @@ export function ResultCard({ run, onSelect }: ResultCardProps) {
           )}
           <span>{isVideo ? "Video" : "Image"}</span>
         </div>
+      </div>
+
+      <div className="absolute top-2 right-2 z-10">
+        <ResultCardActions run={run} />
       </div>
 
       {isVideo && preview && (
