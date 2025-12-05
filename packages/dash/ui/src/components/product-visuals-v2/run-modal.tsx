@@ -8,9 +8,11 @@ import {
 import { Dialog, DialogContent } from "@openpromo/ui/components/dialog";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { formatDistanceToNow } from "date-fns";
-import { ChevronDown, ExternalLink } from "lucide-react";
+import { ChevronDown, ExternalLink, Plus } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import { useOpenComposer } from "@/hooks/useOpenComposer";
 import { StatusPill } from "./status-pill";
 
 export function RunModal({
@@ -21,11 +23,40 @@ export function RunModal({
   onClose: () => void;
 }) {
   const [artifactsOpen, setArtifactsOpen] = useState(false);
+  const openComposer = useOpenComposer();
 
   const finalVideos = run.output.output?.videos ?? [];
   const finalImages = run.output.output?.images ?? [];
   const artifactVideos = run.artifacts?.videos ?? [];
   const artifactImages = run.artifacts?.images ?? [];
+
+  const firstUrl =
+    finalVideos[0]?.videoUrl ||
+    finalImages[0]?.imageUrl ||
+    artifactVideos[0]?.videoUrl ||
+    artifactImages[0]?.imageUrl;
+
+  const handleCreatePost = async () => {
+    if (!firstUrl) return;
+
+    // Determine if it's a video or image
+    const isVideo = finalVideos[0] || artifactVideos[0];
+
+    // Open composer with the media
+    openComposer({
+      attachments: [
+        {
+          id: run.id,
+          type: isVideo ? "video" : "photo",
+          publicUrl: firstUrl,
+          mimeType: isVideo ? "video/mp4" : "image/jpeg",
+        },
+      ],
+    });
+
+    toast.success("Media added to composer");
+    onClose();
+  };
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -194,6 +225,12 @@ export function RunModal({
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
+          {firstUrl && (
+            <Button onClick={handleCreatePost} size="sm" className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create post
+            </Button>
+          )}
           {finalVideos[0]?.videoUrl && (
             <Button asChild variant="default" size="sm">
               <a

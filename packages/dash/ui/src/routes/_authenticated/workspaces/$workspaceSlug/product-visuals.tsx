@@ -3,7 +3,8 @@ import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Slider } from "@openpromo/ui/components/slider";
 import type { VideoGenRealtime } from "@shared";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+
 import { Image as ImageIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +15,7 @@ import { ResultCard } from "@/components/product-visuals-v2/result-card";
 import { RunModal } from "@/components/product-visuals-v2/run-modal";
 import { useProductVisualsStore } from "@/features/product-visuals-v2/product-visuals-store";
 import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import { useOpenComposer } from "@/hooks/useOpenComposer";
 import { useOptimisticRuns } from "@/hooks/useOptimisticRuns";
 import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -23,7 +25,6 @@ import {
 } from "@/queries/agent-runs";
 import { useProductListQuery } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles-queries";
-import { useComposerStore } from "@/stores/composer-store";
 
 const sampleProductImageUrls = [
   "https://i.pinimg.com/1200x/1e/63/b8/1e63b8168a25c2a2a4127971514d97e2.jpg",
@@ -86,11 +87,8 @@ function ProductVisualsPage() {
   });
 
   const deleteRunsMutation = useDeleteAgentRunsMutation();
-  const navigate = useNavigate();
+  const openComposer = useOpenComposer();
   const { workspace } = useWorkspace();
-  const addAttachmentSpecs = useComposerStore(
-    (state) => state.addAttachmentSpecs,
-  );
 
   const [selectedRun, setSelectedRun] = useState<RunFeedItem | null>(null);
   const [selectedStyleId, setSelectedStyleId] = useState<string>("");
@@ -194,12 +192,8 @@ function ProductVisualsPage() {
       return;
     }
 
-    // Add attachments and navigate
-    addAttachmentSpecs(attachments);
-    await navigate({
-      to: "/workspaces/$workspaceSlug/composer",
-      params: { workspaceSlug: workspace.slug },
-    });
+    // Open composer with attachments
+    openComposer({ attachments });
 
     toast.success(`${attachments.length} media added to composer`);
     setSelectedRunIds(new Set());
