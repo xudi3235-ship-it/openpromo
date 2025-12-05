@@ -1,9 +1,9 @@
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import type { VideoGenRealtime } from "@shared";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Image as ImageIcon } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { ProductSelectItem } from "@/components/image-generator/product-select";
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
@@ -13,12 +13,14 @@ import { RunModal } from "@/components/product-visuals-v2/run-modal";
 import { useProductVisualsStore } from "@/features/product-visuals-v2/product-visuals-store";
 import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
 import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   useAgentRunsListQuery,
   useDeleteAgentRunsMutation,
 } from "@/queries/agent-runs";
 import { useProductListQuery } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles-queries";
+import { useComposerStore } from "@/stores/composer-store";
 
 const sampleProductImageUrls = [
   "https://i.pinimg.com/1200x/1e/63/b8/1e63b8168a25c2a2a4127971514d97e2.jpg",
@@ -82,9 +84,15 @@ function ProductVisualsV2Page() {
   });
 
   const deleteRunsMutation = useDeleteAgentRunsMutation();
+  const navigate = useNavigate();
+  const { workspace } = useWorkspace();
+  const addAttachmentSpecs = useComposerStore(
+    (state) => state.addAttachmentSpecs,
+  );
 
   const [selectedRun, setSelectedRun] = useState<RunFeedItem | null>(null);
   const [selectedStyleId, setSelectedStyleId] = useState<string>("");
+  const [selectedRunIds, setSelectedRunIds] = useState<Set<string>>(new Set());
   const lastSentRef = useRef<string | null>(null);
   const lastAgentRef = useRef<string | null>(null);
 
@@ -139,6 +147,77 @@ function ProductVisualsV2Page() {
     deleteRunsMutation.mutate({ ids: [run.id] });
   };
 
+  const handleToggleRunSelection = (runId: string) => {
+    setSelectedRunIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(runId)) {
+        next.delete(runId);
+      } else {
+        next.add(runId);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedRunIds.size === (feedData?.items.length ?? 0)) {
+      setSelectedRunIds(new Set());
+    } else {
+      setSelectedRunIds(new Set(feedData?.items.map((run) => run.id) ?? []));
+    }
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedRunIds.size === 0) return;
+    deleteRunsMutation.mutate({ ids: Array.from(selectedRunIds) });
+    setSelectedRunIds(new Set());
+  };
+
+  const handleBatchCreatePost = async () => {
+    if (selectedRunIds.size === 0) return;
+
+    // Get selected run objects
+    const selectedRuns = (feedData?.items ?? []).filter((run) =>
+      selectedRunIds.has(run.id),
+    );
+
+    // Extract media specs from selected runs
+    const attachments = selectedRuns
+      .map((run) => {
+        const isVideo =
+          run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
+        const url =
+          isVideo?.videoUrl ||
+          run.output.output?.images?.[0]?.imageUrl ||
+          run.artifacts?.images?.[0]?.imageUrl;
+
+        if (!url) return null;
+
+        return {
+          id: run.id,
+          type: isVideo ? ("video" as const) : ("photo" as const),
+          publicUrl: url,
+          mimeType: isVideo ? "video/mp4" : "image/jpeg",
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    if (attachments.length === 0) {
+      toast.error("No media found to add");
+      return;
+    }
+
+    // Add attachments and navigate
+    addAttachmentSpecs(attachments);
+    await navigate({
+      to: "/workspaces/$workspaceSlug/composer",
+      params: { workspaceSlug: workspace.slug },
+    });
+
+    toast.success(`${attachments.length} media added to composer`);
+    setSelectedRunIds(new Set());
+  };
+
   const productSelectItems: ProductSelectItem[] =
     productsData?.products.map((product) => ({
       id: product.id,
@@ -178,16 +257,26 @@ function ProductVisualsV2Page() {
     });
   };
 
-  const handleProductSelect = (id: string) => {
-    setProductId(id);
-    const product = productSelectItems.find((p) => p.id === id);
-    if (!product) return;
-    const urls: string[] =
-      product.attachments
-        ?.map((a) => a.publicUrl || a.presignedUrl)
-        .filter((v): v is string => Boolean(v)) ?? [];
-    setProductImageUrls(urls.length > 0 ? urls : sampleProductImageUrls);
-  };
+  const handleProductSelect = useCallback(
+    (id: string) => {
+      setProductId(id);
+      const product = productSelectItems.find((p) => p.id === id);
+      if (!product) return;
+      const urls: string[] =
+        product.attachments
+          ?.map((a) => a.publicUrl || a.presignedUrl)
+          .filter((v): v is string => Boolean(v)) ?? [];
+      setProductImageUrls(urls.length > 0 ? urls : sampleProductImageUrls);
+    },
+    [productSelectItems, setProductId, setProductImageUrls],
+  );
+
+  // Preselect first product on load
+  useEffect(() => {
+    if (productSelectItems.length > 0 && !productId) {
+      handleProductSelect(productSelectItems[0].id);
+    }
+  }, [productSelectItems, productId, handleProductSelect]);
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -242,6 +331,34 @@ function ProductVisualsV2Page() {
                   View and manage all generated visuals.
                 </p>
               </div>
+              {selectedRunIds.size > 0 && (
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="font-medium">
+                    {selectedRunIds.size} selected
+                  </span>
+                  <button
+                    onClick={handleSelectAll}
+                    className="text-xs text-foreground/60 hover:text-foreground underline"
+                  >
+                    {selectedRunIds.size === (feedData?.items.length ?? 0)
+                      ? "Deselect all"
+                      : "Select all"}
+                  </button>
+                  <button
+                    onClick={handleBatchCreatePost}
+                    className="text-xs font-medium text-foreground hover:text-foreground/80"
+                  >
+                    Create posts
+                  </button>
+                  <button
+                    onClick={handleBatchDelete}
+                    disabled={deleteRunsMutation.isPending}
+                    className="text-xs font-medium text-destructive hover:text-destructive/80 disabled:opacity-50"
+                  >
+                    Delete selected
+                  </button>
+                </div>
+              )}
             </div>
 
             <ScrollArea className="min-h-0 flex-1">
@@ -277,6 +394,8 @@ function ProductVisualsV2Page() {
                         onSelect={() => setSelectedRun(run)}
                         onDelete={handleDeleteRun}
                         isDeleting={deleteRunsMutation.isPending}
+                        isSelected={selectedRunIds.has(run.id)}
+                        onToggleSelect={handleToggleRunSelection}
                       />
                     ))}
                   </div>

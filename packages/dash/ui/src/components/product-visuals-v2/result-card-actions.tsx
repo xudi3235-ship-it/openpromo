@@ -6,17 +6,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@openpromo/ui/components/dropdown-menu";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Copy,
   Download,
   ExternalLink,
   MoreVertical,
+  Plus,
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { useComposerStore } from "@/stores/composer-store";
 
 interface ResultCardActionsProps {
   run: RunFeedItem;
@@ -30,6 +34,11 @@ export function ResultCardActions({
   isDeleting,
 }: ResultCardActionsProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const { workspace } = useWorkspace();
+  const addAttachmentSpecs = useComposerStore(
+    (state) => state.addAttachmentSpecs,
+  );
 
   const firstUrl =
     run.output.output?.videos?.[0]?.videoUrl ||
@@ -57,6 +66,35 @@ export function ResultCardActions({
   const handleDelete = () => {
     if (!onDelete) return;
     setDeleteDialogOpen(true);
+  };
+
+  const handleCreatePost = async () => {
+    if (!firstUrl) return;
+
+    // Determine if it's a video or image
+    const isVideo =
+      firstUrl.includes(".mp4") ||
+      firstUrl.includes(".webm") ||
+      run.output.output?.videos?.[0] ||
+      run.artifacts?.videos?.[0];
+
+    // Add the media as an attachment spec
+    addAttachmentSpecs([
+      {
+        id: run.id,
+        type: isVideo ? "video" : "photo",
+        publicUrl: firstUrl,
+        mimeType: isVideo ? "video/mp4" : "image/jpeg",
+      },
+    ]);
+
+    // Navigate to composer
+    await navigate({
+      to: "/workspaces/$workspaceSlug/composer",
+      params: { workspaceSlug: workspace.slug },
+    });
+
+    toast.success("Media added to composer");
   };
 
   if (!firstUrl && !onDelete) {
@@ -98,6 +136,11 @@ export function ResultCardActions({
               <DropdownMenuItem onClick={handleDownload}>
                 <Download className="h-4 w-4" />
                 <span>Download</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleCreatePost}>
+                <Plus className="h-4 w-4" />
+                <span>Create post with this</span>
               </DropdownMenuItem>
             </>
           )}

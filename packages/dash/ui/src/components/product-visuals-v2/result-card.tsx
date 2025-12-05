@@ -1,4 +1,5 @@
 import { Badge } from "@openpromo/ui/components/badge";
+import { Checkbox } from "@openpromo/ui/components/checkbox";
 import { cn } from "@openpromo/ui/lib/utils";
 import {
   AlertCircle,
@@ -15,6 +16,8 @@ interface ResultCardProps {
   onSelect: () => void;
   onDelete?: (run: RunFeedItem) => void;
   isDeleting?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (runId: string) => void;
 }
 
 const stateLabelMap: Record<RunFeedItem["status"], string> = {
@@ -30,6 +33,8 @@ export function ResultCard({
   onSelect,
   onDelete,
   isDeleting,
+  isSelected,
+  onToggleSelect,
 }: ResultCardProps) {
   const coverVideo =
     run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
@@ -60,7 +65,15 @@ export function ResultCard({
       )}
       onClick={!isPending && preview ? onSelect : undefined}
     >
-      <div className="absolute top-2 left-2 z-10">
+      <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
+        {onToggleSelect && (
+          <Checkbox
+            checked={isSelected ?? false}
+            onCheckedChange={() => onToggleSelect(run.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="h-5 w-5"
+          />
+        )}
         <div className="flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium border shadow-sm">
           {isVideo ? (
             <Film className="h-3 w-3" />

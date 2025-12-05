@@ -6,7 +6,7 @@ import { Agent } from "@openai/agents";
 import { VideoGenRealtime } from "@shared/agents";
 import type { VideoGenAgentContext } from "../context";
 import { StaticPrompts } from "../prompts";
-import { nanoBananaTool } from "../tools";
+import { evaluateImageTool, nanoBananaTool } from "../tools";
 
 const sysPrompt = `
 1. Role
@@ -22,6 +22,7 @@ User's input will include the following items
 * Focus on extracting learnings, styles, elements from reference images; apply them together with the product images to use image generation tools to produce img.
 * dynamically adapt to diffent product types, categories, styles, etc.
 * for any *CRITICAL instructions, must closely follow and reflect them when reasoning.
+* use the evaluate tool to asset the image quality, and iterate to address any issues.
 
 3. Reasoning
 think thoroughly & chain the steps, since it's sequential, former steps needs to be hgih quality & detailed to ensure good output quality
@@ -62,7 +63,7 @@ export function createImageGenWithRefAgent() {
       },
     },
     instructions: sysPrompt,
-    tools: [nanoBananaTool],
+    tools: [nanoBananaTool, evaluateImageTool],
     // @ts-expect-error weird zod typing issue
     outputType: VideoGenRealtime.AgentOutput,
   });
