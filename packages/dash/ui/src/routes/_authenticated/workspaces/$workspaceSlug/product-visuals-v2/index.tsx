@@ -1,13 +1,14 @@
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
+import { Skeleton } from "@openpromo/ui/components/skeleton";
 import type { VideoGenRealtime } from "@shared";
 import { createFileRoute } from "@tanstack/react-router";
+import { Image as ImageIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { ProductSelectItem } from "@/components/image-generator/product-select";
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
 import { InputPanel } from "@/components/product-visuals-v2/input-panel";
-import { LiveArtifactsGrid } from "@/components/product-visuals-v2/live-artifacts-grid";
-import { RunCard } from "@/components/product-visuals-v2/run-card";
+import { ResultCard } from "@/components/product-visuals-v2/result-card";
 import { RunModal } from "@/components/product-visuals-v2/run-modal";
 import { useProductVisualsStore } from "@/features/product-visuals-v2/product-visuals-store";
 import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
@@ -121,25 +122,6 @@ function ProductVisualsV2Page() {
     pageSize: 24,
   });
 
-  const liveArtifacts = useMemo(
-    () => ({
-      videos: [
-        ...(serverState.artifacts.videos ?? []),
-        ...(serverState.output.output.videos ?? []),
-      ],
-      images: [
-        ...(serverState.artifacts.images ?? []),
-        ...(serverState.output.output.images ?? []),
-      ],
-    }),
-    [
-      serverState.artifacts.images,
-      serverState.artifacts.videos,
-      serverState.output.output.images,
-      serverState.output.output.videos,
-    ],
-  );
-
   const productSelectItems: ProductSelectItem[] =
     productsData?.products.map((product) => ({
       id: product.id,
@@ -234,34 +216,43 @@ function ProductVisualsV2Page() {
           />
 
           <section className="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border bg-white">
-            <ScrollArea className="flex-1">
-              <div className="space-y-4 p-4">
-                <div>
-                  <h4 className="text-base font-semibold">Generated Results</h4>
-                  <p className="text-xs text-muted-foreground">
-                    View and manage all generated visuals.
-                  </p>
-                </div>
+            <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+              <div>
+                <h4 className="text-sm font-medium">Generated Results</h4>
+                <p className="text-xs text-muted-foreground">
+                  View and manage all generated visuals.
+                </p>
+              </div>
+            </div>
 
+            <ScrollArea className="min-h-0 flex-1">
+              <div className="space-y-4 p-4">
                 {isFeedPending && (
-                  <div className="flex items-center justify-center py-8">
-                    <p className="text-sm text-muted-foreground">Loading…</p>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="space-y-2">
+                        <Skeleton className="aspect-square w-full rounded-md" />
+                        <Skeleton className="h-3 w-1/2" />
+                        <Skeleton className="h-2 w-3/4" />
+                      </div>
+                    ))}
                   </div>
                 )}
                 {!isFeedPending && (feedData?.items.length ?? 0) === 0 && (
-                  <div className="flex items-center justify-center py-12">
-                    <p className="text-sm text-muted-foreground">
-                      No results yet. Generate visuals to see them here.
+                  <div className="flex flex-col items-center justify-center text-center py-16 text-muted-foreground gap-2">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                      <ImageIcon className="h-5 w-5" />
+                    </div>
+                    <p className="text-sm font-medium">No results yet</p>
+                    <p className="text-xs text-muted-foreground">
+                      Generate visuals to see them in one place.
                     </p>
                   </div>
                 )}
-
-                <LiveArtifactsGrid artifacts={liveArtifacts} />
-
-                {(feedData?.items.length ?? 0) > 0 && (
+                {!isFeedPending && (feedData?.items.length ?? 0) > 0 && (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {feedData?.items.map((run) => (
-                      <RunCard
+                      <ResultCard
                         key={run.id}
                         run={run}
                         onSelect={() => setSelectedRun(run)}
