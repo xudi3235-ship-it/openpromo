@@ -6,6 +6,7 @@ import {
   ToggleGroupItem,
 } from "@openpromo/ui/components/toggle-group";
 import { cn } from "@openpromo/ui/lib/utils";
+import type { AllPlatforms, ContentPublishingStatus } from "@shared/content";
 import type { ContentCreateData } from "@worker/orpc/routes/content/create-content";
 import type { MergedContentEntity } from "@worker/shared/content-types";
 import {
@@ -57,10 +58,13 @@ export interface EventCalendarProps {
   currentDate?: Date;
   onDateChange?: (date: Date) => void;
   onViewChange?: (view: CalendarView) => void;
-  filters?: { platform?: string; publishingStatus?: string };
+  filters?: {
+    platform?: AllPlatforms;
+    publishingStatus?: ContentPublishingStatus;
+  };
   onFiltersChange?: (filters: {
-    platform?: string;
-    publishingStatus?: string;
+    platform?: AllPlatforms;
+    publishingStatus?: ContentPublishingStatus;
   }) => void;
 }
 

@@ -1,3 +1,9 @@
+import {
+  type AllPlatforms,
+  AllPlatformsZod,
+  type ContentPublishingStatus,
+  ContentPublishingStatusZod,
+} from "@shared";
 import { createFileRoute } from "@tanstack/react-router";
 import type { MergedContentEntity } from "@worker/shared/content-types";
 import { format, parse } from "date-fns";
@@ -17,8 +23,8 @@ import {
 const calendarSearchSchema = z.object({
   view: z.enum(CalendarViews).catch("week"),
   date: z.string().optional(), // YYYY-MM-DD format
-  platform: z.enum(["FACEBOOK", "INSTAGRAM", "TIKTOK"]).optional(),
-  publishingStatus: z.string().optional(), // DRAFT, SCHEDULED, PUBLISHED
+  platform: AllPlatformsZod.optional(),
+  publishingStatus: ContentPublishingStatusZod.optional(), // DRAFT, SCHEDULED, PUBLISHED
 });
 
 export const Route = createFileRoute(
@@ -48,18 +54,8 @@ export const Route = createFileRoute(
       sortOrder: "desc",
       fromDate,
       toDate,
-      platform: deps.platform as
-        | "FACEBOOK"
-        | "INSTAGRAM"
-        | "TIKTOK"
-        | undefined,
-      publishingStatus: deps.publishingStatus as
-        | "DRAFT"
-        | "SCHEDULED"
-        | "PUBLISHED"
-        | "FAILED_TO_PUBLISH"
-        | "PUBLISH_NOW"
-        | undefined,
+      platform: deps.platform,
+      publishingStatus: deps.publishingStatus,
     });
   },
   component: CalendarPage,
@@ -88,14 +84,8 @@ export default function CalendarPage() {
     sortOrder: "desc",
     fromDate,
     toDate,
-    platform: platform as "FACEBOOK" | "INSTAGRAM" | "TIKTOK" | undefined,
-    publishingStatus: publishingStatus as
-      | "DRAFT"
-      | "SCHEDULED"
-      | "PUBLISHED"
-      | "FAILED_TO_PUBLISH"
-      | "PUBLISH_NOW"
-      | undefined,
+    platform,
+    publishingStatus,
   });
 
   const [events, setEvents] = useState<MergedContentEntity[]>([]);
@@ -134,18 +124,14 @@ export default function CalendarPage() {
   };
 
   const handleFiltersChange = (filters: {
-    platform?: string;
-    publishingStatus?: string;
+    platform?: AllPlatforms;
+    publishingStatus?: ContentPublishingStatus;
   }) => {
     navigate({
       search: {
         view,
         date: dateParam,
-        platform: filters.platform as
-          | "FACEBOOK"
-          | "INSTAGRAM"
-          | "TIKTOK"
-          | undefined,
+        platform: filters.platform,
         publishingStatus: filters.publishingStatus,
       },
     });

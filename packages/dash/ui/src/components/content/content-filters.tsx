@@ -7,15 +7,21 @@ import {
   SelectValue,
 } from "@openpromo/ui/components/select";
 import { DateRangePicker } from "@openpromo/ui/components/time/date-range-picker";
+import {
+  type AllPlatforms,
+  AllPlatforms as AllPlatformsEnum,
+  type ContentPublishingStatus,
+  ContentPublishingStatus as ContentPublishingStatusEnum,
+} from "@shared/content";
 import type { LucideIcon } from "lucide-react";
 import { AlertCircle, CheckCircle2, CircleDashed, X } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
 
 export interface ContentFilters {
-  publishingStatus?: string;
+  publishingStatus?: ContentPublishingStatus;
   dateRange?: DateRange;
-  platform?: string;
+  platform?: AllPlatforms;
 }
 
 interface ContentFiltersProps {
@@ -25,33 +31,45 @@ interface ContentFiltersProps {
 }
 
 const PUBLISHING_STATUS_OPTIONS: Array<{
-  value: string;
+  value: ContentPublishingStatus;
   label: string;
   icon: LucideIcon;
 }> = [
-  { value: "DRAFT", label: "Unpublished", icon: CircleDashed },
-  { value: "PUBLISHED", label: "Published", icon: CheckCircle2 },
-  { value: "FAILED_TO_PUBLISH", label: "Failed", icon: AlertCircle },
+  {
+    value: ContentPublishingStatusEnum.DRAFT,
+    label: "Unpublished",
+    icon: CircleDashed,
+  },
+  {
+    value: ContentPublishingStatusEnum.PUBLISHED,
+    label: "Published",
+    icon: CheckCircle2,
+  },
+  {
+    value: ContentPublishingStatusEnum.FAILED_TO_PUBLISH,
+    label: "Failed",
+    icon: AlertCircle,
+  },
 ];
 
 const PLATFORM_OPTIONS: Array<{
-  value: string;
+  value: AllPlatforms;
   label: string;
   // biome-ignore lint/suspicious/noExplicitAny: icon can be any renderable element
   icon: any;
 }> = [
   {
-    value: "FACEBOOK",
+    value: AllPlatformsEnum.FACEBOOK,
     label: "Facebook",
     icon: <FaFacebook className="h-4 w-4 text-blue-600" />,
   },
   {
-    value: "INSTAGRAM",
+    value: AllPlatformsEnum.INSTAGRAM,
     label: "Instagram",
     icon: <FaInstagram className="h-4 w-4 text-pink-600" />,
   },
   {
-    value: "TIKTOK",
+    value: AllPlatformsEnum.TIKTOK,
     label: "TikTok",
     icon: <FaTiktok className="h-3 w-3 text-black" />,
   },
@@ -73,14 +91,15 @@ export function ContentFilters({
   const updatePublishingStatus = (status: string | undefined) => {
     onFiltersChange({
       ...filters,
-      publishingStatus: status === "all" ? undefined : status,
+      publishingStatus:
+        status === "all" ? undefined : (status as ContentPublishingStatus),
     });
   };
 
   const updatePlatform = (platform: string | undefined) => {
     onFiltersChange({
       ...filters,
-      platform: platform === "all" ? undefined : platform,
+      platform: platform === "all" ? undefined : (platform as AllPlatforms),
     });
   };
 
