@@ -183,7 +183,7 @@ export class VideoGenAgent extends AIChatAgent<
 
   onStart(_props?: Record<string, unknown> | undefined) {
     const props = this.castProps(_props);
-    console.log(`[VideoGenAgent] onStart called with props:`, props);
+    // console.log(`[VideoGenAgent] onStart called with props:`, props);
     if (props?.actor) {
       this.setActor(props.actor);
     }
@@ -276,6 +276,7 @@ export class VideoGenAgent extends AIChatAgent<
       },
     });
     // 2. run the agent
+    // TODO: utilize agent handoff using structural output
     const result = await run(agent, runnerInput, {
       context,
     });

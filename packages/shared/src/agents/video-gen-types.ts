@@ -103,10 +103,14 @@ export namespace VideoGenRealtime {
     message: z.string(),
     error: z.string().nullable().optional(),
     // generated assets
-    output: z.object({
-      videos: Video.array(),
-      images: Image.array(),
-    }),
+    output: z
+      .object({
+        videos: Video.array(),
+        images: Image.array(),
+      })
+      .describe(
+        "final deliverables only. your tool outputs are auto-captured. only include final outputs here.",
+      ),
   });
 
   export type AgentOutput = z.infer<typeof AgentOutput>;

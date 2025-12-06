@@ -10,6 +10,7 @@ import { downloadImagesToTmp, downloadVideosToTmp } from "../utils";
 
 const toolParams = z.object({
   videoUrlOrPath: z.string().describe("Path or URL to the input video file."),
+  context: z.string().describe("additional context"),
   productImagePaths: z
     .string()
     .array()
@@ -68,6 +69,7 @@ function videoInline(path: string) {
 async function toolImpl({
   videoUrlOrPath: videoPath,
   productImagePaths,
+  context,
 }: z.infer<typeof toolParams>) {
   const gemini = getGeminiClient();
 
@@ -97,6 +99,15 @@ async function toolImpl({
   for (const imgPath of localImagePaths) {
     contents.push(_imgInline(imgPath));
   }
+  // 3. additional context
+  contents.push({
+    text: `here is the additional context for this run`,
+    role: "user",
+  });
+  contents.push({
+    text: context,
+    role: "user",
+  });
 
   const response = await gemini.models.generateContent({
     model: "gemini-3-pro-preview",
