@@ -64,7 +64,7 @@ working product visuals page, powered by DO, for image/video gen w/ product imag
 *Missing
 - add presets in the ui & DO. is it the same as style? maybe not, i want presets to be even more high level, abstracted, higher quality handpicked one that can reduce the uncercaintiy in output.
 - tune the prompt to address the slow dialogue issue for specific UGC video types.
-- we have to double down in this cloning path, it has to be stunning, by finding the best ads, etiher from visuals, creative ideas, etc. reverse-eng the top-performing ads, breakdown the visuals, structure, framework, and apply the treatment to user's brand
+- we have to double down in this cloning path, it has to be stunning, by finding the best ads, etiher from visuals, creative ideas, etc. reverse-eng the top-performing ads, breakdown the visuals, structure, framework, and apply the treatment to user's brand/product context.
 
 ### Inbox -> DM + Comments
 support basic functionaltiy for engaging with inbox related, including btoh DMs as well as comments features.

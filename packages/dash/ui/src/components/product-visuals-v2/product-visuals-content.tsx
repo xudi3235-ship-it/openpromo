@@ -15,6 +15,7 @@ import {
   useDeleteAgentRunsMutation,
 } from "@/queries/agent-runs";
 import { useProductListQuery } from "@/queries/product";
+import { ConfirmDialog } from "../confirm-dialog";
 import { InputPanel } from "./input-panel";
 import { ResultCard } from "./result-card";
 import { RunModal } from "./run-modal";
@@ -94,6 +95,7 @@ export function ProductVisualsContent({
   const [selectedRun, setSelectedRun] = useState<RunFeedItem | null>(null);
   const [selectedRunIds, setSelectedRunIds] = useState<Set<string>>(new Set());
   const [selectedStyleId, setSelectedStyleId] = useState<string>("");
+  const [showBatchDeleteDialog, setShowBatchDeleteDialog] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -188,8 +190,18 @@ export function ProductVisualsContent({
 
   const handleBatchDelete = () => {
     if (selectedRunIds.size === 0) return;
-    deleteRunsMutation.mutate({ ids: Array.from(selectedRunIds) });
-    setSelectedRunIds(new Set());
+    setShowBatchDeleteDialog(true);
+  };
+
+  const handleConfirmBatchDelete = async () => {
+    try {
+      await deleteRunsMutation.mutateAsync({ ids: Array.from(selectedRunIds) });
+      setSelectedRunIds(new Set());
+      setShowBatchDeleteDialog(false);
+    } catch (error) {
+      // Keep dialog open if deletion fails
+      console.error("Failed to delete items:", error);
+    }
   };
 
   const handleBatchCreatePost = async () => {
@@ -403,6 +415,25 @@ export function ProductVisualsContent({
       {selectedRun && (
         <RunModal run={selectedRun} onClose={() => setSelectedRun(null)} />
       )}
+
+      <ConfirmDialog
+        open={showBatchDeleteDialog}
+        onOpenChange={setShowBatchDeleteDialog}
+        title="Delete Selected Items"
+        desc={
+          <span>
+            Are you sure you want to delete{" "}
+            <strong>{selectedRunIds.size}</strong> selected item
+            {selectedRunIds.size !== 1 ? "s" : ""}? This action cannot be
+            undone.
+          </span>
+        }
+        cancelBtnText="Cancel"
+        confirmText="Delete"
+        destructive={true}
+        handleConfirm={handleConfirmBatchDelete}
+        isLoading={deleteRunsMutation.isPending}
+      />
     </>
   );
 }
