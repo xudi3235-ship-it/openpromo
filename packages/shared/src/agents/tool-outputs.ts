@@ -7,6 +7,7 @@ const ToolName = z.enum([
   "veo31_text_to_video",
   "veo31_image_to_video",
   "veo31_reference_images_to_video",
+  "veo31_unified",
   "veo31_video_extension",
   "sora2_storyboard_generate",
   "tmp_fs",
@@ -16,7 +17,7 @@ const ToolName = z.enum([
 
 type ToolNameType = z.infer<typeof ToolName>;
 
-function makeToolOutput<const T extends string, S extends z.ZodTypeAny>(
+function makeToolOutput<const T extends ToolNameType, S extends z.ZodTypeAny>(
   toolName: T,
   outputSchema: S,
 ) {
@@ -63,6 +64,14 @@ export const Veo31ReferenceImagesToVideoToolOutput = makeToolOutput(
   "veo31_reference_images_to_video",
   Veo31PromptVideoOutput.extend({
     referenceImagePaths: z.array(z.string()).min(1),
+  }),
+);
+
+export const Veo31UnifiedToolOutput = makeToolOutput(
+  "veo31_unified",
+  z.object({
+    videoUrl: z.string().url(),
+    outputPath: z.string(),
   }),
 );
 
@@ -237,11 +246,13 @@ export const NanoBananaToolOutput = makeToolOutput(
 
 export type NanoBananaToolOutput = z.infer<typeof NanoBananaToolOutput>;
 
+// NOTE: keep this in sync with all tool outputs above
 export const ToolOutputs = z.union([
   Veo31TextToVideoToolOutput,
   Veo31ImageToVideoToolOutput,
   Veo31ReferenceImagesToVideoToolOutput,
   Veo31VideoExtensionToolOutput,
+  Veo31UnifiedToolOutput,
   SoraStoryboardToolOutput,
   TmpFsToolOutput,
   VirtualShellToolOutput,

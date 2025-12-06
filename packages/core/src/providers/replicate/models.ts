@@ -145,22 +145,21 @@ export namespace Replicate {
         model: "kwaivgi/kling-v2.5-turbo-pro",
         input: parsed,
       });
-      return replicate.wait(prediction);
+      return await replicate.wait(prediction);
     }
   }
 
   export namespace Veo31Fast {
     export const schema = z.object({
       prompt: z.string(),
-      image: z.string().optional(),
-      duration: z.enum(["4", "6", "8"]).default("8").transform(Number),
-      start_frame: z.string().optional(),
-      last_frame: z.string().optional(),
-      negative_prompt: z.string().optional(),
-      resolution: z.enum(["720p", "1080p"]).default("1080p"),
-      aspect_ratio: z.enum(["16:9", "9:16", "1:1"]).default("16:9"),
+      image: z.string().describe("start frame image"),
+      duration: z.union([z.literal(4), z.literal(6), z.literal(8)]).default(8),
+      last_frame: z.string().optional().nullable(),
+      negative_prompt: z.string().optional().nullable(),
+      resolution: z.enum(["720p", "1080p"]).default("720p"),
+      aspect_ratio: z.enum(["16:9", "9:16"]).default("9:16"),
       generate_audio: z.boolean().default(true),
-      seed: z.number().optional(),
+      seed: z.number().optional().nullable(),
     });
     export type Input = z.input<typeof schema>;
 
@@ -170,7 +169,7 @@ export namespace Replicate {
         model: "google/veo-3.1-fast",
         input: parsed,
       });
-      return replicate.wait(prediction);
+      return await replicate.wait(prediction);
     }
   }
 }

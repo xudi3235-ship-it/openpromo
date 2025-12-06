@@ -9,9 +9,10 @@ import {
   nanoBananaTool,
   searchImageTool,
   sora2StoryboardTool,
-  veo31ImageToVideoTool,
-  veo31ReferenceImagesToVideoTool,
-  veo31VideoExtensionTool,
+  // veo31ImageToVideoTool,
+  // veo31ReferenceImagesToVideoTool,
+  veo31UnifiedTool,
+  // veo31VideoExtensionTool,
   virtualShellTool,
 } from "./tools";
 import { videoToSpecTool } from "./tools/video-to-spec";
@@ -44,7 +45,7 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     - unless specified, aspect raito is vertical, 9:16. State the aspect ratio in every video/tool request.
     - Operate only inside /tmp; treat /tmp/products as the source of product inputs. Never read/write outside repo sandbox.
     - Every image generation call must include at least one provided product/reference image so the product stays recognizable.
-    - veo3.1 clips are capped at 8s per segment; manage hooks, cuts, and extensions around this. Multi-shot outputs must chain via extension or stitched clips with continuity notes. !VEO3.1 produces slow dialogue!! than normal videos, this is critical, so explicitly prompt in for faster paced dialogue, scene cut. This is critical.
+    - veo3.1 clips are capped at fixed duration!(4,6,8s) per shot; manage hooks, cuts, and extensions around this. Multi-shot outputs must chain via extension or stitched clips with continuity notes. !VEO3.1 produces slow dialogue!! than normal videos, this is critical, so explicitly prompt in for faster paced dialogue, scene cut. This is critical.
     - Do not add text overlays in video outputs until accuracy improves.
     - Run evaluate_image exactly once per image batch; incorporate the feedback before moving to video and restate the approval in the first video prompt.
     - **for ugc style video, must start with strong hook, 0-6s of every video segment--call this out inside your storyboard and prompts.
@@ -58,7 +59,7 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     </about_image_generation>
 
     <about_video_gen>
-    - veo3.1 can only create up to 8s video at a time. Plan each beat so hooks, feature reveals, and CTAs respect this cap.
+    - veo3.1 can only create up to (4,6,8s) video at a time. Plan each beat so hooks, feature reveals, and CTAs respect this cap.
     - Camera movements must feel smooth and authentic; justify any aggressive motion when it reinforces the hook.
     - Maintain visual + narrative continuity when extending a clip; reference previous frame states explicitly in prompts.
     - For reference accuracy (ingredients, textiles, packaging), prefer \`veo31_reference_images_to_video\` (16:9 requirement). Use other modes only when they better satisfy continuity or timing needs.
@@ -177,10 +178,11 @@ export function createVideoGenAgent() {
       videoToSpecTool,
       evaluateImageTool,
       nanoBananaTool,
+      veo31UnifiedTool, // on replicate
       // veo31TextToVideoTool, // never use pure text-to-video for product-centric videos
-      veo31ImageToVideoTool,
-      veo31ReferenceImagesToVideoTool,
-      veo31VideoExtensionTool,
+      // veo31ImageToVideoTool,
+      // veo31ReferenceImagesToVideoTool,
+      // veo31VideoExtensionTool,
       sora2StoryboardTool,
       // other stuff
       ffmpegTool,

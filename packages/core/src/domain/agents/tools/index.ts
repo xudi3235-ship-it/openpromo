@@ -14,6 +14,7 @@ export { searchImageTool } from "./search-image";
 export { createShellTool, VideoGenShell, videoGenShellTool } from "./shell";
 // Sora 2 Pro tools
 export { sora2StoryboardTool } from "./sora2-storyboard";
+export { veo31UnifiedTool } from "./veo31_unified";
 // Tmp filesystem helper
 export { veo31ImageToVideoTool } from "./veo31-image-to-video";
 export { veo31ReferenceImagesToVideoTool } from "./veo31-reference-images-to-video";

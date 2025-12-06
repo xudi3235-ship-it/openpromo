@@ -11,6 +11,7 @@ export {
   Veo31ImageToVideoToolOutput,
   Veo31ReferenceImagesToVideoToolOutput,
   Veo31TextToVideoToolOutput,
+  Veo31UnifiedToolOutput,
   Veo31VideoExtensionToolOutput,
   VirtualShellToolOutput,
 } from "@shared/agents/tool-outputs";
