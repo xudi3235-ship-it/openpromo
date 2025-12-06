@@ -78,3 +78,43 @@ export async function downloadImagesToTmp(
 
   return localPaths;
 }
+
+export async function downloadVideosToTmp(
+  urls: string[],
+  destDir: string,
+): Promise<string[]> {
+  // Create destination directory if it doesn't exist
+  if (!existsSync(destDir)) {
+    mkdirSync(destDir, { recursive: true });
+  }
+
+  const localPaths: string[] = [];
+
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    // Extract filename from URL or generate one
+    const urlPath = new URL(url).pathname;
+    const filename = urlPath.split("/").pop() || `video_${i}.mp4`;
+    const localPath = `${destDir}/${filename}`;
+
+    try {
+      console.log(`[VideoGenAgent] Downloading: ${url}`);
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${url}: ${response.status}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      writeFileSync(localPath, buffer);
+
+      console.log(`[VideoGenAgent] Saved to: ${localPath}`);
+      localPaths.push(localPath);
+    } catch (err) {
+      console.error(`[VideoGenAgent] Failed to download ${url}:`, err);
+    }
+  }
+
+  return localPaths;
+}

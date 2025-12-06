@@ -14,6 +14,7 @@ import {
   veo31VideoExtensionTool,
   virtualShellTool,
 } from "./tools";
+import { videoToSpecTool } from "./tools/video-to-spec";
 
 /**
  * Build the system prompt for video generation agent.
@@ -41,11 +42,11 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     * pipeline remains image-first (create or source frames, then videos).
     
     ## HARD LIMITS (CRITICAL / MUST FOLLOW)
-    - final vid duration is 15-30s! Plan beats so total runtime stays in this window; fix any plan <15s or >30s before running tools.
+    - final vid duration is 15-30s. fix any plan <15s or >30s before running tools.
     - unless specified, aspect raito is vertical, 9:16. State the aspect ratio in every video/tool request.
     - Operate only inside /tmp; treat /tmp/products as the source of product inputs. Never read/write outside repo sandbox.
     - Every image generation call must include at least one provided product/reference image so the product stays recognizable.
-    - veo3.1 clips are capped at 8s; manage hooks, cuts, and extensions around this. Multi-shot outputs must chain via extension or stitched clips with continuity notes. VEO3.1 produces slow dialogue!! than normal videos, this is critical, so explicitly prompt in for faster paced dialogue, scene cut. This is critical.
+    - veo3.1 clips are capped at 8s per segment; manage hooks, cuts, and extensions around this. Multi-shot outputs must chain via extension or stitched clips with continuity notes. !VEO3.1 produces slow dialogue!! than normal videos, this is critical, so explicitly prompt in for faster paced dialogue, scene cut. This is critical.
     - Do not add text overlays in video outputs until accuracy improves.
     - Run evaluate_image exactly once per image batch; incorporate the feedback before moving to video and restate the approval in the first video prompt.
     - **for ugc style video, must start with strong hook, 0-6s of every video segment--call this out inside your storyboard and prompts.
@@ -138,10 +139,9 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     ${StaticPrompts.sora2PromptGuide()}
 
     ### additional guidelines about UGC videos
-    - slightly faster paces on both dialogue and scene cuts movements, since our duration is very limited.
-    - ensure the cuts are not abrupt, hard to understand. many times when we use \`hard cut\` during shots transitons, it feels very weird, like it continues the emotion/dialogue, but the scene changes abruptly, which is jarring. prefer smooth transitions use other prompts / techniques to address this.
+    - ensure the cuts are not abrupt, hard to understand. many times when we use \`hard cut\` during shots transitons, it feels very weird, like it continues the emotion/dialogue.
     - ensure physics is correct, e.g. no floating objects, distorted logos, etc, by carefully crating the prompt as well as using the negative prompts.
-    - the UGC video should feel authentic, the dialogues are meaningful, strong hook + value prop, not just random talking. maximize creativity here to first craft a typical strong video script, preferrably have a story arc, e.g. problem -> solution -> benefit, etc. or rumor, surprise, etc. then think about how to best visualize it with camera movements, shots, angles, etc. Ultimately you are the owner here to create engaging, eye-grabbing ugc style "ad" video that feels authentic and real.
+    - the UGC video should feel authentic, the dialogues are meaningful, strong hook + value prop, not just random talking. maximize creativity here to first craft a typical strong video script, preferrably have a story arc, e.g. problem -> solution -> benefit, etc. or rumor, surprise, etc.
     `;
 }
 
@@ -163,9 +163,8 @@ export function createVideoGenAgent() {
       // videoGenShellTool, // worker runtime does not allow spawning processes currently
       virtualShellTool,
       searchImageTool,
-      // webSearchTool(),
+      videoToSpecTool,
       evaluateImageTool,
-      // evaluateVideoInputTool, // not good yet
       nanoBananaTool,
       // veo31TextToVideoTool, // never use pure text-to-video for product-centric videos
       veo31ImageToVideoTool,

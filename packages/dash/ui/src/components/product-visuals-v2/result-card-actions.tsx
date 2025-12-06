@@ -116,16 +116,31 @@ export function ResultCardActions({
                   <span>Open in new tab</span>
                 </a>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleCopyLink}>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyLink();
+                }}
+              >
                 <Copy className="h-4 w-4" />
                 <span>Copy link</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDownload}>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownload();
+                }}
+              >
                 <Download className="h-4 w-4" />
                 <span>Download</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleCreatePost}>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCreatePost();
+                }}
+              >
                 <Plus className="h-4 w-4" />
                 <span>Create post with this</span>
               </DropdownMenuItem>
@@ -135,7 +150,10 @@ export function ResultCardActions({
             <>
               {firstUrl && <DropdownMenuSeparator />}
               <DropdownMenuItem
-                onClick={handleDelete}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
                 disabled={isDeleting}
                 className="text-destructive focus:text-destructive"
               >
