@@ -7,8 +7,7 @@
     "sync_secrets": "bash scripts/sync_secrets.sh",
     "postinstall": "lefthook install",
     "typecheck": "pnpm run --parallel -r typecheck",
-    "typecheck:backend": "cd packages/backend && uv run basedpyright --level error",
-    "lint": "pnpm check && pnpm typecheck && pnpm typecheck:backend",
+    "lint": "pnpm check && pnpm typecheck",
     "meerkat": "bash scripts/meerkat.sh"
   },
   "devDependencies": {

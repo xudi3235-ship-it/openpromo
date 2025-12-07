@@ -1,7 +1,6 @@
 import {
   Calendar,
   Home,
-  Image as ImageIcon,
   Inbox,
   LayoutList,
   Package,
@@ -11,6 +10,7 @@ import {
   TestTube,
   TrendingUp,
   Users,
+  Zap,
 } from "lucide-react";
 import { BiNotification } from "react-icons/bi";
 import { useActor, useWorkspaceActor } from "@/hooks/useActor";
@@ -78,9 +78,9 @@ export const useSidebarData = (): SidebarData => {
           icon: Palette,
         },
         {
-          title: "Product Visuals",
-          url: "/workspaces/$workspaceSlug/product-visuals",
-          icon: ImageIcon,
+          title: "Instant Ad",
+          url: "/workspaces/$workspaceSlug/instant-ad",
+          icon: Zap,
         },
       ],
     },

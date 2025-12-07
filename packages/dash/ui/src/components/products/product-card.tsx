@@ -129,7 +129,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleCreateImage = (event: Event) => {
     event.preventDefault();
     navigate({
-      to: "/workspaces/$workspaceSlug/product-visuals",
+      to: "/workspaces/$workspaceSlug/instant-ad",
       params: {
         workspaceSlug: workspace.slug,
       },

@@ -1,6 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Label } from "@openpromo/ui/components/label";
-import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import type { VideoGenRealtime } from "@shared";
 import { ChevronDown } from "lucide-react";
@@ -104,31 +103,31 @@ export function InputPanel({
   const generateLabel = mode === "video" ? "Generate Video" : "Generate Image";
 
   return (
-    <section className="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border bg-white">
-      <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
-        <div className="text-sm font-medium">Generation Settings</div>
+    <div className="flex h-full min-w-0 flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 pb-4">
+        <h3 className="text-sm font-medium">Generation Settings</h3>
         <div className="flex items-center gap-2">
           <StatusPill status={status} />
           <ModeToggle mode={mode} onChange={onModeChange} />
         </div>
       </div>
 
-      {/* Video Presets - outside ScrollArea for proper horizontal scrolling */}
-      {mode === "video" && videoPresets && (
-        <div className="flex-shrink-0 border-b">
-          <div className="px-4 py-3">
-            <VideoPresets
-              presets={videoPresets}
-              isLoading={isLoadingVideoPresets || false}
-              selectedPresetId={selectedVideoPresetId}
-              onPresetSelect={onVideoPresetSelect}
-            />
-          </div>
-        </div>
-      )}
-
-      <ScrollArea className="min-h-0 flex-1">
-        <div className="space-y-6 p-4">
+      {/* Main Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="space-y-8">
+          {/* Video Presets */}
+          {mode === "video" && videoPresets && (
+            <div>
+              <VideoPresets
+                presets={videoPresets}
+                isLoading={isLoadingVideoPresets || false}
+                selectedPresetId={selectedVideoPresetId}
+                onPresetSelect={onVideoPresetSelect}
+              />
+            </div>
+          )}
+          {/* Prompt Section */}
           <div>
             <Label htmlFor="prompt" className="text-sm font-medium">
               Prompt
@@ -146,6 +145,7 @@ export function InputPanel({
             />
           </div>
 
+          {/* Product Section */}
           <div>
             <Label className="text-sm font-medium">Product</Label>
             <p className="text-xs text-muted-foreground mb-2">
@@ -175,6 +175,7 @@ export function InputPanel({
             )}
           </div>
 
+          {/* Style Section */}
           <div>
             <StyleGallery
               styles={styles}
@@ -186,10 +187,10 @@ export function InputPanel({
           </div>
 
           {/* Optional Assets Collapsible */}
-          <div className="border-t pt-4">
+          <div className="border-t pt-6">
             <button
               onClick={() => setIsAssetsOpen(!isAssetsOpen)}
-              className="flex w-full items-center justify-between rounded px-2 py-2 hover:bg-gray-50 transition-colors"
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors"
             >
               <span className="text-sm font-medium text-foreground">
                 Additional Assets
@@ -203,7 +204,7 @@ export function InputPanel({
             </button>
 
             {isAssetsOpen && (
-              <div className="mt-4 space-y-5 animate-in fade-in-50 duration-200">
+              <div className="mt-4 space-y-6 animate-in fade-in-50 duration-200">
                 <AssetInput
                   label="Avatar assets"
                   helper="Reference images for characters or models."
@@ -229,9 +230,10 @@ export function InputPanel({
             )}
           </div>
         </div>
-      </ScrollArea>
+      </div>
 
-      <div className="border-t px-4 py-3">
+      {/* Generate Button */}
+      <div className="mt-6 pt-4 border-t">
         <div className="flex flex-col gap-2">
           <Button onClick={onGenerate} disabled={isGenerateDisabled} size="sm">
             {generateLabel}
@@ -243,6 +245,6 @@ export function InputPanel({
           )}
         </div>
       </div>
-    </section>
+    </div>
   );
 }

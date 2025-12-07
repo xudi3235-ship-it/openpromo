@@ -394,17 +394,17 @@ export function ProductVisualsContent({
 
   return (
     <>
-      <div ref={containerRef} className="flex h-full min-w-0 gap-4">
-        <div className="w-96 flex-shrink-0">
+      <div ref={containerRef} className="flex h-full min-w-0">
+        <div className="w-96 flex-shrink-0 pr-6">
           <InputPanel {...inputPanelProps} />
           {import.meta.env.DEV && (
-            <Button className="mb-4" onClick={resetState} variant="outline">
+            <Button className="mt-4" onClick={resetState} variant="outline">
               Reset
             </Button>
           )}
         </div>
 
-        <section className="flex flex-1 min-w-0 flex-col overflow-hidden">
+        <div className="flex-1 min-w-0 h-full overflow-hidden">
           <DataGrid<RunFeedItem>
             items={mergedRuns}
             isLoading={isFeedPending}
@@ -444,9 +444,9 @@ export function ProductVisualsContent({
                 disabled: deleteRunsMutation.isPending,
               },
             ]}
-            className="flex flex-1 min-w-0 flex-col overflow-hidden rounded-lg border bg-white"
+            className="flex flex-1 min-w-0 flex-col overflow-hidden h-full"
           />
-        </section>
+        </div>
       </div>
 
       {selectedRun && (

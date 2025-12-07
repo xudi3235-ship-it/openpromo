@@ -52,7 +52,7 @@ export function StyleCardActions({
       description: `Ready to use "${style.name}" for your visuals`,
     });
     navigate({
-      to: "/workspaces/$workspaceSlug/product-visuals",
+      to: "/workspaces/$workspaceSlug/instant-ad",
       params: {
         workspaceSlug: workspace.slug,
       },

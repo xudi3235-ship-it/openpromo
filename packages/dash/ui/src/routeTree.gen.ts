@@ -18,7 +18,7 @@ import { Route as AuthenticatedWorkspacesWorkspaceSlugRouteRouteImport } from '.
 import { Route as AuthenticatedWorkspacesWorkspaceSlugIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/index'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugTeamRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/team'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugSettingsRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/settings'
-import { Route as AuthenticatedWorkspacesWorkspaceSlugProductVisualsRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/product-visuals'
+import { Route as AuthenticatedWorkspacesWorkspaceSlugInstantAdRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/instant-ad'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugInsightsRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/insights'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugInboxRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/inbox'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugContentRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/content'
@@ -84,10 +84,10 @@ const AuthenticatedWorkspacesWorkspaceSlugSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRouteRoute,
   } as any)
-const AuthenticatedWorkspacesWorkspaceSlugProductVisualsRoute =
-  AuthenticatedWorkspacesWorkspaceSlugProductVisualsRouteImport.update({
-    id: '/product-visuals',
-    path: '/product-visuals',
+const AuthenticatedWorkspacesWorkspaceSlugInstantAdRoute =
+  AuthenticatedWorkspacesWorkspaceSlugInstantAdRouteImport.update({
+    id: '/instant-ad',
+    path: '/instant-ad',
     getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRouteRoute,
   } as any)
 const AuthenticatedWorkspacesWorkspaceSlugInsightsRoute =
@@ -187,7 +187,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceSlug/content': typeof AuthenticatedWorkspacesWorkspaceSlugContentRoute
   '/workspaces/$workspaceSlug/inbox': typeof AuthenticatedWorkspacesWorkspaceSlugInboxRouteWithChildren
   '/workspaces/$workspaceSlug/insights': typeof AuthenticatedWorkspacesWorkspaceSlugInsightsRoute
-  '/workspaces/$workspaceSlug/product-visuals': typeof AuthenticatedWorkspacesWorkspaceSlugProductVisualsRoute
+  '/workspaces/$workspaceSlug/instant-ad': typeof AuthenticatedWorkspacesWorkspaceSlugInstantAdRoute
   '/workspaces/$workspaceSlug/settings': typeof AuthenticatedWorkspacesWorkspaceSlugSettingsRoute
   '/workspaces/$workspaceSlug/team': typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   '/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
@@ -209,7 +209,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceSlug/composer': typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
   '/workspaces/$workspaceSlug/content': typeof AuthenticatedWorkspacesWorkspaceSlugContentRoute
   '/workspaces/$workspaceSlug/insights': typeof AuthenticatedWorkspacesWorkspaceSlugInsightsRoute
-  '/workspaces/$workspaceSlug/product-visuals': typeof AuthenticatedWorkspacesWorkspaceSlugProductVisualsRoute
+  '/workspaces/$workspaceSlug/instant-ad': typeof AuthenticatedWorkspacesWorkspaceSlugInstantAdRoute
   '/workspaces/$workspaceSlug/settings': typeof AuthenticatedWorkspacesWorkspaceSlugSettingsRoute
   '/workspaces/$workspaceSlug/team': typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   '/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
@@ -236,7 +236,7 @@ export interface FileRoutesById {
   '/_authenticated/workspaces/$workspaceSlug/content': typeof AuthenticatedWorkspacesWorkspaceSlugContentRoute
   '/_authenticated/workspaces/$workspaceSlug/inbox': typeof AuthenticatedWorkspacesWorkspaceSlugInboxRouteWithChildren
   '/_authenticated/workspaces/$workspaceSlug/insights': typeof AuthenticatedWorkspacesWorkspaceSlugInsightsRoute
-  '/_authenticated/workspaces/$workspaceSlug/product-visuals': typeof AuthenticatedWorkspacesWorkspaceSlugProductVisualsRoute
+  '/_authenticated/workspaces/$workspaceSlug/instant-ad': typeof AuthenticatedWorkspacesWorkspaceSlugInstantAdRoute
   '/_authenticated/workspaces/$workspaceSlug/settings': typeof AuthenticatedWorkspacesWorkspaceSlugSettingsRoute
   '/_authenticated/workspaces/$workspaceSlug/team': typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   '/_authenticated/workspaces/$workspaceSlug/': typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
@@ -263,7 +263,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug/content'
     | '/workspaces/$workspaceSlug/inbox'
     | '/workspaces/$workspaceSlug/insights'
-    | '/workspaces/$workspaceSlug/product-visuals'
+    | '/workspaces/$workspaceSlug/instant-ad'
     | '/workspaces/$workspaceSlug/settings'
     | '/workspaces/$workspaceSlug/team'
     | '/workspaces/$workspaceSlug/'
@@ -285,7 +285,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug/composer'
     | '/workspaces/$workspaceSlug/content'
     | '/workspaces/$workspaceSlug/insights'
-    | '/workspaces/$workspaceSlug/product-visuals'
+    | '/workspaces/$workspaceSlug/instant-ad'
     | '/workspaces/$workspaceSlug/settings'
     | '/workspaces/$workspaceSlug/team'
     | '/workspaces/$workspaceSlug'
@@ -311,7 +311,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/$workspaceSlug/content'
     | '/_authenticated/workspaces/$workspaceSlug/inbox'
     | '/_authenticated/workspaces/$workspaceSlug/insights'
-    | '/_authenticated/workspaces/$workspaceSlug/product-visuals'
+    | '/_authenticated/workspaces/$workspaceSlug/instant-ad'
     | '/_authenticated/workspaces/$workspaceSlug/settings'
     | '/_authenticated/workspaces/$workspaceSlug/team'
     | '/_authenticated/workspaces/$workspaceSlug/'
@@ -396,11 +396,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugSettingsRouteImport
       parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteRoute
     }
-    '/_authenticated/workspaces/$workspaceSlug/product-visuals': {
-      id: '/_authenticated/workspaces/$workspaceSlug/product-visuals'
-      path: '/product-visuals'
-      fullPath: '/workspaces/$workspaceSlug/product-visuals'
-      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugProductVisualsRouteImport
+    '/_authenticated/workspaces/$workspaceSlug/instant-ad': {
+      id: '/_authenticated/workspaces/$workspaceSlug/instant-ad'
+      path: '/instant-ad'
+      fullPath: '/workspaces/$workspaceSlug/instant-ad'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugInstantAdRouteImport
       parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteRoute
     }
     '/_authenticated/workspaces/$workspaceSlug/insights': {
@@ -547,7 +547,7 @@ interface AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren {
   AuthenticatedWorkspacesWorkspaceSlugContentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugContentRoute
   AuthenticatedWorkspacesWorkspaceSlugInboxRoute: typeof AuthenticatedWorkspacesWorkspaceSlugInboxRouteWithChildren
   AuthenticatedWorkspacesWorkspaceSlugInsightsRoute: typeof AuthenticatedWorkspacesWorkspaceSlugInsightsRoute
-  AuthenticatedWorkspacesWorkspaceSlugProductVisualsRoute: typeof AuthenticatedWorkspacesWorkspaceSlugProductVisualsRoute
+  AuthenticatedWorkspacesWorkspaceSlugInstantAdRoute: typeof AuthenticatedWorkspacesWorkspaceSlugInstantAdRoute
   AuthenticatedWorkspacesWorkspaceSlugSettingsRoute: typeof AuthenticatedWorkspacesWorkspaceSlugSettingsRoute
   AuthenticatedWorkspacesWorkspaceSlugTeamRoute: typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   AuthenticatedWorkspacesWorkspaceSlugIndexRoute: typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
@@ -571,8 +571,8 @@ const AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren: AuthenticatedWorks
       AuthenticatedWorkspacesWorkspaceSlugInboxRouteWithChildren,
     AuthenticatedWorkspacesWorkspaceSlugInsightsRoute:
       AuthenticatedWorkspacesWorkspaceSlugInsightsRoute,
-    AuthenticatedWorkspacesWorkspaceSlugProductVisualsRoute:
-      AuthenticatedWorkspacesWorkspaceSlugProductVisualsRoute,
+    AuthenticatedWorkspacesWorkspaceSlugInstantAdRoute:
+      AuthenticatedWorkspacesWorkspaceSlugInstantAdRoute,
     AuthenticatedWorkspacesWorkspaceSlugSettingsRoute:
       AuthenticatedWorkspacesWorkspaceSlugSettingsRoute,
     AuthenticatedWorkspacesWorkspaceSlugTeamRoute:

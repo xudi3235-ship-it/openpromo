@@ -4,21 +4,21 @@ import type { StyleGalleryItem } from "@/components/image-generator/style-galler
 import { ProductVisualsContent } from "@/components/product-visuals-v2/product-visuals-content";
 import { useStylesListQuery } from "@/queries/styles-queries";
 
-const productVisualsSearchSchema = z.object({
+const instantAdSearchSchema = z.object({
   styleId: z.string().optional(),
   productId: z.string().optional(),
 });
 
 export const Route = createFileRoute(
-  "/_authenticated/workspaces/$workspaceSlug/product-visuals",
+  "/_authenticated/workspaces/$workspaceSlug/instant-ad",
 )({
-  validateSearch: (search) => productVisualsSearchSchema.parse(search),
-  component: ProductVisualsPage,
+  validateSearch: (search) => instantAdSearchSchema.parse(search),
+  component: InstantAdPage,
 });
 
-function ProductVisualsPage() {
+function InstantAdPage() {
   const { styleId } = useSearch({
-    from: "/_authenticated/workspaces/$workspaceSlug/product-visuals",
+    from: "/_authenticated/workspaces/$workspaceSlug/instant-ad",
   });
   const { data: stylesData, isPending: isLoadingStyles } = useStylesListQuery({
     page: 1,
@@ -29,21 +29,18 @@ function ProductVisualsPage() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="flex-shrink-0 px-6 pb-4">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Product Visuals
-        </h1>
+      <div className="flex-shrink-0">
+        <h1 className="text-lg font-semibold tracking-tight">Instant Ad</h1>
         <p className="text-sm text-muted-foreground">
-          Generate ready-to-use product imagery and video concepts with custom
-          prompts and assets.
+          Create ready-to-publish social media ads with AI in seconds.
         </p>
       </div>
 
-      <div className="flex-1 min-h-0 px-4 pb-4">
+      <div className="flex-1 min-h-0">
         <ProductVisualsContent
           styles={styleGalleryItems}
           isLoadingStyles={isLoadingStyles}
-          userId="product-visuals"
+          userId="instant-ad"
           preselectedStyleId={styleId}
         />
       </div>
