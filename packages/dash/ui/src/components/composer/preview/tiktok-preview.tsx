@@ -57,7 +57,10 @@ export function TikTokPreview({ accountId }: TikTokPreviewProps) {
         const attachment = previewData.attachments?.[mediaIndex];
         if (!attachment) return null;
 
-        return renderAttachment(attachment, className, true);
+        return renderAttachment(attachment, className, true, {
+          showMuteButton: true,
+          size: "default",
+        });
       }}
     />
   );

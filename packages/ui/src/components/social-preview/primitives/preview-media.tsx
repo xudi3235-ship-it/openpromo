@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: skeleton */
 import { cn } from "@openpromo/ui/lib/utils";
 import type { PreviewMediaItem } from "../types";
+import { VideoWithMuteButton } from "./video-with-mute-button";
 
 export type MediaLayout = "single" | "collage" | "carousel";
 
@@ -14,6 +15,10 @@ export interface PreviewMediaProps {
   renderMedia?: (media: PreviewMediaItem, className: string) => React.ReactNode;
   /** Layout mode: single (first item only), collage (FB grid), carousel (IG/TikTok swipe) */
   layout?: MediaLayout;
+  /** Whether to show mute button for videos (default: false) */
+  showMuteButton?: boolean;
+  /** Size of the preview component (affects mute button size) */
+  size?: "default" | "compact" | "thumbnail" | "large";
 }
 
 export function PreviewMedia({
@@ -24,6 +29,8 @@ export function PreviewMedia({
   className,
   renderMedia,
   layout = "single",
+  showMuteButton = false,
+  size = "default",
 }: PreviewMediaProps) {
   // Map aspect ratio to Tailwind classes
   const aspectRatioClass = {
@@ -81,14 +88,26 @@ export function PreviewMedia({
     }
 
     return mediaItem.type === "video" ? (
-      <video
-        src={mediaItem.url}
-        poster={mediaItem.thumbnailUrl}
-        className={mediaClassName}
-        controls={false}
-        muted
-        loop
-      />
+      showMuteButton ? (
+        <VideoWithMuteButton
+          src={mediaItem.url}
+          poster={mediaItem.thumbnailUrl}
+          className={mediaClassName}
+          loop={true}
+          objectFit={objectFit}
+          showMuteButton={showMuteButton}
+          size={size}
+        />
+      ) : (
+        <video
+          src={mediaItem.url}
+          poster={mediaItem.thumbnailUrl}
+          className={mediaClassName}
+          controls={false}
+          muted
+          loop
+        />
+      )
     ) : (
       <img src={mediaItem.url} alt="Preview" className={mediaClassName} />
     );

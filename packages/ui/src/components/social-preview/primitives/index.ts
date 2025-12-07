@@ -11,3 +11,4 @@ export type { PreviewHeaderProps } from "./preview-header";
 export { PreviewHeader } from "./preview-header";
 export type { MediaLayout, PreviewMediaProps } from "./preview-media";
 export { PreviewMedia } from "./preview-media";
+export { VideoWithMuteButton } from "./video-with-mute-button";

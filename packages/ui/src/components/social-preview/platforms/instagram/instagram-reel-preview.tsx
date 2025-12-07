@@ -70,6 +70,8 @@ export function InstagramReelPreview({
             layout="single"
             objectFit="cover"
             renderMedia={renderMedia}
+            showMuteButton={true}
+            size={size}
             placeholder={
               <div className="w-full h-full bg-gray-900 flex items-center justify-center text-white/70">
                 <div className="text-center">

@@ -69,6 +69,8 @@ export function TikTokFeedPreview({
             aspectRatio="9/16"
             layout="carousel"
             renderMedia={renderMedia}
+            showMuteButton={true}
+            size={size}
             placeholder={
               <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#0f172a] via-[#0b1020] to-[#04050b] text-white/70">
                 <div

@@ -127,31 +127,26 @@ export function ContentConfirmationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[70vw] min-w-[900px] max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
         {/* Header */}
-        <DialogHeader className="border-b border-border/60 px-6 py-4 flex-shrink-0">
+        <DialogHeader className="border-b border-border/60 px-5 py-3 flex-shrink-0">
           <DialogTitle className="text-base font-semibold">
             {getTitle()}
           </DialogTitle>
+          {getInfoMessage() && (
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              {getInfoMessage()}
+            </p>
+          )}
         </DialogHeader>
 
         {/* Content - Scrollable */}
-        <ScrollArea className="flex-1 overflow-hidden">
-          <div className="flex flex-col gap-5 p-6">
-            {/* Confirmation Message */}
-            <div className="space-y-2 pb-2 border-b border-border/40">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Please review your post below
-              </p>
-              <p className="text-sm text-foreground leading-relaxed">
-                {getInfoMessage()}
-              </p>
-            </div>
-
+        <ScrollArea className="flex-1 overflow-y-auto">
+          <div className="flex flex-col gap-4 p-5">
             {/* Preview Section */}
-            <div className="space-y-2">
+            <div className="space-y-1">
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Preview
               </h3>
-              <div className="flex justify-center py-4">
+              <div className="flex justify-center py-2">
                 {previewAccounts.length > 0 ? (
                   <CollageView
                     accounts={previewAccounts}
@@ -159,7 +154,7 @@ export function ContentConfirmationDialog({
                     isReel={isReel}
                   />
                 ) : (
-                  <div className="text-center text-sm text-muted-foreground">
+                  <div className="text-center text-xs text-muted-foreground">
                     Connect an account to see a preview.
                   </div>
                 )}
@@ -168,11 +163,11 @@ export function ContentConfirmationDialog({
 
             {/* Caption Section */}
             {message && (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Caption
                 </h3>
-                <p className="text-sm text-foreground line-clamp-3">
+                <p className="text-xs text-foreground line-clamp-3">
                   {message}
                 </p>
               </div>
@@ -181,11 +176,11 @@ export function ContentConfirmationDialog({
             {/* Publish Time Section */}
             {(actionType === "schedule" || actionType === "publish") &&
               publishTime && (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                     Publish time
                   </h3>
-                  <p className="text-sm text-foreground font-medium">
+                  <p className="text-xs text-foreground font-medium">
                     {format(publishTime, "MMM d, yyyy 'at' h:mm a")}
                   </p>
                 </div>
@@ -194,7 +189,7 @@ export function ContentConfirmationDialog({
         </ScrollArea>
 
         {/* Footer */}
-        <DialogFooter className="border-t border-border/60 px-6 py-3 gap-2 flex-shrink-0">
+        <DialogFooter className="border-t border-border/60 px-5 py-2 gap-2 flex-shrink-0">
           <Button
             variant="outline"
             size="sm"

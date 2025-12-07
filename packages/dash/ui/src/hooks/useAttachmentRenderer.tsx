@@ -1,3 +1,4 @@
+import { VideoWithMuteButton } from "@openpromo/ui/components/social-preview";
 import type { SharedAttachmentSpec } from "@shared/content";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { StreamVideoPreview } from "@/components/composer/media/stream-video-preview";
@@ -113,6 +114,10 @@ export function useAttachmentRenderer(options: AttachmentRendererOptions = {}) {
       attachment: SharedAttachmentSpec,
       className: string = "w-full h-full object-cover",
       controls = false,
+      options?: {
+        showMuteButton?: boolean;
+        size?: "default" | "compact" | "thumbnail" | "large";
+      },
     ) => {
       const url = getAttachmentUrl(attachment);
 
@@ -129,6 +134,20 @@ export function useAttachmentRenderer(options: AttachmentRendererOptions = {}) {
         const previewIframeUrl = attachment.metadata?.previewIframeUrl as
           | string
           | undefined;
+
+        // Use VideoWithMuteButton if requested
+        if (options?.showMuteButton && url) {
+          return (
+            <VideoWithMuteButton
+              key={url}
+              src={url}
+              className={className}
+              loop={true}
+              showMuteButton={true}
+              size={options.size || "default"}
+            />
+          );
+        }
 
         // Prioritize local file if it exists
         if (url && attachment.file) {
