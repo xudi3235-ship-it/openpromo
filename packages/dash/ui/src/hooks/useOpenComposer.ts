@@ -2,6 +2,7 @@ import type { SharedAttachmentSpec } from "@shared/content";
 import { useNavigate } from "@tanstack/react-router";
 import type { ContentCreateData } from "@worker/orpc/routes/content/create-content";
 import { useCallback } from "react";
+import { useConnectedAccounts } from "@/queries/connected-account";
 import { useComposerStore } from "@/stores/composer-store";
 import { useWorkspace } from "./useWorkspace";
 
@@ -48,6 +49,7 @@ export function useOpenComposer() {
     (state) => state.initializeComposer,
   );
   const currentAccounts = useComposerStore((state) => state.accounts);
+  const { accounts } = useConnectedAccounts();
   const selectedAccounts = useComposerStore((state) => state.selectedAccounts);
 
   return useCallback(
@@ -74,7 +76,7 @@ export function useOpenComposer() {
           initContentCreateData,
           contentGroupID,
           initialAccounts:
-            selectedAccounts.length > 0 ? currentAccounts : undefined,
+            selectedAccounts.length > 0 ? currentAccounts : accounts,
         });
       }
 
@@ -90,6 +92,7 @@ export function useOpenComposer() {
       initializeComposer,
       currentAccounts,
       selectedAccounts,
+      accounts,
     ],
   );
 }

@@ -33,6 +33,8 @@ const buildInitialFacebookPlacements = (
     return [];
   }
 
+  const baseAttachments = props.initContentCreateData?.base?.attachments || [];
+
   return (
     (props.initialAccounts
       ?.map((acc) => {
@@ -47,7 +49,7 @@ const buildInitialFacebookPlacements = (
           postSpec: {
             message: props.initialMessage || "",
           },
-          attachments: [],
+          attachments: baseAttachments,
           customized: false,
           firstComment: props.initContentCreateData?.base?.firstComment,
         } satisfies FBFeedPlacementSpec;
@@ -69,6 +71,8 @@ const buildInitialInstagramPlacements = (
     return [];
   }
 
+  const baseAttachments = props.initContentCreateData?.base?.attachments || [];
+
   return (
     (props.initialAccounts
       ?.map((acc) => {
@@ -81,7 +85,7 @@ const buildInitialInstagramPlacements = (
           },
           placement: "IG_FEED" as const,
           caption: props.initialMessage || "",
-          attachments: [],
+          attachments: baseAttachments,
           customized: false,
           firstComment: props.initContentCreateData?.base?.firstComment,
         } satisfies IGFeedPlacementSpec;
@@ -102,6 +106,8 @@ const buildInitialTikTokPlacements = (
   if (isEditFlow) {
     return [];
   }
+
+  const baseAttachments = props.initContentCreateData?.base?.attachments || [];
 
   return (
     (props.initialAccounts
@@ -131,7 +137,7 @@ const buildInitialTikTokPlacements = (
           },
           placement: "TT_FEED",
           caption: props.initialMessage || "",
-          attachments: [],
+          attachments: baseAttachments,
           customized: false,
           firstComment: props.initContentCreateData?.base?.firstComment,
         } satisfies TikTokFeedPlacementSpec;
