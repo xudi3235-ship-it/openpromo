@@ -1,8 +1,5 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import type { ProductVisualsFeedResponse } from "@/queries/product-visuals";
-
-type FeedItem = ProductVisualsFeedResponse["items"][number];
 
 export type GeneratorMode = "generate" | "edit";
 export type GenerationType = "images" | "video";
@@ -29,9 +26,7 @@ export interface ProductVisualGeneratorState {
   // Gallery state
   selectedGalleryItems: Set<string>;
   galleryGridCols: number;
-  previewItem: FeedItem | null;
   variationPrompt: string;
-  selectedItemForVariation: FeedItem | null;
   selectedParentForVariations: string | null;
   variationRefetch: (() => void) | null;
 
@@ -54,9 +49,7 @@ export interface ProductVisualGeneratorState {
   removeSelectedGalleryItem: (itemId: string) => void;
   clearSelectedGalleryItems: () => void;
   setGalleryGridCols: (cols: number) => void;
-  setPreviewItem: (item: FeedItem | null) => void;
   setVariationPrompt: (prompt: string) => void;
-  setSelectedItemForVariation: (item: FeedItem | null) => void;
   setSelectedParentForVariations: (parentId: string | null) => void;
   setVariationRefetch: (refetch: (() => void) | null) => void;
   resetGalleryState: () => void;
@@ -75,9 +68,7 @@ const initialState = {
   editingGenerationId: null as string | null,
   selectedGalleryItems: new Set<string>(),
   galleryGridCols: 4,
-  previewItem: null as FeedItem | null,
   variationPrompt: "",
-  selectedItemForVariation: null as FeedItem | null,
   selectedParentForVariations: null as string | null,
   variationRefetch: null as (() => void) | null,
 };
@@ -181,19 +172,9 @@ export const useProductVisualGeneratorStore =
           state.galleryGridCols = cols;
         }),
 
-      setPreviewItem: (item) =>
-        set((state) => {
-          state.previewItem = item;
-        }),
-
       setVariationPrompt: (prompt) =>
         set((state) => {
           state.variationPrompt = prompt;
-        }),
-
-      setSelectedItemForVariation: (item) =>
-        set((state) => {
-          state.selectedItemForVariation = item;
         }),
 
       setSelectedParentForVariations: (parentId) =>
@@ -210,10 +191,7 @@ export const useProductVisualGeneratorStore =
         set((state) => {
           state.selectedGalleryItems = initialState.selectedGalleryItems;
           state.galleryGridCols = initialState.galleryGridCols;
-          state.previewItem = initialState.previewItem;
           state.variationPrompt = initialState.variationPrompt;
-          state.selectedItemForVariation =
-            initialState.selectedItemForVariation;
           state.selectedParentForVariations =
             initialState.selectedParentForVariations;
           state.variationRefetch = initialState.variationRefetch;

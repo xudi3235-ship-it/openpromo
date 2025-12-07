@@ -36,6 +36,7 @@ import { EntAgentRun } from "../agent-run";
 import type { VideoGenAgentContext } from "./context";
 import { buildSystemPrompt, createVideoGenAgent } from "./create-agent";
 import { setupAgentHooks } from "./hooks";
+import { Presets } from "./presets";
 import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
 import { toAgentImageInputs } from "./tools/evaluation-utils";
 import { buildTreeString, downloadImagesToTmp } from "./utils";
@@ -88,12 +89,15 @@ export class VideoGenAgent extends AIChatAgent<
   private runStateSerialized: string | null;
   private _logs: string;
   private actorStore: ActorStore;
+  private presetManager: Presets.Manager;
 
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
     this.runStateSerialized = null;
     this._logs = "";
     this.actorStore = new ActorStore(ctx);
+    this.presetManager = new Presets.Manager();
+
     // if not initialized, init
     if (!this.state) {
       this.setState(VideoGenRealtime.initialServerAppState);
@@ -565,6 +569,25 @@ export class VideoGenAgent extends AIChatAgent<
       ],
     });
 
+    // load preset if any
+    if (this.state.input.presetId) {
+      const preset = await this.presetManager.getByID(
+        this.state.input.presetId,
+      );
+      if (preset) {
+        messages.push({
+          role: "system",
+          content: [
+            {
+              type: "input_text" as const,
+              text: `user selected this preset, use properly as direction and adjustmenets. Using preset "${preset.name}": ${preset.description}\nPrompt: ${preset.prompt}`,
+            },
+          ],
+        });
+      }
+    }
+    // final user prompt
+
     messages.push({
       role: "user",
       content: [
@@ -593,7 +616,7 @@ export class VideoGenAgent extends AIChatAgent<
   }
 
   // wip
-  async startImageGenWorkflow() {
+  async _startImageGenWorkflow() {
     this.ctx.id; // current durable object id
     const workflow = await Binding.use().ImageGenerationWorkflow.create({
       params: {

@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { orpc } from "@/lib/orpc-client";
@@ -100,7 +100,6 @@ export const useProductVisualsVideoStartMutation = (
  */
 export const useVideoGenDeleteBatchMutation = (onSuccess?: () => void) => {
   const { workspace } = useWorkspace();
-  const queryClient = useQueryClient();
 
   return useMutation<
     VideoGenDeleteBatchResponse,
@@ -113,9 +112,6 @@ export const useVideoGenDeleteBatchMutation = (onSuccess?: () => void) => {
         workspaceSlug: workspace.slug,
       }),
     onSuccess: async (data) => {
-      await queryClient.invalidateQueries({
-        queryKey: orpc.productVisuals.feed.key(),
-      });
       toast.success(
         `Deleted ${data.deletedCount} video${data.deletedCount !== 1 ? "s" : ""}`,
       );

@@ -46,6 +46,8 @@ export namespace VideoGenRealtime {
       .string()
       .array()
       .describe("optional style/reference images"),
+    // preset ID
+    presetId: z.string().nullable().optional(),
   });
   export type Input = z.infer<typeof InputSchema>;
 
