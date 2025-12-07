@@ -141,12 +141,18 @@ export function ProductVisualsContent({
     return () => observer.disconnect();
   }, []);
 
-  // Refetch runs when a new run is created
+  // Navigate to detail view when a new run is created
   useEffect(() => {
     if (serverState.runId) {
       refetchRuns();
+      // Navigate to the detail view for the new run
+      navigate({
+        to: "/workspaces/$workspaceSlug/instant-ad",
+        params: { workspaceSlug: workspace.slug },
+        search: (prev) => ({ ...prev, runId: serverState.runId || undefined }),
+      });
     }
-  }, [serverState.runId, refetchRuns]);
+  }, [serverState.runId, refetchRuns, navigate, workspace.slug]);
 
   // Merge optimistic runs with server data
   const mergedRuns = useOptimisticRuns(
@@ -414,12 +420,10 @@ export function ProductVisualsContent({
 
         <div className="flex-1 min-w-0 h-full overflow-hidden">
           {selectedRunId ? (
-            <div className="p-6">
-              <RunDetailView
-                runId={selectedRunId}
-                workspaceSlug={workspace.slug}
-              />
-            </div>
+            <RunDetailView
+              runId={selectedRunId}
+              workspaceSlug={workspace.slug}
+            />
           ) : (
             <DataGrid<RunFeedItem>
               items={mergedRuns}

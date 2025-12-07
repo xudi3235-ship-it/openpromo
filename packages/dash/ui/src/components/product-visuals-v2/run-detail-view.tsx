@@ -1,11 +1,13 @@
 import { Button } from "@openpromo/ui/components/button";
+import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, FileText, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, FileText, Trash2 } from "lucide-react";
 import {
   useAgentRunQuery,
   useDeleteAgentRunsMutation,
 } from "@/queries/agent-runs";
+import { RunPreview } from "./run-preview";
 
 interface RunDetailViewProps {
   runId: string;
@@ -19,12 +21,48 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   // Fetch run data using the specific query
   const { data: run, isPending, error } = useAgentRunQuery({ id: runId });
 
+  // Get media type for metadata display
+  const isVideo =
+    run?.output.output?.videos?.[0] || run?.artifacts?.videos?.[0];
+
   const handleBack = () => {
     navigate({
       to: "/workspaces/$workspaceSlug/instant-ad",
       params: { workspaceSlug },
       search: (prev) => ({ ...prev, runId: undefined }),
     });
+  };
+
+  const handleDownload = async () => {
+    if (!run) return;
+
+    const isVideo =
+      run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
+    const url =
+      isVideo?.videoUrl ||
+      run.output.output?.images?.[0]?.imageUrl ||
+      run.artifacts?.images?.[0]?.imageUrl;
+
+    if (!url) {
+      alert("No media found to download");
+      return;
+    }
+
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `run-${run.id}-${Date.now()}${isVideo ? ".mp4" : ".jpg"}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Failed to download media:", error);
+      alert("Failed to download media");
+    }
   };
 
   const handleDelete = async () => {
@@ -73,19 +111,12 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     });
   };
 
-  const isVideo =
-    run?.output.output?.videos?.[0] || run?.artifacts?.videos?.[0];
-  const mediaUrl =
-    isVideo?.videoUrl ||
-    run?.output.output?.images?.[0]?.imageUrl ||
-    run?.artifacts?.images?.[0]?.imageUrl;
-
   // Show loading state
   if (isPending) {
     return (
-      <div className="flex h-full min-w-0 flex-col">
+      <div className="flex h-full w-full min-w-0 flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b">
+        <div className="flex items-center justify-between py-6 px-6">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -106,42 +137,51 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
         </div>
 
         {/* Loading Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="space-y-6">
-            {/* Media Preview Skeleton */}
-            <div>
-              <Skeleton className="w-full h-96 rounded-lg" />
-            </div>
-
-            {/* Input Section Skeleton */}
-            <div>
-              <Skeleton className="h-4 w-16 mb-2" />
-              <div className="bg-muted/50 rounded-lg p-3">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4 mt-1" />
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="px-6 pb-6 pt-8">
+            <div className="space-y-8">
+              {/* Media Preview Skeleton */}
+              <div className="flex justify-center pb-8">
+                <Skeleton className="w-[280px] h-[500px] rounded-2xl" />
               </div>
-            </div>
 
-            {/* Metadata Section Skeleton */}
-            <div>
-              <Skeleton className="h-4 w-20 mb-2" />
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-24" />
+              {/* Details Skeleton */}
+              <div className="max-w-2xl mx-auto space-y-6">
+                <div>
+                  <Skeleton className="h-4 w-16 mb-3" />
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4 mt-2" />
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-16" />
-                </div>
-                <div className="flex justify-between">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 w-12" />
+
+                <div>
+                  <Skeleton className="h-4 w-20 mb-3" />
+                  <div className="bg-muted/30 rounded-lg p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Skeleton className="h-3 w-16 mb-1" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                      <div>
+                        <Skeleton className="h-3 w-12 mb-1" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                      <div>
+                        <Skeleton className="h-3 w-10 mb-1" />
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                      <div>
+                        <Skeleton className="h-3 w-14 mb-1" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </ScrollArea>
       </div>
     );
   }
@@ -166,9 +206,9 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   }
 
   return (
-    <div className="flex h-full min-w-0 flex-col">
+    <div className="flex h-full w-full min-w-0 flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b">
+      <div className="flex items-center justify-between py-6 px-6">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -182,94 +222,119 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
             <h3 className="text-sm font-medium">Run Details</h3>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCreatePost}
-            className="flex items-center gap-2"
-          >
-            <FileText size={14} />
-            Create Post
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDelete}
-            disabled={deleteRunMutation.isPending}
-            className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:border-red-300"
-          >
-            <Trash2 size={14} />
-            Delete
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleDelete}
+          disabled={deleteRunMutation.isPending}
+          className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+        >
+          <Trash2 size={14} />
+          Delete
+        </Button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        {/* Media Preview */}
-        {mediaUrl && (
-          <div className="mb-6">
-            <div className="rounded-lg border overflow-hidden bg-gray-50">
-              {isVideo ? (
-                <video
-                  src={mediaUrl}
-                  controls
-                  className="w-full h-auto max-h-96 object-contain"
-                />
-              ) : (
-                <img
-                  src={mediaUrl}
-                  alt="Generated content"
-                  className="w-full h-auto max-h-96 object-contain"
-                />
-              )}
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="px-6 pb-6 pt-8">
+          {/* Social Media Previews */}
+          {run && (
+            <div className="pb-8 flex justify-center">
+              <RunPreview run={run} />
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Run Details */}
-        <div className="space-y-4">
-          <div>
-            <h4 className="text-sm font-medium mb-2">Input</h4>
-            <div className="bg-muted/50 rounded-lg p-3">
-              <p className="text-sm text-muted-foreground">
-                {run.input?.prompt || "No prompt available"}
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-medium mb-2">Metadata</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Created:</span>
-                <span>{new Date(run.createdAt).toLocaleString()}</span>
+          {/* Call to Action Section */}
+          {run && (
+            <div className="mb-8 max-w-2xl mx-auto pt-2">
+              <div className="text-center mb-4">
+                <h3 className="text-sm font-medium text-foreground mb-1">
+                  Ready to share?
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Post to your connected accounts
+                </p>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Status:</span>
-                <span className="capitalize">{run.status}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Type:</span>
-                <span>{isVideo ? "Video" : "Image"}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Output Details */}
-          {run.output.output && (
-            <div>
-              <h4 className="text-sm font-medium mb-2">Output</h4>
-              <div className="bg-muted/50 rounded-lg p-3">
-                <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
-                  {JSON.stringify(run.output.output, null, 2)}
-                </pre>
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  onClick={handleCreatePost}
+                  size="sm"
+                  className="bg-foreground hover:bg-foreground/90 text-background"
+                >
+                  <FileText size={14} className="mr-1.5" />
+                  Create Post
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDownload}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <Download size={14} />
+                </Button>
               </div>
             </div>
           )}
+
+          {/* Run Details */}
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div>
+              <h4 className="text-sm font-medium mb-3 text-foreground">
+                Prompt
+              </h4>
+              <div className="bg-muted/50 rounded-lg p-4">
+                <p className="text-sm text-muted-foreground">
+                  {run.input?.prompt || "No prompt available"}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-medium mb-3 text-foreground">
+                Information
+              </h4>
+              <div className="bg-muted/30 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Created:</span>
+                    <p className="font-medium mt-1">
+                      {new Date(run.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Status:</span>
+                    <p className="capitalize font-medium mt-1">{run.status}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Type:</span>
+                    <p className="font-medium mt-1">
+                      {isVideo ? "Video" : "Image"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Agent:</span>
+                    <p className="font-medium mt-1">{run.agentName}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Output Details - only show in dev */}
+            {run.output.output && process.env.NODE_ENV === "development" && (
+              <div>
+                <h4 className="text-sm font-medium mb-3 text-foreground">
+                  Debug Output
+                </h4>
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-96 overflow-auto">
+                    {JSON.stringify(run.output.output, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }

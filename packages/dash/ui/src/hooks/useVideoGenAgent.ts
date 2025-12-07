@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noConsole: test */
 import { VideoGenRealtime } from "@shared";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAgentChat } from "agents/ai-react";
 import { useAgent } from "agents/react";
 import { useCallback, useState } from "react";
@@ -17,6 +18,7 @@ export function useVideoGenAgent({
   _onMessage,
 }: UseVideoGenAgentProps) {
   const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
   const [isConnected, setIsConnected] = useState(false);
   const [serverState, setServerState] =
     useState<VideoGenRealtime.ServerAppState>(
@@ -46,6 +48,14 @@ export function useVideoGenAgent({
           data.state,
         );
         setServerState(data.state);
+
+        // Invalidate individual run query if we have a runId
+        if (data.state.runId) {
+          queryClient.invalidateQueries({
+            queryKey: ["orpc", "agentRuns", "get", { id: data.state.runId }],
+          });
+        }
+
         await callUserHandler("sync_state", data);
       },
       status_update: async (data) => {
@@ -54,6 +64,14 @@ export function useVideoGenAgent({
           status: data.status,
           lastUpdated: new Date().toISOString(),
         }));
+
+        // Invalidate queries for current run
+        if (serverState.runId) {
+          queryClient.invalidateQueries({
+            queryKey: ["orpc", "agentRuns", "get", { id: serverState.runId }],
+          });
+        }
+
         await callUserHandler("status_update", data);
       },
       video_generated: async (data) => {
@@ -68,10 +86,18 @@ export function useVideoGenAgent({
           },
           lastUpdated: new Date().toISOString(),
         }));
+
+        // Invalidate queries for current run
+        if (serverState.runId) {
+          queryClient.invalidateQueries({
+            queryKey: ["orpc", "agentRuns", "get", { id: serverState.runId }],
+          });
+        }
+
         await callUserHandler("video_generated", data);
       },
     }),
-    [onEvent, callUserHandler],
+    [onEvent, callUserHandler, queryClient, serverState.runId],
   );
 
   const agent = useAgent<VideoGenRealtime.ServerAppState>({
