@@ -10,6 +10,10 @@ import { replicate } from "./client";
 
 type ModelId = `${string}/${string}` | `${string}/${string}:${string}`;
 
+type InnerPrediction = Prediction & {
+  output: string;
+};
+
 function extractUrl(output: FileOutput): string {
   const url = output.url();
   if (!url) throw new Error("No URL returned from model output");
@@ -18,6 +22,12 @@ function extractUrl(output: FileOutput): string {
 
 function extractUrls(outputs: FileOutput[]): string[] {
   return outputs.map(extractUrl);
+}
+function wrapPrediction(prediction: Prediction): InnerPrediction {
+  return {
+    ...prediction,
+    output: prediction.output as string,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -70,6 +80,42 @@ export namespace Replicate {
     }
   }
 
+  export namespace SeedreamV4_5 {
+    export const schema = z.object({
+      prompt: z.string(),
+      image_input: z.array(z.string()).default([]),
+      aspect_ratio: z
+        .enum([
+          "match_input_image",
+          "1:1",
+          "4:3",
+          "3:4",
+          "16:9",
+          "9:16",
+          "3:2",
+          "2:3",
+          "21:9",
+        ])
+        .default("match_input_image"),
+      size: z.enum(["2K", "4K", "custom"]).default("2K"),
+      width: z.number().min(1024).max(4096).default(2048),
+      height: z.number().min(1024).max(4096).default(2048),
+      sequential_image_generation: z
+        .enum(["disabled", "auto"])
+        .default("disabled"),
+      max_images: z.number().min(1).max(15).default(1),
+    });
+    export type Input = z.input<typeof schema>;
+
+    export async function run(input: Input): Promise<string[]> {
+      const parsed = schema.parse(input);
+      const output = (await replicate.run("bytedance/seedream-4.5", {
+        input: parsed,
+      })) as FileOutput[];
+      return extractUrls(output);
+    }
+  }
+
   export namespace NanoBanana {
     export const schema = z.object({
       prompt: z.string(),
@@ -97,7 +143,7 @@ export namespace Replicate {
       const { pro, ...parsed } = schema.parse(input);
       const model = pro ? "google/nano-banana-pro" : "google/nano-banana";
       const output = (await replicate.run(model as ModelId, {
-        input: parsed,
+        input: omitNull(parsed),
       })) as FileOutput;
       return extractUrl(output);
     }
@@ -120,9 +166,125 @@ export namespace Replicate {
     export async function run(input: Input): Promise<string[]> {
       const parsed = schema.parse(input);
       const output = (await replicate.run("openai/gpt-image-1", {
-        input: { ...parsed, openai_api_key: env.OPENAI_API_KEY },
+        input: omitNull({ ...parsed, openai_api_key: env.OPENAI_API_KEY }),
       })) as FileOutput[];
       return extractUrls(output);
+    }
+  }
+
+  export namespace Flux2Pro {
+    export const schema = z.object({
+      prompt: z.string(),
+      input_images: z.array(z.string()).default([]),
+      aspect_ratio: z
+        .enum([
+          "match_input_image",
+          "custom",
+          "1:1",
+          "16:9",
+          "3:2",
+          "2:3",
+          "4:5",
+          "5:4",
+          "9:16",
+          "3:4",
+          "4:3",
+        ])
+        .default("1:1"),
+      resolution: z
+        .enum(["match_input_image", "0.5 MP", "1 MP", "2 MP", "4 MP"])
+        .default("1 MP"),
+      width: z.number().min(256).max(2048).optional().nullable(),
+      height: z.number().min(256).max(2048).optional().nullable(),
+      safety_tolerance: z.number().min(1).max(5).default(2),
+      seed: z.number().optional(),
+      output_format: z.enum(["webp", "jpg", "png"]).default("webp"),
+      output_quality: z.number().min(0).max(100).default(80),
+    });
+    export type Input = z.input<typeof schema>;
+
+    export async function run(input: Input): Promise<string> {
+      const parsed = schema.parse(input);
+      const output = (await replicate.run("black-forest-labs/flux-2-pro", {
+        input: omitNull(parsed),
+      })) as FileOutput;
+      return extractUrl(output);
+    }
+  }
+
+  export namespace ZImageTurbo {
+    export const schema = z.object({
+      prompt: z.string(),
+      height: z.number().min(64).max(1440).default(1024),
+      width: z.number().min(64).max(1440).default(1024),
+      num_inference_steps: z.number().min(1).max(50).default(8),
+      guidance_scale: z.number().min(0).max(20).default(0),
+      seed: z.number().optional().nullable(),
+      output_format: z.enum(["png", "jpg", "webp"]).default("jpg"),
+      output_quality: z.number().min(0).max(100).default(80),
+    });
+    export type Input = z.input<typeof schema>;
+
+    export async function run(input: Input): Promise<string> {
+      const parsed = schema.parse(input);
+      const output = (await replicate.run("prunaai/z-image-turbo", {
+        input: omitNull(parsed),
+      })) as FileOutput;
+      return extractUrl(output);
+    }
+  }
+
+  export namespace PImage {
+    export const schema = z.object({
+      prompt: z.string(),
+      aspect_ratio: z
+        .enum(["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "custom"])
+        .default("16:9"),
+      width: z.number().min(256).max(1440).optional().nullable(),
+      height: z.number().min(256).max(1440).optional().nullable(),
+      prompt_upsampling: z.boolean().default(false),
+      seed: z.number().optional().nullable(),
+      disable_safety_checker: z.boolean().default(false),
+    });
+    export type Input = z.input<typeof schema>;
+
+    export async function run(input: Input): Promise<string> {
+      const parsed = schema.parse(input);
+      const output = (await replicate.run("prunaai/p-image", {
+        input: omitNull(parsed),
+      })) as FileOutput;
+      return extractUrl(output);
+    }
+  }
+
+  export namespace PImageEdit {
+    export const schema = z.object({
+      prompt: z.string(),
+      images: z.array(z.string()).default([]),
+      turbo: z.boolean().default(true),
+      aspect_ratio: z
+        .enum([
+          "match_input_image",
+          "1:1",
+          "16:9",
+          "9:16",
+          "4:3",
+          "3:4",
+          "3:2",
+          "2:3",
+        ])
+        .default("match_input_image"),
+      seed: z.number().optional().nullable(),
+      disable_safety_checker: z.boolean().default(false),
+    });
+    export type Input = z.input<typeof schema>;
+
+    export async function run(input: Input): Promise<string> {
+      const parsed = schema.parse(input);
+      const output = (await replicate.run("prunaai/p-image-edit", {
+        input: omitNull(parsed),
+      })) as FileOutput;
+      return extractUrl(output);
     }
   }
 
@@ -134,19 +296,20 @@ export namespace Replicate {
     export const schema = z.object({
       prompt: z.string(),
       start_image: z.string().optional(),
-      duration: z.enum(["5", "10"]).default("10").transform(Number),
+      duration: z.union([z.literal(5), z.literal(10)]).default(10),
       aspect_ratio: z.enum(["16:9", "9:16", "1:1"]).default("16:9"),
       negative_prompt: z.string().optional(),
     });
     export type Input = z.input<typeof schema>;
 
-    export async function run(input: Input): Promise<Prediction> {
+    export async function run(input: Input): Promise<InnerPrediction> {
       const parsed = schema.parse(input);
       const prediction = await replicate.predictions.create({
         model: "kwaivgi/kling-v2.5-turbo-pro",
-        input: parsed,
+        input: omitNull(parsed),
       });
-      return await replicate.wait(prediction);
+      const pred = await replicate.wait(prediction);
+      return wrapPrediction(pred);
     }
   }
 
@@ -164,13 +327,75 @@ export namespace Replicate {
     });
     export type Input = z.input<typeof schema>;
 
-    export async function run(input: Input): Promise<Prediction> {
+    export async function run(input: Input): Promise<InnerPrediction> {
       const parsed = schema.parse(input);
       const prediction = await replicate.predictions.create({
         model: "google/veo-3.1-fast",
         input: omitNull(parsed), // remove nulls to use defaults
       });
-      return await replicate.wait(prediction);
+      const pred = await replicate.wait(prediction);
+      return wrapPrediction(pred);
+    }
+  }
+
+  export namespace Ltx2Pro {
+    export const schema = z.object({
+      prompt: z.string(),
+      image: z
+        .string()
+        .url()
+        .optional()
+        .describe("First frame image for optional image-to-video generation"),
+      duration: z.union([z.literal(6), z.literal(8), z.literal(10)]).default(6),
+      resolution: z.enum(["1080p", "2k", "4k"]).default("1080p"),
+      generate_audio: z.boolean().default(true),
+    });
+    export type Input = z.input<typeof schema>;
+
+    export async function run(input: Input): Promise<InnerPrediction> {
+      const parsed = schema.parse(input);
+      const prediction = await replicate.predictions.create({
+        model: "lightricks/ltx-2-pro",
+        input: omitNull(parsed),
+      });
+      const pred = await replicate.wait(prediction);
+      return wrapPrediction(pred);
+    }
+  }
+
+  export namespace Ltx2Fast {
+    export const schema = z.object({
+      prompt: z.string(),
+      image: z
+        .string()
+        .url()
+        .optional()
+        .describe("First frame image for optional image-to-video generation"),
+      duration: z
+        .union([
+          z.literal(6),
+          z.literal(8),
+          z.literal(10),
+          z.literal(12),
+          z.literal(14),
+          z.literal(16),
+          z.literal(18),
+          z.literal(20),
+        ])
+        .default(6),
+      resolution: z.enum(["1080p", "2k", "4k"]).default("1080p"),
+      generate_audio: z.boolean().default(true),
+    });
+    export type Input = z.input<typeof schema>;
+
+    export async function run(input: Input): Promise<InnerPrediction> {
+      const parsed = schema.parse(input);
+      const prediction = await replicate.predictions.create({
+        model: "lightricks/ltx-2-fast",
+        input: omitNull(parsed),
+      });
+      const pred = await replicate.wait(prediction);
+      return wrapPrediction(pred);
     }
   }
 }
