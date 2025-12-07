@@ -7,6 +7,7 @@ import { useStylesListQuery } from "@/queries/styles-queries";
 const instantAdSearchSchema = z.object({
   styleId: z.string().optional(),
   productId: z.string().optional(),
+  runId: z.string().optional(),
 });
 
 export const Route = createFileRoute(
@@ -17,7 +18,7 @@ export const Route = createFileRoute(
 });
 
 function InstantAdPage() {
-  const { styleId } = useSearch({
+  const { styleId, runId } = useSearch({
     from: "/_authenticated/workspaces/$workspaceSlug/instant-ad",
   });
   const { data: stylesData, isPending: isLoadingStyles } = useStylesListQuery({
@@ -42,6 +43,7 @@ function InstantAdPage() {
           isLoadingStyles={isLoadingStyles}
           userId="instant-ad"
           preselectedStyleId={styleId}
+          selectedRunId={runId}
         />
       </div>
     </div>

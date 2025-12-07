@@ -1,5 +1,6 @@
 import { Button } from "@openpromo/ui/components/button";
 import type { VideoGenRealtime } from "@shared";
+import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DataGrid } from "@/components/common";
@@ -20,7 +21,7 @@ import { useVideoPresetsQuery } from "@/queries/product-visuals";
 import { ConfirmDialog } from "../confirm-dialog";
 import { InputPanel } from "./input-panel";
 import { ResultCard } from "./result-card";
-import { RunModal } from "./run-modal";
+import { RunDetailView } from "./run-detail-view";
 import type { Preset } from "./video-presets";
 
 interface ProductVisualsContentProps {
@@ -29,6 +30,7 @@ interface ProductVisualsContentProps {
   userId?: string;
   onBatchAddedToComposer?: () => void;
   preselectedStyleId?: string;
+  selectedRunId?: string;
 }
 
 const sampleProductImageUrls = [
@@ -44,9 +46,11 @@ export function ProductVisualsContent({
   userId = "product-visuals",
   onBatchAddedToComposer,
   preselectedStyleId,
+  selectedRunId,
 }: ProductVisualsContentProps) {
   const { workspace } = useWorkspace();
   const openComposer = useOpenComposer();
+  const navigate = useNavigate();
 
   // Product Visuals Store
   const {
@@ -99,7 +103,6 @@ export function ProductVisualsContent({
   const deleteRunsMutation = useDeleteAgentRunsMutation();
 
   // State
-  const [selectedRun, setSelectedRun] = useState<RunFeedItem | null>(null);
   const [selectedRunIds, setSelectedRunIds] = useState<Set<string>>(new Set());
   const [selectedStyleId, setSelectedStyleId] = useState<string>("");
   const [selectedVideoPresetId, setSelectedVideoPresetId] =
@@ -180,10 +183,6 @@ export function ProductVisualsContent({
     const payload = buildInput;
     startGeneration(agentName, payload);
   }, [isConnected, mode, buildInput, startGeneration]);
-
-  const handleDeleteRun = (run: RunFeedItem) => {
-    deleteRunsMutation.mutate({ ids: [run.id] });
-  };
 
   const handleToggleRunSelection = (runId: string) => {
     setSelectedRunIds((prev) => {
@@ -392,6 +391,15 @@ export function ProductVisualsContent({
     ],
   );
 
+  // Update click handler to navigate instead of opening modal
+  const handleRunClick = (run: RunFeedItem) => {
+    navigate({
+      to: "/workspaces/$workspaceSlug/instant-ad",
+      params: { workspaceSlug: workspace.slug },
+      search: (prev) => ({ ...prev, runId: run.id }),
+    });
+  };
+
   return (
     <>
       <div ref={containerRef} className="flex h-full min-w-0">
@@ -405,53 +413,58 @@ export function ProductVisualsContent({
         </div>
 
         <div className="flex-1 min-w-0 h-full overflow-hidden">
-          <DataGrid<RunFeedItem>
-            items={mergedRuns}
-            isLoading={isFeedPending}
-            isEmpty={mergedRuns.length === 0}
-            renderItem={(run) => (
-              <ResultCard
-                key={run.id}
-                run={run}
-                onSelect={() => setSelectedRun(run)}
-                onDelete={handleDeleteRun}
-                isDeleting={deleteRunsMutation.isPending}
-                isSelected={selectedRunIds.has(run.id)}
-                onToggleSelect={handleToggleRunSelection}
+          {selectedRunId ? (
+            <div className="p-6">
+              <RunDetailView
+                runId={selectedRunId}
+                workspaceSlug={workspace.slug}
               />
-            )}
-            header={{
-              title: "Generated Results",
-              description: "View and manage all generated visuals.",
-            }}
-            showColumnControl={true}
-            defaultColumns={4}
-            minColumns={2}
-            maxColumns={6}
-            columnStep={2}
-            selectedCount={selectedRunIds.size}
-            showSelectAllBtn={true}
-            onSelectAllToggle={handleSelectAll}
-            batchActions={[
-              {
-                label: "Create posts",
-                onClick: handleBatchCreatePost,
-              },
-              {
-                label: "Delete selected",
-                variant: "destructive",
-                onClick: handleBatchDelete,
-                disabled: deleteRunsMutation.isPending,
-              },
-            ]}
-            className="flex flex-1 min-w-0 flex-col overflow-hidden h-full"
-          />
+            </div>
+          ) : (
+            <DataGrid<RunFeedItem>
+              items={mergedRuns}
+              isLoading={isFeedPending}
+              isEmpty={mergedRuns.length === 0}
+              renderItem={(run) => (
+                <ResultCard
+                  key={run.id}
+                  run={run}
+                  onSelect={() => handleRunClick(run)}
+                  onDelete={() => deleteRunsMutation.mutate({ ids: [run.id] })}
+                  isDeleting={deleteRunsMutation.isPending}
+                  isSelected={selectedRunIds.has(run.id)}
+                  onToggleSelect={handleToggleRunSelection}
+                />
+              )}
+              header={{
+                title: "Generated Results",
+                description: "View and manage all generated visuals.",
+              }}
+              showColumnControl={true}
+              defaultColumns={3}
+              minColumns={2}
+              maxColumns={6}
+              columnStep={1}
+              selectedCount={selectedRunIds.size}
+              showSelectAllBtn={true}
+              onSelectAllToggle={handleSelectAll}
+              batchActions={[
+                {
+                  label: "Create posts",
+                  onClick: handleBatchCreatePost,
+                },
+                {
+                  label: "Delete selected",
+                  variant: "destructive",
+                  onClick: handleBatchDelete,
+                  disabled: deleteRunsMutation.isPending,
+                },
+              ]}
+              className="flex flex-1 min-w-0 flex-col overflow-hidden h-full"
+            />
+          )}
         </div>
       </div>
-
-      {selectedRun && (
-        <RunModal run={selectedRun} onClose={() => setSelectedRun(null)} />
-      )}
 
       <ConfirmDialog
         open={showBatchDeleteDialog}
