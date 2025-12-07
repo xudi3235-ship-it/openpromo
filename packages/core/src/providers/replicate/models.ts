@@ -1,3 +1,4 @@
+import { omitUndefined } from "@core/utils/common";
 import { env } from "@core/utils/env";
 import type { FileOutput, Prediction } from "replicate";
 import { z } from "zod";
@@ -167,7 +168,7 @@ export namespace Replicate {
       const parsed = schema.parse(input);
       const prediction = await replicate.predictions.create({
         model: "google/veo-3.1-fast",
-        input: parsed,
+        input: omitUndefined(parsed),
       });
       return await replicate.wait(prediction);
     }

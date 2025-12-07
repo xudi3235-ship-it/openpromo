@@ -6,11 +6,14 @@
 import { VideoGenRealtime } from "@shared/agents";
 import z from "zod";
 
-// context for agent
-// passed to tool, and
 export const VideoGenAgentContext = z.object({
-  // input
+  // raw user input
   input: VideoGenRealtime.SetInput.shape.data,
+  // below are agent context for each run. NOTE: mutable object
+  stage: z
+    .enum(["create_plan", "image_gen", "video_gen"])
+    .default("create_plan"),
+  plan: z.string(),
 });
 
 export type VideoGenAgentContext = z.infer<typeof VideoGenAgentContext>;

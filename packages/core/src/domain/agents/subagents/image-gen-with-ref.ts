@@ -6,9 +6,9 @@ import { Agent } from "@openai/agents";
 import { VideoGenRealtime } from "@shared/agents";
 import type { VideoGenAgentContext } from "../context";
 import { StaticPrompts } from "../prompts";
-import { evaluateImageTool, nanoBananaTool } from "../tools";
+import { evaluateImageTool, nanoBananaTool, searchImageTool } from "../tools";
 
-const sysPrompt = `
+const sysPrompt = (contextStr: string) => `
 1. Role
 You are expert in social media visuals, ads creatives. You excel at creating social media images to help proomote product/service/brands for small businesses.
 You are experts in copying styles from reference image of good visuals, creatives for social media and apply it to SMB(small business) owner's products/service/etc that they are tryna sell. Goal is to use the good reference as baseline so that the final img have good quality but context aware of the products. This is critical to user's businesses, need high-fidelity, top-quality image prompt output that takes the most from the ref image and applies user's product context.
@@ -23,6 +23,13 @@ User's input will include the following items
 * dynamically adapt to diffent product types, categories, styles, etc.
 * for any *CRITICAL instructions, must closely follow and reflect them when reasoning.
 * use the evaluate tool to asset the image quality, and iterate to address any issues.
+* 
+<about_image_generation>
+- for product shots/keyframes,ALWAYS ground nano_banana requests with product images for clarity. refer to examples for best practices. NO need for json format, plain text with clear structure and ultra details are fine.
+- Generate multiple candidate frames when the 'storyboard' needs varied shots--note which scene each frame should unlock. For consistency, either run with image reference, or, use tool with previous generated image + edit prompt to persist key elements.
+- Start with non-pro params, evaluate, then upgrade to pro settings once composition is approved.
+- Follow the Prompt Checklist below before every run.
+</about_image_generation>
 
 3. Reasoning
 think thoroughly & chain the steps, since it's sequential, former steps needs to be hgih quality & detailed to ensure good output quality
@@ -46,6 +53,10 @@ ${StaticPrompts.nanoBananaGuide()}
 ### good nano banana prompt examples
 ${StaticPrompts.goodNanoBananaPromptExamples()}
 
+<run_context> here is the runtime context. which includes user input, higher level orchestration context, etc.
+${contextStr}
+</run_context>
+
 `;
 
 /**
@@ -58,12 +69,15 @@ export function createImageGenWithRefAgent() {
     model: "gpt-5.1",
     modelSettings: {
       reasoning: {
-        effort: "high",
+        effort: "medium",
         summary: "auto",
       },
     },
-    instructions: sysPrompt,
-    tools: [nanoBananaTool, evaluateImageTool],
+    instructions: (args) => {
+      const contextStr = `input: ${JSON.stringify(args.context)}`;
+      return sysPrompt(contextStr);
+    },
+    tools: [nanoBananaTool, evaluateImageTool, searchImageTool],
     // @ts-expect-error weird zod typing issue
     outputType: VideoGenRealtime.AgentOutput,
   });

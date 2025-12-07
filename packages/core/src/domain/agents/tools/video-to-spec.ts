@@ -6,6 +6,7 @@ import { tool } from "@openai/agents";
 import z from "zod/v3";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { PRIMARY_GOAL } from "../constants";
+import type { VideoGenAgentContext } from "../context";
 import { downloadImagesToTmp, downloadVideosToTmp } from "../utils";
 
 const toolParams = z.object({
@@ -143,6 +144,10 @@ export const videoToSpecTool = tool({
   description:
     "takes in a social media video ad, analyzes it, and produces a comprehensive spec/blueprint that can be used to replicate the video effectively for promoting products/services/brands for small businesses.",
   parameters: toolParams,
+  isEnabled(args) {
+    const context = args.runContext.context as VideoGenAgentContext;
+    return context.stage === "video_gen";
+  },
   execute: async (args: z.infer<typeof toolParams>) => {
     return await toolImpl(args);
   },

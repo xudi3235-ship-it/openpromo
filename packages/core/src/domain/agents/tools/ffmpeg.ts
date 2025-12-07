@@ -81,6 +81,10 @@ export const ffmpegTool = toolBuilder<
   name: "run_ffmpeg",
   description: FFMPEG_TOOL_DESCRIPTION,
   parameters: FfmpegParamsSchema,
+  isEnabled(args) {
+    const context = args.runContext.context as VideoGenAgentContext;
+    return context.stage === "video_gen";
+  },
   async execute(params: FfmpegParams) {
     // TODO: handle scaling and routing
     try {

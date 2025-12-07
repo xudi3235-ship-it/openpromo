@@ -8,6 +8,7 @@ import { Actor } from "@core/helpers/actor";
 import {
   type Agent,
   type AgentInputItem,
+  RunContext,
   RunState,
   run,
   withTrace,
@@ -32,21 +33,12 @@ import {
   type UIMessage,
 } from "ai";
 import { EntAgentRun } from "../agent-run";
-import { onToolOutput } from "./agent-types";
 import type { VideoGenAgentContext } from "./context";
 import { buildSystemPrompt, createVideoGenAgent } from "./create-agent";
 import { setupAgentHooks } from "./hooks";
 import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
 import { toAgentImageInputs } from "./tools/evaluation-utils";
 import { buildTreeString, downloadImagesToTmp } from "./utils";
-
-const VIDEO_ASSET_TOOL_NAMES = [
-  "veo31_text_to_video",
-  "veo31_image_to_video",
-  "veo31_reference_images_to_video",
-  "veo31_video_extension",
-  "sora2_storyboard_generate",
-] as const;
 
 class ActorStore {
   private cache: Actor.WorkspaceUser | null = null;
@@ -143,9 +135,7 @@ export class VideoGenAgent extends AIChatAgent<
   /**
    * Patch the application state with partial updates.
    */
-  private patchState(
-    updater: (draft: VideoGenRealtime.ServerAppState) => void,
-  ) {
+  patchState(updater: (draft: VideoGenRealtime.ServerAppState) => void) {
     const newState = produce(this.state, (draft) => {
       updater(draft);
       draft.lastUpdated = new Date().toISOString();
@@ -216,9 +206,11 @@ export class VideoGenAgent extends AIChatAgent<
    * core entrypoint to run the video generation pipeline.
    */
   private async runPipelineImpl(params: { agent: VideoGenRealtime.AgentName }) {
-    const context: VideoGenAgentContext = {
+    const runtimeContext = new RunContext<VideoGenAgentContext>({
       input: this.state.input,
-    };
+      stage: "create_plan",
+      plan: "",
+    });
     // 1. create agent with context
     const agent =
       params.agent === "video_gen_agent"
@@ -241,58 +233,41 @@ export class VideoGenAgent extends AIChatAgent<
       },
       onToolEnd: (_ctx, toolName, result) => {
         this.log(`Tool ended: ${toolName}`, result);
-
-        for (const assetTool of VIDEO_ASSET_TOOL_NAMES) {
-          onToolOutput(result, assetTool, {
-            onSuccess: (output) => {
-              this.log(`Received ${assetTool} asset output:`, output.videoUrl);
-              this.patchState((draft) => {
-                if (!draft.artifacts.videos) {
-                  draft.artifacts.videos = [];
-                }
-                draft.artifacts.videos.push({
-                  id: `${assetTool}_${Date.now()}`,
-                  videoUrl: output.videoUrl,
-                });
-              });
-            },
-          });
-        }
-
-        onToolOutput(result, "nano_banana", {
-          onSuccess: (output) => {
-            this.log(`Received nano banana asset output:`, output);
-            this.patchState((draft) => {
-              if (!draft.artifacts.images) {
-                draft.artifacts.images = [];
-              }
-              draft.artifacts.images.push({
-                id: `nano_banana_${Date.now()}`,
-                imageUrl: output.imageUrl,
-              });
-            });
-          },
-        });
       },
     });
+    let currInput = runnerInput;
+    let step = 0;
     // 2. run the agent
     // TODO: utilize agent handoff using structural output
-    const result = await run(agent, runnerInput, {
-      context,
-    });
-    // serialize run state
-    this.runStateSerialized = result.state.toString();
-    const finalOutput = result.finalOutput as VideoGenRealtime.AgentOutput;
-    // 3. update state with serialized run and final output
-    this.patchState((draft) => {
-      draft.status = "succeeded";
-      draft.output = finalOutput;
-      draft.logs = this._logs;
-    });
+    while (step < 50) {
+      console.log(`>>>> starting agent run loop with input:`, currInput);
+      const result = await run(agent, currInput, {
+        context: runtimeContext,
+      });
+      // serialize run state
+      this.runStateSerialized = result.state.toString();
+      const finalOutput = result.finalOutput as VideoGenRealtime.AgentOutput;
+      if (!finalOutput.done) {
+        console.log(`continuing run, not done yet...`);
+        // prepare next input
+        currInput = result.history;
+        step++;
+        continue;
+      }
+      // done
+      // 3. update state with serialized run and final output
+      this.patchState((draft) => {
+        draft.status = "succeeded";
+        draft.output = finalOutput;
+        draft.logs = this._logs;
+      });
 
-    this.log(`run completed:`, result.finalOutput);
+      this.log(`run completed:`, result.finalOutput);
 
-    console.log(`logs:\n${this._logs}`);
+      console.log(`logs:\n${this._logs}`);
+      // exit
+      break;
+    }
   }
 
   private async withStateMgmt<T>(fn: () => Promise<T>) {
@@ -337,6 +312,10 @@ export class VideoGenAgent extends AIChatAgent<
         draft.error = (error as Error).message;
       });
       throw error;
+    } finally {
+      // reset state
+      console.log(`[VideoGenAgent] resetting state after run`);
+      this.resetState();
     }
   }
 
@@ -378,10 +357,12 @@ export class VideoGenAgent extends AIChatAgent<
   ) {
     console.log(`[VideoGenAgent] onChatMessage called`);
     // TODO: Extract runtime context from messages or agent state
-    const runtimeContext: VideoGenAgentContext = {
+    const runtimeContext = new RunContext<VideoGenAgentContext>({
       input: this.state.input,
-    };
-    const systemPrompt = buildSystemPrompt(runtimeContext);
+      stage: "create_plan",
+      plan: "",
+    });
+    const systemPrompt = buildSystemPrompt(runtimeContext.context);
     const messages = this.messages;
 
     console.log(

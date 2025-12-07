@@ -3,18 +3,15 @@ import { VideoGenRealtime } from "@shared/agents";
 import { PRIMARY_GOAL } from "./constants";
 import type { VideoGenAgentContext } from "./context";
 import { StaticPrompts } from "./prompts";
+import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
 import {
-  evaluateImageTool,
   ffmpegTool,
-  nanoBananaTool,
   searchImageTool,
   sora2StoryboardTool,
-  // veo31ImageToVideoTool,
-  // veo31ReferenceImagesToVideoTool,
   veo31UnifiedTool,
-  // veo31VideoExtensionTool,
   virtualShellTool,
 } from "./tools";
+import { setContextTool } from "./tools/set-context";
 import { videoToSpecTool } from "./tools/video-to-spec";
 
 /**
@@ -50,13 +47,6 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     - Run evaluate_image exactly once per image batch; incorporate the feedback before moving to video and restate the approval in the first video prompt.
     - **for ugc style video, must start with strong hook, 0-6s of every video segment--call this out inside your storyboard and prompts.
     </hard_limits, critical_must_follow>
-
-    <about_image_generation>
-    - for product shots/keyframes,ALWAYS ground nano_banana requests with product images for clarity. refer to examples for best practices. NO need for json format, plain text with clear structure and ultra details are fine.
-    - Generate multiple candidate frames when the 'storyboard' needs varied shots--note which scene each frame should unlock. For consistency, either run with image reference, or, use tool with previous generated image + edit prompt to persist key elements.
-    - Start with non-pro params, evaluate, then upgrade to pro settings once composition is approved.
-    - Follow the Prompt Checklist below before every run.
-    </about_image_generation>
 
     <about_video_gen>
     - veo3.1 can only create up to (4,6,8s) video at a time. Plan each beat so hooks, feature reveals, and CTAs respect this cap.
@@ -132,16 +122,10 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
 
 
     <additional_resources>
-    ### general prompt guide for image gen
-    ${StaticPrompts.generalImagePromptGuide()}
-    ### nano banana guide
-    ${StaticPrompts.nanoBananaGuide()}
     ### veo3.1 guide
     ${StaticPrompts.veo31Guide()}
     ### good veo3.1 prompt examples
     ${StaticPrompts.goodVeo31PromptExamples()}
-    ### good nano banana prompt examples
-    ${StaticPrompts.goodNanoBananaPromptExamples()}
     ### sora2 prompt guide
     ${StaticPrompts.sora2PromptGuide()}
 
@@ -154,6 +138,13 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     <output_schema>
     artifacts from tool outputs, e.g. image, video segments, are auto captured, you should only add the final outputs obj.
     </output_schema>
+
+    <__internal__>
+    - use the set_context tool to update internal stage, steps, tasks. etc. if no done, complete the conversation, since it will trigger the next run with updated context, and more tools will be available to you. 
+    - e.g. for certain stage, new tools will be enabled for specific tasks.
+    - stage transition: image -> video. 
+    - do NOT complete until you have a final deliverable. do NOT set done=true until a final output is ready!
+    </__internal__>
     `;
 }
 
@@ -173,11 +164,12 @@ export function createVideoGenAgent() {
     handoffs: [],
     tools: [
       // videoGenShellTool, // worker runtime does not allow spawning processes currently
+      setContextTool,
       virtualShellTool,
       searchImageTool,
       videoToSpecTool,
-      evaluateImageTool,
-      nanoBananaTool,
+      // evaluateImageTool,
+      // nanoBananaTool,
       veo31UnifiedTool, // on replicate
       // veo31TextToVideoTool, // never use pure text-to-video for product-centric videos
       // veo31ImageToVideoTool,
@@ -186,10 +178,20 @@ export function createVideoGenAgent() {
       sora2StoryboardTool,
       // other stuff
       ffmpegTool,
+      // sub-agents
+      createImageGenWithRefAgent().asTool({
+        toolName: "image_gen_agent",
+        toolDescription:
+          "Sub-agent for image generation with reference images and product inputs. Provide good instructions and steering, and internally it will finalize the prompt and generate images for you. ",
+        isEnabled: (args) => {
+          // conditional.
+          return args.runContext.context.stage === "image_gen";
+        },
+      }),
     ],
     modelSettings: {
       reasoning: {
-        effort: "high",
+        effort: "medium",
         summary: "auto",
       },
     },

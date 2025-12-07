@@ -5,9 +5,11 @@
 
 import { Replicate } from "@core/providers/replicate/models";
 import { downloadVideo } from "@core/utils/common";
+import { getCurrentAgent } from "agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
+import type { VideoGenAgent } from "../video-gen-agent";
 
 const toolParams = z.object({
   outputPath: z.string().describe("Path to save the generated video file."),
@@ -31,6 +33,10 @@ The input image is used as the first frame to guide generation.
 Best for: animating static images, creating motion from still images.
 NOTE: Provide image URLs - the tool will process them directly.`,
   parameters: toolParams,
+  isEnabled(args) {
+    const context = args.runContext.context as VideoGenAgentContext;
+    return context.stage === "video_gen";
+  },
   async execute(params: ToolParams) {
     const { outputPath, ...rest } = params;
 
@@ -56,6 +62,17 @@ NOTE: Provide image URLs - the tool will process them directly.`,
 
       // Download and save the video
       await downloadVideo(videoUrl, outputPath);
+
+      const { agent } = getCurrentAgent<VideoGenAgent>();
+      agent?.patchState((draft) => {
+        if (!draft.artifacts.videos) {
+          draft.artifacts.videos = [];
+        }
+        draft.artifacts.videos.push({
+          id: `$veo31_unified_${Date.now()}`,
+          videoUrl: videoUrl,
+        });
+      });
 
       // Return success with the exact schema expected by Veo31UnifiedToolOutput
       return toolSuccess("veo31_unified", {

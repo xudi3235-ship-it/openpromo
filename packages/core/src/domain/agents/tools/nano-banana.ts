@@ -18,9 +18,11 @@ import {
   downloadImage as downloadImageBase,
   isStringUrl,
 } from "@core/utils/common";
+import { getCurrentAgent } from "agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolSuccess } from "../tool-builder";
+import type { VideoGenAgent } from "../video-gen-agent";
 
 const OUTPUT_DIR = "/tmp/nanobana_output";
 
@@ -124,6 +126,18 @@ Auto-saves generated images and returns the URL.`,
 
     // Download and save the image
     await downloadImage(imageUrl, outputPath);
+
+    // update agent state with artifacts
+    const { agent } = getCurrentAgent<VideoGenAgent>();
+    agent?.patchState((draft) => {
+      if (!draft.artifacts.images) {
+        draft.artifacts.images = [];
+      }
+      draft.artifacts.images.push({
+        id: `nano_banana_${Date.now()}`,
+        imageUrl,
+      });
+    });
 
     return toolSuccess("nano_banana", {
       imageUrl,

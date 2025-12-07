@@ -145,6 +145,10 @@ Preferably use image gen tool to create image first, then use that along with th
 Best for: longer narrative videos, multi-scene storytelling, complex sequences.
 NOTE: Provide local file paths for reference images - files will be uploaded automatically.`,
   parameters: Sora2StoryboardParamsSchema,
+  isEnabled(args) {
+    const context = args.runContext.context as VideoGenAgentContext;
+    return context.stage === "video_gen";
+  },
   async execute(params: Sora2StoryboardParams) {
     const { shots, outputPath, duration, aspectRatio, referenceImagePaths } =
       params;
