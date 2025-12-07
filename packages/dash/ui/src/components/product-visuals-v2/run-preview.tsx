@@ -1,4 +1,7 @@
+import { Button } from "@openpromo/ui/components/button";
+import { Grid2X2, List } from "lucide-react";
 import React from "react";
+import { GridView } from "@/components/composer/layout/grid-view";
 import { ListView } from "@/components/composer/layout/list-view";
 import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
 import { useConnectedAccounts } from "@/queries/connected-account";
@@ -10,6 +13,7 @@ interface RunPreviewProps {
 }
 
 export function RunPreview({ run, className }: RunPreviewProps) {
+  const [viewMode, setViewMode] = React.useState<"list" | "grid">("grid");
   const { accounts, isPending: isLoadingAccounts } = useConnectedAccounts();
   const { initializeComposer, activeAccount, setActiveAccount } =
     useComposerStore();
@@ -57,13 +61,42 @@ export function RunPreview({ run, className }: RunPreviewProps) {
   // Show all connected accounts
   return (
     <div className={className}>
-      <ListView
-        accounts={accounts}
-        selectedAccountId={activeAccount || accounts[0]?.id}
-        onSelectAccount={setActiveAccount}
-        activeAccountId={null}
-        isReel={Boolean(isVideo)}
-      />
+      {/* View Toggle */}
+      <div className="flex items-center justify-center gap-1 mb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setViewMode("list")}
+          className={`h-8 w-8 p-0 ${viewMode === "list" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <List size={16} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setViewMode("grid")}
+          className={`h-8 w-8 p-0 ${viewMode === "grid" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <Grid2X2 size={16} />
+        </Button>
+      </div>
+
+      {/* Preview Content */}
+      {viewMode === "list" ? (
+        <ListView
+          accounts={accounts}
+          selectedAccountId={activeAccount || accounts[0]?.id}
+          onSelectAccount={setActiveAccount}
+          activeAccountId={null}
+          isReel={Boolean(isVideo)}
+        />
+      ) : (
+        <GridView
+          accounts={accounts}
+          activeAccountId={null}
+          isReel={Boolean(isVideo)}
+        />
+      )}
     </div>
   );
 }
