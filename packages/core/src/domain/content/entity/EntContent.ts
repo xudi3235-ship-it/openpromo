@@ -431,6 +431,14 @@ export class EntPendingContent extends EntUnifiedContentBase {
     await this.updateAttachments((attachment) => {
       if (!attachment?.id) return attachment;
 
+      // no-op if not on managed storage.
+      if (
+        attachment.source &&
+        attachment.source !== "cf_stream" &&
+        attachment.source !== "cf_image"
+      )
+        return attachment;
+
       if (attachment.type === "photo") {
         remoteMetadataTasks.push(
           ImageStorage.setMetadata(attachment.id, statusMetadata),
@@ -608,6 +616,14 @@ export class EntPendingContent extends EntUnifiedContentBase {
 
     await this.updateAttachments((attachment) => {
       if (!attachment?.id) return attachment;
+
+      // no-op if not on managed storage.
+      if (
+        attachment.source &&
+        attachment.source !== "cf_stream" &&
+        attachment.source !== "cf_image"
+      )
+        return attachment;
 
       if (attachment.type === "photo") {
         remoteMetadataTasks.push(

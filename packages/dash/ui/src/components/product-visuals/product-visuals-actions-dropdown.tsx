@@ -63,6 +63,7 @@ export function ProductVisualsActionsDropdown({
           thumbnailUrl: item.previewUrl ?? item.outputUrl,
           mimeType: isVideo ? "video/mp4" : "image/jpeg",
           s3Key: item.id,
+          source: "remote" as const, // verify this
         },
       ],
     });

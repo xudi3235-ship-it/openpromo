@@ -227,6 +227,7 @@ export function ProductVisualsContent({
           type: isVideo ? ("video" as const) : ("photo" as const),
           publicUrl: url,
           mimeType: isVideo ? "video/mp4" : "image/jpeg",
+          source: "remote" as const,
         };
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);

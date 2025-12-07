@@ -74,6 +74,12 @@ export const BaseAttachmentSpec = z.object({
   thumbnailUrl: z.string().optional(),
   mimeType: z.string().optional(),
   metadata: z.record(z.any(), z.any()).optional(),
+  source: z
+    .enum(["cf_stream", "cf_image", "r2", "remote"])
+    .optional()
+    .describe(
+      'source of this attachment, e.g. "cf_stream" for Cloudflare Stream. Remote means its hosted externally.',
+    ),
   file: z
     .instanceof(File)
     .optional()
