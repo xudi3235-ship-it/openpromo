@@ -313,3 +313,24 @@ export const useStyleDeleteMutation = (onSuccess?: () => void) => {
     }),
   });
 };
+
+export const useStyleCreateManyMutation = (onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  const { workspace } = useWorkspace();
+
+  return useMutation(
+    orpc.styles.createMany.mutationOptions({
+      onSuccess: async (data) => {
+        await invalidateStylesListQueries(queryClient);
+        toast.success(`Created ${data.styles.length} style(s)`);
+        onSuccess?.();
+      },
+      mutationFn: async (input) => {
+        return orpc.styles.createMany.call({
+          ...input,
+          workspaceId: workspace.id,
+        });
+      },
+    }),
+  );
+};

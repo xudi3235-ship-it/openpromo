@@ -50,6 +50,12 @@ const createStyleInput = createWorkspaceInputSchema(
   EntStyleComponent.Schemas().create,
 );
 
+const createManyStylesInput = createWorkspaceInputSchema(
+  z.object({
+    styles: z.array(EntStyleComponent.Schemas().create).min(1).max(10),
+  }),
+);
+
 const updateStyleInput = createWorkspaceInputSchema(
   EntStyleComponent.Schemas().update.extend({
     styleId: z.string().min(1),
@@ -95,6 +101,28 @@ export const createStyle = orpcBuilder
     const style = await EntStyleComponent.create(data);
     return {
       style: style.toJSON(),
+    };
+  });
+
+export const createManyStyles = orpcBuilder
+  .input(createManyStylesInput)
+  .use(withWorkspaceRole, workspaceRoleMappers.editor)
+  .handler(async ({ input }) => {
+    const {
+      styles: stylesToCreate,
+      workspaceId: _workspaceId,
+      workspaceSlug: _workspaceSlug,
+    } = input;
+
+    const createdStyles = await Promise.all(
+      stylesToCreate.map(async (styleData) => {
+        const style = await EntStyleComponent.create(styleData);
+        return style.toJSON();
+      }),
+    );
+
+    return {
+      styles: createdStyles,
     };
   });
 
@@ -187,6 +215,7 @@ export const stylesRouter = {
   list: listStyles,
   get: getStyle,
   create: createStyle,
+  createMany: createManyStyles,
   update: updateStyle,
   delete: deleteStyle,
   generations: {

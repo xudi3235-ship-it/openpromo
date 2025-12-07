@@ -16,6 +16,7 @@ import { StylesInfiniteGrid } from "@/components/styles/styles-infinite-grid";
 import { useWorkspaceEvents } from "@/hooks/useWorkspaceWebSocket";
 import type { StylesListParams } from "@/queries/styles-queries";
 import { invalidateStylesListQueries } from "@/queries/styles-queries";
+import { BulkStyleComposer } from "./bulk-style-composer";
 import { StyleComposer } from "./composer";
 
 type SortOption = "latest" | "oldest" | "most_used";
@@ -153,6 +154,12 @@ export function StyleListPage() {
           <BadgeCheck className="h-4 w-4" />
           Official only
         </Button>
+
+        <BulkStyleComposer
+          onSuccess={() => {
+            invalidateStylesListQueries(queryClient);
+          }}
+        />
       </div>
 
       <PageContent>
