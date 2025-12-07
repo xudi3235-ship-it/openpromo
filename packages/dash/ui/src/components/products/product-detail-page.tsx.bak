@@ -82,7 +82,6 @@ export function ProductDetailPage() {
 
   const { data, isPending, error } = useProductQuery(productId);
   const product = data?.product;
-  const productContext = product?.metadata?.productContext;
 
   const primaryAttachment = product?.attachments.find(
     (att) => att.id === product.primaryAttachmentId,
@@ -187,7 +186,7 @@ export function ProductDetailPage() {
       </PageHeader>
 
       <PageContent>
-        <div className="max-w-2xl">
+        <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
             <Surface tone="subtle" padded="md" shadow="sm">
               <div className="grid gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
@@ -334,6 +333,75 @@ export function ProductDetailPage() {
               </Surface>
             ) : null}
           </div>
+
+          <div className="space-y-4">
+            <Surface
+              tone="subtle"
+              padded="lg"
+              shadow="sm"
+              className="flex h-full flex-col"
+            >
+              <div className="space-y-3">
+                <h2 className="text-lg font-semibold text-foreground">
+                  Generate Product Image
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Use your product context to generate a marketing-ready
+                  creative.
+                </p>
+                <Button
+                  onClick={handleGenerate}
+                  disabled={isGenerating}
+                  className="w-full justify-center gap-2"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Generate image
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <div className="mt-6 flex flex-1 flex-col gap-3">
+                <div className={previewContainerClass}>
+                  <div className="aspect-square w-full">
+                    {generatedImage ? (
+                      <img
+                        src={generatedImage?.generation?.outputImages?.[0]}
+                        alt={`Generated preview for ${product.name}`}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : !isGenerating ? (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground">
+                        <Sparkles className="h-5 w-5" />
+                        Click “Generate image” to create a fresh visual using
+                        this product&apos;s context.
+                      </div>
+                    ) : null}
+                  </div>
+                  {isGenerating ? (
+                    <>
+                      <div className="absolute inset-0 overflow-hidden rounded-lg">
+                        <Skeleton className="h-full w-full animate-pulse" />
+                      </div>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background/60 backdrop-blur-sm">
+                        <div className="h-12 w-12 rounded-full border border-border/60 bg-gradient-to-br from-primary/10 via-transparent to-transparent animate-pulse" />
+                        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Generating preview
+                        </span>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </Surface>
+          </div>
         </div>
       </PageContent>
     </Page>
@@ -366,7 +434,7 @@ export function ProductDetailSkeleton() {
       </PageHeader>
 
       <PageContent>
-        <div className="max-w-2xl">
+        <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
             <Surface tone="subtle" padded="md" shadow="sm">
               <div className="grid gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
@@ -420,6 +488,28 @@ export function ProductDetailSkeleton() {
                   <Skeleton className="h-5 w-14 rounded-full" />
                   <Skeleton className="h-5 w-20 rounded-full" />
                 </div>
+              </SurfaceBody>
+            </Surface>
+          </div>
+
+          <div className="space-y-4">
+            <Surface
+              tone="subtle"
+              padded="lg"
+              shadow="sm"
+              className="flex h-full flex-col"
+            >
+              <div className="space-y-3">
+                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-10 w-full rounded-md" />
+              </div>
+              <SurfaceBody
+                padded="md"
+                className="mt-4 rounded-lg border border-dashed border-border/70 bg-muted/10"
+              >
+                <Skeleton className="aspect-square w-full rounded-md" />
+                <Skeleton className="mt-3 h-4 w-1/2" />
               </SurfaceBody>
             </Surface>
           </div>

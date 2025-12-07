@@ -49,42 +49,42 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const sourceStyles: Record<string, { badge: string }> = {
     MANUAL: {
-      badge: "bg-zinc-500/80 text-white",
+      badge: "bg-white/10 text-white/80 border border-white/20",
     },
     AMAZON: {
-      badge: "bg-orange-500/80 text-white",
+      badge: "bg-white/10 text-white/80 border border-white/20",
     },
     SHOPIFY: {
-      badge: "bg-emerald-500/80 text-white",
+      badge: "bg-white/10 text-white/80 border border-white/20",
     },
     ETSY: {
-      badge: "bg-rose-500/80 text-white",
+      badge: "bg-white/10 text-white/80 border border-white/20",
     },
     CUSTOM_URL: {
-      badge: "bg-sky-500/80 text-white",
+      badge: "bg-white/10 text-white/80 border border-white/20",
     },
   };
 
   const stateConfig = {
     not_started: {
       label: "New",
-      className: "bg-zinc-500/80 text-white",
+      className: "bg-white/10 text-white/80 border border-white/20",
     },
     pending: {
       label: "Pending",
-      className: "bg-amber-400 text-zinc-900",
+      className: "bg-white/10 text-white/80 border border-white/20",
     },
     processing: {
       label: "Processing",
-      className: "bg-blue-500/80 text-white",
+      className: "bg-white/10 text-white/80 border border-white/20",
     },
     ready: {
       label: "Ready",
-      className: "bg-emerald-500/80 text-white",
+      className: "bg-white/10 text-white/80 border border-white/20",
     },
     failed: {
       label: "Failed",
-      className: "bg-red-500/80 text-white",
+      className: "bg-white/10 text-white/80 border border-white/20",
     },
   };
 
@@ -94,18 +94,6 @@ export function ProductCard({ product }: ProductCardProps) {
     imageAttachment?.type === "photo"
       ? (imageAttachment.publicUrl ?? imageAttachment.presignedUrl)
       : undefined;
-
-  const formatDate = (date: Date | string | null | undefined) => {
-    if (!date) return null;
-    const resolvedDate = typeof date === "string" ? new Date(date) : date;
-    return resolvedDate.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  const createdDate = formatDate(product.createdAt);
 
   const handleCardClick = () => {
     if (deleteDialogOpen) return;
@@ -144,13 +132,13 @@ export function ProductCard({ product }: ProductCardProps) {
       <GridCard
         onClick={handleCardClick}
         onKeyDown={handleKeyDown}
-        className="bg-muted"
+        className="bg-muted/30"
       >
         <GridCardBadges>
           <GridCardTypeBadge
             label={product.source?.toLowerCase() ?? "unknown"}
             className={cn(
-              "uppercase tracking-wide text-[11px] font-semibold",
+              "uppercase tracking-wide text-[10px] font-semibold",
               product.source
                 ? sourceStyles[product.source]?.badge
                 : "bg-zinc-500/80 text-white",
@@ -160,7 +148,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <GridCardTypeBadge
               label={currentState.label}
               className={cn(
-                "text-[11px] font-semibold",
+                "text-[10px] font-semibold",
                 currentState.className,
               )}
             />
@@ -228,57 +216,47 @@ export function ProductCard({ product }: ProductCardProps) {
               <span className="text-6xl opacity-30">📦</span>
             </div>
           )}
-
           <GridCardHoverOverlay>
-            <div className="pointer-events-none flex h-full flex-col justify-end p-4">
-              <div className="translate-y-3 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                <div className="space-y-2 text-white">
-                  <div className="space-y-1">
-                    <h3 className="text-base font-semibold leading-tight line-clamp-2">
-                      {product.name}
-                    </h3>
-                    {product.description && (
-                      <p className="text-sm text-white/80 line-clamp-2">
-                        {product.description}
-                      </p>
-                    )}
-                  </div>
+            <div className="flex h-full flex-col justify-between p-3">
+              {/* Top - Actions menu */}
+              <div />
 
-                  {product.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {product.tags.slice(0, 3).map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="border border-white/25 bg-white/15 px-2 py-0 text-[11px] font-medium text-white/90 backdrop-blur-sm hover:bg-white/25"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                      {product.tags.length > 3 && (
-                        <Badge
-                          variant="secondary"
-                          className="border border-white/25 bg-white/10 px-2 py-0 text-[11px] font-medium text-white/80 backdrop-blur-sm"
-                        >
-                          +{product.tags.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-
-                  {(product.category || createdDate) && (
-                    <div className="flex items-center justify-between text-xs text-white/70">
-                      {product.category && (
-                        <span className="truncate">{product.category}</span>
-                      )}
-                      {createdDate && <span>{createdDate}</span>}
-                    </div>
+              {/* Bottom - Info */}
+              <div className="space-y-2">
+                <div>
+                  <h3 className="text-sm font-medium text-white line-clamp-1">
+                    {product.name}
+                  </h3>
+                  {product.description && (
+                    <p className="mt-0.5 text-xs text-white/70 line-clamp-1">
+                      {product.description}
+                    </p>
                   )}
                 </div>
+                {product.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {product.tags.slice(0, 2).map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="border border-white/20 bg-white/10 px-1 py-0 text-[9px] font-medium text-white/80 backdrop-blur-sm"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                    {product.tags.length > 2 && (
+                      <Badge
+                        variant="secondary"
+                        className="border border-white/20 bg-white/10 px-1 py-0 text-[9px] font-medium text-white/80 backdrop-blur-sm"
+                      >
+                        +{product.tags.length - 2}
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-          </GridCardHoverOverlay>
-
+          </GridCardHoverOverlay>{" "}
           {product.state === "pending" && (
             <GridCardStateOverlay state="processing" message="Pending" />
           )}

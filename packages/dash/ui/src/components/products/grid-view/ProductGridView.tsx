@@ -49,7 +49,7 @@ export function ProductGridView({
   }
 
   const containerClass =
-    "flex flex-1 min-w-0 items-stretch justify-center overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800";
+    "flex flex-1 min-w-0 items-stretch justify-center overflow-hidden rounded-lg bg-white dark:bg-background";
 
   if (products.length === 0) {
     return (
