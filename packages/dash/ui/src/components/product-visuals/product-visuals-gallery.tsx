@@ -215,9 +215,9 @@ export function ProductVisualsGallery({
 
   const handleDeleteSingle = async (item: FeedItem) => {
     if (item.type === "image") {
-      deleteMutation.mutate({ imageIds: [item.id], videoIds: [] });
+      await deleteMutation.mutateAsync({ imageIds: [item.id], videoIds: [] });
     } else {
-      deleteMutation.mutate({ imageIds: [], videoIds: [item.id] });
+      await deleteMutation.mutateAsync({ imageIds: [], videoIds: [item.id] });
     }
   };
 

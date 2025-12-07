@@ -122,13 +122,15 @@ const buildInitialTikTokPlacements = (
 
         // Extract the appropriate user ID based on account type
         let tiktokUserID: string;
+        // TODO: we should only allow busienss login. clean this up.
+        // later we can consider more account types.
         if (metadata.type === "BUSINESS_LOGIN") {
           tiktokUserID = metadata.businessAccountId;
         } else if (metadata.type === "DEVELOPER_OAUTH") {
           tiktokUserID = metadata.tiktokUserId;
         } else {
           // ADVERTISER accounts are not supported for organic content posting
-          return null;
+          tiktokUserID = "TODO_UNSUPPORTED_ADVERTISER_ACCOUNT";
         }
         return {
           identity: {

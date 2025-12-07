@@ -72,22 +72,6 @@ export interface VideoGenAgentProps {
 }
 
 /**
- * core design of the video gen agent
- * Input: product images, avatar images, prompt
- *
- * Internally, it runs the pipeline to
- * 1. create image keyframes using the assets(product, brand, etc.).
- * 2. generate video segments from keyframes. Either sora2 long video one shot, or image-to-video short clips, extension or stitching.
- * 3. compose final video
- *
- * Image Gen workflow
- * Input: product images, reference images, prompt, ...(optionally more assets, style reference, etc)
- * 1. asset lib, gather, select assets
- * 2. create image, might be batch
- *
- */
-
-/**
  * Main entrypoint for video generation agent.
  * Ported from Python main_agent.py
  *
@@ -314,7 +298,8 @@ export class VideoGenAgent extends AIChatAgent<
       // 3. failed
       this.patchState((draft) => {
         draft.status = "failed";
-        draft.error = (error as Error).message;
+        draft.error =
+          typeof error === "string" ? error : (error as Error).message;
       });
       throw error;
     } finally {
@@ -429,8 +414,6 @@ export class VideoGenAgent extends AIChatAgent<
    * handles incoming ws message, we will provide our custom message types here.
    */
   async onMessage(connection: Connection, message: WSMessage) {
-    console.log(`[VideoGenAgent] onMessage called with:`, message);
-    // 2. Then handle our custom video gen events
     await this.handleWebsocketMessages(connection, message);
   }
 
