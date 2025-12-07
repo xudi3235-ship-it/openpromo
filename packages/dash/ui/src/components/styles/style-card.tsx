@@ -59,27 +59,30 @@ export function StyleCard({ style }: StyleCardProps) {
         {isFailed && <GridCardStateOverlay state="failed" />}
 
         <GridCardHoverOverlay>
-          <div className="flex h-full flex-col justify-end p-4">
-            <h3 className="text-base font-semibold text-white line-clamp-1">
-              {style.name}
-            </h3>
+          <div className="flex h-full flex-col justify-between p-3">
+            {/* Top - Title and description */}
+            <div />
 
-            {style.description && (
-              <p className="mt-1 text-xs text-white/80 line-clamp-2">
-                {style.description}
-              </p>
-            )}
-
-            <div className="mt-2 flex items-center gap-2">
-              {imageCount > 0 && (
-                <span className="text-xs text-white/70">
-                  {imageCount} {imageCount === 1 ? "image" : "images"}
-                </span>
-              )}
-            </div>
-
-            <div className="mt-3 -mx-4 -mb-4 px-4 py-3 bg-gradient-to-t from-black/60 to-transparent">
-              <StyleCardActions style={style} showUseButton />
+            {/* Bottom - Info and action */}
+            <div className="space-y-2">
+              <div>
+                <h3 className="text-sm font-medium text-white line-clamp-1">
+                  {style.name}
+                </h3>
+                {style.description && (
+                  <p className="mt-0.5 text-xs text-white/70 line-clamp-1">
+                    {style.description}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center justify-between">
+                {imageCount > 0 && (
+                  <span className="text-xs text-white/60">
+                    {imageCount} {imageCount === 1 ? "image" : "images"}
+                  </span>
+                )}
+                <StyleCardActions style={style} showUseButton />
+              </div>
             </div>
           </div>
         </GridCardHoverOverlay>

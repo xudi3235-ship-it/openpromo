@@ -62,30 +62,18 @@ export function StyleCardActions({
     });
   };
 
-  // Show as primary button when on card
+  // Show as compact button on card hover
   if (showUseButton) {
     return (
       <>
         <Button
           onClick={(e) => handleUseStyle(e as unknown as Event)}
           disabled={isNavigating}
-          className="w-full bg-white/90 text-black hover:bg-white text-sm font-medium"
+          size="sm"
+          className="bg-white/90 text-black hover:bg-white text-xs font-medium px-3 py-1 h-auto"
         >
-          <Sparkles className="mr-2 h-4 w-4" />
-          {isNavigating ? "Opening..." : "Use This Style"}
+          <Sparkles className="h-3.5 w-3.5" />
         </Button>
-
-        {showDeleteAction && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setDeleteDialogOpen(true)}
-            className="mt-2 w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
-          </Button>
-        )}
 
         {/* Delete Confirmation Dialog */}
         <ConfirmDialog

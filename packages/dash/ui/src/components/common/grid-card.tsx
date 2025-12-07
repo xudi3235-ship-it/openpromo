@@ -291,7 +291,7 @@ export function GridCardHoverOverlay({
   return (
     <div
       className={cn(
-        "absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100",
+        "absolute inset-0 z-10 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100",
         className,
       )}
     >
