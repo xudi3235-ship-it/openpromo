@@ -12,6 +12,10 @@ import { StyleGallery } from "@/components/image-generator/style-gallery";
 import { AssetInput } from "@/components/product-visuals-v2/asset-input";
 import { ModeToggle } from "@/components/product-visuals-v2/mode-toggle";
 import { StatusPill } from "@/components/product-visuals-v2/status-pill";
+import {
+  type Preset,
+  VideoPresets,
+} from "@/components/product-visuals-v2/video-presets";
 import type { AssetItem } from "@/features/product-visuals-v2/product-visuals-types";
 
 export interface InputPanelProps {
@@ -25,6 +29,12 @@ export interface InputPanelProps {
   // Prompt
   prompt: string;
   onPromptChange: (prompt: string) => void;
+
+  // Video Presets (only for video mode)
+  videoPresets?: Preset[];
+  isLoadingVideoPresets?: boolean;
+  selectedVideoPresetId?: string;
+  onVideoPresetSelect?: (preset: Preset) => void;
 
   // Product
   products: ProductSelectItem[];
@@ -64,6 +74,10 @@ export function InputPanel({
   status,
   prompt,
   onPromptChange,
+  videoPresets,
+  isLoadingVideoPresets,
+  selectedVideoPresetId,
+  onVideoPresetSelect,
   products,
   selectedProductId,
   onProductChange,
@@ -98,6 +112,20 @@ export function InputPanel({
           <ModeToggle mode={mode} onChange={onModeChange} />
         </div>
       </div>
+
+      {/* Video Presets - outside ScrollArea for proper horizontal scrolling */}
+      {mode === "video" && videoPresets && (
+        <div className="flex-shrink-0 border-b">
+          <div className="px-4 py-3">
+            <VideoPresets
+              presets={videoPresets}
+              isLoading={isLoadingVideoPresets || false}
+              selectedPresetId={selectedVideoPresetId}
+              onPresetSelect={onVideoPresetSelect}
+            />
+          </div>
+        </div>
+      )}
 
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-6 p-4">

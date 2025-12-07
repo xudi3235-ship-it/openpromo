@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { orpc } from "@/lib/orpc-client";
@@ -39,4 +39,15 @@ export const useProductVisualsBatchDeleteMutation = (
       toast.error(error.message || "Failed to delete items");
     },
   });
+};
+
+export const useVideoPresetsQuery = () => {
+  const { workspace } = useWorkspace();
+  return useQuery(
+    orpc.productVisuals.videoPresets.queryOptions({
+      input: {
+        workspaceSlug: workspace.slug,
+      },
+    }),
+  );
 };

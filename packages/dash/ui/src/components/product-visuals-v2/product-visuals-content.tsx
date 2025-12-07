@@ -16,10 +16,12 @@ import {
   useDeleteAgentRunsMutation,
 } from "@/queries/agent-runs";
 import { useProductListQuery } from "@/queries/product";
+import { useVideoPresetsQuery } from "@/queries/product-visuals";
 import { ConfirmDialog } from "../confirm-dialog";
 import { InputPanel } from "./input-panel";
 import { ResultCard } from "./result-card";
 import { RunModal } from "./run-modal";
+import type { Preset } from "./video-presets";
 
 interface ProductVisualsContentProps {
   styles: StyleGalleryItem[];
@@ -82,6 +84,9 @@ export function ProductVisualsContent({
   const { data: productsData, isPending: isLoadingProducts } =
     useProductListQuery({ pageSize: 50 });
 
+  const { data: videoPresetsData, isPending: isLoadingVideoPresets } =
+    useVideoPresetsQuery();
+
   const {
     data: feedData,
     isPending: isFeedPending,
@@ -97,6 +102,8 @@ export function ProductVisualsContent({
   const [selectedRun, setSelectedRun] = useState<RunFeedItem | null>(null);
   const [selectedRunIds, setSelectedRunIds] = useState<Set<string>>(new Set());
   const [selectedStyleId, setSelectedStyleId] = useState<string>("");
+  const [selectedVideoPresetId, setSelectedVideoPresetId] =
+    useState<string>("");
   const [showBatchDeleteDialog, setShowBatchDeleteDialog] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -152,8 +159,16 @@ export function ProductVisualsContent({
       avatarImages: avatarAssets.map((a) => a.url).slice(0, 3),
       referenceImages: referenceAssets.map((a) => a.url).slice(0, 3),
       brandAssets: brandAssets.map((a) => a.url).slice(0, 3),
+      presetId: selectedVideoPresetId || undefined,
     }),
-    [avatarAssets, brandAssets, productImageUrls, prompt, referenceAssets],
+    [
+      avatarAssets,
+      brandAssets,
+      productImageUrls,
+      prompt,
+      referenceAssets,
+      selectedVideoPresetId,
+    ],
   );
 
   const handleGenerate = useCallback(() => {
@@ -284,6 +299,12 @@ export function ProductVisualsContent({
     [styleGalleryItems, addReferenceAsset],
   );
 
+  const handleVideoPresetSelect = useCallback((preset: Preset) => {
+    setSelectedVideoPresetId(preset.id);
+    // You could update the prompt based on the preset if needed
+    // For now, just tracking the selection
+  }, []);
+
   const handleProductSelect = useCallback(
     (id: string) => {
       setProductId(id);
@@ -311,6 +332,10 @@ export function ProductVisualsContent({
       status: serverState.status,
       prompt,
       onPromptChange: setPrompt,
+      videoPresets: videoPresetsData?.presets,
+      isLoadingVideoPresets,
+      selectedVideoPresetId,
+      onVideoPresetSelect: handleVideoPresetSelect,
       products: productSelectItems,
       selectedProductId: productId,
       onProductChange: handleProductSelect,
@@ -336,6 +361,10 @@ export function ProductVisualsContent({
     [
       mode,
       prompt,
+      videoPresetsData,
+      isLoadingVideoPresets,
+      selectedVideoPresetId,
+      handleVideoPresetSelect,
       productSelectItems,
       productId,
       isLoadingProducts,

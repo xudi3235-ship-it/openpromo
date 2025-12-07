@@ -45,7 +45,7 @@ export const batchDeleteProductVisuals = orpcBuilder
  * Get all available video presets for product visuals
  */
 export const getVideoPresets = orpcBuilder
-  .input(z.object({}))
+  .input(createWorkspaceInputSchema(z.object({})))
   .use(withWorkspaceRole, workspaceRoleMappers.editor)
   .handler(async () => {
     const presetManager = new Presets.Manager();
