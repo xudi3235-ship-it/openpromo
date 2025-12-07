@@ -1,3 +1,4 @@
+import { Button } from "@openpromo/ui/components/button";
 import type { VideoGenRealtime } from "@shared";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -71,6 +72,7 @@ export function ProductVisualsContent({
     isConnected,
     startGeneration,
     serverState,
+    resetState,
     chat: { error },
   } = useVideoGenAgent({
     userId,
@@ -365,6 +367,11 @@ export function ProductVisualsContent({
       <div ref={containerRef} className="flex h-full min-w-0 gap-4">
         <div className="w-96 flex-shrink-0">
           <InputPanel {...inputPanelProps} />
+          {import.meta.env.DEV && (
+            <Button className="mb-4" onClick={resetState} variant="outline">
+              Reset
+            </Button>
+          )}
         </div>
 
         <section className="flex flex-1 min-w-0 flex-col overflow-hidden">

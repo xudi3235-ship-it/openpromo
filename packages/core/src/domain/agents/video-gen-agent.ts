@@ -240,7 +240,12 @@ export class VideoGenAgent extends AIChatAgent<
     // 2. run the agent
     // TODO: utilize agent handoff using structural output
     while (step < 50) {
-      console.log(`>>>> starting agent run loop with input:`, currInput);
+      console.log(`>>>> Agent run step ${step} >>>>`);
+      console.log(`last input:`, JSON.stringify(currInput.at(-1)));
+      console.log(
+        `agent tools:`,
+        agent.tools.map((t) => t.name),
+      );
       const result = await run(agent, currInput, {
         context: runtimeContext,
       });
@@ -356,7 +361,6 @@ export class VideoGenAgent extends AIChatAgent<
     _options?: { abortSignal?: AbortSignal },
   ) {
     console.log(`[VideoGenAgent] onChatMessage called`);
-    // TODO: Extract runtime context from messages or agent state
     const runtimeContext = new RunContext<VideoGenAgentContext>({
       input: this.state.input,
       stage: "create_plan",

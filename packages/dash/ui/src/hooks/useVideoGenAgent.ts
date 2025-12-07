@@ -147,5 +147,8 @@ export function useVideoGenAgent({
     serverState,
     // rpc wrappers around sendEvent for operations
     // ...
+    resetState: () => {
+      sendEvent("reset_state", {});
+    },
   };
 }

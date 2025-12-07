@@ -136,6 +136,12 @@ export function omitUndefined<T extends Record<string, unknown>>(obj: T) {
   ) as T;
 }
 
+export function omitNull<T extends Record<string, unknown>>(obj: T) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, value]) => value != null),
+  ) as T;
+}
+
 // queue
 export async function queue<T, R>(
   concurrency: number,

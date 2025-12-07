@@ -144,6 +144,7 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     - e.g. for certain stage, new tools will be enabled for specific tasks.
     - stage transition: image -> video. 
     - do NOT complete until you have a final deliverable. do NOT set done=true until a final output is ready!
+    - AVOID infinite loops. after you set the context, next run should be executing it against it.
     </__internal__>
     `;
 }
