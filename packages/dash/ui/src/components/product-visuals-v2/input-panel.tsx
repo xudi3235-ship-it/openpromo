@@ -106,7 +106,7 @@ export function InputPanel({
     <div className="flex h-full min-w-0 flex-col">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 pb-4">
-        <h3 className="text-sm font-medium">Generation Settings</h3>
+        <h3 className="text-sm font-medium"> Settings</h3>
         <div className="flex items-center gap-2">
           <StatusPill status={status} />
           <ModeToggle mode={mode} onChange={onModeChange} />

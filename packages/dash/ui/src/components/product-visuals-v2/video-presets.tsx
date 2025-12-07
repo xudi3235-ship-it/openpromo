@@ -52,7 +52,7 @@ export function VideoPresets({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between">
         <h4 className="text-xs font-medium">Video Presets</h4>
         {selectedPreset && (
           <div className="flex items-center gap-1 text-xs text-primary font-medium">
@@ -61,6 +61,9 @@ export function VideoPresets({
           </div>
         )}
       </div>
+      <p className="text-xs text-muted-foreground mb-1">
+        Ready-made formats for viral ads and content
+      </p>
 
       {/* 2x4 Grid */}
       <div className="grid grid-cols-4 gap-2">

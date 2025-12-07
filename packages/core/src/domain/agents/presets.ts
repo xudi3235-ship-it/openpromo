@@ -68,7 +68,8 @@ Technical:
         name: "Us vs. Them Comparison",
         description:
           "Side-by-side comparison that visually proves why your product is superior to generic competitors. Uses 'Green Check' vs 'Red X' psychology. Highly effective for switching customers.",
-        thumbnailUrl: "",
+        thumbnailUrl:
+          "https://i.pinimg.com/1200x/59/70/0f/59700fb850b0dae19d1842bd75a9142d.jpg",
         prompt: `Create a split-screen "Us vs. Them" comparison video (15s).
 Visual Style:
 - Split screen: Left side = "Other Brands/Generic Solutions" (Grey/Dull), Right side = "Our Brand" (Bright/Vibrant).
@@ -90,7 +91,8 @@ Technical:
         name: "Expert Mythbuster",
         description:
           "Positions your brand as the authority by debunking a common industry myth. Builds trust and sells by educating. Great for services, supplements, and tech.",
-        thumbnailUrl: "",
+        thumbnailUrl:
+          "https://i.pinimg.com/1200x/c6/15/4f/c6154f088cd0a7fc376049bfc01fec9c.jpg",
         prompt: `Create an "Expert Mythbuster" style video (30-45s).
 Visual Style:
 - Subject (Expert/Founder) talking directly to camera. Professional but accessible.
@@ -112,7 +114,8 @@ Technical:
         name: "Founder's Story",
         description:
           "Emotional storytelling connecting the founder's personal journey to the product. 'Why I started this'. Builds deep brand loyalty and supports small business narrative.",
-        thumbnailUrl: "",
+        thumbnailUrl:
+          "https://i.pinimg.com/736x/8e/60/d6/8e60d6b4a87082ea35386eb78a52853e.jpg",
         prompt: `Create a "Founder's Story" video (30-60s).
 Visual Style:
 - Montage of clips: Early days (humble beginnings), sketches/prototypes, the "aha" moment, and happy customers.
@@ -134,7 +137,8 @@ Technical:
         name: "Flash Sale / Urgency",
         description:
           "High-energy, text-heavy video designed to drive immediate clicks for a sale or limited offer. Uses scarcity and urgency triggers. Best for clearing inventory or holiday sales.",
-        thumbnailUrl: "",
+        thumbnailUrl:
+          "https://i.pinimg.com/736x/79/74/40/797440959e51cc604693c0cc41f7f568.jpg",
         prompt: `Create a high-urgency "Flash Sale" video (10-15s).
 Visual Style:
 - Fast cuts of the product showing its best angles and features.
