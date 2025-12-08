@@ -72,7 +72,7 @@ func (containerServiceServer) RunFfmpeg(ctx context.Context, req *connect.Reques
 	}
 
 	key := filepath.Join("ffmpeg", buildR2Key(result.filename))
-	uploadRes, err := uploader.uploadFile(ctx, result.outputPath, key, result.contentType, TTL1Hour)
+	uploadRes, err := uploader.uploadFile(ctx, result.outputPath, key, result.contentType, TTL1Week)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 upload failed: %w", err))
 	}
