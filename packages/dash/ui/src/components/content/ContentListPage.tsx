@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useContentListQuery } from "@/queries/content-orpc";
+import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import { BatchActionsToolbar } from "./batch-actions-toolbar";
 import { columns } from "./columns";
 import { ContentErrorState } from "./content-error-state";
@@ -95,15 +96,26 @@ export function ContentListPage() {
 
   const navigate = useNavigate();
   const { workspace } = useWorkspace();
+  const openDialog = useDialogComposerStore((state) => state.openDialog);
 
   const handleRowClick = useCallback(
     (entity: MergedContentEntity) => {
-      if (entity.type !== "content" || !workspace) return;
-      navigate({
-        to: `/workspaces/${workspace.slug}/content/${entity.entity.id}`,
-      });
+      if (!workspace) return;
+
+      // Content group: open edit dialog
+      if (entity.type === "group") {
+        openDialog(entity.entity.id);
+        return;
+      }
+
+      // Content: open detail view
+      if (entity.type === "content") {
+        navigate({
+          to: `/workspaces/${workspace.slug}/content/${entity.entity.id}`,
+        });
+      }
     },
-    [navigate, workspace],
+    [navigate, workspace, openDialog],
   );
 
   const handleRetry = () => {
