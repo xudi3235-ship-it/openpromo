@@ -1,5 +1,14 @@
 # 12/4/2025, mvp launch progress tracking
 OpenPromo, Inc
+
+## Instructions
+
+You are senior staff software engineer/solutions architect. You help build product,infra, features e2e.
+
+use this doc for source of truth of all the todos/work planned. once you are assigned one, create a working doc in `./current_task` with toe format of <app_area_feature>, e.g. `dash_composer_some_cool.md`. or `www_landing_work.md` to track.
+
+No emoji in the tracker doc, just pure, ascii char in markdown format. it should be a [date] [...updates,logs,changes] in the main entry; header includes the metadata, e.g. high level description, task detail, milestones, etc. to help multiple engineer/agents to collaborate and other resoruces neede. e.g. the ascii diagram of the design sketch (if any), or infra components tech design diagrams, etc. OR skills/relevant docs that's needed for that task to help quickly ramp up the context.
+
 <!-- ------------------------------------------------ -->
 <!-- section: north star. top line goal. if features are not marked/prefixed as todo/planned/wip, it's complete.
 
@@ -39,8 +48,10 @@ core content publishing
 
 
 *Missing
-- one click to generate thumbnail for videos. this is really critical
-- music selection..? not sure if this has enough prioroty
+- [p0] e2e test publishing for all cotnent formats, diff attachemnts source handling, etc.
+- [p1]one click to generate thumbnail for videos. this is really critical
+- [p2]music selection..? not sure if this has enough prioroty, probably NOT
+- [p2] 
 
 ### Content Management
 content infra, providesr crud on the source platforms, backfills, fetches metrics/insights.
@@ -49,10 +60,10 @@ content infra, providesr crud on the source platforms, backfills, fetches metric
 - content planner, content table view, with common actions like reschedule, DnD, edit draft, etc.
 
 *Missing
-- audit the current state for backfill. for backfilled one, check their lifecycle,s what actions can be taken, etc.
-- a detail view when click on specific published posts
+- [p0] audit the current state for backfill. for backfilled one, check their lifecycle,s what actions can be taken, etc.
+- [p0] a detail view when click on specific published posts
 - table view's metrics needs to be set up and refreshed nightly.
-- planner's week view might need some re-work, mayeb the vertical timeline we need to slice it to X min of interval, so that scheduling for specific timeblock is easier, e.g. 20min interval? but need to consider how to render when multiple posts collide.
+- [p1] planner's week view might need some re-work, mayeb the vertical timeline we need to slice it to X min of interval, so that scheduling for specific timeblock is easier, e.g. 20min interval? but need to consider how to render when multiple posts collide.
 
 ### Image-genAI, video-genAI
 working product visuals page, powered by DO, for image/video gen w/ product image inputs.
@@ -62,16 +73,18 @@ working product visuals page, powered by DO, for image/video gen w/ product imag
 - similarly, for video gen. powered by veo3.1 and sora2 storyboard.
 
 *Missing
-- add presets in the ui & DO. is it the same as style? maybe not, i want presets to be even more high level, abstracted, higher quality handpicked one that can reduce the uncercaintiy in output.
-- tune the prompt to address the slow dialogue issue for specific UGC video types.
-- we have to double down in this cloning path, it has to be stunning, by finding the best ads, etiher from visuals, creative ideas, etc. reverse-eng the top-performing ads, breakdown the visuals, structure, framework, and apply the treatment to user's brand/product context.
+- [p0] add presets in the ui & DO. is it the same as style? maybe not, i want presets to be even more high level, abstracted, higher quality handpicked one that can reduce the uncercaintiy in output.
+- [p1] we have to double down in this cloning path, it has to be stunning, by finding the best ads, etiher from visuals, creative ideas, etc. reverse-eng the top-performing ads, breakdown the visuals, structure, framework, and apply the treatment to user's brand/product context.
+- [p2] check ltx-2 model for long vid generation?
+- [p0] e2e test from ai-gen to composer-> final publish flow.
+
 
 ### Inbox -> DM + Comments
 support basic functionaltiy for engaging with inbox related, including btoh DMs as well as comments features.
 
 *Missing
-- audit the current state for the feature parity across the plats.
-- WIP, pending integrations with tiktok business messaging api.
+- [p0] audit the current state for the feature parity across the plats.
+- [p1] WIP, pending integrations with tiktok business messaging api.
 
 ### Insights
 metrics/insights/growth related, shows performance and how much value OP added.
@@ -80,11 +93,14 @@ metrics/insights/growth related, shows performance and how much value OP added.
 ### Workspace features
 basic workspace CRUD, team mgmt features. mostly done.
 
+*Missing
+- [p1] workspace left nav, profile dropdown rework. remove the useless stuff. navigate to proper billings page *once payments infra is done.
+
 ### payments infra
 TBD, not sure to go with stripe or polar.sh. latter is MoR, but needs 4% cut.
 
 *Missing
-- not started at all. need to figure out a pricing first compared to other products and our pmf.
+- [p0] not started at all. need to figure out a pricing first compared to other products and our pmf.
 
 ### notification/emails
 TBD, gonna use resend for marketing emails.
@@ -93,7 +109,10 @@ TBD, gonna use resend for marketing emails.
 for new users onboarding flow and ramp up, not implemented at all.
 
 *Missing
-- when a new workspace is created, go through the onboarding flow
+- [p0] when a new workspace is created, go through the onboarding flow
+
+### dash, workspace home
+might need to rethink what features to show.
 
 ### www site
 landing site, key marketing, will do this after features are ready.

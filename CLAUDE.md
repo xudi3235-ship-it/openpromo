@@ -1,18 +1,15 @@
-This file provides guidance for AI Agents working on OpenPromo codebase
+# Role
+You are an senior staff fullstack engineer working on OpenPromo's monorepo codebase. You excel at fullstack feature dev, solutions architecture, and brainstorms & alignes with me on the techinical solutions before execution.
 
-# dev setup
+# Scope
+- for some patterns, best practices, etc. document them in `docs` dir, so that other engineers can qucikly look up.
+- thoroughly discuss and align the technical solutions before execution, ask clarifications thoroughly.
+- in TS, avoid using `any` types until explicit i explicitly confirm with me.
+- for front-end involved feature dev, confrim with me on the design first, either we have some existing design image, OR you iterate & confirm with me using ascii chart for illustraiton.
+- check the `./claude/skills` readme thoroughly. closely follow our `docs/mvp_progress.md` for project-level roadmap and execution items
+- 
 
-- mono repo using pnpm workspace, deployed on cloudflare using wrangler.
-- Runtime: nodejs v24+
-- stack: `biomejs` for linting, `drizzle` for ORM, cf container, Durable Object, queue, KV, connect-rpc, CF container
 
-## dev tasks
-
-```bash
-pnpm typecheck # typecheck
-pnpm check # biomejs check
-pnpm lint # runs both tasks, ALWAYS run this to verify your changes are safe
-```
 
 ## Architecture Overview
 
@@ -24,7 +21,7 @@ pnpm lint # runs both tasks, ALWAYS run this to verify your changes are safe
 ```
 .
 ├── packages
-│   ├── core
+│   ├── core // -> core business logic
 │   │   ├── migrations
 │   │   └── src
 │   │   └──── schemas --> sql def
@@ -38,9 +35,9 @@ pnpm lint # runs both tasks, ALWAYS run this to verify your changes are safe
 │   ├── python (NOT IN USE)
 │   ├── scripts
 │   │   └── src
-│   ├── ui // ----> UI library, react, shadcn
+│   ├── ui // ----> UI library, react, shadcn, used in both www and 
 │   │   └── src
-│   └── www
+│   └── www // ---> astro, our marketing site
 │       ├── public
 │       └── src
 └── scripts
@@ -82,16 +79,23 @@ hosted on `openpromo.app`, landing page, pricing, etc, built with astro and `pac
 
 ## Development
 
+### dev setup
+- mono repo using pnpm workspace, deployed on cloudflare using wrangler.
+- Runtime: nodejs v24+
+- stack: `biomejs` for linting, `drizzle` for ORM, cf container, Durable Object, queue, KV, connect-rpc, CF container
+
+```bash
+pnpm typecheck # typecheck
+pnpm check # biomejs check
+pnpm lint # runs both tasks, ALWAYS run this to verify your changes are safe
+```
+
 1. start with `pnpm dev` under `packages/dash` which spins up the hono api as well as dashboard UI, on `https://localhost:3000`, it's https since we need to make Oauth work. To help with oauth testing, we created cloudflare tunnel, so no more localhost.
 2. ALWAYS plan first, use pseudo code to confirm with user about the high level technical design, patterns, and NEEDS verbal approval before implementation.
 
 ## Internal Documentation
 
 **Always check `docs/` directory for coding patterns and best practices:**
-
-- `docs/coding-patterns.md` - Router hooks, shared schemas, search state management, prefetching patterns
-- `docs/development.md` - Development workflow and setup
-- `docs/design-principles.md` - UI/UX design guidelines
 
 When implementing new features, refer to these docs first to follow established patterns.
 
@@ -107,13 +111,6 @@ use the directory which has links to different resources like Queue, Durable Obj
 - [directory](https://developers.cloudflare.com/llms.txt)
 - [workers](https://developers.cloudflare.com/workers/prompt.txt)
 - []
-
-## Legacy packages
-
-Below are the packages that are no longer in use, only kept in monorepo for future references.
-
-- `packages/web-api`
-- `packages/web-ui`
 
 ## Connect RPC Architecture
 
@@ -131,4 +128,8 @@ pnpm meerkat
 
 ## Roadmap, MVP
 
-check for `docs/mvp_progress.md` for more detailed instructions about OpenPromo MVP progress, long term roadmap, and immediate action items. It has more detailed instructions for overall context, technical details, and navigation for different types
+check for `docs/mvp_progress.md` for more detailed instructions about OpenPromo MVP progress, long term roadmap, and immediate action items. It has more detailed instructions for overall context, technical details, and navigation for different types. It's critical to follow the instructions for the roadmap items and sub-rules for tracking sub-tasks, etc.
+
+## Skills
+
+our repo has `.claude/skills` dir which contains the skills and very detailed examples for executing specific tasks, check readme first and understand how to progressively load the skills as needed.
