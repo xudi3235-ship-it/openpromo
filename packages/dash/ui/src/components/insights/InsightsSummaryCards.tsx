@@ -1,5 +1,6 @@
 import type { WorkspaceInsightSnapshotRecord } from "@shared/insights";
 import { formatDistanceToNow } from "date-fns";
+import { StatCard, StatCardGroup } from "@/components/common";
 import { MomentumCard } from "@/components/momentum/MomentumCard";
 
 type InsightsSummaryCardsProps = {
@@ -70,35 +71,18 @@ export function InsightsSummaryCards({
           </p>
         ) : null}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <StatCardGroup columns="auto">
         {stats.map((stat) => (
-          <div
+          <StatCard
             key={stat.label}
-            className="rounded-2xl border border-border/40 p-4 space-y-1"
-          >
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              {stat.label}
-            </p>
-            <p className="text-3xl font-semibold text-foreground">
-              {formatValue(stat.value, stat.suffix, stat.precision)}
-            </p>
-            <p className="text-xs text-muted-foreground">{stat.hint}</p>
-          </div>
+            label={stat.label}
+            value={stat.value}
+            description={stat.hint}
+            suffix={stat.suffix}
+            precision={stat.precision}
+          />
         ))}
-      </div>
+      </StatCardGroup>
     </MomentumCard>
   );
-}
-
-function formatValue(
-  value: number | undefined,
-  suffix?: string,
-  precision = 0,
-) {
-  if (value === undefined || value === null) return "—";
-  const formatted =
-    suffix === "%"
-      ? (value * 100).toFixed(precision)
-      : Number(value).toLocaleString();
-  return suffix ? `${formatted}${suffix}` : formatted;
 }

@@ -1,16 +1,8 @@
 import { Button } from "@openpromo/ui/components/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@openpromo/ui/components/dropdown-menu";
-import { Input } from "@openpromo/ui/components/input";
 import type { Table } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/shared/content-types";
 import {
   Calendar,
-  ChevronDown,
   Clock,
   Eye,
   FileText,
@@ -23,6 +15,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import { DataTableHeader } from "@/components/common";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 
 const columnIcons: Record<string, React.ReactNode> = {
@@ -76,43 +69,13 @@ export function ContentPageHeader({
       <ContentPageHeaderTitle />
 
       {/* Search and Columns Section */}
-      <div className="flex flex-wrap items-center gap-3 md:gap-4 py-2">
-        <Input
-          placeholder="Search content..."
-          value={searchValue}
-          onChange={(event) => onSearchChange(event.target.value)}
-          className="max-w-sm"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    <div className="flex items-center gap-2">
-                      {columnIcons[column.id]}
-                      <span>{column.id}</span>
-                    </div>
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      <DataTableHeader
+        table={table}
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search content..."
+        columnIcons={columnIcons}
+      />
     </>
   );
 }

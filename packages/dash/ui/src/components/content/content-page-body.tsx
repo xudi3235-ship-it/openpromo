@@ -9,9 +9,9 @@ import {
 import { flexRender, type Table as TableType } from "@tanstack/react-table";
 import type { MergedContentEntity } from "@worker/shared/content-types";
 import type { KeyboardEvent, MouseEvent } from "react";
+import { TableSkeleton } from "@/components/common";
 import { columns } from "./columns";
 import { ContentEmptyState } from "./content-empty-state";
-import { ContentTableSkeleton } from "./content-table-skeleton";
 
 interface ContentPageBodyProps {
   table: TableType<MergedContentEntity>;
@@ -25,7 +25,7 @@ export function ContentPageBody({
   onRowClick,
 }: ContentPageBodyProps) {
   if (isLoading) {
-    return <ContentTableSkeleton />;
+    return <TableSkeleton rows={6} columns={6} />;
   }
 
   return (

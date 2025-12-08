@@ -1,12 +1,3 @@
-import { Button } from "@openpromo/ui/components/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@openpromo/ui/components/select";
-import { DateRangePicker } from "@openpromo/ui/components/time/date-range-picker";
 import {
   type AllPlatforms,
   AllPlatforms as AllPlatformsEnum,
@@ -14,9 +5,10 @@ import {
   ContentPublishingStatus as ContentPublishingStatusEnum,
 } from "@shared/content";
 import type { LucideIcon } from "lucide-react";
-import { AlertCircle, CheckCircle2, CircleDashed, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, CircleDashed } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
+import { FilterBar, FilterDateRange, FilterSelect } from "@/components/common";
 
 export interface ContentFilters {
   publishingStatus?: ContentPublishingStatus;
@@ -88,18 +80,19 @@ export function ContentFilters({
     onFiltersChange({});
   };
 
-  const updatePublishingStatus = (status: string | undefined) => {
+  const updatePublishingStatus = (
+    status: ContentPublishingStatus | undefined,
+  ) => {
     onFiltersChange({
       ...filters,
-      publishingStatus:
-        status === "all" ? undefined : (status as ContentPublishingStatus),
+      publishingStatus: status,
     });
   };
 
-  const updatePlatform = (platform: string | undefined) => {
+  const updatePlatform = (platform: AllPlatforms | undefined) => {
     onFiltersChange({
       ...filters,
-      platform: platform === "all" ? undefined : (platform as AllPlatforms),
+      platform,
     });
   };
 
@@ -110,78 +103,50 @@ export function ContentFilters({
     });
   };
 
+  // Convert platform options to filter option format
+  const platformOptions = PLATFORM_OPTIONS.map(({ value, label, icon }) => ({
+    value,
+    label,
+    icon,
+  }));
+
+  // Convert status options to filter option format
+  const statusOptions = PUBLISHING_STATUS_OPTIONS.map(
+    ({ value, label, icon: Icon }) => ({
+      value,
+      label,
+      icon: <Icon className="h-4 w-4" />,
+    }),
+  );
+
   return (
-    <div className="flex items-center gap-2 mb-2">
-      {/* Publishing Status Filter */}
-      <div className="flex items-center gap-1.5">
-        <Select
-          value={filters.publishingStatus || "all"}
-          onValueChange={updatePublishingStatus}
-        >
-          <SelectTrigger className="w-36 h-9 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {PUBLISHING_STATUS_OPTIONS.map(({ value, label, icon: Icon }) => (
-              <SelectItem key={value} value={value}>
-                <span className="flex items-center gap-2">
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <FilterBar
+      hasActiveFilters={hasActiveFilters}
+      onClearFilters={clearFilters}
+    >
+      <FilterSelect
+        value={filters.publishingStatus}
+        onValueChange={updatePublishingStatus}
+        options={statusOptions}
+        placeholder="Status"
+        allLabel="All Statuses"
+      />
 
-      {/* Platform Filter */}
-      <div className="flex items-center gap-1.5">
-        <Select
-          value={filters.platform || "all"}
-          onValueChange={updatePlatform}
-        >
-          <SelectTrigger className="w-36 h-9 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Platforms</SelectItem>
-            {PLATFORM_OPTIONS.map(({ value, label, icon }) => (
-              <SelectItem key={value} value={value}>
-                <span className="flex items-center gap-2">
-                  {icon}
-                  {label}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <FilterSelect
+        value={filters.platform}
+        onValueChange={updatePlatform}
+        options={platformOptions}
+        placeholder="Platform"
+        allLabel="All Platforms"
+      />
 
-      {/* Date Range Filter */}
       {showDateFilter && (
-        <div className="flex items-center gap-1.5">
-          <DateRangePicker
-            date={filters.dateRange}
-            onDateChange={updateDateRange}
-            placeholder="Select date range..."
-            className="w-64"
-          />
-        </div>
+        <FilterDateRange
+          value={filters.dateRange}
+          onValueChange={updateDateRange}
+          placeholder="Select date range..."
+        />
       )}
-
-      {/* Clear Filters */}
-      {hasActiveFilters && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={clearFilters}
-          className="text-muted-foreground hover:text-foreground h-9 px-3"
-        >
-          <X className="h-4 w-4 mr-1" />
-          Clear
-        </Button>
-      )}
-    </div>
+    </FilterBar>
   );
 }

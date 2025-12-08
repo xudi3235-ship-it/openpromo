@@ -5,7 +5,6 @@ import { useProductListQuery } from "@/queries/product";
 import { AddProductCard } from "../add-product-card";
 import { ProductCard } from "../product-card";
 import { ProductsEmptyState } from "../products-empty-state";
-import { ProductsLoadingState } from "../products-loading-state";
 
 interface ProductGridViewProps {
   searchQuery: string;
@@ -43,7 +42,17 @@ export function ProductGridView({
   if (isPending) {
     return (
       <div className="flex flex-1">
-        <ProductsLoadingState />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: loading skeleton only
+              key={i}
+              className="aspect-square overflow-hidden rounded-lg bg-muted/30"
+            >
+              <div className="h-full w-full bg-gradient-to-br from-muted/40 via-muted/20 to-muted/10 animate-pulse" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

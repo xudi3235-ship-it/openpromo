@@ -11,12 +11,12 @@ import {
 import type { MergedContentEntity } from "@worker/shared/content-types";
 import { useCallback, useEffect, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
+import { ErrorState } from "@/components/common";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useContentListQuery } from "@/queries/content-orpc";
 import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 import { BatchActionsToolbar } from "./batch-actions-toolbar";
 import { columns } from "./columns";
-import { ContentErrorState } from "./content-error-state";
 import type { ContentFilters as ContentFiltersType } from "./content-filters";
 import { ContentPageBody } from "./content-page-body";
 import { ContentPageFooter } from "./content-page-footer";
@@ -131,7 +131,12 @@ export function ContentListPage() {
         filters={filters}
         onFiltersChange={setFilters}
       >
-        <ContentErrorState error={error as Error} onRetry={handleRetry} />
+        <ErrorState
+          error={error as Error}
+          onRetry={handleRetry}
+          title="Failed to load content"
+          message="An error occurred while fetching your content. Please try again."
+        />
       </ContentPageLayout>
     );
   }
