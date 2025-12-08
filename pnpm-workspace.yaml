@@ -10,8 +10,8 @@ catalog:
   '@types/react': 19.2.7
   '@types/react-dom': 19.2.3
   '@workos-inc/node': ^7.77.0
-  agents: ^0.2.29
-  ai: ^5.0.106
+  agents: ^0.2.30
+  ai: ^5.0.108
   cloudflare: ^5.2.0
   drizzle-orm: ^0.45.0
   hono: ^4.10.7
@@ -19,7 +19,7 @@ catalog:
   lucide-react: ^0.555.0
   react: 19.2.1
   react-dom: 19.2.1
-  vite: ^7.2.6
+  vite: ^7.2.7
   wrangler: 4.53.0
   zod: 4.1.13
 
