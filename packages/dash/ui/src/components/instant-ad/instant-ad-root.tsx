@@ -286,6 +286,7 @@ export function InstantAdRoot({
   const inputPanelProps = useMemo(
     () => ({
       status: serverState.status,
+      isConnected,
       products: productSelectItems,
       isLoadingProducts,
       styles: styleGalleryItems,
@@ -296,12 +297,12 @@ export function InstantAdRoot({
     }),
     [
       serverState.status,
+      isConnected,
       productSelectItems,
       isLoadingProducts,
       styleGalleryItems,
       isLoadingStyles,
       handleGenerate,
-      isConnected,
       error,
     ],
   );

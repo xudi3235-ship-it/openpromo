@@ -18,6 +18,7 @@ import { usePresetsQuery } from "@/queries/product-visuals";
 export interface InputPanelProps {
   // Status
   status: VideoGenRealtime.RunStatus;
+  isConnected: boolean;
 
   // Product
   products: ProductSelectItem[];
@@ -35,6 +36,7 @@ export interface InputPanelProps {
 
 export function InputPanel({
   status,
+  isConnected,
   products,
   isLoadingProducts,
   styles,
@@ -73,13 +75,15 @@ export function InputPanel({
   const { data: presetsData, isPending: isLoadingPresets } = usePresetsQuery();
   const presets = presetsData?.presets ?? [];
 
+  const statusForBadge = isConnected ? status : "connecting";
+
   return (
     <div className="flex h-full min-w-0 flex-col">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 pb-4">
         <h3 className="text-sm font-medium"> Settings</h3>
         <div className="flex items-center gap-2">
-          <StatusPill status={status} />
+          <StatusPill status={statusForBadge} />
           <ModeToggle mode={mode} onChange={setMode} />
         </div>
       </div>
