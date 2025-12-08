@@ -4,18 +4,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAgentChat } from "agents/ai-react";
 import { useAgent } from "agents/react";
 import { useCallback, useState } from "react";
+import { orpc } from "@/lib/orpc-client";
 import { useActor } from "./useActor";
 import { useWorkspace } from "./useWorkspace";
 
-type UseVideoGenAgentProps = {
+type Props = {
   onEvent?: VideoGenRealtime.Handlers;
-  _onMessage?: (event: MessageEvent) => Promise<void>;
 };
 
-export function useVideoGenAgent({
-  onEvent,
-  _onMessage,
-}: UseVideoGenAgentProps) {
+export function useVideoGenAgent({ onEvent }: Props) {
   const { workspace } = useWorkspace();
   const actorID = useActor().id;
   const queryClient = useQueryClient();
@@ -87,17 +84,18 @@ export function useVideoGenAgent({
           lastUpdated: new Date().toISOString(),
         }));
 
-        // Invalidate queries for current run
         if (serverState.runId) {
           queryClient.invalidateQueries({
-            queryKey: ["orpc", "agentRuns", "get", { id: serverState.runId }],
+            queryKey: orpc.agentRuns.get.key({
+              input: { id: serverState.runId, workspaceSlug: workspace.slug },
+            }),
           });
         }
 
         await callUserHandler("video_generated", data);
       },
     }),
-    [onEvent, callUserHandler, queryClient, serverState.runId],
+    [onEvent, callUserHandler, queryClient, serverState.runId, workspace.slug],
   );
 
   const agent = useAgent<VideoGenRealtime.ServerAppState>({
@@ -113,7 +111,6 @@ export function useVideoGenAgent({
       setIsConnected(false);
     },
     onMessage: async (event) => {
-      _onMessage?.(event);
       console.log("[useVideoGenAgent] Received message:", event.data);
       await VideoGenRealtime.onEvent(event.data, handlers());
     },

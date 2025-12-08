@@ -49,7 +49,7 @@ const parseMultilineList = (value: string) =>
 export function AgentChatPanel({ userId }: { userId: string | undefined }) {
   const [chatInput, setChatInput] = useState("");
   const [inputForm, setInputForm] = useState<InputFormState>(defaultInputForm);
-  const [_msgs, setMsgs] = useState<unknown[]>([]);
+  const [_msgs] = useState<unknown[]>([]);
   const [selectedAgent, setSelectedAgent] =
     useState<VideoGenRealtime.AgentName>("video_gen_agent");
 
@@ -64,9 +64,6 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
       echo: (data) => {
         alert(`Echo received: ${data.message}`);
       },
-    },
-    _onMessage: async (evt) => {
-      setMsgs((prev) => [...prev, evt.data]);
     },
   });
   const lastSentRef = useRef<string | null>(null);
