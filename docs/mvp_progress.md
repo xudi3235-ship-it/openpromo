@@ -176,3 +176,11 @@ here are the longterm roadmap items. eventually we wanna build a solid platform 
 <!-- section: execution todos. for AI Agents, use this section to capture the TODOs, updates, etc.
  -->
 <!-- ------------------------------------------------ -->
+
+## Execution TODOs
+
+### [2025-12-08] UI Primitives Migration
+- Priority: P2 (not blocking MVP)
+- Status: Primitives scaffolded, ready for adoption
+- Details: `./current_tasks/dash_ui_primitives_migration.md`
+- Summary: Created 5 categories of app-specific UI primitives to reduce 30-40% duplication across 282 components

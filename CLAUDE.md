@@ -94,6 +94,98 @@ pnpm check # biomejs check
 pnpm lint # runs both tasks, ALWAYS run this to verify your changes are safe
 ```
 
+## Git Commit & PR Conventions
+
+Follow conventional commit format for clear, scannable history.
+
+### Commit Message Format
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Type** (required):
+- `feat` - new feature
+- `fix` - bug fix
+- `docs` - documentation changes
+- `refactor` - code refactoring (no behavior change)
+- `perf` - performance improvements
+- `test` - adding/updating tests
+- `chore` - maintenance tasks (deps, config, etc.)
+- `ci` - CI/CD changes
+
+**Scope** (optional): package or feature area
+- `dash`, `core`, `www`, `ui`, `shared`
+- `composer`, `content`, `inbox`, `insights`, etc.
+
+**Subject**: imperative, lowercase, no period, max 72 chars
+
+**Body** (optional): explain what and why, not how
+
+**Rules**:
+- NO emoji in commit messages or PR descriptions
+- Keep it minimal, effective, scannable
+- Use imperative mood: "add feature" not "added feature"
+- Reference issues/PRs when relevant
+
+### Examples
+
+Good:
+```
+feat(dash): add application-specific UI primitives
+
+Scaffold 5 categories of reusable UI primitives to reduce
+duplication across features (content, products, calendar).
+
+Includes ErrorState, Skeleton components, StatCard, DataTable
+composables, and Filter primitives.
+```
+
+```
+fix(core): handle null access tokens in oauth refresh flow
+```
+
+```
+docs: refactor MVP tracker to use index pattern
+```
+
+```
+chore(deps): bump cloudflare wrangler to v4.53.0
+```
+
+Bad:
+```
+✨ Add cool new feature! 🎉
+```
+
+```
+fixed stuff
+```
+
+```
+WIP
+```
+
+### Multi-line Commits
+
+For complex changes, use heredoc in git commands:
+```bash
+git commit -m "$(cat <<'EOF'
+feat(dash): add user authentication
+
+- Implement WorkOS SSO integration
+- Add session management with cookies
+- Create protected route middleware
+
+Related: #123
+EOF
+)"
+```
+
 ## Internal Documentation
 
 **Always check `docs/` directory for coding patterns and best practices:**
