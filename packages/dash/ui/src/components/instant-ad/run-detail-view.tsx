@@ -1,6 +1,7 @@
 import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
 import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
+import { orpc } from "@/lib/orpc-client";
 import {
   useAgentRunQuery,
   useDeleteAgentRunsMutation,
@@ -28,13 +30,14 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   const navigate = useNavigate();
   const deleteRunMutation = useDeleteAgentRunsMutation();
   const openComposer = useOpenComposer();
+  const queryClient = useQueryClient();
 
   // Fetch run data using the specific query
   const {
     data: run,
     isPending,
     error,
-    refetch,
+    // refetch,
   } = useAgentRunQuery({ id: runId });
 
   // Set up real-time updates for running runs
@@ -42,23 +45,39 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     onEvent: {
       // Update run data when we receive sync_state event
       sync_state: async (data) => {
-        if (data.state.runId === runId) {
-          // Refetch the run data to get the latest state
-          refetch();
+        if (data.state.runId !== runId) {
+          return;
         }
+        // Merge the latest data from sync_state into the cached query data
+        queryClient.setQueryData(
+          orpc.agentRuns.get.key({ input: { id: runId, workspaceSlug } }),
+          (oldData: typeof run) => {
+            if (!oldData) return oldData;
+
+            // Merge the server state with the existing run data
+            return {
+              ...oldData,
+              status: data.state.status,
+              output: data.state.output,
+              artifacts: data.state.artifacts,
+              agentName: data.state.agentName,
+              updatedAt: data.state.lastUpdated,
+            };
+          },
+        );
       },
-      status_update: async () => {
-        // Always refetch on status updates for this run
-        if (serverState.runId === runId) {
-          refetch();
-        }
-      },
-      video_generated: async () => {
-        // Always refetch when video generation is complete for this run
-        if (serverState.runId === runId) {
-          refetch();
-        }
-      },
+      // status_update: async () => {
+      //   // Refetch on status updates for this run
+      //   if (serverState.runId === runId) {
+      //     refetch();
+      //   }
+      // },
+      // video_generated: async () => {
+      //   // Refetch when video generation is complete for this run
+      //   if (serverState.runId === runId) {
+      //     refetch();
+      //   }
+      // },
     },
   });
 
