@@ -9,6 +9,7 @@ import { exec } from "node:child_process";
 import {
   type Shell,
   type ShellAction,
+  type ShellOutputResult,
   type ShellResult,
   shellTool,
 } from "@openai/agents";
@@ -27,6 +28,7 @@ const MAX_OUTPUT_LENGTH = 10000;
 /**
  * Shell executor implementation for video generation agent.
  * Executes commands with timeout support and output truncation.
+ * NOT in use yet, since worker env does not support child_process exec.
  */
 export class VideoGenShell implements Shell {
   private cwd: string;
@@ -37,7 +39,7 @@ export class VideoGenShell implements Shell {
 
   async run(action: ShellAction): Promise<ShellResult> {
     const outputs: ShellResult["output"] = [];
-    const timeoutMs = action.timeout_ms ?? 30000; // Default 30s timeout
+    const timeoutMs = action.timeoutMs ?? 30000; // Default 30s timeout
 
     for (const command of action.commands) {
       try {
@@ -47,10 +49,9 @@ export class VideoGenShell implements Shell {
         );
 
         outputs.push({
-          type: "shell_output",
-          command,
-          output: this.truncateOutput(stdout + (stderr ? `\n${stderr}` : "")),
-        });
+          stdout: this.truncateOutput(stdout),
+          stderr: this.truncateOutput(stderr),
+        } as ShellOutputResult);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
@@ -61,18 +62,23 @@ export class VideoGenShell implements Shell {
           errorMessage.includes("TIMEOUT")
         ) {
           outputs.push({
-            type: "shell_output",
-            command,
-            output: `Command timed out after ${timeoutMs}ms`,
+            outcome: {
+              type: "timeout",
+            },
+            stderr: `Error: Command timed out after ${timeoutMs} ms`,
+            stdout: "",
           });
           break; // Stop executing remaining commands on timeout
         }
 
         // Handle other execution errors
         outputs.push({
-          type: "shell_output",
-          command,
-          output: `Error: ${this.truncateOutput(errorMessage)}`,
+          outcome: {
+            type: "exit",
+            exitCode: 1,
+          },
+          stderr: `Error: ${this.truncateOutput(errorMessage)}`,
+          stdout: "",
         });
       }
     }

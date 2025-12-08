@@ -3,8 +3,7 @@ import { getGeminiClient } from "@core/providers/gemini";
 import { isStringUrl } from "@core/utils/common";
 import { type ContentListUnion, ThinkingLevel } from "@google/genai";
 import { tool } from "@openai/agents";
-import z from "zod/v3";
-import { zodToJsonSchema } from "zod-to-json-schema";
+import z from "zod";
 import { PRIMARY_GOAL } from "../constants";
 import type { VideoGenAgentContext } from "../context";
 import { downloadImagesToTmp, downloadVideosToTmp } from "../utils";
@@ -116,7 +115,7 @@ async function toolImpl({
     config: {
       systemInstruction: sysPrompt,
       responseMimeType: "application/json",
-      responseJsonSchema: zodToJsonSchema(specSchema),
+      responseJsonSchema: z.toJSONSchema(specSchema), // TODO: check to ensure this work with zod v4
       thinkingConfig: {
         thinkingLevel: ThinkingLevel.HIGH,
       },

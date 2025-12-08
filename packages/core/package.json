@@ -58,8 +58,7 @@
     "stripe": "^20.0.0",
     "ulid": "^3.0.2",
     "vite": "catalog:",
-    "zod": "catalog:",
-    "zod-to-json-schema": "^3.25.0"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.61.0",

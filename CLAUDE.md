@@ -134,3 +134,6 @@ check for `docs/mvp_progress.md` for more detailed instructions about OpenPromo 
 ## Skills
 
 our repo has `.claude/skills` dir which contains the skills and very detailed examples for executing specific tasks, check readme first and understand how to progressively load the skills as needed.
+
+## manual patches, for developers
+1. `node_modules/.pnpm/@openai+agents-core@0.3.4_@cfworker+json-schema@4.1.1_ws@8.18.3_zod@4.1.13/node_modules/@openai/agents-core/dist/types/aliases.d.ts` needds patch to `zod/v3` in order to get type inference

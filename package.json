@@ -5,7 +5,7 @@
   "scripts": {
     "check": "biome check --write --diagnostic-level=warn",
     "sync_secrets": "bash scripts/sync_secrets.sh",
-    "postinstall": "lefthook install",
+    "postinstall": "lefthook install && patch-package",
     "typecheck": "pnpm run --parallel -r typecheck",
     "lint": "pnpm check && pnpm typecheck",
     "meerkat": "bash scripts/meerkat.sh"
@@ -18,7 +18,8 @@
     "lefthook": "^2.0.8",
     "orval": "^7.17.0",
     "typescript": "^5.9.3",
-    "wrangler": "catalog:"
+    "wrangler": "catalog:",
+    "patch-package": "8.0.1"
   },
   "engines": {
     "node": ">=22"
