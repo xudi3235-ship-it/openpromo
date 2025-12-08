@@ -17,6 +17,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
+// Common TTL presets for R2 uploads
+const (
+	TTL1Hour   = 1 * time.Hour
+	TTL24Hours = 24 * time.Hour
+	TTL1Week   = 7 * 24 * time.Hour
+	TTL1Month  = 30 * 24 * time.Hour
+)
+
 type r2Uploader struct {
 	client   *s3.Client
 	presign  *s3.PresignClient
@@ -84,7 +92,9 @@ type uploadResult struct {
 	ContentLen int64
 }
 
-func (u *r2Uploader) uploadFile(ctx context.Context, filePath, key, contentType string) (*uploadResult, error) {
+// uploadFile uploads a file to R2 and returns a presigned URL with the specified TTL.
+// Common TTL presets: TTL1Hour, TTL24Hours, TTL1Week, TTL1Month
+func (u *r2Uploader) uploadFile(ctx context.Context, filePath, key, contentType string, ttl time.Duration) (*uploadResult, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("open file: %w", err)
@@ -103,11 +113,11 @@ func (u *r2Uploader) uploadFile(ctx context.Context, filePath, key, contentType 
 		return nil, fmt.Errorf("put object: %w", err)
 	}
 
-	// Presign a GET URL for 1 hour.
+	// Presign a GET URL with configurable TTL.
 	presigned, err := u.presign.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(u.bucket),
 		Key:    aws.String(key),
-	}, s3.WithPresignExpires(1*time.Hour))
+	}, s3.WithPresignExpires(ttl))
 	if err != nil {
 		return nil, fmt.Errorf("presign: %w", err)
 	}

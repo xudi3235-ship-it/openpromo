@@ -7,9 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"connectrpc.com/connect"
 	containersv1 "main/gen/containers/v1"
 	containersv1connect "main/gen/containers/v1/containersv1connect"
+
+	"connectrpc.com/connect"
 )
 
 type containerServiceServer struct{}
@@ -41,7 +42,7 @@ func (containerServiceServer) ResizeVideo(ctx context.Context, req *connect.Requ
 	}
 
 	key := buildR2Key(result.filename)
-	uploadRes, err := uploader.uploadFile(ctx, result.outputPath, key, result.contentType)
+	uploadRes, err := uploader.uploadFile(ctx, result.outputPath, key, result.contentType, TTL1Hour)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 upload failed: %w", err))
 	}
@@ -71,7 +72,7 @@ func (containerServiceServer) RunFfmpeg(ctx context.Context, req *connect.Reques
 	}
 
 	key := filepath.Join("ffmpeg", buildR2Key(result.filename))
-	uploadRes, err := uploader.uploadFile(ctx, result.outputPath, key, result.contentType)
+	uploadRes, err := uploader.uploadFile(ctx, result.outputPath, key, result.contentType, TTL1Hour)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 upload failed: %w", err))
 	}
@@ -112,7 +113,7 @@ func (containerServiceServer) TranscodeVideo(ctx context.Context, req *connect.R
 	}
 
 	key := buildR2Key(result.filename)
-	uploadRes, err := uploader.uploadFile(ctx, result.outputPath, key, result.contentType)
+	uploadRes, err := uploader.uploadFile(ctx, result.outputPath, key, result.contentType, TTL1Hour)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 upload failed: %w", err))
 	}
