@@ -41,10 +41,10 @@ export const useProductVisualsBatchDeleteMutation = (
   });
 };
 
-export const useVideoPresetsQuery = () => {
+export const usePresetsQuery = () => {
   const { workspace } = useWorkspace();
   return useQuery(
-    orpc.productVisuals.videoPresets.queryOptions({
+    orpc.productVisuals.presets.queryOptions({
       input: {
         workspaceSlug: workspace.slug,
       },

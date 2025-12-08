@@ -36,7 +36,8 @@ export namespace Presets {
     }
 
     // ---------------------------------
-    // internal, pre-defined presets
+    // internal, pre-defined presets, for now hardcoded, will use Workers AI + Vectorize,
+    // to dynamically load and search.
     // ---------------------------------
     private static internalPresets: Preset[] = [
       {

@@ -42,9 +42,9 @@ export const batchDeleteProductVisuals = orpcBuilder
   });
 
 /**
- * Get all available video presets for product visuals
+ * Get all available presets for product visuals
  */
-export const getVideoPresets = orpcBuilder
+export const getPresets = orpcBuilder
   .input(createWorkspaceInputSchema(z.object({})))
   .use(withWorkspaceRole, workspaceRoleMappers.editor)
   .handler(async () => {
@@ -58,7 +58,7 @@ export const getVideoPresets = orpcBuilder
 
 export const productVisualsRouter = {
   batchDelete: batchDeleteProductVisuals,
-  videoPresets: getVideoPresets,
+  presets: getPresets,
 };
 
 export type ProductVisualsRouterOutputs = InferRouterOutputs<

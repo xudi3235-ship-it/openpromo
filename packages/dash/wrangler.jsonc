@@ -114,6 +114,11 @@
       "bucket_name": "openpromo-bucket",
       "binding": "Bucket",
       "remote": true
+    },
+    {
+      "bucket_name": "public",
+      "binding": "PublicBucket",
+      "remote": true
     }
   ],
   "analytics_engine_datasets": [
@@ -217,16 +222,23 @@
         }
       ],
       "containers": [
-        // {
-        //   "max_instances": 2,
-        //   "class_name": "ContainerBackend",
-        //   "image": "../core/src/containers/Dockerfile"
-        // }
+        {
+          "max_instances": 2,
+          "class_name": "ContainerBackend",
+          "image": "../core/src/containers/Dockerfile",
+          "image_build_context": "../core/src/containers",
+          "instance_type": "basic"
+        }
       ],
       "r2_buckets": [
         {
           "bucket_name": "openpromo-bucket",
           "binding": "Bucket",
+          "remote": true
+        },
+        {
+          "bucket_name": "public",
+          "binding": "PublicBucket",
           "remote": true
         }
       ],
@@ -308,6 +320,11 @@
         {
           "bucket_name": "openpromo-bucket",
           "binding": "Bucket",
+          "remote": true
+        },
+        {
+          "bucket_name": "public",
+          "binding": "PublicBucket",
           "remote": true
         }
       ],
@@ -394,7 +411,13 @@
         ]
       },
       "containers": [
-        // TODO: we can do this later
+        {
+          "max_instances": 2,
+          "class_name": "ContainerBackend",
+          "image": "../core/src/containers/Dockerfile",
+          "image_build_context": "../core/src/containers",
+          "instance_type": "basic"
+        }
       ],
       "kv_namespaces": [
         {

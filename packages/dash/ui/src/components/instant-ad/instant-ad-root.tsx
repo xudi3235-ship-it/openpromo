@@ -16,7 +16,7 @@ import {
   useDeleteAgentRunsMutation,
 } from "@/queries/agent-runs";
 import { useProductListQuery } from "@/queries/product";
-import { useVideoPresetsQuery } from "@/queries/product-visuals";
+import { usePresetsQuery } from "@/queries/product-visuals";
 import { ConfirmDialog } from "../confirm-dialog";
 import { InputPanel } from "./input-panel";
 import { ResultCard } from "./result-card";
@@ -72,8 +72,7 @@ export function InstantAdRoot({
   const { data: productsData, isPending: isLoadingProducts } =
     useProductListQuery({ pageSize: 50 });
 
-  const { data: videoPresetsData, isPending: isLoadingVideoPresets } =
-    useVideoPresetsQuery();
+  const { data: presetsData, isPending: isLoadingPresets } = usePresetsQuery();
 
   const {
     data: feedData,
@@ -290,8 +289,8 @@ export function InstantAdRoot({
   const inputPanelProps = useMemo(
     () => ({
       status: serverState.status,
-      videoPresets: videoPresetsData?.presets,
-      isLoadingVideoPresets,
+      presets: presetsData?.presets,
+      isLoadingPresets,
       products: productSelectItems,
       isLoadingProducts,
       styles: styleGalleryItems,
@@ -302,8 +301,8 @@ export function InstantAdRoot({
     }),
     [
       serverState.status,
-      videoPresetsData,
-      isLoadingVideoPresets,
+      presetsData,
+      isLoadingPresets,
       productSelectItems,
       isLoadingProducts,
       styleGalleryItems,

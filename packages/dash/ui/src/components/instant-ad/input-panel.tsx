@@ -13,7 +13,7 @@ import { ModeToggle } from "@/components/instant-ad/mode-toggle";
 import { StatusPill } from "@/components/instant-ad/status-pill";
 import {
   type Preset,
-  VideoPresets,
+  PresetPicker,
 } from "@/components/instant-ad/video-presets";
 import { useInstantAdStore } from "@/features/instant-ad/instant-ad-store";
 
@@ -21,9 +21,9 @@ export interface InputPanelProps {
   // Status
   status: VideoGenRealtime.RunStatus;
 
-  // Video Presets (only for video mode)
-  videoPresets?: Preset[];
-  isLoadingVideoPresets?: boolean;
+  // Presets
+  presets?: Preset[];
+  isLoadingPresets?: boolean;
 
   // Product
   products: ProductSelectItem[];
@@ -41,8 +41,8 @@ export interface InputPanelProps {
 
 export function InputPanel({
   status,
-  videoPresets,
-  isLoadingVideoPresets,
+  presets,
+  isLoadingPresets,
   products,
   isLoadingProducts,
   styles,
@@ -91,12 +91,12 @@ export function InputPanel({
       {/* Main Content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="space-y-8">
-          {/* Video Presets */}
-          {mode === "video" && videoPresets && (
+          {/* Presets */}
+          {presets && (
             <div className="mx-1">
-              <VideoPresets
-                presets={videoPresets}
-                isLoading={isLoadingVideoPresets || false}
+              <PresetPicker
+                presets={presets}
+                isLoading={isLoadingPresets || false}
                 selectedPresetId={selectedVideoPresetId}
                 onPresetSelect={(preset) => {
                   if (selectedVideoPresetId === preset.id) {

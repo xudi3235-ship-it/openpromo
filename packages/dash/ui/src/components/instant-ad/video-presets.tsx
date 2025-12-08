@@ -8,8 +8,7 @@ import { PresetPreviewModal } from "./preset-preview-modal";
 type ProductVisualsRouterOutputs = InferRouterOutputs<
   typeof productVisualsRouter
 >;
-export type Preset =
-  ProductVisualsRouterOutputs["videoPresets"]["presets"][number];
+export type Preset = ProductVisualsRouterOutputs["presets"]["presets"][number];
 
 interface VideoPresetsProps {
   presets: Preset[];
@@ -18,7 +17,7 @@ interface VideoPresetsProps {
   onPresetSelect?: (preset: Preset) => void;
 }
 
-export function VideoPresets({
+export function PresetPicker({
   presets,
   isLoading,
   selectedPresetId,
