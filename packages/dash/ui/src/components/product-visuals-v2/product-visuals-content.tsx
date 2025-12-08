@@ -37,7 +37,6 @@ const samplePrompt =
 export function ProductVisualsContent({
   styles,
   isLoadingStyles,
-  userId = "product-visuals",
   onBatchAddedToComposer,
   preselectedStyleId,
   selectedRunId,
@@ -67,9 +66,7 @@ export function ProductVisualsContent({
     serverState,
     resetState,
     chat: { error },
-  } = useVideoGenAgent({
-    userId,
-  });
+  } = useVideoGenAgent({});
 
   // Queries
   const { data: productsData, isPending: isLoadingProducts } =

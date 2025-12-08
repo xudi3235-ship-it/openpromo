@@ -69,16 +69,14 @@ export function useOpenComposer() {
             }
           : undefined;
 
-      // Initialize composer with the content
-      // Preserve currently selected accounts to avoid resetting them
-      if (initContentCreateData || contentGroupID) {
-        initializeComposer({
-          initContentCreateData,
-          contentGroupID,
-          initialAccounts:
-            selectedAccounts.length > 0 ? currentAccounts : accounts,
-        });
-      }
+      // Initialize composer store BEFORE navigation
+      // This ensures the data is available when ComposerRoot mounts
+      initializeComposer({
+        initContentCreateData,
+        contentGroupID,
+        initialAccounts:
+          selectedAccounts.length > 0 ? currentAccounts : accounts,
+      });
 
       // Navigate to composer
       navigate({

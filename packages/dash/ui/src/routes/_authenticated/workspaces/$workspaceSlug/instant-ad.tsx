@@ -41,7 +41,6 @@ function InstantAdPage() {
         <ProductVisualsContent
           styles={styleGalleryItems}
           isLoadingStyles={isLoadingStyles}
-          userId="instant-ad"
           preselectedStyleId={styleId}
           selectedRunId={runId}
         />

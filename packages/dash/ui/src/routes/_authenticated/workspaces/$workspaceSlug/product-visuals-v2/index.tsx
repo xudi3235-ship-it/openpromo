@@ -72,9 +72,7 @@ function ProductVisualsPage() {
     startGeneration,
     serverState,
     chat: { error },
-  } = useVideoGenAgent({
-    userId: "product-visuals-v2",
-  });
+  } = useVideoGenAgent({});
 
   const {
     data: feedData,

@@ -2,7 +2,17 @@ import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Download, SquarePen, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  RefreshCw,
+  SquarePen,
+  Trash2,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
+import { useOpenComposer } from "@/hooks/useOpenComposer";
+import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
 import {
   useAgentRunQuery,
   useDeleteAgentRunsMutation,
@@ -17,9 +27,43 @@ interface RunDetailViewProps {
 export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   const navigate = useNavigate();
   const deleteRunMutation = useDeleteAgentRunsMutation();
+  const openComposer = useOpenComposer();
 
   // Fetch run data using the specific query
-  const { data: run, isPending, error } = useAgentRunQuery({ id: runId });
+  const {
+    data: run,
+    isPending,
+    error,
+    refetch,
+  } = useAgentRunQuery({ id: runId });
+
+  // Set up real-time updates for running runs
+  const { serverState, isConnected } = useVideoGenAgent({
+    onEvent: {
+      // Update run data when we receive sync_state event
+      sync_state: async (data) => {
+        if (data.state.runId === runId) {
+          // Refetch the run data to get the latest state
+          refetch();
+        }
+      },
+      status_update: async () => {
+        // Always refetch on status updates for this run
+        if (serverState.runId === runId) {
+          refetch();
+        }
+      },
+      video_generated: async () => {
+        // Always refetch when video generation is complete for this run
+        if (serverState.runId === runId) {
+          refetch();
+        }
+      },
+    },
+  });
+
+  // Check if this run is currently active in the agent
+  const isActiveRun = serverState.runId === runId && isConnected;
 
   // Get media type for metadata display
   const isVideo =
@@ -103,11 +147,9 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
       },
     ];
 
-    // Navigate to composer with the media
-    navigate({
-      to: "/workspaces/$workspaceSlug/composer",
-      params: { workspaceSlug },
-      search: { attachments: JSON.stringify(attachments) },
+    // Open composer with the media
+    openComposer({
+      attachments,
     });
   };
 
@@ -303,9 +345,36 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
                 {/* Right Column - Metadata */}
                 <div className="w-80 flex-shrink-0">
                   <div className="mb-6">
-                    <h4 className="text-sm font-medium mb-3 text-foreground">
-                      Information
-                    </h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-medium text-foreground">
+                        Information
+                      </h4>
+                      {/* Real-time connection indicator */}
+                      <div className="flex items-center gap-1 text-xs">
+                        {isConnected && isActiveRun ? (
+                          <>
+                            <Wifi className="h-3 w-3 text-green-500" />
+                            <span className="text-green-600 dark:text-green-400">
+                              Live updates
+                            </span>
+                          </>
+                        ) : isConnected ? (
+                          <>
+                            <Wifi className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">
+                              Connected
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <WifiOff className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">
+                              Offline
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
                     <div className="bg-muted/30 rounded-lg p-4">
                       <div className="space-y-3 text-sm">
                         <div>
@@ -318,9 +387,21 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
                         </div>
                         <div>
                           <span className="text-muted-foreground">Status:</span>
-                          <p className="capitalize font-medium mt-1">
-                            {run.status}
-                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="capitalize font-medium">
+                              {run.status}
+                            </p>
+                            {isActiveRun && (
+                              <div className="flex items-center gap-1">
+                                <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />
+                                <span className="text-xs text-blue-600 dark:text-blue-400">
+                                  {serverState.status === "running"
+                                    ? "Processing..."
+                                    : serverState.status}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Type:</span>

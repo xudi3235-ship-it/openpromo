@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { ConnectedAccount } from "@/lib/hono-client";
-import { type ComposerProps, useComposerStore } from "@/stores/composer-store";
+import { useComposerStore } from "@/stores/composer-store";
 import { ComposerLeft } from "./composer-left";
 import { ComposerRight } from "./composer-right";
 import { TwoColumnLayout } from "./two-column-layout";
@@ -8,7 +8,6 @@ import { TwoColumnLayout } from "./two-column-layout";
 interface ComposerRootProps {
   accounts: ConnectedAccount[];
   className?: string;
-  initComposerProps?: Partial<ComposerProps>;
 }
 
 /**
@@ -19,32 +18,37 @@ interface ComposerRootProps {
  *
  * The store persists across navigation. To reset it, call `resetComposer()` from the store.
  */
-export function ComposerRoot({
-  accounts,
-  className = "",
-  initComposerProps,
-}: ComposerRootProps) {
-  const initializeComposer = useComposerStore(
-    (state) => state.initializeComposer,
-  );
-
+export function ComposerRoot({ accounts, className = "" }: ComposerRootProps) {
+  // Only initialize if composer hasn't been initialized yet
+  // This allows useOpenComposer to handle the initialization
   useEffect(() => {
-    // Initialize composer with clean state using provided accounts
-    // This ensures we don't have leftover preview state from other pages
-    const contentData = initComposerProps?.initContentCreateData || {
-      base: {
-        message: "",
-        attachments: [],
-      },
-      placements: {},
-    };
+    const currentState = useComposerStore.getState();
 
-    initializeComposer({
-      initialAccounts: accounts,
-      initContentCreateData: contentData,
-      ...initComposerProps,
-    });
-  }, [accounts, initComposerProps, initializeComposer]);
+    // If composer is already initialized (has attachments or message), don't override
+    const hasExistingContent =
+      (currentState.contentCreateData.base.attachments?.length ?? 0) > 0 ||
+      (currentState.contentCreateData.base.message?.trim().length ?? 0) > 0 ||
+      currentState.contentGroupID;
+
+    if (hasExistingContent) {
+      // Just update accounts, preserve existing content
+      useComposerStore.getState().initializeComposer({
+        initialAccounts: accounts,
+      });
+    } else {
+      // Initialize fresh composer with empty state
+      useComposerStore.getState().initializeComposer({
+        initialAccounts: accounts,
+        initContentCreateData: {
+          base: {
+            message: "",
+            attachments: [],
+          },
+          placements: {},
+        },
+      });
+    }
+  }, [accounts]);
 
   return (
     <TwoColumnLayout

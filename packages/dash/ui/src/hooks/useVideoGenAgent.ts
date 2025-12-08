@@ -4,20 +4,20 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAgentChat } from "agents/ai-react";
 import { useAgent } from "agents/react";
 import { useCallback, useState } from "react";
+import { useActor } from "./useActor";
 import { useWorkspace } from "./useWorkspace";
 
 type UseVideoGenAgentProps = {
-  userId: string;
   onEvent?: VideoGenRealtime.Handlers;
   _onMessage?: (event: MessageEvent) => Promise<void>;
 };
 
 export function useVideoGenAgent({
-  userId,
   onEvent,
   _onMessage,
 }: UseVideoGenAgentProps) {
   const { workspace } = useWorkspace();
+  const actorID = useActor().id;
   const queryClient = useQueryClient();
   const [isConnected, setIsConnected] = useState(false);
   const [serverState, setServerState] =
@@ -102,7 +102,7 @@ export function useVideoGenAgent({
 
   const agent = useAgent<VideoGenRealtime.ServerAppState>({
     agent: "video-gen-agent",
-    name: userId,
+    name: actorID,
     host: `${window.location.origin}/api/workspaces/${workspace.slug}/agents`,
     onOpen: () => {
       console.log("[useVideoGenAgent] Connected");

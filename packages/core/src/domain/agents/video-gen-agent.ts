@@ -223,9 +223,10 @@ export class VideoGenAgent extends AIChatAgent<
     });
     let currInput = runnerInput;
     let step = 0;
+    const MAX_RUN_STEPS = 20;
     // 2. run the agent
     // TODO: utilize agent handoff using structural output
-    while (step < 20) {
+    while (step < MAX_RUN_STEPS) {
       console.log(`>>>> Agent run step ${step} >>>>`);
       console.log(`>>>> last 2 input:`, JSON.stringify(currInput.slice(-2)));
       console.log(

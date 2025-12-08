@@ -35,7 +35,6 @@ export function MediaGeneratorDialog({
           <ProductVisualsContent
             styles={styles}
             isLoadingStyles={isLoadingStyles}
-            userId="media-generator"
             onBatchAddedToComposer={() => setOpen(false)}
           />
         </div>

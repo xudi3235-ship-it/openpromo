@@ -60,7 +60,6 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
     chat: { messages, sendMessage, status, error, clearHistory },
     serverState,
   } = useVideoGenAgent({
-    userId: userId || "guest",
     onEvent: {
       echo: (data) => {
         alert(`Echo received: ${data.message}`);
