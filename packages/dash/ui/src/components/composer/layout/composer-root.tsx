@@ -29,12 +29,20 @@ export function ComposerRoot({
   );
 
   useEffect(() => {
-    // Just initialize with the provided props and accounts
-    // The store will handle merging with existing state if needed
+    // Initialize composer with clean state using provided accounts
+    // This ensures we don't have leftover preview state from other pages
+    const contentData = initComposerProps?.initContentCreateData || {
+      base: {
+        message: "",
+        attachments: [],
+      },
+      placements: {},
+    };
+
     initializeComposer({
-      initialMessage: "",
-      ...initComposerProps,
       initialAccounts: accounts,
+      initContentCreateData: contentData,
+      ...initComposerProps,
     });
   }, [accounts, initComposerProps, initializeComposer]);
 
