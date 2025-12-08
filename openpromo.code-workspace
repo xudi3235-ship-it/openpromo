@@ -95,7 +95,7 @@
     },
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnSave": true,
-    "typescript.experimental.useTsgo": false,
+    "typescript.experimental.useTsgo": true,
     "chatgpt.commentCodeLensEnabled": false,
     "chatgpt.openOnStartup": true,
     "python.languageServer": "None",

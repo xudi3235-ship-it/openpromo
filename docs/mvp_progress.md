@@ -58,10 +58,10 @@ content infra, providesr crud on the source platforms, backfills, fetches metric
 
 *Implemented
 - content planner, content table view, with common actions like reschedule, DnD, edit draft, etc.
+- [p0] a detail view when click on specific published posts
 
 *Missing
 - [p0] audit the current state for backfill. for backfilled one, check their lifecycle,s what actions can be taken, etc.
-- [p0] a detail view when click on specific published posts
 - table view's metrics needs to be set up and refreshed nightly.
 
 ### Image-genAI, video-genAI

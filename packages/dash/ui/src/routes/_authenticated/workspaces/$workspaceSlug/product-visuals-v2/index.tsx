@@ -132,8 +132,8 @@ function ProductVisualsPage() {
     startGeneration(agentName, payload);
   }, [isConnected, mode, buildInput, startGeneration]);
 
-  const handleDeleteRun = (run: RunFeedItem) => {
-    deleteRunsMutation.mutate({ ids: [run.id] });
+  const handleDeleteRun = async (run: RunFeedItem) => {
+    await deleteRunsMutation.mutateAsync({ ids: [run.id] });
   };
 
   const handleToggleRunSelection = (runId: string) => {
@@ -446,7 +446,7 @@ function ProductVisualsPage() {
                         key={run.id}
                         run={run}
                         onSelect={() => setSelectedRun(run)}
-                        onDelete={handleDeleteRun}
+                        onDelete={async () => await handleDeleteRun(run)}
                         isDeleting={deleteRunsMutation.isPending}
                         isSelected={selectedRunIds.has(run.id)}
                         onToggleSelect={handleToggleRunSelection}

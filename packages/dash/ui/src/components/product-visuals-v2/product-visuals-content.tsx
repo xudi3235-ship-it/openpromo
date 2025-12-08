@@ -434,7 +434,9 @@ export function ProductVisualsContent({
                   key={run.id}
                   run={run}
                   onSelect={() => handleRunClick(run)}
-                  onDelete={() => deleteRunsMutation.mutate({ ids: [run.id] })}
+                  onDelete={async () => {
+                    await deleteRunsMutation.mutateAsync({ ids: [run.id] });
+                  }}
                   isDeleting={deleteRunsMutation.isPending}
                   isSelected={selectedRunIds.has(run.id)}
                   onToggleSelect={handleToggleRunSelection}

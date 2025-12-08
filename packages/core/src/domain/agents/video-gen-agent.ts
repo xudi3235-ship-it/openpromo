@@ -103,8 +103,7 @@ export class VideoGenAgent extends AIChatAgent<
       this.setState(VideoGenRealtime.initialServerAppState);
     }
     this.ctx.blockConcurrencyWhile(async () => {
-      const actor = await this.actorStore.get();
-      console.log(`[VideoGenAgent] actor resolved:`, actor);
+      await this.actorStore.get();
     });
   }
 
@@ -186,7 +185,7 @@ export class VideoGenAgent extends AIChatAgent<
     return [
       ...state.history,
       // captures latest msg
-      await this.createRunnerInitialInput(),
+      ...(await this.createRunnerInitialInput()),
     ];
   }
 
@@ -209,15 +208,14 @@ export class VideoGenAgent extends AIChatAgent<
 
     // 2. setup hooks
     setupAgentHooks(agent, {
-      verbose: true,
       onAgentStart: (_ctx) => {
         this.log(`started`);
       },
       onAgentEnd: (_ctx, output) => {
         this.log(`ended`, output);
       },
-      onToolStart: (_ctx, toolName, details) => {
-        this.log(`Tool started: ${toolName}`, details);
+      onToolStart: (_ctx, toolName, _details) => {
+        this.log(`Tool started: ${toolName}`);
       },
       onToolEnd: (_ctx, toolName, result) => {
         this.log(`Tool ended: ${toolName}`, result);
@@ -227,11 +225,11 @@ export class VideoGenAgent extends AIChatAgent<
     let step = 0;
     // 2. run the agent
     // TODO: utilize agent handoff using structural output
-    while (step < 50) {
+    while (step < 20) {
       console.log(`>>>> Agent run step ${step} >>>>`);
-      console.log(`last input:`, JSON.stringify(currInput.at(-1)));
+      console.log(`>>>> last 2 input:`, JSON.stringify(currInput.slice(-2)));
       console.log(
-        `agent tools:`,
+        `>>>> agent tools:`,
         agent.tools.map((t) => t.name),
       );
       const result = await run(agent, currInput, {
@@ -243,7 +241,10 @@ export class VideoGenAgent extends AIChatAgent<
       if (!finalOutput.done) {
         console.log(`continuing run, not done yet...`);
         // prepare next input
-        currInput = result.history;
+        currInput = [
+          ...result.history,
+          // TODO: might instrument more info here during each run
+        ];
         step++;
         continue;
       }
@@ -284,22 +285,27 @@ export class VideoGenAgent extends AIChatAgent<
       });
       return;
     }
-    // 0. mark as running
+    // 0. Reset internal state before starting a new run
+    // This ensures we don't try to restore from stale/invalid state
+    this.runStateSerialized = null;
+    this._logs = "";
+
+    // 1. mark as running
     const run = await EntAgentRun.createFromState(this.state);
     this.patchState((draft) => {
       draft.status = "running";
       draft.runId = run.data.id;
     });
     try {
-      // 1. run the fn
+      // 2. run the fn
       const result = await fn();
-      // 2. mark as succeeded?
+      // 3. mark as succeeded?
       this.patchState((draft) => {
         draft.status = "succeeded";
       });
       return result;
     } catch (error) {
-      // 3. failed
+      // 4. failed
       this.patchState((draft) => {
         draft.status = "failed";
         draft.error =
@@ -489,14 +495,6 @@ export class VideoGenAgent extends AIChatAgent<
 
     const [productImagePaths, avatarImagePaths] =
       await this.ensureFilesExists();
-    console.log(
-      `[VideoGenAgent] Product images downloaded to:`,
-      productImagePaths,
-    );
-    console.log(
-      `[VideoGenAgent] Avatar images downloaded to:`,
-      avatarImagePaths,
-    );
 
     const productImages = toAgentImageInputs(this.state.input.productImages);
     const avatarImages = toAgentImageInputs(this.state.input.avatarImages);
@@ -577,12 +575,7 @@ export class VideoGenAgent extends AIChatAgent<
       if (preset) {
         messages.push({
           role: "system",
-          content: [
-            {
-              type: "input_text" as const,
-              text: `user selected this preset, use properly as direction and adjustmenets. Using preset "${preset.name}": ${preset.description}\nPrompt: ${preset.prompt}`,
-            },
-          ],
+          content: `user selected this preset, use properly as direction and adjustmenets. Using preset "${preset.name}": ${preset.description}\nPrompt: ${preset.prompt}`,
         });
       }
     }

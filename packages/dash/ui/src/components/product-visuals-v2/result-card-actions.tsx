@@ -22,7 +22,7 @@ import { useOpenComposer } from "@/hooks/useOpenComposer";
 
 interface ResultCardActionsProps {
   run: RunFeedItem;
-  onDelete?: (run: RunFeedItem) => void;
+  onDelete?: (run: RunFeedItem) => Promise<void>;
   isDeleting?: boolean;
 }
 
@@ -173,8 +173,8 @@ export function ResultCardActions({
         desc="Are you sure you want to delete this generated output? This action cannot be undone."
         confirmText="Delete"
         destructive
-        handleConfirm={() => {
-          onDelete?.(run);
+        handleConfirm={async () => {
+          await onDelete?.(run);
           setDeleteDialogOpen(false);
         }}
         isLoading={isDeleting}

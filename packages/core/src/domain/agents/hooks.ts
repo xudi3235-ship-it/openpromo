@@ -30,8 +30,6 @@ interface ToolCallDetails {
 export function setupAgentHooks(
   agent: Agent<VideoGenAgentContext, VideoGenRealtime.AgentOutput>,
   options?: {
-    /** Enable verbose logging */
-    verbose?: boolean;
     /** Custom logger function */
     logger?: (message: string, ...args: unknown[]) => void;
     /** Callback when agent starts */
@@ -59,51 +57,26 @@ export function setupAgentHooks(
     ) => void;
   },
 ): void {
-  const log = options?.logger ?? console.log;
-  const verbose = options?.verbose ?? false;
-
   // Agent start event
   agent.on("agent_start", (ctx, agentInstance) => {
-    log(`[${agentInstance.name}] >> Agent started`);
-    if (verbose && ctx.context) {
-      log(`[${agentInstance.name}] Context:`, ctx.context);
-    }
     options?.onAgentStart?.(ctx, agentInstance);
   });
 
   // Agent end event
   agent.on("agent_end", (ctx, output) => {
-    const preview =
-      typeof output === "string"
-        ? output.slice(0, 200) + (output.length > 200 ? "..." : "")
-        : JSON.stringify(output).slice(0, 200);
-    log(`[${agent.name}] << Agent completed:`, preview);
     options?.onAgentEnd?.(ctx, output);
   });
 
   // Agent handoff event (for multi-agent scenarios)
-  agent.on("agent_handoff", (_ctx, nextAgent) => {
-    log(`[${agent.name}] -> Handing off to: ${nextAgent.name}`);
-  });
+  agent.on("agent_handoff", (_ctx, _nextAgent) => {});
 
   // Tool start event
   agent.on("agent_tool_start", (ctx, tool, details) => {
-    log(`[${agent.name}] [>] Tool started: ${tool.name}`);
-    if (verbose) {
-      const toolCall = details.toolCall as ToolCallDetails["toolCall"];
-      log(`[${agent.name}] Tool args:`, toolCall.function?.arguments);
-    }
     options?.onToolStart?.(ctx, tool, details as ToolCallDetails);
   });
 
   // Tool end event
   agent.on("agent_tool_end", (ctx, tool, result, details) => {
-    const resultPreview =
-      result.length > 500 ? result.slice(0, 500) + "..." : result;
-    log(`[${agent.name}] [x] Tool completed: ${tool.name}`);
-    if (verbose) {
-      log(`[${agent.name}] Tool result:`, resultPreview);
-    }
     options?.onToolEnd?.(ctx, tool, result, details as ToolCallDetails);
   });
 }

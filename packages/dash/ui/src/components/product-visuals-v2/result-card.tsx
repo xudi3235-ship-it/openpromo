@@ -17,7 +17,7 @@ import { ResultCardActions } from "./result-card-actions";
 interface ResultCardProps {
   run: RunFeedItem;
   onSelect: () => void;
-  onDelete?: (run: RunFeedItem) => void;
+  onDelete?: (run: RunFeedItem) => Promise<void>;
   isDeleting?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (runId: string) => void;
