@@ -4,6 +4,7 @@ import {
   ContentFilters,
   type ContentFilters as ContentFiltersType,
 } from "./content-filters";
+import { ContentPageSearchHeader } from "./content-page-header";
 import { ContentRescheduleDialog } from "./content-reschedule-dialog";
 
 interface ContentPageLayoutProps {
@@ -23,11 +24,23 @@ interface ContentPageLayoutProps {
  */
 export function ContentPageLayout({
   children,
+  searchValue,
+  onSearchChange,
+  table,
   filters,
   onFiltersChange,
 }: ContentPageLayoutProps) {
   return (
     <div className="w-full space-y-2">
+      {/* Header with search and column controls only */}
+      {table && (
+        <ContentPageSearchHeader
+          searchValue={searchValue}
+          onSearchChange={onSearchChange}
+          table={table}
+        />
+      )}
+
       <ContentFilters filters={filters} onFiltersChange={onFiltersChange} />
 
       {children}

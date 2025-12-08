@@ -173,14 +173,38 @@ here are the longterm roadmap items. eventually we wanna build a solid platform 
 
 
 <!-- ------------------------------------------------ -->
-<!-- section: execution todos. for AI Agents, use this section to capture the TODOs, updates, etc.
+<!-- section: execution todos. for AI Agents, use this section to capture the TODOs, updates, etc. Use this a a index, put task detail under ./current_tasks dir so this tracker is lightweight enough.
  -->
 <!-- ------------------------------------------------ -->
 
 ## Execution TODOs
 
-### [2025-12-08] UI Primitives Migration
-- Priority: P2 (not blocking MVP)
-- Status: Primitives scaffolded, ready for adoption
-- Details: `./current_tasks/dash_ui_primitives_migration.md`
-- Summary: Created 5 categories of app-specific UI primitives to reduce 30-40% duplication across 282 components
+### P0 - Critical for MVP Launch
+
+1. [composer][p0] e2e test publishing for all content formats, different attachment source handling
+2. [composer][p0] one click to generate thumbnail for videos
+3. [content][p0] audit current state for backfill lifecycle and available actions
+4. [content][p0] table view metrics setup and nightly refresh
+5. [genai][p0] add presets in UI & DO for higher quality, abstracted outputs
+6. [genai][p0] e2e test from AI-gen to composer to final publish flow
+7. [inbox][p0] audit current state for feature parity across platforms
+8. [payments][p0] figure out pricing strategy compared to competitors and PMF
+9. [nux][p0] implement new workspace onboarding flow
+
+### P1 - Important for MVP Success
+
+10. [account][p1] check IG w/ FB login support requirements
+11. [account][p1] implement access token periodic renewal jobs per workspace
+12. [account][p1] investigate TikTok biz access token expiration handling
+13. [account][p1] encrypt access tokens to prevent client-side exposure
+14. [account][p1] enforce zod schemas in OAuth flow and add observability with PostHog
+15. [genai][p1] enhance cloning path with top-performing ads analysis and brand context application
+16. [inbox][p1] integrate TikTok business messaging API
+17. [workspace][p1] rework workspace left nav and profile dropdown, prepare billing navigation
+
+### P2 - Nice to have if time permits
+
+18. [composer][p2] music selection feature (likely deprioritized)
+19. [genai][p2] evaluate LTX-2 model for long video generation
+20. [www][p2] revamped landing design and SEO optimization
+21. [telemetry][p2] add Sentry for error monitoring

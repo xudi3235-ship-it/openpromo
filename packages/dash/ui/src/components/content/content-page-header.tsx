@@ -79,3 +79,23 @@ export function ContentPageHeader({
     </>
   );
 }
+
+/**
+ * ContentPageSearchHeader - Search and column controls only (no title)
+ * For use in layouts where title is handled by parent component
+ */
+export function ContentPageSearchHeader({
+  searchValue,
+  onSearchChange,
+  table,
+}: ContentPageHeaderProps) {
+  return (
+    <DataTableHeader
+      table={table}
+      searchValue={searchValue}
+      onSearchChange={onSearchChange}
+      searchPlaceholder="Search content..."
+      columnIcons={columnIcons}
+    />
+  );
+}
