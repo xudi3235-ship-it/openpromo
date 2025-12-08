@@ -1,4 +1,3 @@
-import { Button } from "@openpromo/ui/components/button";
 import type { VideoGenRealtime } from "@shared";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -22,7 +21,6 @@ import { ConfirmDialog } from "../confirm-dialog";
 import { InputPanel } from "./input-panel";
 import { ResultCard } from "./result-card";
 import { RunDetailView } from "./run-detail-view";
-import type { Preset } from "./video-presets";
 
 interface ProductVisualsContentProps {
   styles: StyleGalleryItem[];
@@ -32,10 +30,6 @@ interface ProductVisualsContentProps {
   preselectedStyleId?: string;
   selectedRunId?: string;
 }
-
-const sampleProductImageUrls = [
-  "https://i.pinimg.com/1200x/1e/63/b8/1e63b8168a25c2a2a4127971514d97e2.jpg",
-];
 
 const samplePrompt =
   "Create an 8s TikTok style UGC ad video. using both avatar and product image";
@@ -61,16 +55,9 @@ export function ProductVisualsContent({
     avatarAssets,
     referenceAssets,
     brandAssets,
-    setMode,
-    setPrompt,
-    setProductId,
-    setProductImageUrls,
-    addAvatarAsset,
-    removeAvatarAsset,
-    addReferenceAsset,
-    removeReferenceAsset,
-    addBrandAsset,
-    removeBrandAsset,
+    selectedVideoPresetId,
+    selectStyle,
+    selectProduct,
   } = useProductVisualsStore();
 
   // Video Gen Agent
@@ -104,29 +91,18 @@ export function ProductVisualsContent({
 
   // State
   const [selectedRunIds, setSelectedRunIds] = useState<Set<string>>(new Set());
-  const [selectedStyleId, setSelectedStyleId] = useState<string>("");
-  const [selectedVideoPresetId, setSelectedVideoPresetId] =
-    useState<string>("");
   const [showBatchDeleteDialog, setShowBatchDeleteDialog] = useState(false);
+  const [showConfirmGenerateDialog, setShowConfirmGenerateDialog] =
+    useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Preset style on mount if preselectedStyleId is provided
   useEffect(() => {
     if (preselectedStyleId && styles.length > 0) {
-      const selectedStyle = styles.find((s) => s.id === preselectedStyleId);
-      if (selectedStyle) {
-        // Add style images to reference assets
-        const styleImages = selectedStyle.imageRefs.filter(
-          (url): url is string => Boolean(url),
-        );
-        styleImages.forEach((url) => {
-          addReferenceAsset({ id: url, url });
-        });
-        setSelectedStyleId(preselectedStyleId);
-      }
+      selectStyle(preselectedStyleId, styles);
     }
-  }, [preselectedStyleId, styles, addReferenceAsset]);
+  }, [preselectedStyleId, styles, selectStyle]);
 
   // Auto-size columns based on container width using ResizeObserver
   useEffect(() => {
@@ -185,10 +161,22 @@ export function ProductVisualsContent({
       toast.error("Not connected yet");
       return;
     }
+    if (serverState.status === "running") {
+      setShowConfirmGenerateDialog(true);
+      return;
+    }
     const agentName = mode === "image" ? "image_gen_agent" : "video_gen_agent";
     const payload = buildInput;
     startGeneration(agentName, payload);
-  }, [isConnected, mode, buildInput, startGeneration]);
+  }, [isConnected, mode, buildInput, startGeneration, serverState.status]);
+
+  const handleConfirmGenerate = () => {
+    resetState();
+    const agentName = mode === "image" ? "image_gen_agent" : "video_gen_agent";
+    const payload = buildInput;
+    startGeneration(agentName, payload);
+    setShowConfirmGenerateDialog(false);
+  };
 
   const handleToggleRunSelection = (runId: string) => {
     setSelectedRunIds((prev) => {
@@ -289,39 +277,11 @@ export function ProductVisualsContent({
     [styles],
   );
 
-  const handleStyleSelect = useCallback(
-    (styleId: string) => {
-      setSelectedStyleId(styleId);
-      const style = styleGalleryItems.find((s) => s.id === styleId);
-      if (!style) return;
-      const styleImages = style.imageRefs.filter((url): url is string =>
-        Boolean(url),
-      );
-      styleImages.forEach((url) => {
-        addReferenceAsset({ id: url, url });
-      });
-    },
-    [styleGalleryItems, addReferenceAsset],
-  );
-
-  const handleVideoPresetSelect = useCallback((preset: Preset) => {
-    setSelectedVideoPresetId(preset.id);
-    // You could update the prompt based on the preset if needed
-    // For now, just tracking the selection
-  }, []);
-
   const handleProductSelect = useCallback(
     (id: string) => {
-      setProductId(id);
-      const product = productSelectItems.find((p) => p.id === id);
-      if (!product) return;
-      const urls: string[] =
-        product.attachments
-          ?.map((a) => a.publicUrl || a.presignedUrl)
-          .filter((v): v is string => Boolean(v)) ?? [];
-      setProductImageUrls(urls.length > 0 ? urls : sampleProductImageUrls);
+      selectProduct(id, productSelectItems);
     },
-    [productSelectItems, setProductId, setProductImageUrls],
+    [selectProduct, productSelectItems],
   );
 
   useEffect(() => {
@@ -332,68 +292,28 @@ export function ProductVisualsContent({
 
   const inputPanelProps = useMemo(
     () => ({
-      mode,
-      onModeChange: setMode,
       status: serverState.status,
-      prompt,
-      onPromptChange: setPrompt,
       videoPresets: videoPresetsData?.presets,
       isLoadingVideoPresets,
-      selectedVideoPresetId,
-      onVideoPresetSelect: handleVideoPresetSelect,
       products: productSelectItems,
-      selectedProductId: productId,
-      onProductChange: handleProductSelect,
       isLoadingProducts,
-      productImageUrls,
       styles: styleGalleryItems,
       isLoadingStyles,
-      selectedStyleId,
-      onStyleSelect: handleStyleSelect,
-      avatarAssets,
-      onAddAvatarAsset: addAvatarAsset,
-      onRemoveAvatarAsset: removeAvatarAsset,
-      referenceAssets,
-      onAddReferenceAsset: addReferenceAsset,
-      onRemoveReferenceAsset: removeReferenceAsset,
-      brandAssets,
-      onAddBrandAsset: addBrandAsset,
-      onRemoveBrandAsset: removeBrandAsset,
       onGenerate: handleGenerate,
       isGenerateDisabled: !isConnected || serverState.status === "running",
       error,
     }),
     [
-      mode,
-      prompt,
+      serverState.status,
       videoPresetsData,
       isLoadingVideoPresets,
-      selectedVideoPresetId,
-      handleVideoPresetSelect,
       productSelectItems,
-      productId,
       isLoadingProducts,
-      productImageUrls,
       styleGalleryItems,
       isLoadingStyles,
-      selectedStyleId,
-      avatarAssets,
-      referenceAssets,
-      brandAssets,
-      serverState.status,
+      handleGenerate,
       isConnected,
       error,
-      setMode,
-      setPrompt,
-      handleProductSelect,
-      handleStyleSelect,
-      addAvatarAsset,
-      removeAvatarAsset,
-      addReferenceAsset,
-      removeReferenceAsset,
-      addBrandAsset,
-      removeBrandAsset,
-      handleGenerate,
     ],
   );
 
@@ -411,11 +331,6 @@ export function ProductVisualsContent({
       <div ref={containerRef} className="flex h-full min-w-0">
         <div className="w-96 flex-shrink-0 pr-6">
           <InputPanel {...inputPanelProps} />
-          {import.meta.env.DEV && (
-            <Button className="mt-4" onClick={resetState} variant="outline">
-              Reset
-            </Button>
-          )}
         </div>
 
         <div className="flex-1 min-w-0 h-full overflow-hidden">
@@ -489,6 +404,17 @@ export function ProductVisualsContent({
         destructive={true}
         handleConfirm={handleConfirmBatchDelete}
         isLoading={deleteRunsMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={showConfirmGenerateDialog}
+        onOpenChange={setShowConfirmGenerateDialog}
+        title="Confirm Generation"
+        desc="A generation is already running. Starting a new one will reset the current process. Continue?"
+        cancelBtnText="Cancel"
+        confirmText="Continue"
+        handleConfirm={handleConfirmGenerate}
+        isLoading={false}
       />
     </>
   );

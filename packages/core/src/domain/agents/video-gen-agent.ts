@@ -255,10 +255,7 @@ export class VideoGenAgent extends AIChatAgent<
         draft.output = finalOutput;
         draft.logs = this._logs;
       });
-
       this.log(`run completed:`, result.finalOutput);
-
-      console.log(`logs:\n${this._logs}`);
       // exit
       break;
     }

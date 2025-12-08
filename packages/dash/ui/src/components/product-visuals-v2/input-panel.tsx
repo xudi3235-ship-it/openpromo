@@ -15,51 +15,23 @@ import {
   type Preset,
   VideoPresets,
 } from "@/components/product-visuals-v2/video-presets";
-import type { AssetItem } from "@/features/product-visuals-v2/product-visuals-types";
+import { useProductVisualsStore } from "@/features/product-visuals-v2/product-visuals-store";
 
 export interface InputPanelProps {
-  // Mode
-  mode: "image" | "video";
-  onModeChange: (mode: "image" | "video") => void;
-
   // Status
   status: VideoGenRealtime.RunStatus;
-
-  // Prompt
-  prompt: string;
-  onPromptChange: (prompt: string) => void;
 
   // Video Presets (only for video mode)
   videoPresets?: Preset[];
   isLoadingVideoPresets?: boolean;
-  selectedVideoPresetId?: string;
-  onVideoPresetSelect?: (preset: Preset) => void;
 
   // Product
   products: ProductSelectItem[];
-  selectedProductId: string | null;
-  onProductChange: (id: string) => void;
   isLoadingProducts: boolean;
-  productImageUrls: string[];
 
   // Styles
   styles: StyleGalleryItem[];
   isLoadingStyles: boolean;
-  selectedStyleId: string;
-  onStyleSelect: (styleId: string) => void;
-
-  // Assets
-  avatarAssets: AssetItem[];
-  onAddAvatarAsset: (asset: AssetItem) => void;
-  onRemoveAvatarAsset: (id: string) => void;
-
-  referenceAssets: AssetItem[];
-  onAddReferenceAsset: (asset: AssetItem) => void;
-  onRemoveReferenceAsset: (id: string) => void;
-
-  brandAssets: AssetItem[];
-  onAddBrandAsset: (asset: AssetItem) => void;
-  onRemoveBrandAsset: (id: string) => void;
 
   // Actions
   onGenerate: () => void;
@@ -68,37 +40,39 @@ export interface InputPanelProps {
 }
 
 export function InputPanel({
-  mode,
-  onModeChange,
   status,
-  prompt,
-  onPromptChange,
   videoPresets,
   isLoadingVideoPresets,
-  selectedVideoPresetId,
-  onVideoPresetSelect,
   products,
-  selectedProductId,
-  onProductChange,
   isLoadingProducts,
-  productImageUrls,
   styles,
   isLoadingStyles,
-  selectedStyleId,
-  onStyleSelect,
-  avatarAssets,
-  onAddAvatarAsset,
-  onRemoveAvatarAsset,
-  referenceAssets,
-  onAddReferenceAsset,
-  onRemoveReferenceAsset,
-  brandAssets,
-  onAddBrandAsset,
-  onRemoveBrandAsset,
   onGenerate,
   isGenerateDisabled,
   error,
 }: InputPanelProps) {
+  const {
+    mode,
+    prompt,
+    productId,
+    productImageUrls,
+    avatarAssets,
+    referenceAssets,
+    brandAssets,
+    selectedStyleId,
+    selectedVideoPresetId,
+    setMode,
+    setPrompt,
+    selectStyle,
+    selectVideoPreset,
+    selectProduct,
+    addAvatarAsset,
+    removeAvatarAsset,
+    addReferenceAsset,
+    removeReferenceAsset,
+    addBrandAsset,
+    removeBrandAsset,
+  } = useProductVisualsStore();
   const [isAssetsOpen, setIsAssetsOpen] = useState(false);
   const generateLabel = mode === "video" ? "Generate Video" : "Generate Image";
 
@@ -109,7 +83,7 @@ export function InputPanel({
         <h3 className="text-sm font-medium"> Settings</h3>
         <div className="flex items-center gap-2">
           <StatusPill status={status} />
-          <ModeToggle mode={mode} onChange={onModeChange} />
+          <ModeToggle mode={mode} onChange={setMode} />
         </div>
       </div>
 
@@ -118,12 +92,18 @@ export function InputPanel({
         <div className="space-y-8">
           {/* Video Presets */}
           {mode === "video" && videoPresets && (
-            <div>
+            <div className="mx-1">
               <VideoPresets
                 presets={videoPresets}
                 isLoading={isLoadingVideoPresets || false}
                 selectedPresetId={selectedVideoPresetId}
-                onPresetSelect={onVideoPresetSelect}
+                onPresetSelect={(preset) => {
+                  if (selectedVideoPresetId === preset.id) {
+                    selectVideoPreset(undefined);
+                  } else {
+                    selectVideoPreset(preset.id);
+                  }
+                }}
               />
             </div>
           )}
@@ -138,7 +118,7 @@ export function InputPanel({
             <Textarea
               id="prompt"
               value={prompt}
-              onChange={(e) => onPromptChange(e.target.value)}
+              onChange={(e) => setPrompt(e.target.value)}
               placeholder="e.g., Create a professional product shot with a lifestyle background..."
               rows={3}
               className="w-full text-sm"
@@ -153,8 +133,8 @@ export function InputPanel({
             </p>
             <ProductSelect
               products={products}
-              selectedProductId={selectedProductId ?? ""}
-              onProductChange={onProductChange}
+              selectedProductId={productId ?? ""}
+              onProductChange={(id) => selectProduct(id, products)}
               isLoading={isLoadingProducts}
             />
             {productImageUrls.length > 0 && (
@@ -180,7 +160,7 @@ export function InputPanel({
             <StyleGallery
               styles={styles}
               selectedStyleId={selectedStyleId}
-              onStyleSelect={onStyleSelect}
+              onStyleSelect={(id) => selectStyle(id, styles)}
               isLoading={isLoadingStyles}
               helperText="Optional"
             />
@@ -209,22 +189,22 @@ export function InputPanel({
                   label="Avatar assets"
                   helper="Reference images for characters or models."
                   assets={avatarAssets}
-                  onAdd={onAddAvatarAsset}
-                  onRemove={onRemoveAvatarAsset}
+                  onAdd={addAvatarAsset}
+                  onRemove={removeAvatarAsset}
                 />
                 <AssetInput
                   label="Reference / style assets"
                   helper="Images to guide visual style and composition."
                   assets={referenceAssets}
-                  onAdd={onAddReferenceAsset}
-                  onRemove={onRemoveReferenceAsset}
+                  onAdd={addReferenceAsset}
+                  onRemove={removeReferenceAsset}
                 />
                 <AssetInput
                   label="Brand assets"
                   helper="Logos, graphics, or other branding elements."
                   assets={brandAssets}
-                  onAdd={onAddBrandAsset}
-                  onRemove={onRemoveBrandAsset}
+                  onAdd={addBrandAsset}
+                  onRemove={removeBrandAsset}
                 />
               </div>
             )}
