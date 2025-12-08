@@ -32,12 +32,12 @@ export function AssetInput({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div>
-        <Label>{label}</Label>
+        <Label className="text-sm">{label}</Label>
         {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Dropzone
           accept={{ "image/*": [], "video/*": [] }}
           maxFiles={Math.max(0, 3 - assets.length)}
@@ -59,11 +59,11 @@ export function AssetInput({
               // errors handled in hook
             }
           }}
-          className="w-full h-32 p-4"
+          className="w-full h-20 p-3"
         >
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
-            <Plus className="h-6 w-6" />
-            <p className="text-xs font-medium">Drop here or click</p>
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted-foreground">
+            <Plus className="h-4 w-4" />
+            <p className="text-xs font-medium">Drop or click</p>
           </div>
         </Dropzone>
         <button
@@ -100,7 +100,7 @@ export function AssetInput({
         )}
       </div>
       {assets.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-1.5">
           {assets.map((asset) => (
             <div
               key={asset.id}

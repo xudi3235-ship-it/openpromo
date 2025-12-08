@@ -2,7 +2,7 @@ import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Download, Share2, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, SquarePen, Trash2 } from "lucide-react";
 import {
   useAgentRunQuery,
   useDeleteAgentRunsMutation,
@@ -235,7 +235,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
             variant="ghost"
             className="flex items-center gap-2"
           >
-            <Share2 size={14} />
+            <SquarePen size={14} />
             Create Post
           </Button>
           <Button
@@ -276,7 +276,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
                 Share your creation with your audience instantly
               </p>
               <Button onClick={handleCreatePost} size="lg">
-                <Share2 size={18} className="mr-2" />
+                <SquarePen size={18} className="mr-2" />
                 Post to Social Accounts
               </Button>
             </div>

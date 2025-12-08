@@ -3,6 +3,7 @@ import type { InferRouterOutputs } from "@orpc/server";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import type { productVisualsRouter } from "../../../../worker/src/orpc/routes/product-visuals";
+import { PresetPreviewModal } from "./preset-preview-modal";
 
 type ProductVisualsRouterOutputs = InferRouterOutputs<
   typeof productVisualsRouter
@@ -24,13 +25,16 @@ export function VideoPresets({
   onPresetSelect,
 }: VideoPresetsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const MAX_VISIBLE = 8; // 2x4 grid
 
   if (isLoading) {
     return (
       <div>
-        <h4 className="text-xs font-medium mb-3">Video Presets</h4>
-        <div className="grid grid-cols-4 gap-2">
+        <h4 className="text-xs font-medium mb-3">
+          Step 1. Select Viral Preset
+        </h4>
+        <div className="grid grid-cols-4 gap-1.5">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div
               key={i}
@@ -53,7 +57,7 @@ export function VideoPresets({
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-medium">Video Presets</h4>
+        <h4 className="text-sm font-medium">Step 1. Select Viral Preset</h4>
         {selectedPreset && (
           <div className="flex items-center gap-1 text-xs text-primary font-medium">
             <div className="w-2 h-2 bg-primary rounded-full"></div>
@@ -66,7 +70,7 @@ export function VideoPresets({
       </p>
 
       {/* 2x4 Grid */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-1.5">
         {visiblePresets.map((preset) => (
           <div
             key={preset.id}
@@ -104,7 +108,7 @@ export function VideoPresets({
             <div className="absolute bottom-0 left-0 right-0 p-1">
               <h5
                 className={cn(
-                  "text-[8px] font-medium leading-tight truncate",
+                  "text-xs font-medium leading-tight truncate",
                   selectedPresetId === preset.id
                     ? "text-white font-semibold"
                     : "text-white",
@@ -116,6 +120,27 @@ export function VideoPresets({
           </div>
         ))}
       </div>
+
+      {/* Selected Preset Description */}
+      {selectedPreset && (
+        <div className="mt-3">
+          {selectedPreset.thumbnailUrl && (
+            <div className="mb-2">
+              <img
+                src={selectedPreset.thumbnailUrl}
+                alt={selectedPreset.name}
+                className="w-full h-24 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => setPreviewModalOpen(true)}
+              />
+            </div>
+          )}
+          {selectedPreset.description && (
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {selectedPreset.description}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Expand/Collapse Button */}
       {hasMore && (
@@ -134,6 +159,11 @@ export function VideoPresets({
           />
         </button>
       )}
+      <PresetPreviewModal
+        preset={selectedPreset as Preset}
+        isOpen={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+      />
     </div>
   );
 }

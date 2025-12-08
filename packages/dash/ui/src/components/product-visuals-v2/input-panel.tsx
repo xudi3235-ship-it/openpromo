@@ -74,6 +74,7 @@ export function InputPanel({
     removeBrandAsset,
   } = useProductVisualsStore();
   const [isAssetsOpen, setIsAssetsOpen] = useState(false);
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
   const generateLabel = mode === "video" ? "Generate Video" : "Generate Image";
 
   return (
@@ -107,29 +108,53 @@ export function InputPanel({
               />
             </div>
           )}
-          {/* Prompt Section */}
-          <div>
-            <Label htmlFor="prompt" className="text-sm font-medium">
-              Prompt
-            </Label>
-            <p className="text-xs text-muted-foreground mb-2">
-              Describe what you want to generate.
-            </p>
-            <Textarea
-              id="prompt"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="e.g., Create a professional product shot with a lifestyle background..."
-              rows={3}
-              className="w-full text-sm"
-            />
+          {/* Custom Prompt Collapsible */}
+          <div className="mx-1">
+            <Button
+              onClick={() => setIsPromptOpen(!isPromptOpen)}
+              variant="ghost"
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 h-auto"
+            >
+              <span className="text-sm font-medium text-foreground">
+                Custom Prompt{" "}
+                <span className="text-muted-foreground font-normal">
+                  (Optional)
+                </span>
+              </span>
+              <ChevronDown
+                size={18}
+                className={`text-muted-foreground transition-transform duration-200 ${
+                  isPromptOpen ? "rotate-180" : ""
+                }`}
+              />
+            </Button>
+
+            {isPromptOpen && (
+              <div className="mt-4 animate-in fade-in-50 duration-200">
+                <p className="text-xs text-muted-foreground mb-2">
+                  Add specific instructions. Most users find presets work great
+                  on their own.
+                </p>
+                <Textarea
+                  id="prompt"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="e.g., Add a sunset background, make it more vibrant, focus on the texture..."
+                  rows={3}
+                  className="w-full text-sm"
+                />
+              </div>
+            )}
           </div>
 
           {/* Product Section */}
           <div>
-            <Label className="text-sm font-medium">Product</Label>
+            <Label className="text-sm font-medium">
+              Step 2. Select Product
+            </Label>
             <p className="text-xs text-muted-foreground mb-2">
-              Select a product to use in generation.
+              Choose the product you're selling that will be featured in your
+              creative content.
             </p>
             <ProductSelect
               products={products}
@@ -155,25 +180,15 @@ export function InputPanel({
             )}
           </div>
 
-          {/* Style Section */}
-          <div>
-            <StyleGallery
-              styles={styles}
-              selectedStyleId={selectedStyleId}
-              onStyleSelect={(id) => selectStyle(id, styles)}
-              isLoading={isLoadingStyles}
-              helperText="Optional"
-            />
-          </div>
-
           {/* Optional Assets Collapsible */}
-          <div className="border-t pt-6">
-            <button
+          <div className="pt-6">
+            <Button
               onClick={() => setIsAssetsOpen(!isAssetsOpen)}
-              className="flex w-full items-center justify-between rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors"
+              variant="ghost"
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 h-auto"
             >
               <span className="text-sm font-medium text-foreground">
-                Additional Assets
+                Advanced
               </span>
               <ChevronDown
                 size={18}
@@ -181,27 +196,42 @@ export function InputPanel({
                   isAssetsOpen ? "rotate-180" : ""
                 }`}
               />
-            </button>
+            </Button>
 
             {isAssetsOpen && (
               <div className="mt-4 space-y-6 animate-in fade-in-50 duration-200">
+                {/* Style Section */}
+                <div>
+                  <Label className="text-sm font-medium">Style</Label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Choose a visual style to apply to your generation.
+                  </p>
+                  <StyleGallery
+                    styles={styles}
+                    selectedStyleId={selectedStyleId}
+                    onStyleSelect={(id) => selectStyle(id, styles)}
+                    isLoading={isLoadingStyles}
+                    helperText="Optional"
+                  />
+                </div>
+
                 <AssetInput
-                  label="Avatar assets"
-                  helper="Reference images for characters or models."
+                  label="Avatar Assets"
+                  helper="Reference images for characters, models, or people to influence the generation."
                   assets={avatarAssets}
                   onAdd={addAvatarAsset}
                   onRemove={removeAvatarAsset}
                 />
                 <AssetInput
-                  label="Reference / style assets"
-                  helper="Images to guide visual style and composition."
+                  label="Reference Assets"
+                  helper="Images to guide visual style, composition, and artistic direction."
                   assets={referenceAssets}
                   onAdd={addReferenceAsset}
                   onRemove={removeReferenceAsset}
                 />
                 <AssetInput
-                  label="Brand assets"
-                  helper="Logos, graphics, or other branding elements."
+                  label="Brand Assets"
+                  helper="Logos, graphics, fonts, or other branding elements to incorporate."
                   assets={brandAssets}
                   onAdd={addBrandAsset}
                   onRemove={removeBrandAsset}
@@ -213,7 +243,10 @@ export function InputPanel({
       </div>
 
       {/* Generate Button */}
-      <div className="mt-6 pt-4 border-t">
+      <div className="mt-6 pt-4">
+        <Label className="text-sm font-medium mb-2 block">
+          Step 3. Generate Video
+        </Label>
         <div className="flex flex-col gap-2">
           <Button onClick={onGenerate} disabled={isGenerateDisabled} size="sm">
             {generateLabel}
