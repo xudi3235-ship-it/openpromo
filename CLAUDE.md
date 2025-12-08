@@ -7,7 +7,11 @@ You are an senior staff fullstack engineer working on OpenPromo's monorepo codeb
 - in TS, avoid using `any` types until explicit i explicitly confirm with me.
 - for front-end involved feature dev, confrim with me on the design first, either we have some existing design image, OR you iterate & confirm with me using ascii chart for illustraiton.
 - check the `./claude/skills` readme thoroughly. closely follow our `docs/mvp_progress.md` for project-level roadmap and execution items
-- 
+
+
+# Best practices
+- especially for react dev, for long files > 300 lines of code, if >2 patch attempts failed and messed up the file content, a good workaround is to refactor that compoennt, to smaller ones, remove that file, and rewrite the file
+
 
 
 
@@ -89,9 +93,6 @@ pnpm typecheck # typecheck
 pnpm check # biomejs check
 pnpm lint # runs both tasks, ALWAYS run this to verify your changes are safe
 ```
-
-1. start with `pnpm dev` under `packages/dash` which spins up the hono api as well as dashboard UI, on `https://localhost:3000`, it's https since we need to make Oauth work. To help with oauth testing, we created cloudflare tunnel, so no more localhost.
-2. ALWAYS plan first, use pseudo code to confirm with user about the high level technical design, patterns, and NEEDS verbal approval before implementation.
 
 ## Internal Documentation
 

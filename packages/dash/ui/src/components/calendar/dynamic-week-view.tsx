@@ -316,11 +316,14 @@ export function DynamicWeekView({
 
                 {/* Add button at the bottom if there are events */}
                 {eventsForDay.length > 0 && isCreatableDay(day) && (
-                  <EmptyStateButton
-                    day={day}
-                    onClick={handleCreateEvent}
-                    variant="small"
-                  />
+                  <div className="h-40 w-full">
+                    <EmptyStateButton
+                      day={day}
+                      onClick={handleCreateEvent}
+                      variant="small"
+                      className="h-full"
+                    />
+                  </div>
                 )}
               </div>
             </DroppableCell>

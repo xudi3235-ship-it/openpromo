@@ -44,7 +44,7 @@ export function EmptyStateButton({
         type="button"
         onClick={handleClick}
         className={cn(
-          "w-full h-8 border border-dashed border-border/30 rounded",
+          "w-full h-8 border border-dashed border-border/30 rounded-lg",
           "flex items-center justify-center text-muted-foreground text-xs",
           "hover:border-border/50 hover:bg-accent/20 transition-all",
           "mt-2 group",
@@ -62,7 +62,7 @@ export function EmptyStateButton({
       type="button"
       onClick={handleClick}
       className={cn(
-        "w-full min-h-[8rem] border-2 border-dashed border-border/40 rounded-lg",
+        "w-full min-h-[150px] border-2 border-dashed border-border/40 rounded-lg",
         "flex items-center justify-center text-muted-foreground",
         "hover:border-border/60 hover:bg-accent/30 transition-all",
         "group",
