@@ -5,7 +5,7 @@ import {
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
-import { ProductVisualsContent } from "@/components/product-visuals-v2/product-visuals-content";
+import { InstantAdRoot } from "@/components/instant-ad/instant-ad-root";
 import { useProductVisualGeneratorStore } from "@/stores/product-visual-generator-store";
 
 interface MediaGeneratorDialogProps {
@@ -32,7 +32,7 @@ export function MediaGeneratorDialog({
         </DialogHeader>
 
         <div className="flex-1 min-h-0 px-6 pb-6 overflow-hidden">
-          <ProductVisualsContent
+          <InstantAdRoot
             styles={styles}
             isLoadingStyles={isLoadingStyles}
             onBatchAddedToComposer={() => setOpen(false)}

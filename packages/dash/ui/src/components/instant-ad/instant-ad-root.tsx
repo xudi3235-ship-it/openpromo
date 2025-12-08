@@ -34,7 +34,7 @@ interface ProductVisualsContentProps {
 const samplePrompt =
   "Create an 8s TikTok style UGC ad video. using both avatar and product image";
 
-export function ProductVisualsContent({
+export function InstantAdRoot({
   styles,
   isLoadingStyles,
   onBatchAddedToComposer,

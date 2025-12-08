@@ -1,7 +1,7 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { z } from "zod";
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
-import { ProductVisualsContent } from "@/components/product-visuals-v2/product-visuals-content";
+import { InstantAdRoot } from "@/components/instant-ad/instant-ad-root";
 import { useStylesListQuery } from "@/queries/styles-queries";
 
 const instantAdSearchSchema = z.object({
@@ -38,7 +38,7 @@ function InstantAdPage() {
       </div>
 
       <div className="flex-1 min-h-0">
-        <ProductVisualsContent
+        <InstantAdRoot
           styles={styleGalleryItems}
           isLoadingStyles={isLoadingStyles}
           preselectedStyleId={styleId}

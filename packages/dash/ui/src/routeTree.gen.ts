@@ -27,7 +27,6 @@ import { Route as AuthenticatedWorkspacesWorkspaceSlugCalendarRouteImport } from
 import { Route as AuthenticatedWorkspacesWorkspaceSlugLabsRouteRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/labs/route'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugStylesIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/styles/index'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugProductsIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/products/index'
-import { Route as AuthenticatedWorkspacesWorkspaceSlugProductVisualsV2IndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/product-visuals-v2/index'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugInboxIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/inbox/index'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugContentIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/content/index'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/products/$productId'
@@ -140,12 +139,6 @@ const AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute =
     path: '/products/',
     getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRouteRoute,
   } as any)
-const AuthenticatedWorkspacesWorkspaceSlugProductVisualsV2IndexRoute =
-  AuthenticatedWorkspacesWorkspaceSlugProductVisualsV2IndexRouteImport.update({
-    id: '/product-visuals-v2/',
-    path: '/product-visuals-v2/',
-    getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRouteRoute,
-  } as any)
 const AuthenticatedWorkspacesWorkspaceSlugInboxIndexRoute =
   AuthenticatedWorkspacesWorkspaceSlugInboxIndexRouteImport.update({
     id: '/',
@@ -212,7 +205,6 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceSlug/products/$productId': typeof AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute
   '/workspaces/$workspaceSlug/content/': typeof AuthenticatedWorkspacesWorkspaceSlugContentIndexRoute
   '/workspaces/$workspaceSlug/inbox/': typeof AuthenticatedWorkspacesWorkspaceSlugInboxIndexRoute
-  '/workspaces/$workspaceSlug/product-visuals-v2': typeof AuthenticatedWorkspacesWorkspaceSlugProductVisualsV2IndexRoute
   '/workspaces/$workspaceSlug/products': typeof AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute
   '/workspaces/$workspaceSlug/styles': typeof AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute
 }
@@ -235,7 +227,6 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceSlug/products/$productId': typeof AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute
   '/workspaces/$workspaceSlug/content': typeof AuthenticatedWorkspacesWorkspaceSlugContentIndexRoute
   '/workspaces/$workspaceSlug/inbox': typeof AuthenticatedWorkspacesWorkspaceSlugInboxIndexRoute
-  '/workspaces/$workspaceSlug/product-visuals-v2': typeof AuthenticatedWorkspacesWorkspaceSlugProductVisualsV2IndexRoute
   '/workspaces/$workspaceSlug/products': typeof AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute
   '/workspaces/$workspaceSlug/styles': typeof AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute
 }
@@ -264,7 +255,6 @@ export interface FileRoutesById {
   '/_authenticated/workspaces/$workspaceSlug/products/$productId': typeof AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute
   '/_authenticated/workspaces/$workspaceSlug/content/': typeof AuthenticatedWorkspacesWorkspaceSlugContentIndexRoute
   '/_authenticated/workspaces/$workspaceSlug/inbox/': typeof AuthenticatedWorkspacesWorkspaceSlugInboxIndexRoute
-  '/_authenticated/workspaces/$workspaceSlug/product-visuals-v2/': typeof AuthenticatedWorkspacesWorkspaceSlugProductVisualsV2IndexRoute
   '/_authenticated/workspaces/$workspaceSlug/products/': typeof AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute
   '/_authenticated/workspaces/$workspaceSlug/styles/': typeof AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute
 }
@@ -293,7 +283,6 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug/products/$productId'
     | '/workspaces/$workspaceSlug/content/'
     | '/workspaces/$workspaceSlug/inbox/'
-    | '/workspaces/$workspaceSlug/product-visuals-v2'
     | '/workspaces/$workspaceSlug/products'
     | '/workspaces/$workspaceSlug/styles'
   fileRoutesByTo: FileRoutesByTo
@@ -316,7 +305,6 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug/products/$productId'
     | '/workspaces/$workspaceSlug/content'
     | '/workspaces/$workspaceSlug/inbox'
-    | '/workspaces/$workspaceSlug/product-visuals-v2'
     | '/workspaces/$workspaceSlug/products'
     | '/workspaces/$workspaceSlug/styles'
   id:
@@ -344,7 +332,6 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/$workspaceSlug/products/$productId'
     | '/_authenticated/workspaces/$workspaceSlug/content/'
     | '/_authenticated/workspaces/$workspaceSlug/inbox/'
-    | '/_authenticated/workspaces/$workspaceSlug/product-visuals-v2/'
     | '/_authenticated/workspaces/$workspaceSlug/products/'
     | '/_authenticated/workspaces/$workspaceSlug/styles/'
   fileRoutesById: FileRoutesById
@@ -483,13 +470,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugProductsIndexRouteImport
       parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteRoute
     }
-    '/_authenticated/workspaces/$workspaceSlug/product-visuals-v2/': {
-      id: '/_authenticated/workspaces/$workspaceSlug/product-visuals-v2/'
-      path: '/product-visuals-v2'
-      fullPath: '/workspaces/$workspaceSlug/product-visuals-v2'
-      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugProductVisualsV2IndexRouteImport
-      parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteRoute
-    }
     '/_authenticated/workspaces/$workspaceSlug/inbox/': {
       id: '/_authenticated/workspaces/$workspaceSlug/inbox/'
       path: '/'
@@ -608,7 +588,6 @@ interface AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren {
   AuthenticatedWorkspacesWorkspaceSlugTeamRoute: typeof AuthenticatedWorkspacesWorkspaceSlugTeamRoute
   AuthenticatedWorkspacesWorkspaceSlugIndexRoute: typeof AuthenticatedWorkspacesWorkspaceSlugIndexRoute
   AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute: typeof AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute
-  AuthenticatedWorkspacesWorkspaceSlugProductVisualsV2IndexRoute: typeof AuthenticatedWorkspacesWorkspaceSlugProductVisualsV2IndexRoute
   AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute: typeof AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute
   AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute: typeof AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute
 }
@@ -637,8 +616,6 @@ const AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren: AuthenticatedWorks
       AuthenticatedWorkspacesWorkspaceSlugIndexRoute,
     AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute:
       AuthenticatedWorkspacesWorkspaceSlugProductsProductIdRoute,
-    AuthenticatedWorkspacesWorkspaceSlugProductVisualsV2IndexRoute:
-      AuthenticatedWorkspacesWorkspaceSlugProductVisualsV2IndexRoute,
     AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute:
       AuthenticatedWorkspacesWorkspaceSlugProductsIndexRoute,
     AuthenticatedWorkspacesWorkspaceSlugStylesIndexRoute:

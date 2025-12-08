@@ -8,13 +8,13 @@ import type { ProductSelectItem } from "@/components/image-generator/product-sel
 import { ProductSelect } from "@/components/image-generator/product-select";
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
 import { StyleGallery } from "@/components/image-generator/style-gallery";
-import { AssetInput } from "@/components/product-visuals-v2/asset-input";
-import { ModeToggle } from "@/components/product-visuals-v2/mode-toggle";
-import { StatusPill } from "@/components/product-visuals-v2/status-pill";
+import { AssetInput } from "@/components/instant-ad/asset-input";
+import { ModeToggle } from "@/components/instant-ad/mode-toggle";
+import { StatusPill } from "@/components/instant-ad/status-pill";
 import {
   type Preset,
   VideoPresets,
-} from "@/components/product-visuals-v2/video-presets";
+} from "@/components/instant-ad/video-presets";
 import { useProductVisualsStore } from "@/features/product-visuals-v2/product-visuals-store";
 
 export interface InputPanelProps {
