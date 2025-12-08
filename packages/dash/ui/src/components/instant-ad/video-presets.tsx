@@ -12,7 +12,7 @@ export type Preset = ProductVisualsRouterOutputs["presets"]["presets"][number];
 
 interface VideoPresetsProps {
   presets: Preset[];
-  isLoading: boolean;
+  isLoading?: boolean;
   selectedPresetId?: string;
   onPresetSelect?: (preset: Preset) => void;
 }
@@ -30,9 +30,12 @@ export function PresetPicker({
   if (isLoading) {
     return (
       <div>
-        <h4 className="text-xs font-medium mb-3">
+        <h4 className="text-sm font-medium mb-3">
           Step 1. Select Viral Preset
         </h4>
+        <p className="text-xs text-muted-foreground mb-3">
+          Ready-made formats for viral ads and content
+        </p>
         <div className="grid grid-cols-4 gap-1.5">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div

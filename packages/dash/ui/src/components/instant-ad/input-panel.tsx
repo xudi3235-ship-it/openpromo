@@ -11,19 +11,13 @@ import { StyleGallery } from "@/components/image-generator/style-gallery";
 import { AssetInput } from "@/components/instant-ad/asset-input";
 import { ModeToggle } from "@/components/instant-ad/mode-toggle";
 import { StatusPill } from "@/components/instant-ad/status-pill";
-import {
-  type Preset,
-  PresetPicker,
-} from "@/components/instant-ad/video-presets";
+import { PresetPicker } from "@/components/instant-ad/video-presets";
 import { useInstantAdStore } from "@/features/instant-ad/instant-ad-store";
+import { usePresetsQuery } from "@/queries/product-visuals";
 
 export interface InputPanelProps {
   // Status
   status: VideoGenRealtime.RunStatus;
-
-  // Presets
-  presets?: Preset[];
-  isLoadingPresets?: boolean;
 
   // Product
   products: ProductSelectItem[];
@@ -41,8 +35,6 @@ export interface InputPanelProps {
 
 export function InputPanel({
   status,
-  presets,
-  isLoadingPresets,
   products,
   isLoadingProducts,
   styles,
@@ -77,6 +69,10 @@ export function InputPanel({
   const [isPromptOpen, setIsPromptOpen] = useState(false);
   const generateLabel = mode === "video" ? "Generate Video" : "Generate Image";
 
+  // Fetch presets
+  const { data: presetsData, isPending: isLoadingPresets } = usePresetsQuery();
+  const presets = presetsData?.presets ?? [];
+
   return (
     <div className="flex h-full min-w-0 flex-col">
       {/* Header */}
@@ -92,22 +88,20 @@ export function InputPanel({
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="space-y-8">
           {/* Presets */}
-          {presets && (
-            <div className="mx-1">
-              <PresetPicker
-                presets={presets}
-                isLoading={isLoadingPresets || false}
-                selectedPresetId={selectedVideoPresetId}
-                onPresetSelect={(preset) => {
-                  if (selectedVideoPresetId === preset.id) {
-                    selectVideoPreset(undefined);
-                  } else {
-                    selectVideoPreset(preset.id);
-                  }
-                }}
-              />
-            </div>
-          )}
+          <div className="mx-1">
+            <PresetPicker
+              presets={presets}
+              isLoading={isLoadingPresets}
+              selectedPresetId={selectedVideoPresetId}
+              onPresetSelect={(preset) => {
+                if (selectedVideoPresetId === preset.id) {
+                  selectVideoPreset(undefined);
+                } else {
+                  selectVideoPreset(preset.id);
+                }
+              }}
+            />
+          </div>
           {/* Custom Prompt Collapsible */}
           <div className="mx-1">
             <Button
