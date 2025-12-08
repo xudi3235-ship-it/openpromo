@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as z from "zod";
-import { ContentListPage } from "@/components/content/ContentListPage";
-import { prefetchContentList } from "@/queries/content-orpc";
+import { ContentLayout } from "@/components/content/content-layout";
 
 const contentSearchSchema = z.object({
   // Allow these params but don't use them (from calendar navigation)
@@ -18,9 +17,5 @@ export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/content",
 )({
   validateSearch: contentSearchSchema,
-  loader: ({ params, context }) => {
-    // Prefetch content list with default params to avoid query waterfall
-    prefetchContentList(context.queryClient, params.workspaceSlug);
-  },
-  component: ContentListPage,
+  component: ContentLayout,
 });

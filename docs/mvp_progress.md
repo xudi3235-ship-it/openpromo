@@ -63,7 +63,6 @@ content infra, providesr crud on the source platforms, backfills, fetches metric
 - [p0] audit the current state for backfill. for backfilled one, check their lifecycle,s what actions can be taken, etc.
 - [p0] a detail view when click on specific published posts
 - table view's metrics needs to be set up and refreshed nightly.
-- [p1] planner's week view might need some re-work, mayeb the vertical timeline we need to slice it to X min of interval, so that scheduling for specific timeblock is easier, e.g. 20min interval? but need to consider how to render when multiple posts collide.
 
 ### Image-genAI, video-genAI
 working product visuals page, powered by DO, for image/video gen w/ product image inputs.

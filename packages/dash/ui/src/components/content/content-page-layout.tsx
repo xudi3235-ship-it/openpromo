@@ -4,14 +4,13 @@ import {
   ContentFilters,
   type ContentFilters as ContentFiltersType,
 } from "./content-filters";
-import { ContentPageHeader } from "./content-page-header";
 import { ContentRescheduleDialog } from "./content-reschedule-dialog";
 
 interface ContentPageLayoutProps {
   children: React.ReactNode;
   searchValue: string;
   onSearchChange: (value: string) => void;
-  table: Table<MergedContentEntity>;
+  table?: Table<MergedContentEntity>;
   filters: ContentFiltersType;
   onFiltersChange: (filters: ContentFiltersType) => void;
 }
@@ -24,20 +23,11 @@ interface ContentPageLayoutProps {
  */
 export function ContentPageLayout({
   children,
-  searchValue,
-  onSearchChange,
-  table,
   filters,
   onFiltersChange,
 }: ContentPageLayoutProps) {
   return (
     <div className="w-full space-y-2">
-      <ContentPageHeader
-        searchValue={searchValue}
-        onSearchChange={onSearchChange}
-        table={table}
-      />
-
       <ContentFilters filters={filters} onFiltersChange={onFiltersChange} />
 
       {children}

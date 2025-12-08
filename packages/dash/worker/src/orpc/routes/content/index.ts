@@ -8,9 +8,11 @@ import {
 } from "./content-groups";
 import { createContent } from "./create-content";
 import { batchDeleteContent, deleteContent } from "./delete-content";
+import { getContent } from "./get-content";
 import { listContents } from "./list-content";
 
 export const contentRouter = orpcBuilder.router({
+  get: getContent,
   list: listContents,
   create: createContent,
   delete: deleteContent,

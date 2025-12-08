@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import {
   type ColumnFiltersState,
   getCoreRowModel,
@@ -7,8 +8,10 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { useEffect, useState } from "react";
+import type { MergedContentEntity } from "@worker/shared/content-types";
+import { useCallback, useEffect, useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { useContentListQuery } from "@/queries/content-orpc";
 import { BatchActionsToolbar } from "./batch-actions-toolbar";
 import { columns } from "./columns";
@@ -90,6 +93,19 @@ export function ContentListPage() {
     .getFilteredSelectedRowModel()
     .rows.map((row) => row.original);
 
+  const navigate = useNavigate();
+  const { workspace } = useWorkspace();
+
+  const handleRowClick = useCallback(
+    (entity: MergedContentEntity) => {
+      if (entity.type !== "content" || !workspace) return;
+      navigate({
+        to: `/workspaces/${workspace.slug}/content/${entity.entity.id}`,
+      });
+    },
+    [navigate, workspace],
+  );
+
   const handleRetry = () => {
     refetch();
   };
@@ -126,7 +142,11 @@ export function ContentListPage() {
         onClearSorting={() => setSorting([])}
       />
 
-      <ContentPageBody table={table} isLoading={isPending} />
+      <ContentPageBody
+        table={table}
+        isLoading={isPending}
+        onRowClick={handleRowClick}
+      />
 
       <ContentPageFooter table={table} pagination={data?.pagination} />
     </ContentPageLayout>

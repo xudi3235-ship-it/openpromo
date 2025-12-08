@@ -8,7 +8,6 @@ export function ProductsLoadingState() {
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {Array.from({ length: 10 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders only
           <div
             key={i}
             className="aspect-square overflow-hidden rounded-lg border border-border bg-muted/30"

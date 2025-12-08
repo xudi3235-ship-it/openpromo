@@ -45,30 +45,35 @@ interface ContentPageHeaderProps {
   table: Table<MergedContentEntity>;
 }
 
+export function ContentPageHeaderTitle() {
+  const openDialog = useDialogComposerStore((state) => state.openDialog);
+  return (
+    <div className="flex flex-wrap items-start gap-4">
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Content</h1>
+        <p className="text-sm text-muted-foreground">
+          Plan, publish, and measure everything in one place.
+        </p>
+      </div>
+      <div className="flex gap-2 ml-auto">
+        <Button onClick={() => openDialog()}>
+          <Plus className="h-4 w-4" />
+          Create Post
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function ContentPageHeader({
   searchValue,
   onSearchChange,
   table,
 }: ContentPageHeaderProps) {
-  const openDialog = useDialogComposerStore((state) => state.openDialog);
-
   return (
     <>
       {/* Title Section */}
-      <div className="flex flex-wrap items-start gap-4">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold tracking-tight">Content</h1>
-          <p className="text-sm text-muted-foreground">
-            Plan, publish, and measure everything in one place.
-          </p>
-        </div>
-        <div className="flex gap-2 ml-auto">
-          <Button onClick={() => openDialog()}>
-            <Plus className="h-4 w-4" />
-            Create Post
-          </Button>
-        </div>
-      </div>
+      <ContentPageHeaderTitle />
 
       {/* Search and Columns Section */}
       <div className="flex flex-wrap items-center gap-3 md:gap-4 py-2">

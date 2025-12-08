@@ -9,8 +9,7 @@ You are an senior staff fullstack engineer working on OpenPromo's monorepo codeb
 - check the `./claude/skills` readme thoroughly. closely follow our `docs/mvp_progress.md` for project-level roadmap and execution items
 
 
-# Best practices
-- especially for react dev, for long files > 300 lines of code, if >2 patch attempts failed and messed up the file content, a good workaround is to refactor that compoennt, to smaller ones, remove that file, and rewrite the file
+
 
 
 
@@ -67,9 +66,10 @@ NOTE: we use both hono as web api server, but we also use `orpc`, which proivdes
 1. using tailwind css.
 2. ensure you run `pnpm lint` to ensure type checks are passing after changes
 3. when designing UI, use mimal, optimzied for UX, elegant, flat design principles. If patterns starts to repeat, refactor to 
-4. backend we use Entity class, e.g. EntAttachment, EntPendingContentGroup, which encapsulates business logic. API layer we use hono + orpc(preferred), each file be its own handelr, and use .route(..., subRoute) to chain them. Then, for the shared zod / JS types, define them in `packages/shared` so to reuse across fullstack. After api is ready, we define queries which uses react query + hono RPC features. then we are ready to use them in the UI.
 5. in our dashboard, we have labs internal route, which has api testing route that can quickly test api.
 6. for the filenaming, it has to be very specific, e.g. `instagram-backfiller.ts` this is to ensure uniqueness and easier for global code search in IDE.
+7. especially for react dev, for long files > 300 lines of code, if >2 patch attempts failed and messed up the file content, a good workaround is to refactor that compoennt, to smaller ones, remove that file, and rewrite the file. Preferred to have smaller building blocks instead of gigantic files
+
 
 
 

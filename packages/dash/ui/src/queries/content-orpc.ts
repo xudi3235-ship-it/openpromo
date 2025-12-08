@@ -18,6 +18,12 @@ export type ContentListParams = Omit<
 >;
 export type ContentListResponse = ContentRouterOutputs["list"];
 
+export type ContentDetailParams = Omit<
+  ContentRouterInputs["get"],
+  "workspaceId" | "workspaceSlug"
+>;
+export type ContentDetailResponse = ContentRouterOutputs["get"];
+
 export type ContentCreateInput = Omit<
   ContentRouterInputs["create"],
   "workspaceId" | "workspaceSlug"
@@ -87,6 +93,22 @@ export const prefetchContentList = (
   );
 };
 
+export const prefetchContentDetail = (
+  queryClient: QueryClient,
+  workspaceSlug: string,
+  contentId: string,
+) => {
+  // do not await so we can hydrate when route loads
+  queryClient.prefetchQuery(
+    orpc.content.get.queryOptions({
+      input: {
+        workspaceSlug,
+        contentId,
+      },
+    }),
+  );
+};
+
 // Query hooks
 export const useContentListQuery = (
   params: ContentListParams = defaultListContentParams,
@@ -99,6 +121,20 @@ export const useContentListQuery = (
         ...params,
         workspaceSlug: workspace.slug,
       },
+    }),
+  );
+};
+
+export const useContentDetailQuery = (contentId?: string) => {
+  const { workspace } = useWorkspace();
+
+  return useQuery(
+    orpc.content.get.queryOptions({
+      input: {
+        workspaceSlug: workspace.slug,
+        contentId: contentId ?? "",
+      },
+      enabled: Boolean(contentId),
     }),
   );
 };
