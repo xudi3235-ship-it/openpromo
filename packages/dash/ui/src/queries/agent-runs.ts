@@ -1,3 +1,5 @@
+import type { QueryClient } from "@tanstack/react-query";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   AgentRunsRouterInputs,
@@ -17,6 +19,16 @@ export type AgentRunGetInput = Omit<
   AgentRunsRouterInputs["get"],
   "workspaceId" | "workspaceSlug"
 >;
+
+export const prefetchAgentRunsList = (
+  queryClient: QueryClient,
+  workspaceSlug: string,
+  params: AgentRunsListInput,
+) => {
+  queryClient.prefetchQuery(
+    orpc.agentRuns.list.queryOptions({ input: { ...params, workspaceSlug } }),
+  );
+};
 
 export const useAgentRunsListQuery = (
   params: AgentRunsListInput,

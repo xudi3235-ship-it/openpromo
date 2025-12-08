@@ -1,3 +1,5 @@
+import type { QueryClient } from "@tanstack/react-query";
+
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -48,6 +50,17 @@ export const usePresetsQuery = () => {
       input: {
         workspaceSlug: workspace.slug,
       },
+    }),
+  );
+};
+
+export const prefetchPresetsQuery = (
+  queryClient: QueryClient,
+  workspaceSlug: string,
+) => {
+  queryClient.prefetchQuery(
+    orpc.productVisuals.presets.queryOptions({
+      input: { workspaceSlug },
     }),
   );
 };

@@ -2,7 +2,13 @@ import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { z } from "zod";
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
 import { InstantAdRoot } from "@/components/instant-ad/instant-ad-root";
-import { useStylesListQuery } from "@/queries/styles-queries";
+import { prefetchAgentRunsList } from "@/queries/agent-runs";
+import { prefetchProductList } from "@/queries/product";
+import { prefetchPresetsQuery } from "@/queries/product-visuals";
+import {
+  prefetchStylesList,
+  useStylesListQuery,
+} from "@/queries/styles-queries";
 
 const instantAdSearchSchema = z.object({
   styleId: z.string().optional(),
@@ -14,6 +20,21 @@ export const Route = createFileRoute(
   "/_authenticated/workspaces/$workspaceSlug/instant-ad",
 )({
   validateSearch: (search) => instantAdSearchSchema.parse(search),
+  loader: async ({ context, params }) => {
+    const { queryClient } = context;
+    const { workspaceSlug } = params;
+    // Prefetch all required queries
+    prefetchStylesList(queryClient, workspaceSlug, {
+      page: 1,
+      officialOnly: true,
+    });
+    prefetchProductList(queryClient, workspaceSlug, { pageSize: 50 });
+    prefetchPresetsQuery(queryClient, workspaceSlug);
+    prefetchAgentRunsList(queryClient, workspaceSlug, {
+      page: 1,
+      pageSize: 24,
+    });
+  },
   component: InstantAdPage,
 });
 
