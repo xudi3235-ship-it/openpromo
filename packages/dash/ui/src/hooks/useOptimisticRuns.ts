@@ -1,6 +1,6 @@
 import type { VideoGenRealtime } from "@shared/agents/video-gen-types";
 import { useEffect, useMemo, useState } from "react";
-import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
 
 export function useOptimisticRuns(
   serverRuns: RunFeedItem[] | undefined,

@@ -17,7 +17,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
 
 interface ResultCardActionsProps {

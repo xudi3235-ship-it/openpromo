@@ -1,5 +1,5 @@
 import { cn } from "@openpromo/ui/lib/utils";
-import type { GenerationMode } from "@/features/product-visuals-v2/product-visuals-types";
+import type { GenerationMode } from "@/features/instant-ad/instant-ad-types";
 
 export function ModeToggle({
   mode,

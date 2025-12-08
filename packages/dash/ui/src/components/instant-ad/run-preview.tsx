@@ -3,7 +3,7 @@ import { Grid2X2, List } from "lucide-react";
 import React from "react";
 import { GridView } from "@/components/composer/layout/grid-view";
 import { ListView } from "@/components/composer/layout/list-view";
-import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
 import { useConnectedAccounts } from "@/queries/connected-account";
 import { useComposerStore } from "@/stores/composer-store";
 

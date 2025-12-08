@@ -5,8 +5,8 @@ import { toast } from "sonner";
 import { DataGrid } from "@/components/common";
 import type { ProductSelectItem } from "@/components/image-generator/product-select";
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
-import { useProductVisualsStore } from "@/features/product-visuals-v2/product-visuals-store";
-import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import { useInstantAdStore } from "@/features/instant-ad/instant-ad-store";
+import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
 import { useOptimisticRuns } from "@/hooks/useOptimisticRuns";
 import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
@@ -57,7 +57,7 @@ export function InstantAdRoot({
     selectedVideoPresetId,
     selectStyle,
     selectProduct,
-  } = useProductVisualsStore();
+  } = useInstantAdStore();
 
   // Video Gen Agent
   const {

@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
 
 export function RunCardActions({ run }: { run: RunFeedItem }) {
   const firstUrl =

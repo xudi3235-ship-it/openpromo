@@ -15,7 +15,7 @@ import {
   type Preset,
   VideoPresets,
 } from "@/components/instant-ad/video-presets";
-import { useProductVisualsStore } from "@/features/product-visuals-v2/product-visuals-store";
+import { useInstantAdStore } from "@/features/instant-ad/instant-ad-store";
 
 export interface InputPanelProps {
   // Status
@@ -72,7 +72,7 @@ export function InputPanel({
     removeReferenceAsset,
     addBrandAsset,
     removeBrandAsset,
-  } = useProductVisualsStore();
+  } = useInstantAdStore();
   const [isAssetsOpen, setIsAssetsOpen] = useState(false);
   const [isPromptOpen, setIsPromptOpen] = useState(false);
   const generateLabel = mode === "video" ? "Generate Video" : "Generate Image";

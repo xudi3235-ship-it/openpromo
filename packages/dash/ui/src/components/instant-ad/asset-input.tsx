@@ -4,7 +4,7 @@ import { Label } from "@openpromo/ui/components/label";
 import { Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { Dropzone } from "@/components/dropzone";
-import type { AssetItem } from "@/features/product-visuals-v2/product-visuals-types";
+import type { AssetItem } from "@/features/instant-ad/instant-ad-types";
 import { useStorageUpload } from "@/hooks/useStorageUpload";
 
 export function AssetInput({

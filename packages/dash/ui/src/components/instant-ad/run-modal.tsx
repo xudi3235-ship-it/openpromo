@@ -11,7 +11,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ChevronDown, ExternalLink, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
 import { StatusPill } from "./status-pill";
 

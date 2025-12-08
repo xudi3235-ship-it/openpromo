@@ -1,7 +1,7 @@
 import { Badge } from "@openpromo/ui/components/badge";
 import { formatDistanceToNow } from "date-fns";
 import { Play } from "lucide-react";
-import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
 import { RunCardActions } from "./run-card-actions";
 import { StatusPill } from "./status-pill";
 

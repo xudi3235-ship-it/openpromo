@@ -11,7 +11,7 @@ import {
   GridCardStatusBadge,
   GridCardTypeBadge,
 } from "@/components/common";
-import type { RunFeedItem } from "@/features/product-visuals-v2/product-visuals-types";
+import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
 import { ResultCardActions } from "./result-card-actions";
 
 interface ResultCardProps {
