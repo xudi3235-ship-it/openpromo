@@ -12,6 +12,7 @@ import { AssetInput } from "@/components/instant-ad/asset-input";
 import { ModeToggle } from "@/components/instant-ad/mode-toggle";
 import { StatusPill } from "@/components/instant-ad/status-pill";
 import { PresetPicker } from "@/components/instant-ad/video-presets";
+import { CreateProductModal } from "@/components/products/create-product-modal";
 import { useInstantAdStore } from "@/features/instant-ad/instant-ad-store";
 import { usePresetsQuery } from "@/queries/product-visuals";
 
@@ -256,6 +257,7 @@ export function InputPanel({
           )}
         </div>
       </div>
+      <CreateProductModal />
     </div>
   );
 }
