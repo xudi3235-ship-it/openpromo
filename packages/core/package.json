@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.0.0",
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "db": "doppler run -- drizzle-kit",
     "db:script": "doppler run -- tsx",
     "db:push": "pnpm db push",
