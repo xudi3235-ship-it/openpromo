@@ -14,7 +14,7 @@ catalog:
   ai: ^5.0.108
   cloudflare: ^5.2.0
   drizzle-orm: ^0.45.0
-  hono: ^4.10.7
+  hono: ^4.10.8
   immer: ^11.0.1
   lucide-react: ^0.555.0
   react: 19.2.1
