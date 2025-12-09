@@ -21,28 +21,7 @@ export function useRunAttachments(run: RunFeedItem | undefined) {
       source: "remote" as const,
     }));
 
-    // Also check artifacts for backwards compatibility
-    const artifactVideos = (run.artifacts?.videos || []).map((v) => ({
-      id: run.id,
-      type: "video" as const,
-      publicUrl: v.videoUrl,
-      mimeType: "video/mp4",
-      source: "remote" as const,
-    }));
-    const artifactImages = (run.artifacts?.images || []).map((i) => ({
-      id: run.id,
-      type: "photo" as const,
-      publicUrl: i.imageUrl,
-      mimeType: "image/jpeg",
-      source: "remote" as const,
-    }));
-
-    const allAttachments = [
-      ...videos,
-      ...images,
-      ...artifactVideos,
-      ...artifactImages,
-    ];
+    const allAttachments = [...videos, ...images];
 
     // Deduplicate by publicUrl to avoid duplicates when same media exists in both output and artifacts
     const uniqueAttachments = allAttachments.filter(
