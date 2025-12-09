@@ -59,6 +59,7 @@
     "./lib/*": "./src/lib/*.ts",
     "./components/*": "./src/components/*.tsx",
     "./components/social-preview": "./src/components/social-preview/index.ts",
+    "./components/ai-elements": "./src/components/ai-elements/index.ts",
     "./layout": "./src/layout/index.ts",
     "./styles/fonts": "./src/styles/fonts.ts"
   }

@@ -4,19 +4,14 @@ import { FlaskConical } from "lucide-react";
 function LabsLayout() {
   return (
     <div className="flex flex-col h-full">
-      {/* Internal Labs Banner */}
-      <div className="bg-muted/50 border-b">
-        <div className="container mx-auto px-6 py-3">
-          <div className="flex items-center gap-3">
-            <FlaskConical className="w-4 h-4 text-muted-foreground" />
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Labs</span>
-              <span className="text-xs text-muted-foreground">•</span>
-              <span className="text-xs text-muted-foreground">
-                Internal Only
-              </span>
-            </div>
-          </div>
+      {/* Internal Labs Pill */}
+      <div className="flex justify-center pt-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted/60 rounded-full border border-border/50">
+          <FlaskConical className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground">
+            Labs
+          </span>
+          <span className="text-xs text-muted-foreground/60">• Internal</span>
         </div>
       </div>
 

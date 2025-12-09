@@ -2,6 +2,7 @@
 import { Button } from "@openpromo/ui/components/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { InstantAdChat } from "@/components/instant-ad-chat/instant-ad-chat";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaceWebSocket } from "@/hooks/useWorkspaceWebSocket";
 import { useHonoMutation } from "@/lib/hono-client";
@@ -20,9 +21,9 @@ function PlaygroundPage() {
   const { workspaceSlug } = Route.useParams();
   const { data: user } = useAuth();
   const [events, setEvents] = useState<WebSocketEvent[]>([]);
-  const [activeTab, setActiveTab] = useState<"websocket" | "agent-chat">(
-    "websocket",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "websocket" | "agent-chat" | "instant-ad"
+  >("websocket");
 
   // Use the shared WebSocket connection from the provider
   const { status, subscribe, refreshNotifications } = useWorkspaceWebSocket();
@@ -107,6 +108,16 @@ function PlaygroundPage() {
             }`}
           >
             Agent Chat
+          </button>
+          <button
+            onClick={() => setActiveTab("instant-ad")}
+            className={`px-4 py-2 rounded ${
+              activeTab === "instant-ad"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200"
+            }`}
+          >
+            Instant Ad Chat
           </button>
         </div>
       </div>
@@ -252,6 +263,19 @@ function PlaygroundPage() {
         <Suspense fallback={<div>Loading Agent Chat...</div>}>
           <AgentChatPanel userId={user?.id} />
         </Suspense>
+      )}
+
+      {activeTab === "instant-ad" && (
+        <div className="h-[calc(100vh-12rem)]">
+          <InstantAdChat
+            products={[]}
+            presets={[]}
+            styles={[]}
+            onGenerate={(request) => {
+              console.log("Generating ad:", request);
+            }}
+          />
+        </div>
       )}
     </div>
   );
