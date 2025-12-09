@@ -43,7 +43,6 @@ export function InputPanel({
   styles,
   isLoadingStyles,
   onGenerate,
-  isGenerateDisabled,
   error,
 }: InputPanelProps) {
   const {
@@ -247,7 +246,7 @@ export function InputPanel({
           Step 3. create instant ad
         </Label>
         <div className="flex flex-col gap-2">
-          <Button onClick={onGenerate} disabled={isGenerateDisabled} size="sm">
+          <Button onClick={onGenerate} size="sm">
             {generateLabel}
           </Button>
           {error && (

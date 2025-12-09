@@ -112,6 +112,7 @@ Auto-saves generated images and returns the URL.`,
       image_input: inputImages,
       aspect_ratio: aspectRatio,
       output_format: outputFormat,
+      pro: false, // cheaper for test
     });
 
     console.log(`[nanoBanana] Generated image URL: ${imageUrl}`);

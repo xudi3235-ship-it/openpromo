@@ -30,9 +30,6 @@ interface ProductVisualsContentProps {
   selectedRunId?: string;
 }
 
-const samplePrompt =
-  "Create an 8s TikTok style UGC ad video. using both avatar and product image";
-
 export function InstantAdRoot({
   styles,
   isLoadingStyles,
@@ -133,7 +130,7 @@ export function InstantAdRoot({
   const buildInput = useMemo(
     (): VideoGenRealtime.EventDataMap["set_input"] => ({
       mode: mode === "image" ? "image_gen" : "video_gen",
-      prompt: prompt.trim() || samplePrompt,
+      prompt: prompt.trim() || "",
       productImages: productImageUrls.filter(Boolean).slice(0, 3),
       avatarImages: avatarAssets.map((a) => a.url).slice(0, 3),
       referenceImages: referenceAssets.map((a) => a.url).slice(0, 3),

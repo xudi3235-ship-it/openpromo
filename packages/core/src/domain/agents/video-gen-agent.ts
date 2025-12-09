@@ -456,10 +456,7 @@ export class VideoGenAgent extends AIChatAgent<
         });
       },
       start_pipeline: async (data) => {
-        // reset, then set input, then run
-        // TODO: this might be problem if we wanna multi-turn
-        // interactions.
-        this.resetState();
+        console.log({ data });
         // Input is now required in start_pipeline
         this.patchState((draft) => {
           draft.input = data.input;

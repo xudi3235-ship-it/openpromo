@@ -13,6 +13,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
+import { useRunAttachments } from "@/hooks/useRunAttachments";
 import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
 import { orpc } from "@/lib/orpc-client";
 import {
@@ -39,6 +40,9 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     error,
     // refetch,
   } = useAgentRunQuery({ id: runId });
+
+  // Get attachments from run data
+  const { attachments, isVideo, firstMediaUrl } = useRunAttachments(run);
 
   // Set up real-time updates for running runs
   const { serverState, isConnected } = useVideoGenAgent({
@@ -83,10 +87,6 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   // Check if this run is currently active in the agent
   const isActiveRun = serverState.runId === runId && isConnected;
 
-  // Get media type for metadata display
-  const isVideo =
-    run?.output.output?.videos?.[0] || run?.artifacts?.videos?.[0];
-
   const handleBack = () => {
     navigate({
       to: "/workspaces/$workspaceSlug/instant-ad",
@@ -98,20 +98,13 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   const handleDownload = async () => {
     if (!run) return;
 
-    const isVideo =
-      run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
-    const url =
-      isVideo?.videoUrl ||
-      run.output.output?.images?.[0]?.imageUrl ||
-      run.artifacts?.images?.[0]?.imageUrl;
-
-    if (!url) {
+    if (!firstMediaUrl) {
       alert("No media found to download");
       return;
     }
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(firstMediaUrl);
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -143,28 +136,10 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   const handleCreatePost = () => {
     if (!run) return;
 
-    const isVideo =
-      run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
-    const url =
-      isVideo?.videoUrl ||
-      run.output.output?.images?.[0]?.imageUrl ||
-      run.artifacts?.images?.[0]?.imageUrl;
-
-    if (!url) {
+    if (attachments.length === 0) {
       alert("No media found to add to composer");
       return;
     }
-
-    const attachments = [
-      {
-        id: run.id,
-        type: isVideo ? ("video" as const) : ("photo" as const),
-        publicUrl: url,
-        mimeType: isVideo ? "video/mp4" : "image/jpeg",
-        source: "remote" as const,
-      },
-    ];
-
     // Open composer with the media
     openComposer({
       attachments,

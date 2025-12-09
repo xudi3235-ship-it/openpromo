@@ -4,6 +4,7 @@ import React from "react";
 import { GridView } from "@/components/composer/layout/grid-view";
 import { ListView } from "@/components/composer/layout/list-view";
 import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
+import { useRunAttachments } from "@/hooks/useRunAttachments";
 import { useConnectedAccounts } from "@/queries/connected-account";
 import { useComposerStore } from "@/stores/composer-store";
 
@@ -18,28 +19,15 @@ export function RunPreview({ run, className }: RunPreviewProps) {
   const { initializeComposer, activeAccount, setActiveAccount } =
     useComposerStore();
 
-  // Get media from run
-  const isVideo = run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
-  const mediaUrl =
-    isVideo?.videoUrl ||
-    run.output.output?.images?.[0]?.imageUrl ||
-    run.artifacts?.images?.[0]?.imageUrl;
+  const { attachments, isVideo, hasMedia } = useRunAttachments(run);
 
   // Initialize composer store with run data when component mounts
   React.useEffect(() => {
-    if (mediaUrl) {
+    if (hasMedia) {
       initializeComposer({
         initContentCreateData: {
           base: {
-            attachments: [
-              {
-                id: run.id,
-                type: isVideo ? "video" : "photo",
-                publicUrl: mediaUrl,
-                mimeType: isVideo ? "video/mp4" : "image/jpeg",
-                source: "remote" as const,
-              },
-            ],
+            attachments,
             message: run.input?.prompt || "",
           },
           placements: {},
@@ -48,7 +36,7 @@ export function RunPreview({ run, className }: RunPreviewProps) {
         initialSelectedPreview: accounts[0]?.platform,
       });
     }
-  }, [run, mediaUrl, isVideo, accounts, initializeComposer]);
+  }, [run, attachments, hasMedia, accounts, initializeComposer]);
 
   if (isLoadingAccounts) {
     return <div className={className}>Loading preview...</div>;
