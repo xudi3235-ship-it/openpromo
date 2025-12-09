@@ -37,7 +37,20 @@ export function useRunAttachments(run: RunFeedItem | undefined) {
       source: "remote" as const,
     }));
 
-    return [...videos, ...images, ...artifactVideos, ...artifactImages];
+    const allAttachments = [
+      ...videos,
+      ...images,
+      ...artifactVideos,
+      ...artifactImages,
+    ];
+
+    // Deduplicate by publicUrl to avoid duplicates when same media exists in both output and artifacts
+    const uniqueAttachments = allAttachments.filter(
+      (attachment, index, self) =>
+        self.findIndex((a) => a.publicUrl === attachment.publicUrl) === index,
+    );
+
+    return uniqueAttachments;
   }, [run]);
 
   const isVideo = attachments.some((att) => att.type === "video");

@@ -69,18 +69,6 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
           },
         );
       },
-      // status_update: async () => {
-      //   // Refetch on status updates for this run
-      //   if (serverState.runId === runId) {
-      //     refetch();
-      //   }
-      // },
-      // video_generated: async () => {
-      //   // Refetch when video generation is complete for this run
-      //   if (serverState.runId === runId) {
-      //     refetch();
-      //   }
-      // },
     },
   });
 
