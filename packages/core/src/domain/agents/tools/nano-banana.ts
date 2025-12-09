@@ -62,10 +62,6 @@ const NanoBananaParamsSchema = z.object({
     .describe(
       "Aspect ratio of the generated image. Use 9:16 for TikTok/Reels, 1:1 for Instagram posts, 16:9 for YouTube.",
     ),
-  outputFormat: z
-    .enum(["png", "jpg"])
-    .default("jpg")
-    .describe("Output image format."),
 });
 
 type NanoBananaParams = z.infer<typeof NanoBananaParamsSchema>;
@@ -75,7 +71,7 @@ type NanoBananaParams = z.infer<typeof NanoBananaParamsSchema>;
  * @param inputs
  * @returns
  */
-function transformFileInputs(inputs: string[]): (string | Buffer)[] {
+export function transformFileInputs(inputs: string[]): (string | Buffer)[] {
   return inputs.map((input) => {
     // 1. if url string, use as is
     if (isStringUrl(input)) return input;
@@ -104,14 +100,14 @@ Auto-saves generated images and returns the URL.`,
       `[nanoBanana] Tool invoked with params:`,
       JSON.stringify(params),
     );
-    const { prompt, imageInputPaths, aspectRatio, outputFormat } = params;
+    const { prompt, imageInputPaths, aspectRatio } = params;
     const inputImages = transformFileInputs(imageInputPaths ?? []);
 
     const imageUrl = await Replicate.NanoBanana.run({
       prompt,
       image_input: inputImages,
       aspect_ratio: aspectRatio,
-      output_format: outputFormat,
+      output_format: "jpg",
       pro: false, // cheaper for test
     });
 
@@ -122,7 +118,7 @@ Auto-saves generated images and returns the URL.`,
 
     // Generate unique filename with timestamp
     const timestamp = Date.now();
-    const fileName = `nanobana_${timestamp}.${outputFormat}`;
+    const fileName = `nanobana_${timestamp}.jpg`;
     const outputPath = join(OUTPUT_DIR, fileName);
 
     // Download and save the image
@@ -130,10 +126,15 @@ Auto-saves generated images and returns the URL.`,
 
     // update agent state with artifacts
     const { agent } = getCurrentAgent<VideoGenAgent>();
-    agent?.patchState((draft) => {
-      if (!draft.artifacts.images) {
-        draft.artifacts.images = [];
-      }
+    if (!agent) {
+      console.warn("[nanoBanana] No current agent found to update state.");
+      return toolSuccess("nano_banana", {
+        imageUrl,
+        outputPath,
+      });
+    }
+
+    agent.patchState((draft) => {
       draft.artifacts.images.push({
         id: `nano_banana_${Date.now()}`,
         imageUrl,
