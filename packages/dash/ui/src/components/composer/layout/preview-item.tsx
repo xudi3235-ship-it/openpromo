@@ -8,7 +8,7 @@ interface PreviewItemProps {
   contentType: "reel" | "feed";
   isActive: boolean;
   children: React.ReactNode;
-  size?: "default" | "compact";
+  size?: "default" | "compact" | "large";
 }
 
 export function PreviewItem({
@@ -29,33 +29,62 @@ export function PreviewItem({
     <div
       className={cn(
         "flex flex-col flex-shrink-0",
-        size === "compact" ? "w-[220px] gap-1.5" : "w-[280px] gap-2",
+        size === "compact"
+          ? "w-[220px] gap-1.5"
+          : size === "large"
+            ? "w-[360px] gap-3"
+            : "w-[280px] gap-2",
       )}
     >
       <div
         className={cn(
           "flex flex-col items-center text-center",
-          size === "compact" ? "gap-0.5" : "gap-1",
+          size === "compact" ? "gap-0.5" : size === "large" ? "gap-2" : "gap-1",
         )}
       >
         <div
           className={cn(
             "flex items-center justify-center gap-2 px-1 font-medium text-foreground",
-            size === "compact" ? "text-[11px]" : "text-xs",
+            size === "compact"
+              ? "text-[11px]"
+              : size === "large"
+                ? "text-sm"
+                : "text-xs",
           )}
         >
           <span
-            className="inline-flex h-2.5 w-2.5 rounded-full border border-border"
+            className={cn(
+              "rounded-full border border-border",
+              size === "compact"
+                ? "h-2.5 w-2.5"
+                : size === "large"
+                  ? "h-3 w-3"
+                  : "h-2.5 w-2.5",
+            )}
             style={{ backgroundColor: meta.accentColor }}
           />
-          <span className="truncate max-w-[180px]" title={accountLabel}>
+          <span
+            className={cn(
+              "truncate",
+              size === "compact"
+                ? "max-w-[180px]"
+                : size === "large"
+                  ? "max-w-[220px]"
+                  : "max-w-[180px]",
+            )}
+            title={accountLabel}
+          >
             {accountLabel}
           </span>
         </div>
         <div
           className={cn(
             "text-muted-foreground",
-            size === "compact" ? "text-[10px]" : "text-[11px]",
+            size === "compact"
+              ? "text-[10px]"
+              : size === "large"
+                ? "text-xs"
+                : "text-[11px]",
           )}
         >
           {contentLabel}
@@ -65,12 +94,13 @@ export function PreviewItem({
         className={cn(
           "w-full rounded-2xl",
           size === "compact" && "rounded-xl",
+          size === "large" && "rounded-3xl",
           isActive && cn("ring-2 ring-offset-2", meta.accentRingClass),
         )}
       >
         {children}
       </div>
-      {isActive && size === "default" && (
+      {isActive && (size === "default" || size === "large") && (
         <div className="flex justify-center">
           <Badge
             variant="secondary"
@@ -78,6 +108,7 @@ export function PreviewItem({
               "text-[10px] font-medium px-2 py-0.5",
               "bg-muted/80",
               meta.accentTextClass,
+              size === "large" && "text-xs px-3 py-1",
             )}
           >
             Customizing

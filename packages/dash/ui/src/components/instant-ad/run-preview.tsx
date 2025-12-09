@@ -1,6 +1,6 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Grid2X2, List } from "lucide-react";
-import React from "react";
+import { useEffect, useState } from "react";
 import { GridView } from "@/components/composer/layout/grid-view";
 import { ListView } from "@/components/composer/layout/list-view";
 import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
@@ -11,10 +11,15 @@ import { useComposerStore } from "@/stores/composer-store";
 interface RunPreviewProps {
   run: RunFeedItem;
   className?: string;
+  size?: "default" | "compact" | "large";
 }
 
-export function RunPreview({ run, className }: RunPreviewProps) {
-  const [viewMode, setViewMode] = React.useState<"list" | "grid">("grid");
+export function RunPreview({
+  run,
+  className,
+  size = "large",
+}: RunPreviewProps) {
+  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const { accounts, isPending: isLoadingAccounts } = useConnectedAccounts();
   const { initializeComposer, activeAccount, setActiveAccount } =
     useComposerStore();
@@ -22,7 +27,7 @@ export function RunPreview({ run, className }: RunPreviewProps) {
   const { attachments, isVideo, hasMedia } = useRunAttachments(run);
 
   // Initialize composer store with run data when component mounts
-  React.useEffect(() => {
+  useEffect(() => {
     if (hasMedia) {
       initializeComposer({
         initContentCreateData: {
@@ -83,6 +88,7 @@ export function RunPreview({ run, className }: RunPreviewProps) {
           accounts={accounts}
           activeAccountId={null}
           isReel={Boolean(isVideo)}
+          size={size}
         />
       )}
     </div>

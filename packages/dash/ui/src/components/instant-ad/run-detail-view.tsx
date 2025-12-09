@@ -253,15 +253,6 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
         </div>
         <div className="flex items-center gap-2">
           <Button
-            onClick={handleCreatePost}
-            size="sm"
-            variant="ghost"
-            className="flex items-center gap-2"
-          >
-            <SquarePen size={14} />
-            Create Post
-          </Button>
-          <Button
             variant="ghost"
             size="sm"
             onClick={handleDownload}
@@ -284,143 +275,151 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
 
       {/* Content */}
       <ScrollArea className="min-h-0 flex-1">
-        <div className="px-4 pb-4 pt-4">
-          {/* Social Media Previews */}
+        <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
+          {/* Social Media Preview */}
           {run && (
-            <div className="pb-6 flex justify-center">
-              <RunPreview run={run} />
+            <div className="w-full overflow-x-auto pb-4">
+              <div className="min-w-max flex justify-center">
+                <RunPreview run={run} className="w-fit" />
+              </div>
             </div>
           )}
 
-          {/* Call to Action - Post to Social */}
+          {/* Call to Action - Single prominent CTA */}
           {run && (
-            <div className="mb-8 max-w-2xl mx-auto text-center">
-              <p className="text-sm text-muted-foreground mb-4">
-                Share your creation with your audience instantly
-              </p>
-              <Button onClick={handleCreatePost} size="lg">
+            <div className="text-center">
+              <Button
+                onClick={handleCreatePost}
+                size="lg"
+                disabled={attachments.length === 0}
+                className="min-w-[200px]"
+              >
                 <SquarePen size={18} className="mr-2" />
-                Post to Social Accounts
+                Create Post
               </Button>
+              <p className="text-sm text-muted-foreground mt-2">
+                Share your creation with your audience
+              </p>
             </div>
           )}
 
-          {/* Details Section */}
-          {run && (
-            <div className="max-w-4xl mx-auto">
-              <div className="flex gap-8">
-                {/* Left Column - Prompt */}
-                <div className="flex-1 min-w-0">
-                  <div className="mb-6">
-                    <h4 className="text-sm font-medium mb-3 text-foreground">
-                      Prompt
-                    </h4>
-                    <div className="bg-muted/50 rounded-lg p-4">
-                      <p className="text-sm text-muted-foreground">
-                        {run.input?.prompt || "No prompt available"}
+          {/* Information Card - Combined prompt and details */}
+          <div className="bg-card border rounded-xl p-6">
+            <h4 className="text-sm font-medium mb-4 text-foreground">
+              Run Information
+            </h4>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Prompt Section */}
+              <div>
+                <h5 className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wider">
+                  Prompt
+                </h5>
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground">
+                    {run.input?.prompt || "No prompt available"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Details Section */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Details
+                  </h5>
+                  {/* Real-time connection indicator */}
+                  <div className="flex items-center gap-1 text-xs">
+                    {isConnected && isActiveRun ? (
+                      <>
+                        <Wifi className="h-3 w-3 text-green-500" />
+                        <span className="text-green-600 dark:text-green-400">
+                          Live updates
+                        </span>
+                      </>
+                    ) : isConnected ? (
+                      <>
+                        <Wifi className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-muted-foreground">Connected</span>
+                      </>
+                    ) : (
+                      <>
+                        <WifiOff className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-muted-foreground">Offline</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground text-xs">
+                        Created:
+                      </span>
+                      <p className="font-medium mt-0.5 text-xs">
+                        {new Date(run.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground text-xs">
+                        Type:
+                      </span>
+                      <p className="font-medium mt-0.5 text-xs capitalize">
+                        {isVideo ? "Video" : "Image"}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground text-xs">
+                        Status:
+                      </span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="font-medium text-xs capitalize">
+                          {run.status}
+                        </p>
+                        {isActiveRun && (
+                          <div className="flex items-center gap-1">
+                            <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />
+                            <span className="text-xs text-blue-600 dark:text-blue-400">
+                              {serverState.status === "running"
+                                ? "Processing..."
+                                : serverState.status}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground text-xs">
+                        Mode:
+                      </span>
+                      <p className="font-medium mt-0.5 text-xs">
+                        {run.input.mode}
                       </p>
                     </div>
                   </div>
                 </div>
-
-                {/* Right Column - Metadata */}
-                <div className="w-80 flex-shrink-0">
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-medium text-foreground">
-                        Information
-                      </h4>
-                      {/* Real-time connection indicator */}
-                      <div className="flex items-center gap-1 text-xs">
-                        {isConnected && isActiveRun ? (
-                          <>
-                            <Wifi className="h-3 w-3 text-green-500" />
-                            <span className="text-green-600 dark:text-green-400">
-                              Live updates
-                            </span>
-                          </>
-                        ) : isConnected ? (
-                          <>
-                            <Wifi className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-muted-foreground">
-                              Connected
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <WifiOff className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-muted-foreground">
-                              Offline
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="bg-muted/30 rounded-lg p-4">
-                      <div className="space-y-3 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">
-                            Created:
-                          </span>
-                          <p className="font-medium mt-1">
-                            {new Date(run.createdAt).toLocaleString()}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Status:</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <p className="capitalize font-medium">
-                              {run.status}
-                            </p>
-                            {isActiveRun && (
-                              <div className="flex items-center gap-1">
-                                <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />
-                                <span className="text-xs text-blue-600 dark:text-blue-400">
-                                  {serverState.status === "running"
-                                    ? "Processing..."
-                                    : serverState.status}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Type:</span>
-                          <p className="font-medium mt-1">
-                            {isVideo ? "Video" : "Image"}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Mode:</span>
-                          <p className="font-medium mt-1">{run.input.mode}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Output Details - only show in dev */}
-                  {run.output.output &&
-                    process.env.NODE_ENV === "development" && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <h4 className="text-sm font-medium text-foreground">
-                            Debug Output
-                          </h4>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                            DEV ONLY
-                          </span>
-                        </div>
-                        <div className="bg-muted/50 rounded-lg p-4">
-                          <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-96 overflow-auto">
-                            {JSON.stringify(run.output, null, 2)}
-                          </pre>
-                        </div>
-                      </div>
-                    )}
-                </div>
               </div>
             </div>
-          )}
+
+            {/* Output Details - only show in dev */}
+            {run.output.output && process.env.NODE_ENV === "development" && (
+              <div className="mt-6 pt-6 border-t">
+                <div className="flex items-center gap-2 mb-3">
+                  <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Debug Output
+                  </h5>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                    DEV ONLY
+                  </span>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-96 overflow-auto">
+                    {JSON.stringify(run.output, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </ScrollArea>
     </div>
