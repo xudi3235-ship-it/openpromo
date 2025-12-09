@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "preview": "astro build && wrangler dev",
     "astro": "astro",
     "deploy:staging": "astro build && wrangler deploy -e staging",

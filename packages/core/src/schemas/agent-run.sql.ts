@@ -23,12 +23,6 @@ export const agentRunStatusEnum = pgEnum(
 
 export type AgentRunStatus = z.infer<typeof VideoGenRealtime.RunStatusZod>;
 
-export type AgentRunName = z.infer<typeof VideoGenRealtime.AgentNameZod>;
-export const agentNameEnum = pgEnum(
-  "agent_run_agent",
-  VideoGenRealtime.AgentName,
-);
-
 export const AgentRunArtifactsSchema =
   VideoGenRealtime.AgentOutput.shape.output.default(
     VideoGenRealtime.defaultArtifacts,
@@ -55,10 +49,6 @@ export const agentRunTable = pgTable(
     ...timestamps,
     ...workspaceID,
     // stores fields from server app state
-    agentName: agentNameEnum("agent_name")
-      .notNull()
-      .default("video_gen_agent")
-      .$type<AgentRunName>(),
     status: agentRunStatusEnum().notNull().default("not_started"),
     input: jsonb("input")
       .$type<AgentRunInput>()

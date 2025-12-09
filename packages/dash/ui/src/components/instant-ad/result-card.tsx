@@ -39,7 +39,7 @@ export function ResultCard({
   isSelected,
   onToggleSelect,
 }: ResultCardProps) {
-  const isVideo = run.agentName === "video_gen_agent";
+  const isVideo = run.input.mode === "video_gen";
   const coverVideo =
     run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
   const coverImage =

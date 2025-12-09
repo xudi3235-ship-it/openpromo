@@ -24,16 +24,12 @@ export namespace VideoGenRealtime {
   export const RunStatusZod = z.enum(RunStatus);
   export type RunStatus = z.infer<typeof RunStatusZod>;
 
-  export const AgentName = ["video_gen_agent", "image_gen_agent"] as const;
-  export type AgentName = z.infer<typeof AgentNameZod>;
-
-  export const AgentNameZod = z.enum(AgentName);
-
   // -- Client Events --
   /**
    * core input data schema, powering the video gen as well as
    */
   export const InputSchema = z.object({
+    mode: z.enum(["image_gen", "video_gen"]),
     prompt: z.string(),
     // brand assets, e.g. logo
     brandAssets: z.string().array(),
@@ -53,6 +49,7 @@ export namespace VideoGenRealtime {
 
   export const defaultInput: Input = {
     prompt: "empty prompt",
+    mode: "video_gen",
     productImages: [],
     avatarImages: [],
     referenceImages: [],
@@ -68,13 +65,6 @@ export namespace VideoGenRealtime {
     type: z.literal("start_pipeline"),
     data: z.object({
       input: InputSchema,
-    }),
-  });
-
-  export const SetAgent = base.extend({
-    type: z.literal("set_agent"),
-    data: z.object({
-      agent: AgentNameZod,
     }),
   });
 
@@ -125,7 +115,6 @@ export namespace VideoGenRealtime {
 
   // -- Application State --
   export const serverAppState = z.object({
-    agentName: AgentNameZod,
     status: RunStatusZod,
     runId: z.string().nullable(),
     lastUpdated: z.string(),
@@ -145,7 +134,6 @@ export namespace VideoGenRealtime {
   export type ServerAppState = z.infer<typeof serverAppState>;
 
   export const initialServerAppState: ServerAppState = {
-    agentName: "video_gen_agent",
     status: "not_started",
     runId: null,
     logs: "",
@@ -189,7 +177,7 @@ export namespace VideoGenRealtime {
     }),
   });
 
-  const ClientEvents = z.union([SetInput, SetAgent, StartPipeline, ResetState]);
+  const ClientEvents = z.union([SetInput, StartPipeline, ResetState]);
 
   const ServerEvents = z.union([SyncState, StatusUpdate, VideoGenerated, Echo]);
 

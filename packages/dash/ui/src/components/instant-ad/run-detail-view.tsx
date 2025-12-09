@@ -60,7 +60,6 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
               status: data.state.status,
               output: data.state.output,
               artifacts: data.state.artifacts,
-              agentName: data.state.agentName,
               updatedAt: data.state.lastUpdated,
             };
           },
@@ -429,8 +428,8 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
                           </p>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Agent:</span>
-                          <p className="font-medium mt-1">{run.agentName}</p>
+                          <span className="text-muted-foreground">Mode:</span>
+                          <p className="font-medium mt-1">{run.input.mode}</p>
                         </div>
                       </div>
                     </div>
@@ -450,7 +449,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
                         </div>
                         <div className="bg-muted/50 rounded-lg p-4">
                           <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-96 overflow-auto">
-                            {JSON.stringify(run.output.output, null, 2)}
+                            {JSON.stringify(run.output, null, 2)}
                           </pre>
                         </div>
                       </div>

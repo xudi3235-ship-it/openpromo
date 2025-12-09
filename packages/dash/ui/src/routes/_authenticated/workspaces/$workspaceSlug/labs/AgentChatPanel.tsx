@@ -50,13 +50,10 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
   const [chatInput, setChatInput] = useState("");
   const [inputForm, setInputForm] = useState<InputFormState>(defaultInputForm);
   const [_msgs] = useState<unknown[]>([]);
-  const [selectedAgent, setSelectedAgent] =
-    useState<VideoGenRealtime.AgentName>("video_gen_agent");
 
   const {
     isConnected,
     sendEvent,
-    setAgent,
     chat: { messages, sendMessage, status, error, clearHistory },
     serverState,
   } = useVideoGenAgent({
@@ -73,6 +70,7 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
     const avatarImages = parseMultilineList(inputForm.avatarImages);
 
     const payload: VideoGenRealtime.EventDataMap["set_input"] = {
+      mode: "video_gen",
       prompt: inputForm.prompt.trim() || samplePrompt,
       productImages,
       avatarImages,
@@ -82,10 +80,6 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
 
     return payload;
   }, [inputForm]);
-
-  useEffect(() => {
-    setSelectedAgent(serverState.agentName);
-  }, [serverState.agentName]);
 
   useEffect(() => {
     if (!isConnected) return;
@@ -134,13 +128,6 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
     sendEvent("reset_state", {});
   };
 
-  const handleAgentChange = (agentName: VideoGenRealtime.AgentName) => {
-    setSelectedAgent(agentName);
-    const payload = buildInputPayload;
-    lastSentRef.current = JSON.stringify(payload);
-    setAgent(agentName, payload);
-  };
-
   const videos = dedupeById([
     ...(serverState.artifacts.videos ?? []),
     ...(serverState.output.output.videos ?? []),
@@ -174,10 +161,8 @@ export function AgentChatPanel({ userId }: { userId: string | undefined }) {
             <div>
               <Label htmlFor="agent">Agent</Label>
               <Select
-                value={selectedAgent}
-                onValueChange={(value) =>
-                  handleAgentChange(value as VideoGenRealtime.AgentName)
-                }
+                value={"video_gen_agent"}
+                onValueChange={() => {}}
                 disabled={!isConnected}
               >
                 <SelectTrigger id="agent" className="w-full">

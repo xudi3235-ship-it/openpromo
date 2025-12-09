@@ -17,7 +17,6 @@ export function useOptimisticRuns(
 
     const optimisticRun: RunFeedItem = {
       id: serverState.runId,
-      agentName: serverState.agentName,
       status: serverState.status,
       input: serverState.input,
       output: serverState.output,

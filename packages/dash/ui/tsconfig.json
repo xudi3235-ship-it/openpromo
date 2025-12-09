@@ -4,6 +4,7 @@
     "@tsconfig/vite-react/tsconfig.json"
   ],
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@worker/*": ["../worker/src/*"],

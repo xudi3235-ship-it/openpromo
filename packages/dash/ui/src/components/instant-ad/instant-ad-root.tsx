@@ -132,6 +132,7 @@ export function InstantAdRoot({
 
   const buildInput = useMemo(
     (): VideoGenRealtime.EventDataMap["set_input"] => ({
+      mode: mode === "image" ? "image_gen" : "video_gen",
       prompt: prompt.trim() || samplePrompt,
       productImages: productImageUrls.filter(Boolean).slice(0, 3),
       avatarImages: avatarAssets.map((a) => a.url).slice(0, 3),
@@ -140,6 +141,7 @@ export function InstantAdRoot({
       presetId: selectedVideoPresetId || undefined,
     }),
     [
+      mode,
       avatarAssets,
       brandAssets,
       productImageUrls,
@@ -158,16 +160,14 @@ export function InstantAdRoot({
       setShowConfirmGenerateDialog(true);
       return;
     }
-    const agentName = mode === "image" ? "image_gen_agent" : "video_gen_agent";
     const payload = buildInput;
-    startGeneration(agentName, payload);
-  }, [isConnected, mode, buildInput, startGeneration, serverState.status]);
+    startGeneration(payload);
+  }, [isConnected, buildInput, startGeneration, serverState.status]);
 
   const handleConfirmGenerate = () => {
     resetState();
-    const agentName = mode === "image" ? "image_gen_agent" : "video_gen_agent";
     const payload = buildInput;
-    startGeneration(agentName, payload);
+    startGeneration(payload);
     setShowConfirmGenerateDialog(false);
   };
 

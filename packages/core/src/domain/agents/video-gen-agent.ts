@@ -143,11 +143,11 @@ export class VideoGenAgent extends AIChatAgent<
       });
   }
 
-  private async runPipeline(params: { agent: VideoGenRealtime.AgentName }) {
+  private async runPipeline() {
     await this.withActor(() =>
       withTrace(VideoGenAgent.name, async () => {
         return this.withStateMgmt(async () => {
-          await this.runPipelineImpl(params);
+          await this.runPipelineImpl();
         });
       }),
     );
@@ -192,7 +192,7 @@ export class VideoGenAgent extends AIChatAgent<
   /**
    * core entrypoint to run the video generation pipeline.
    */
-  private async runPipelineImpl(params: { agent: VideoGenRealtime.AgentName }) {
+  private async runPipelineImpl() {
     const runtimeContext = new RunContext<VideoGenAgentContext>({
       input: this.state.input,
       stage: "create_plan",
@@ -200,7 +200,7 @@ export class VideoGenAgent extends AIChatAgent<
     });
     // 1. create agent with context
     const agent =
-      params.agent === "video_gen_agent"
+      this.state.input.mode === "video_gen"
         ? createVideoGenAgent()
         : createImageGenWithRefAgent();
     // finalized input items
@@ -227,7 +227,7 @@ export class VideoGenAgent extends AIChatAgent<
     // 2. run the agent
     // TODO: utilize agent handoff using structural output
     while (step < MAX_RUN_STEPS) {
-      console.log(`>>>> Agent run step ${step} >>>>`);
+      console.log(`>>>> Agent: ${this.state.input.mode} run step ${step} >>>>`);
       console.log(`>>>> last 2 input:`, JSON.stringify(currInput.slice(-2)));
       console.log(
         `>>>> agent tools:`,
@@ -244,7 +244,11 @@ export class VideoGenAgent extends AIChatAgent<
         // prepare next input
         currInput = [
           ...result.history,
-          // TODO: might instrument more info here during each run
+          // TODO: might instrument more info here during each run to avoid losing context.
+          {
+            role: "system",
+            content: `<end_of_step> end of step ${step}, continue to next step run. above is the action item and needs execution.`,
+          },
         ];
         step++;
         continue;
@@ -451,22 +455,16 @@ export class VideoGenAgent extends AIChatAgent<
           draft.input = data;
         });
       },
-      set_agent: async (data) => {
-        this.log(`[VideoGenAgent] switching agent to ${data.agent}`);
-        this.runStateSerialized = null;
-        this.patchState((draft) => {
-          Object.assign(draft, VideoGenRealtime.initialServerAppState);
-          draft.agentName = data.agent;
-        });
-      },
       start_pipeline: async (data) => {
+        // reset, then set input, then run
+        // TODO: this might be problem if we wanna multi-turn
+        // interactions.
+        this.resetState();
         // Input is now required in start_pipeline
         this.patchState((draft) => {
           draft.input = data.input;
         });
-        await this.runPipeline({
-          agent: this.state.agentName,
-        });
+        await this.runPipeline();
       },
       reset_state: async () => {
         console.log(`[VideoGenAgent] reset_state requested`);
@@ -572,8 +570,18 @@ export class VideoGenAgent extends AIChatAgent<
       );
       if (preset) {
         messages.push({
-          role: "system",
-          content: `user selected this preset, use properly as direction and adjustmenets. Using preset "${preset.name}": ${preset.description}\nPrompt: ${preset.prompt}`,
+          role: "user",
+          content: [
+            {
+              type: "input_text" as const,
+              text: `User selected a preset. Uses this preset as reference/directional inspiration, Do not simply copy pasta it!  "${preset.name}": ${preset.prompt}`,
+            },
+            // TODO: load more assets?
+            {
+              type: "input_image" as const,
+              image: preset.thumbnailUrl,
+            },
+          ],
         });
       }
     }

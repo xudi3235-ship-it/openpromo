@@ -145,21 +145,8 @@ export function useVideoGenAgent({ onEvent }: Props) {
     agent,
     // Application State
     state: serverState,
-    setAgent: (
-      agentName: VideoGenRealtime.AgentName,
-      input?: VideoGenRealtime.EventDataMap["set_input"],
-    ) => {
-      sendEvent("set_agent", { agent: agentName });
-      if (input) {
-        sendEvent("set_input", input);
-      }
-    },
     // Combined agent setup and pipeline start in one call
-    startGeneration: (
-      agentName: VideoGenRealtime.AgentName,
-      input: VideoGenRealtime.EventDataMap["set_input"],
-    ) => {
-      sendEvent("set_agent", { agent: agentName });
+    startGeneration: (input: VideoGenRealtime.EventDataMap["set_input"]) => {
       sendEvent("start_pipeline", { input });
     },
     // low level event sender on ws

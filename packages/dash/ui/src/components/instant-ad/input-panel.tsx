@@ -244,7 +244,7 @@ export function InputPanel({
       {/* Generate Button */}
       <div className="mt-6 pt-4">
         <Label className="text-sm font-medium mb-2 block">
-          Step 3. Generate Video
+          Step 3. create instant ad
         </Label>
         <div className="flex flex-col gap-2">
           <Button onClick={onGenerate} disabled={isGenerateDisabled} size="sm">

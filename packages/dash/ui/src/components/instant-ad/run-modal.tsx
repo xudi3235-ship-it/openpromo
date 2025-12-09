@@ -68,7 +68,7 @@ export function RunModal({
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="capitalize">
-                  {run.agentName.replace("_", " ")}
+                  {run.input.mode}
                 </Badge>
                 <StatusPill status={run.status} />
                 <span className="text-xs text-muted-foreground">
