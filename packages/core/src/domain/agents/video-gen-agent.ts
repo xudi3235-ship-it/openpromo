@@ -80,14 +80,14 @@ export class VideoGenAgent extends AIChatAgent<
       this.setState(VideoGenRealtime.initialServerAppState);
     }
 
-    // Initialize state manager
+    // Initialize state manager with getters/setters (single source of truth)
     this.stateManager = new AppStateManager(
+      () => this.state,
+      (state) => this.setState(state),
       (state) => {
         const connections = this.ctx.getWebSockets();
         StateBroadcaster.broadcastState(connections, state);
       },
-      (state) => this.setState(state),
-      this.state,
     );
 
     this.ctx.blockConcurrencyWhile(async () => {
@@ -149,14 +149,14 @@ export class VideoGenAgent extends AIChatAgent<
   ): Promise<AgentInputItem[]> {
     if (!this.runStateSerialized) {
       // new
-      return await this.createRunnerInitialInput();
+      return await this.inputTransformer.transform(this.state.input);
     }
     // from serialized
     const state = await RunState.fromString(agent, this.runStateSerialized);
     return [
       ...state.history,
       // captures latest msg
-      ...(await this.createRunnerInitialInput()),
+      ...(await this.inputTransformer.transform(this.state.input)),
     ];
   }
 
@@ -256,7 +256,7 @@ export class VideoGenAgent extends AIChatAgent<
     _state: VideoGenRealtime.ServerAppState | undefined,
     _source: Connection | "server",
   ): Promise<void> {
-    this.broadcastState();
+    this.stateManager.broadcastState();
   }
 
   // clears stuff
@@ -267,10 +267,6 @@ export class VideoGenAgent extends AIChatAgent<
       // Reset chat history
       this.messages = [];
     });
-  }
-
-  private broadcastState() {
-    this.stateManager.broadcastState();
   }
 
   /**
@@ -352,22 +348,6 @@ export class VideoGenAgent extends AIChatAgent<
         this.resetState();
       },
     } satisfies WebSocketHandler.EventHandlers);
-  }
-
-  /**
-   * Transform input to agent input items using InputTransformer.
-   * Used for both video gen and image gen agents.
-   */
-  private async createRunnerInitialInput(): Promise<AgentInputItem[]> {
-    return this.inputTransformer.transform(this.state.input);
-  }
-
-  /**
-   * Get the current structure of the tmp directory as a string.
-   * Uses node:fs which is available in Cloudflare Workers VFS.
-   */
-  static get tmpDirStr(): string {
-    return InputTransformer.getTmpDirSnapshot();
   }
 
   // wip
