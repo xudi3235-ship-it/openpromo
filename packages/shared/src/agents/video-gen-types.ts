@@ -119,7 +119,7 @@ export namespace VideoGenRealtime {
     runId: z.string().nullable(),
     lastUpdated: z.string(),
     input: InputSchema,
-    logs: z.string().describe("optional logs from agent run"),
+    logs: z.array(z.string()).describe("append-only logs from agent run"),
     // intermediate artifacts generated in the pipeline
     // during agent run
     artifacts: z.object({
@@ -136,7 +136,7 @@ export namespace VideoGenRealtime {
   export const initialServerAppState: ServerAppState = {
     status: "not_started",
     runId: null,
-    logs: "",
+    logs: [],
     lastUpdated: new Date().toISOString(),
     input: defaultInput,
     output: defaultAgentOutput,

@@ -407,6 +407,13 @@
       "when": 1765342000934,
       "tag": "0057_colossal_black_panther",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1765397137335,
+      "tag": "0058_furry_magdalene",
+      "breakpoints": true
     }
   ]
 }

@@ -35,6 +35,7 @@ export const AgentRunOutputSchema = VideoGenRealtime.AgentOutput.default(
 );
 export type AgentRunOutput = z.infer<typeof AgentRunOutputSchema>;
 const defaultOutput: AgentRunOutput = VideoGenRealtime.defaultAgentOutput;
+const defaultLogs: string[] = [];
 
 export const AgentRunInputSchema = VideoGenRealtime.InputSchema.default(
   VideoGenRealtime.defaultInput,
@@ -62,7 +63,7 @@ export const agentRunTable = pgTable(
       .$type<AgentRunOutput>()
       .notNull()
       .default(defaultOutput),
-    logs: text("logs"),
+    logs: jsonb("logs").$type<string[]>().notNull().default(defaultLogs),
     error: text("error"),
     startedAt: timestamp(),
     completedAt: timestamp(),

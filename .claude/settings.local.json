@@ -1,13 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm lint)",
       "Bash(docker info:*)",
-      "Bash(pnpm biome check:*)",
       "Bash(cat:*)",
-      "Bash(pnpm tsc:*)",
-      "Bash(pnpm list:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(pnpm:*)"
     ]
   }
 }

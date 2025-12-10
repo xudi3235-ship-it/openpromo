@@ -7,9 +7,9 @@ import type { ProductSelectItem } from "@/components/image-generator/product-sel
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
 import { useInstantAdStore } from "@/features/instant-ad/instant-ad-store";
 import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
+import { useVideoGenAgentContext } from "@/features/instant-ad/video-gen-agent-provider";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
 import { useOptimisticRuns } from "@/hooks/useOptimisticRuns";
-import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   useAgentRunsListQuery,
@@ -62,7 +62,7 @@ export function InstantAdRoot({
     serverState,
     resetState,
     chat: { error },
-  } = useVideoGenAgent({});
+  } = useVideoGenAgentContext();
 
   // Queries
   const { data: productsData, isPending: isLoadingProducts } =

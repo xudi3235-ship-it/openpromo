@@ -56,38 +56,53 @@ export function useVideoGenAgent({ onEvent }: Props) {
         await callUserHandler("sync_state", data);
       },
       status_update: async (data) => {
-        setServerState((prev) => ({
-          ...prev,
-          status: data.status,
-          lastUpdated: new Date().toISOString(),
-        }));
+        let runIdForInvalidation: string | null = null;
+        setServerState((prev) => {
+          runIdForInvalidation = prev.runId;
+          return {
+            ...prev,
+            status: data.status,
+            lastUpdated: new Date().toISOString(),
+          };
+        });
 
-        // Invalidate queries for current run
-        if (serverState.runId) {
+        if (runIdForInvalidation) {
           queryClient.invalidateQueries({
-            queryKey: ["orpc", "agentRuns", "get", { id: serverState.runId }],
+            queryKey: orpc.agentRuns.get.key({
+              input: {
+                id: runIdForInvalidation,
+                workspaceSlug: workspace.slug,
+              },
+            }),
           });
         }
 
         await callUserHandler("status_update", data);
       },
       video_generated: async (data) => {
-        setServerState((prev) => ({
-          ...prev,
-          artifacts: {
-            ...prev.artifacts,
-            videos: [
-              ...(prev.artifacts.videos ?? []),
-              { id: data.assetId, videoUrl: data.videoUrl },
-            ],
-          },
-          lastUpdated: new Date().toISOString(),
-        }));
+        let runIdForInvalidation: string | null = null;
+        setServerState((prev) => {
+          runIdForInvalidation = prev.runId;
+          return {
+            ...prev,
+            artifacts: {
+              ...prev.artifacts,
+              videos: [
+                ...(prev.artifacts.videos ?? []),
+                { id: data.assetId, videoUrl: data.videoUrl },
+              ],
+            },
+            lastUpdated: new Date().toISOString(),
+          };
+        });
 
-        if (serverState.runId) {
+        if (runIdForInvalidation) {
           queryClient.invalidateQueries({
             queryKey: orpc.agentRuns.get.key({
-              input: { id: serverState.runId, workspaceSlug: workspace.slug },
+              input: {
+                id: runIdForInvalidation,
+                workspaceSlug: workspace.slug,
+              },
             }),
           });
         }
@@ -95,7 +110,7 @@ export function useVideoGenAgent({ onEvent }: Props) {
         await callUserHandler("video_generated", data);
       },
     }),
-    [onEvent, callUserHandler, queryClient, serverState.runId, workspace.slug],
+    [onEvent, callUserHandler, queryClient, workspace.slug],
   );
 
   const agent = useAgent<VideoGenRealtime.ServerAppState>({

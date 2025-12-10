@@ -12,14 +12,16 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { useVideoGenAgentContext } from "@/features/instant-ad/video-gen-agent-provider";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
 import { useRunAttachments } from "@/hooks/useRunAttachments";
-import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
 import { orpc } from "@/lib/orpc-client";
 import {
   useAgentRunQuery,
   useDeleteAgentRunsMutation,
 } from "@/queries/agent-runs";
+import { RunLivePanel } from "./run-live-panel";
 import { RunPreview } from "./run-preview";
 
 interface RunDetailViewProps {
@@ -42,38 +44,62 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   } = useAgentRunQuery({ id: runId });
 
   // Get attachments from run data
-  const { attachments, isVideo, firstMediaUrl } = useRunAttachments(run);
+  const { serverState, isConnected } = useVideoGenAgentContext();
 
-  // Set up real-time updates for running runs
-  const { serverState, isConnected } = useVideoGenAgent({
-    onEvent: {
-      // Update run data when we receive sync_state event
-      sync_state: async (data) => {
-        if (data.state.runId !== runId) {
-          return;
-        }
-        // Merge the latest data from sync_state into the cached query data
-        queryClient.setQueryData(
-          orpc.agentRuns.get.key({ input: { id: runId, workspaceSlug } }),
-          (oldData: typeof run) => {
-            if (!oldData) return oldData;
+  const liveRun = useMemo(() => {
+    if (!run) return run;
 
-            // Merge the server state with the existing run data
-            return {
-              ...oldData,
-              status: data.state.status,
-              output: data.state.output,
-              artifacts: data.state.artifacts,
-              updatedAt: data.state.lastUpdated,
-            };
-          },
-        );
-      },
-    },
-  });
+    if (serverState.runId === runId && isConnected) {
+      return {
+        ...run,
+        status: serverState.status,
+        artifacts: serverState.artifacts,
+        output: serverState.output,
+        logs: serverState.logs,
+        input: serverState.input,
+        updatedAt: new Date(serverState.lastUpdated),
+      };
+    }
 
-  // Check if this run is currently active in the agent
+    return run;
+  }, [isConnected, run, runId, serverState]);
+
+  const { attachments, isVideo, firstMediaUrl } = useRunAttachments(liveRun);
+
+  // Merge latest server state into cached query when this run is active
   const isActiveRun = serverState.runId === runId && isConnected;
+
+  const liveLogs = useMemo(() => {
+    if (isActiveRun) return serverState.logs;
+    if (!run) return [];
+    if (Array.isArray(run.logs)) return run.logs;
+    return run.logs ? [run.logs] : [];
+  }, [isActiveRun, run, serverState.logs]);
+
+  const liveArtifacts = isActiveRun
+    ? serverState.artifacts
+    : (run?.artifacts ?? { images: [], videos: [] });
+
+  useEffect(() => {
+    if (!isActiveRun) return;
+
+    queryClient.setQueryData(
+      orpc.agentRuns.get.key({ input: { id: runId, workspaceSlug } }),
+      (oldData: typeof run) => {
+        if (!oldData) return oldData;
+
+        return {
+          ...oldData,
+          status: serverState.status,
+          output: serverState.output,
+          artifacts: serverState.artifacts,
+          logs: serverState.logs,
+          input: serverState.input,
+          updatedAt: new Date(serverState.lastUpdated),
+        };
+      },
+    );
+  }, [isActiveRun, queryClient, runId, serverState, workspaceSlug]);
 
   const handleBack = () => {
     navigate({
@@ -84,7 +110,8 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   };
 
   const handleDownload = async () => {
-    if (!run) return;
+    const currentRun = liveRun ?? run;
+    if (!currentRun) return;
 
     if (!firstMediaUrl) {
       alert("No media found to download");
@@ -97,7 +124,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = downloadUrl;
-      a.download = `run-${run.id}-${Date.now()}${isVideo ? ".mp4" : ".jpg"}`;
+      a.download = `run-${currentRun.id}-${Date.now()}${isVideo ? ".mp4" : ".jpg"}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(downloadUrl);
@@ -109,12 +136,14 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   };
 
   const handleDelete = async () => {
-    if (!run || !confirm("Are you sure you want to delete this run?")) {
+    const currentRun = liveRun ?? run;
+
+    if (!currentRun || !confirm("Are you sure you want to delete this run?")) {
       return;
     }
 
     try {
-      await deleteRunMutation.mutateAsync({ ids: [run.id] });
+      await deleteRunMutation.mutateAsync({ ids: [currentRun.id] });
       handleBack(); // Go back to list after successful delete
     } catch (error) {
       console.error("Failed to delete run:", error);
@@ -122,7 +151,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   };
 
   const handleCreatePost = () => {
-    if (!run) return;
+    if (!liveRun) return;
 
     if (attachments.length === 0) {
       alert("No media found to add to composer");
@@ -234,6 +263,12 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     );
   }
 
+  const displayRun = liveRun ?? run;
+  const displayStatus = isActiveRun ? serverState.status : displayRun.status;
+  const displayMode = isActiveRun
+    ? serverState.input.mode
+    : displayRun.input.mode;
+
   return (
     <div className="flex h-full w-full min-w-0 flex-col">
       {/* Header */}
@@ -287,11 +322,15 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
       {/* Content */}
       <ScrollArea className="min-h-0 flex-1">
         <div className="w-full max-w-6xl mx-auto px-3 py-2 sm:px-4 sm:py-3 space-y-4 sm:space-y-6">
+          {isActiveRun && serverState.status === "running" && (
+            <RunLivePanel logs={liveLogs} artifacts={liveArtifacts} />
+          )}
+
           {/* Social Media Preview */}
-          {run && (
+          {displayRun && (
             <div className="w-full">
               <div className="flex justify-center">
-                <RunPreview run={run} className="w-full max-w-full" />
+                <RunPreview run={displayRun} className="w-full max-w-full" />
               </div>
               {/* Mobile Create Post Button - shown only on small screens */}
               <div className="mt-4 sm:hidden text-center">
@@ -325,7 +364,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
                 </h5>
                 <div className="bg-muted/50 rounded-md sm:rounded-lg p-2.5 sm:p-3">
                   <p className="text-sm text-muted-foreground break-words">
-                    {run.input?.prompt || "No prompt available"}
+                    {displayRun.input?.prompt || "No prompt available"}
                   </p>
                 </div>
               </div>
@@ -365,7 +404,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
                         Created:
                       </span>
                       <p className="font-medium mt-0.5 text-xs">
-                        {new Date(run.createdAt).toLocaleString()}
+                        {new Date(displayRun.createdAt).toLocaleString()}
                       </p>
                     </div>
                     <div>
@@ -382,7 +421,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
                       </span>
                       <div className="flex items-center gap-2 mt-0.5">
                         <p className="font-medium text-xs capitalize">
-                          {run.status}
+                          {displayStatus}
                         </p>
                         {isActiveRun && (
                           <div className="flex items-center gap-1">
@@ -401,7 +440,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
                         Mode:
                       </span>
                       <p className="font-medium mt-0.5 text-xs">
-                        {run.input.mode}
+                        {displayMode}
                       </p>
                     </div>
                   </div>
@@ -410,23 +449,24 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
             </div>
 
             {/* Output Details - only show in dev */}
-            {run.output.output && process.env.NODE_ENV === "development" && (
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 mb-2">
-                  <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Debug Output
-                  </h5>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 w-fit">
-                    DEV ONLY
-                  </span>
+            {displayRun.output.output &&
+              process.env.NODE_ENV === "development" && (
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 mb-2">
+                    <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Debug Output
+                    </h5>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 w-fit">
+                      DEV ONLY
+                    </span>
+                  </div>
+                  <div className="bg-muted/50 rounded-md sm:rounded-lg p-2.5 sm:p-3 overflow-x-auto">
+                    <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-96 overflow-auto break-all">
+                      {JSON.stringify(displayRun, null, 2)}
+                    </pre>
+                  </div>
                 </div>
-                <div className="bg-muted/50 rounded-md sm:rounded-lg p-2.5 sm:p-3 overflow-x-auto">
-                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-96 overflow-auto break-all">
-                    {JSON.stringify(run, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
       </ScrollArea>

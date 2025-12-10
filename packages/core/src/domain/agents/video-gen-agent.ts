@@ -58,7 +58,6 @@ export class VideoGenAgent extends AIChatAgent<
 > {
   // internal states
   private runStateSerialized: string | null;
-  private _logs: string;
   private actorStore: ActorStore;
   private presetManager: Presets.Manager;
   private inputTransformer: InputTransformer;
@@ -66,7 +65,6 @@ export class VideoGenAgent extends AIChatAgent<
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
     this.runStateSerialized = null;
-    this._logs = "";
     this.actorStore = new ActorStore(ctx);
     this.presetManager = new Presets.Manager();
     this.inputTransformer = new InputTransformer(this.presetManager);
@@ -189,7 +187,11 @@ export class VideoGenAgent extends AIChatAgent<
 
     // Reset internal state before starting
     this.runStateSerialized = null;
-    this._logs = "";
+    this.patchState((draft) => {
+      draft.logs = [];
+      draft.artifacts = VideoGenRealtime.defaultArtifacts;
+      draft.output = VideoGenRealtime.defaultAgentOutput;
+    });
 
     // Create run and mark as running
     const run = await EntAgentRun.createFromState(this.state);
@@ -234,7 +236,9 @@ export class VideoGenAgent extends AIChatAgent<
   private log(msg: string, ...args: any[]) {
     const formattedMsg = `[${VideoGenAgent.name}] ${msg} ${JSON.stringify(args)}`;
     console.log(formattedMsg, ...args);
-    this._logs += `${formattedMsg}\n`;
+    this.patchState((draft) => {
+      draft.logs.push(formattedMsg);
+    });
   }
 
   // either from serialize state or create new
@@ -323,7 +327,6 @@ export class VideoGenAgent extends AIChatAgent<
       this.patchState((draft) => {
         draft.status = "succeeded";
         draft.output = finalOutput;
-        draft.logs = this._logs;
       });
       this.log(`run completed:`, result.finalOutput);
       // exit
@@ -348,7 +351,6 @@ export class VideoGenAgent extends AIChatAgent<
     // Reset state and broadcast to clients
     this.setState(VideoGenRealtime.initialServerAppState);
     this.runStateSerialized = null;
-    this._logs = "";
     // Reset chat history
     this.messages = [];
 
