@@ -3,10 +3,10 @@ import { Button } from "@openpromo/ui/components/button";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { InstantAdChat } from "@/components/instant-ad-chat/instant-ad-chat";
+import { AgentChatPanel } from "@/components/labs/AgentChatPanel";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaceWebSocket } from "@/hooks/useWorkspaceWebSocket";
 import { useHonoMutation } from "@/lib/hono-client";
-import { AgentChatPanel } from "./AgentChatPanel";
 
 type WebSocketEvent = {
   type: string;

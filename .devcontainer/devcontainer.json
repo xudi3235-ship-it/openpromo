@@ -6,24 +6,16 @@
     "vscode": {
       "extensions": [
         "biomejs.biome",
-        "bradlc.vscode-tailwindcss",
         "cloudflare.cloudflare",
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
         "github.copilot",
         "github.copilot-chat",
         "golang.go",
-        "hookyqr.beautify",
-        "mhutchie.git-graph",
         "ms-azuretools.vscode-docker",
         "ms-vscode.vscode-json",
         "ms-vscode.vscode-typescript-next",
         "ms-python.python",
         "ms-python.black-formatter",
-        "ms-vscode.vscode-yaml",
-        "tyriar.sort-lines",
-        "visualstudioexptteam.vscodeintellicode",
-        "yzhang.markdown-all-in-one"
+        "ms-vscode.vscode-yaml"
       ]
     }
   },
