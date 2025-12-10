@@ -1,6 +1,5 @@
 import { openai } from "@ai-sdk/openai";
 import { type ApiEnv, Binding } from "@core/helpers/api-env";
-import { produce } from "immer";
 
 // import { routeAgentRequest } from "agents";
 
@@ -21,7 +20,6 @@ import type {
   WSMessage,
 } from "agents";
 import { AIChatAgent } from "agents/ai-chat-agent";
-import { MessageType as CfAgentMessageType } from "agents/ai-types";
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -32,40 +30,16 @@ import {
   type ToolSet,
   type UIMessage,
 } from "ai";
-import { EntAgentRun } from "../agent-run";
 import type { VideoGenAgentContext } from "./context";
 import { buildSystemPrompt, createVideoGenAgent } from "./create-agent";
 import { setupAgentHooks } from "./hooks";
+import { InputTransformer } from "./input/input-transformer";
 import { Presets } from "./presets";
+import { ActorStore } from "./state/actor-store";
+import { AppStateManager } from "./state/app-state-manager";
 import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
-import { toAgentImageInputs } from "./tools/evaluation-utils";
-import { buildTreeString, downloadImagesToTmp } from "./utils";
-
-class ActorStore {
-  private cache: Actor.WorkspaceUser | null = null;
-  private readonly key = "actor";
-
-  constructor(private ctx: AgentContext) {}
-
-  async get(): Promise<Actor.WorkspaceUser | null> {
-    if (this.cache) return this.cache;
-    const storedActor = await this.ctx.storage.get(this.key);
-    if (!storedActor) return null;
-    this.cache = storedActor as Actor.WorkspaceUser;
-    return this.cache;
-  }
-
-  async set(actor: Actor.WorkspaceUser) {
-    this.cache = actor;
-    await this.ctx.storage.put(this.key, actor);
-  }
-
-  async withContext<T>(fn: () => Promise<T>): Promise<T> {
-    const actor = await this.get();
-    if (!actor) throw new Error("Actor not set on VideoGenAgent");
-    return Actor.provide("workspace_user", actor.properties, fn);
-  }
-}
+import { StateBroadcaster } from "./transport/state-broadcaster";
+import { WebSocketHandler } from "./transport/websocket-handler";
 
 // extra props for agent instantiation.
 export interface VideoGenAgentProps {
@@ -90,6 +64,8 @@ export class VideoGenAgent extends AIChatAgent<
   private _logs: string;
   private actorStore: ActorStore;
   private presetManager: Presets.Manager;
+  private inputTransformer: InputTransformer;
+  private stateManager: AppStateManager;
 
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
@@ -97,11 +73,23 @@ export class VideoGenAgent extends AIChatAgent<
     this._logs = "";
     this.actorStore = new ActorStore(ctx);
     this.presetManager = new Presets.Manager();
+    this.inputTransformer = new InputTransformer(this.presetManager);
 
     // if not initialized, init
     if (!this.state) {
       this.setState(VideoGenRealtime.initialServerAppState);
     }
+
+    // Initialize state manager
+    this.stateManager = new AppStateManager(
+      (state) => {
+        const connections = this.ctx.getWebSockets();
+        StateBroadcaster.broadcastState(connections, state);
+      },
+      (state) => this.setState(state),
+      this.state,
+    );
+
     this.ctx.blockConcurrencyWhile(async () => {
       await this.actorStore.get();
     });
@@ -123,24 +111,7 @@ export class VideoGenAgent extends AIChatAgent<
    * Patch the application state with partial updates.
    */
   patchState(updater: (draft: VideoGenRealtime.ServerAppState) => void) {
-    const newState = produce(this.state, (draft) => {
-      updater(draft);
-      draft.lastUpdated = new Date().toISOString();
-    });
-    this.setState(newState);
-    if (!this.state.runId) return;
-    // persist state
-    EntAgentRun.fromID(this.state.runId)
-      .then((run) => {
-        run.persistState(newState);
-      })
-      .catch((err) => {
-        // might be deleted
-        console.error(
-          `[VideoGenAgent] Failed to persist state for run ${this.state.runId}:`,
-          err,
-        );
-      });
+    this.stateManager.patchState(updater);
   }
 
   private async runPipeline() {
@@ -267,58 +238,15 @@ export class VideoGenAgent extends AIChatAgent<
   }
 
   private async withStateMgmt<T>(fn: () => Promise<T>) {
-    // if already running, no-op
-    if (this.state.status === "running") {
-      console.warn("[VideoGenAgent] withStateMgmt called but already running");
-      return;
-    }
-
-    // if no valid input or images, error out
-    if (
-      this.state.input.productImages.length === 0 ||
-      this.state.input.prompt.length === 0
-    ) {
-      console.error(
-        "[VideoGenAgent] runPipeline called but no product images provided",
-      );
-      this.patchState((draft) => {
-        draft.status = "failed";
-        draft.error = "No product images or prompt provided in input.";
-      });
-      return;
-    }
-    // 0. Reset internal state before starting a new run
-    // This ensures we don't try to restore from stale/invalid state
-    this.runStateSerialized = null;
-    this._logs = "";
-
-    // 1. mark as running
-    const run = await EntAgentRun.createFromState(this.state);
-    this.patchState((draft) => {
-      draft.status = "running";
-      draft.runId = run.data.id;
-    });
-    try {
-      // 2. run the fn
-      const result = await fn();
-      // 3. mark as succeeded?
-      this.patchState((draft) => {
-        draft.status = "succeeded";
-      });
-      return result;
-    } catch (error) {
-      // 4. failed
-      this.patchState((draft) => {
-        draft.status = "failed";
-        draft.error =
-          typeof error === "string" ? error : (error as Error).message;
-      });
-      throw error;
-    } finally {
-      // reset state
-      console.log(`[VideoGenAgent] resetting state after run`);
-      this.resetState();
-    }
+    return this.stateManager.withRunLifecycle(
+      this.state.input,
+      () => {
+        // Reset internal state before starting a new run
+        this.runStateSerialized = null;
+        this._logs = "";
+      },
+      fn,
+    );
   }
 
   /**
@@ -333,21 +261,16 @@ export class VideoGenAgent extends AIChatAgent<
 
   // clears stuff
   resetState() {
-    this.runStateSerialized = null;
-    this._logs = "";
-    // Reset chat history and app state
-    this.messages = [];
-    this.setState(VideoGenRealtime.initialServerAppState);
-    this.broadcastState();
+    this.stateManager.resetState(VideoGenRealtime.initialServerAppState, () => {
+      this.runStateSerialized = null;
+      this._logs = "";
+      // Reset chat history
+      this.messages = [];
+    });
   }
 
   private broadcastState() {
-    const connections = this.ctx.getWebSockets();
-    for (const conn of connections) {
-      VideoGenRealtime.sendEvent(conn, "sync_state", {
-        state: this.state,
-      });
-    }
+    this.stateManager.broadcastState();
   }
 
   /**
@@ -400,25 +323,11 @@ export class VideoGenAgent extends AIChatAgent<
     // Access the Request on ctx.request to inspect headers, cookies and the URL
     await super.onConnect(connection, ctx);
 
-    // Manually sync messages to client on connection
-    this.syncChatMessages(connection);
-
-    // Sync application state
-    VideoGenRealtime.sendEvent(connection, "sync_state", {
-      state: this.state,
-    });
-  }
-
-  private syncChatMessages(connection: Connection) {
-    if (this.messages.length === 0) return;
-    console.log(
-      `[VideoGenAgent] Syncing ${this.messages.length} messages to connection`,
-    );
-    connection.send(
-      JSON.stringify({
-        type: CfAgentMessageType.CF_AGENT_CHAT_MESSAGES,
-        messages: this.messages as UIMessage[],
-      }),
+    // Sync state and messages to newly connected client
+    StateBroadcaster.syncToNewConnection(
+      connection,
+      this.state,
+      this.messages as UIMessage[],
     );
   }
 
@@ -426,175 +335,31 @@ export class VideoGenAgent extends AIChatAgent<
    * handles incoming ws message, we will provide our custom message types here.
    */
   async onMessage(connection: Connection, message: WSMessage) {
-    await this.handleWebsocketMessages(connection, message);
-  }
-
-  /**
-   * internal handlers for typesafe ws message events
-   */
-  private async handleWebsocketMessages(
-    connection: Connection,
-    message: WSMessage,
-  ) {
-    if (typeof message !== "string") {
-      console.warn(
-        `[VideoGenAgent] Received non-string message, ignoring:`,
-        message,
-      );
-      return;
-    }
-    await VideoGenRealtime.onEvent(message, {
-      echo: async (data) => {
-        console.log(`[VideoGenAgent] Received echo message:`, data);
-        VideoGenRealtime.sendEvent(connection, "echo", {
-          message: `Echo: ${data.message}`,
-        });
-      },
-      set_input: async (data) => {
+    await WebSocketHandler.handleMessage(connection, message, {
+      onSetInput: async (data) => {
         this.patchState((draft) => {
           draft.input = data;
         });
       },
-      start_pipeline: async (data) => {
-        console.log({ data });
+      onStartPipeline: async (data) => {
         // Input is now required in start_pipeline
         this.patchState((draft) => {
           draft.input = data.input;
         });
         await this.runPipeline();
       },
-      reset_state: async () => {
-        console.log(`[VideoGenAgent] reset_state requested`);
+      onResetState: async () => {
         this.resetState();
       },
-    });
-  }
-
-  private async ensureFilesExists() {
-    return await Promise.all([
-      downloadImagesToTmp(this.state.input.productImages, "/tmp/products"),
-      downloadImagesToTmp(this.state.input.avatarImages, "/tmp/avatar"),
-      downloadImagesToTmp(this.state.input.referenceImages, "/tmp/reference"),
-      downloadImagesToTmp(this.state.input.brandAssets, "/tmp/brand"),
-    ]);
+    } satisfies WebSocketHandler.EventHandlers);
   }
 
   /**
-   * shared logic to tranform input to agent input items.
-   * used for both video gen and image gen agents
+   * Transform input to agent input items using InputTransformer.
+   * Used for both video gen and image gen agents.
    */
   private async createRunnerInitialInput(): Promise<AgentInputItem[]> {
-    console.log(`[VideoGenAgent] Creating input from state`, this.state);
-
-    const [productImagePaths, avatarImagePaths] =
-      await this.ensureFilesExists();
-
-    const productImages = toAgentImageInputs(this.state.input.productImages);
-    const avatarImages = toAgentImageInputs(this.state.input.avatarImages);
-    const referenceImages = toAgentImageInputs(
-      this.state.input.referenceImages,
-    );
-    const brandAssets = toAgentImageInputs(this.state.input.brandAssets);
-
-    const messages: AgentInputItem[] = [];
-
-    if (productImages.length > 0) {
-      messages.push({
-        role: "user",
-        content: [
-          {
-            type: "input_text" as const,
-            text: `Product reference files stored under /tmp/products. Local paths: ${productImagePaths.join(", ")}`,
-          },
-          ...productImages,
-        ],
-      });
-    }
-
-    if (avatarImages.length > 0) {
-      messages.push({
-        role: "user",
-        content: [
-          {
-            type: "input_text" as const,
-            text: `Avatar references stored under /tmp/avatar. Local paths: ${avatarImagePaths.join(", ")}`,
-          },
-          ...avatarImages,
-        ],
-      });
-    }
-
-    if (referenceImages.length > 0) {
-      messages.push({
-        role: "user",
-        content: [
-          {
-            type: "input_text" as const,
-            text: "Additional reference images:",
-          },
-          ...referenceImages,
-        ],
-      });
-    }
-
-    if (brandAssets.length > 0) {
-      messages.push({
-        role: "user",
-        content: [
-          {
-            type: "input_text" as const,
-            text: "Brand assets:",
-          },
-          ...brandAssets,
-        ],
-      });
-    }
-
-    messages.push({
-      role: "user",
-      content: [
-        {
-          type: "input_text" as const,
-          text: `Latest tmp dir snapshot (cwd=/tmp):\n${VideoGenAgent.tmpDirStr}`,
-        },
-      ],
-    });
-
-    // load preset if any
-    if (this.state.input.presetId) {
-      const preset = await this.presetManager.getByID(
-        this.state.input.presetId,
-      );
-      if (preset) {
-        messages.push({
-          role: "user",
-          content: [
-            {
-              type: "input_text" as const,
-              text: `User selected a preset. Uses this preset as reference/directional inspiration, Do not simply copy pasta it!  "${preset.name}": ${preset.prompt}`,
-            },
-            // TODO: load more assets?
-            {
-              type: "input_image" as const,
-              image: preset.thumbnailUrl,
-            },
-          ],
-        });
-      }
-    }
-    // final user prompt
-
-    messages.push({
-      role: "user",
-      content: [
-        {
-          type: "input_text" as const,
-          text: `user input: ${this.state.input.prompt}`,
-        },
-      ],
-    });
-
-    return messages;
+    return this.inputTransformer.transform(this.state.input);
   }
 
   /**
@@ -602,13 +367,7 @@ export class VideoGenAgent extends AIChatAgent<
    * Uses node:fs which is available in Cloudflare Workers VFS.
    */
   static get tmpDirStr(): string {
-    try {
-      // Use the VFS tmp path where we symlink/copy files
-      const tmpBasePath = "/tmp";
-      return `${tmpBasePath}/\n${buildTreeString(tmpBasePath, "")}`;
-    } catch {
-      return "Unable to read tmp directory structure";
-    }
+    return InputTransformer.getTmpDirSnapshot();
   }
 
   // wip
