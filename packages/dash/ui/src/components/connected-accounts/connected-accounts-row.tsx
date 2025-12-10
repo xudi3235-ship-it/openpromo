@@ -49,7 +49,7 @@ function SkeletonAvatar({ mouseX }: { mouseX: MotionValue<number> }) {
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-150, 0, 150], [32, 48, 32]);
+  const widthSync = useTransform(distance, [-150, 0, 150], [28, 40, 28]);
   const width = useSpring(widthSync, {
     mass: 0.1,
     stiffness: 150,
@@ -113,7 +113,7 @@ function AccountAvatar({
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-150, 0, 150], [32, 48, 32]);
+  const widthSync = useTransform(distance, [-150, 0, 150], [28, 40, 28]);
   const width = useSpring(widthSync, {
     mass: 0.1,
     stiffness: 150,
@@ -155,9 +155,9 @@ function AccountAvatar({
 
         {/* Tooltip */}
         {showTooltip && (
-          <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
             <div className="text-center">
-              <div className="font-medium">
+              <div className="font-medium text-xs">
                 {account.accountName || account.platform}
                 {isTikTokBusiness && (
                   <span className="ml-1 text-blue-500">(Business)</span>
@@ -165,7 +165,7 @@ function AccountAvatar({
               </div>
               {account.followersCount !== null &&
                 account.followersCount !== undefined && (
-                  <div className="text-muted-foreground text-[10px]">
+                  <div className="text-muted-foreground text-[9px]">
                     {account.followersCount.toLocaleString()} followers
                   </div>
                 )}
@@ -227,7 +227,7 @@ function AddButton({
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthSync = useTransform(distance, [-150, 0, 150], [32, 48, 32]);
+  const widthSync = useTransform(distance, [-150, 0, 150], [28, 40, 28]);
   const width = useSpring(widthSync, {
     mass: 0.1,
     stiffness: 150,
@@ -263,7 +263,7 @@ function AddButton({
         <PlatformAvatarBadge platform={platform} isBusiness={isBusiness} />
       </motion.button>
 
-      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
         {isConnecting ? "Connecting..." : `Add ${displayLabel}`}
       </div>
     </motion.div>
@@ -297,7 +297,7 @@ export function ConnectedAccountsRow({
           "flex items-center gap-2 rounded-2xl",
           appearance === "default"
             ? "bg-card border border-border/40 px-4 py-3"
-            : "px-0 py-0",
+            : "px-0 py-1.5",
           fullWidth && "w-full",
         )}
         onMouseMove={({ pageX }) => mouseX.set(pageX)}
@@ -369,7 +369,7 @@ export function ConnectedAccountsRowSkeleton({
           "flex items-center gap-2 rounded-2xl",
           appearance === "default"
             ? "bg-card border border-border/40 px-4 py-3"
-            : "px-0 py-0",
+            : "px-0 py-1.5",
           fullWidth && "w-full",
         )}
         onMouseMove={({ pageX }) => mouseX.set(pageX)}

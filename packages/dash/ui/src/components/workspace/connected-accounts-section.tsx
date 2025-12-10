@@ -57,7 +57,7 @@ export function ConnectedAccountsSection({
           onConnectInstagram={handleConnectInstagram}
           onConnectTikTok={handleConnectTikTok}
           isConnecting={isConnecting}
-          size="md"
+          size="sm"
         />
       </div>
     );

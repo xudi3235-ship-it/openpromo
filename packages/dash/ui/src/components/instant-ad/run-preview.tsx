@@ -55,22 +55,22 @@ export function RunPreview({
   return (
     <div className={className}>
       {/* View Toggle */}
-      <div className="flex items-center justify-center gap-1 mb-4">
+      <div className="flex items-center justify-center gap-1 mb-2">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setViewMode("list")}
-          className={`h-8 w-8 p-0 ${viewMode === "list" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          className={`h-7 w-7 p-0 ${viewMode === "list" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
         >
-          <List size={16} />
+          <List size={14} />
         </Button>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setViewMode("grid")}
-          className={`h-8 w-8 p-0 ${viewMode === "grid" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          className={`h-7 w-7 p-0 ${viewMode === "grid" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
         >
-          <Grid2X2 size={16} />
+          <Grid2X2 size={14} />
         </Button>
       </div>
 

@@ -43,7 +43,7 @@ export function GridView({
   };
 
   return (
-    <div className="mx-auto flex flex-wrap justify-center gap-4 items-start">
+    <div className="w-full mx-auto flex flex-wrap justify-center gap-2 sm:gap-3 items-start">
       {accounts.map((account) => (
         <PreviewItem
           key={account.id}

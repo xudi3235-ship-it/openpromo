@@ -98,9 +98,9 @@ function WorkspaceComponent() {
 
   return (
     <WorkspaceLayout>
-      <div className="flex h-full flex-col gap-4">
+      <div className="flex h-full flex-col">
         {shouldShowAccountsBar && (
-          <div className="px-4 pt-5">
+          <div className="px-4 pt-2 pb-1">
             <WorkspaceConnectedAccountsBar />
           </div>
         )}

@@ -30,16 +30,20 @@ export function PreviewItem({
       className={cn(
         "flex flex-col flex-shrink-0",
         size === "compact"
-          ? "w-[220px] gap-1.5"
+          ? "w-[200px] sm:w-[220px] gap-1"
           : size === "large"
-            ? "w-[360px] gap-3"
-            : "w-[280px] gap-2",
+            ? "w-[300px] sm:w-[360px] lg:w-[380px] gap-2"
+            : "w-[240px] sm:w-[280px] gap-1.5",
       )}
     >
       <div
         className={cn(
           "flex flex-col items-center text-center",
-          size === "compact" ? "gap-0.5" : size === "large" ? "gap-2" : "gap-1",
+          size === "compact"
+            ? "gap-0.5"
+            : size === "large"
+              ? "gap-1.5"
+              : "gap-0.5",
         )}
       >
         <div
@@ -67,10 +71,10 @@ export function PreviewItem({
             className={cn(
               "truncate",
               size === "compact"
-                ? "max-w-[180px]"
+                ? "max-w-[160px] sm:max-w-[180px]"
                 : size === "large"
-                  ? "max-w-[220px]"
-                  : "max-w-[180px]",
+                  ? "max-w-[260px] sm:max-w-[300px]"
+                  : "max-w-[200px] sm:max-w-[240px]",
             )}
             title={accountLabel}
           >
