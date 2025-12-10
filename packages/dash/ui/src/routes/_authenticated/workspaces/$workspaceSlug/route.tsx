@@ -52,6 +52,7 @@ export const Route = createFileRoute(
 
 const DISABLED_ACCOUNTS_BAR_PATTERNS: RegExp[] = [
   /^\/workspaces\/[^/]+\/composer\/?$/,
+  /^\/workspaces\/[^/]+\/instant-ad(\/.*)?$/,
 ];
 
 function WorkspaceComponent() {
