@@ -1,5 +1,4 @@
 import { and, asc, count, db, desc, eq, ilike, or } from "@core/database/db";
-import { EntImageGeneration } from "@core/domain/image-generation";
 import { Actor } from "@core/helpers/actor";
 import { Binding } from "@core/helpers/api-env";
 import { Ent } from "@core/helpers/ent";
@@ -199,12 +198,6 @@ export class EntStyleComponent extends Ent<StyleComponentSelectType> {
     }
 
     return styles;
-  }
-
-  async listGenerations(
-    params?: Parameters<typeof EntImageGeneration.listForStyle>[1],
-  ) {
-    return EntImageGeneration.listForStyle(this.data.id, params);
   }
 
   async update(

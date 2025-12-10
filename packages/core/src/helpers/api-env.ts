@@ -3,7 +3,6 @@ import type { ContainerBackend } from "@core/containers";
 import type { VideoGenAgent } from "@core/domain/agents/video-gen-agent";
 import type { ContentBackfillWorkflowParams } from "@core/domain/content/workflows/content-backfill-workflow";
 import type { PublishWorkflowParams } from "@core/domain/content/workflows/content-publish-workflow";
-import type { ImageGenerationWorkflowParams } from "@core/domain/image-generation";
 import type { ProductProcessingWorkflowParams } from "@core/domain/product/workflows/product-processing-workflow";
 import type { StyleComponentWorkflowParams } from "@core/domain/style-component";
 import type { VideoGenerationWorkflowParams } from "@core/domain/video-generation";
@@ -34,7 +33,6 @@ export type ApiEnv = {
     ContentBackfillWorkflow: Workflow<ContentBackfillWorkflowParams>;
     ProductProcessingWorkflow: Workflow<ProductProcessingWorkflowParams>;
     StyleComponentWorkflow: Workflow<StyleComponentWorkflowParams>;
-    ImageGenerationWorkflow: Workflow<ImageGenerationWorkflowParams>;
     VideoGenerationWorkflow: Workflow<VideoGenerationWorkflowParams>;
     // durable objects
     WorkspacePusher: DurableObjectNamespace<WorkspacePusher>;

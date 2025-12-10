@@ -1,9 +1,6 @@
 import { openai } from "@ai-sdk/openai";
-import { type ApiEnv, Binding } from "@core/helpers/api-env";
-
-// import { routeAgentRequest } from "agents";
-
-import { Actor } from "@core/helpers/actor";
+import type { Actor } from "@core/helpers/actor";
+import type { ApiEnv } from "@core/helpers/api-env";
 import {
   type Agent,
   type AgentInputItem,
@@ -40,7 +37,6 @@ import { AppStateManager } from "./state/app-state-manager";
 import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
 import { StateBroadcaster } from "./transport/state-broadcaster";
 import { WebSocketHandler } from "./transport/websocket-handler";
-
 // extra props for agent instantiation.
 export interface VideoGenAgentProps {
   actor: Actor.WorkspaceUser;
@@ -348,17 +344,5 @@ export class VideoGenAgent extends AIChatAgent<
         this.resetState();
       },
     } satisfies WebSocketHandler.EventHandlers);
-  }
-
-  // wip
-  async _startImageGenWorkflow() {
-    this.ctx.id; // current durable object id
-    const workflow = await Binding.use().ImageGenerationWorkflow.create({
-      params: {
-        actor: Actor.assert("workspace_user"),
-        generationId: "TODO",
-      },
-    });
-    return workflow;
   }
 }

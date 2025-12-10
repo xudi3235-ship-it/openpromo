@@ -12,7 +12,6 @@ import {
   UnifiedContentSelect as UnifiedContentSelectSchema,
   unifiedContentTable,
 } from "@core/schemas/content.sql";
-import { imageGenerationTable } from "@core/schemas/image-generation.sql";
 import { inboxConversationsTable } from "@core/schemas/inbox-conversations.sql";
 import { inboxMessagesTable } from "@core/schemas/inbox-messages.sql";
 import {
@@ -994,27 +993,13 @@ export class WorkspaceInsightsAggregator {
     };
   }
 
-  private async getAiGenerationStats(params: {
+  private async getAiGenerationStats(_params: {
     workspaceId: string;
     range: GoalWindow;
   }): Promise<AiGenerationStats> {
-    const [{ runs = 0, totalOutputs = 0 } = {}] = await db()
-      .select({
-        runs: sql<number>`COUNT(*)`,
-        totalOutputs: sql<number>`COALESCE(SUM(jsonb_array_length(${imageGenerationTable.outputImages})), 0)`,
-      })
-      .from(imageGenerationTable)
-      .where(
-        and(
-          eq(imageGenerationTable.workspaceId, params.workspaceId),
-          sql`${imageGenerationTable.createdAt} >= ${params.range.start.toISOString()}`,
-          sql`${imageGenerationTable.createdAt} < ${params.range.endExclusive.toISOString()}`,
-        ),
-      );
-
     return {
-      runs: Number(runs ?? 0),
-      outputs: Number(totalOutputs ?? 0),
+      runs: 0,
+      outputs: 0,
     };
   }
 

@@ -4,10 +4,6 @@ import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { orpc } from "@/lib/orpc-client";
 import type {
-  ImageGenRouterInputs,
-  ImageGenRouterOutputs,
-} from "../../../worker/src/orpc/routes/image-gen";
-import type {
   ProductRouterInputs,
   ProductRouterOutputs,
 } from "../../../worker/src/orpc/routes/products";
@@ -28,13 +24,6 @@ export type ProductUpdateInput = Omit<
   ProductRouterInputs["update"],
   "workspaceId" | "workspaceSlug"
 >;
-
-export type ProductImageGenerateInput = Omit<
-  ImageGenRouterInputs["generate"],
-  "workspaceId" | "workspaceSlug"
->;
-
-export type ProductImageGenerateResponse = ImageGenRouterOutputs["generate"];
 
 export const invalidateProductListQueries = async (
   queryClient: QueryClient,
@@ -163,48 +152,5 @@ export const useProductDeleteMutation = (onSuccess?: () => void) => {
         onSuccess?.();
       },
     }),
-  });
-};
-
-export const useProductImageGenerateMutation = (
-  onSuccess?: (
-    data: ProductImageGenerateResponse,
-    variables: ProductImageGenerateInput,
-  ) => void,
-) => {
-  const { workspace } = useWorkspace();
-
-  return useMutation<
-    ProductImageGenerateResponse,
-    Error,
-    ProductImageGenerateInput
-  >({
-    mutationFn: async (variables) =>
-      orpc.imageGen.generate.call({
-        ...variables,
-        workspaceSlug: workspace.slug,
-      }),
-    onSuccess: (data, variables) => {
-      const count = variables.batchCount || 1;
-
-      // Check if response is async (production) or sync (local)
-      if (data.async) {
-        // Async mode - generation started, will get updates via WebSocket
-        toast.success(
-          count === 1
-            ? "Image generation started"
-            : `${count} image generations started`,
-        );
-      } else {
-        // Sync mode - generation completed immediately
-        toast.success(
-          count === 1
-            ? "Image generated successfully"
-            : `${count} images generated successfully`,
-        );
-      }
-
-      onSuccess?.(data, variables);
-    },
   });
 };

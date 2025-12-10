@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { GenerateButton } from "@/components/image-generator/generate-button";
 import { ProductSelect } from "@/components/image-generator/product-select";
 import { StyleGallery } from "@/components/image-generator/style-gallery";
-import { useImageGeneratorMutation } from "@/hooks/useImageGeneratorMutation";
 import { useProductListQuery } from "@/queries/product";
 import { useStylesListQuery } from "@/queries/styles-queries";
 import { useComposerStore } from "@/stores/composer-store";
@@ -25,13 +24,6 @@ export function MediaGenerateContent() {
   );
   const selectedStyleId = useProductVisualGeneratorStore(
     (state) => state.selectedStyleId,
-  );
-  const batchCount = useProductVisualGeneratorStore(
-    (state) => state.batchCount,
-  );
-  const prompt = useProductVisualGeneratorStore((state) => state.prompt);
-  const referenceImageUrl = useProductVisualGeneratorStore(
-    (state) => state.referenceImageUrl,
   );
   const setGeneratorDialogOpen = useProductVisualGeneratorStore(
     (state) => state.setGeneratorDialogOpen,
@@ -56,8 +48,6 @@ export function MediaGenerateContent() {
     officialOnly: true,
   });
 
-  const generateMutation = useImageGeneratorMutation();
-
   const products = productsData?.products || [];
   const styles = stylesData?.styles || [];
 
@@ -71,30 +61,7 @@ export function MediaGenerateContent() {
     0,
   );
 
-  const canGenerate =
-    Boolean(selectedProductId) &&
-    remainingSlots > 0 &&
-    !generateMutation.isPending;
-
-  const handleQuickGenerate = () => {
-    if (!selectedProductId || remainingSlots <= 0) return;
-
-    const safeBatchCount = Math.max(
-      1,
-      Math.min(batchCount || 1, Math.min(remainingSlots, 4)),
-    );
-
-    const trimmedPrompt = prompt.trim();
-    const trimmedReference = referenceImageUrl.trim();
-
-    generateMutation.mutate({
-      productId: selectedProductId,
-      styleId: selectedStyleId || undefined,
-      batchCount: safeBatchCount,
-      prompt: trimmedPrompt || undefined,
-      referenceImageUrl: trimmedReference || undefined,
-    });
-  };
+  const canGenerate = Boolean(selectedProductId) && remainingSlots > 0;
 
   if (isPendingProducts) {
     return (
@@ -128,9 +95,10 @@ export function MediaGenerateContent() {
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
           <GenerateButton
-            onClick={handleQuickGenerate}
+            onClick={() => {}}
             disabled={!canGenerate}
-            isGenerating={generateMutation.isPending}
+            idleLabel="FIXME_USE_AGENT"
+            isGenerating={false}
             className="sm:flex-1"
           />
           <Button

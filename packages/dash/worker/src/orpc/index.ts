@@ -7,7 +7,6 @@ export type {
 } from "./routes/agent-runs";
 export { agentRunsRouter } from "./routes/agent-runs";
 export { contentRouter } from "./routes/content/index";
-export { imageGenRouter } from "./routes/image-gen";
 export { inboxRouter } from "./routes/inbox";
 export { insightsRouter } from "./routes/insights";
 export { internalRouter } from "./routes/internal";
@@ -17,7 +16,6 @@ export {
   listPlanet,
   planetRouter,
 } from "./routes/planet";
-export { productVisualsRouter } from "./routes/product-visuals";
 export { productVisualsVideoRouter } from "./routes/product-visuals-video";
 export { productsRouter } from "./routes/products";
 export { listStyles, stylesRouter } from "./routes/styles";
@@ -29,7 +27,6 @@ import { onError } from "@orpc/server";
 import { orpcBuilder } from "./context";
 import { agentRunsRouter as agentRuns } from "./routes/agent-runs";
 import { contentRouter as content } from "./routes/content/index";
-import { imageGenRouter as imageGen } from "./routes/image-gen";
 import { inboxRouter as inbox } from "./routes/inbox";
 import { insightsRouter as insights } from "./routes/insights";
 import { internalRouter as internal } from "./routes/internal";
@@ -63,7 +60,6 @@ export const orpcRouter = orpcBuilder
     planet,
     inbox,
     insights,
-    imageGen,
     videoGen,
     productVisuals,
     productVisualsVideo,

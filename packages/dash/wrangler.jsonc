@@ -52,11 +52,6 @@
       "name": "ProductProcessingWorkflow"
     },
     {
-      "class_name": "ImageGenerationWorkflow",
-      "binding": "ImageGenerationWorkflow",
-      "name": "ImageGenerationWorkflow"
-    },
-    {
       "class_name": "StyleComponentWorkflow",
       "binding": "StyleComponentWorkflow",
       "name": "StyleComponentWorkflow"
@@ -266,11 +261,6 @@
           "name": "ProductProcessingWorkflow"
         },
         {
-          "class_name": "ImageGenerationWorkflow",
-          "binding": "ImageGenerationWorkflow",
-          "name": "ImageGenerationWorkflow"
-        },
-        {
           "class_name": "StyleComponentWorkflow",
           "binding": "StyleComponentWorkflow",
           "name": "StyleComponentWorkflow"
@@ -362,32 +352,27 @@
         {
           "class_name": "PendingContentPublishWorkflow",
           "binding": "WORKFLOW",
-          "name": "PendingContentPublishWorkflowProd"
+          "name": "PendingContentPublishWorkflow"
         },
         {
           "class_name": "ContentBackfillWorkflow",
           "binding": "ContentBackfillWorkflow",
-          "name": "ContentBackfillWorkflowProd"
+          "name": "ContentBackfillWorkflow"
         },
         {
           "class_name": "ProductProcessingWorkflow",
           "binding": "ProductProcessingWorkflow",
-          "name": "ProductProcessingWorkflowProd"
-        },
-        {
-          "class_name": "ImageGenerationWorkflow",
-          "binding": "ImageGenerationWorkflow",
-          "name": "ImageGenerationWorkflowProd"
+          "name": "ProductProcessingWorkflow"
         },
         {
           "class_name": "StyleComponentWorkflow",
           "binding": "StyleComponentWorkflow",
-          "name": "StyleComponentWorkflowProd"
+          "name": "StyleComponentWorkflow"
         },
         {
           "class_name": "VideoGenerationWorkflow",
           "binding": "VideoGenerationWorkflow",
-          "name": "VideoGenerationWorkflowProd"
+          "name": "VideoGenerationWorkflow"
         }
       ],
       "triggers": {
