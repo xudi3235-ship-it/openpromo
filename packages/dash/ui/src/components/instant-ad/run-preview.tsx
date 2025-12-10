@@ -6,7 +6,7 @@ import { ListView } from "@/components/composer/layout/list-view";
 import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
 import { useRunAttachments } from "@/hooks/useRunAttachments";
 import { useConnectedAccounts } from "@/queries/connected-account";
-import { useComposerStore } from "@/stores/composer-store";
+import { usePreviewSessionStore } from "@/stores/composer-preview-store";
 
 interface RunPreviewProps {
   run: RunFeedItem;
@@ -21,27 +21,41 @@ export function RunPreview({
 }: RunPreviewProps) {
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const { accounts, isPending: isLoadingAccounts } = useConnectedAccounts();
-  const { initializeComposer, activeAccount, setActiveAccount } =
-    useComposerStore();
+  const { session, setPreviewSession, setActiveAccount, clearPreviewSession } =
+    usePreviewSessionStore();
 
   const { attachments, isVideo, hasMedia } = useRunAttachments(run);
 
-  // Initialize composer store with run data when component mounts
+  // Initialize preview session with run data when component mounts
   useEffect(() => {
-    if (hasMedia) {
-      initializeComposer({
-        initContentCreateData: {
-          base: {
-            attachments,
-            message: run.input?.prompt || "",
-          },
-          placements: {},
+    if (!hasMedia || accounts.length === 0) return;
+
+    setPreviewSession({
+      accounts,
+      selectedPreview: accounts[0]?.platform,
+      activeAccount: accounts[0]?.id ?? null,
+      contentCreateData: {
+        base: {
+          attachments,
+          message: run.input?.prompt || "",
+          firstComment: undefined,
         },
-        initialAccounts: accounts,
-        initialSelectedPreview: accounts[0]?.platform,
-      });
-    }
-  }, [run, attachments, hasMedia, accounts, initializeComposer]);
+        placements: {},
+      },
+      placementsByAccount: {},
+    });
+
+    return () => {
+      clearPreviewSession();
+    };
+  }, [
+    accounts,
+    attachments,
+    clearPreviewSession,
+    hasMedia,
+    run.input?.prompt,
+    setPreviewSession,
+  ]);
 
   if (isLoadingAccounts) {
     return <div className={className}>Loading preview...</div>;
@@ -78,7 +92,7 @@ export function RunPreview({
       {viewMode === "list" ? (
         <ListView
           accounts={accounts}
-          selectedAccountId={activeAccount || accounts[0]?.id}
+          selectedAccountId={session.activeAccount || accounts[0]?.id}
           onSelectAccount={setActiveAccount}
           activeAccountId={null}
           isReel={Boolean(isVideo)}

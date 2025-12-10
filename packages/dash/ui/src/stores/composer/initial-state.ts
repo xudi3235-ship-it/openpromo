@@ -14,6 +14,7 @@ const DEFAULT_PROPS: ComposerProps = {
   initialSelectedPreview: "FACEBOOK",
   initialMessage: "",
   contentGroupID: undefined,
+  treatInitialContentAsUnsaved: false,
 };
 
 export const resolveComposerProps = (
@@ -190,6 +191,22 @@ export const createComposerInitialState = (
     ? Array.from(new Set(placementAccountIds))
     : props.initialAccounts?.map((acc) => acc.id) || [];
 
+  const initialSnapshot = props.treatInitialContentAsUnsaved
+    ? createInitialSnapshot(
+        {
+          base: {
+            message: "",
+            publishingStatus: "PUBLISH_NOW",
+            attachments: [],
+            firstComment: undefined,
+            schedulingSpec: undefined,
+          },
+          placements: { facebookFeed: [], instagramFeed: [], tiktokFeed: [] },
+        },
+        [],
+      )
+    : createInitialSnapshot(contentCreateData, selectedAccounts);
+
   const state: ComposerState = {
     placementSelected: props.initialPlacementSelected || "ALL",
     selectedPreview: props.initialSelectedPreview || "FACEBOOK",
@@ -203,7 +220,7 @@ export const createComposerInitialState = (
     ),
     contentGroupID: props.contentGroupID ?? null,
     validation: { isValid: false, errors: [], canPublish: false },
-    initialSnapshot: createInitialSnapshot(contentCreateData, selectedAccounts),
+    initialSnapshot,
   };
 
   state.validation = validateComposerState(state);
