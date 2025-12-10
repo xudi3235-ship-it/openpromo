@@ -5,7 +5,9 @@
       "Bash(docker info:*)",
       "Bash(pnpm biome check:*)",
       "Bash(cat:*)",
-      "Bash(pnpm tsc:*)"
+      "Bash(pnpm tsc:*)",
+      "Bash(pnpm list:*)",
+      "Bash(tree:*)"
     ]
   }
 }

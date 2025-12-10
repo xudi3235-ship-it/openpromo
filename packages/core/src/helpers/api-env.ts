@@ -45,6 +45,10 @@ export type ApiEnv = {
     WorkspaceInsightsAnalytics: AnalyticsEngineDataset;
     // agents
     VideoGenAgent: AgentNamespace<VideoGenAgent>;
+    // workers ai
+    AI: Ai;
+    // browser rendering
+    Browser: Fetcher;
   };
 };
 

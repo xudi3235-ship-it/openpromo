@@ -87,6 +87,14 @@
       "id": "66945099c2b142c0bc7a46cc5664a67d"
     }
   ],
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
+  "browser": {
+    "binding": "Browser",
+    "remote": true
+  },
   "containers": [
     {
       "max_instances": 2,
@@ -394,7 +402,13 @@
           "binding": "KV",
           "id": "66945099c2b142c0bc7a46cc5664a67d"
         }
-      ]
+      ],
+      "ai": {
+        "binding": "AI"
+      },
+      "browser": {
+        "binding": "Browser"
+      }
     }
   }
 }
