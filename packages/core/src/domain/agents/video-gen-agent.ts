@@ -27,13 +27,14 @@ import {
   type ToolSet,
   type UIMessage,
 } from "ai";
+import { produce } from "immer";
+import { EntAgentRun } from "../agent-run";
 import type { VideoGenAgentContext } from "./context";
 import { buildSystemPrompt, createOrchestratorAgent } from "./create-agent";
 import { setupAgentHooks } from "./hooks";
 import { InputTransformer } from "./input/input-transformer";
 import { Presets } from "./presets";
 import { ActorStore } from "./state/actor-store";
-import { AppStateManager } from "./state/app-state-manager";
 import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
 import { StateBroadcaster } from "./transport/state-broadcaster";
 import { WebSocketHandler } from "./transport/websocket-handler";
@@ -61,7 +62,6 @@ export class VideoGenAgent extends AIChatAgent<
   private actorStore: ActorStore;
   private presetManager: Presets.Manager;
   private inputTransformer: InputTransformer;
-  private stateManager: AppStateManager;
 
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
@@ -75,16 +75,6 @@ export class VideoGenAgent extends AIChatAgent<
     if (!this.state) {
       this.setState(VideoGenRealtime.initialServerAppState);
     }
-
-    // Initialize state manager with getters/setters (single source of truth)
-    this.stateManager = new AppStateManager(
-      () => this.state,
-      (state) => this.setState(state),
-      (state) => {
-        const connections = this.ctx.getWebSockets();
-        StateBroadcaster.broadcastState(connections, state);
-      },
-    );
 
     this.ctx.blockConcurrencyWhile(async () => {
       await this.actorStore.get();
@@ -107,13 +97,37 @@ export class VideoGenAgent extends AIChatAgent<
    * Patch the application state with partial updates.
    */
   patchState(updater: (draft: VideoGenRealtime.ServerAppState) => void) {
-    this.stateManager.patchState(updater);
+    const newState = produce(this.state, (draft) => {
+      updater(draft);
+      draft.lastUpdated = new Date().toISOString();
+    });
+
+    this.setState(newState);
+
+    // Broadcast state to all connected clients
+    const connections = this.ctx.getWebSockets();
+    StateBroadcaster.broadcastState(connections, newState);
+
+    // Persist state asynchronously if we have a runId
+    if (newState.runId) {
+      EntAgentRun.fromID(newState.runId)
+        .then((run) => {
+          run.persistState(newState);
+        })
+        .catch((err) => {
+          // might be deleted
+          console.error(
+            `[VideoGenAgent] Failed to persist state for run ${newState.runId}:`,
+            err,
+          );
+        });
+    }
   }
 
   private async runPipeline() {
     await this.withActor(() =>
       withTrace(VideoGenAgent.name, async () => {
-        return this.withStateMgmt(async () => {
+        return this.withRunLifecycle(async () => {
           await this.runPipelineImpl();
         });
       }),
@@ -123,6 +137,90 @@ export class VideoGenAgent extends AIChatAgent<
   private castProps(_props?: Record<string, unknown>): VideoGenAgentProps {
     const props = _props as unknown as VideoGenAgentProps;
     return props;
+  }
+
+  /**
+   * Validate input before starting a run.
+   */
+  private validateInput(input: VideoGenRealtime.Input): {
+    valid: boolean;
+    error?: string;
+  } {
+    if (input.productImages.length === 0) {
+      return {
+        valid: false,
+        error: "No product images provided in input.",
+      };
+    }
+    if (input.prompt.length === 0 && input.presetId === null) {
+      return {
+        valid: false,
+        error: "No prompt provided in input.",
+      };
+    }
+    return { valid: true };
+  }
+
+  /**
+   * Manage state lifecycle for a run execution.
+   * Handles validation, run creation, status transitions, and error handling.
+   */
+  private async withRunLifecycle<T>(
+    fn: () => Promise<T>,
+  ): Promise<T | undefined> {
+    // Check if already running
+    if (this.state.status === "running") {
+      console.warn(
+        "[VideoGenAgent] withRunLifecycle called but already running",
+      );
+      return;
+    }
+
+    // Validate input
+    const validation = this.validateInput(this.state.input);
+    if (!validation.valid) {
+      console.error(`[VideoGenAgent] Invalid input: ${validation.error}`);
+      this.patchState((draft) => {
+        draft.status = "failed";
+        draft.error = validation.error ?? "Invalid input";
+      });
+      return;
+    }
+
+    // Reset internal state before starting
+    this.runStateSerialized = null;
+    this._logs = "";
+
+    // Create run and mark as running
+    const run = await EntAgentRun.createFromState(this.state);
+    this.patchState((draft) => {
+      draft.status = "running";
+      draft.runId = run.data.id;
+    });
+
+    try {
+      // Execute the run
+      const result = await fn();
+
+      // Mark as succeeded
+      this.patchState((draft) => {
+        draft.status = "succeeded";
+      });
+
+      return result;
+    } catch (error) {
+      // Mark as failed
+      this.patchState((draft) => {
+        draft.status = "failed";
+        draft.error =
+          typeof error === "string" ? error : (error as Error).message;
+      });
+      throw error;
+    } finally {
+      // Reset state after run
+      console.log(`[VideoGenAgent] resetting state after run`);
+      this.resetState();
+    }
   }
 
   onStart(_props?: Record<string, unknown> | undefined) {
@@ -233,18 +331,6 @@ export class VideoGenAgent extends AIChatAgent<
     }
   }
 
-  private async withStateMgmt<T>(fn: () => Promise<T>) {
-    return this.stateManager.withRunLifecycle(
-      this.state.input,
-      () => {
-        // Reset internal state before starting a new run
-        this.runStateSerialized = null;
-        this._logs = "";
-      },
-      fn,
-    );
-  }
-
   /**
    * triggered when app state is updated
    */
@@ -252,17 +338,23 @@ export class VideoGenAgent extends AIChatAgent<
     _state: VideoGenRealtime.ServerAppState | undefined,
     _source: Connection | "server",
   ): Promise<void> {
-    this.stateManager.broadcastState();
+    // Broadcast current state to all connected clients
+    const connections = this.ctx.getWebSockets();
+    StateBroadcaster.broadcastState(connections, this.state);
   }
 
   // clears stuff
   resetState() {
-    this.stateManager.resetState(VideoGenRealtime.initialServerAppState, () => {
-      this.runStateSerialized = null;
-      this._logs = "";
-      // Reset chat history
-      this.messages = [];
-    });
+    // Reset state and broadcast to clients
+    this.setState(VideoGenRealtime.initialServerAppState);
+    this.runStateSerialized = null;
+    this._logs = "";
+    // Reset chat history
+    this.messages = [];
+
+    // Broadcast the reset state
+    const connections = this.ctx.getWebSockets();
+    StateBroadcaster.broadcastState(connections, this.state);
   }
 
   /**
