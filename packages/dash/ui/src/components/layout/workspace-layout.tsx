@@ -44,10 +44,6 @@ export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     </SidebarProvider>
   );
 
-  if (!workspaceSlug) {
-    return layout;
-  }
-
   return (
     <WorkspaceWebSocketProvider workspaceSlug={workspaceSlug}>
       {layout}

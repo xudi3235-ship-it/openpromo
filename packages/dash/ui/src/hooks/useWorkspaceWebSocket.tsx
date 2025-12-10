@@ -37,7 +37,7 @@ const WorkspaceWebSocketContext =
   createContext<WorkspaceWebSocketContextValue | null>(null);
 
 interface WorkspaceWebSocketProviderProps {
-  workspaceSlug: string;
+  workspaceSlug?: string;
   children: React.ReactNode;
 }
 
