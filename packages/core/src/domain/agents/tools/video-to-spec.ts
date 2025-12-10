@@ -138,16 +138,18 @@ async function toolImpl({
   }
 }
 
-export const videoToSpecTool = tool({
-  name: "video_to_spec",
-  description:
-    "takes in a social media video ad, analyzes it, and produces a comprehensive spec/blueprint that can be used to replicate the video effectively for promoting products/services/brands for small businesses.",
-  parameters: toolParams,
-  isEnabled(args) {
-    const context = args.runContext.context as VideoGenAgentContext;
-    return context.stage === "video_gen";
+export const videoToSpecTool = tool<VideoGenAgentContext, VideoGenAgentContext>(
+  {
+    name: "video_to_spec",
+    description:
+      "takes in a social media video ad, analyzes it, and produces a comprehensive spec/blueprint that can be used to replicate the video effectively for promoting products/services/brands for small businesses.",
+    parameters: toolParams,
+    isEnabled(args) {
+      const context = args.runContext.context as VideoGenAgentContext;
+      return context.stage === "video_gen";
+    },
+    execute: async (args: z.infer<typeof toolParams>) => {
+      return await toolImpl(args);
+    },
   },
-  execute: async (args: z.infer<typeof toolParams>) => {
-    return await toolImpl(args);
-  },
-});
+);

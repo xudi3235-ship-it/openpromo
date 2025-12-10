@@ -164,18 +164,11 @@ export function createVideoGenAgent() {
     },
     handoffs: [],
     tools: [
-      // videoGenShellTool, // worker runtime does not allow spawning processes currently
       setContextTool,
       virtualShellTool,
       searchImageTool,
       videoToSpecTool,
-      // evaluateImageTool,
-      // nanoBananaTool,
       veo31UnifiedTool, // on replicate
-      // veo31TextToVideoTool, // never use pure text-to-video for product-centric videos
-      // veo31ImageToVideoTool,
-      // veo31ReferenceImagesToVideoTool,
-      // veo31VideoExtensionTool,
       sora2StoryboardTool,
       // other stuff
       ffmpegTool,
