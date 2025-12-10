@@ -5,7 +5,6 @@ import type { ContentBackfillWorkflowParams } from "@core/domain/content/workflo
 import type { PublishWorkflowParams } from "@core/domain/content/workflows/content-publish-workflow";
 import type { ProductProcessingWorkflowParams } from "@core/domain/product/workflows/product-processing-workflow";
 import type { StyleComponentWorkflowParams } from "@core/domain/style-component";
-import type { VideoGenerationWorkflowParams } from "@core/domain/video-generation";
 import type {
   ApiRateLimitCoordinator,
   WorkspacePusher,
@@ -33,7 +32,6 @@ export type ApiEnv = {
     ContentBackfillWorkflow: Workflow<ContentBackfillWorkflowParams>;
     ProductProcessingWorkflow: Workflow<ProductProcessingWorkflowParams>;
     StyleComponentWorkflow: Workflow<StyleComponentWorkflowParams>;
-    VideoGenerationWorkflow: Workflow<VideoGenerationWorkflowParams>;
     // durable objects
     WorkspacePusher: DurableObjectNamespace<WorkspacePusher>;
     WorkspaceSyncCoordinator: DurableObjectNamespace<WorkspaceSyncCoordinator>;

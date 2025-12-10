@@ -16,10 +16,8 @@ export {
   listPlanet,
   planetRouter,
 } from "./routes/planet";
-export { productVisualsVideoRouter } from "./routes/product-visuals-video";
 export { productsRouter } from "./routes/products";
 export { listStyles, stylesRouter } from "./routes/styles";
-export { videoGenRouter } from "./routes/video-gen";
 export { workspacesRouter } from "./routes/workspaces";
 
 import { getPostHogClient } from "@core/providers/posthog";
@@ -32,10 +30,8 @@ import { insightsRouter as insights } from "./routes/insights";
 import { internalRouter as internal } from "./routes/internal";
 import { planetRouter as planet } from "./routes/planet";
 import { productVisualsRouter as productVisuals } from "./routes/product-visuals";
-import { productVisualsVideoRouter as productVisualsVideo } from "./routes/product-visuals-video";
 import { productsRouter as products } from "./routes/products";
 import { stylesRouter as styles } from "./routes/styles";
-import { videoGenRouter as videoGen } from "./routes/video-gen";
 import { workspacesRouter as workspaces } from "./routes/workspaces";
 
 export const orpcRouter = orpcBuilder
@@ -60,9 +56,7 @@ export const orpcRouter = orpcBuilder
     planet,
     inbox,
     insights,
-    videoGen,
     productVisuals,
-    productVisualsVideo,
     styles,
     products,
     workspaces,

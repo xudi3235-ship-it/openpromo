@@ -55,11 +55,6 @@
       "class_name": "StyleComponentWorkflow",
       "binding": "StyleComponentWorkflow",
       "name": "StyleComponentWorkflow"
-    },
-    {
-      "class_name": "VideoGenerationWorkflow",
-      "binding": "VideoGenerationWorkflow",
-      "name": "VideoGenerationWorkflow"
     }
   ],
   "durable_objects": {
@@ -264,11 +259,6 @@
           "class_name": "StyleComponentWorkflow",
           "binding": "StyleComponentWorkflow",
           "name": "StyleComponentWorkflow"
-        },
-        {
-          "class_name": "VideoGenerationWorkflow",
-          "binding": "VideoGenerationWorkflow",
-          "name": "VideoGenerationWorkflow"
         }
       ],
       "triggers": {
@@ -368,11 +358,6 @@
           "class_name": "StyleComponentWorkflow",
           "binding": "StyleComponentWorkflow",
           "name": "StyleComponentWorkflow"
-        },
-        {
-          "class_name": "VideoGenerationWorkflow",
-          "binding": "VideoGenerationWorkflow",
-          "name": "VideoGenerationWorkflow"
         }
       ],
       "triggers": {
