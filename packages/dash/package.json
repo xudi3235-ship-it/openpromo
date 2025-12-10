@@ -1,6 +1,7 @@
 {
-  "name": "@openpromo/dash",
+  "name": "dash",
   "type": "module",
+  "description": "dashboard for OpenPromo, main react SPA app on cloudflare workers. react app + hono api",
   "scripts": {
     "predev": "pnpm secrets:sync && pnpm -w --filter @openpromo/core run db:migrate",
     "dev": "vite --port 3000 --host",

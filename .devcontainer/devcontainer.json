@@ -1,0 +1,48 @@
+{
+  "name": "OpenPromo Development",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "biomejs.biome",
+        "bradlc.vscode-tailwindcss",
+        "cloudflare.cloudflare",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "github.copilot",
+        "github.copilot-chat",
+        "golang.go",
+        "hookyqr.beautify",
+        "mhutchie.git-graph",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode.vscode-json",
+        "ms-vscode.vscode-typescript-next",
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-vscode.vscode-yaml",
+        "redhat.vscode-yaml",
+        "streetsidesoftware.code-spell-checker",
+        "styled-components.vscode-styled-components",
+        "gruntfuggly.todo-tree",
+        "tyriar.sort-lines",
+        "visualstudioexptteam.vscodeintellicode",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  },
+
+  "forwardPorts": [3000, 8080, 5173, 4321],
+
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+
+  "remoteUser": "root",
+
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+
+  "capAdd": ["SYS_ADMIN"],
+
+  "securityOpt": ["seccomp=unconfined"]
+}

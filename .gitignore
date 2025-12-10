@@ -1,5 +1,6 @@
 # dependencies
 node_modules
+.pnpm-store
 
 # turborepo
 .turbo
@@ -23,3 +24,6 @@ node_modules
 # wip stuff
 infra/wrangler
 .gocache
+
+# devcontainer certificates (generated per-user)
+.devcontainer/system-certs.pem

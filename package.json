@@ -4,11 +4,11 @@
   "packageManager": "pnpm@10.25.0",
   "scripts": {
     "check": "biome check --write --diagnostic-level=warn",
-    "sync_secrets": "bash scripts/sync_secrets.sh",
     "postinstall": "lefthook install && patch-package",
     "typecheck": "pnpm run --parallel -r typecheck",
     "lint": "pnpm check && pnpm typecheck",
-    "meerkat": "bash scripts/meerkat.sh"
+    "meerkat": "bash scripts/meerkat.sh",
+    "dev": "turbo dev"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
@@ -23,7 +23,7 @@
     "wrangler": "catalog:"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=25"
   },
   "pnpm": {
     "overrides": {
