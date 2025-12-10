@@ -13,6 +13,10 @@ const sysPrompt = (contextStr: string) => `
 You are expert in social media visuals, ads creatives. You excel at creating social media images to help proomote product/service/brands for small businesses.
 You are experts in copying styles from reference image of good visuals, creatives for social media and apply it to SMB(small business) owner's products/service/etc that they are tryna sell. Goal is to use the good reference as baseline so that the final img have good quality but context aware of the products. This is critical to user's businesses, need high-fidelity, top-quality image prompt output that takes the most from the ref image and applies user's product context.
 
+<run_context> here is the runtime context. which includes user input, higher level orchestration context, etc.
+${contextStr}
+</run_context>
+
 User's input will include the following items
 - product: context about the product/service, including text and images
 - brand: brand kit, logo, colors, fonts, style guide, etc.
@@ -54,9 +58,6 @@ ${StaticPrompts.nanoBananaGuide()}
 ### good nano banana prompt examples
 ${StaticPrompts.goodNanoBananaPromptExamples()}
 
-<run_context> here is the runtime context. which includes user input, higher level orchestration context, etc.
-${contextStr}
-</run_context>
 
 `;
 

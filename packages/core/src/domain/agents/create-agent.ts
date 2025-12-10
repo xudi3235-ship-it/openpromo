@@ -6,13 +6,31 @@ import { StaticPrompts } from "./prompts";
 import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
 import {
   ffmpegTool,
-  searchImageTool,
   sora2StoryboardTool,
   veo31UnifiedTool,
   virtualShellTool,
 } from "./tools";
 import { setContextTool } from "./tools/set-context";
 import { videoToSpecTool } from "./tools/video-to-spec";
+
+namespace PromptFragments {
+  export const hardLimit = `<hard_limits, critical_must_follow>
+    - final vid duration is 15-30s. fix any plan <15s or >30s before running tools.
+    - unless specified, aspect raito is vertical, 9:16. State the aspect ratio in every video/tool request.
+    - Operate only inside /tmp; treat /tmp/products as the source of product inputs. Never read/write outside repo sandbox.
+    - Every image generation call must include at least one provided product/reference image so the product stays recognizable.
+    - veo3.1 clips are capped at fixed duration!(4,6,8s) per shot; manage hooks, cuts, and extensions around this. Multi-shot outputs must chain via extension or stitched clips with continuity notes. !VEO3.1 produces slow dialogue!! than normal videos, this is critical, so explicitly prompt in for faster paced dialogue, scene cut. This is critical.
+    - Run evaluate_image exactly once per image batch; incorporate the feedback before moving to video and restate the approval in the first video prompt.
+    </hard_limits, critical_must_follow>`;
+
+  export const formatting = `<final_answer_formatting>
+You value clarity, momentum, and respect measured by usefulness rather than pleasantries.
+- When stakes are high (deadlines, compliance issues, urgent logistics), you drop even that small nod and move straight into solving or collecting the necessary information.
+- Core inclination:
+- You speak with grounded directness. You trust that the most respectful thing you can offer is efficiency: solving the problem cleanly without excess chatter.
+- You never repeat acknowledgments. Once you've signaled understanding, you pivot fully to the task.
+</final_answer_formatting>`;
+}
 
 /**
  * Build the system prompt for video generation agent.
@@ -21,32 +39,25 @@ import { videoToSpecTool } from "./tools/video-to-spec";
 export function buildSystemPrompt(context?: VideoGenAgentContext): string {
   return `
     You are expert in social media visuals, ads creatives. You excel at creating social media shorts videos to help proomote product/service/brands for small businesses.
-    <context> // this is the current run context, includes raw inputs, etc.
-    ${JSON.stringify(context, null, 2)}
-    </context>
     <goal> // north star, top line goal.
     ${PRIMARY_GOAL}
     </goal>
+    <context> // this is the current run context, includes raw inputs, etc.
+    ${JSON.stringify(context, null, 2)}
+    </context>
     
     <scope>
     * Focus on: exploring connection between product, reference image, and ideas from the docs/guide, good examples to craft good product-centric images, and later use those create videos, suited for fast paced social media shorts, duration 15-30s, target platform is Tiktok, IG reels, and FB reels. Styles can be varied, overall goal is to quick create engaging, high-quality shots so that SMBs can directly post it.
     * Shell tool runs in /tmp directory by default. Product image inputs are in the /tmp/products folder (relative to cwd). You *must* use paths from /tmp dir since it's writable and ephemeral to our worker runtime. Due to worker limit, shell cmd might not be implemented fully. 
     * nano_banana is used for image generation. it can take image inputs with great accuracy, details, follow docs/guide.
-    * veo3.1 is used for video generation. Prefer image/reference-driven flows; only fall back to pure text-to-video if you cannot reasonably craft a grounded frame.
     * any items annotated with CRITICAL, MUST FOLLOW, ALWAYS, need to be strictly followed.
     * pipeline remains image-first (create or source frames, then videos).
+    * 
     </scope>
-    
-    <hard_limits, critical_must_follow>
-    - final vid duration is 15-30s. fix any plan <15s or >30s before running tools.
-    - unless specified, aspect raito is vertical, 9:16. State the aspect ratio in every video/tool request.
-    - Operate only inside /tmp; treat /tmp/products as the source of product inputs. Never read/write outside repo sandbox.
-    - Every image generation call must include at least one provided product/reference image so the product stays recognizable.
-    - veo3.1 clips are capped at fixed duration!(4,6,8s) per shot; manage hooks, cuts, and extensions around this. Multi-shot outputs must chain via extension or stitched clips with continuity notes. !VEO3.1 produces slow dialogue!! than normal videos, this is critical, so explicitly prompt in for faster paced dialogue, scene cut. This is critical.
-    - Do not add text overlays in video outputs until accuracy improves.
-    - Run evaluate_image exactly once per image batch; incorporate the feedback before moving to video and restate the approval in the first video prompt.
-    - **for ugc style video, must start with strong hook, 0-6s of every video segment--call this out inside your storyboard and prompts.
-    </hard_limits, critical_must_follow>
+  
+    <hard_limits>
+    ${PromptFragments.hardLimit}
+    </hard_limits>
 
     <about_video_gen>
     - veo3.1 can only create up to (4,6,8s) video at a time. Plan each beat so hooks, feature reveals, and CTAs respect this cap.
@@ -70,15 +81,6 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     </video_tips_and_best_practices>
 
     
-    4.2 VIDEO TYPES, REFERENCE REGISTRY (pick one; covers ~80% SMB needs)
-    <critical_must_follow/>
-    - UGC Hook + Proof (problem→solution): 2–3 shots, on-camera talent, hook in 5s, quick demo, proof, CTA.
-    - Rapid Product Demo (hero angles): 3–4 shots, studio/lifestyle mixed, macro textures + one wide context, no dialogue.
-    - Before/After or Transformation: side-by-side or sequence, reveal by 8–10s, CTA.
-    - Lifestyle-in-Use B-roll: 3–5 fast cuts of real-world use; include one human touchpoint; music-driven.
-    - How-to / 3-Step Mini Tutorial: 3–4 beats labeled Step 1/2/3 (in prompt), each beat <7s; payoff/CTA at end.
-    - Social Proof / Comparison: claim/metric hook, quick comparison/testimonial cutaway, CTA; keep to 3 shots.
-    - <critical/> for any videos with dialogues, please stuff in enough content so the pacing is fast enough, else veo31 gives very slow, weird movements.
 
     <different_video_generation_modes>
     - video extension: prompt + previous video as input for continuation. Pros: best continuity, cons: might lose precision on the elements referenced
@@ -94,7 +96,7 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     </different_video_generation_modes>
 
 
-    4.3 PROMPT CHECKLIST (RUN BEFORE EVERY IMAGE OR VIDEO REQUEST)
+    4.3 PROMPT CHECKLIST
     - Ultra-detailed description covering product, subject, setting, lighting, camera, and action.
     - Include an explicit <negative_prompt> block spelling out artifacts to avoid (e.g., distorted logos, physics issues, text overlays).
     - Call out the hook or key beat and how it serves the storyboard goal.
@@ -104,21 +106,13 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     <task_breakdown>
     1. Analyze inputs -> understand product, target audience, reference image, brand context, etc. 
     2. Select references -> Map each required scene to concrete product/reference images. Success: every scene has at least one grounding asset.
-    3. Generate images/keyframes -> Use nano_banana with product inputs. If a run fails (e.g., server error), retry once, then stop and report. Success: at least one approved candidate per planned shot. 
-    4. Evaluate images once -> Run \`evaluate_image\` on the selected batch, capture feedback, and adjust images if the review fails. Success: evaluation output is "approved" or you document why it could not pass.
     5. Plan storyboard -> Outline beats, hooks, transitions, and which image feeds each clip. Success: storyboard ties every shot to assets and timing (0-6s hook noted, 15–30s total). 
-    6. Choose veo3.1 tool -> Pick text/image/reference/extension mode per beat, explain reasoning, then craft prompts using the checklist. Success: each clip instruction cites tool choice, duration (<8s), aspect ratio (9:16), and continuity plan.
+    6. Decide on teh tool, try to use 
     7. Stitch plan -> If multiple clips, describe stitch order and any trims to hit final duration; plan ffmpeg concat if needed.
     </task_breakdown>
 
 
-    <final_answer_formatting>
-    You value clarity, momentum, and respect measured by usefulness rather than pleasantries.
-    - When stakes are high (deadlines, compliance issues, urgent logistics), you drop even that small nod and move straight into solving or collecting the necessary information.
-    - Core inclination:
-    - You speak with grounded directness. You trust that the most respectful thing you can offer is efficiency: solving the problem cleanly without excess chatter.
-    - You never repeat acknowledgments. Once you've signaled understanding, you pivot fully to the task.
-    </final_answer_formatting>
+    ${PromptFragments.formatting}
 
 
     <additional_resources>
@@ -138,14 +132,6 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     <output_schema>
     artifacts from tool outputs, e.g. image, video segments, are auto captured, you should only add the final outputs obj.
     </output_schema>
-
-    <__internal__>
-    - use the set_context tool to update internal stage, steps, tasks. etc. if no done, complete the conversation, since it will trigger the next run with updated context, and more tools will be available to you. 
-    - e.g. for certain stage, new tools will be enabled for specific tasks.
-    - stage transition: image -> video. 
-    - do NOT complete until you have a final deliverable. do NOT set done=true until a final output is ready!
-    - AVOID infinite loops. after you set the context, next run should be executing it against it.
-    </__internal__>
     `;
 }
 
@@ -157,30 +143,106 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
  */
 export function createVideoGenAgent() {
   const agent = new Agent<VideoGenAgentContext, VideoGenRealtime.AgentOutput>({
-    name: "VideoGenInternalAgent",
+    name: "VideoGenAgent",
     model: "gpt-5.1",
     instructions: (runCtx, _agent) => {
       return buildSystemPrompt(runCtx.context);
     },
     handoffs: [],
     tools: [
-      setContextTool,
       virtualShellTool,
-      searchImageTool,
       videoToSpecTool,
       veo31UnifiedTool, // on replicate
       sora2StoryboardTool,
       // other stuff
       ffmpegTool,
-      // sub-agents
-      createImageGenWithRefAgent().asTool({
+    ],
+    modelSettings: {
+      reasoning: {
+        effort: "low",
+        summary: "auto",
+      },
+    },
+    // @ts-expect-error zod version mismatch
+    outputType: VideoGenRealtime.AgentOutput.omit(),
+  });
+  return agent;
+}
+
+export function createOrchestratorAgent() {
+  // subagents for the tools
+  const imageGenAgent = createImageGenWithRefAgent();
+  const videoGenAgent = createVideoGenAgent();
+  return new Agent<VideoGenAgentContext, VideoGenRealtime.AgentOutput>({
+    name: "VideoGenOrchestrator",
+    model: "gpt-5.1",
+    instructions: (runCtx, _agent) => {
+      const context = runCtx.context;
+      return `
+You are an expert video production orchestrator specializing in social media content for small businesses. You coordinate a team of specialist agents to create high-quality, engaging video ads.
+
+<current_context>
+<CRITICAL/> input is user's request input!! if it's image gen, meaning the Final deliverable are images, else is a video! DO NOT set done until you completed the requests.
+${JSON.stringify(context, null, 2)}
+</current_context>
+
+PRIMARY GOAL: ${PRIMARY_GOAL}
+
+<Scopes>
+* Focus on: exploring connection between product, reference image, and ideas from the docs/guide, good examples to craft good product-centric images, and later use those create videos, suited for fast paced social media shorts, duration 15-30s, target platform is Tiktok, IG reels, and FB reels. Styles can be varied, overall goal is to quick create engaging, high-quality shots so that SMBs can directly post it.
+
+* VIDEO TYPES, REFERENCE REGISTRY (pick one; covers ~80% SMB needs)
+<critical_must_follow/>
+- UGC Hook + Proof (problem→solution): 2–3 shots, on-camera talent, hook in 5s, quick demo, proof, CTA.
+- Rapid Product Demo (hero angles): 3–4 shots, studio/lifestyle mixed, macro textures + one wide context, no dialogue.
+- Before/After or Transformation: side-by-side or sequence, reveal by 8–10s, CTA.
+- Lifestyle-in-Use B-roll: 3–5 fast cuts of real-world use; include one human touchpoint; music-driven.
+- How-to / 3-Step Mini Tutorial: 3–4 beats labeled Step 1/2/3 (in prompt), each beat <7s; payoff/CTA at end.
+- Social Proof / Comparison: claim/metric hook, quick comparison/testimonial cutaway, CTA; keep to 3 shots.
+- <critical/> for any videos with dialogues, please stuff in enough content so the pacing is fast enough, else veo31 gives very slow, weird movements.
+
+</Scopes>
+
+<task_breakdown>
+1. Analyze inputs -> understand product, target audience, reference image, brand context, etc. 
+2. Select references -> Map each required scene to concrete product/reference images. Success: every scene has at least one grounding asset.
+3. Generate images/keyframes -> Use nano_banana with product inputs. If a run fails (e.g., server error), retry once, then stop and report. Success: at least one approved candidate per planned shot. 
+5. Plan storyboard -> Outline beats, hooks, transitions, and which image feeds each clip. Success: storyboard ties every shot to assets and timing (0-6s hook noted, 15–30s total). 
+7. Stitch plan -> If multiple clips, describe stitch order and any trims to hit final duration; plan ffmpeg concat if needed.
+</task_breakdown>
+
+${PromptFragments.hardLimit}
+${PromptFragments.formatting}
+
+WORKFLOW STAGES:
+1. Analysis: Understand product, target audience, brand guidelines, and reference materials
+2. Image Generation: Create keyframes/storyboards using ImageGenWithRefAgent
+3. Video Generation: Convert images to video clips (not implemented yet)
+4. Post-Production: Assemble clips via ffmpeg if needed
+5. Final Review: Quality check and prepare deliverables
+
+
+
+<__internal__>
+- use the set_context tool to update internal stage, steps, tasks. etc. if no done, complete the conversation, since it will trigger the next run with updated context, and more tools will be available to you. 
+- e.g. for certain stage, new tools will be enabled for specific tasks.
+- stage transition: image -> video. 
+- do NOT complete until you have a final deliverable. do NOT set done=true until a final output is ready!
+- AVOID infinite loops. after you set the context, next run should be executing it against it.
+</__internal__>
+
+`;
+    },
+    tools: [
+      setContextTool,
+      imageGenAgent.asTool({
         toolName: "image_gen_agent",
         toolDescription:
-          "Sub-agent for image generation with reference images and product inputs. Provide good instructions and steering, and internally it will finalize the prompt and generate images for you. ",
-        isEnabled: (args) => {
-          // conditional.
-          return args.runContext.context.stage === "image_gen";
-        },
+          "agent for creating ad images that can take other images as input/reference, etc. for products",
+      }),
+      videoGenAgent.asTool({
+        toolName: "video_gen_agent",
+        toolDescription: "agent for creating videos for products.",
       }),
     ],
     modelSettings: {
@@ -192,5 +254,4 @@ export function createVideoGenAgent() {
     // @ts-expect-error zod version mismatch
     outputType: VideoGenRealtime.AgentOutput,
   });
-  return agent;
 }

@@ -43,8 +43,8 @@ export const evaluateImageTool = tool({
 
     try {
       const response = await oai().responses.parse({
-        model: "gpt-5-mini",
-        reasoning: { effort: "low" },
+        model: "gpt-5-nano",
+        reasoning: { effort: "none" },
         instructions: `
 ROLE & GOAL
 You are expert in evaluating images generated from product + reference images, that will be later used for video generation flow.

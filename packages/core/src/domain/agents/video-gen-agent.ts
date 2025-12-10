@@ -28,7 +28,7 @@ import {
   type UIMessage,
 } from "ai";
 import type { VideoGenAgentContext } from "./context";
-import { buildSystemPrompt, createVideoGenAgent } from "./create-agent";
+import { buildSystemPrompt, createOrchestratorAgent } from "./create-agent";
 import { setupAgentHooks } from "./hooks";
 import { InputTransformer } from "./input/input-transformer";
 import { Presets } from "./presets";
@@ -168,7 +168,7 @@ export class VideoGenAgent extends AIChatAgent<
     // 1. create agent with context
     const agent =
       this.state.input.mode === "video_gen"
-        ? createVideoGenAgent()
+        ? createOrchestratorAgent()
         : createImageGenWithRefAgent();
     // finalized input items
     const runnerInput = await this.createRunnerInput(agent);
@@ -190,7 +190,7 @@ export class VideoGenAgent extends AIChatAgent<
     });
     let currInput = runnerInput;
     let step = 0;
-    const MAX_RUN_STEPS = 20;
+    const MAX_RUN_STEPS = 100;
     // 2. run the agent
     // TODO: utilize agent handoff using structural output
     while (step < MAX_RUN_STEPS) {

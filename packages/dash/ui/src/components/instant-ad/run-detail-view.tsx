@@ -414,7 +414,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
                 </div>
                 <div className="bg-muted/50 rounded-lg p-4">
                   <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-96 overflow-auto">
-                    {JSON.stringify(run.output, null, 2)}
+                    {JSON.stringify(run, null, 2)}
                   </pre>
                 </div>
               </div>
