@@ -9,6 +9,7 @@ import {
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Plus } from "lucide-react";
 import { useProductModalStore } from "@/stores/product-modal-store";
+import { CreateProductModal } from "../products/create-product-modal";
 
 export interface ProductSelectItem {
   id: string;
@@ -177,6 +178,7 @@ export function ProductSelect({
         <div>
           <ProductSelectAddButton disabled={disabled} />
         </div>
+        <CreateProductModal />
       </div>
     </div>
   );
