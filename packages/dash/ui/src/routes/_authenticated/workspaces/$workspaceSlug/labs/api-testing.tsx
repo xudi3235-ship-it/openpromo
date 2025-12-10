@@ -1,5 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { orpc } from "@/lib/orpc-client";
 import {
@@ -12,9 +12,6 @@ function ApiTestingPage() {
   const backfillMutation = useTestBackfillMutation();
   const metricsMutation = useTestMetricsRefreshMutation();
   const analyticsMutation = useTestAnalyticsWriteMutation();
-  const planetListQuery = useQuery(
-    orpc.planet.list.queryOptions({ input: {} }),
-  );
 
   const snapshotMutation = useMutation(
     orpc.insights.getSnapshot.mutationOptions({
@@ -69,14 +66,6 @@ function ApiTestingPage() {
           {snapshotMutation.isPending
             ? "Generating..."
             : "Generate Insight Snapshot"}
-        </Button>
-
-        <Button
-          onClick={() => planetListQuery.refetch()}
-          disabled={planetListQuery.isFetching}
-        >
-          {planetListQuery.isFetching ? "Fetching..." : "test ORPC Planet List"}
-          {planetListQuery.data && ` (${planetListQuery.data.length} planets)`}
         </Button>
       </div>
     </div>

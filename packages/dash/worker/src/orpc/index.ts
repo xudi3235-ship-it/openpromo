@@ -10,12 +10,6 @@ export { contentRouter } from "./routes/content/index";
 export { inboxRouter } from "./routes/inbox";
 export { insightsRouter } from "./routes/insights";
 export { internalRouter } from "./routes/internal";
-export {
-  createPlanet,
-  findPlanet,
-  listPlanet,
-  planetRouter,
-} from "./routes/planet";
 export { productsRouter } from "./routes/products";
 export { listStyles, stylesRouter } from "./routes/styles";
 export { workspacesRouter } from "./routes/workspaces";
@@ -28,7 +22,6 @@ import { contentRouter as content } from "./routes/content/index";
 import { inboxRouter as inbox } from "./routes/inbox";
 import { insightsRouter as insights } from "./routes/insights";
 import { internalRouter as internal } from "./routes/internal";
-import { planetRouter as planet } from "./routes/planet";
 import { productVisualsRouter as productVisuals } from "./routes/product-visuals";
 import { productsRouter as products } from "./routes/products";
 import { stylesRouter as styles } from "./routes/styles";
@@ -53,7 +46,6 @@ export const orpcRouter = orpcBuilder
   .router({
     content,
     agentRuns,
-    planet,
     inbox,
     insights,
     productVisuals,
