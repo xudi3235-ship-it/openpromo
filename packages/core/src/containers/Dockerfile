@@ -1,5 +1,4 @@
-# syntax=docker/dockerfile:1.6
-
+# NOTE: syntax directive removed to avoid Docker credential issues in dev containers
 FROM golang:1.24.4-alpine AS base
 WORKDIR /src
 COPY go.mod ./

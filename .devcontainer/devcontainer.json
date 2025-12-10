@@ -6,16 +6,13 @@
     "vscode": {
       "extensions": [
         "biomejs.biome",
-        "cloudflare.cloudflare",
-        "github.copilot",
+        "bradlc.vscode-tailwindcss",
+        "charliermarsh.ruff",
+        "astro-build.astro-vscode",
+        "openai.chatgpt",
+        "anthropic.claude-code",
         "github.copilot-chat",
-        "golang.go",
-        "ms-azuretools.vscode-docker",
-        "ms-vscode.vscode-json",
-        "ms-vscode.vscode-typescript-next",
-        "ms-python.python",
-        "ms-python.black-formatter",
-        "ms-vscode.vscode-yaml"
+        "github.copilot"
       ]
     }
   },
