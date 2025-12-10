@@ -206,6 +206,67 @@ else
   echo "[INFO] uv already installed: $(uv --version)"
 fi
 
+# Install buf (Protocol Buffer tool)
+if ! command -v buf &> /dev/null; then
+  echo "[INFO] Installing buf..."
+  BUF_VERSION="1.61.0"
+
+  # Detect architecture
+  ARCH=$(uname -m)
+  case "$ARCH" in
+    x86_64|amd64)
+      BUF_ARCH="x86_64"
+      ;;
+    aarch64|arm64)
+      BUF_ARCH="aarch64"
+      ;;
+    *)
+      echo "[ERROR] Unsupported architecture: $ARCH"
+      exit 1
+      ;;
+  esac
+
+  # Download and install buf
+  BUF_FILE="buf-Linux-${BUF_ARCH}"
+  wget -q -O /usr/local/bin/buf "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/${BUF_FILE}"
+  chmod +x /usr/local/bin/buf
+
+  # Verify installation
+  if command -v buf &> /dev/null; then
+    echo "[INFO] buf installed: $(buf --version)"
+  else
+    echo "[ERROR] buf installation failed"
+    exit 1
+  fi
+else
+  echo "[INFO] buf already installed: $(buf --version)"
+fi
+
+# Install AI Coding CLI Tools
+echo "[INFO] Installing AI coding CLI tools..."
+
+# Install OpenAI Codex CLI
+if ! command -v codex &> /dev/null; then
+  echo "[INFO] Installing @openai/codex..."
+  npm install -g @openai/codex || echo "[WARN] @openai/codex installation failed. This tool may be deprecated."
+else
+  echo "[INFO] OpenAI Codex already installed"
+fi
+
+# Install Claude CLI
+if ! command -v claude &> /dev/null; then
+  echo "[INFO] Installing Claude CLI..."
+  curl -fsSL https://claude.ai/install.sh | bash || echo "[WARN] Claude CLI installation failed. Please install manually if needed."
+
+  # Add to PATH if installed
+  if [ -d "$HOME/.claude" ]; then
+    export PATH="$HOME/.claude/bin:$PATH"
+    echo 'export PATH="$HOME/.claude/bin:$PATH"' >> ~/.bashrc
+  fi
+else
+  echo "[INFO] Claude CLI already installed"
+fi
+
 # Install Doppler CLI
 if ! command -v doppler &> /dev/null; then
   echo "[INFO] Installing Doppler CLI..."
