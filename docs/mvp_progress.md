@@ -182,8 +182,6 @@ here are the longterm roadmap items. eventually we wanna build a solid platform 
 
 1. [composer][p0] e2e test publishing for all content formats, different attachment source handling
 2. [composer][p0] one click to generate thumbnail for videos
-3. [content][p0] audit current state for backfill lifecycle and available actions
-4. [content][p0] table view metrics setup and nightly refresh
 5. [genai][p0] add presets in UI & DO for higher quality, abstracted outputs
 6. [genai][p0] e2e test from AI-gen to composer to final publish flow
 7. [inbox][p0] audit current state for feature parity across platforms
