@@ -7,8 +7,8 @@ import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
 import {
   ffmpegTool,
   sora2StoryboardTool,
-  veo31ImageToVideoTool,
-  // veo31UnifiedTool, // uses replicate provider
+  // veo31ImageToVideoTool,
+  veo31UnifiedTool, // uses replicate provider
   virtualShellTool,
 } from "./tools";
 import { setContextTool } from "./tools/set-context";
@@ -19,8 +19,9 @@ namespace PromptFragments {
     - final vid duration is 15-30s. fix any plan <15s or >30s before running tools.
     - unless specified, aspect raito is vertical, 9:16. State the aspect ratio in every video/tool request.
     - Operate only inside /tmp; treat /tmp/products as the source of product inputs. Never read/write outside repo sandbox.
-    - Every image generation call must include at least one provided product/reference image so the product stays recognizable.
-    - for veo3.1 image2video call, ONLY provide a single keyframe!! e.g. if you planned 3 shots BUT bundled in a single veo3.1 call, DO NOT create other keyframes they WILL NOT be used.
+    - Every image generation call must include provided product/reference image so the product stays recognizable. 
+    - That generatedd image will be start frame used in video gen tool, and prompt can specify multiple shots around it. for veo3.1 image2video tool, ONLY provide a single keyframe per shot. e.g. if you planned 3 shots BUT bundled in a single veo3.1 call, only generate the first keyframe image.
+
     - veo3.1 clips are capped at fixed duration!(4,6,8s) per shot; manage hooks, cuts, and extensions around this. Multi-shot outputs must chain via extension or stitched clips with continuity notes. !VEO3.1 produces slow dialogue!! than normal videos, this is critical, so explicitly prompt in for faster paced dialogue, scene cut. This is critical.
     - Run evaluate_image exactly once per image batch; incorporate the feedback before moving to video and restate the approval in the first video prompt.
     </hard_limits, critical_must_follow>`;
@@ -164,8 +165,8 @@ export function createVideoGenAgent() {
     tools: [
       virtualShellTool,
       videoToSpecTool,
-      // veo31UnifiedTool, // on replicate
-      veo31ImageToVideoTool,
+      veo31UnifiedTool, // on replicate
+      // veo31ImageToVideoTool,
       sora2StoryboardTool,
       // other stuff
       ffmpegTool,
@@ -216,8 +217,9 @@ PRIMARY GOAL: ${PRIMARY_GOAL}
 
 </Scopes>
 
-${PromptFragments.orchestrator}
+Your plans must strictly adhere to these guidelines, especially about the limits.
 
+${PromptFragments.orchestrator}
 ${PromptFragments.hardLimit}
 ${PromptFragments.formatting}
 
