@@ -46,6 +46,8 @@ You value clarity, momentum, and respect measured by usefulness rather than plea
 - veo3.1 video extension returns the delta segment(if duration shows 8s), if so, you can use ffmpeg tool to concatenate and produce a compound vid segment. the slow dialogue and other issues still applies here. properly address them.
 - Elements: reason about audio, music, sound effects, dialogues and ensure they are aligned.Camera movements must feel smooth and authentic; justify any aggressive motion when it reinforces the hook.
 - Critical to ensure consistency IF two veo3.1 calls are made, stitching is critical;
+- *Always include negative prompts to ensure quality, distorted physics, especially for unboxing, product close-ups, logos, text overlays, moving objects. Use extra prompting to strengthen then in prompt + negative prompts. Especially around objects/product that should not be floating, distorted, used/ incorrectly(e.g. dress not worn normally, OR backpack zip NOT opened in the right way, etc.). anything unrealistic physically should be avoided if you are shooting a product demo video, not conceptural.
+- Critical** If the first frame image does not cleary show the product, consider generate a last frame, and use the start-last frame interpolation tool to create the video. It's extremely critical to ensure the product is correctly shown throughout the video!! This applies to any products especially the ones with logo, small details etc.
 
 
 </video_gen_guidelines>
@@ -88,7 +90,6 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     * your upsteam might give you a well-defined script/storyboard for the entire video along with the keyframes generated, focus on utilziing sepcific tools to execute and get the clips then deliver the final video. You need to make some tweaks 
     * Focus on: exploring connection between product, reference image, and ideas from the docs/guide, good examples to craft good product-centric images, and later use those create videos, suited for fast paced social media shorts, duration 15-30s, target platform is Tiktok, IG reels, and FB reels. Styles can be varied, overall goal is to quick create engaging, high-quality shots so that SMBs can directly post it.
     * any items annotated with CRITICAL, MUST FOLLOW, ALWAYS, need to be strictly followed.
-    * 
     </scope>
   
     <hard_limits>
@@ -148,7 +149,7 @@ export function createVideoGenAgent() {
     name: "VideoGenAgent",
     model: "gpt-5.1",
     instructions: (runCtx, _agent) => {
-      return buildSystemPrompt(runCtx.context);
+      return buildSystemPrompt(runCtx.context).replaceAll("  ", "");
     },
     handoffs: [],
     tools: [
@@ -227,7 +228,7 @@ ${PromptFragments.formatting}
 - AVOID infinite loops. after you set the context, next run should be executing it against it.
 </__internal__>
 
-`;
+`.replaceAll("  ", "");
     },
     tools: [
       setContextTool,

@@ -227,13 +227,6 @@ export const GOOD_VEO31_PROMPT_EXAMPLES = `
     "Shot on 35mm film" - Film grain, warmer colors, organic feel
     "iPhone 15 Pro cinematography" - Modern mobile aesthetic
 
-    Director Style References:
-
-    "Wes Anderson style" - Symmetrical, pastel colors, precise framing
-    "David Fincher style" - Dark, precise, clinical lighting
-    "Christopher Nolan style" - Epic scope, practical effects feel
-    "Denis Villeneuve style" - Atmospheric, moody, wide shots
-
     Movie Cinematography References:
 
     "Blade Runner 2049 cinematography" - Neon, atmospheric, futuristic
