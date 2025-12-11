@@ -106,6 +106,7 @@ export function toolBuilder<
           `Invalid tool output: ${JSON.stringify(parsed.error)}`,
         );
       } catch (error) {
+        console.log(`[toolBuilder] Error in tool ${name}:`, error);
         return toolError(name, formatToolError(error));
       }
     },

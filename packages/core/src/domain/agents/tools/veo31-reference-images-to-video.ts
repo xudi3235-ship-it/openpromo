@@ -86,7 +86,6 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
       generationType: "REFERENCE_2_VIDEO",
       aspectRatio: "9:16",
       model: "veo3_fast",
-      enableTranslation: true,
     });
 
     // Download and save

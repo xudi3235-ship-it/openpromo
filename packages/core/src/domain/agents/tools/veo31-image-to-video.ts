@@ -8,13 +8,7 @@ import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolSuccess } from "../tool-builder";
 import { VideoGenAgent } from "../video-gen-agent";
-import {
-  defaultVeo31Config,
-  downloadVideo,
-  getKieAIClient,
-  uploadFile,
-  Veo31ConfigSchema,
-} from "./utils";
+import { downloadVideo, getKieAIClient, uploadFile } from "./utils";
 
 // Parameter schema for image-to-video tool
 const ImageToVideoParamsSchema = z.object({
@@ -30,9 +24,9 @@ const ImageToVideoParamsSchema = z.object({
     .describe(
       "Optional local file path of the last frame image for interpolation. Pass null if not using.",
     ),
-  config: Veo31ConfigSchema.nullable()
-    .optional()
-    .describe("Video generation configuration."),
+  // config: Veo31ConfigSchema.nullable()
+  //   .optional()
+  //   .describe("Video generation configuration."),
 });
 
 type ImageToVideoParams = z.infer<typeof ImageToVideoParamsSchema>;
@@ -59,9 +53,7 @@ NOTE:
 `,
   parameters: ImageToVideoParamsSchema,
   async execute(params: ImageToVideoParams) {
-    const { prompt, outputPath, inputImagePath, inputLastFramePath, config } =
-      params;
-    const cfg = config ?? defaultVeo31Config;
+    const { prompt, outputPath, inputImagePath, inputLastFramePath } = params;
 
     console.log(
       `[veo31_image_to_video] Generating from image: ${inputImagePath}`,
@@ -92,9 +84,8 @@ NOTE:
         prompt,
         imageUrls,
         generationType,
-        aspectRatio: cfg.aspectRatio === "16:9" ? "16:9" : "9:16",
+        aspectRatio: "9:16",
         model: "veo3_fast",
-        enableTranslation: true,
       },
       {
         onPoll: (attempt, maxAttempts) => {

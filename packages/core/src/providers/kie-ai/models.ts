@@ -676,7 +676,7 @@ export namespace KieAI {
     export const schema = z.object({
       prompt: z.string(),
       imageUrls: z.array(z.string()).optional(),
-      model: z.enum(["veo3", "veo3_fast"]).optional(),
+      model: z.enum(["veo3", "veo3_fast"]).default("veo3_fast"),
       generationType: z
         .enum([
           "TEXT_2_VIDEO",
@@ -684,10 +684,9 @@ export namespace KieAI {
           "REFERENCE_2_VIDEO",
         ])
         .optional(),
-      aspectRatio: z.enum(["16:9", "9:16", "Auto"]).optional(),
-      duration: z.number().min(1).max(60).optional(),
+      aspectRatio: z.enum(["16:9", "9:16", "Auto"]).default("9:16").optional(),
       seeds: z.number().optional(),
-      enableTranslation: z.boolean().optional(),
+      callbackUrl: z.string().optional(),
       watermark: z.string().optional(),
     });
     export type Input = z.input<typeof schema>;

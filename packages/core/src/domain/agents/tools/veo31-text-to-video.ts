@@ -57,7 +57,6 @@ Note: For product consistency, prefer veo31_reference_images_to_video instead.`,
       prompt,
       aspectRatio: cfg.aspectRatio === "16:9" ? "16:9" : "9:16",
       model: "veo3_fast",
-      enableTranslation: true,
     });
 
     // Download and save
