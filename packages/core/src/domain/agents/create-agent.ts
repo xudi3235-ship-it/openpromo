@@ -197,6 +197,10 @@ You are an expert video production orchestrator specializing in social media con
 
 <current_context>
 <CRITICAL/> input is user's request input!! if it's image gen, meaning the Final deliverable are images, else is a video! DO NOT set done until you completed the requests.
+
+If image gen -> set the context plan and delegate to image gen agent to create the images.
+
+if video gen -> make the plan, create keyframe via image gen agent, then delegate to video gen agent to create the final video.
 ${JSON.stringify(context, null, 2)}
 </current_context>
 
@@ -231,7 +235,6 @@ ${PromptFragments.formatting}
 - stage transition: image -> video. 
 - do NOT complete until you have a final deliverable. do NOT set done=true until a final output is ready!
 - AVOID infinite loops. after you set the context, next run should be executing it against it.
-- if prompt includes <__internal__>, it's our developer testing, must follow the instructions as override for all the previous instructions.
 </__internal__>
 
 `;

@@ -27,7 +27,7 @@ User's input will include the following items
 * Focus on extracting learnings, styles, elements from reference images; apply them together with the product images to use image generation tools to produce img.
 * dynamically adapt to diffent product types, categories, styles, etc.
 * for any *CRITICAL instructions, must closely follow and reflect them when reasoning.
-* use the evaluate tool to asset the image quality, and iterate to address any issues.
+* use the evaluate tool to asset the image quality, and iterate to address any issues. Only evaluate once, avoid loops of stuck at evals.
 * 
 <about_image_generation>
 - for product shots/keyframes,ALWAYS ground nano_banana requests with product images for clarity. refer to examples for best practices. NO need for json format, plain text with clear structure and ultra details are fine.
@@ -49,6 +49,7 @@ think thoroughly & chain the steps, since it's sequential, former steps needs to
 - depends on the scenario & context.  if the refernce img is good fit with the product, then the variance can be low when we trynna put the product it. otherwise, if there's no good fit for the reference and the product image, then use your own creative thinking to come up with a very ads-creative / social-media good fit visual
 - make sure to make swaps of the elements so that we ensure the output image does NOT look alike as the style reference. we dont want people can tell that we used the style ref img. So it needs to be differentiated enough while still keeping the core style elements.
 - NO need for JSON prompt format. plain text works just fine with enough deatils
+
 
 5. docs/guides
 ### general prompt guide for image gen

@@ -1,6 +1,7 @@
 import type { AgentInputItem } from "@openai/agents";
 import type { VideoGenRealtime } from "@shared/agents";
 import type { Presets } from "../presets";
+import type { ActorStore } from "../state/actor-store";
 import { toAgentImageInputs } from "../tools/evaluation-utils";
 import { buildTreeString } from "../utils";
 import { downloadInputFiles } from "./file-manager";
@@ -12,7 +13,10 @@ import { downloadInputFiles } from "./file-manager";
  * for agent consumption.
  */
 export class InputTransformer {
-  constructor(private presetManager: Presets.Manager) {}
+  constructor(
+    private actorStore: ActorStore,
+    private presetManager: Presets.Manager,
+  ) {}
 
   /**
    * Transform input state into agent-compatible input items.
@@ -118,6 +122,23 @@ export class InputTransformer {
         });
       }
     }
+    const actor = await this.actorStore.get();
+
+    if (actor?.properties.featureFlags.includes("is_internal")) {
+      console.log(
+        `[InputTransformer] Detected internal developer actor, applying special instructions.`,
+      );
+      messages.push({
+        role: "system",
+        content: `NOTE: this is internal developer, instructions from developer has highest priority than previous instructions.`,
+      });
+    }
+
+    // mode input
+    messages.push({
+      role: "system",
+      content: `user selected mode: ${input.mode}. This is for the final deliverable format decision - whether images or video.`,
+    });
 
     // Final user prompt
     messages.push({

@@ -8,6 +8,7 @@ import { tool } from "@openai/agents";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { PRIMARY_GOAL } from "../constants";
+import type { VideoGenAgentContext } from "../context";
 import { toImageInputs } from "./evaluation-utils";
 
 // Output schema for image evaluation
@@ -33,12 +34,15 @@ type EvaluateImageParams = z.infer<typeof EvaluateImageParamsSchema>;
  * Evaluate generated images tool.
  * Ensures images meet quality and relevance criteria before video generation.
  */
-export const evaluateImageTool = tool({
+export const evaluateImageTool = tool<
+  VideoGenAgentContext,
+  VideoGenAgentContext
+>({
   name: "evaluate_image",
   description:
     "Evaluate generated images to ensure they meet quality and relevance criteria for video generation. Use this after generating images to validate quality.",
   parameters: EvaluateImageParamsSchema,
-  async execute(params: EvaluateImageParams) {
+  async execute(params: EvaluateImageParams, ctx) {
     const { imagePaths } = params;
 
     try {
@@ -49,7 +53,10 @@ export const evaluateImageTool = tool({
 ROLE & GOAL
 You are expert in evaluating images generated from product + reference images, that will be later used for video generation flow.
 Given the primary goal of the agent who produced these imgs: ${PRIMARY_GOAL}
-and the primary target is SMBS(small businesses) who need quick, high-quality, engaging social media shorts/ads/videos for their products on social media(tiktok, ig reels, fb reels, etc).
+and the primary target is SMBS(small businesses) who need quick, high-quality, engaging social media shorts/ads/videos/images for their products on social media(tiktok, ig reels, fb reels, etc).
+
+Here's the current run's context, this includes current run, e.g. whether the goal is to create keyframes for next steps of video generation, or whether we are just creating ad images to post directly, etc.
+${JSON.stringify(ctx?.context, null, 2)}
 
 SCOPE
 * Focus on: analyzing the generated images, understanding product, selling points, and target audience.

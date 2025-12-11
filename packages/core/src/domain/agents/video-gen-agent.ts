@@ -36,7 +36,6 @@ import { setupAgentHooks } from "./hooks";
 import { InputTransformer } from "./input/input-transformer";
 import { Presets } from "./presets";
 import { ActorStore } from "./state/actor-store";
-import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
 import { StateBroadcaster } from "./transport/state-broadcaster";
 import { WebSocketHandler } from "./transport/websocket-handler";
 // extra props for agent instantiation.
@@ -68,7 +67,10 @@ export class VideoGenAgent extends AIChatAgent<
     this.runStateSerialized = null;
     this.actorStore = new ActorStore(ctx);
     this.presetManager = new Presets.Manager();
-    this.inputTransformer = new InputTransformer(this.presetManager);
+    this.inputTransformer = new InputTransformer(
+      this.actorStore,
+      this.presetManager,
+    );
 
     // if not initialized, init
     if (!this.state) {
@@ -269,10 +271,7 @@ export class VideoGenAgent extends AIChatAgent<
       plan: "",
     });
     // 1. create agent with context
-    const agent =
-      this.state.input.mode === "video_gen"
-        ? createOrchestratorAgent()
-        : createImageGenWithRefAgent();
+    const agent = createOrchestratorAgent();
     // finalized input items
     const runnerInput = await this.createRunnerInput(agent);
 
