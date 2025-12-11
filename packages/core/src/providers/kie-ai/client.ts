@@ -2,36 +2,10 @@ import { omitUndefined } from "@core/utils/common";
 import type { ZodType } from "zod";
 import type {
   ApiResponse,
-  ByteDanceDuration,
-  ByteDanceResolution,
   CreateTaskResponse,
   FileUploadResponse,
-  FrameDuration,
-  GrokAspectRatio,
-  GrokMode,
-  IdeogramImageSize,
-  IdeogramNumImages,
-  IdeogramRenderingSpeed,
-  IdeogramStyle,
-  Kling26Duration,
-  NanoBananaAspectRatio,
-  NanoBananaOutputFormat,
-  NanoBananaResolution,
-  SeeDreamAspectRatio,
-  SeeDreamQuality,
-  StoryboardAspectRatio,
   TaskDetailsResponse,
   TaskResultPayload,
-  Veo31AspectRatio,
-  Veo31ExtendVideoResponse,
-  Veo31GenerateVideoResponse,
-  Veo31GenerationType,
-  Veo31Model,
-  Veo31Video1080pResponse,
-  Veo31VideoDetailsResponse,
-  Wan25Duration,
-  Wan25Resolution,
-  ZImageAspectRatio,
 } from "./schemas";
 import {
   ApiResponseSchema,
@@ -39,10 +13,6 @@ import {
   FileUploadResponseSchema,
   parseTaskResultPayload,
   TaskDetailsResponseSchema,
-  Veo31ExtendVideoResponseSchema,
-  Veo31GenerateVideoResponseSchema,
-  Veo31Video1080pResponseSchema,
-  Veo31VideoDetailsResponseSchema,
 } from "./schemas";
 
 type SchemaOutput<T extends ZodType> = T["_output"];
@@ -53,124 +23,6 @@ const UPLOAD_BASE_URL = "https://kieai.redpandaai.co";
 export interface KieAIClientOptions {
   apiKey: string;
   baseUrl?: string;
-}
-
-export interface CreateNanoBananaTaskParams {
-  prompt: string;
-  imageInput?: string[];
-  aspectRatio?: NanoBananaAspectRatio;
-  resolution?: NanoBananaResolution;
-  outputFormat?: NanoBananaOutputFormat;
-  callbackUrl?: string;
-}
-
-export interface StoryboardShotInput {
-  scene: string;
-  duration: number;
-  Scene?: string;
-}
-
-export interface StoryboardTaskParams {
-  shots: StoryboardShotInput[];
-  nFrames: FrameDuration;
-  aspectRatio?: StoryboardAspectRatio;
-  imageUrls?: string[];
-  callbackUrl?: string;
-}
-
-export interface ByteDanceTaskParams {
-  prompt: string;
-  imageUrl: string;
-  resolution?: ByteDanceResolution;
-  duration?: ByteDanceDuration;
-  callbackUrl?: string;
-}
-
-export interface GrokImageToVideoTaskParams {
-  prompt?: string;
-  imageUrls?: string[];
-  taskId?: string;
-  index?: number;
-  mode?: GrokMode;
-  callbackUrl?: string;
-}
-
-export interface GrokTextToVideoTaskParams {
-  prompt: string;
-  aspectRatio?: GrokAspectRatio;
-  mode?: GrokMode;
-  callbackUrl?: string;
-}
-
-export interface GrokTextToImageTaskParams {
-  prompt: string;
-  aspectRatio?: GrokAspectRatio;
-  mode?: GrokMode;
-  callbackUrl?: string;
-}
-
-export interface GrokUpscaleTaskParams {
-  taskId: string;
-  callbackUrl?: string;
-}
-
-export interface Wan25ImageToVideoParams {
-  prompt: string;
-  imageUrl: string;
-  duration?: Wan25Duration;
-  resolution?: Wan25Resolution;
-  negativePrompt?: string;
-  enablePromptExpansion?: boolean;
-  seed?: number;
-  callbackUrl?: string;
-}
-
-export interface SoraWatermarkRemoverTaskParams {
-  videoUrl: string;
-  callbackUrl?: string;
-}
-
-export interface IdeogramCharacterEditTaskParams {
-  prompt: string;
-  imageUrl: string;
-  maskUrl: string;
-  referenceImageUrls: string[];
-  renderingSpeed?: IdeogramRenderingSpeed;
-  style?: IdeogramStyle;
-  expandPrompt?: boolean;
-  numImages?: IdeogramNumImages;
-  seed?: number;
-  callbackUrl?: string;
-}
-
-export interface IdeogramCharacterRemixTaskParams {
-  prompt: string;
-  imageUrl: string;
-  referenceImageUrls: string[];
-  renderingSpeed?: IdeogramRenderingSpeed;
-  style?: IdeogramStyle;
-  expandPrompt?: boolean;
-  imageSize?: IdeogramImageSize;
-  numImages?: IdeogramNumImages;
-  seed?: number;
-  strength?: number;
-  negativePrompt?: string;
-  imageUrls?: string[];
-  referenceMaskUrls?: string;
-  callbackUrl?: string;
-}
-
-export interface IdeogramCharacterTaskParams {
-  prompt: string;
-  referenceImageUrls: string[];
-  renderingSpeed?: IdeogramRenderingSpeed;
-  style?: IdeogramStyle;
-  expandPrompt?: boolean;
-  numImages?: IdeogramNumImages;
-  imageSize?: IdeogramImageSize;
-  seed?: number;
-  negativePrompt?: string;
-  callbackUrl?: string;
 }
 
 export interface UploadFileUrlParams {
@@ -189,56 +41,7 @@ export interface UploadFileStreamParams {
   fileName?: string;
 }
 
-export interface CreateZImageTaskParams {
-  prompt: string;
-  aspectRatio?: ZImageAspectRatio;
-  callbackUrl?: string;
-}
-
-export interface CreateKling26ImageToVideoTaskParams {
-  prompt: string;
-  imageUrls: string[];
-  sound?: boolean;
-  duration?: Kling26Duration;
-  callbackUrl?: string;
-}
-
-export interface CreateSeeDream45TextToImageTaskParams {
-  prompt: string;
-  aspectRatio?: SeeDreamAspectRatio;
-  quality?: SeeDreamQuality;
-  callbackUrl?: string;
-}
-
-export interface CreateSeeDream45EditTaskParams {
-  prompt: string;
-  imageUrls: string[];
-  aspectRatio?: SeeDreamAspectRatio;
-  quality?: SeeDreamQuality;
-  callbackUrl?: string;
-}
-
-// ===== VEO 3.1 INTERFACES =====
-
-export interface Veo31GenerateVideoParams {
-  prompt: string;
-  imageUrls?: string[];
-  model?: Veo31Model;
-  generationType?: Veo31GenerationType;
-  aspectRatio?: Veo31AspectRatio;
-  seeds?: number;
-  callbackUrl?: string;
-  enableTranslation?: boolean;
-  watermark?: string;
-}
-
-export interface Veo31ExtendVideoParams {
-  taskId: string;
-  prompt: string;
-  seeds?: number;
-  watermark?: string;
-  callbackUrl?: string;
-}
+// (Veo 3.1 handled in models.ts)
 
 export class KieAIError extends Error {
   constructor(
@@ -256,262 +59,6 @@ export class KieAIClient {
 
   constructor(private readonly options: KieAIClientOptions) {
     this.baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
-  }
-
-  async createNanoBananaTask(
-    params: CreateNanoBananaTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      image_input: params.imageInput,
-      aspect_ratio: params.aspectRatio,
-      resolution: params.resolution,
-      output_format: params.outputFormat,
-    });
-
-    return this.createTask("nano-banana-pro", input, params.callbackUrl);
-  }
-
-  async createZImageTask(
-    params: CreateZImageTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      aspect_ratio: params.aspectRatio ?? "1:1",
-    });
-
-    return this.createTask("z-image", input, params.callbackUrl);
-  }
-
-  async createKling26ImageToVideoTask(
-    params: CreateKling26ImageToVideoTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      image_urls: params.imageUrls,
-      sound: params.sound,
-      duration: params.duration,
-    });
-
-    return this.createTask(
-      "kling-2.6/image-to-video",
-      input,
-      params.callbackUrl,
-    );
-  }
-
-  async createSeeDream45TextToImageTask(
-    params: CreateSeeDream45TextToImageTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      aspect_ratio: params.aspectRatio ?? "1:1",
-      quality: params.quality ?? "basic",
-    });
-
-    return this.createTask(
-      "seedream/4.5-text-to-image",
-      input,
-      params.callbackUrl,
-    );
-  }
-
-  async createSeeDream45EditTask(
-    params: CreateSeeDream45EditTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      image_urls: params.imageUrls,
-      aspect_ratio: params.aspectRatio ?? "1:1",
-      quality: params.quality ?? "basic",
-    });
-
-    return this.createTask("seedream/4.5-edit", input, params.callbackUrl);
-  }
-
-  async createStoryboardTask(
-    params: StoryboardTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const shots = params.shots.map((shot) => ({
-      Scene: shot.Scene ?? shot.scene,
-      duration: shot.duration,
-    }));
-
-    const input = omitUndefined({
-      shots,
-      n_frames: params.nFrames,
-      aspect_ratio: params.aspectRatio,
-      image_urls: params.imageUrls,
-    });
-
-    return this.createTask("sora-2-pro-storyboard", input, params.callbackUrl);
-  }
-
-  async createByteDanceTask(
-    params: ByteDanceTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      image_url: params.imageUrl,
-      resolution: params.resolution,
-      duration: params.duration,
-    });
-
-    return this.createTask(
-      "bytedance/v1-pro-fast-image-to-video",
-      input,
-      params.callbackUrl,
-    );
-  }
-
-  async createGrokImageToVideoTask(
-    params: GrokImageToVideoTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      image_urls: params.imageUrls,
-      task_id: params.taskId,
-      index: params.index,
-      mode: params.mode,
-    });
-
-    return this.createTask(
-      "grok-imagine/image-to-video",
-      input,
-      params.callbackUrl,
-    );
-  }
-
-  async createGrokTextToVideoTask(
-    params: GrokTextToVideoTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      aspect_ratio: params.aspectRatio,
-      mode: params.mode,
-    });
-
-    return this.createTask(
-      "grok-imagine/text-to-video",
-      input,
-      params.callbackUrl,
-    );
-  }
-
-  async createGrokTextToImageTask(
-    params: GrokTextToImageTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      aspect_ratio: params.aspectRatio,
-      mode: params.mode,
-    });
-
-    return this.createTask(
-      "grok-imagine/text-to-image",
-      input,
-      params.callbackUrl,
-    );
-  }
-
-  async createGrokUpscaleTask(
-    params: GrokUpscaleTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = { task_id: params.taskId };
-
-    return this.createTask("grok-imagine/upscale", input, params.callbackUrl);
-  }
-
-  async createSoraWatermarkRemoverTask(
-    params: SoraWatermarkRemoverTaskParams,
-  ): Promise<CreateTaskResponse> {
-    return this.createTask(
-      "sora-watermark-remover",
-      { video_url: params.videoUrl },
-      params.callbackUrl,
-    );
-  }
-
-  async createWan25ImageToVideoTask(
-    params: Wan25ImageToVideoParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      image_url: params.imageUrl,
-      duration: params.duration,
-      resolution: params.resolution,
-      negative_prompt: params.negativePrompt,
-      enable_prompt_expansion: params.enablePromptExpansion,
-      seed: params.seed,
-    });
-
-    return this.createTask("wan/2-5-image-to-video", input, params.callbackUrl);
-  }
-
-  async createIdeogramCharacterEditTask(
-    params: IdeogramCharacterEditTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      image_url: params.imageUrl,
-      mask_url: params.maskUrl,
-      reference_image_urls: params.referenceImageUrls,
-      rendering_speed: params.renderingSpeed,
-      style: params.style,
-      expand_prompt: params.expandPrompt,
-      num_images: params.numImages,
-      seed: params.seed,
-    });
-
-    return this.createTask(
-      "ideogram/character-edit",
-      input,
-      params.callbackUrl,
-    );
-  }
-
-  async createIdeogramCharacterRemixTask(
-    params: IdeogramCharacterRemixTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      image_url: params.imageUrl,
-      reference_image_urls: params.referenceImageUrls,
-      rendering_speed: params.renderingSpeed,
-      style: params.style,
-      expand_prompt: params.expandPrompt,
-      image_size: params.imageSize,
-      num_images: params.numImages,
-      seed: params.seed,
-      strength: params.strength,
-      negative_prompt: params.negativePrompt,
-      image_urls: params.imageUrls,
-      reference_mask_urls: params.referenceMaskUrls,
-    });
-
-    return this.createTask(
-      "ideogram/character-remix",
-      input,
-      params.callbackUrl,
-    );
-  }
-
-  async createIdeogramCharacterTask(
-    params: IdeogramCharacterTaskParams,
-  ): Promise<CreateTaskResponse> {
-    const input = omitUndefined({
-      prompt: params.prompt,
-      reference_image_urls: params.referenceImageUrls,
-      rendering_speed: params.renderingSpeed,
-      style: params.style,
-      expand_prompt: params.expandPrompt,
-      num_images: params.numImages,
-      image_size: params.imageSize,
-      seed: params.seed,
-      negative_prompt: params.negativePrompt,
-    });
-
-    return this.createTask("ideogram/character", input, params.callbackUrl);
   }
 
   async getTaskDetails(taskId: string): Promise<TaskDetailsResponse> {
@@ -614,158 +161,7 @@ export class KieAIClient {
     return parseTaskResultPayload(details.data?.resultJson ?? null);
   }
 
-  // ===== VEO 3.1 METHODS =====
-
-  /**
-   * Generate a video using Veo 3.1.
-   *
-   * @param params - Video generation parameters
-   * @returns Task response with taskId for tracking
-   */
-  async veo31GenerateVideo(
-    params: Veo31GenerateVideoParams,
-  ): Promise<Veo31GenerateVideoResponse> {
-    const payload = omitUndefined({
-      prompt: params.prompt,
-      imageUrls: params.imageUrls,
-      model: params.model ?? "veo3_fast",
-      generationType: params.generationType,
-      aspectRatio: params.aspectRatio ?? "9:16",
-      seeds: params.seeds,
-      callBackUrl: params.callbackUrl,
-      enableTranslation: params.enableTranslation ?? true,
-      watermark: params.watermark,
-    });
-
-    return this.request(
-      `${this.baseUrl}/api/v1/veo/generate`,
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-      },
-      Veo31GenerateVideoResponseSchema,
-    );
-  }
-
-  /**
-   * Extend an existing Veo 3.1 video.
-   *
-   * @param params - Video extension parameters
-   * @returns Task response with taskId for tracking
-   */
-  async veo31ExtendVideo(
-    params: Veo31ExtendVideoParams,
-  ): Promise<Veo31ExtendVideoResponse> {
-    const payload = omitUndefined({
-      taskId: params.taskId,
-      prompt: params.prompt,
-      seeds: params.seeds,
-      watermark: params.watermark,
-      callBackUrl: params.callbackUrl,
-    });
-
-    return this.request(
-      `${this.baseUrl}/api/v1/veo/extend`,
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-      },
-      Veo31ExtendVideoResponseSchema,
-    );
-  }
-
-  /**
-   * Get video generation task details and status.
-   *
-   * @param taskId - Task ID from video generation
-   * @returns Video details including status and result URLs
-   */
-  async veo31GetVideoDetails(
-    taskId: string,
-  ): Promise<Veo31VideoDetailsResponse> {
-    const url = new URL(`${this.baseUrl}/api/v1/veo/record-info`);
-    url.searchParams.set("taskId", taskId);
-
-    return this.request(
-      url.toString(),
-      { method: "GET" },
-      Veo31VideoDetailsResponseSchema,
-    );
-  }
-
-  /**
-   * Get the 1080P version of a generated video.
-   *
-   * @param taskId - Task ID from video generation
-   * @param index - Optional video index
-   * @returns 1080P video URL
-   */
-  async veo31Get1080pVideo(
-    taskId: string,
-    index?: number,
-  ): Promise<Veo31Video1080pResponse> {
-    const url = new URL(`${this.baseUrl}/api/v1/veo/get-1080p-video`);
-    url.searchParams.set("taskId", taskId);
-    if (index !== undefined) {
-      url.searchParams.set("index", String(index));
-    }
-
-    return this.request(
-      url.toString(),
-      { method: "GET" },
-      Veo31Video1080pResponseSchema,
-    );
-  }
-
-  /**
-   * Poll Veo 3.1 task until complete.
-   * Returns the video URL when done or throws on failure.
-   *
-   * @param taskId - Task ID to poll
-   * @param pollIntervalMs - Polling interval in milliseconds (default: 10000)
-   * @param maxAttempts - Maximum polling attempts (default: 60)
-   * @param sleepFn - Custom sleep function (e.g., Cloudflare Workflows step.sleep)
-   */
-  async veo31PollUntilComplete(
-    taskId: string,
-    onPoll?: (attempt: number, maxAttempt: number) => Promise<void>,
-    pollIntervalMs = 10000,
-    maxAttempts = 60,
-    sleepFn: (ms: number) => Promise<void> = (ms) =>
-      new Promise((resolve) => setTimeout(resolve, ms)),
-  ): Promise<string> {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const details = await this.veo31GetVideoDetails(taskId);
-      const data = details.data;
-
-      if (!data) {
-        throw new KieAIError(500, "No data in task details response");
-      }
-
-      // successFlag: 0=generating, 1=success, 2=failed, 3=generation_failed
-      if (data.successFlag === 1) {
-        const resultUrls = data.response?.resultUrls;
-        if (resultUrls && resultUrls.length > 0) {
-          return resultUrls[0];
-        }
-        throw new KieAIError(500, "Task succeeded but no result URLs found");
-      }
-
-      if (data.successFlag === 2 || data.successFlag === 3) {
-        throw new KieAIError(500, JSON.stringify(data));
-      }
-
-      // Still generating, wait and retry
-      console.log(`[veo31] Polling attempt ${attempt + 1}/${maxAttempts}...`);
-      onPoll?.(attempt + 1, maxAttempts);
-      await sleepFn(pollIntervalMs);
-    }
-
-    throw new KieAIError(
-      408,
-      `Polling timed out after ${maxAttempts} attempts`,
-    );
-  }
+  // Veo 3.1 methods removed — handled via models and generic client
 
   /**
    * Generic poll task until complete.
@@ -833,6 +229,21 @@ export class KieAIClient {
       408,
       `Polling timed out after ${maxAttempts} attempts`,
     );
+  }
+
+  /**
+   * Create a task using a generic model identifier and a params object.
+   * Keys in `params` are converted from camelCase to snake_case automatically.
+   */
+  async createGenericTask(
+    model: string,
+    params: unknown,
+    callbackUrl?: string,
+  ): Promise<CreateTaskResponse> {
+    const input = omitUndefined(
+      convertKeysToSnakeCase(params) as Record<string, unknown>,
+    );
+    return this.createTask(model, input, callbackUrl);
   }
 
   private async createTask(
@@ -937,6 +348,32 @@ export class KieAIClient {
 
     return finalHeaders;
   }
+}
+
+function convertKeysToSnakeCase(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+
+  if (Array.isArray(value)) {
+    return value.map((v) => convertKeysToSnakeCase(v));
+  }
+
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      // convert camelCase or PascalCase to snake_case
+      const snake = k
+        .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+        .replace(/([A-Z])([A-Z][a-z])/g, "$1_$2")
+        .replace(/^_+|_+$/g, "")
+        .toLowerCase();
+
+      out[snake] = convertKeysToSnakeCase(v);
+    }
+    return out;
+  }
+
+  return value;
 }
 
 function normalizeUploadPath(path: string) {

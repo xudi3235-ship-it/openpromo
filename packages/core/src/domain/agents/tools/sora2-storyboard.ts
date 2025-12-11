@@ -143,14 +143,18 @@ NOTE: Provide local file paths for reference images - files will be uploaded aut
       duration: shot.duration,
     }));
 
-    // Create storyboard task
-    const response = await client.createStoryboardTask({
+    // Create storyboard task via generic API and poll until complete
+    const payload = {
       shots: kieShots,
-      nFrames: mapDuration(duration),
-      aspectRatio: mapAspectRatio(aspectRatio),
-      imageUrls,
-    });
+      n_frames: mapDuration(duration),
+      aspect_ratio: mapAspectRatio(aspectRatio),
+      image_urls: imageUrls,
+    };
 
+    const response = await client.createGenericTask(
+      "sora2-storyboard",
+      payload as unknown,
+    );
     const taskId = response.data?.taskId;
     if (!taskId) {
       return toolError(
@@ -158,9 +162,9 @@ NOTE: Provide local file paths for reference images - files will be uploaded aut
         "Failed to start storyboard generation - no task ID returned",
       );
     }
+
     console.log(`[sora2_storyboard] Task started: ${taskId}`);
 
-    // Poll until complete using client's typed method
     const videoUrl = await client.pollTaskUntilComplete(taskId, {
       logPrefix: "sora2_storyboard",
       onPoll: async (attempt, maxAttempt) => {

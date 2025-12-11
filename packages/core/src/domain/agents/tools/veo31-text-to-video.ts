@@ -3,15 +3,11 @@
  * Ported from Python: src/openai_agent/tools/veo31.py
  */
 
+import { KieAI } from "@core/providers/kie-ai/models";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
-import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
-import {
-  defaultVeo31Config,
-  downloadVideo,
-  getKieAIClient,
-  Veo31ConfigSchema,
-} from "./utils";
+import { toolBuilder, toolSuccess } from "../tool-builder";
+import { defaultVeo31Config, downloadVideo, Veo31ConfigSchema } from "./utils";
 
 // Parameter schema for text-to-video tool
 const TextToVideoParamsSchema = z.object({
@@ -56,28 +52,13 @@ Note: For product consistency, prefer veo31_reference_images_to_video instead.`,
     );
     console.log(`[veo31_text_to_video] Config: ${JSON.stringify(cfg)}`);
 
-    const client = getKieAIClient();
-
-    // Start video generation
-    const generateResult = await client.veo31GenerateVideo({
+    // Generate video via models API (handles task creation + polling)
+    const videoUrl = await KieAI.Veo31.run({
       prompt,
       aspectRatio: cfg.aspectRatio === "16:9" ? "16:9" : "9:16",
       model: "veo3_fast",
       enableTranslation: true,
     });
-
-    const taskId = generateResult.data?.taskId;
-    if (!taskId) {
-      return toolError(
-        "veo31_text_to_video",
-        "Failed to start video generation - no task ID returned",
-      );
-    }
-
-    console.log(`[veo31_text_to_video] Task started: ${taskId}`);
-
-    // Poll until complete
-    const videoUrl = await client.veo31PollUntilComplete(taskId);
 
     // Download and save
     await downloadVideo(videoUrl, outputPath);
@@ -85,7 +66,6 @@ Note: For product consistency, prefer veo31_reference_images_to_video instead.`,
     return toolSuccess("veo31_text_to_video", {
       videoUrl,
       outputPath,
-      taskId,
       prompt,
     });
   },

@@ -3,9 +3,10 @@
  * Ported from Python: src/openai_agent/tools/veo31.py
  */
 
+import { KieAI } from "@core/providers/kie-ai/models";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
-import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
+import { toolBuilder, toolSuccess } from "../tool-builder";
 import {
   defaultVeo31Config,
   downloadVideo,
@@ -78,28 +79,15 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
     // Upload all reference images and get URLs
     const referenceImageUrls = await uploadFiles(client, referenceImagePaths);
 
-    // Start video generation with reference images
-    const generateResult = await client.veo31GenerateVideo({
+    // Generate video via models API (handles task creation + polling)
+    const videoUrl = await KieAI.Veo31.run({
       prompt,
       imageUrls: referenceImageUrls,
       generationType: "REFERENCE_2_VIDEO",
-      aspectRatio: "16:9", // REQUIRED for reference images
+      aspectRatio: "9:16",
       model: "veo3_fast",
       enableTranslation: true,
     });
-
-    const taskId = generateResult.data?.taskId;
-    if (!taskId) {
-      return toolError(
-        "veo31_reference_images_to_video",
-        "Failed to start video generation - no task ID returned",
-      );
-    }
-
-    console.log(`[veo31_reference_images_to_video] Task started: ${taskId}`);
-
-    // Poll until complete
-    const videoUrl = await client.veo31PollUntilComplete(taskId);
 
     // Download and save
     await downloadVideo(videoUrl, outputPath);
@@ -107,7 +95,6 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
     return toolSuccess("veo31_reference_images_to_video", {
       videoUrl,
       outputPath,
-      taskId,
       prompt,
       referenceImagePaths,
     });

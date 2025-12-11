@@ -3,9 +3,10 @@
  * Ported from Python: src/openai_agent/tools/veo31.py
  */
 
+import { KieAI } from "@core/providers/kie-ai/models";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
-import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
+import { toolBuilder, toolSuccess } from "../tool-builder";
 import { VideoGenAgent } from "../video-gen-agent";
 import {
   defaultVeo31Config,
@@ -85,33 +86,22 @@ NOTE:
       ? ("FIRST_AND_LAST_FRAMES_2_VIDEO" as const)
       : undefined;
 
-    // Start video generation
-    const generateResult = await client.veo31GenerateVideo({
-      prompt,
-      imageUrls,
-      generationType,
-      aspectRatio: cfg.aspectRatio === "16:9" ? "16:9" : "9:16",
-      model: "veo3_fast",
-      enableTranslation: true,
-    });
-
-    const taskId = generateResult.data?.taskId;
-    if (!taskId) {
-      return toolError(
-        "veo31_image_to_video",
-        "Failed to start video generation - no task ID returned",
-      );
-    }
-
-    console.log(`[veo31_image_to_video] Task started: ${taskId}`);
-
-    // Poll until complete
-    const videoUrl = await client.veo31PollUntilComplete(
-      taskId,
-      async (attempt, maxAttempt) => {
-        VideoGenAgent.onProgressUpdate((draft) => {
-          draft.logs.push(`Progress: attempt ${attempt} of ${maxAttempt}`);
-        });
+    // Start video generation via models API (handles polling)
+    const videoUrl = await KieAI.Veo31.run(
+      {
+        prompt,
+        imageUrls,
+        generationType,
+        aspectRatio: cfg.aspectRatio === "16:9" ? "16:9" : "9:16",
+        model: "veo3_fast",
+        enableTranslation: true,
+      },
+      {
+        onPoll: (attempt, maxAttempts) => {
+          VideoGenAgent.onProgressUpdate((draft) => {
+            draft.logs.push(`Progress: attempt ${attempt} of ${maxAttempts}`);
+          });
+        },
       },
     );
 
@@ -121,7 +111,6 @@ NOTE:
     return toolSuccess("veo31_image_to_video", {
       videoUrl,
       outputPath,
-      taskId,
       prompt,
       inputImagePath,
       inputLastFramePath: inputLastFramePath ?? null,

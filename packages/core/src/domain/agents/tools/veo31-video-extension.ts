@@ -3,15 +3,11 @@
  * Ported from Python: src/openai_agent/tools/veo31.py
  */
 
+import { KieAI } from "@core/providers/kie-ai/models";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
-import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
-import {
-  downloadVideo,
-  getKieAIClient,
-  probeDurationMs,
-  Veo31ConfigSchema,
-} from "./utils";
+import { toolBuilder, toolSuccess } from "../tool-builder";
+import { downloadVideo, probeDurationMs, Veo31ConfigSchema } from "./utils";
 
 // Parameter schema for video-extension tool
 const VideoExtensionParamsSchema = z.object({
@@ -52,26 +48,11 @@ Best for: making longer videos, continuing a scene, seamless extensions.`,
       `[veo31_video_extension] Extension prompt: ${prompt.slice(0, 100)}...`,
     );
 
-    const client = getKieAIClient();
-
-    // Start video extension
-    const extendResult = await client.veo31ExtendVideo({
+    // Extend via models API (handles task creation + polling)
+    const videoUrl = await KieAI.Veo31.extend({
       taskId: inputVideoTaskId,
       prompt,
     });
-
-    const taskId = extendResult.data?.taskId;
-    if (!taskId) {
-      return toolError(
-        "veo31_video_extension",
-        "Failed to start video extension - no task ID returned",
-      );
-    }
-
-    console.log(`[veo31_video_extension] Extension task started: ${taskId}`);
-
-    // Poll until complete
-    const videoUrl = await client.veo31PollUntilComplete(taskId);
 
     // Download and save
     const [_, durationMs] = await Promise.all([
@@ -82,7 +63,6 @@ Best for: making longer videos, continuing a scene, seamless extensions.`,
     return toolSuccess("veo31_video_extension", {
       videoUrl,
       outputPath,
-      taskId,
       prompt,
       originalTaskId: inputVideoTaskId,
       durationMs,

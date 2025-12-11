@@ -13,7 +13,6 @@
 import { readFileSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import type { CreateNanoBananaTaskParams } from "@core/providers";
 import { Replicate } from "@core/providers/replicate/models";
 import {
   downloadImage as downloadImageBase,
@@ -101,10 +100,10 @@ async function providerKieImpl(params: NanoBananaParams) {
   const { prompt, imageInputPaths, aspectRatio } = params;
   const client = getKieAIClient();
   const imageUrls = await uploadFilesToKie(client, imageInputPaths ?? []);
-  const task = await client.createNanoBananaTask({
+  const task = await client.createGenericTask("nano-banana-pro", {
     prompt,
     imageInput: imageUrls,
-    aspectRatio: aspectRatio as CreateNanoBananaTaskParams["aspectRatio"],
+    aspectRatio,
   });
   const taskID = task.data?.taskId;
   if (!taskID)

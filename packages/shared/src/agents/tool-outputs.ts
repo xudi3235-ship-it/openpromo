@@ -39,7 +39,6 @@ function makeToolOutput<const T extends ToolNameType, S extends z.ZodTypeAny>(
 const Veo31BaseVideoOutput = z.object({
   videoUrl: z.string().url(),
   outputPath: z.string(),
-  taskId: z.string(),
   durationMs: z.number().optional(),
 });
 
