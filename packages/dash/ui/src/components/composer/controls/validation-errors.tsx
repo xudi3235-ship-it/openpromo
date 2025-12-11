@@ -164,7 +164,7 @@ export function ValidationErrors({ errors }: ValidationErrorsProps) {
 
   return (
     <section
-      className="mt-4 rounded-[12px] bg-[#F9F5F4] px-4 py-[14px]"
+      className=" rounded-[12px] bg-[#F9F5F4] px-4 py-4"
       style={{ borderLeft: "2px solid #B63A3A" }}
     >
       <header className="flex items-center gap-1.5 text-xs font-semibold text-[#7B1F1F]">

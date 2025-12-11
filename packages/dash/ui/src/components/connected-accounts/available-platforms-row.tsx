@@ -22,7 +22,7 @@ const platforms: Platform[] = [
   },
   {
     id: "tiktok",
-    name: "TikTok",
+    name: "TikTok Business",
     colors: "from-black to-gray-800",
     available: true,
   },

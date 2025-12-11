@@ -28,8 +28,8 @@ const availablePlatforms = [
   },
   {
     id: "tiktok",
-    name: "TikTok",
-    description: "Create and schedule TikTok videos",
+    name: "TikTok Business",
+    description: "Create and schedule TikTok videos with business features",
     icon: "https://logo.clearbit.com/tiktok.com",
     status: "available",
   },
@@ -138,7 +138,7 @@ export function ConnectedAccountsPage() {
   const {
     handleConnectFacebook,
     handleConnectInstagram,
-    handleConnectTikTok,
+    handleConnectTikTokBusiness,
     isConnecting,
   } = useOAuthWithListener();
 
@@ -251,7 +251,7 @@ export function ConnectedAccountsPage() {
         onOpenChange={setIsConnectDialogOpen}
         onConnectFacebook={handleConnectFacebook}
         onConnectInstagram={handleConnectInstagram}
-        onConnectTikTok={handleConnectTikTok}
+        onConnectTikTok={handleConnectTikTokBusiness}
         isConnecting={isConnecting}
       />
     </div>

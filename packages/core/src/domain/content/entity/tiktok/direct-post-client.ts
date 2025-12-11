@@ -1,3 +1,12 @@
+/**
+ * DEPRECATED: This client is deprecated since 2025-12-10.
+ *
+ * All TikTok integrations now use TikTok Business API through TikTokBusinessAPIClient.
+ * This file is kept for historical context and reference only.
+ *
+ * Migration: Replace usage with TikTokBusinessAPIClient which supports all features
+ * of the Business API including enhanced publishing, comment management, and more.
+ */
 import { ConnectedAccount } from "@core/domain/connected-account/connected-account";
 import type { TikTokFeedPlacementSpec } from "@core/schemas/content.sql";
 import { WorkflowError } from "@core/utils/error";

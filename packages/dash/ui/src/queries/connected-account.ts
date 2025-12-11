@@ -86,24 +86,34 @@ export const useInstagramOauthMutation = () => {
   });
 };
 
+/**
+ * DEPRECATED: This mutation is deprecated since 2025-12-10.
+ *
+ * All TikTok connections should now use useTikTokBusinessOauthMutation.
+ * This function is kept for backward compatibility but should not be used.
+ */
 export const useTikTokOauthMutation = () => {
   const { workspace } = useWorkspace();
   return useHonoMutation({
-    mutationFn: (api, variables: { state?: string }) =>
+    mutationFn: (api) =>
       api.workspaces[":workspaceSlug"].connected_accounts.tiktok.auth.$get({
-        query: { state: variables.state },
         param: { workspaceSlug: workspace.slug },
       }),
     onError: (error) => {
-      toast.error(`Failed to initiate TikTok OAuth: ${error.message}`);
+      // Show the deprecation error from the API response
+      if (error.message.includes("deprecated")) {
+        toast.error(
+          "TikTok OAuth has been deprecated. Please use TikTok Business instead.",
+        );
+      } else {
+        toast.error(`Failed to initiate TikTok OAuth: ${error.message}`);
+      }
     },
-    onSuccess({ data: { url } }) {
-      openPopup({
-        url,
-        target: "tiktok-oauth",
-        width: 600,
-        height: 800,
-      });
+    onSuccess() {
+      // This should not be reached as the endpoint returns 410 Gone
+      toast.error(
+        "TikTok OAuth has been deprecated. Please use TikTok Business instead.",
+      );
     },
   });
 };

@@ -1,3 +1,12 @@
+/**
+ * NOT IN USE: This route is not in use since 2025-12-10.
+ *
+ * TikTok Marketing API OAuth callback route is implemented but not registered.
+ * The route exists for when TikTok advertiser accounts are integrated into the application.
+ *
+ * Status: Implementation complete, but not integrated into the main application flow.
+ * To enable: Add initiation route and expose in frontend UI.
+ */
 import {
   ConnectedAccount,
   tikTokAdvertiserOAuthService,

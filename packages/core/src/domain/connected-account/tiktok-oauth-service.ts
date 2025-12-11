@@ -1,3 +1,12 @@
+/**
+ * DEPRECATED: This service is deprecated since 2025-12-10.
+ *
+ * All TikTok integrations now use TikTok Business API through TikTokBusinessOAuthService.
+ * This file is kept for historical context and reference only.
+ *
+ * Migration: All connected accounts using DEVELOPER_OAUTH should be migrated to BUSINESS_LOGIN.
+ * See migration script in packages/core/migrations/ for details.
+ */
 import { createHash } from "node:crypto";
 import { env } from "@core/utils/env";
 import { Log } from "@core/utils/log";

@@ -4,11 +4,9 @@ import { Maximize2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MdPublish, MdSaveAlt, MdSchedule } from "react-icons/md";
 import { toast } from "sonner";
-import { ValidationErrors } from "@/components/composer/controls/validation-errors";
 import { ContentConfirmationDialog } from "@/components/composer/dialogs/content-confirmation-dialog";
 import { PublishingOverlay } from "@/components/composer/layout/publishing-overlay";
 import { useComposerPublishHandlers } from "@/hooks/composer/useComposerHooks";
-import { useInternal } from "@/hooks/useActor";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { validateCaption } from "@/lib/caption-limit";
 import { logComposerEvent } from "@/lib/instrumentation/composer";
@@ -321,26 +319,19 @@ export function ComposerFooter() {
     closeComposer();
   };
 
-  const data = useComposerStore((s) => s.contentCreateData);
-  const isInternal = useInternal();
-
   return (
     <>
-      <div className="space-y-3">
-        <FooterActions
-          showMoreTools={showMoreToolsButton}
-          isDialog={isDialog}
-          isPending={isPending}
-          canPublish={validation.canPublish}
-          actionType={actionType}
-          onMoreTools={handleSwitchToFullscreen}
-          onCancel={handleCancel}
-          onSaveDraft={handleSaveDraft}
-          onPublish={handlePublish}
-        />
-
-        <ValidationErrors errors={validation.errors} />
-      </div>
+      <FooterActions
+        showMoreTools={showMoreToolsButton}
+        isDialog={isDialog}
+        isPending={isPending}
+        canPublish={validation.canPublish}
+        actionType={actionType}
+        onMoreTools={handleSwitchToFullscreen}
+        onCancel={handleCancel}
+        onSaveDraft={handleSaveDraft}
+        onPublish={handlePublish}
+      />
 
       <CancelConfirmationDialog
         open={showCancelConfirm}
@@ -373,17 +364,6 @@ export function ComposerFooter() {
           actionType="publish"
           isPending={isPending}
         />
-      )}
-      {(import.meta.env.DEV || isInternal) && (
-        <div className="max-w-md mx-auto my-4 p-2 bg-muted rounded text-xs overflow-auto border border-dashed border-yellow-500">
-          <div className="flex items-center gap-1.5 mb-2 text-yellow-600 dark:text-yellow-500 font-medium">
-            <span className="px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 rounded text-[10px] uppercase tracking-wide">
-              {import.meta.env.DEV ? "Dev" : "Internal"}
-            </span>
-            <span>Debug Data</span>
-          </div>
-          <pre>{JSON.stringify(data, null, 2)}</pre>
-        </div>
       )}
       <PublishingOverlay
         isVisible={publishingState.isVisible}

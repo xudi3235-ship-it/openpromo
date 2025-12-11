@@ -220,7 +220,7 @@ export function AccountSelection() {
   };
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2">
       {/* Section Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-foreground">Accounts</h3>
