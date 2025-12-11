@@ -10,11 +10,12 @@ import {
   withTrace,
 } from "@openai/agents";
 import { VideoGenRealtime } from "@shared/agents";
-import type {
-  AgentContext,
-  Connection,
-  ConnectionContext,
-  WSMessage,
+import {
+  type AgentContext,
+  type Connection,
+  type ConnectionContext,
+  getCurrentAgent,
+  type WSMessage,
 } from "agents";
 import { AIChatAgent } from "agents/ai-chat-agent";
 import {
@@ -438,5 +439,16 @@ export class VideoGenAgent extends AIChatAgent<
         this.resetState();
       },
     } satisfies WebSocketHandler.EventHandlers);
+  }
+
+  /**
+   * uses async local storage
+   * @param updater
+   */
+  static onProgressUpdate(
+    updater: (draft: VideoGenRealtime.ServerAppState) => void,
+  ) {
+    const { agent } = getCurrentAgent<VideoGenAgent>();
+    agent?.patchState(updater);
   }
 }

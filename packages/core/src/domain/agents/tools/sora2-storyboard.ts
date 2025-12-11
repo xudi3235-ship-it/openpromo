@@ -16,6 +16,7 @@ import { env } from "@core/utils/env";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
+import { VideoGenAgent } from "../video-gen-agent";
 
 /**
  * Get KieAI client instance.
@@ -201,12 +202,18 @@ NOTE: Provide local file paths for reference images - files will be uploaded aut
         "Failed to start storyboard generation - no task ID returned",
       );
     }
-
     console.log(`[sora2_storyboard] Task started: ${taskId}`);
 
     // Poll until complete using client's typed method
     const videoUrl = await client.pollTaskUntilComplete(taskId, {
       logPrefix: "sora2_storyboard",
+      onPoll: async (attempt, maxAttempt) => {
+        VideoGenAgent.onProgressUpdate((draft) => {
+          draft.logs.push(
+            `[sora2_storyboard] Polling attempt ${attempt} of ${maxAttempt}`,
+          );
+        });
+      },
     });
 
     // Download and save

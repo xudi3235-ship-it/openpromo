@@ -7,7 +7,8 @@ import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
 import {
   ffmpegTool,
   sora2StoryboardTool,
-  veo31UnifiedTool,
+  veo31ImageToVideoTool,
+  // veo31UnifiedTool, // uses replicate provider
   virtualShellTool,
 } from "./tools";
 import { setContextTool } from "./tools/set-context";
@@ -75,10 +76,37 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     </video_structure>
 
     <video_tips_and_best_practices>
-    - extension tool ONLy works for non-consistent,natural continuation. if needs accuracy on elements, prefer multiple i2v, or use sora2(if not requiring realistic person in).
     - strong, effecitve, opening. Right on point hook. retention is critical for first 3-6 s. Optimize for our topline metrics.
     - natural, authentic dialogue that feels real, not scripted. avoid buzzwords, cliches, over-the-top claims. 
     </video_tips_and_best_practices>
+
+<multi_shot_strategy>
+ PREFER multi-shot single generation over multiple separate generations:
+
+ 1. Plan shots as SCENES within a single generation request
+ 2. Use explicit cut/transitions in prompts:
+    - "CUT TO: [next scene description]"
+    - "QUICK CUT: [transition description]"
+    - "SMOOTH DISSOLVE: [scene change]"
+
+ 3. barebone structure prompts as:
+    - Shot 1 (0-3s): [hook/intro]
+    - CUT TO:
+    - Shot 2 (..s): [development]
+    - CUT TO:
+    - Shot 3 (..s): [climax/CTA]
+    ... more shots here as needed
+
+ 4. For VEO31:
+    - Use single prompt with internal cuts
+    - Include timing cues: "[first 6s], [next 6s], [final 6s]"
+    - Specify dialogue pacing: "fast-paced dialogue", "quick cuts"
+    - specify negative prompts too.
+
+ 5. For Sora2 Storyboard:
+    - Provide shot array with explicit transitions
+    - Each shot includes: scene, duration, transition_type
+ </multi_shot_strategy>
 
     
 
@@ -92,22 +120,32 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     - Known issues & Best practices:
       - Extension prompts need added narrative + visual context, or they drift. Add last-frame descriptions and desired continuation cues.
       - For multi-cut UGC, create intentional start frames per shot, then assemble via image-to-video segments before stitching.
-      - Complex scenes often require multiple keyframes instead of a single long extension--prefer clarity over automation.
     </different_video_generation_modes>
 
 
     4.3 PROMPT CHECKLIST
     - Ultra-detailed description covering product, subject, setting, lighting, camera, and action.
     - Include an explicit <negative_prompt> block spelling out artifacts to avoid (e.g., distorted logos, physics issues, text overlays).
-    - Call out the hook or key beat and how it serves the storyboard goal.
     - Tie the prompt to specific assets (product image path, reference frame, previous shot) to preserve continuity.
     - Note pacing or transition requirements so cuts feel intentional.
+
+<failure_recovery>
+ 1. Track each shot's generation status separately
+ 2. If shot N fails:
+    - Preserve successful shots 1..N-1
+    - Retry only failed shot with adjusted prompt
+    - Maintain continuity by referencing previous successful shots
+ 3. After 2 retries:
+    - Try alternative generation method (VEO31 ↔ Sora2)
+    - Report partial success for manual review
+ </failure_recovery>
+
 
     <task_breakdown>
     1. Analyze inputs -> understand product, target audience, reference image, brand context, etc. 
     2. Select references -> Map each required scene to concrete product/reference images. Success: every scene has at least one grounding asset.
     5. Plan storyboard -> Outline beats, hooks, transitions, and which image feeds each clip. Success: storyboard ties every shot to assets and timing (0-6s hook noted, 15–30s total). 
-    6. Decide on teh tool, try to use 
+    - reason about whether use sora2 OR veo3.1
     7. Stitch plan -> If multiple clips, describe stitch order and any trims to hit final duration; plan ffmpeg concat if needed.
     </task_breakdown>
 
@@ -152,7 +190,8 @@ export function createVideoGenAgent() {
     tools: [
       virtualShellTool,
       videoToSpecTool,
-      veo31UnifiedTool, // on replicate
+      // veo31UnifiedTool, // on replicate
+      veo31ImageToVideoTool,
       sora2StoryboardTool,
       // other stuff
       ffmpegTool,
@@ -229,6 +268,7 @@ WORKFLOW STAGES:
 - stage transition: image -> video. 
 - do NOT complete until you have a final deliverable. do NOT set done=true until a final output is ready!
 - AVOID infinite loops. after you set the context, next run should be executing it against it.
+- if prompt includes <__internal__>, it's our developer testing, must follow the instructions as override for all the previous instructions.
 </__internal__>
 
 `;
@@ -238,11 +278,12 @@ WORKFLOW STAGES:
       imageGenAgent.asTool({
         toolName: "image_gen_agent",
         toolDescription:
-          "agent for creating ad images that can take other images as input/reference, etc. for products",
+          "Creates product-focused ad images using reference images for style guidance. Generates keyframes for video sequences.",
       }),
       videoGenAgent.asTool({
         toolName: "video_gen_agent",
-        toolDescription: "agent for creating videos for products.",
+        toolDescription:
+          "Converts images into engaging social media videos. Optimizes multi-shot structure and internal pacing.",
       }),
     ],
     modelSettings: {

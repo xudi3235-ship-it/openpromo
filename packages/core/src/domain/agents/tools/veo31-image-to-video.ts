@@ -6,6 +6,7 @@
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
+import { VideoGenAgent } from "../video-gen-agent";
 import {
   defaultVeo31Config,
   downloadVideo,
@@ -51,7 +52,12 @@ export const veo31ImageToVideoTool = toolBuilder<
 The input image is used as the first frame to guide generation.
 Optionally provide a last frame image for frame interpolation.
 Best for: animating static images, starting from a specific visual, transitions.
-NOTE: Provide local file paths - files will be uploaded automatically.`,
+NOTE: 
+
+1. Provide local file paths - files will be uploaded automatically.
+2. each video is fixed at 8s.
+
+`,
   parameters: ImageToVideoParamsSchema,
   async execute(params: ImageToVideoParams) {
     const { prompt, outputPath, inputImagePath, inputLastFramePath, config } =
@@ -102,7 +108,14 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
     console.log(`[veo31_image_to_video] Task started: ${taskId}`);
 
     // Poll until complete
-    const videoUrl = await client.veo31PollUntilComplete(taskId);
+    const videoUrl = await client.veo31PollUntilComplete(
+      taskId,
+      async (attempt, maxAttempt) => {
+        VideoGenAgent.onProgressUpdate((draft) => {
+          draft.logs.push(`Progress: attempt ${attempt} of ${maxAttempt}`);
+        });
+      },
+    );
 
     // Download and save
     await downloadVideo(videoUrl, outputPath);

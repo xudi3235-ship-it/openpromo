@@ -728,6 +728,7 @@ export class KieAIClient {
    */
   async veo31PollUntilComplete(
     taskId: string,
+    onPoll?: (attempt: number, maxAttempt: number) => Promise<void>,
     pollIntervalMs = 10000,
     maxAttempts = 60,
     sleepFn: (ms: number) => Promise<void> = (ms) =>
@@ -756,6 +757,7 @@ export class KieAIClient {
 
       // Still generating, wait and retry
       console.log(`[veo31] Polling attempt ${attempt + 1}/${maxAttempts}...`);
+      onPoll?.(attempt + 1, maxAttempts);
       await sleepFn(pollIntervalMs);
     }
 
@@ -781,6 +783,7 @@ export class KieAIClient {
       logPrefix?: string;
       /** Custom sleep function (e.g., Cloudflare Workflows step.sleep) */
       sleepFn?: (ms: number) => Promise<void>;
+      onPoll?: (attempt: number, maxAttempt: number) => void;
     },
   ): Promise<string> {
     const pollIntervalMs = options?.pollIntervalMs ?? 10000;
@@ -822,6 +825,7 @@ export class KieAIClient {
       console.log(
         `[${logPrefix}] Polling attempt ${attempt + 1}/${maxAttempts}...`,
       );
+      options?.onPoll?.(attempt + 1, maxAttempts);
       await sleepFn(pollIntervalMs);
     }
 
