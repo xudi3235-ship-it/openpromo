@@ -39,7 +39,7 @@ export const likesColumn: ColumnDef<MergedContentEntity> = {
         return (
           <div className="flex items-center space-x-1.5 text-sm text-gray-600 dark:text-gray-400">
             <Heart className="w-4 h-4" />
-            <span>{formatNumber(likes)}</span>
+            <span>{likes > 0 ? formatNumber(likes) : "—"}</span>
           </div>
         );
       },

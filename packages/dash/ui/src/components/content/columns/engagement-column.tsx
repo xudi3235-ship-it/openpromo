@@ -39,7 +39,7 @@ export const engagementColumn: ColumnDef<MergedContentEntity> = {
         return (
           <div className="flex items-center space-x-1.5 text-sm text-gray-600 dark:text-gray-400">
             <Zap className="w-4 h-4" />
-            <span>{formatNumber(engagement)}</span>
+            <span>{engagement > 0 ? formatNumber(engagement) : "—"}</span>
           </div>
         );
       },

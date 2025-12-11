@@ -1,48 +1,58 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: lib */
 import { createContext } from "./context";
 
 export namespace Log {
   const ctx = createContext<{
-    // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
     tags: Record<string, any>;
   }>();
 
-  // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
   export function create(tags?: Record<string, any>) {
     tags = tags || {};
 
     const result = {
-      // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
-      info(msg: string, extra?: Record<string, any>) {
+      info(...args: any[]) {
         const prefix = Object.entries({
           ...use().tags,
           ...tags,
-          ...extra,
         })
           .map(([key, value]) => `${key}=${value}`)
           .join(" ");
-        console.log(prefix, msg);
+
+        if (prefix) {
+          console.log(prefix, ...args);
+        } else {
+          console.log(...args);
+        }
         return result;
       },
-      // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
-      warn(msg: string, extra?: Record<string, any>) {
+      warn(...args: any[]) {
         const prefix = Object.entries({
           ...use().tags,
           ...tags,
-          ...extra,
         })
           .map(([key, value]) => `${key}=${value}`)
           .join(" ");
-        console.warn(prefix, msg);
+
+        if (prefix) {
+          console.warn(prefix, ...args);
+        } else {
+          console.warn(...args);
+        }
         return result;
       },
-      error(error: Error) {
+      error(...args: any[]) {
         const prefix = Object.entries({
           ...use().tags,
           ...tags,
         })
           .map(([key, value]) => `${key}=${value}`)
           .join(" ");
-        console.error(prefix, error);
+
+        if (prefix) {
+          console.error(prefix, ...args);
+        } else {
+          console.error(...args);
+        }
         return result;
       },
       tag(key: string, value: string) {
@@ -57,7 +67,6 @@ export namespace Log {
     return result;
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: TODO: fix later
   export function provide<R>(tags: Record<string, any>, cb: () => R) {
     const existing = use();
     return ctx.provide(

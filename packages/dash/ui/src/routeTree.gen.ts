@@ -24,6 +24,7 @@ import { Route as AuthenticatedWorkspacesWorkspaceSlugInboxRouteImport } from '.
 import { Route as AuthenticatedWorkspacesWorkspaceSlugContentRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/content'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugComposerRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/composer'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugCalendarRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/calendar'
+import { Route as AuthenticatedWorkspacesWorkspaceSlugBillingRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/billing'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugLabsRouteRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/labs/route'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugStylesIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/styles/index'
 import { Route as AuthenticatedWorkspacesWorkspaceSlugProductsIndexRouteImport } from './routes/_authenticated/workspaces/$workspaceSlug/products/index'
@@ -121,6 +122,12 @@ const AuthenticatedWorkspacesWorkspaceSlugCalendarRoute =
     path: '/calendar',
     getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRouteRoute,
   } as any)
+const AuthenticatedWorkspacesWorkspaceSlugBillingRoute =
+  AuthenticatedWorkspacesWorkspaceSlugBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => AuthenticatedWorkspacesWorkspaceSlugRouteRoute,
+  } as any)
 const AuthenticatedWorkspacesWorkspaceSlugLabsRouteRoute =
   AuthenticatedWorkspacesWorkspaceSlugLabsRouteRouteImport.update({
     id: '/labs',
@@ -189,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugRouteRouteWithChildren
   '/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/workspaces/$workspaceSlug/labs': typeof AuthenticatedWorkspacesWorkspaceSlugLabsRouteRouteWithChildren
+  '/workspaces/$workspaceSlug/billing': typeof AuthenticatedWorkspacesWorkspaceSlugBillingRoute
   '/workspaces/$workspaceSlug/calendar': typeof AuthenticatedWorkspacesWorkspaceSlugCalendarRoute
   '/workspaces/$workspaceSlug/composer': typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
   '/workspaces/$workspaceSlug/content': typeof AuthenticatedWorkspacesWorkspaceSlugContentRouteWithChildren
@@ -213,6 +221,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/workspaces': typeof AuthenticatedWorkspacesIndexRoute
   '/workspaces/$workspaceSlug/labs': typeof AuthenticatedWorkspacesWorkspaceSlugLabsRouteRouteWithChildren
+  '/workspaces/$workspaceSlug/billing': typeof AuthenticatedWorkspacesWorkspaceSlugBillingRoute
   '/workspaces/$workspaceSlug/calendar': typeof AuthenticatedWorkspacesWorkspaceSlugCalendarRoute
   '/workspaces/$workspaceSlug/composer': typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
   '/workspaces/$workspaceSlug/insights': typeof AuthenticatedWorkspacesWorkspaceSlugInsightsRoute
@@ -239,6 +248,7 @@ export interface FileRoutesById {
   '/_authenticated/workspaces/$workspaceSlug': typeof AuthenticatedWorkspacesWorkspaceSlugRouteRouteWithChildren
   '/_authenticated/workspaces/': typeof AuthenticatedWorkspacesIndexRoute
   '/_authenticated/workspaces/$workspaceSlug/labs': typeof AuthenticatedWorkspacesWorkspaceSlugLabsRouteRouteWithChildren
+  '/_authenticated/workspaces/$workspaceSlug/billing': typeof AuthenticatedWorkspacesWorkspaceSlugBillingRoute
   '/_authenticated/workspaces/$workspaceSlug/calendar': typeof AuthenticatedWorkspacesWorkspaceSlugCalendarRoute
   '/_authenticated/workspaces/$workspaceSlug/composer': typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
   '/_authenticated/workspaces/$workspaceSlug/content': typeof AuthenticatedWorkspacesWorkspaceSlugContentRouteWithChildren
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceSlug'
     | '/workspaces/'
     | '/workspaces/$workspaceSlug/labs'
+    | '/workspaces/$workspaceSlug/billing'
     | '/workspaces/$workspaceSlug/calendar'
     | '/workspaces/$workspaceSlug/composer'
     | '/workspaces/$workspaceSlug/content'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/workspaces'
     | '/workspaces/$workspaceSlug/labs'
+    | '/workspaces/$workspaceSlug/billing'
     | '/workspaces/$workspaceSlug/calendar'
     | '/workspaces/$workspaceSlug/composer'
     | '/workspaces/$workspaceSlug/insights'
@@ -316,6 +328,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspaces/$workspaceSlug'
     | '/_authenticated/workspaces/'
     | '/_authenticated/workspaces/$workspaceSlug/labs'
+    | '/_authenticated/workspaces/$workspaceSlug/billing'
     | '/_authenticated/workspaces/$workspaceSlug/calendar'
     | '/_authenticated/workspaces/$workspaceSlug/composer'
     | '/_authenticated/workspaces/$workspaceSlug/content'
@@ -449,6 +462,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugCalendarRouteImport
       parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteRoute
     }
+    '/_authenticated/workspaces/$workspaceSlug/billing': {
+      id: '/_authenticated/workspaces/$workspaceSlug/billing'
+      path: '/billing'
+      fullPath: '/workspaces/$workspaceSlug/billing'
+      preLoaderRoute: typeof AuthenticatedWorkspacesWorkspaceSlugBillingRouteImport
+      parentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugRouteRoute
+    }
     '/_authenticated/workspaces/$workspaceSlug/labs': {
       id: '/_authenticated/workspaces/$workspaceSlug/labs'
       path: '/labs'
@@ -578,6 +598,7 @@ const AuthenticatedWorkspacesWorkspaceSlugInboxRouteWithChildren =
 
 interface AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren {
   AuthenticatedWorkspacesWorkspaceSlugLabsRouteRoute: typeof AuthenticatedWorkspacesWorkspaceSlugLabsRouteRouteWithChildren
+  AuthenticatedWorkspacesWorkspaceSlugBillingRoute: typeof AuthenticatedWorkspacesWorkspaceSlugBillingRoute
   AuthenticatedWorkspacesWorkspaceSlugCalendarRoute: typeof AuthenticatedWorkspacesWorkspaceSlugCalendarRoute
   AuthenticatedWorkspacesWorkspaceSlugComposerRoute: typeof AuthenticatedWorkspacesWorkspaceSlugComposerRoute
   AuthenticatedWorkspacesWorkspaceSlugContentRoute: typeof AuthenticatedWorkspacesWorkspaceSlugContentRouteWithChildren
@@ -596,6 +617,8 @@ const AuthenticatedWorkspacesWorkspaceSlugRouteRouteChildren: AuthenticatedWorks
   {
     AuthenticatedWorkspacesWorkspaceSlugLabsRouteRoute:
       AuthenticatedWorkspacesWorkspaceSlugLabsRouteRouteWithChildren,
+    AuthenticatedWorkspacesWorkspaceSlugBillingRoute:
+      AuthenticatedWorkspacesWorkspaceSlugBillingRoute,
     AuthenticatedWorkspacesWorkspaceSlugCalendarRoute:
       AuthenticatedWorkspacesWorkspaceSlugCalendarRoute,
     AuthenticatedWorkspacesWorkspaceSlugComposerRoute:
