@@ -687,6 +687,7 @@ export namespace KieAI {
       aspectRatio: z.enum(["16:9", "9:16", "Auto"]).default("9:16").optional(),
       seeds: z.number().optional(),
       callbackUrl: z.string().optional(),
+      callBackUrl: z.string().optional(),
       watermark: z.string().optional(),
     });
     export type Input = z.input<typeof schema>;
@@ -696,6 +697,8 @@ export namespace KieAI {
       prompt: string;
       seeds?: number;
       watermark?: string;
+      callbackUrl?: string;
+      callBackUrl?: string;
     }
 
     /**
@@ -711,14 +714,21 @@ export namespace KieAI {
     ): Promise<string> {
       const parsed = schema.parse(input);
       const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+      const task = await client.generateVeo31Video({
+        prompt: parsed.prompt,
+        imageUrls: parsed.imageUrls,
+        model: parsed.model ?? "veo3_fast",
+        generationType: parsed.generationType,
+        aspectRatio: parsed.aspectRatio,
+        seeds: parsed.seeds,
+        callBackUrl: parsed.callBackUrl ?? parsed.callbackUrl,
+        watermark: parsed.watermark,
+      });
 
-      const modelId =
-        (parsed as unknown as { model?: string }).model ?? "veo3_fast";
-      const task = await client.createGenericTask(modelId, parsed as unknown);
       const taskId = task.data?.taskId;
       if (!taskId) throw new KieAIError(500, "No task ID returned from Veo31");
 
-      return await client.pollTaskUntilComplete(taskId, {
+      return await client.pollVeo31UntilComplete(taskId, {
         logPrefix: "Veo31",
         pollIntervalMs: 10000,
         maxAttempts: 180,
@@ -733,16 +743,18 @@ export namespace KieAI {
      */
     export async function extend(input: ExtendParams): Promise<string> {
       const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
-
-      const task = await client.createGenericTask(
-        "veo3_extend",
-        input as unknown,
-      );
+      const task = await client.extendVeo31Video({
+        taskId: input.taskId,
+        prompt: input.prompt,
+        seeds: input.seeds,
+        watermark: input.watermark,
+        callBackUrl: input.callBackUrl ?? input.callbackUrl,
+      });
       const taskId = task.data?.taskId;
       if (!taskId)
         throw new KieAIError(500, "No task ID returned from Veo31.extend");
 
-      return await client.pollTaskUntilComplete(taskId, {
+      return await client.pollVeo31UntilComplete(taskId, {
         logPrefix: "Veo31.extend",
         pollIntervalMs: 10000,
         maxAttempts: 180,
@@ -757,11 +769,8 @@ export namespace KieAI {
     export async function upscale1080p(taskId: string): Promise<string> {
       const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
 
-      const response = await client.createGenericTask("veo3_upscale_1080p", {
-        taskId,
-      } as unknown);
-      const resultUrl = (response.data as unknown as { resultUrl?: string })
-        .resultUrl;
+      const response = await client.getVeo31Video1080p(taskId);
+      const resultUrl = response.data?.resultUrl;
       if (!resultUrl)
         throw new KieAIError(
           500,

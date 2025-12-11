@@ -6,6 +6,10 @@ import type {
   FileUploadResponse,
   TaskDetailsResponse,
   TaskResultPayload,
+  Veo31ExtendVideoResponse,
+  Veo31GenerateVideoResponse,
+  Veo31Video1080pResponse,
+  Veo31VideoDetailsResponse,
 } from "./schemas";
 import {
   ApiResponseSchema,
@@ -13,6 +17,10 @@ import {
   FileUploadResponseSchema,
   parseTaskResultPayload,
   TaskDetailsResponseSchema,
+  Veo31ExtendVideoResponseSchema,
+  Veo31GenerateVideoResponseSchema,
+  Veo31Video1080pResponseSchema,
+  Veo31VideoDetailsResponseSchema,
 } from "./schemas";
 
 type SchemaOutput<T extends ZodType> = T["_output"];
@@ -41,7 +49,7 @@ export interface UploadFileStreamParams {
   fileName?: string;
 }
 
-// (Veo 3.1 handled in models.ts)
+// Veo 3.1 endpoints use dedicated API routes (not the generic createTask).
 
 export class KieAIError extends Error {
   constructor(
@@ -161,7 +169,120 @@ export class KieAIClient {
     return parseTaskResultPayload(details.data?.resultJson ?? null);
   }
 
-  // Veo 3.1 methods removed — handled via models and generic client
+  async generateVeo31Video(
+    params: Record<string, unknown>,
+  ): Promise<Veo31GenerateVideoResponse> {
+    const payload = omitUndefined(params);
+
+    return this.request(
+      `${this.baseUrl}/api/v1/veo/generate`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+      Veo31GenerateVideoResponseSchema,
+    );
+  }
+
+  async extendVeo31Video(
+    params: Record<string, unknown>,
+  ): Promise<Veo31ExtendVideoResponse> {
+    const payload = omitUndefined(params);
+
+    return this.request(
+      `${this.baseUrl}/api/v1/veo/extend`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+      Veo31ExtendVideoResponseSchema,
+    );
+  }
+
+  async getVeo31VideoDetails(
+    taskId: string,
+  ): Promise<Veo31VideoDetailsResponse> {
+    const url = new URL(`${this.baseUrl}/api/v1/veo/record-info`);
+    url.searchParams.set("taskId", taskId);
+
+    return this.request(
+      url.toString(),
+      { method: "GET" },
+      Veo31VideoDetailsResponseSchema,
+    );
+  }
+
+  async getVeo31Video1080p(
+    taskId: string,
+    index?: number,
+  ): Promise<Veo31Video1080pResponse> {
+    const url = new URL(`${this.baseUrl}/api/v1/veo/get-1080p-video`);
+    url.searchParams.set("taskId", taskId);
+    if (typeof index === "number") {
+      url.searchParams.set("index", String(index));
+    }
+
+    return this.request(
+      url.toString(),
+      { method: "GET" },
+      Veo31Video1080pResponseSchema,
+    );
+  }
+
+  async pollVeo31UntilComplete(
+    taskId: string,
+    options?: {
+      pollIntervalMs?: number;
+      maxAttempts?: number;
+      logPrefix?: string;
+      sleepFn?: (ms: number) => Promise<void>;
+      onPoll?: (attempt: number, maxAttempt: number) => void;
+    },
+  ): Promise<string> {
+    const pollIntervalMs = options?.pollIntervalMs ?? 10000;
+    const maxAttempts = options?.maxAttempts ?? 180;
+    const logPrefix = options?.logPrefix ?? "veo3.1";
+    const sleepFn =
+      options?.sleepFn ??
+      ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const details = await this.getVeo31VideoDetails(taskId);
+      const data = details.data;
+
+      if (!data) {
+        throw new KieAIError(500, "No data in Veo 3.1 details response");
+      }
+
+      if (data.successFlag === 1) {
+        const urls = data.response?.resultUrls ?? [];
+        if (urls.length > 0) return urls[0];
+
+        const originUrls = data.response?.originUrls ?? [];
+        if (originUrls.length > 0) return originUrls[0];
+
+        throw new KieAIError(500, "Task succeeded but no result URLs found");
+      }
+
+      if (data.successFlag === 2 || data.successFlag === 3) {
+        throw new KieAIError(500, data.errorMessage ?? "Veo 3.1 task failed", {
+          errorCode: data.errorCode,
+          successFlag: data.successFlag,
+        });
+      }
+
+      console.log(
+        `[${logPrefix}] Polling attempt ${attempt + 1}/${maxAttempts}...`,
+      );
+      options?.onPoll?.(attempt + 1, maxAttempts);
+      await sleepFn(pollIntervalMs);
+    }
+
+    throw new KieAIError(
+      408,
+      `Veo 3.1 polling timed out after ${maxAttempts} attempts`,
+    );
+  }
 
   /**
    * Generic poll task until complete.

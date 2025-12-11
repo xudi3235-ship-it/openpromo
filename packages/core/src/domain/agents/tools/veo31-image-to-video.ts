@@ -4,6 +4,7 @@
  */
 
 import { KieAI } from "@core/providers/kie-ai/models";
+import { isStringUrl } from "@core/utils/common";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolSuccess } from "../tool-builder";
@@ -11,25 +12,22 @@ import { VideoGenAgent } from "../video-gen-agent";
 import { downloadVideo, getKieAIClient, uploadFile } from "./utils";
 
 // Parameter schema for image-to-video tool
-const ImageToVideoParamsSchema = z.object({
+const params = z.object({
   prompt: z.string().describe("Text prompt"),
   outputPath: z.string().describe("Path to save the generated video file."),
-  inputImagePath: z
+  inputImagePathOrUrl: z
     .string()
-    .describe("Local file path of the image to use as the start frame."),
-  inputLastFramePath: z
+    .describe("Local file path or url of the image to use as the start frame."),
+  inputLastFramePathOrUrl: z
     .string()
     .nullable()
     .optional()
     .describe(
       "Optional local file path of the last frame image for interpolation. Pass null if not using.",
     ),
-  // config: Veo31ConfigSchema.nullable()
-  //   .optional()
-  //   .describe("Video generation configuration."),
 });
 
-type ImageToVideoParams = z.infer<typeof ImageToVideoParamsSchema>;
+type Params = z.infer<typeof params>;
 
 /**
  * VEO 3.1 Image-to-Video tool.
@@ -37,7 +35,7 @@ type ImageToVideoParams = z.infer<typeof ImageToVideoParamsSchema>;
  */
 export const veo31ImageToVideoTool = toolBuilder<
   "veo31_image_to_video",
-  typeof ImageToVideoParamsSchema,
+  typeof params,
   VideoGenAgentContext
 >({
   name: "veo31_image_to_video",
@@ -51,21 +49,26 @@ NOTE:
 2. each video is fixed at 8s.
 
 `,
-  parameters: ImageToVideoParamsSchema,
-  async execute(params: ImageToVideoParams) {
-    const { prompt, outputPath, inputImagePath, inputLastFramePath } = params;
+  parameters: params,
+  async execute(params: Params) {
+    const { prompt, outputPath, inputImagePathOrUrl, inputLastFramePathOrUrl } =
+      params;
 
     console.log(
-      `[veo31_image_to_video] Generating from image: ${inputImagePath}`,
+      `[veo31_image_to_video] Generating from image: ${inputImagePathOrUrl}`,
     );
     console.log(`[veo31_image_to_video] Prompt: ${prompt.slice(0, 100)}...`);
 
     const client = getKieAIClient();
 
     // Upload images and get URLs
-    const inputImageUrl = await uploadFile(client, inputImagePath);
-    const inputLastFrameUrl = inputLastFramePath
-      ? await uploadFile(client, inputLastFramePath)
+    const inputImageUrl = isStringUrl(inputImagePathOrUrl)
+      ? inputImagePathOrUrl
+      : await uploadFile(client, inputImagePathOrUrl);
+    const inputLastFrameUrl = inputLastFramePathOrUrl
+      ? isStringUrl(inputLastFramePathOrUrl)
+        ? inputLastFramePathOrUrl
+        : await uploadFile(client, inputLastFramePathOrUrl)
       : undefined;
 
     // Build image URLs array (first frame, optionally last frame)
@@ -96,6 +99,10 @@ NOTE:
       },
     );
 
+    VideoGenAgent.onProgressUpdate((draft) => {
+      draft.artifacts.videos.push({ videoUrl, id: videoUrl });
+    });
+
     // Download and save
     await downloadVideo(videoUrl, outputPath);
 
@@ -103,8 +110,8 @@ NOTE:
       videoUrl,
       outputPath,
       prompt,
-      inputImagePath,
-      inputLastFramePath: inputLastFramePath ?? null,
+      inputImagePath: inputImagePathOrUrl,
+      inputLastFramePath: inputLastFramePathOrUrl ?? null,
     });
   },
 });
