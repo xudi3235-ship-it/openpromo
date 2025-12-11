@@ -13,17 +13,15 @@ import {
   getKieAIClient,
   uploadFile,
   Veo31ConfigSchema,
-} from "./veo31-utils";
+} from "./utils";
 
 // Parameter schema for image-to-video tool
 const ImageToVideoParamsSchema = z.object({
-  prompt: z
-    .string()
-    .describe("Text prompt describing the desired video motion/action."),
+  prompt: z.string().describe("Text prompt"),
   outputPath: z.string().describe("Path to save the generated video file."),
   inputImagePath: z
     .string()
-    .describe("Local file path of the image to use as the first frame."),
+    .describe("Local file path of the image to use as the start frame."),
   inputLastFramePath: z
     .string()
     .nullable()

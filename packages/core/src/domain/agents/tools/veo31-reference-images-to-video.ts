@@ -12,7 +12,7 @@ import {
   getKieAIClient,
   uploadFiles,
   Veo31ConfigSchema,
-} from "./veo31-utils";
+} from "./utils";
 
 // Parameter schema for reference-images-to-video tool
 const ReferenceImagesToVideoParamsSchema = z.object({

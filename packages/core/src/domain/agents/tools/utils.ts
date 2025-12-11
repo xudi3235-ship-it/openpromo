@@ -1,19 +1,4 @@
-/**
- * Shared utilities for VEO 3.1 video generation tools.
- * Ported from Python: src/openai_agent/tools/veo31.py
- *
- * NOTE: OpenAI Agents SDK requires `.nullable()` with `.optional()` for Zod schemas.
- * Using `.optional()` alone will cause: "Zod field uses .optional() without .nullable()
- * which is not supported by the API". Always use `.nullable().optional()` for optional fields.
- */
-
-import { readFile } from "node:fs/promises";
-import { basename } from "node:path";
-import { KieAIClient } from "@core/providers/kie-ai";
-import { downloadVideo as downloadVideoBase } from "@core/utils/common";
 import { env } from "@core/utils/env";
-import { z } from "zod";
-import { Binding } from "../../../helpers/api-env";
 
 /**
  * Get KieAI client instance.
@@ -21,6 +6,48 @@ import { Binding } from "../../../helpers/api-env";
 export function getKieAIClient(): KieAIClient {
   return new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
 }
+
+/**
+ * Upload local files to KieAI and return their URLs.
+ */
+export async function uploadFilesToKie(
+  client: KieAIClient,
+  filePaths: string[],
+): Promise<string[]> {
+  const { readFile } = await import("node:fs/promises");
+  const urls: string[] = [];
+
+  for (const filePath of filePaths) {
+    const fileBuffer = await readFile(filePath);
+    const fileName = basename(filePath);
+
+    console.log(`[sora2_storyboard] Uploading file: ${filePath}`);
+
+    const response = await client.uploadFileStream({
+      file: fileBuffer,
+      uploadPath: "sora2_storyboard/images",
+      fileName,
+    });
+
+    if (!response.data?.downloadUrl) {
+      throw new Error(`Failed to upload file: ${filePath}`);
+    }
+
+    console.log(
+      `[sora2_storyboard] Uploaded: ${filePath} -> ${response.data.downloadUrl}`,
+    );
+    urls.push(response.data.downloadUrl);
+  }
+
+  return urls;
+}
+
+import { readFile } from "node:fs/promises";
+import { basename } from "node:path";
+import { KieAIClient } from "@core/providers/kie-ai";
+import { downloadVideo as downloadVideoBase } from "@core/utils/common";
+import { z } from "zod";
+import { Binding } from "../../../helpers/api-env";
 
 /**
  * Upload a local file to KieAI and return the download URL.

@@ -5,60 +5,16 @@
  * Generates multi-scene storyboard videos up to 25 seconds using Kie AI provider.
  */
 
-import { basename } from "node:path";
-import {
-  type FrameDuration,
-  KieAIClient,
-  type StoryboardAspectRatio,
+import type {
+  FrameDuration,
+  StoryboardAspectRatio,
 } from "@core/providers/kie-ai";
 import { downloadVideo as downloadVideoBase } from "@core/utils/common";
-import { env } from "@core/utils/env";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import { VideoGenAgent } from "../video-gen-agent";
-
-/**
- * Get KieAI client instance.
- */
-function getKieAIClient(): KieAIClient {
-  return new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
-}
-
-/**
- * Upload local files to KieAI and return their URLs.
- */
-async function uploadFiles(
-  client: KieAIClient,
-  filePaths: string[],
-): Promise<string[]> {
-  const { readFile } = await import("node:fs/promises");
-  const urls: string[] = [];
-
-  for (const filePath of filePaths) {
-    const fileBuffer = await readFile(filePath);
-    const fileName = basename(filePath);
-
-    console.log(`[sora2_storyboard] Uploading file: ${filePath}`);
-
-    const response = await client.uploadFileStream({
-      file: fileBuffer,
-      uploadPath: "sora2_storyboard/images",
-      fileName,
-    });
-
-    if (!response.data?.downloadUrl) {
-      throw new Error(`Failed to upload file: ${filePath}`);
-    }
-
-    console.log(
-      `[sora2_storyboard] Uploaded: ${filePath} -> ${response.data.downloadUrl}`,
-    );
-    urls.push(response.data.downloadUrl);
-  }
-
-  return urls;
-}
+import { getKieAIClient, uploadFilesToKie } from "./utils";
 
 /**
  * Download video from URL and save to local path.
@@ -177,7 +133,7 @@ NOTE: Provide local file paths for reference images - files will be uploaded aut
     // Upload reference images if provided
     let imageUrls: string[] | undefined;
     if (referenceImagePaths && referenceImagePaths.length > 0) {
-      imageUrls = await uploadFiles(client, referenceImagePaths);
+      imageUrls = await uploadFilesToKie(client, referenceImagePaths);
     }
 
     // Convert shots to Kie AI format

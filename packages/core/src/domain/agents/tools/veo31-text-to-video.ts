@@ -11,7 +11,7 @@ import {
   downloadVideo,
   getKieAIClient,
   Veo31ConfigSchema,
-} from "./veo31-utils";
+} from "./utils";
 
 // Parameter schema for text-to-video tool
 const TextToVideoParamsSchema = z.object({

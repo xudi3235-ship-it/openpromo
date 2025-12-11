@@ -11,7 +11,7 @@ import {
   getKieAIClient,
   probeDurationMs,
   Veo31ConfigSchema,
-} from "./veo31-utils";
+} from "./utils";
 
 // Parameter schema for video-extension tool
 const VideoExtensionParamsSchema = z.object({

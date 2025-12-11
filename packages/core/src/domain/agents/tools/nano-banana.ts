@@ -13,6 +13,7 @@
 import { readFileSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import type { CreateNanoBananaTaskParams } from "@core/providers";
 import { Replicate } from "@core/providers/replicate/models";
 import {
   downloadImage as downloadImageBase,
@@ -23,6 +24,7 @@ import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolSuccess } from "../tool-builder";
 import type { VideoGenAgent } from "../video-gen-agent";
+import { getKieAIClient, uploadFilesToKie } from "./utils";
 
 const OUTPUT_DIR = "/tmp/nanobana_output";
 
@@ -80,7 +82,45 @@ export function transformFileInputs(inputs: string[]): (string | Buffer)[] {
     return readFileSync(input);
   });
 }
+async function providerRepImpl(params: NanoBananaParams) {
+  const { prompt, imageInputPaths, aspectRatio } = params;
+  const inputImages = transformFileInputs(imageInputPaths ?? []);
 
+  const imageUrl = await Replicate.NanoBanana.run({
+    prompt,
+    image_input: inputImages,
+    aspect_ratio: aspectRatio,
+    output_format: "jpg",
+    pro: false, // cheaper for test
+  });
+
+  return imageUrl;
+}
+
+async function providerKieImpl(params: NanoBananaParams) {
+  const { prompt, imageInputPaths, aspectRatio } = params;
+  const client = getKieAIClient();
+  const imageUrls = await uploadFilesToKie(client, imageInputPaths ?? []);
+  const task = await client.createNanoBananaTask({
+    prompt,
+    imageInput: imageUrls,
+    aspectRatio: aspectRatio as CreateNanoBananaTaskParams["aspectRatio"],
+  });
+  const taskID = task.data?.taskId;
+  if (!taskID)
+    throw new Error("Failed to start Nano Banana task - no task ID returned");
+  const imageUrl = await client.pollTaskUntilComplete(taskID);
+  return imageUrl;
+}
+
+async function impl(provider: "replicate" | "kie", params: NanoBananaParams) {
+  switch (provider) {
+    case "replicate":
+      return await providerRepImpl(params);
+    case "kie":
+      return await providerKieImpl(params);
+  }
+}
 /**
  * Nano Banana image generation tool.
  * Generates images using Google's Nano Banana model via Replicate.
@@ -100,22 +140,10 @@ Auto-saves generated images and returns the URL.`,
       `[nanoBanana] Tool invoked with params:`,
       JSON.stringify(params),
     );
-    const { prompt, imageInputPaths, aspectRatio } = params;
-    const inputImages = transformFileInputs(imageInputPaths ?? []);
-
-    const imageUrl = await Replicate.NanoBanana.run({
-      prompt,
-      image_input: inputImages,
-      aspect_ratio: aspectRatio,
-      output_format: "jpg",
-      pro: false, // cheaper for test
-    });
-
+    const imageUrl = await impl("kie", params);
     console.log(`[nanoBanana] Generated image URL: ${imageUrl}`);
-
     // Ensure output directory exists
     await mkdir(OUTPUT_DIR, { recursive: true });
-
     // Generate unique filename with timestamp
     const timestamp = Date.now();
     const fileName = `nanobana_${timestamp}.jpg`;
