@@ -12,7 +12,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useVideoGenAgentContext } from "@/features/instant-ad/video-gen-agent-provider";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
 import { useRunAttachments } from "@/hooks/useRunAttachments";
@@ -34,6 +34,9 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   const deleteRunMutation = useDeleteAgentRunsMutation();
   const openComposer = useOpenComposer();
   const queryClient = useQueryClient();
+  const [lastRunSnapshot, setLastRunSnapshot] = useState<typeof run | null>(
+    null,
+  );
 
   // Fetch run data using the specific query
   const {
@@ -64,7 +67,19 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     return run;
   }, [isConnected, run, runId, serverState]);
 
-  const { attachments, isVideo, firstMediaUrl } = useRunAttachments(liveRun);
+  const displayRun = liveRun ?? run ?? lastRunSnapshot;
+
+  useEffect(() => {
+    if (liveRun) {
+      setLastRunSnapshot(liveRun);
+    } else if (run) {
+      setLastRunSnapshot(run);
+    }
+  }, [liveRun, run]);
+
+  const { attachments, isVideo, firstMediaUrl } = useRunAttachments(
+    displayRun ?? undefined,
+  );
 
   // Merge latest server state into cached query when this run is active
   const isActiveRun = serverState.runId === runId && isConnected;
@@ -110,7 +125,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   };
 
   const handleDownload = async () => {
-    const currentRun = liveRun ?? run;
+    const currentRun = displayRun;
     if (!currentRun) return;
 
     if (!firstMediaUrl) {
@@ -136,7 +151,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   };
 
   const handleDelete = async () => {
-    const currentRun = liveRun ?? run;
+    const currentRun = displayRun;
 
     if (!currentRun || !confirm("Are you sure you want to delete this run?")) {
       return;
@@ -151,7 +166,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   };
 
   const handleCreatePost = () => {
-    if (!liveRun) return;
+    if (!displayRun) return;
 
     if (attachments.length === 0) {
       alert("No media found to add to composer");
@@ -164,7 +179,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   };
 
   // Show loading state
-  if (isPending) {
+  if (isPending && !displayRun) {
     return (
       <div className="flex h-full w-full min-w-0 flex-col">
         {/* Header */}
@@ -245,7 +260,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   }
 
   // Show error state
-  if (error || !run) {
+  if ((error && !displayRun) || (!displayRun && !isPending)) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <p className="text-sm text-muted-foreground">
@@ -263,7 +278,10 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     );
   }
 
-  const displayRun = liveRun ?? run;
+  if (!displayRun) {
+    return null;
+  }
+
   const displayStatus = isActiveRun ? serverState.status : displayRun.status;
   const displayMode = isActiveRun
     ? serverState.input.mode

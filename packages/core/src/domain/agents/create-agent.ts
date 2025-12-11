@@ -201,6 +201,7 @@ You are an expert video production orchestrator specializing in social media con
 If image gen -> set the context plan and delegate to image gen agent to create the images.
 
 if video gen -> make the plan, create keyframe via image gen agent, then delegate to video gen agent to create the final video.
+current run context:
 ${JSON.stringify(context, null, 2)}
 </current_context>
 

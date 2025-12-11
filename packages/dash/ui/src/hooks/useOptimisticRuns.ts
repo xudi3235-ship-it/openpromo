@@ -65,15 +65,18 @@ export function useOptimisticRuns(
   const mergedRuns = useMemo(() => {
     const runs = serverRuns ?? [];
     const optimisticValues = Array.from(optimisticRuns.values());
+    const optimisticById = new Map(optimisticValues.map((r) => [r.id, r]));
 
-    // Runs that exist on server take precedence
-    const serverIds = new Set(runs.map((r) => r.id));
+    const mergedServerRuns = runs.map((run) => {
+      const optimistic = optimisticById.get(run.id);
+      return optimistic ? { ...run, ...optimistic } : run;
+    });
+
     const pendingOptimistic = optimisticValues.filter(
-      (r) => !serverIds.has(r.id),
+      (r) => !runs.some((run) => run.id === r.id),
     );
 
-    // Pending optimistic first, then server runs
-    return [...pendingOptimistic, ...runs];
+    return [...pendingOptimistic, ...mergedServerRuns];
   }, [serverRuns, optimisticRuns]);
 
   return mergedRuns;
