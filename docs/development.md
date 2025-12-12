@@ -78,6 +78,37 @@ pnpm turbo build --graph
 
 ---
 
+## One-Time Infrastructure Setup
+
+These commands only need to be run once when setting up a new environment. They create persistent Cloudflare resources.
+
+### Reference Gallery (Vectorize + R2 Notifications)
+
+```bash
+cd packages/dash
+
+# 1. Create Vectorize index for semantic search (768 dims for BGE embeddings)
+pnpm exec wrangler vectorize create reference-gallery-index --dimensions=768 --metric=cosine
+
+# 2. Subscribe to R2 object-create events (triggers AI tagging)
+pnpm exec wrangler r2 bucket notification create openpromo-reference \
+  --event-type object-create \
+  --queue jobs
+
+# 3. Subscribe to R2 object-delete events (cleans up vectors)
+pnpm exec wrangler r2 bucket notification create openpromo-reference \
+  --event-type object-delete \
+  --queue jobs
+```
+
+**Verify setup:**
+```bash
+pnpm exec wrangler vectorize info reference-gallery-index
+pnpm exec wrangler r2 bucket notification list openpromo-reference
+```
+
+---
+
 ## FAQs
 
 1. **OAuth Login**: TikTok local dev login does not work. We use Cloudflare Zero Trust tunnel, works the same as ngrok but free.

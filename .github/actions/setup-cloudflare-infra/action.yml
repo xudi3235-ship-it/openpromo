@@ -1,5 +1,5 @@
 name: "Setup Cloudflare Infrastructure"
-description: "Configure R2 bucket lifecycles, Vectorize indexes, and event notifications"
+description: "Configure R2 bucket lifecycles"
 
 inputs:
   cloudflare_account_id:
@@ -24,32 +24,6 @@ runs:
       working-directory: packages/dash
       shell: bash
       run: pnpm exec wrangler r2 bucket lifecycle set public --file ../../infra/r2/public-bucket-lifecycle.json --force
-      env:
-        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
-        CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
-
-    - name: Ensure Vectorize index exists
-      working-directory: packages/dash
-      shell: bash
-      run: pnpm exec wrangler vectorize create reference-gallery-index --dimensions=768 --metric=cosine || echo "Index already exists, skipping"
-      env:
-        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
-        CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
-
-    - name: Configure R2 reference bucket notifications
-      working-directory: packages/dash
-      shell: bash
-      run: |
-        # Subscribe to object-create events
-        pnpm exec wrangler r2 bucket notification create openpromo-reference \
-          --event-type object-create \
-          --queue jobs \
-          || echo "Create notification already exists, skipping"
-        # Subscribe to object-delete events
-        pnpm exec wrangler r2 bucket notification create openpromo-reference \
-          --event-type object-delete \
-          --queue jobs \
-          || echo "Delete notification already exists, skipping"
       env:
         CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
         CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}

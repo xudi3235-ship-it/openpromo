@@ -17,12 +17,12 @@ const ReferenceTagSchema = z.object({
   keywords: z
     .array(z.string())
     .describe(
-      "5-15 freeform tags: visual style (UGC, studio, lifestyle, product-shot), mood (energetic, calm, luxurious), subjects (woman, man, product, food), colors (warm, cool, vibrant, muted), composition (close-up, wide-angle, flat-lay, overhead)",
+      "5-15 freeform tags: visual style (UGC, studio, lifestyle, product-shot), mood (energetic, calm, luxurious), subjects, colors, composition , etc. pick the most relevant keywords/tags for searching and relevancy",
     ),
   industries: z
     .array(z.string())
     .describe(
-      "relevant industries: beauty, fitness, tech, fashion, food, home, travel, automotive, health, pets, kids, sports, entertainment",
+      "relevant industries: beauty, fitness, tech, fashion, food, home, travel, automotive, health, pets, kids, sports, entertainment. be specific and search friendly",
     ),
 });
 
@@ -120,7 +120,7 @@ async function getImageUrl(key: string): Promise<string> {
 }
 
 /**
- * Analyze image using GPT-5.1-mini to get structured tags
+ * Analyze image to get structured tags
  */
 async function analyzeImage(imageUrl: string): Promise<ReferenceTag> {
   const imgPart: ImagePart = {
@@ -129,20 +129,34 @@ async function analyzeImage(imageUrl: string): Promise<ReferenceTag> {
   };
 
   const result = await generateObject({
-    model: openai("gpt-5.1-mini"),
+    model: openai("gpt-5-mini"),
     schema: ReferenceTagSchema,
-    maxOutputTokens: 1000,
+    maxOutputTokens: 2000,
     messages: [
       {
         role: "system",
-        content: `You are an expert at analyzing images for an ad creative reference library.
+        content: `
+<Role>
+You are an expert at analyzing images for an ad creative reference library. You will analyze images or keyframes from viral top performing ads/social media contents and extract concice descriptions, tag,s any relevant elements from it that would help categorize and search for similar images.
+
+This is critical as the accuracy matters the most for survival of small businesses.
+</Role>
+
+<Task>
 
 Analyze the provided image and extract:
 1. A concise description (1-2 sentences) focusing on visual style, composition, and subjects
-2. Keywords covering: visual style, mood/tone, subjects/objects, color palette, composition type
+2. Keywords covering: visual style, mood/tone, subjects/objects, color palette, composition type, any notable elements and successful features
 3. Relevant industries this image would be useful for as ad creative reference
 
-Be specific and practical - these tags will be used to search and match images to product categories.`,
+Be specific and practical - these tags will be used to search and match images to product categories.
+</Task>
+
+<Rules>
+1. critical to be accurate and concise when tagging, as these tags will determine search relevancy
+2. use a progressive pattern: for industry, start broad 1-2, then more specific 3-5; similarly for keywords, take the progressive tagging approach.
+</Rules>
+`,
       },
       {
         role: "user",
@@ -190,7 +204,6 @@ export namespace ReferenceSearch {
       size: Math.round(imageUrl.length / 1024),
     });
 
-    // Analyze image with GPT-5.1-mini
     const tags = await analyzeImage(imageUrl);
     log.info("image analyzed", {
       key,
@@ -338,10 +351,14 @@ export namespace ReferenceSearch {
    * Delete a reference from the index
    */
   export async function remove(id: string): Promise<void> {
-    const env = Binding.use();
+    try {
+      const env = Binding.use();
 
-    await env.ReferenceIndex.deleteByIds([id]);
+      await env.ReferenceIndex.deleteByIds([id]);
 
-    log.info("reference deleted", { id });
+      log.info("reference deleted", { id });
+    } catch (error) {
+      log.error("failed to delete reference", { id, error });
+    }
   }
 }
