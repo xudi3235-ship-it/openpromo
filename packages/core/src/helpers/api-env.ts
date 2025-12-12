@@ -40,6 +40,7 @@ export type ApiEnv = {
     // R2 storage
     Bucket: R2Bucket;
     PublicBucket: R2Bucket;
+    ReferenceBucket: R2Bucket;
     // KV storage
     KV: KVNamespace;
     JobQueue: Queue<JobQueueMessage>;
@@ -51,6 +52,8 @@ export type ApiEnv = {
     AI: Ai;
     // browser rendering
     Browser: Fetcher;
+    // vectorize
+    ReferenceIndex: VectorizeIndex;
   };
 };
 

@@ -11,6 +11,7 @@ export { inboxRouter } from "./routes/inbox";
 export { insightsRouter } from "./routes/insights";
 export { internalRouter } from "./routes/internal";
 export { productsRouter } from "./routes/products";
+export { referencesRouter } from "./routes/references-orpc-route";
 export { listStyles, stylesRouter } from "./routes/styles";
 export { workspacesRouter } from "./routes/workspaces";
 
@@ -24,6 +25,7 @@ import { insightsRouter as insights } from "./routes/insights";
 import { internalRouter as internal } from "./routes/internal";
 import { productVisualsRouter as productVisuals } from "./routes/product-visuals";
 import { productsRouter as products } from "./routes/products";
+import { referencesRouter as references } from "./routes/references-orpc-route";
 import { stylesRouter as styles } from "./routes/styles";
 import { workspacesRouter as workspaces } from "./routes/workspaces";
 
@@ -49,6 +51,7 @@ export const orpcRouter = orpcBuilder
     inbox,
     insights,
     productVisuals,
+    references,
     styles,
     products,
     workspaces,

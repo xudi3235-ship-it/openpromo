@@ -95,6 +95,12 @@
     "binding": "Browser",
     "remote": true
   },
+  "vectorize": [
+    {
+      "binding": "ReferenceIndex",
+      "index_name": "reference-gallery-index"
+    }
+  ],
   "containers": [
     {
       "max_instances": 2,
@@ -116,6 +122,11 @@
     {
       "bucket_name": "public",
       "binding": "PublicBucket",
+      "remote": true
+    },
+    {
+      "bucket_name": "openpromo-reference",
+      "binding": "ReferenceBucket",
       "remote": true
     }
   ],
@@ -238,6 +249,11 @@
           "bucket_name": "public",
           "binding": "PublicBucket",
           "remote": true
+        },
+        {
+          "bucket_name": "openpromo-reference",
+          "binding": "ReferenceBucket",
+          "remote": true
         }
       ],
       "analytics_engine_datasets": [
@@ -288,7 +304,13 @@
             "max_batch_size": 10
           }
         ]
-      }
+      },
+      "vectorize": [
+        {
+          "binding": "ReferenceIndex",
+          "index_name": "reference-gallery-index"
+        }
+      ]
     },
     "production": {
       "name": "openpromo-dash-production",
@@ -313,6 +335,11 @@
         {
           "bucket_name": "public",
           "binding": "PublicBucket",
+          "remote": true
+        },
+        {
+          "bucket_name": "openpromo-reference",
+          "binding": "ReferenceBucket",
           "remote": true
         }
       ],
@@ -408,7 +435,13 @@
       },
       "browser": {
         "binding": "Browser"
-      }
+      },
+      "vectorize": [
+        {
+          "binding": "ReferenceIndex",
+          "index_name": "reference-gallery-index"
+        }
+      ]
     }
   }
 }
