@@ -11,16 +11,16 @@ catalog:
   '@types/react-dom': 19.2.3
   '@workos-inc/node': ^7.77.0
   agents: ^0.2.31
-  ai: 5.0.108
+  ai: 5.0.112
   cloudflare: 5.2.0
-  drizzle-orm: 0.45.0
+  drizzle-orm: 0.45.1
   hono: 4.10.8
   immer: 11.0.1
-  lucide-react: 0.556.0
-  react: 19.2.1
-  react-dom: 19.2.1
+  lucide-react: 0.560.0
+  react: 19.2.3
+  react-dom: 19.2.3
   vite: 7.2.7
-  wrangler: 4.53.0
+  wrangler: 4.54.0
   zod: 4.1.13
 
 onlyBuiltDependencies:
