@@ -1,7 +1,6 @@
 import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -16,7 +15,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useVideoGenAgentContext } from "@/features/instant-ad/video-gen-agent-provider";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
 import { useRunAttachments } from "@/hooks/useRunAttachments";
-import { orpc } from "@/lib/orpc-client";
 import {
   useAgentRunQuery,
   useDeleteAgentRunsMutation,
@@ -33,7 +31,6 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   const navigate = useNavigate();
   const deleteRunMutation = useDeleteAgentRunsMutation();
   const openComposer = useOpenComposer();
-  const queryClient = useQueryClient();
   const [lastRunSnapshot, setLastRunSnapshot] = useState<typeof run | null>(
     null,
   );
@@ -94,27 +91,6 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   const liveArtifacts = isActiveRun
     ? serverState.artifacts
     : (run?.artifacts ?? { images: [], videos: [] });
-
-  useEffect(() => {
-    if (!isActiveRun) return;
-
-    queryClient.setQueryData(
-      orpc.agentRuns.get.key({ input: { id: runId, workspaceSlug } }),
-      (oldData: typeof run) => {
-        if (!oldData) return oldData;
-
-        return {
-          ...oldData,
-          status: serverState.status,
-          output: serverState.output,
-          artifacts: serverState.artifacts,
-          logs: serverState.logs,
-          input: serverState.input,
-          updatedAt: new Date(serverState.lastUpdated),
-        };
-      },
-    );
-  }, [isActiveRun, queryClient, runId, serverState, workspaceSlug]);
 
   const handleBack = () => {
     navigate({

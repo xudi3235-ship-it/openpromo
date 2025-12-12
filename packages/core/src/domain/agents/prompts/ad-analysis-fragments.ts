@@ -12,32 +12,32 @@ You are part of a larger system with the primary goal of: ${PRIMARY_GOAL}`;
 
 /** Marketing strategy analysis - hooks, persuasion, audience */
 export const MARKETING_STRATEGY_ANALYSIS = `
-### MARKETING STRATEGY
+1. Marketing Strategy
 
-#### Hook & Attention
+Hook & Attention
 - Visual hook: what grabs attention in the first 0.5 seconds (color contrast, face, text, unusual element, motion)
 - Pattern interrupt: what makes this stand out in a feed (unexpected element, bold color, etc.)
 - Thumb-stopping element: the single most attention-grabbing component
 
-#### Persuasion Elements
+Persuasion Elements
 - Social proof signals: testimonial style, UGC aesthetic, real-person feel, user-generated look
 - Trust indicators: authenticity markers, relatable elements, "real" vs "polished" spectrum
 - Emotional trigger: desire / fear / curiosity / FOMO / aspiration / belonging / transformation
 - Psychological angle: scarcity, authority, social validation, reciprocity, commitment
 
-#### Target Audience Signals
+Target Audience Signals
 - Implied demographic: age range, gender, lifestyle signals from visual choices
 - Psychographic cues: values, interests, pain points suggested by imagery
 - Aspiration/identity: what lifestyle or identity does this sell?
 
-#### Call-to-Action (if present)
+Call-to-Action (if present)
 - CTA text: exact wording
 - CTA placement: position and visual weight
 - CTA style: button / text overlay / implied / none`;
 
 /** Product presentation analysis */
 export const PRODUCT_PRESENTATION_ANALYSIS = `
-### PRODUCT PRESENTATION (if product visible)
+PRODUCT PRESENTATION (if product visible)
 - Product prominence: hero / supporting / subtle / implied
 - Product angle: front / side / in-use / lifestyle context / flat-lay
 - Product staging: isolated / in-hand / in-environment / comparison
@@ -46,7 +46,7 @@ export const PRODUCT_PRESENTATION_ANALYSIS = `
 
 /** Color analysis */
 export const COLOR_ANALYSIS = `
-### COLOR
+COLOR
 - Dominant colors: list 3-5 with hex codes and their role (background, accent, subject)
 - Color palette type: complementary / analogous / triadic / monochromatic / split-complementary
 - Temperature: warm / cool / neutral
@@ -56,7 +56,7 @@ export const COLOR_ANALYSIS = `
 
 /** Lighting analysis */
 export const LIGHTING_ANALYSIS = `
-### LIGHTING
+LIGHTING
 - Source type: natural / artificial / studio / mixed / ring light / selfie light / practical lights
 - Direction: front / 45° side / 90° side / back / top / bottom / diffused
 - Quality: hard (sharp shadows) / soft (gradual shadows) / dramatic / even
@@ -69,7 +69,7 @@ export const LIGHTING_ANALYSIS = `
 
 /** Technical specs for visual quality */
 export const TECHNICAL_SPECS_ANALYSIS = `
-### TECHNICAL SPECS
+TECHNICAL SPECS
 - Medium: digital photography / 3D render / digital painting / vector / photo manipulation / screenshot-style
 - Style: realistic / hyperrealistic / stylized / minimalist / maximalist / surreal / raw-UGC
 - Texture: smooth / grainy / sharp / soft / painterly / glossy / matte
@@ -81,9 +81,9 @@ export const TECHNICAL_SPECS_ANALYSIS = `
 
 /** Subject/person analysis */
 export const SUBJECT_ANALYSIS = `
-### SUBJECT (if person present)
+SUBJECT (if person present)
 
-#### Face & Expression
+Face & Expression
 - Mouth: closed smile / open smile / slight smile / neutral / serious / pursed
 - Smile intensity: none / subtle / moderate / broad
 - Eyes: direct gaze / looking away / squinting / wide / relaxed / intensity level
@@ -91,7 +91,7 @@ export const SUBJECT_ANALYSIS = `
 - Overall emotion: happy / content / serious / playful / confident / warm / cold
 - Authenticity: genuine / posed / candid
 
-#### Hair (CRITICAL - avoid "perfect" descriptions, capture natural variation)
+Hair (CRITICAL - avoid "perfect" descriptions, capture natural variation)
 - Length: use body reference points (above ears, chin-length, shoulder-length, mid-back)
 - Cut style: specific name (bob, shag, fade, undercut, layered, blunt)
 - Texture: straight / wavy / curly / coily — with specific wave pattern
@@ -101,7 +101,7 @@ export const SUBJECT_ANALYSIS = `
 - Volume: flat / moderate / voluminous
 - Details: bangs type, face-framing layers, faded areas, length variations
 
-#### Hands & Gestures (CRITICAL)
+Hands & Gestures (CRITICAL)
 - Left hand: exact position (visible/hidden, touching what, where)
 - Right hand: exact position
 - Finger positions: relaxed / gripping / spread / interlaced / pointing
@@ -110,13 +110,13 @@ export const SUBJECT_ANALYSIS = `
 - Interaction: what hands are touching or holding
 - Naturalness: organic casual / deliberately posed / caught mid-motion
 
-#### Body Position
+Body Position
 - Posture: standing / sitting / leaning / lying
 - Angle to camera: facing / 45° turn / profile / back
 - Weight distribution: centered / shifted left / shifted right
 - Shoulders: level / tilted / rotated
 
-#### Creator/Influencer Signals (for UGC-style)
+Creator/Influencer Signals (for UGC-style)
 - Relatability markers: casual appearance, "just woke up" aesthetic, everyday setting
 - Authenticity cues: imperfect framing, natural expressions, real environment
 - Platform native feel: TikTok creator style, Instagram influencer polish, YouTube thumbnail energy`;

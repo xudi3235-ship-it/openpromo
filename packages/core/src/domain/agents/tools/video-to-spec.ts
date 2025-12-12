@@ -37,6 +37,8 @@ Your task: Analyze the uploaded video ad/short and produce a comprehensive spec/
 3. Visual details for each key frame to guide AI image generation
 4. An adaptable blueprint for promoting different products/brands
 
+Our north star is to use this blueprint to create viral social media ads for small businesses to grow social presence and sales.
+
 ---
 
 ## OUTPUT FORMAT
@@ -136,12 +138,19 @@ function videoInline(path: string) {
   };
 }
 
-async function toolImpl({
+async function transformVideoToSpec({
   videoUrlOrPath: videoPath,
   productImagePaths,
   context,
 }: z.infer<typeof toolParams>) {
   const gemini = getGeminiClient();
+  const uploadedFile = await gemini.files.upload({
+    file: videoPath,
+    config: {
+      mimeType: "video/mp4",
+    },
+  });
+  console.log("Uploaded video file:", uploadedFile);
 
   if (isStringUrl(videoPath)) {
     // download
@@ -171,11 +180,7 @@ async function toolImpl({
   }
   // 3. additional context
   contents.push({
-    text: `here is the additional context for this run`,
-    role: "user",
-  });
-  contents.push({
-    text: context,
+    text: `here is the additional context for this run: ${context}`,
     role: "user",
   });
 
@@ -219,7 +224,7 @@ export const videoToSpecTool = tool<VideoGenAgentContext, VideoGenAgentContext>(
       return context.stage === "video_gen";
     },
     execute: async (args: z.infer<typeof toolParams>) => {
-      return await toolImpl(args);
+      return await transformVideoToSpec(args);
     },
   },
 );

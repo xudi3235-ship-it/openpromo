@@ -97,7 +97,7 @@ export class VideoGenAgent extends AIChatAgent<
   /**
    * Patch the application state with partial updates.
    */
-  patchState(updater: (draft: VideoGenRealtime.ServerAppState) => void) {
+  async patchState(updater: (draft: VideoGenRealtime.ServerAppState) => void) {
     const newState = produce(this.state, (draft) => {
       updater(draft);
       draft.lastUpdated = new Date().toISOString();
@@ -112,8 +112,8 @@ export class VideoGenAgent extends AIChatAgent<
     // Persist state asynchronously if we have a runId
     if (newState.runId) {
       EntAgentRun.fromID(newState.runId)
-        .then((run) => {
-          run.persistState(newState);
+        .then(async (run) => {
+          await run.persistState(newState);
         })
         .catch((err) => {
           // might be deleted
@@ -181,7 +181,7 @@ export class VideoGenAgent extends AIChatAgent<
     const validation = this.validateInput(this.state.input);
     if (!validation.valid) {
       console.error(`[VideoGenAgent] Invalid input: ${validation.error}`);
-      this.patchState((draft) => {
+      await this.patchState((draft) => {
         draft.status = "failed";
         draft.error = validation.error ?? "Invalid input";
       });
@@ -190,7 +190,7 @@ export class VideoGenAgent extends AIChatAgent<
 
     // Reset internal state before starting
     this.runStateSerialized = null;
-    this.patchState((draft) => {
+    await this.patchState((draft) => {
       draft.logs = [];
       draft.artifacts = VideoGenRealtime.defaultArtifacts;
       draft.output = VideoGenRealtime.defaultAgentOutput;
@@ -198,7 +198,7 @@ export class VideoGenAgent extends AIChatAgent<
 
     // Create run and mark as running
     const run = await EntAgentRun.createFromState(this.state);
-    this.patchState((draft) => {
+    await this.patchState((draft) => {
       draft.status = "running";
       draft.runId = run.data.id;
     });
@@ -206,16 +206,10 @@ export class VideoGenAgent extends AIChatAgent<
     try {
       // Execute the run
       const result = await fn();
-
-      // Mark as succeeded
-      this.patchState((draft) => {
-        draft.status = "succeeded";
-      });
-
       return result;
     } catch (error) {
       // Mark as failed
-      this.patchState((draft) => {
+      await this.patchState((draft) => {
         draft.status = "failed";
         draft.error =
           typeof error === "string" ? error : (error as Error).message;
@@ -223,8 +217,8 @@ export class VideoGenAgent extends AIChatAgent<
       throw error;
     } finally {
       // Reset state after run
-      console.log(`[VideoGenAgent] resetting state after run`);
-      this.resetState();
+      // console.log(`[VideoGenAgent] resetting state after run`);
+      // this.resetState();
     }
   }
 
@@ -241,7 +235,7 @@ export class VideoGenAgent extends AIChatAgent<
     console.log(formattedMsg, ...args);
     this.patchState((draft) => {
       draft.logs.push(formattedMsg);
-    });
+    }).catch(console.error);
   }
 
   // either from serialize state or create new
@@ -324,7 +318,7 @@ export class VideoGenAgent extends AIChatAgent<
       }
       // done
       // 3. update state with serialized run and final output
-      this.patchState((draft) => {
+      await this.patchState((draft) => {
         draft.status = "succeeded";
         draft.output = finalOutput;
       });

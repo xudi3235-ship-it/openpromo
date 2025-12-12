@@ -43,6 +43,9 @@ export const useAgentRunsListQuery = (
   return useQuery({
     ...queryOptions,
     enabled: options?.enabled ?? queryOptions.enabled ?? true,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };
 
@@ -53,7 +56,12 @@ export const useAgentRunQuery = (params: AgentRunGetInput) => {
     input: { ...params, workspaceSlug: workspace.slug },
   });
 
-  return useQuery(queryOptions);
+  return useQuery({
+    ...queryOptions,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 };
 
 export const useDeleteAgentRunsMutation = (onSuccess?: () => void) => {
