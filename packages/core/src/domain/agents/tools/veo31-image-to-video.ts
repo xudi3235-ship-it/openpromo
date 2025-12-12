@@ -88,7 +88,7 @@ NOTE:
         imageUrls,
         generationType,
         aspectRatio: "9:16",
-        model: "veo3_fast",
+        model: "veo3",
       },
       {
         onPoll: (attempt, maxAttempts) => {

@@ -139,7 +139,7 @@ Auto-saves generated images and returns the URL.`,
       `[nanoBanana] Tool invoked with params:`,
       JSON.stringify(params),
     );
-    const imageUrl = await impl("replicate", params);
+    const imageUrl = await impl("kie", params);
     console.log(`[nanoBanana] Generated image URL: ${imageUrl}`);
     // Ensure output directory exists
     await mkdir(OUTPUT_DIR, { recursive: true });

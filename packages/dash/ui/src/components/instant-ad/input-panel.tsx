@@ -2,7 +2,7 @@ import { Button } from "@openpromo/ui/components/button";
 import { Label } from "@openpromo/ui/components/label";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import type { VideoGenRealtime } from "@shared";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { useState } from "react";
 import type { ProductSelectItem } from "@/components/image-generator/product-select";
 import { ProductSelect } from "@/components/image-generator/product-select";
@@ -10,7 +10,6 @@ import type { StyleGalleryItem } from "@/components/image-generator/style-galler
 import { StyleGallery } from "@/components/image-generator/style-gallery";
 import { AssetInput } from "@/components/instant-ad/asset-input";
 import { ModeToggle } from "@/components/instant-ad/mode-toggle";
-import { StatusPill } from "@/components/instant-ad/status-pill";
 import { PresetPicker } from "@/components/instant-ad/video-presets";
 import { useInstantAdStore } from "@/features/instant-ad/instant-ad-store";
 import { usePresetsQuery } from "@/queries/product-visuals";
@@ -74,17 +73,21 @@ export function InputPanel({
   const { data: presetsData, isPending: isLoadingPresets } = usePresetsQuery();
   const presets = presetsData?.presets ?? [];
 
-  const statusForBadge = isConnected ? status : "connecting";
+  // Determine button state and label
+  const isRunning = status === "running";
+  const buttonDisabled = !isConnected || isRunning;
+  const buttonLabel = !isConnected
+    ? "Connecting..."
+    : isRunning
+      ? "Generating..."
+      : generateLabel;
 
   return (
     <div className="flex h-full min-w-0 flex-col">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 pb-4">
         <h3 className="text-sm font-medium"> Settings</h3>
-        <div className="flex items-center gap-2">
-          <StatusPill status={statusForBadge} />
-          <ModeToggle mode={mode} onChange={setMode} />
-        </div>
+        <ModeToggle mode={mode} onChange={setMode} />
       </div>
 
       {/* Main Content */}
@@ -245,8 +248,11 @@ export function InputPanel({
           Step 3. create instant ad
         </Label>
         <div className="flex flex-col gap-2">
-          <Button onClick={onGenerate} size="sm">
-            {generateLabel}
+          <Button onClick={onGenerate} size="sm" disabled={buttonDisabled}>
+            {(!isConnected || isRunning) && (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
+            {buttonLabel}
           </Button>
           {error && (
             <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">

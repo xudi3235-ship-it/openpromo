@@ -154,8 +154,8 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     });
   };
 
-  // Show loading state
-  if (isPending && !displayRun) {
+  // Show loading state - also show skeleton during initial connection if no cached data
+  if ((isPending || !isConnected) && !displayRun) {
     return (
       <div className="flex h-full w-full min-w-0 flex-col">
         {/* Header */}
@@ -235,8 +235,8 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     );
   }
 
-  // Show error state
-  if ((error && !displayRun) || (!displayRun && !isPending)) {
+  // Show error state - only show "not found" if query finished loading AND connected
+  if ((error && !displayRun) || (!displayRun && !isPending && isConnected)) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <p className="text-sm text-muted-foreground">
