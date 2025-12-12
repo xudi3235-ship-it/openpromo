@@ -1,0 +1,76 @@
+{
+  "rules": [
+    {
+      "id": "abort-multipart-uploads-7d",
+      "enabled": true,
+      "conditions": { "prefix": "" },
+      "abortMultipartUploadsTransition": {
+        "condition": { "type": "Age", "maxAge": 604800 }
+      }
+    },
+    {
+      "id": "expire-ephemeral-hourly",
+      "enabled": true,
+      "conditions": { "prefix": "ephemeral/hourly/" },
+      "deleteObjectsTransition": {
+        "condition": { "type": "Age", "maxAge": 86400 }
+      }
+    },
+    {
+      "id": "expire-temporary-hourly",
+      "enabled": true,
+      "conditions": { "prefix": "temporary/hourly/" },
+      "deleteObjectsTransition": {
+        "condition": { "type": "Age", "maxAge": 86400 }
+      }
+    },
+    {
+      "id": "expire-ephemeral-daily",
+      "enabled": true,
+      "conditions": { "prefix": "ephemeral/daily/" },
+      "deleteObjectsTransition": {
+        "condition": { "type": "Age", "maxAge": 86400 }
+      }
+    },
+    {
+      "id": "expire-temporary-daily",
+      "enabled": true,
+      "conditions": { "prefix": "temporary/daily/" },
+      "deleteObjectsTransition": {
+        "condition": { "type": "Age", "maxAge": 86400 }
+      }
+    },
+    {
+      "id": "expire-ephemeral-weekly",
+      "enabled": true,
+      "conditions": { "prefix": "ephemeral/weekly/" },
+      "deleteObjectsTransition": {
+        "condition": { "type": "Age", "maxAge": 604800 }
+      }
+    },
+    {
+      "id": "expire-temporary-weekly",
+      "enabled": true,
+      "conditions": { "prefix": "temporary/weekly/" },
+      "deleteObjectsTransition": {
+        "condition": { "type": "Age", "maxAge": 604800 }
+      }
+    },
+    {
+      "id": "expire-ephemeral-monthly",
+      "enabled": true,
+      "conditions": { "prefix": "ephemeral/monthly/" },
+      "deleteObjectsTransition": {
+        "condition": { "type": "Age", "maxAge": 3024000 }
+      }
+    },
+    {
+      "id": "expire-temporary-monthly",
+      "enabled": true,
+      "conditions": { "prefix": "temporary/monthly/" },
+      "deleteObjectsTransition": {
+        "condition": { "type": "Age", "maxAge": 3024000 }
+      }
+    }
+  ]
+}

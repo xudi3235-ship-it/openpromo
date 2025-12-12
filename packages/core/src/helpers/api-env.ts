@@ -37,8 +37,10 @@ export type ApiEnv = {
     WorkspaceSyncCoordinator: DurableObjectNamespace<WorkspaceSyncCoordinator>;
     ApiRateLimitCoordinator: DurableObjectNamespace<ApiRateLimitCoordinator>;
     ContainerBackend: DurableObjectNamespace<ContainerBackend>;
-    // storage
+    // R2 storage
     Bucket: R2Bucket;
+    PublicBucket: R2Bucket;
+    // KV storage
     KV: KVNamespace;
     JobQueue: Queue<JobQueueMessage>;
     // analytics

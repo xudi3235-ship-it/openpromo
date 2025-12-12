@@ -47,6 +47,20 @@ jobs:
       - name: Install PostHog CLI
         run: npm install -g @posthog/cli
 
+      - name: Configure R2 openpromo bucket lifecycle
+        working-directory: packages/dash
+        run: pnpm exec wrangler r2 bucket lifecycle set openpromo-bucket --file ../../infra/r2/openpromo-bucket-lifecycle.json --force
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Configure R2 public bucket lifecycle
+        working-directory: packages/dash
+        run: pnpm exec wrangler r2 bucket lifecycle set public --file ../../infra/r2/public-bucket-lifecycle.json --force
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
       - name: Sync secrets to worker
         working-directory: packages/dash
         run: doppler secrets --config=${{ github.ref_name }} --json | jq -c 'with_entries(.value = .value.computed)' | pnpm exec wrangler secret bulk -e ${{ github.ref_name }}

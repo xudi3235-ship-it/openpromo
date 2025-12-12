@@ -315,11 +315,10 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
             <span className="hidden sm:inline ml-1.5">Download</span>
           </Button>
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={handleCreatePost}
             disabled={attachments.length === 0}
-            className="flex items-center gap-2 border-primary text-primary hover:bg-primary/5 sm:px-3"
           >
             <SquarePen size={14} />
             <span className="hidden sm:inline">Create Post</span>

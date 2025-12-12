@@ -1,6 +1,5 @@
 import { db } from "./database/db";
 import { type ApiEnv, Binding } from "./helpers/api-env";
-import { Storage } from "./helpers/storage";
 import type { JobQueueMessage } from "./queues/job-queue";
 import { workspacesTable } from "./schemas/workspaces.sql";
 import { Log } from "./utils/log";
@@ -40,7 +39,6 @@ async function dailyJob() {
   await enqueueWorkspaceTokenRefreshes();
   await runWorkspaceContentMetrics();
   await enqueueWorkspaceCleanups();
-  await cleanupPublicBucket();
 }
 
 async function enqueueWorkspaceTokenRefreshes() {
@@ -110,11 +108,6 @@ async function enqueueWorkspaceCleanups() {
     totalWorkspaces: workspaces.length,
     totalTasks: messages.length,
   });
-}
-
-async function cleanupPublicBucket() {
-  const results = await Storage.cleanupPublicBucketByCadence();
-  log.info("public bucket cleanup results", { results });
 }
 
 async function runWorkspaceContentMetrics() {
