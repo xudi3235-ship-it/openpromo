@@ -30,11 +30,8 @@ export function PresetPicker({
   if (isLoading) {
     return (
       <div>
-        <h4 className="text-sm font-medium mb-3">
-          Step 1. Select Viral Preset
-        </h4>
         <p className="text-xs text-muted-foreground mb-3">
-          Ready-made formats for viral ads and content
+          Pick a template for your ad
         </p>
         <div className="grid grid-cols-4 gap-1.5">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -58,18 +55,17 @@ export function PresetPicker({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium">Step 1. Select Viral Preset</h4>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs text-muted-foreground">
+          Pick a template for your ad
+        </p>
         {selectedPreset && (
           <div className="flex items-center gap-1 text-xs text-primary font-medium">
-            <div className="w-2 h-2 bg-primary rounded-full"></div>
+            <div className="w-2 h-2 bg-primary rounded-full" />
             {selectedPreset.name}
           </div>
         )}
       </div>
-      <p className="text-xs text-muted-foreground mb-1">
-        Ready-made formats for viral ads and content
-      </p>
 
       {/* 2x4 Grid */}
       <div className="grid grid-cols-4 gap-1.5">

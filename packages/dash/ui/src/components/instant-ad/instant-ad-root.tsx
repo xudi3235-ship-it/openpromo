@@ -1,5 +1,6 @@
 import type { VideoGenRealtime } from "@shared";
 import { useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DataGrid } from "@/components/common";
@@ -343,6 +344,24 @@ export function InstantAdRoot({
                   isSelected={selectedRunIds.has(run.id)}
                   onToggleSelect={handleToggleRunSelection}
                 />
+              )}
+              renderEmpty={() => (
+                <div className="flex flex-col items-center justify-center text-center py-16 px-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
+                    <Sparkles className="h-7 w-7 text-primary" />
+                  </div>
+                  <h3 className="text-base font-medium mb-1">
+                    Create your first ad
+                  </h3>
+                  <p className="text-sm text-muted-foreground max-w-xs mb-4">
+                    Select your product, pick a style, and generate stunning ad
+                    visuals in seconds.
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>Start with the settings panel</span>
+                  </div>
+                </div>
               )}
               header={{
                 title: "Generated Results",

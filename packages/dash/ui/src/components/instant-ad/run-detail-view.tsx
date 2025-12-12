@@ -8,8 +8,6 @@ import {
   RefreshCw,
   SquarePen,
   Trash2,
-  Wifi,
-  WifiOff,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useVideoGenAgentContext } from "@/features/instant-ad/video-gen-agent-provider";
@@ -259,9 +257,6 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   }
 
   const displayStatus = isActiveRun ? serverState.status : displayRun.status;
-  const displayMode = isActiveRun
-    ? serverState.input.mode
-    : displayRun.input.mode;
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col">
@@ -364,77 +359,31 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
 
               {/* Details Section */}
               <div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-1.5">
-                  <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Details
-                  </h5>
-                  {/* Real-time connection indicator */}
-                  <div className="flex items-center gap-1 text-xs">
-                    {isConnected && isActiveRun ? (
-                      <>
-                        <Wifi className="h-3 w-3 text-green-500" />
-                        <span className="text-green-600 dark:text-green-400">
-                          Live updates
-                        </span>
-                      </>
-                    ) : isConnected ? (
-                      <>
-                        <Wifi className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">Connected</span>
-                      </>
-                    ) : (
-                      <>
-                        <WifiOff className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">Offline</span>
-                      </>
-                    )}
-                  </div>
-                </div>
+                <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Details
+                </h5>
                 <div className="bg-muted/30 rounded-md sm:rounded-lg p-2.5 sm:p-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 text-sm">
+                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
                     <div>
-                      <span className="text-muted-foreground text-xs">
-                        Created:
-                      </span>
-                      <p className="font-medium mt-0.5 text-xs">
-                        {new Date(displayRun.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground text-xs">
-                        Type:
-                      </span>
-                      <p className="font-medium mt-0.5 text-xs capitalize">
+                      <span className="text-muted-foreground">Type: </span>
+                      <span className="font-medium capitalize">
                         {isVideo ? "Video" : "Image"}
-                      </p>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <span className="text-muted-foreground text-xs">
-                        Status:
                       </span>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="font-medium text-xs capitalize">
-                          {displayStatus}
-                        </p>
-                        {isActiveRun && (
-                          <div className="flex items-center gap-1">
-                            <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />
-                            <span className="text-xs text-blue-600 dark:text-blue-400">
-                              {serverState.status === "running"
-                                ? "Processing..."
-                                : serverState.status}
-                            </span>
-                          </div>
-                        )}
-                      </div>
                     </div>
-                    <div className="sm:col-span-2">
-                      <span className="text-muted-foreground text-xs">
-                        Mode:
+                    <div>
+                      <span className="text-muted-foreground">Status: </span>
+                      <span className="font-medium capitalize">
+                        {displayStatus}
                       </span>
-                      <p className="font-medium mt-0.5 text-xs">
-                        {displayMode}
-                      </p>
+                      {isActiveRun && serverState.status === "running" && (
+                        <RefreshCw className="inline-block ml-1 h-3 w-3 animate-spin text-blue-500" />
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Created: </span>
+                      <span className="font-medium">
+                        {new Date(displayRun.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
                 </div>
