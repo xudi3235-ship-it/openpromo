@@ -377,13 +377,13 @@
       "queues": {
         "producers": [
           {
-            "queue": "jobs-prod",
+            "queue": "jobs",
             "binding": "JobQueue"
           }
         ],
         "consumers": [
           {
-            "queue": "jobs-prod",
+            "queue": "jobs",
             "max_batch_size": 10
           }
         ]
