@@ -18,7 +18,7 @@
     "@openpromo/shared": "workspace:*",
     "@openpromo/ui": "workspace:*",
     "@tailwindcss/typography": "^0.5.19",
-    "@tailwindcss/vite": "^4.1.17",
+    "@tailwindcss/vite": "^4.1.18",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "astro": "^5.16.5",
@@ -28,7 +28,7 @@
     "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tailwindcss": "^4.1.17",
+    "tailwindcss": "^4.1.18",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
