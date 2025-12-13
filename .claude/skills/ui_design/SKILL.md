@@ -36,6 +36,9 @@ Decision-making framework for building UI on OpenPromo dashboard and www.
 - **Alert**: persistent warnings, important info in context
 - **ErrorState**: full component failure, with retry option
 
+### icons 
+- we have lucide icons and react-icons installed, react-icons is way more complete, so prefer to use them.
+
 ## Layout Patterns
 
 ### Page Structure

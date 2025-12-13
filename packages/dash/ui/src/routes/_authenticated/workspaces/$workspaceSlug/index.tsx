@@ -23,13 +23,19 @@ import {
   Wand2,
 } from "lucide-react";
 import { useMemo } from "react";
-import { HomeHeroCard } from "@/components/home/HomeHeroCard";
+import {
+  RiAddLine,
+  RiBarChartBoxLine,
+  RiCalendarScheduleLine,
+} from "react-icons/ri";
+import { CompactStatsCard } from "@/components/home/compact-stats-card";
 import { InsightsSummaryCards } from "@/components/insights/InsightsSummaryCards";
 import {
   InsightsTopContent,
   InsightsTopContentSkeleton,
 } from "@/components/insights/InsightsTopContent";
 import { MomentumCard } from "@/components/momentum/MomentumCard";
+import { QuickAdCard } from "@/components/quick-ad/quick-ad-card";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { matchEntity } from "@/lib/hono-client";
 import {
@@ -53,39 +59,10 @@ function WorkspaceHomePage() {
   const { data: topContent, isPending: topContentLoading } =
     useWorkspaceInsightsTopContent({ limit: 3, sortBy: "impressions" });
 
-  const heroHighlight = snapshotRecord?.snapshot.narrativeHighlights?.[0];
   const topStreak = useMemo(() => {
     const streaks = snapshotRecord?.snapshot.goals?.map((g) => g.streak ?? 0);
     return streaks && streaks.length > 0 ? Math.max(...streaks) : undefined;
   }, [snapshotRecord?.snapshot.goals]);
-
-  const heroSuggestion = useMemo(() => {
-    if (
-      !snapshotRecord?.snapshot.goals ||
-      snapshotRecord.snapshot.goals.length === 0
-    ) {
-      return {
-        label: "Starter cadence",
-        description:
-          "Publish three posts this week to unlock personalized targets.",
-        ctaLabel: "Set starter goal",
-        href: `/workspaces/${workspace.slug}/insights`,
-        progressPercent: 0,
-      } as const;
-    }
-
-    const primaryGoal = snapshotRecord.snapshot.goals[0];
-    const progress = Math.min(1, Math.max(primaryGoal.progressPercent ?? 0, 0));
-    const percent = Math.round(progress * 100);
-
-    return {
-      label: "Stay on track",
-      description: `You are ${percent}% of the way there. Keep the cadence to protect your streak.`,
-      ctaLabel: "Review goals",
-      href: `/workspaces/${workspace.slug}/insights`,
-      progressPercent: progress,
-    } as const;
-  }, [snapshotRecord?.snapshot.goals, workspace.slug]);
 
   const actionItems = useMemo(
     () =>
@@ -120,13 +97,12 @@ function WorkspaceHomePage() {
         <WorkspaceActionBar workspaceSlug={workspace.slug} />
         <div className="grid gap-6 xl:grid-cols-12">
           <div className="space-y-6 xl:col-span-8">
-            <HomeHeroCard
-              workspaceName={workspace.name}
+            <QuickAdCard />
+
+            <CompactStatsCard
+              cadenceSummary={cadenceSummary}
               workspaceSlug={workspace.slug}
-              highlight={heroHighlight}
-              streak={topStreak}
               isLoading={snapshotPending}
-              suggestion={!snapshotPending ? heroSuggestion : undefined}
             />
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -209,6 +185,7 @@ function WorkspaceActionBar({ workspaceSlug }: WorkspaceActionBarProps) {
               to="/workspaces/$workspaceSlug/composer"
               params={{ workspaceSlug }}
             >
+              <RiAddLine className="h-4 w-4" />
               Create post
             </Link>
           </Button>
@@ -218,6 +195,7 @@ function WorkspaceActionBar({ workspaceSlug }: WorkspaceActionBarProps) {
               params={{ workspaceSlug }}
               search={{ view: "week" }}
             >
+              <RiCalendarScheduleLine className="h-4 w-4" />
               Plan calendar
             </Link>
           </Button>
@@ -226,6 +204,7 @@ function WorkspaceActionBar({ workspaceSlug }: WorkspaceActionBarProps) {
               to="/workspaces/$workspaceSlug/insights"
               params={{ workspaceSlug }}
             >
+              <RiBarChartBoxLine className="h-4 w-4" />
               View insights
             </Link>
           </Button>

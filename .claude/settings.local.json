@@ -4,10 +4,12 @@
       "Bash(docker info:*)",
       "Bash(cat:*)",
       "Bash(tree:*)",
-      "Bash(pnpm:*)"
+      "Bash(pnpm:*)",
+      "Bash(ls:*)",
+      "Bash(xargs basename:*)"
     ]
   },
-  "disabledMcpjsonServers": ["playwright"],
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": ["playwright"],
-  "enableAllProjectMcpServers": true
+  "disabledMcpjsonServers": ["playwright"]
 }
