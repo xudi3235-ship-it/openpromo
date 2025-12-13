@@ -293,83 +293,121 @@ function UpcomingScheduleCard({
   return (
     <MomentumCard className="space-y-4">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-foreground">
-            Upcoming schedule
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Review what&#39;s queued next
-          </p>
-        </div>
+        <p className="text-sm font-medium text-foreground">Upcoming</p>
         <Link
           to="/workspaces/$workspaceSlug/calendar"
           params={{ workspaceSlug }}
           search={{ view: "week" }}
-          className="text-xs text-primary hover:underline"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           Open calendar
         </Link>
       </div>
       {isLoading ? (
-        <div className="space-y-3">
-          {[0, 1, 2].map((idx) => (
-            <div
-              key={idx}
-              className="space-y-2 rounded-2xl border border-border/40 p-4"
-            >
-              <Skeleton className="h-3 w-16 rounded" />
-              <Skeleton className="h-4 w-48 rounded" />
-              <Skeleton className="h-3 w-32 rounded" />
-            </div>
-          ))}
-        </div>
+        <UpcomingScheduleSkeleton />
       ) : (
-        <UpcomingScheduleList items={items} />
+        <UpcomingScheduleList items={items} workspaceSlug={workspaceSlug} />
       )}
-      <Button asChild variant="outline" size="sm">
+      <Button asChild variant="outline" size="sm" className="w-full">
         <Link
           to="/workspaces/$workspaceSlug/composer"
           params={{ workspaceSlug }}
         >
-          Queue another post
+          Create post
         </Link>
       </Button>
     </MomentumCard>
   );
 }
 
+function UpcomingScheduleSkeleton() {
+  return (
+    <div className="space-y-4 border-l-2 border-border/40 pl-4 ml-1">
+      {[0, 1, 2].map((idx) => (
+        <div key={idx} className="relative">
+          <div className="absolute -left-[21px] top-0.5 h-3 w-3 rounded-full border-2 border-border bg-background" />
+          <Skeleton className="h-3 w-20 mb-2" />
+          <div className="flex gap-3">
+            <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+            <div className="flex-1 space-y-1">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-3 w-full" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 type UpcomingScheduleListProps = {
   items: PlannerItem[];
+  workspaceSlug: string;
 };
 
-function UpcomingScheduleList({ items }: UpcomingScheduleListProps) {
+function UpcomingScheduleList({
+  items,
+  workspaceSlug,
+}: UpcomingScheduleListProps) {
   if (!items.length) {
     return (
-      <div className="flex h-full flex-col justify-center gap-2 rounded-2xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
-        <span>No scheduled posts.</span>
-        <span>Use the composer to queue your next campaign.</span>
+      <div className="rounded-xl border border-dashed border-border/60 p-4 text-center">
+        <p className="text-sm text-muted-foreground mb-1">
+          Nothing scheduled yet
+        </p>
+        <Link
+          to="/workspaces/$workspaceSlug/composer"
+          params={{ workspaceSlug }}
+          className="text-xs text-primary hover:underline"
+        >
+          Create your first post
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3 rounded-2xl border border-border/40 p-4">
-      {items.map((item) => (
-        <div key={item.id} className="space-y-1">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span className="uppercase tracking-wide">{item.platform}</span>
-            <span className="text-[11px] font-medium text-primary">
-              {item.status === "scheduled" ? "Scheduled" : item.status}
-            </span>
+    <div className="space-y-4 border-l-2 border-border/40 pl-4 ml-1">
+      {items.map((item, index) => {
+        const isScheduled = item.status === "scheduled";
+        const isLast = index === items.length - 1;
+
+        return (
+          <div key={item.id} className="relative">
+            {/* Timeline dot */}
+            <div
+              className={`absolute -left-[21px] top-0.5 h-3 w-3 rounded-full border-2 ${
+                isScheduled
+                  ? "border-foreground bg-foreground"
+                  : "border-border bg-background"
+              }`}
+            />
+
+            {/* Date/time label */}
+            <p className="text-xs text-muted-foreground mb-2">
+              {item.scheduledAt
+                ? format(item.scheduledAt, "MMM d, h:mm a")
+                : "Not scheduled"}
+            </p>
+
+            {/* Content row */}
+            <div className={`flex gap-3 ${!isLast ? "pb-1" : ""}`}>
+              {/* Thumbnail placeholder */}
+              <div className="h-10 w-10 rounded-lg bg-muted/40 flex items-center justify-center shrink-0 overflow-hidden">
+                <span className="text-[10px] text-muted-foreground">
+                  {item.platform.slice(0, 2)}
+                </span>
+              </div>
+
+              {/* Details */}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">{item.platform}</p>
+                <p className="text-sm text-foreground truncate">{item.title}</p>
+              </div>
+            </div>
           </div>
-          <p className="text-sm font-medium text-foreground">{item.title}</p>
-          <p className="text-xs text-muted-foreground">
-            {item.scheduledAt
-              ? format(item.scheduledAt, "MMM d • h:mm a")
-              : "Publish date to be scheduled"}
-          </p>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
