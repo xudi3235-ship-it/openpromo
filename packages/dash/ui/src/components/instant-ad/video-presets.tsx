@@ -112,34 +112,34 @@ export function PresetPicker({
 
       {/* Selected Reference Description */}
       {selectedRef && (
-        <div className="mt-3">
+        <div className="mt-3 flex gap-3">
           {selectedRef.url && (
-            <div className="mb-2">
-              <img
-                src={selectedRef.url}
-                alt={selectedRef.description}
-                className="w-full h-24 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => setPreviewModalOpen(true)}
-              />
-            </div>
+            <img
+              src={selectedRef.url}
+              alt={selectedRef.description}
+              className="w-28 h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0"
+              onClick={() => setPreviewModalOpen(true)}
+            />
           )}
-          {selectedRef.description && (
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {selectedRef.description}
-            </p>
-          )}
-          {selectedRef.keywords.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {selectedRef.keywords.slice(0, 5).map((kw) => (
-                <span
-                  key={kw}
-                  className="text-xs bg-muted px-1.5 py-0.5 rounded"
-                >
-                  {kw}
-                </span>
-              ))}
-            </div>
-          )}
+          <div className="min-w-0 flex-1">
+            {selectedRef.description && (
+              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                {selectedRef.description}
+              </p>
+            )}
+            {selectedRef.keywords.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {selectedRef.keywords.slice(0, 4).map((kw) => (
+                  <span
+                    key={kw}
+                    className="text-xs bg-muted px-1.5 py-0.5 rounded"
+                  >
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

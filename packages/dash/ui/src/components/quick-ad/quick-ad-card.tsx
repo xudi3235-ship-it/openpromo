@@ -136,7 +136,7 @@ function QuickAdCardInner() {
           <div>
             <h3 className="text-sm font-semibold">Instant Ad</h3>
             <p className="text-xs text-muted-foreground">
-              Generate ads in seconds
+              AI-powered product visuals for social
             </p>
           </div>
         </div>

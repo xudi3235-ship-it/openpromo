@@ -143,14 +143,6 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
 
   const isRunning = status === "running";
 
-  // TODO: Remove after design iteration - force show LiveRunView
-  const DEBUG_FORCE_LIVE_VIEW = true;
-  if (DEBUG_FORCE_LIVE_VIEW) {
-    return (
-      <LiveRunView logs={logs} artifacts={artifacts} onBack={handleBack} />
-    );
-  }
-
   // Show immersive live view for active running jobs
   if (isLive && isRunning && isConnected) {
     return (

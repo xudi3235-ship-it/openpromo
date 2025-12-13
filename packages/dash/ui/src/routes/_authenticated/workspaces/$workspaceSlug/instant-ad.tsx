@@ -53,7 +53,7 @@ function InstantAdPage() {
   return (
     <VideoGenAgentProvider>
       <div className="flex h-full flex-col bg-background">
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 pt-6 pb-4">
           <h1 className="text-lg font-semibold tracking-tight">Instant Ad</h1>
           <p className="text-sm text-muted-foreground">
             Create ready-to-publish social media ads with AI in seconds.
