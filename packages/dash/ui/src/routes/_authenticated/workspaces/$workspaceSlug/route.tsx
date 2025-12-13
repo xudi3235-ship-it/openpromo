@@ -6,10 +6,12 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
+import { useState } from "react";
 import { toast } from "sonner";
 import ComposerDialog from "@/components/composer/modal/dialog-composer";
 import { WorkspaceLayout } from "@/components/layout/workspace-layout";
 import { WorkspaceLayoutLoading } from "@/components/loading/workspace-loading";
+import { OnboardingDialog } from "@/components/onboarding/onboarding-dialog";
 import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
 import { orpc } from "@/lib/orpc-client";
@@ -61,6 +63,7 @@ function WorkspaceComponent() {
   const queryClient = useQueryClient();
   const { accounts, isPending } = useConnectedAccounts();
   const { location } = useRouterState();
+  const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(false);
 
   const { mutate: _ } = useMutation(
     orpc.workspaces.delete.mutationOptions({
@@ -85,9 +88,30 @@ function WorkspaceComponent() {
     (pattern) => pattern.test(location.pathname),
   );
 
-  if (!isPending && accounts.length === 0) {
+  const showOnboarding = !isPending && accounts.length === 0;
+
+  if (showOnboarding && isOnboardingDismissed) {
+    // User dismissed onboarding, show simple null state
     return (
       <WorkspaceLayout>
+        <WorkspaceNullState
+          title={`Welcome to ${workspace.name}`}
+          description="Connect your social media accounts to start creating and scheduling content"
+          footerText="Choose a platform above to get started"
+        />
+      </WorkspaceLayout>
+    );
+  }
+
+  if (showOnboarding) {
+    // Show onboarding dialog experience
+    return (
+      <WorkspaceLayout>
+        <OnboardingDialog
+          open={true}
+          onOpenChange={() => {}}
+          onSkip={() => setIsOnboardingDismissed(true)}
+        />
         <WorkspaceNullState
           title={`Welcome to ${workspace.name}`}
           description="Connect your social media accounts to start creating and scheduling content"
