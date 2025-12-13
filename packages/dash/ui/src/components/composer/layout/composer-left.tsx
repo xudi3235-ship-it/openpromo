@@ -18,7 +18,7 @@ export function ComposerLeft() {
       </div>
 
       {/* Scrollable Content with Glass Effects */}
-      <div className="flex-1 overflow-y-auto relative px-4 md:px-6 pb-0 flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto relative px-4 md:px-6 pb-0 flex flex-col gap-6 scroll-feather">
         <AccountSelection />
         <MediaUpload />
         <PostDetails />

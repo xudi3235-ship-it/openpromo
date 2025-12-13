@@ -53,7 +53,7 @@ export function FacebookFeedPreview({
 
   return (
     <PreviewContainer size={size} platform="FACEBOOK" className={className}>
-      <div className="bg-background border rounded-lg">
+      <div className="bg-background border rounded-lg aspect-[9/16] flex flex-col">
         {/* Header */}
         <PreviewHeader
           accountName={accountName || "Facebook Page"}
@@ -87,18 +87,32 @@ export function FacebookFeedPreview({
         {/* Media */}
         <div
           className={cn(
-            "overflow-hidden",
+            "overflow-hidden flex-1",
             size === "compact" || size === "thumbnail" ? "px-2" : "px-3",
           )}
         >
           <PreviewMedia
             media={media}
-            aspectRatio="3/4"
+            aspectRatio="1/1"
             layout="collage"
             renderMedia={renderMedia}
             placeholder={
-              <div className="h-64 bg-muted flex items-center justify-center text-muted-foreground text-sm">
-                Upload media to get started
+              <div className="w-full h-full bg-muted/50 rounded-lg flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                <svg
+                  className="w-10 h-10 opacity-40"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                <span className="text-xs">Upload media</span>
               </div>
             }
           />
