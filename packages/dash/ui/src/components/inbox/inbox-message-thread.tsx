@@ -5,9 +5,19 @@ import {
 } from "@openpromo/ui/components/avatar";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
+import { useParams } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { CornerUpLeft, Loader2, Paperclip } from "lucide-react";
+import { CornerUpLeft, Image as ImageIcon, Loader2 } from "lucide-react";
+import { useMemo } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useAddReaction, useRemoveReaction } from "@/queries/inbox/reactions";
 import type { InboxMessage } from "@/stores/inbox/types";
+import { InboxMessageAttachments } from "./inbox-message-attachments";
+import {
+  processReactions,
+  ReactionDisplay,
+  ReactionPicker,
+} from "./inbox-message-reactions";
 
 interface InboxMessageThreadProps {
   messages: InboxMessage[];
@@ -18,6 +28,7 @@ interface InboxMessageThreadProps {
   selfName?: string;
   selfAvatarUrl?: string | null;
   onReply?: (message: InboxMessage) => void;
+  conversationPlatform?: string; // Platform from conversation (FACEBOOK, INSTAGRAM, etc.)
 }
 
 export function InboxMessageThread({
@@ -29,8 +40,19 @@ export function InboxMessageThread({
   selfName = "You",
   selfAvatarUrl,
   onReply,
+  conversationPlatform,
 }: InboxMessageThreadProps) {
   const showEmptyState = !isLoading && messages.length === 0;
+
+  const messagesById = useMemo(() => {
+    return messages.reduce(
+      (acc, message) => {
+        acc[message.id] = message;
+        return acc;
+      },
+      {} as Record<string, InboxMessage>,
+    );
+  }, [messages]);
 
   return (
     <div className="space-y-3">
@@ -42,17 +64,29 @@ export function InboxMessageThread({
               isSelf={isSelf}
             />
           ))
-        : messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              contactName={contactName}
-              contactAvatarUrl={contactAvatarUrl ?? undefined}
-              selfName={selfName}
-              selfAvatarUrl={selfAvatarUrl ?? undefined}
-              onReply={onReply}
-            />
-          ))}
+        : messages.map((message) => {
+            const extra = message.metadata?.extra as
+              | Record<string, unknown>
+              | undefined;
+            const replyToMessageId = getStringExtra(extra, "replyToMessageId");
+            const replyTarget = replyToMessageId
+              ? messagesById[replyToMessageId]
+              : undefined;
+
+            return (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                replyTarget={replyTarget}
+                contactName={contactName}
+                contactAvatarUrl={contactAvatarUrl ?? undefined}
+                selfName={selfName}
+                selfAvatarUrl={selfAvatarUrl ?? undefined}
+                onReply={onReply}
+                conversationPlatform={conversationPlatform}
+              />
+            );
+          })}
 
       {showEmptyState && (
         <div className="rounded-lg border border-dashed border-border/70 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
@@ -73,21 +107,32 @@ export function InboxMessageThread({
 
 interface MessageBubbleProps {
   message: InboxMessage;
+  replyTarget?: InboxMessage;
   contactName: string;
   contactAvatarUrl?: string;
   selfName: string;
   selfAvatarUrl?: string;
   onReply?: (message: InboxMessage) => void;
+  conversationPlatform?: string; // Platform from conversation (FACEBOOK, INSTAGRAM, etc.)
 }
 
 function MessageBubble({
   message,
+  replyTarget,
   contactName,
   contactAvatarUrl,
   selfName,
   selfAvatarUrl,
   onReply,
+  conversationPlatform,
 }: MessageBubbleProps) {
+  const params = useParams({ strict: false }) as { conversationId?: string };
+  const conversationId = params.conversationId ?? "";
+  const { user } = useAuth();
+
+  const addReaction = useAddReaction();
+  const removeReaction = useRemoveReaction();
+
   const isSelf = message.sender === "self";
   const timestamp = format(message.createdAt, "MMM d, h:mm a");
   const hasAttachments = message.attachments?.length
@@ -106,17 +151,44 @@ function MessageBubble({
     ? (selfAvatarUrl ?? undefined)
     : (senderAvatarExtra ?? contactAvatarUrl ?? undefined);
   const avatarFallback = getInitials(displayName || (isSelf ? "You" : "User"));
-  const reactions = Object.values(message.metadata?.byPlatform ?? {}).flatMap(
-    (platformMeta) => platformMeta?.[message.channel]?.reactions ?? [],
+
+  // Instagram supports adding reactions via API (unlike Facebook)
+  const canAddReaction = conversationPlatform === "INSTAGRAM";
+
+  // Process reactions from webhooks
+  const processedReactions = processReactions(
+    message.metadata,
+    message.channel,
+    canAddReaction ? user?.id : undefined, // Only highlight user reactions if they can interact
   );
-  const reactionMap = reactions.reduce((acc, reaction) => {
-    const label = reaction.emoji ?? reaction.key.toLowerCase();
-    const existing = acc.get(label) ?? { label, count: 0 };
-    acc.set(label, { label, count: existing.count + 1 });
-    return acc;
-  }, new Map<string, { label: string; count: number }>());
-  const reactionChips = Array.from(reactionMap.values());
+
   const showReplyAction = typeof onReply === "function";
+
+  const handleAddReaction = (emoji: string) => {
+    addReaction.mutate({
+      conversationId,
+      messageId: message.id,
+      emoji,
+    });
+  };
+
+  const handleRemoveReaction = (emoji: string) => {
+    removeReaction.mutate({
+      conversationId,
+      messageId: message.id,
+      emoji,
+    });
+  };
+
+  const replyTargetSender =
+    replyTarget?.sender === "self"
+      ? "You"
+      : (getStringExtra(
+          replyTarget?.metadata?.extra as Record<string, unknown>,
+          "senderName",
+        ) ??
+        contactName ??
+        "Customer");
 
   return (
     <div
@@ -139,6 +211,35 @@ function MessageBubble({
             {timestamp}
           </span>
         </div>
+
+        {replyTarget && !isDeleted && (
+          <div
+            className={cn(
+              "mb-1 flex items-center gap-2 rounded-lg border border-l-4 border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground",
+              isSelf ? "border-l-primary/40" : "border-l-muted-foreground/40",
+            )}
+          >
+            <CornerUpLeft className="h-3 w-3 flex-shrink-0" />
+            <div className="flex flex-col gap-0.5 overflow-hidden text-left">
+              <span className="font-medium text-foreground">
+                Reply to {replyTargetSender}
+              </span>
+              <span className="truncate">
+                {replyTarget.attachments?.length > 0 ? (
+                  <span className="flex items-center gap-1 italic">
+                    <ImageIcon className="h-3 w-3" />
+                    {replyTarget.attachments.length > 1
+                      ? `${replyTarget.attachments.length} attachments`
+                      : "Attachment"}
+                  </span>
+                ) : (
+                  (replyTarget.text ?? "Message")
+                )}
+              </span>
+            </div>
+          </div>
+        )}
+
         <div
           className={cn(
             "w-fit rounded-2xl border px-3 py-2 text-sm leading-relaxed",
@@ -160,42 +261,47 @@ function MessageBubble({
             </div>
           )}
           {!isDeleted && hasAttachments && (
-            <div className="mt-2 flex items-center gap-2 text-xs">
-              <Paperclip className="h-3 w-3" />
-              <span>
-                {message.attachments.length} attachment
-                {message.attachments.length > 1 ? "s" : ""}
-              </span>
-            </div>
-          )}
-          {!isDeleted && reactionChips.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-              {reactionChips.map((chip) => (
-                <span
-                  key={`${chip.label}-${message.id}`}
-                  className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 py-1"
-                >
-                  <span>{chip.label}</span>
-                  {chip.count > 1 && <span>{chip.count}</span>}
-                </span>
-              ))}
-            </div>
+            <InboxMessageAttachments attachments={message.attachments} />
           )}
         </div>
-        {showReplyAction ? (
-          <button
-            type="button"
-            onClick={() => onReply?.(message)}
-            className={cn(
-              "inline-flex items-center gap-1 text-[11px] text-muted-foreground/80 transition-opacity",
-              isSelf ? "self-end" : "self-start",
-              "opacity-0 group-hover:opacity-100",
-            )}
-          >
-            <CornerUpLeft className="h-3 w-3" />
-            Reply
-          </button>
-        ) : null}
+
+        {/* Reactions Display */}
+        {!isDeleted && processedReactions.length > 0 && (
+          <ReactionDisplay
+            reactions={processedReactions}
+            onRemove={canAddReaction ? handleRemoveReaction : undefined}
+            className="mt-1"
+          />
+        )}
+
+        {/* Action Buttons */}
+        <div
+          className={cn(
+            "flex items-center gap-2",
+            isSelf ? "self-end" : "self-start",
+          )}
+        >
+          {/* Instagram: Allow adding reactions (API supported) */}
+          {!isDeleted && canAddReaction && (
+            <ReactionPicker
+              onSelect={handleAddReaction}
+              disabled={isOptimistic}
+            />
+          )}
+          {showReplyAction ? (
+            <button
+              type="button"
+              onClick={() => onReply?.(message)}
+              className={cn(
+                "inline-flex items-center gap-1 text-[11px] text-muted-foreground/80 transition-opacity",
+                "opacity-0 group-hover:opacity-100",
+              )}
+            >
+              <CornerUpLeft className="h-3 w-3" />
+              Reply
+            </button>
+          ) : null}
+        </div>
       </div>
       {isSelf && (
         <MessageAvatar src={avatarUrl} fallback={avatarFallback} self />

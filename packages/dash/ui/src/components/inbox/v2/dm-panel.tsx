@@ -77,6 +77,7 @@ export function InboxDMPanelV2({
           selfName={selfName}
           selfAvatarUrl={selfAvatarUrl}
           onReply={handleReply}
+          conversationPlatform={conversation.platform}
         />
       </div>
       <InboxMessageInput conversation={conversation} />
