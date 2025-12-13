@@ -87,7 +87,7 @@ export function OnboardingDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-3xl w-full p-0 overflow-hidden gap-0"
+        className="min-w-[60vw] min-h-[70vh] w-full p-0 overflow-hidden gap-0"
         overlayClassName="backdrop-blur-md bg-black/70"
         showCloseButton={false}
       >
@@ -109,7 +109,7 @@ export function OnboardingDialog({
         </div>
 
         {/* Step content */}
-        <div className="min-h-[400px] relative">
+        <div className="flex-1 relative">
           <AnimatePresence mode="wait">
             {step === 1 && (
               <motion.div
