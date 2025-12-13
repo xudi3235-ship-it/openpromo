@@ -122,6 +122,13 @@ export function ContentListPage() {
     refetch();
   };
 
+  const batchActions = (
+    <BatchActionsToolbar
+      selectedRows={selectedRows}
+      onClearSelection={() => table.toggleAllPageRowsSelected(false)}
+    />
+  );
+
   if (error) {
     return (
       <ContentPageLayout
@@ -148,12 +155,8 @@ export function ContentListPage() {
       table={table}
       filters={filters}
       onFiltersChange={setFilters}
+      batchActions={batchActions}
     >
-      <BatchActionsToolbar
-        selectedRows={selectedRows}
-        onClearSelection={() => table.toggleAllPageRowsSelected(false)}
-      />
-
       <SortingIndicator
         sorting={sorting}
         onClearSorting={() => setSorting([])}
