@@ -1,20 +1,30 @@
 import { useMemo } from "react";
 import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
+import type { LiveRunData } from "@/stores/live-run-store";
 
-export function useRunAttachments(run: RunFeedItem | undefined) {
+type RunData = RunFeedItem | LiveRunData | undefined;
+
+export function useRunAttachments(run: RunData) {
   const attachments = useMemo(() => {
     if (!run) return [];
 
+    // Get ID - LiveRunData uses runId, RunFeedItem uses id
+    const runId = "runId" in run ? run.runId : run.id;
+
+    // Get output videos/images from either run type
+    const outputVideos = run.output?.output?.videos ?? [];
+    const outputImages = run.output?.output?.images ?? [];
+
     // Map all output images/videos to attachments
-    const videos = (run.output.output?.videos || []).map((v) => ({
-      id: run.id,
+    const videos = outputVideos.map((v) => ({
+      id: runId,
       type: "video" as const,
       publicUrl: v.videoUrl,
       mimeType: "video/mp4",
       source: "remote" as const,
     }));
-    const images = (run.output.output?.images || []).map((i) => ({
-      id: run.id,
+    const images = outputImages.map((i) => ({
+      id: runId,
       type: "photo" as const,
       publicUrl: i.imageUrl,
       mimeType: "image/jpeg",

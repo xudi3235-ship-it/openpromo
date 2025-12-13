@@ -18,6 +18,10 @@ export async function uploadFilesToKie(
   const urls: string[] = [];
 
   for (const filePath of filePaths) {
+    if (isStringUrl(filePath)) {
+      urls.push(filePath);
+      continue;
+    }
     const fileBuffer = await readFile(filePath);
     const fileName = basename(filePath);
 
@@ -45,7 +49,10 @@ export async function uploadFilesToKie(
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { KieAIClient } from "@core/providers/kie-ai";
-import { downloadVideo as downloadVideoBase } from "@core/utils/common";
+import {
+  downloadVideo as downloadVideoBase,
+  isStringUrl,
+} from "@core/utils/common";
 import { z } from "zod";
 import { Binding } from "../../../helpers/api-env";
 

@@ -7,9 +7,10 @@ import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
 import { useRunAttachments } from "@/hooks/useRunAttachments";
 import { useConnectedAccounts } from "@/queries/connected-account";
 import { usePreviewSessionStore } from "@/stores/composer-preview-store";
+import type { LiveRunData } from "@/stores/live-run-store";
 
 interface RunPreviewProps {
-  run: RunFeedItem;
+  run: RunFeedItem | LiveRunData;
   className?: string;
   size?: "default" | "compact" | "large";
 }

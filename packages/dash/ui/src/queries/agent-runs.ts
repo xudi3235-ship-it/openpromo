@@ -51,7 +51,10 @@ export const useAgentRunsListQuery = (
   });
 };
 
-export const useAgentRunQuery = (params: AgentRunGetInput) => {
+export const useAgentRunQuery = (
+  params: AgentRunGetInput,
+  options?: { enabled?: boolean },
+) => {
   const { workspace } = useWorkspace();
 
   const queryOptions = orpc.agentRuns.get.queryOptions({
@@ -60,11 +63,13 @@ export const useAgentRunQuery = (params: AgentRunGetInput) => {
 
   return useQuery({
     ...queryOptions,
-    // Reduced from 30s - WebSocket invalidates on run_completed
-    staleTime: 10_000,
-    // Enable refetch to catch up after tab switch or reconnect
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    enabled: options?.enabled ?? queryOptions.enabled ?? true,
+    // Keep data fresh longer - completed runs don't change
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchIntervalInBackground: false,
   });
 };
 

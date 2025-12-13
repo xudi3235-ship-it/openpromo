@@ -2,22 +2,13 @@ import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  Download,
-  RefreshCw,
-  SquarePen,
-  Trash2,
-} from "lucide-react";
-import { useMemo } from "react";
-import { useVideoGenAgentContext } from "@/features/instant-ad/video-gen-agent-provider";
+import { ArrowLeft, Download, SquarePen, Trash2 } from "lucide-react";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
 import { useRunAttachments } from "@/hooks/useRunAttachments";
-import {
-  useAgentRunQuery,
-  useDeleteAgentRunsMutation,
-} from "@/queries/agent-runs";
-import { RunLivePanel } from "./run-live-panel";
+import { useRunData } from "@/hooks/useRunData";
+import { useDeleteAgentRunsMutation } from "@/queries/agent-runs";
+import { useIsConnected } from "@/stores/live-run-store";
+import { LiveRunView } from "./live-run-view";
 import { RunPreview } from "./run-preview";
 
 interface RunDetailViewProps {
@@ -27,32 +18,25 @@ interface RunDetailViewProps {
 
 /**
  * Detail view for a single run.
- * Data comes from query cache (single source of truth).
- * WebSocket updates are written directly to cache by useVideoGenAgent.
+ *
+ * Data source depends on run state:
+ * - LIVE runs (status: "running"): Data from Zustand store (WebSocket)
+ * - COMPLETED runs: Data from React Query (database)
  */
 export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   const navigate = useNavigate();
   const deleteRunMutation = useDeleteAgentRunsMutation();
   const openComposer = useOpenComposer();
 
-  // Query cache is the source of truth (updated by WebSocket)
-  const { data: run, isPending, error } = useAgentRunQuery({ id: runId });
+  // Unified hook handles live vs completed data source
+  const { run, isPending, error, isLive, logs, artifacts, status } =
+    useRunData(runId);
 
-  // Only need to know if this is the active run for UI indicators
-  const { activeRunId, isConnected } = useVideoGenAgentContext();
-  const isActiveRun = activeRunId === runId && isConnected;
+  const isConnected = useIsConnected();
 
   const { attachments, isVideo, firstMediaUrl } = useRunAttachments(
     run ?? undefined,
   );
-
-  // Get logs from run data (cache is kept up-to-date by WebSocket)
-  const logs = useMemo(() => {
-    if (!run?.logs) return [];
-    return Array.isArray(run.logs) ? run.logs : [run.logs];
-  }, [run?.logs]);
-
-  const artifacts = run?.artifacts ?? { images: [], videos: [] };
 
   const handleBack = () => {
     navigate({
@@ -74,7 +58,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = downloadUrl;
-      a.download = `run-${run.id}-${Date.now()}${isVideo ? ".mp4" : ".jpg"}`;
+      a.download = `run-${runId}-${Date.now()}${isVideo ? ".mp4" : ".jpg"}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(downloadUrl);
@@ -91,7 +75,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     }
 
     try {
-      await deleteRunMutation.mutateAsync({ ids: [run.id] });
+      await deleteRunMutation.mutateAsync({ ids: [runId] });
       handleBack();
     } catch (err) {
       console.error("Failed to delete run:", err);
@@ -157,7 +141,19 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     );
   }
 
-  const isRunning = run.status === "running";
+  const isRunning = status === "running";
+
+  // Show immersive live view for active running jobs
+  if (isLive && isRunning && isConnected) {
+    return (
+      <LiveRunView logs={logs} artifacts={artifacts} onBack={handleBack} />
+    );
+  }
+
+  // For completed runs, get additional fields from the database response
+  const prompt = "input" in run ? run.input?.prompt : undefined;
+  const createdAt = "createdAt" in run ? new Date(run.createdAt) : new Date();
+  const output = "output" in run ? run.output : undefined;
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col">
@@ -209,11 +205,6 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
       {/* Content */}
       <ScrollArea className="min-h-0 flex-1">
         <div className="w-full max-w-6xl mx-auto px-3 py-2 sm:px-4 sm:py-3 space-y-4 sm:space-y-6">
-          {/* Live panel for active running jobs */}
-          {isActiveRun && isRunning && (
-            <RunLivePanel logs={logs} artifacts={artifacts} />
-          )}
-
           {/* Social Media Preview */}
           <div className="w-full">
             <div className="flex justify-center">
@@ -250,7 +241,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
                 </h5>
                 <div className="bg-muted/50 rounded-md sm:rounded-lg p-2.5 sm:p-3">
                   <p className="text-sm text-muted-foreground break-words">
-                    {run.input?.prompt || "No prompt available"}
+                    {prompt || "No prompt available"}
                   </p>
                 </div>
               </div>
@@ -270,17 +261,12 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Status: </span>
-                      <span className="font-medium capitalize">
-                        {run.status}
-                      </span>
-                      {isActiveRun && isRunning && (
-                        <RefreshCw className="inline-block ml-1 h-3 w-3 animate-spin text-blue-500" />
-                      )}
+                      <span className="font-medium capitalize">{status}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Created: </span>
                       <span className="font-medium">
-                        {new Date(run.createdAt).toLocaleDateString()}
+                        {createdAt.toLocaleDateString()}
                       </span>
                     </div>
                   </div>
@@ -289,7 +275,7 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
             </div>
 
             {/* Debug Output - dev only */}
-            {run.output?.output && process.env.NODE_ENV === "development" && (
+            {output?.output && process.env.NODE_ENV === "development" && (
               <div className="mt-4 pt-4 border-t">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 mb-2">
                   <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
