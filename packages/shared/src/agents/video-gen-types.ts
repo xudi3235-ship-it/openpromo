@@ -177,9 +177,25 @@ export namespace VideoGenRealtime {
     }),
   });
 
+  // Sent when a run completes (succeeded or failed)
+  // Signals client to invalidate queries and fetch final state from DB
+  export const RunCompleted = base.extend({
+    type: z.literal("run_completed"),
+    data: z.object({
+      runId: z.string(),
+      status: z.enum(["succeeded", "failed"]),
+    }),
+  });
+
   const ClientEvents = z.union([SetInput, StartPipeline, ResetState]);
 
-  const ServerEvents = z.union([SyncState, StatusUpdate, VideoGenerated, Echo]);
+  const ServerEvents = z.union([
+    SyncState,
+    StatusUpdate,
+    VideoGenerated,
+    Echo,
+    RunCompleted,
+  ]);
 
   export const Event = z.union([ClientEvents, ServerEvents]);
   export type Event = z.infer<typeof Event>;

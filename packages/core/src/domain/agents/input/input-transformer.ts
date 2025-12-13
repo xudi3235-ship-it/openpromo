@@ -3,7 +3,7 @@ import type { VideoGenRealtime } from "@shared/agents";
 import type { Presets } from "../presets";
 import type { ActorStore } from "../state/actor-store";
 import { toAgentImageInputs } from "../tools/evaluation-utils";
-import { buildTreeString } from "../utils";
+import { buildTreeString, downloadImagesToTmp } from "../utils";
 import { downloadInputFiles } from "./file-manager";
 
 /**
@@ -106,21 +106,30 @@ export class InputTransformer {
     // Load reference if specified
     if (input.presetId) {
       const reference = await this.presetManager.getByID(input.presetId);
-      if (reference) {
-        messages.push({
-          role: "user",
-          content: [
-            {
-              type: "input_text" as const,
-              text: `User selected a reference image as directional inspiration. Description: ${reference.description}. Keywords: ${reference.keywords.join(", ")}. Industries: ${reference.industries.join(", ")}.`,
-            },
-            {
-              type: "input_image" as const,
-              image: reference.url,
-            },
-          ],
-        });
+      if (!reference) {
+        throw new Error(`Preset ${input.presetId} not found`);
       }
+      // download
+      const refLocalPaths = await downloadImagesToTmp(
+        [reference.url],
+        "/tmp/reference",
+      );
+      messages.push({
+        role: "user",
+        content: [
+          {
+            type: "input_text" as const,
+            text: `User selected a reference image as directional inspiration. Description: ${reference.description}. Keywords: ${reference.keywords.join(", ")}. Industries: ${reference.industries.join(", ")}.
+            
+            Refernce images downloaded to /tmp/reference. Local path: ${refLocalPaths.join(", ")}
+            `,
+          },
+          {
+            type: "input_image" as const,
+            image: reference.url,
+          },
+        ],
+      });
     }
     const actor = await this.actorStore.get();
 
@@ -150,7 +159,6 @@ export class InputTransformer {
         },
       ],
     });
-
     return messages;
   }
 

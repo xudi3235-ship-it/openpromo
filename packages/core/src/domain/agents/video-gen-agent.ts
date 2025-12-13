@@ -216,9 +216,21 @@ export class VideoGenAgent extends AIChatAgent<
       });
       throw error;
     } finally {
-      // Reset state after run
-      // console.log(`[VideoGenAgent] resetting state after run`);
-      // this.resetState();
+      // Capture final state before any reset
+      const runId = this.state.runId;
+      const finalStatus = this.state.status;
+
+      if (runId && (finalStatus === "succeeded" || finalStatus === "failed")) {
+        // 1. AWAIT persistence to DB (critical - ensures DB has correct state)
+        await this.persistFinalState(runId, this.state);
+
+        // 2. Broadcast run_completed (tells clients to invalidate queries)
+        this.broadcastRunCompleted(runId, finalStatus);
+      }
+
+      // 3. Reset DO state quietly (no broadcast)
+      // Clients will fetch final state from DB via invalidated queries
+      this.resetStateQuietly();
     }
   }
 
@@ -340,15 +352,61 @@ export class VideoGenAgent extends AIChatAgent<
     StateBroadcaster.broadcastState(connections, this.state);
   }
 
-  // clears stuff
-  resetState() {
-    // Reset state and broadcast to clients
+  /**
+   * Persist final state to database (awaited to ensure consistency)
+   */
+  private async persistFinalState(
+    runId: string,
+    state: VideoGenRealtime.ServerAppState,
+  ) {
+    try {
+      const run = await EntAgentRun.fromID(runId);
+      await run.persistState(state);
+      console.log(`[VideoGenAgent] Final state persisted for run ${runId}`);
+    } catch (err) {
+      console.error(
+        `[VideoGenAgent] Failed to persist final state for run ${runId}:`,
+        err,
+      );
+    }
+  }
+
+  /**
+   * Broadcast run_completed event to all clients
+   * This signals clients to invalidate queries and fetch from DB
+   */
+  private broadcastRunCompleted(runId: string, status: "succeeded" | "failed") {
+    const connections = this.ctx.getWebSockets();
+    for (const conn of connections) {
+      VideoGenRealtime.sendEvent(
+        conn as unknown as WebSocket,
+        "run_completed",
+        {
+          runId,
+          status,
+        },
+      );
+    }
+    console.log(`[VideoGenAgent] Broadcasted run_completed for ${runId}`);
+  }
+
+  /**
+   * Reset state without broadcasting (quiet reset)
+   * Used after run completion to clear DO state without confusing clients
+   */
+  private resetStateQuietly() {
     this.setState(VideoGenRealtime.initialServerAppState);
     this.runStateSerialized = null;
-    // Reset chat history
     this.messages = [];
+    console.log(`[VideoGenAgent] State reset quietly (no broadcast)`);
+  }
 
-    // Broadcast the reset state
+  /**
+   * Reset state with broadcast - used for explicit user reset
+   */
+  resetState() {
+    this.resetStateQuietly();
+    // Broadcast the reset state for explicit resets
     const connections = this.ctx.getWebSockets();
     StateBroadcaster.broadcastState(connections, this.state);
   }
@@ -403,12 +461,31 @@ export class VideoGenAgent extends AIChatAgent<
     // Access the Request on ctx.request to inspect headers, cookies and the URL
     await super.onConnect(connection, ctx);
 
-    // Sync state and messages to newly connected client
-    StateBroadcaster.syncToNewConnection(
-      connection,
-      this.state,
-      this.messages as UIMessage[],
-    );
+    // Only sync if there's an ACTIVE run
+    // For completed runs, client will rely on DB via React Query
+    if (this.state.status === "running" && this.state.runId) {
+      console.log(
+        `[VideoGenAgent] Syncing active run ${this.state.runId} to new connection`,
+      );
+      StateBroadcaster.syncToNewConnection(
+        connection,
+        this.state,
+        this.messages as UIMessage[],
+      );
+    } else {
+      // Send idle state - client will rely on DB for historical data
+      console.log(`[VideoGenAgent] No active run, sending idle state`);
+      VideoGenRealtime.sendEvent(
+        connection as unknown as WebSocket,
+        "sync_state",
+        {
+          state: {
+            ...VideoGenRealtime.initialServerAppState,
+            status: "not_started",
+          },
+        },
+      );
+    }
   }
 
   /**

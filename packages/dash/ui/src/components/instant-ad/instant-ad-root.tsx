@@ -10,7 +10,6 @@ import { useInstantAdStore } from "@/features/instant-ad/instant-ad-store";
 import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
 import { useVideoGenAgentContext } from "@/features/instant-ad/video-gen-agent-provider";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
-import { useOptimisticRuns } from "@/hooks/useOptimisticRuns";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   useAgentRunsListQuery,
@@ -56,27 +55,28 @@ export function InstantAdRoot({
     selectProduct,
   } = useInstantAdStore();
 
-  // Video Gen Agent
+  // Video Gen Agent - now with simplified API
   const {
     isConnected,
+    activeRunId,
+    generationStatus,
+    isGenerating,
     startGeneration,
-    serverState,
     resetState,
     chat: { error },
   } = useVideoGenAgentContext();
 
-  // Queries
+  // Queries - this is now the single source of truth
   const { data: productsData, isPending: isLoadingProducts } =
     useProductListQuery({ pageSize: 50 });
 
-  const {
-    data: feedData,
-    isPending: isFeedPending,
-    refetch: refetchRuns,
-  } = useAgentRunsListQuery({
+  const { data: feedData, isPending: isFeedPending } = useAgentRunsListQuery({
     page: 1,
     pageSize: 24,
   });
+
+  // Runs come directly from query cache (updated by WebSocket)
+  const runs = feedData?.items ?? [];
 
   const deleteRunsMutation = useDeleteAgentRunsMutation();
 
@@ -95,38 +95,16 @@ export function InstantAdRoot({
     }
   }, [preselectedStyleId, styles, selectStyle]);
 
-  // Auto-size columns based on container width using ResizeObserver
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const observer = new ResizeObserver(() => {
-      // DataGrid handles its own column sizing now
-    });
-
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, []);
-
   // Navigate to detail view when a new run is created
   useEffect(() => {
-    if (serverState.runId) {
-      refetchRuns();
-      // Navigate to the detail view for the new run
+    if (activeRunId) {
       navigate({
         to: "/workspaces/$workspaceSlug/instant-ad",
         params: { workspaceSlug: workspace.slug },
-        search: (prev) => ({ ...prev, runId: serverState.runId || undefined }),
+        search: (prev) => ({ ...prev, runId: activeRunId }),
       });
     }
-  }, [serverState.runId, refetchRuns, navigate, workspace.slug]);
-
-  // Merge optimistic runs with server data
-  const mergedRuns = useOptimisticRuns(
-    feedData?.items,
-    serverState,
-    workspace.id,
-  );
+  }, [activeRunId, navigate, workspace.slug]);
 
   const buildInput = useMemo(
     (): VideoGenRealtime.EventDataMap["set_input"] => ({
@@ -154,18 +132,16 @@ export function InstantAdRoot({
       toast.error("Not connected yet");
       return;
     }
-    if (serverState.status === "running") {
+    if (isGenerating) {
       setShowConfirmGenerateDialog(true);
       return;
     }
-    const payload = buildInput;
-    startGeneration(payload);
-  }, [isConnected, buildInput, startGeneration, serverState.status]);
+    startGeneration(buildInput);
+  }, [isConnected, buildInput, startGeneration, isGenerating]);
 
   const handleConfirmGenerate = () => {
     resetState();
-    const payload = buildInput;
-    startGeneration(payload);
+    startGeneration(buildInput);
     setShowConfirmGenerateDialog(false);
   };
 
@@ -182,12 +158,12 @@ export function InstantAdRoot({
   };
 
   const handleSelectAll = useCallback(() => {
-    if (selectedRunIds.size === mergedRuns.length) {
+    if (selectedRunIds.size === runs.length) {
       setSelectedRunIds(new Set());
     } else {
-      setSelectedRunIds(new Set(mergedRuns.map((run) => run.id)));
+      setSelectedRunIds(new Set(runs.map((run) => run.id)));
     }
-  }, [selectedRunIds.size, mergedRuns]);
+  }, [selectedRunIds.size, runs]);
 
   const handleBatchDelete = () => {
     if (selectedRunIds.size === 0) return;
@@ -199,24 +175,23 @@ export function InstantAdRoot({
       await deleteRunsMutation.mutateAsync({ ids: Array.from(selectedRunIds) });
       setSelectedRunIds(new Set());
       setShowBatchDeleteDialog(false);
-    } catch (error) {
-      // Keep dialog open if deletion fails
-      console.error("Failed to delete items:", error);
+    } catch (err) {
+      console.error("Failed to delete items:", err);
     }
   };
 
   const handleBatchCreatePost = async () => {
     if (selectedRunIds.size === 0) return;
 
-    const selectedRuns = mergedRuns.filter((run) => selectedRunIds.has(run.id));
+    const selectedRuns = runs.filter((run) => selectedRunIds.has(run.id));
 
     const attachments = selectedRuns
       .map((run) => {
         const isVideo =
-          run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
+          run.output?.output?.videos?.[0] || run.artifacts?.videos?.[0];
         const url =
           isVideo?.videoUrl ||
-          run.output.output?.images?.[0]?.imageUrl ||
+          run.output?.output?.images?.[0]?.imageUrl ||
           run.artifacts?.images?.[0]?.imageUrl;
 
         if (!url) return null;
@@ -283,18 +258,18 @@ export function InstantAdRoot({
 
   const inputPanelProps = useMemo(
     () => ({
-      status: serverState.status,
+      status: generationStatus,
       isConnected,
       products: productSelectItems,
       isLoadingProducts,
       styles: styleGalleryItems,
       isLoadingStyles,
       onGenerate: handleGenerate,
-      isGenerateDisabled: !isConnected || serverState.status === "running",
+      isGenerateDisabled: !isConnected,
       error,
     }),
     [
-      serverState.status,
+      generationStatus,
       isConnected,
       productSelectItems,
       isLoadingProducts,
@@ -305,7 +280,6 @@ export function InstantAdRoot({
     ],
   );
 
-  // Update click handler to navigate instead of opening modal
   const handleRunClick = (run: RunFeedItem) => {
     navigate({
       to: "/workspaces/$workspaceSlug/instant-ad",
@@ -329,13 +303,14 @@ export function InstantAdRoot({
             />
           ) : (
             <DataGrid<RunFeedItem>
-              items={mergedRuns}
+              items={runs}
               isLoading={isFeedPending}
-              isEmpty={mergedRuns.length === 0}
+              isEmpty={runs.length === 0}
               renderItem={(run) => (
                 <ResultCard
                   key={run.id}
                   run={run}
+                  isLive={run.id === activeRunId}
                   onSelect={() => handleRunClick(run)}
                   onDelete={async () => {
                     await deleteRunsMutation.mutateAsync({ ids: [run.id] });

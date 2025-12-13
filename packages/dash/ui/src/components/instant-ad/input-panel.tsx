@@ -41,6 +41,7 @@ export function InputPanel({
   styles,
   isLoadingStyles,
   onGenerate,
+  isGenerateDisabled,
   error,
 }: InputPanelProps) {
   const {
@@ -76,7 +77,6 @@ export function InputPanel({
 
   // Determine button state and label
   const isRunning = status === "running";
-  const buttonDisabled = !isConnected || isRunning;
   const buttonLabel = !isConnected
     ? "Connecting..."
     : isRunning
@@ -267,7 +267,7 @@ export function InputPanel({
         <Button
           onClick={onGenerate}
           size="lg"
-          disabled={buttonDisabled}
+          disabled={isGenerateDisabled}
           className="w-full"
         >
           {(!isConnected || isRunning) && (

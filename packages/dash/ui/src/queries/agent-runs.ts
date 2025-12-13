@@ -43,9 +43,11 @@ export const useAgentRunsListQuery = (
   return useQuery({
     ...queryOptions,
     enabled: options?.enabled ?? queryOptions.enabled ?? true,
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    // Reduced from 30s - WebSocket invalidates on run_completed
+    staleTime: 10_000,
+    // Enable refetch to catch up after tab switch or reconnect
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 };
 
@@ -58,9 +60,11 @@ export const useAgentRunQuery = (params: AgentRunGetInput) => {
 
   return useQuery({
     ...queryOptions,
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    // Reduced from 30s - WebSocket invalidates on run_completed
+    staleTime: 10_000,
+    // Enable refetch to catch up after tab switch or reconnect
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 };
 
