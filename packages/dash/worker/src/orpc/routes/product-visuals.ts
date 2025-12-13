@@ -15,11 +15,11 @@ export const getPresets = orpcBuilder
   .input(createWorkspaceInputSchema(z.object({})))
   .use(withWorkspaceRole, workspaceRoleMappers.editor)
   .handler(async () => {
-    const presetManager = new Presets.Manager();
-    const presets = await presetManager.loadClientPresets();
+    const manager = new Presets.Manager();
+    const references = await manager.list();
 
     return {
-      presets,
+      references,
     };
   });
 

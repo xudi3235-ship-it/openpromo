@@ -103,20 +103,20 @@ export class InputTransformer {
       ],
     });
 
-    // Load preset if specified
+    // Load reference if specified
     if (input.presetId) {
-      const preset = await this.presetManager.getByID(input.presetId);
-      if (preset) {
+      const reference = await this.presetManager.getByID(input.presetId);
+      if (reference) {
         messages.push({
           role: "user",
           content: [
             {
               type: "input_text" as const,
-              text: `User selected a preset. Uses this preset as reference/directional inspiration, Do not simply copy pasta it!  "${preset.name}": ${preset.prompt}`,
+              text: `User selected a reference image as directional inspiration. Description: ${reference.description}. Keywords: ${reference.keywords.join(", ")}. Industries: ${reference.industries.join(", ")}.`,
             },
             {
               type: "input_image" as const,
-              image: preset.thumbnailUrl,
+              image: reference.url,
             },
           ],
         });

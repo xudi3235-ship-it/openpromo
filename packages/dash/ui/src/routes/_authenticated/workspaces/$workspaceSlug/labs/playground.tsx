@@ -269,7 +269,7 @@ function PlaygroundPage() {
         <div className="h-[calc(100vh-12rem)]">
           <InstantAdChat
             products={[]}
-            presets={[]}
+            references={[]}
             styles={[]}
             onGenerate={(request) => {
               console.log("Generating ad:", request);

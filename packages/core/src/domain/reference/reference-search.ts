@@ -1,8 +1,11 @@
 import { openai } from "@ai-sdk/openai";
 import { Binding } from "@core/helpers/api-env";
+import { Storage } from "@core/helpers/storage";
 import { Log } from "@core/utils/log";
 import { generateObject, type ImagePart } from "ai";
 import { z } from "zod";
+
+const REFERENCE_BUCKET = "openpromo-reference";
 
 const log = Log.create({ namespace: "reference-search" });
 
@@ -360,5 +363,22 @@ export namespace ReferenceSearch {
     } catch (error) {
       log.error("failed to delete reference", { id, error });
     }
+  }
+
+  /**
+   * List R2 object keys directly (no Vectorize query).
+   * Fast operation for UI loading.
+   */
+  export async function listKeys(limit = 20): Promise<string[]> {
+    const env = Binding.use();
+    const list = await env.ReferenceBucket.list({ limit });
+    return list.objects.map((obj) => obj.key);
+  }
+
+  /**
+   * Generate a presigned URL for a reference image.
+   */
+  export async function getPresignedUrl(key: string): Promise<string> {
+    return Storage.getPresignedUrl(key, REFERENCE_BUCKET, { expiresIn: 3600 });
   }
 }

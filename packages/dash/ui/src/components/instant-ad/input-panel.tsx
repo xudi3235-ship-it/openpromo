@@ -70,9 +70,9 @@ export function InputPanel({
   const [isMoreOptionsOpen, setIsMoreOptionsOpen] = useState(false);
   const generateLabel = mode === "video" ? "Generate Video" : "Generate Image";
 
-  // Fetch presets
+  // Fetch references
   const { data: presetsData, isPending: isLoadingPresets } = usePresetsQuery();
-  const presets = presetsData?.presets ?? [];
+  const references = presetsData?.references ?? [];
 
   // Determine button state and label
   const isRunning = status === "running";
@@ -144,16 +144,16 @@ export function InputPanel({
             </Button>
 
             {isStyleOpen && (
-              <div className="mt-2 animate-in fade-in-50 duration-200">
+              <div className="mt-2 px-3 animate-in fade-in-50 duration-200">
                 <PresetPicker
-                  presets={presets}
+                  references={references}
                   isLoading={isLoadingPresets}
-                  selectedPresetId={selectedVideoPresetId}
-                  onPresetSelect={(preset) => {
-                    if (selectedVideoPresetId === preset.id) {
+                  selectedReferenceId={selectedVideoPresetId}
+                  onReferenceSelect={(ref) => {
+                    if (selectedVideoPresetId === ref.id) {
                       selectVideoPreset(undefined);
                     } else {
-                      selectVideoPreset(preset.id);
+                      selectVideoPreset(ref.id);
                     }
                   }}
                 />

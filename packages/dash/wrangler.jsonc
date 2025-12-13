@@ -98,7 +98,8 @@
   "vectorize": [
     {
       "binding": "ReferenceIndex",
-      "index_name": "reference-gallery-index"
+      "index_name": "reference-gallery-index",
+      "remote": true
     }
   ],
   "containers": [

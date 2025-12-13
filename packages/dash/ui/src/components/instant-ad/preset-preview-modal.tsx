@@ -1,12 +1,12 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
 
-interface PresetPreviewModalProps {
+interface ReferencePreviewModalProps {
   preset: {
     id: string;
-    name: string;
-    thumbnailUrl?: string;
-    description?: string;
+    url: string;
+    description: string;
+    keywords: string[];
   } | null;
   isOpen: boolean;
   onClose: () => void;
@@ -16,7 +16,7 @@ export function PresetPreviewModal({
   preset,
   isOpen,
   onClose,
-}: PresetPreviewModalProps) {
+}: ReferencePreviewModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -26,49 +26,65 @@ export function PresetPreviewModal({
 
     if (isOpen) {
       document.addEventListener("keydown", handleEscape);
-      document.body.style.overflow = "hidden";
     }
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
 
   if (!isOpen || !preset) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="relative max-w-2xl max-h-[90vh] w-full mx-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={onClose}
+    >
+      <div
+        className="relative max-w-sm w-full mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute -top-12 right-0 z-10 p-2 text-white hover:text-gray-300 transition-colors"
+          className="absolute -top-10 right-0 z-10 p-1.5 text-white/80 hover:text-white transition-colors"
         >
-          <X size={24} />
+          <X size={20} />
         </button>
 
         {/* Modal content */}
-        <div className="bg-white rounded-lg overflow-hidden shadow-2xl">
-          {preset.thumbnailUrl && (
-            <div className="relative">
-              <img
-                src={preset.thumbnailUrl}
-                alt={preset.name}
-                className="w-full h-auto max-h-[70vh] object-contain"
-              />
-            </div>
+        <div className="bg-card rounded-lg overflow-hidden shadow-xl border">
+          {preset.url && (
+            <img
+              src={preset.url}
+              alt={preset.description}
+              className="w-full h-auto max-h-[50vh] object-contain bg-muted"
+            />
           )}
 
           {/* Info section */}
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              {preset.name}
-            </h3>
+          <div className="p-4">
             {preset.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-snug">
                 {preset.description}
               </p>
+            )}
+            {preset.keywords.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {preset.keywords.slice(0, 8).map((kw) => (
+                  <span
+                    key={kw}
+                    className="text-xs bg-muted px-1.5 py-0.5 rounded"
+                  >
+                    {kw}
+                  </span>
+                ))}
+                {preset.keywords.length > 8 && (
+                  <span className="text-xs text-muted-foreground">
+                    +{preset.keywords.length - 8}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>

@@ -23,7 +23,7 @@ import { Mic, Paperclip, Send, Sparkles } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
 import type { ProductSelectItem } from "@/components/image-generator/product-select";
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
-import type { Preset } from "@/components/instant-ad/video-presets";
+import type { Reference } from "@/components/instant-ad/video-presets";
 
 interface ChatMessage {
   id: string;
@@ -31,35 +31,35 @@ interface ChatMessage {
   content: string;
   timestamp: Date;
   productPicker?: ProductSelectItem[];
-  presetPicker?: Preset[];
+  referencePicker?: Reference[];
 }
 
 interface InstantAdChatProps {
   products?: ProductSelectItem[];
-  presets?: Preset[];
+  references?: Reference[];
   styles?: StyleGalleryItem[];
   onGenerate?: (request: {
     prompt: string;
     productId?: string;
-    presetId?: string;
+    referenceId?: string;
     styleId?: string;
   }) => void;
 }
 
 export function InstantAdChat({
   products = [],
-  presets: _presets = [],
-  styles: _styles = [],
-  onGenerate: _onGenerate,
+  references = [],
+  styles = [],
+  onGenerate,
 }: InstantAdChatProps) {
   const [selectedProductId, setSelectedProductId] = useState<
     string | undefined
   >(products.at(0)?.id);
-  const [selectedPresetId, setSelectedPresetId] = useState<string | undefined>(
-    _presets.at(0)?.id,
-  );
+  const [selectedReferenceId, setSelectedReferenceId] = useState<
+    string | undefined
+  >(references.at(0)?.id);
   const [selectedStyleId, setSelectedStyleId] = useState<string | undefined>(
-    _styles.at(0)?.id,
+    styles.at(0)?.id,
   );
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -87,8 +87,8 @@ export function InstantAdChat({
       return;
     }
 
-    if (!selectedProductId || !selectedPresetId) {
-      setSubmitError("Pick a product and preset to generate.");
+    if (!selectedProductId || !selectedReferenceId) {
+      setSubmitError("Pick a product and reference to generate.");
       return;
     }
 
@@ -142,10 +142,10 @@ export function InstantAdChat({
       setIsGenerating(false);
     }, 2000);
 
-    _onGenerate?.({
+    onGenerate?.({
       prompt: text,
       productId: selectedProductId,
-      presetId: selectedPresetId,
+      referenceId: selectedReferenceId,
       styleId: selectedStyleId,
     });
   };
@@ -162,7 +162,7 @@ export function InstantAdChat({
             <div>
               <h2 className="text-sm font-semibold">Instant Ad Studio</h2>
               <p className="text-xs text-muted-foreground">
-                Pick product + preset, then hit generate.
+                Pick product + reference, then hit generate.
               </p>
             </div>
           </div>
@@ -184,7 +184,9 @@ export function InstantAdChat({
                   onProductSelect={(productId) =>
                     setSelectedProductId(productId)
                   }
-                  onPresetSelect={(presetId) => setSelectedPresetId(presetId)}
+                  onReferenceSelect={(referenceId) =>
+                    setSelectedReferenceId(referenceId)
+                  }
                 />
               ))}
 
@@ -220,13 +222,13 @@ export function InstantAdChat({
         ) : (
           <CenteredHero
             products={products}
-            presets={_presets}
-            styles={_styles}
+            references={references}
+            styles={styles}
             selectedProductId={selectedProductId}
-            selectedPresetId={selectedPresetId}
+            selectedReferenceId={selectedReferenceId}
             selectedStyleId={selectedStyleId}
             onProductSelect={setSelectedProductId}
-            onPresetSelect={setSelectedPresetId}
+            onReferenceSelect={setSelectedReferenceId}
             onStyleSelect={setSelectedStyleId}
           />
         )}
@@ -236,13 +238,13 @@ export function InstantAdChat({
       <div className="border-t border-border bg-card/80 px-4 pb-4 pt-3 backdrop-blur">
         <SelectionTray
           products={products}
-          presets={_presets}
-          styles={_styles}
+          references={references}
+          styles={styles}
           selectedProductId={selectedProductId}
-          selectedPresetId={selectedPresetId}
+          selectedReferenceId={selectedReferenceId}
           selectedStyleId={selectedStyleId}
           onProductSelect={setSelectedProductId}
-          onPresetSelect={setSelectedPresetId}
+          onReferenceSelect={setSelectedReferenceId}
           onStyleSelect={setSelectedStyleId}
         />
 
@@ -331,23 +333,23 @@ export function InstantAdChat({
 
 function CenteredHero({
   products,
-  presets,
+  references,
   styles,
   selectedProductId,
-  selectedPresetId,
+  selectedReferenceId,
   selectedStyleId,
   onProductSelect,
-  onPresetSelect,
+  onReferenceSelect,
   onStyleSelect,
 }: {
   products: ProductSelectItem[];
-  presets: Preset[];
+  references: Reference[];
   styles: StyleGalleryItem[];
   selectedProductId?: string;
-  selectedPresetId?: string;
+  selectedReferenceId?: string;
   selectedStyleId?: string;
   onProductSelect: (value: string | undefined) => void;
-  onPresetSelect: (value: string | undefined) => void;
+  onReferenceSelect: (value: string | undefined) => void;
   onStyleSelect: (value: string | undefined) => void;
 }) {
   return (
@@ -368,20 +370,20 @@ function CenteredHero({
         </div>
 
         <p className="mt-4 max-w-2xl text-sm text-muted-foreground">
-          Choose a product and preset, then drop a short direction. We’ll create
-          platform-ready ads without a long back-and-forth.
+          Choose a product and reference, then drop a short direction. We'll
+          create platform-ready ads without a long back-and-forth.
         </p>
 
         <div className="mt-6 space-y-4">
           <SelectionTray
             products={products}
-            presets={presets}
+            references={references}
             styles={styles}
             selectedProductId={selectedProductId}
-            selectedPresetId={selectedPresetId}
+            selectedReferenceId={selectedReferenceId}
             selectedStyleId={selectedStyleId}
             onProductSelect={onProductSelect}
-            onPresetSelect={onPresetSelect}
+            onReferenceSelect={onReferenceSelect}
             onStyleSelect={onStyleSelect}
             condensed={false}
           />
@@ -390,8 +392,8 @@ function CenteredHero({
             <div className="rounded-xl border border-border bg-card/80 px-4 py-3">
               <div className="text-xs text-muted-foreground">Prompt</div>
               <p className="mt-1 text-sm text-foreground">
-                “Create a 15s vertical TikTok ad featuring {"{"}selected product
-                {"}"} with upbeat, hook-first copy.”
+                "Create a 15s vertical TikTok ad featuring {"{"}selected product
+                {"}"} with upbeat, hook-first copy."
               </p>
             </div>
 
@@ -420,24 +422,24 @@ function CenteredHero({
 
 function SelectionTray({
   products,
-  presets,
+  references,
   styles,
   selectedProductId,
-  selectedPresetId,
+  selectedReferenceId,
   selectedStyleId,
   onProductSelect,
-  onPresetSelect,
+  onReferenceSelect,
   onStyleSelect,
   condensed = true,
 }: {
   products: ProductSelectItem[];
-  presets: Preset[];
+  references: Reference[];
   styles: StyleGalleryItem[];
   selectedProductId?: string;
-  selectedPresetId?: string;
+  selectedReferenceId?: string;
   selectedStyleId?: string;
   onProductSelect: (value: string | undefined) => void;
-  onPresetSelect: (value: string | undefined) => void;
+  onReferenceSelect: (value: string | undefined) => void;
   onStyleSelect: (value: string | undefined) => void;
   condensed?: boolean;
 }) {
@@ -466,12 +468,16 @@ function SelectionTray({
       />
 
       <SelectionColumn
-        title="Preset"
+        title="Reference"
         description="Required"
-        emptyLabel="Add presets"
-        items={presets.map((preset) => ({ id: preset.id, label: preset.name }))}
-        selectedId={selectedPresetId}
-        onSelect={onPresetSelect}
+        emptyLabel="Add references"
+        items={references.map((ref) => ({
+          id: ref.id,
+          label: ref.keywords[0] ?? "Reference",
+          thumbnail: ref.url,
+        }))}
+        selectedId={selectedReferenceId}
+        onSelect={onReferenceSelect}
       />
 
       <SelectionColumn
@@ -555,11 +561,11 @@ function SelectionColumn({
 function MessageBubble({
   message,
   onProductSelect,
-  onPresetSelect,
+  onReferenceSelect,
 }: {
   message: ChatMessage;
   onProductSelect?: (productId: string) => void;
-  onPresetSelect?: (presetId: string) => void;
+  onReferenceSelect?: (referenceId: string) => void;
 }) {
   const isUser = message.role === "user";
 
@@ -604,11 +610,11 @@ function MessageBubble({
           />
         )}
 
-        {/* Preset Picker */}
-        {message.presetPicker && message.presetPicker.length > 0 && (
-          <PresetPicker
-            presets={message.presetPicker}
-            onSelect={onPresetSelect}
+        {/* Reference Picker */}
+        {message.referencePicker && message.referencePicker.length > 0 && (
+          <ReferencePicker
+            references={message.referencePicker}
+            onSelect={onReferenceSelect}
           />
         )}
 
@@ -663,24 +669,31 @@ function ProductPicker({
   );
 }
 
-function PresetPicker({
-  presets,
+function ReferencePicker({
+  references,
   onSelect,
 }: {
-  presets: Preset[];
-  onSelect?: (presetId: string) => void;
+  references: Reference[];
+  onSelect?: (referenceId: string) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
-      {presets.map((preset) => (
+      {references.map((ref) => (
         <Button
-          key={preset.id}
+          key={ref.id}
           variant="outline"
           size="sm"
-          onClick={() => onSelect?.(preset.id)}
+          onClick={() => onSelect?.(ref.id)}
           className="text-xs"
         >
-          {preset.name}
+          {ref.url && (
+            <img
+              src={ref.url}
+              alt={ref.description}
+              className="mr-2 h-6 w-6 rounded object-cover"
+            />
+          )}
+          {ref.keywords[0] ?? "Reference"}
         </Button>
       ))}
     </div>
