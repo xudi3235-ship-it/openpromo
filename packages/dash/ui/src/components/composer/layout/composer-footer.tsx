@@ -48,6 +48,8 @@ function FooterActions({
 }: FooterActionsProps) {
   const getDraftLabel = () => {
     if (isPending && actionType === "draft") return "Saving...";
+    // When scheduling is enabled, clarify that draft saves without scheduling
+    if (actionType === "schedule") return "Save as draft";
     return "Save draft";
   };
 

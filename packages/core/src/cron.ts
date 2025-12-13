@@ -38,6 +38,7 @@ async function handleCron(controller: ScheduledController) {
 async function dailyJob() {
   await enqueueWorkspaceTokenRefreshes();
   await runWorkspaceContentMetrics();
+  await enqueueWorkspaceInsightSnapshots();
   await enqueueWorkspaceCleanups();
 }
 
@@ -138,6 +139,34 @@ async function runWorkspaceContentMetrics() {
   await Binding.use().JobQueue.sendBatch(messages);
 
   metricsLog.info("enqueued workspace metrics refresh tasks", {
+    totalEnqueued: messages.length,
+  });
+}
+
+async function enqueueWorkspaceInsightSnapshots() {
+  const workspaces = await db()
+    .select({ id: workspacesTable.id })
+    .from(workspacesTable);
+
+  if (workspaces.length === 0) {
+    log.info("no workspaces to enqueue for insight snapshots");
+    return;
+  }
+
+  const messages = workspaces.map((workspace) => ({
+    body: {
+      type: "workspace.insights.snapshot",
+      workspaceId: workspace.id,
+      actor: {
+        type: "system",
+        properties: { userID: "cron-job" },
+      },
+    } satisfies JobQueueMessage,
+  }));
+
+  await Binding.use().JobQueue.sendBatch(messages);
+
+  log.info("enqueued workspace insight snapshot tasks", {
     totalEnqueued: messages.length,
   });
 }

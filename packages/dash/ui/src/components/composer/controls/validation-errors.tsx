@@ -91,7 +91,7 @@ function PlatformIcon({ platform }: { platform: Platform }) {
   return (
     <span
       className={cn(
-        "inline-flex h-6 w-6 items-center justify-center rounded-full border border-rose-200 bg-white text-[10px] shadow-sm",
+        "inline-flex h-6 w-6 items-center justify-center rounded-full border border-destructive/30 bg-background text-[10px] shadow-sm",
         meta.accentTextClass,
       )}
     >
@@ -163,12 +163,9 @@ export function ValidationErrors({ errors }: ValidationErrorsProps) {
   }
 
   return (
-    <section
-      className=" rounded-[12px] bg-[#F9F5F4] px-4 py-4"
-      style={{ borderLeft: "2px solid #B63A3A" }}
-    >
-      <header className="flex items-center gap-1.5 text-xs font-semibold text-[#7B1F1F]">
-        <span aria-hidden className="text-[11px] leading-none text-[#7B1F1F]">
+    <section className="rounded-xl border-l-2 border-destructive bg-destructive/10 px-4 py-4">
+      <header className="flex items-center gap-1.5 text-xs font-semibold text-destructive">
+        <span aria-hidden className="text-[11px] leading-none">
           ⓘ
         </span>
         <span>
@@ -177,7 +174,7 @@ export function ValidationErrors({ errors }: ValidationErrorsProps) {
         </span>
       </header>
 
-      <ul className="mt-[10px] space-y-1.5 text-xs leading-[1.35] text-[#7B1F1F]">
+      <ul className="mt-2.5 space-y-1.5 text-xs leading-[1.35] text-destructive">
         {activeIssues.map((issue, index) => (
           <li key={`${issue.key}-${index}`}>
             <div>{issue.message}</div>

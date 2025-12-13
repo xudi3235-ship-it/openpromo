@@ -1,4 +1,5 @@
 import { refreshWorkspaceTokens } from "@core/domain/connected-account/token-refresher";
+import { WorkspaceInsightsAggregator } from "@core/domain/insights/aggregator";
 import { runWorkspaceMetricsTask } from "@core/domain/workspace/sync/run-workspace-metrics";
 import { Actor } from "@core/helpers/actor";
 import { type ApiEnv, Binding } from "@core/helpers/api-env";
@@ -35,11 +36,17 @@ const VideoCleanupMessageSchema = BaseJobMessage.extend({
   cursor: z.string().optional(),
 });
 
+const WorkspaceInsightsSnapshotMessageSchema = BaseJobMessage.extend({
+  type: z.literal("workspace.insights.snapshot"),
+  workspaceId: z.string().min(1),
+});
+
 export const JobQueueMessageSchema = z.discriminatedUnion("type", [
   WorkspaceMetricsMessageSchema,
   WorkspaceTokenRefreshMessageSchema,
   ImageCleanupMessageSchema,
   VideoCleanupMessageSchema,
+  WorkspaceInsightsSnapshotMessageSchema,
 ]);
 
 export type JobQueueMessage = z.infer<typeof JobQueueMessageSchema>;
@@ -80,6 +87,9 @@ type WorkspaceTokenRefreshMessage = z.infer<
 >;
 type ImageCleanupMessage = z.infer<typeof ImageCleanupMessageSchema>;
 type VideoCleanupMessage = z.infer<typeof VideoCleanupMessageSchema>;
+type WorkspaceInsightsSnapshotMessage = z.infer<
+  typeof WorkspaceInsightsSnapshotMessageSchema
+>;
 
 async function handleWorkspaceMetricsMessage(message: WorkspaceMetricsMessage) {
   await runWorkspaceMetricsTask(message.workspaceId);
@@ -168,6 +178,22 @@ async function handleVideoCleanupMessage(message: VideoCleanupMessage) {
       cursor: result.nextCursor,
     });
   }
+}
+
+async function handleWorkspaceInsightsSnapshotMessage(
+  message: WorkspaceInsightsSnapshotMessage,
+) {
+  const aggregator = new WorkspaceInsightsAggregator();
+  const snapshot = await aggregator.generateSnapshotForWorkspace({
+    workspaceId: message.workspaceId,
+  });
+
+  log.info("workspace insights snapshot generated", {
+    workspaceId: message.workspaceId,
+    snapshotDate: snapshot.date,
+    reach: snapshot.funnel?.awareness ?? 0,
+    engagement: snapshot.funnel?.engagement ?? 0,
+  });
 }
 
 const REFERENCE_BUCKET_NAME = "openpromo-reference";
@@ -281,6 +307,9 @@ export async function processJobQueueBatch(
             break;
           case "storage.workspace.videos.cleanup":
             await handleVideoCleanupMessage(job);
+            break;
+          case "workspace.insights.snapshot":
+            await handleWorkspaceInsightsSnapshotMessage(job);
             break;
           default:
             log.warn("unsupported job queue message type", {
