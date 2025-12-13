@@ -145,6 +145,8 @@ export namespace VideoGenRealtime {
   };
 
   // -- Server Events --
+
+  // Full state broadcast - used for all real-time updates during a run
   export const SyncState = base.extend({
     type: z.literal("sync_state"),
     data: z.object({
@@ -152,33 +154,7 @@ export namespace VideoGenRealtime {
     }),
   });
 
-  export const StatusUpdate = base.extend({
-    type: z.literal("status_update"),
-    data: z.object({
-      status: RunStatusZod,
-      currentStep: z.string(),
-      message: z.string().optional(),
-    }),
-  });
-
-  export const VideoGenerated = base.extend({
-    type: z.literal("video_generated"),
-    data: z.object({
-      assetId: z.string(),
-      videoUrl: z.string(),
-      thumbnailUrl: z.string().optional(),
-    }),
-  });
-
-  export const Echo = base.extend({
-    type: z.literal("echo"),
-    data: z.object({
-      message: z.string(),
-    }),
-  });
-
-  // Sent when a run completes (succeeded or failed)
-  // Signals client to invalidate queries and fetch final state from DB
+  // Signals run completion - client should invalidate queries to fetch from DB
   export const RunCompleted = base.extend({
     type: z.literal("run_completed"),
     data: z.object({
@@ -189,13 +165,7 @@ export namespace VideoGenRealtime {
 
   const ClientEvents = z.union([SetInput, StartPipeline, ResetState]);
 
-  const ServerEvents = z.union([
-    SyncState,
-    StatusUpdate,
-    VideoGenerated,
-    Echo,
-    RunCompleted,
-  ]);
+  const ServerEvents = z.union([SyncState, RunCompleted]);
 
   export const Event = z.union([ClientEvents, ServerEvents]);
   export type Event = z.infer<typeof Event>;

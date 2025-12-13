@@ -23,7 +23,7 @@ export namespace WebSocketHandler {
    * Process incoming WebSocket message and route to appropriate handler.
    */
   export async function handleMessage(
-    connection: Connection,
+    _connection: Connection,
     message: WSMessage,
     handlers: EventHandlers,
   ): Promise<void> {
@@ -36,12 +36,6 @@ export namespace WebSocketHandler {
     }
 
     await VideoGenRealtime.onEvent(message, {
-      echo: async (data) => {
-        console.log(`[WebSocketHandler] Received echo message:`, data);
-        VideoGenRealtime.sendEvent(connection, "echo", {
-          message: `Echo: ${data.message}`,
-        });
-      },
       set_input: async (data) => {
         await handlers.onSetInput(data);
       },

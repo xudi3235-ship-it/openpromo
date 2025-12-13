@@ -194,87 +194,8 @@ export function useVideoGenAgent({ onEvent }: Props) {
 
         await callUserHandler("run_completed", data);
       },
-
-      status_update: async (data) => {
-        console.log("[useVideoGenAgent] status_update:", data.status);
-
-        setGenerationStatus(data.status);
-
-        // Update cache if we have an active run
-        if (activeRunId) {
-          const detailKey = orpc.agentRuns.get.key({
-            input: { id: activeRunId, workspaceSlug: workspace.slug },
-          });
-          const current =
-            queryClient.getQueryData<AgentRunsRouterOutputs["get"]>(detailKey);
-
-          if (current) {
-            const updatedState: VideoGenRealtime.ServerAppState = {
-              runId: activeRunId,
-              status: data.status,
-              artifacts: current.artifacts ?? { images: [], videos: [] },
-              output: current.output ?? { output: null },
-              logs: Array.isArray(current.logs) ? current.logs : [],
-              input: current.input ?? null,
-              error: current.error ?? null,
-              lastUpdated: new Date().toISOString(),
-            };
-            writeToCache(activeRunId, updatedState);
-          }
-        }
-
-        // Note: Don't clear activeRunId here - wait for run_completed event
-        await callUserHandler("status_update", data);
-      },
-
-      video_generated: async (data) => {
-        console.log("[useVideoGenAgent] video_generated:", data.assetId);
-
-        // Update cache with new video artifact
-        if (activeRunId) {
-          const detailKey = orpc.agentRuns.get.key({
-            input: { id: activeRunId, workspaceSlug: workspace.slug },
-          });
-          const current =
-            queryClient.getQueryData<AgentRunsRouterOutputs["get"]>(detailKey);
-
-          if (current) {
-            const currentArtifacts = current.artifacts ?? {
-              images: [],
-              videos: [],
-            };
-            const updatedState: VideoGenRealtime.ServerAppState = {
-              runId: activeRunId,
-              status: current.status as VideoGenRealtime.RunStatus,
-              artifacts: {
-                ...currentArtifacts,
-                videos: [
-                  ...(currentArtifacts.videos ?? []),
-                  { id: data.assetId, videoUrl: data.videoUrl },
-                ],
-              },
-              output: current.output ?? { output: null },
-              logs: Array.isArray(current.logs) ? current.logs : [],
-              input: current.input ?? null,
-              error: current.error ?? null,
-              lastUpdated: new Date().toISOString(),
-            };
-            writeToCache(activeRunId, updatedState);
-          }
-        }
-
-        await callUserHandler("video_generated", data);
-      },
     }),
-    [
-      onEvent,
-      callUserHandler,
-      writeToCache,
-      invalidateRunQueries,
-      activeRunId,
-      queryClient,
-      workspace.slug,
-    ],
+    [onEvent, callUserHandler, writeToCache, invalidateRunQueries],
   );
 
   const agent = useAgent<VideoGenRealtime.ServerAppState>({
