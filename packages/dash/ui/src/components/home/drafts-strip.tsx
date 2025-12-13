@@ -5,6 +5,7 @@ import { formatDistanceToNow } from "date-fns";
 import { FileText, MoveRight } from "lucide-react";
 import { MomentumCard } from "@/components/momentum/MomentumCard";
 import { matchEntity } from "@/lib/hono-client";
+import { useDialogComposerStore } from "@/stores/dialog-composer-store";
 
 type DraftsStripProps = {
   workspaceSlug: string;
@@ -63,11 +64,7 @@ export function DraftsStrip({
 
       <div className="flex gap-3 overflow-x-auto pb-1">
         {drafts.map((draft) => (
-          <DraftThumbnail
-            key={getDraftKey(draft)}
-            draft={draft}
-            workspaceSlug={workspaceSlug}
-          />
+          <DraftThumbnail key={getDraftKey(draft)} draft={draft} />
         ))}
       </div>
     </MomentumCard>
@@ -83,46 +80,57 @@ function getDraftKey(draft: MergedContentEntity): string {
 
 type DraftThumbnailProps = {
   draft: MergedContentEntity;
-  workspaceSlug: string;
 };
 
-function DraftThumbnail({ draft, workspaceSlug }: DraftThumbnailProps) {
-  const { title, thumbnailUrl, createdAt, linkTo } = matchEntity(draft, {
-    group: ({ entity, contents }) => ({
-      title:
-        entity.pendingContentGroupSpec?.baseMessage?.slice(0, 50) ||
-        "Untitled draft",
-      thumbnailUrl:
-        entity.pendingContentGroupSpec?.baseAttachments?.[0]?.thumbnailUrl ||
-        contents?.[0]?.placementSpec?.thumbnailUrl,
-      createdAt: entity.createdAt ? new Date(entity.createdAt) : undefined,
-      linkTo: `/workspaces/${workspaceSlug}/composer?groupId=${entity.id}`,
-    }),
-    content: ({ entity }) => {
-      // Get caption from placement spec based on placement type
-      const caption =
-        entity.placementSpec &&
-        "caption" in entity.placementSpec &&
-        typeof entity.placementSpec.caption === "string"
-          ? entity.placementSpec.caption
-          : entity.placementSpec &&
-              "postSpec" in entity.placementSpec &&
-              entity.placementSpec.postSpec?.message
-            ? entity.placementSpec.postSpec.message
-            : undefined;
-      return {
-        title: caption?.slice(0, 50) || "Untitled",
-        thumbnailUrl: entity.placementSpec?.thumbnailUrl,
+function DraftThumbnail({ draft }: DraftThumbnailProps) {
+  const openDialog = useDialogComposerStore((s) => s.openDialog);
+
+  const { title, thumbnailUrl, createdAt, contentGroupId } = matchEntity(
+    draft,
+    {
+      group: ({ entity, contents }) => ({
+        title:
+          entity.pendingContentGroupSpec?.baseMessage?.slice(0, 50) ||
+          "Untitled draft",
+        thumbnailUrl:
+          entity.pendingContentGroupSpec?.baseAttachments?.[0]?.thumbnailUrl ||
+          contents?.[0]?.placementSpec?.thumbnailUrl,
         createdAt: entity.createdAt ? new Date(entity.createdAt) : undefined,
-        linkTo: `/workspaces/${workspaceSlug}/content/${entity.id}`,
-      };
+        contentGroupId: entity.id,
+      }),
+      content: ({ entity }) => {
+        // Get caption from placement spec based on placement type
+        const caption =
+          entity.placementSpec &&
+          "caption" in entity.placementSpec &&
+          typeof entity.placementSpec.caption === "string"
+            ? entity.placementSpec.caption
+            : entity.placementSpec &&
+                "postSpec" in entity.placementSpec &&
+                entity.placementSpec.postSpec?.message
+              ? entity.placementSpec.postSpec.message
+              : undefined;
+        return {
+          title: caption?.slice(0, 50) || "Untitled",
+          thumbnailUrl: entity.placementSpec?.thumbnailUrl,
+          createdAt: entity.createdAt ? new Date(entity.createdAt) : undefined,
+          contentGroupId: entity.pendingContentGroupId,
+        };
+      },
     },
-  });
+  );
+
+  const handleClick = () => {
+    if (contentGroupId) {
+      openDialog(contentGroupId);
+    }
+  };
 
   return (
-    <Link
-      to={linkTo}
-      className="group flex w-32 shrink-0 flex-col rounded-xl border border-border/60 bg-muted/20 overflow-hidden hover:border-border transition-colors"
+    <button
+      type="button"
+      onClick={handleClick}
+      className="group flex w-32 shrink-0 flex-col rounded-xl border border-border/60 bg-muted/20 overflow-hidden hover:border-border transition-colors text-left"
     >
       <div className="h-20 w-full bg-muted/40 flex items-center justify-center overflow-hidden">
         {thumbnailUrl ? (
@@ -143,6 +151,6 @@ function DraftThumbnail({ draft, workspaceSlug }: DraftThumbnailProps) {
           </p>
         )}
       </div>
-    </Link>
+    </button>
   );
 }
