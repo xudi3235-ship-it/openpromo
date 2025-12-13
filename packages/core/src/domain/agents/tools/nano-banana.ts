@@ -22,7 +22,7 @@ import { getCurrentAgent } from "agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
 import { toolBuilder, toolSuccess } from "../tool-builder";
-import type { VideoGenAgent } from "../video-gen-agent";
+import { VideoGenAgent } from "../video-gen-agent";
 import { getKieAIClient, uploadFilesToKie } from "./utils";
 
 const OUTPUT_DIR = "/tmp/nanobana_output";
@@ -108,7 +108,15 @@ async function providerKieImpl(params: NanoBananaParams) {
   const taskID = task.data?.taskId;
   if (!taskID)
     throw new Error("Failed to start Nano Banana task - no task ID returned");
-  const imageUrl = await client.pollTaskUntilComplete(taskID);
+  const imageUrl = await client.pollTaskUntilComplete(taskID, {
+    onPoll(attempt, maxAttempt) {
+      VideoGenAgent.onProgressUpdate((draft) => {
+        draft.logs.push(
+          `[nanoBanana] Polling - attempt ${attempt}/${maxAttempt}`,
+        );
+      });
+    },
+  });
   return imageUrl;
 }
 

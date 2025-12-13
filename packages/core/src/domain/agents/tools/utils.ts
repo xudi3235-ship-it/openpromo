@@ -21,11 +21,11 @@ export async function uploadFilesToKie(
     const fileBuffer = await readFile(filePath);
     const fileName = basename(filePath);
 
-    console.log(`[sora2_storyboard] Uploading file: ${filePath}`);
+    console.log(`[uploadFilesToKie] Uploading file: ${filePath}`);
 
     const response = await client.uploadFileStream({
       file: fileBuffer,
-      uploadPath: "sora2_storyboard/images",
+      uploadPath: "uploadFilesToKie/images",
       fileName,
     });
 
@@ -34,7 +34,7 @@ export async function uploadFilesToKie(
     }
 
     console.log(
-      `[sora2_storyboard] Uploaded: ${filePath} -> ${response.data.downloadUrl}`,
+      `[uploadFilesToKie] Uploaded: ${filePath} -> ${response.data.downloadUrl}`,
     );
     urls.push(response.data.downloadUrl);
   }
