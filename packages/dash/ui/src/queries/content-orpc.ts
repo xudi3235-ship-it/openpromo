@@ -125,6 +125,23 @@ export const useContentListQuery = (
   );
 };
 
+// Drafts query for home page
+export const useDraftsQuery = (limit = 4) => {
+  const { workspace } = useWorkspace();
+
+  return useQuery(
+    orpc.content.list.queryOptions({
+      input: {
+        publishingStatus: "DRAFT",
+        pageSize: limit,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+        workspaceSlug: workspace.slug,
+      },
+    }),
+  );
+};
+
 export const useContentDetailQuery = (contentId?: string) => {
   const { workspace } = useWorkspace();
 

@@ -184,6 +184,7 @@ function QuickAdCardInner() {
         <Button
           onClick={() => handleGenerate("image")}
           disabled={isDisabled}
+          variant="secondary"
           className="flex-1"
           size="sm"
         >
@@ -197,7 +198,7 @@ function QuickAdCardInner() {
         <Button
           onClick={() => handleGenerate("video")}
           disabled={isDisabled}
-          variant="outline"
+          variant="secondary"
           className="flex-1"
           size="sm"
         >
