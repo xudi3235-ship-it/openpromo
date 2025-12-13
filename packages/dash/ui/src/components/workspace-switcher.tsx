@@ -82,18 +82,9 @@ export function WorkspaceSwitcher({
     if (workspace.slug === currentWorkspaceSlug) {
       return;
     }
-    if (!currentWorkspaceSlug) {
-      navigate({
-        to: "/workspaces/$workspaceSlug",
-        params: { workspaceSlug: workspace.slug },
-      });
-      return;
-    }
     navigate({
-      params: (old) => ({
-        ...old,
-        workspaceSlug: workspace.slug,
-      }),
+      to: "/workspaces/$workspaceSlug",
+      params: { workspaceSlug: workspace.slug },
     });
   };
 
