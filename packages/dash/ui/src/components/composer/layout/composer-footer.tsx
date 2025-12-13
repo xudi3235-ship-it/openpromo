@@ -1,21 +1,12 @@
 import { Button } from "@openpromo/ui/components/button";
 import { useNavigate } from "@tanstack/react-router";
 import { Maximize2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback } from "react";
 import { MdPublish, MdSaveAlt, MdSchedule } from "react-icons/md";
-import { toast } from "sonner";
 import { ContentConfirmationDialog } from "@/components/composer/dialogs/content-confirmation-dialog";
 import { PublishingOverlay } from "@/components/composer/layout/publishing-overlay";
-import { useComposerPublishHandlers } from "@/hooks/composer/useComposerHooks";
+import { useComposerSubmit } from "@/hooks/composer/useComposerSubmit";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { validateCaption } from "@/lib/caption-limit";
-import { logComposerEvent } from "@/lib/instrumentation/composer";
-import { useComposerMutations } from "@/queries/content-orpc";
-import {
-  resolveHasMediaOrLink,
-  resolveSelectedPlatforms,
-} from "@/stores/composer/utils/caption";
-import { useComposerStore } from "@/stores/composer-store";
 import {
   isDialogMode,
   useDialogComposerStore,
@@ -29,6 +20,8 @@ interface FooterActionsProps {
   isPending: boolean;
   canPublish: boolean;
   actionType: "draft" | "schedule" | "publish";
+  draftLabel: string;
+  publishLabel: string;
   onMoreTools: () => void;
   onCancel: () => void;
   onSaveDraft: () => void;
@@ -41,25 +34,13 @@ function FooterActions({
   isPending,
   canPublish,
   actionType,
+  draftLabel,
+  publishLabel,
   onMoreTools,
   onCancel,
   onSaveDraft,
   onPublish,
 }: FooterActionsProps) {
-  const getDraftLabel = () => {
-    if (isPending && actionType === "draft") return "Saving...";
-    // When scheduling is enabled, clarify that draft saves without scheduling
-    if (actionType === "schedule") return "Save as draft";
-    return "Save draft";
-  };
-
-  const getPublishLabel = () => {
-    if (isPending && (actionType === "publish" || actionType === "schedule")) {
-      return actionType === "schedule" ? "Scheduling..." : "Publishing...";
-    }
-    return actionType === "schedule" ? "Schedule" : "Publish";
-  };
-
   return (
     <div className="flex items-center justify-end gap-2 min-w-0">
       {showMoreTools && (
@@ -91,7 +72,7 @@ function FooterActions({
         className="text-muted-foreground hover:text-foreground disabled:opacity-50 shrink-0 gap-2"
       >
         <MdSaveAlt className="h-4 w-4 flex-shrink-0" />
-        <span className="hidden sm:inline">{getDraftLabel()}</span>
+        <span className="hidden sm:inline">{draftLabel}</span>
       </Button>
       <Button
         size="sm"
@@ -104,93 +85,21 @@ function FooterActions({
         ) : (
           <MdPublish className="h-4 w-4 flex-shrink-0" />
         )}
-        <span className="hidden sm:inline">{getPublishLabel()}</span>
+        <span className="hidden sm:inline">{publishLabel}</span>
       </Button>
     </div>
   );
 }
 
 export function ComposerFooter() {
-  const [publishingState, setPublishingState] = useState<{
-    isVisible: boolean;
-    status: "loading" | "success" | "error";
-  }>({ isVisible: false, status: "loading" });
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [showContentConfirm, setShowContentConfirm] = useState<
-    "draft" | "publish" | "schedule" | null
-  >(null);
-
-  const composerStore = useComposerStore();
-  const {
-    setPublishingStatus,
-    contentCreateData,
-    validation,
-    contentGroupID,
-    hasUnsavedChanges,
-  } = composerStore;
-  const { mode, closeComposer, switchToFullscreen } = useDialogComposerStore();
-  const isDialog = mode !== "closed";
-  const showMoreToolsButton = isDialogMode(mode);
-  const onCompleteHandler = useComposerPublishHandlers();
+  const submit = useComposerSubmit();
+  const { mode, switchToFullscreen } = useDialogComposerStore();
   const ws = useWorkspace();
   const navigate = useNavigate();
 
-  const { create: useCreateMutation, updateGroup: useUpdateGroupMutation } =
-    useComposerMutations();
+  const isDialog = mode !== "closed";
+  const showMoreToolsButton = isDialogMode(mode);
 
-  const selectedPlatforms = useMemo(
-    () =>
-      resolveSelectedPlatforms(
-        composerStore.accounts,
-        composerStore.selectedAccounts,
-      ),
-    [composerStore.accounts, composerStore.selectedAccounts],
-  );
-  const mediaOrLink = useMemo(
-    () =>
-      resolveHasMediaOrLink(
-        composerStore.contentCreateData.base.attachments,
-        composerStore.contentCreateData.placements.facebookFeed,
-      ),
-    [
-      composerStore.contentCreateData.base.attachments,
-      composerStore.contentCreateData.placements.facebookFeed,
-    ],
-  );
-  const captionInfo = useMemo(
-    () =>
-      validateCaption(
-        composerStore.contentCreateData.base.message ?? "",
-        selectedPlatforms,
-        mediaOrLink,
-      ),
-    [
-      composerStore.contentCreateData.base.message,
-      selectedPlatforms,
-      mediaOrLink,
-    ],
-  );
-  const hasText = Boolean(contentCreateData.base.message?.trim());
-  const lastEventRef = useRef<string | undefined>(undefined);
-
-  useEffect(() => {
-    const signature = [
-      hasText ? "1" : "0",
-      mediaOrLink ? "1" : "0",
-      captionInfo.state,
-      selectedPlatforms.join(","),
-    ].join("|");
-    if (signature === lastEventRef.current) return;
-    lastEventRef.current = signature;
-    logComposerEvent({
-      has_text: hasText,
-      has_media: mediaOrLink,
-      platforms: selectedPlatforms,
-      validation: captionInfo.state,
-    });
-  }, [hasText, mediaOrLink, selectedPlatforms, captionInfo.state]);
-
-  // Handler to switch to fullscreen and navigate
   const handleSwitchToFullscreen = useCallback(() => {
     switchToFullscreen();
     navigate({
@@ -199,179 +108,43 @@ export function ComposerFooter() {
     });
   }, [switchToFullscreen, navigate, ws.workspace.slug]);
 
-  // Derive action type from store's publishing status
-  const actionType =
-    contentCreateData.base.publishingStatus === "DRAFT"
-      ? "draft"
-      : contentCreateData.base.publishingStatus === "SCHEDULED"
-        ? "schedule"
-        : "publish";
-
-  const mutationHandlers = {
-    onSuccess: () => {
-      setPublishingState({ isVisible: true, status: "success" });
-      toast.success(getSuccessMessage());
-    },
-    onError: () => {
-      setPublishingState({ isVisible: true, status: "error" });
-      toast.error(getErrorMessage());
-    },
-  } as const;
-
-  const createMutation = useCreateMutation(mutationHandlers);
-  const updateMutation = useUpdateGroupMutation(mutationHandlers);
-
-  const isEditFlow = Boolean(contentGroupID);
-  const shouldUpdateGroup =
-    isEditFlow &&
-    (contentCreateData.base.publishingStatus === "DRAFT" ||
-      contentCreateData.base.publishingStatus === "SCHEDULED");
-
-  const triggerMutation = () => {
-    if (shouldUpdateGroup && contentGroupID) {
-      updateMutation.mutate(contentGroupID);
-      return;
-    }
-
-    createMutation.mutate();
-  };
-
-  const isPending = shouldUpdateGroup
-    ? updateMutation.isPending
-    : createMutation.isPending;
-
-  const getSuccessMessage = () => {
-    switch (actionType) {
-      case "draft":
-        return "Draft saved successfully!";
-      case "schedule":
-        return "Content scheduled successfully!";
-      case "publish":
-        return "Content is being published. We'll notify you once it's live.";
-      default:
-        return "Action completed successfully!";
-    }
-  };
-
-  const getErrorMessage = () => {
-    switch (actionType) {
-      case "draft":
-        return "Failed to save draft. Please try again.";
-      case "schedule":
-        return "Failed to schedule content. Please try again.";
-      case "publish":
-        return "Failed to publish content. Please try again.";
-      default:
-        return "Action failed. Please try again.";
-    }
-  };
-
-  const handleSaveDraft = () => {
-    setShowContentConfirm("draft");
-  };
-
-  const handleConfirmSaveDraft = () => {
-    setPublishingStatus("DRAFT");
-    setPublishingState({ isVisible: true, status: "loading" });
-    setShowContentConfirm(null);
-    triggerMutation();
-  };
-
-  const handlePublish = () => {
-    // Determine which dialog to show based on scheduling
-    if (contentCreateData.base.publishingStatus === "SCHEDULED") {
-      setShowContentConfirm("schedule");
-    } else {
-      setShowContentConfirm("publish");
-    }
-  };
-
-  const handleConfirmPublish = () => {
-    // Only set to PUBLISH_NOW if not already scheduled
-    if (contentCreateData.base.publishingStatus !== "SCHEDULED") {
-      setPublishingStatus("PUBLISH_NOW");
-    }
-    logComposerEvent({
-      has_text: hasText,
-      has_media: mediaOrLink,
-      platforms: selectedPlatforms,
-      validation: captionInfo.state,
-      action: "publish_click",
-    });
-    setPublishingState({ isVisible: true, status: "loading" });
-    setShowContentConfirm(null);
-    triggerMutation();
-  };
-
-  const handleOverlayComplete = () => {
-    setPublishingState({ isVisible: false, status: "loading" });
-    onCompleteHandler();
-  };
-
-  const handleCancel = useCallback(() => {
-    if (hasUnsavedChanges()) {
-      setShowCancelConfirm(true);
-    } else {
-      closeComposer();
-    }
-  }, [hasUnsavedChanges, closeComposer]);
-
-  const handleConfirmCancel = () => {
-    setShowCancelConfirm(false);
-    closeComposer();
-  };
-
   return (
     <>
       <FooterActions
         showMoreTools={showMoreToolsButton}
         isDialog={isDialog}
-        isPending={isPending}
-        canPublish={validation.canPublish}
-        actionType={actionType}
+        isPending={submit.isPending}
+        canPublish={submit.canPublish}
+        actionType={submit.actionType}
+        draftLabel={submit.labels.draft}
+        publishLabel={submit.labels.publish}
         onMoreTools={handleSwitchToFullscreen}
-        onCancel={handleCancel}
-        onSaveDraft={handleSaveDraft}
-        onPublish={handlePublish}
+        onCancel={submit.cancel}
+        onSaveDraft={submit.saveDraft}
+        onPublish={submit.publish}
       />
 
       <CancelConfirmationDialog
-        open={showCancelConfirm}
-        onOpenChange={setShowCancelConfirm}
-        onConfirm={handleConfirmCancel}
+        open={submit.cancelDialog}
+        onOpenChange={submit.dismissCancel}
+        onConfirm={submit.confirmCancel}
       />
-      {showContentConfirm === "draft" && (
+
+      {submit.confirmDialog && (
         <ContentConfirmationDialog
           open={true}
-          onOpenChange={(open) => !open && setShowContentConfirm(null)}
-          onConfirm={handleConfirmSaveDraft}
-          actionType="draft"
-          isPending={isPending}
+          onOpenChange={(open) => !open && submit.dismissConfirm()}
+          onConfirm={submit.confirmAction}
+          actionType={submit.confirmDialog}
+          isPending={submit.isPending}
         />
       )}
-      {showContentConfirm === "schedule" && (
-        <ContentConfirmationDialog
-          open={true}
-          onOpenChange={(open) => !open && setShowContentConfirm(null)}
-          onConfirm={handleConfirmPublish}
-          actionType="schedule"
-          isPending={isPending}
-        />
-      )}
-      {showContentConfirm === "publish" && (
-        <ContentConfirmationDialog
-          open={true}
-          onOpenChange={(open) => !open && setShowContentConfirm(null)}
-          onConfirm={handleConfirmPublish}
-          actionType="publish"
-          isPending={isPending}
-        />
-      )}
+
       <PublishingOverlay
-        isVisible={publishingState.isVisible}
-        status={publishingState.status}
-        actionType={actionType}
-        onComplete={handleOverlayComplete}
+        isVisible={submit.overlayVisible}
+        status={submit.overlayStatus}
+        actionType={submit.actionType}
+        onComplete={submit.onOverlayComplete}
       />
     </>
   );
