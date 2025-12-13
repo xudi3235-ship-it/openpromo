@@ -1,4 +1,5 @@
 import { getDbClient } from "@core/database/db";
+import { InboxService } from "@core/domain/inbox";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import { Actor } from "@core/helpers/actor";
 import { connectedAccount } from "@core/schemas/connected-account.sql";
@@ -7,9 +8,14 @@ import {
   type InboxChannel,
   inboxConversationsTable,
 } from "@core/schemas/inbox-conversations.sql";
+import { inboxMessagesTable } from "@core/schemas/inbox-messages.sql";
 import { ErrorCodes, VisibleError } from "@core/utils/error";
 import type { AllPlatforms } from "@shared/content";
-import type { InboxAttachment, InboxMessageMetadata } from "@shared/inbox";
+import type {
+  InboxAttachment,
+  InboxMessageMetadata,
+  MessagePayload,
+} from "@shared/inbox";
 import { InboxRealtimeEventTypes } from "@shared/inbox";
 import { createWorkspaceEvent } from "@shared/workspace/events";
 import { and, eq } from "drizzle-orm";
@@ -60,6 +66,33 @@ export namespace InboxReplyService {
     const workspaceId = Actor.workspaceID();
     const db = getDbClient();
 
+    let resolvedReplyToMessageId: string | null = null;
+    if (replyToMessageId) {
+      const messageRow = await db
+        .select({ externalId: inboxMessagesTable.externalId })
+        .from(inboxMessagesTable)
+        .where(
+          and(
+            eq(inboxMessagesTable.id, replyToMessageId),
+            eq(inboxMessagesTable.inboxConversationId, conversationId),
+          ),
+        )
+        .limit(1)
+        .then((rows) => rows[0]);
+
+      if (messageRow) {
+        resolvedReplyToMessageId = messageRow.externalId;
+        console.info("[Inbox Reply] Resolved replyToMessageId", {
+          internalId: replyToMessageId,
+          externalId: resolvedReplyToMessageId,
+        });
+      } else {
+        console.warn(
+          `[Inbox Reply] Reply target message not found or does not belong to conversation: ${replyToMessageId}`,
+        );
+      }
+    }
+
     const row = await loadConversation(db, workspaceId, conversationId);
     if (!row) {
       throw new VisibleError(
@@ -88,26 +121,57 @@ export namespace InboxReplyService {
         ...baseContext,
         channel: "dm",
       };
-      await DMReplyHandler.send(dmContext, {
+      const sentMessages = await DMReplyHandler.send(dmContext, {
         text: trimmedText.length > 0 ? trimmedText : null,
         attachments: normalizedAttachments,
-        replyToMessageId,
+        replyToMessageId: resolvedReplyToMessageId,
       });
+
+      // Persist messages immediately
+      if (sentMessages && sentMessages.length > 0) {
+        const metadata: Record<string, unknown> = {};
+        if (replyToMessageId) {
+          if (!metadata.extra) {
+            metadata.extra = {};
+          }
+          (metadata.extra as Record<string, unknown>).replyToMessageId =
+            replyToMessageId;
+        }
+
+        // We can't be sure which mid corresponds to which part (text vs attachment) if split,
+        // but typically last one is text if both exist, or we just persist them all.
+        // For simplicity, we persist all sent messages.
+        for (const msg of sentMessages) {
+          // Create minimal payload that satisfies MessagePayload union type
+          // Using FBMessagePayload structure as base (works for both FB and IG)
+          const minimalPayload = {
+            sender: { id: row.connectedAccountExternalId },
+            recipient: { id: row.contactExternalId },
+            timestamp: Math.floor(Date.now() / 1000),
+          };
+          await InboxService.upsertMessage({
+            workspaceId,
+            inboxConversationId: row.id,
+            externalId: msg.mid,
+            text: trimmedText.length > 0 ? trimmedText : null, // This might duplicate text if split, but it's acceptable for now
+            attachments: normalizedAttachments, // Same here
+            payload: minimalPayload as MessagePayload,
+            sender: "self",
+            channel: "dm",
+            metadata,
+          });
+        }
+      }
+
       await emitPendingReplyEvent(
         row.id,
         row.channel,
         workspaceId,
         trimmedText,
         normalizedAttachments,
+        replyToMessageId,
       );
     } else if (row.channel === "post_comment") {
-      if (normalizedAttachments.length > 0) {
-        throw new VisibleError(
-          "validation",
-          ErrorCodes.Validation.INVALID_STATE,
-          "Attachments are not supported for comment replies yet.",
-        );
-      }
       const commentContext: CommentReplyContext = {
         ...baseContext,
         channel: "post_comment",
@@ -116,13 +180,18 @@ export namespace InboxReplyService {
         conversationMetadata: (row.conversationMetadata ??
           {}) as InboxMessageMetadata,
       };
-      await CommentReplyHandler.send(commentContext, trimmedText);
+      await CommentReplyHandler.send(
+        commentContext,
+        trimmedText,
+        normalizedAttachments,
+      );
       await emitPendingReplyEvent(
         row.id,
         row.channel,
         workspaceId,
         trimmedText,
         normalizedAttachments,
+        replyToMessageId,
       );
     } else {
       throw new VisibleError(
@@ -179,7 +248,17 @@ async function emitPendingReplyEvent(
   workspaceId: string,
   text: string,
   attachments: InboxAttachment[],
+  replyToMessageId?: string | null,
 ) {
+  const metadata: Record<string, unknown> = { pendingEcho: true };
+  if (replyToMessageId) {
+    if (!metadata.extra) {
+      metadata.extra = {};
+    }
+    (metadata.extra as Record<string, unknown>).replyToMessageId =
+      replyToMessageId;
+  }
+
   const pendingEvent = createWorkspaceEvent(
     InboxRealtimeEventTypes.MessageUpserted,
     {
@@ -193,7 +272,7 @@ async function emitPendingReplyEvent(
         createdAt: new Date(),
         channel,
         contentId: null,
-        metadata: { pendingEcho: true },
+        metadata,
       },
     },
   );

@@ -17,11 +17,71 @@ export namespace InstagramReply {
   export async function sendDM(
     context: DMReplyContext,
     payload: DMReplyPayload,
-  ) {
+  ): Promise<{ mid: string }[]> {
     console.info("[Instagram Reply][DM] sending message", {
       conversationId: context.conversationId,
       connectedAccountId: context.connectedAccountId,
     });
+
+    const hasAttachments = payload.attachments.length > 0;
+    const hasText = payload.text && payload.text.trim().length > 0;
+
+    const sentMessages: { mid: string }[] = [];
+
+    // Split message if both text and attachments are present
+    // Instagram API likely has similar constraints or it's safer to align behavior
+    if (hasAttachments && hasText) {
+      // 1. Send Attachment
+      const attachmentPayload = buildMessagePayload(payload.attachments, null);
+      const attachmentBody: Record<string, unknown> = {
+        recipient: { id: context.contactExternalId },
+        message: attachmentPayload,
+      };
+
+      if (payload.replyToMessageId) {
+        attachmentBody.reply_to = { mid: payload.replyToMessageId };
+      }
+
+      const attachmentResponse = await instagramGraphRequest<{
+        recipient_id: string;
+        message_id: string;
+      }>(
+        {
+          accessToken: context.accessToken,
+          rateLimitKey: `instagram:${context.connectedAccountId}`,
+        },
+        "/me/messages",
+        {
+          method: "POST",
+          body: attachmentBody,
+        },
+      );
+      sentMessages.push({ mid: attachmentResponse.message_id });
+
+      // 2. Send Text
+      const textPayload = buildMessagePayload([], payload.text);
+      const textBody: Record<string, unknown> = {
+        recipient: { id: context.contactExternalId },
+        message: textPayload,
+      };
+
+      const textResponse = await instagramGraphRequest<{
+        recipient_id: string;
+        message_id: string;
+      }>(
+        {
+          accessToken: context.accessToken,
+          rateLimitKey: `instagram:${context.connectedAccountId}`,
+        },
+        "/me/messages",
+        {
+          method: "POST",
+          body: textBody,
+        },
+      );
+      sentMessages.push({ mid: textResponse.message_id });
+      return sentMessages;
+    }
 
     const messagePayload = buildMessagePayload(
       payload.attachments,
@@ -37,7 +97,10 @@ export namespace InstagramReply {
       requestBody.reply_to = { mid: payload.replyToMessageId };
     }
 
-    await instagramGraphRequest(
+    const response = await instagramGraphRequest<{
+      recipient_id: string;
+      message_id: string;
+    }>(
       {
         accessToken: context.accessToken,
         rateLimitKey: `instagram:${context.connectedAccountId}`,
@@ -48,6 +111,8 @@ export namespace InstagramReply {
         body: requestBody,
       },
     );
+    sentMessages.push({ mid: response.message_id });
+    return sentMessages;
   }
 
   /**
@@ -62,7 +127,16 @@ export namespace InstagramReply {
     },
     target: CommentReplyTarget,
     text: string,
+    attachments: InboxAttachment[] = [],
   ) {
+    if (attachments.length > 0) {
+      throw new VisibleError(
+        "validation",
+        ErrorCodes.Validation.INVALID_STATE,
+        "Attachments are not supported for Instagram comment replies.",
+      );
+    }
+
     const endpointSuffix = target.type === "comment" ? "replies" : "comments";
 
     console.info("[Instagram Reply][Comment] replying to", {

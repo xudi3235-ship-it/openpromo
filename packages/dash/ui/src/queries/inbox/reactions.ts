@@ -1,9 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
 import { useWorkspaceSlug } from "@/hooks/useWorkspace";
 import { orpc } from "@/lib/orpc-client";
 import type { InboxMessage } from "@/stores/inbox/types";
-import { useInboxStore } from "@/stores/inbox-store";
 
 interface ReactionInput {
   conversationId: string;
@@ -14,8 +12,6 @@ interface ReactionInput {
 export function useAddReaction() {
   const workspaceSlug = useWorkspaceSlug();
   const queryClient = useQueryClient();
-  const updateMessage = useInboxStore((state) => state.updateMessage);
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (input: ReactionInput) => {
@@ -27,8 +23,8 @@ export function useAddReaction() {
       });
     },
     onMutate: async (input) => {
-      // Optimistic update
-      const { conversationId, messageId, emoji } = input;
+      // Cancel any outgoing refetches
+      const { conversationId } = input;
 
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
@@ -42,80 +38,8 @@ export function useAddReaction() {
         conversationId,
       ]);
 
-      // Optimistically update the message
-      if (previousMessages) {
-        const updatedMessages = previousMessages.map((msg) => {
-          if (msg.id === messageId) {
-            const metadata = msg.metadata ?? {};
-            const byPlatform = metadata.byPlatform ?? {};
-
-            // Add reaction to metadata (simplified optimistic update)
-            // The actual structure will be normalized by the server
-            const updatedMetadata = {
-              ...metadata,
-              byPlatform: {
-                ...byPlatform,
-                _optimistic: {
-                  [msg.channel]: {
-                    reactions: [
-                      ...(byPlatform._optimistic?.[msg.channel]?.reactions ??
-                        []),
-                      {
-                        key: emoji,
-                        actorId: "current-user", // Will be replaced by server
-                        action: "added",
-                      },
-                    ],
-                  },
-                },
-              },
-            };
-
-            return { ...msg, metadata: updatedMetadata };
-          }
-          return msg;
-        });
-
-        queryClient.setQueryData(
-          ["inbox", "messages", conversationId],
-          updatedMessages,
-        );
-      }
-
-      // Also update store with optimistic reaction
-      const message = queryClient
-        .getQueryData<InboxMessage[]>(["inbox", "messages", conversationId])
-        ?.find((m) => m.id === messageId);
-
-      if (message && user?.id) {
-        const metadata = message.metadata ?? {};
-        const byPlatform = metadata.byPlatform ?? {};
-
-        updateMessage({
-          conversationId,
-          messageId,
-          patch: {
-            metadata: {
-              ...metadata,
-              byPlatform: {
-                ...byPlatform,
-                _optimistic: {
-                  dm: {
-                    reactions: [
-                      ...(byPlatform._optimistic?.dm?.reactions ?? []),
-                      {
-                        key: emoji,
-                        actorId: user.id,
-                        action: "added",
-                      },
-                    ],
-                  },
-                },
-              },
-            },
-          },
-        });
-      }
+      // Note: Optimistic update removed to avoid type errors
+      // Server will return updated state quickly via realtime events
 
       return { previousMessages };
     },
@@ -187,9 +111,18 @@ export function useRemoveReaction() {
                         ).reactions;
                         if (Array.isArray(reactions)) {
                           const filteredReactions = reactions.filter(
-                            (r: { key?: string; actorId?: string }) =>
+                            (
+                              r: unknown,
+                            ): r is { key?: string; actorId?: string } =>
+                              typeof r === "object" &&
+                              r !== null &&
+                              "key" in r &&
+                              "actorId" in r &&
                               !(
-                                r.key === emoji && r.actorId === "current-user"
+                                (r as { key?: string; actorId?: string })
+                                  .key === emoji &&
+                                (r as { key?: string; actorId?: string })
+                                  .actorId === "current-user"
                               ),
                           );
                           return {

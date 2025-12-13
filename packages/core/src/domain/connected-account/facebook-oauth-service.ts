@@ -336,7 +336,8 @@ export class FacebookOAuthService {
 
   async setupWebhook(accessToken: string): Promise<void> {
     const params = new URLSearchParams({
-      subscribed_fields: "feed,messages,message_edits,message_echoes",
+      subscribed_fields:
+        "feed,messages,message_edits,message_echoes,message_reactions",
       access_token: accessToken,
     });
     const response = await fetch(

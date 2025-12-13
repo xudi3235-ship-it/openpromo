@@ -128,7 +128,8 @@ function MessageBubble({
 }: MessageBubbleProps) {
   const params = useParams({ strict: false }) as { conversationId?: string };
   const conversationId = params.conversationId ?? "";
-  const { user } = useAuth();
+  const auth = useAuth();
+  const userId = auth.data?.id;
 
   const addReaction = useAddReaction();
   const removeReaction = useRemoveReaction();
@@ -159,7 +160,7 @@ function MessageBubble({
   const processedReactions = processReactions(
     message.metadata,
     message.channel,
-    canAddReaction ? user?.id : undefined, // Only highlight user reactions if they can interact
+    canAddReaction ? userId : undefined, // Only highlight user reactions if they can interact
   );
 
   const showReplyAction = typeof onReply === "function";

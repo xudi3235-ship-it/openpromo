@@ -97,15 +97,15 @@
       "id": "66945099c2b142c0bc7a46cc5664a67d"
     }
   ],
-  "containers": [
-    {
-      "max_instances": 2,
-      "class_name": "ContainerBackend",
-      "image": "../core/src/containers/Dockerfile",
-      "image_build_context": "../core/src/containers",
-      "instance_type": "basic"
-    }
-  ],
+//   "containers": [
+//     {
+//       "max_instances": 2,
+//       "class_name": "ContainerBackend",
+//       "image": "../core/src/containers/Dockerfile",
+//       "image_build_context": "../core/src/containers",
+//       "instance_type": "basic"
+//     }
+//   ],
   // https://developers.cloudflare.com/workers/development-testing/wrangler-vs-vite/#when-to-use-wrangler
   // R2 does not work locally since vite plugin does not support.
   // as our backend grows we should separate to its own worker
@@ -113,12 +113,12 @@
     {
       "bucket_name": "openpromo-bucket",
       "binding": "Bucket",
-      "remote": true
+      // "remote": true
     },
     {
       "bucket_name": "public",
       "binding": "PublicBucket",
-      "remote": true
+      // "remote": true
     }
   ],
   "analytics_engine_datasets": [
@@ -221,15 +221,15 @@
           "id": "66945099c2b142c0bc7a46cc5664a67d"
         }
       ],
-      "containers": [
-        {
-          "max_instances": 2,
-          "class_name": "ContainerBackend",
-          "image": "../core/src/containers/Dockerfile",
-          "image_build_context": "../core/src/containers",
-          "instance_type": "basic"
-        }
-      ],
+//       "containers": [
+//         {
+//           "max_instances": 2,
+//           "class_name": "ContainerBackend",
+//           "image": "../core/src/containers/Dockerfile",
+//           "image_build_context": "../core/src/containers",
+//           "instance_type": "basic"
+//         }
+//       ],
       "r2_buckets": [
         {
           "bucket_name": "openpromo-bucket",
@@ -410,15 +410,15 @@
           }
         ]
       },
-      "containers": [
-        {
-          "max_instances": 2,
-          "class_name": "ContainerBackend",
-          "image": "../core/src/containers/Dockerfile",
-          "image_build_context": "../core/src/containers",
-          "instance_type": "basic"
-        }
-      ],
+//       "containers": [
+//         {
+//           "max_instances": 2,
+//           "class_name": "ContainerBackend",
+//           "image": "../core/src/containers/Dockerfile",
+//           "image_build_context": "../core/src/containers",
+//           "instance_type": "basic"
+//         }
+//       ],
       "kv_namespaces": [
         {
           "binding": "KV",

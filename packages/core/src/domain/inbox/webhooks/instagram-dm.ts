@@ -1,10 +1,13 @@
+import { db } from "@core/database/db";
 import { instagramOAuthService } from "@core/domain/connected-account";
 import { InboxService } from "@core/domain/inbox";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import { Platform } from "@core/schemas/connected-account.sql";
+import { inboxMessagesTable } from "@core/schemas/inbox-messages.sql";
 import type { IGMessagePayload } from "@shared/inbox";
 import { InboxRealtimeEventTypes } from "@shared/inbox";
 import { createWorkspaceEvent } from "@shared/workspace/events";
+import { and, eq } from "drizzle-orm";
 
 type ConnectedAccount = Awaited<
   ReturnType<
@@ -356,6 +359,60 @@ async function handleNewMessage(
 
   console.log("[IG DM] Attachments mapped", { count: attachments.length });
 
+  const metadata: Record<string, unknown> = {};
+
+  // reply_to is at the messaging level, not message level
+  const replyTo = messaging.reply_to;
+  let replyToMid: string | null = null;
+
+  if (replyTo) {
+    if ("mid" in replyTo) {
+      replyToMid = replyTo.mid;
+    }
+  }
+
+  if (replyToMid) {
+    console.info("[IG DM] Found reply_to in payload", {
+      mid: message.mid,
+      replyToMid,
+    });
+    const dbClient = db();
+    const [replyToMessage] = await dbClient
+      .select({ id: inboxMessagesTable.id })
+      .from(inboxMessagesTable)
+      .where(
+        and(
+          eq(inboxMessagesTable.externalId, replyToMid),
+          eq(inboxMessagesTable.inboxConversationId, conversation.id),
+        ),
+      )
+      .limit(1);
+
+    if (replyToMessage) {
+      console.info("[IG DM] Resolved reply_to message", {
+        mid: message.mid,
+        replyToMid,
+        internalId: replyToMessage.id,
+      });
+      if (!metadata.extra) {
+        metadata.extra = {};
+      }
+      (metadata.extra as Record<string, unknown>).replyToMessageId =
+        replyToMessage.id;
+    } else {
+      console.warn("[IG DM] Failed to resolve reply_to message", {
+        mid: message.mid,
+        replyToMid,
+        conversationId: conversation.id,
+      });
+    }
+  } else {
+    console.info("[IG DM] No reply_to in payload", {
+      mid: message.mid,
+      isEcho: message.is_echo,
+    });
+  }
+
   await InboxService.upsertMessage({
     inboxConversationId: conversation.id,
     externalId: message.mid,
@@ -365,6 +422,7 @@ async function handleNewMessage(
     sender: message.is_echo ? "self" : "user",
     workspaceId: account.workspaceId,
     channel: conversation.channel,
+    metadata,
   });
 
   console.log("[IG DM] Message upserted to DB");
@@ -380,7 +438,7 @@ async function handleNewMessage(
       createdAt: new Date(timestamp),
       channel: conversation.channel,
       contentId: null,
-      metadata: {},
+      metadata,
     },
   };
 
