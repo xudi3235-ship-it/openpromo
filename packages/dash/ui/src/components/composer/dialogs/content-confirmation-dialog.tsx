@@ -121,13 +121,13 @@ export function ContentConfirmationDialog({
     }
   };
 
-  const buttonVariant = actionType === "draft" ? "secondary" : "default";
+  const buttonVariant = "default";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[70vw] min-w-[900px] max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
         {/* Header */}
-        <DialogHeader className="border-b border-border/60 px-5 py-3 flex-shrink-0">
+        <DialogHeader className="px-5 py-3 flex-shrink-0">
           <DialogTitle className="text-base font-semibold">
             {getTitle()}
           </DialogTitle>
@@ -189,7 +189,7 @@ export function ContentConfirmationDialog({
         </ScrollArea>
 
         {/* Footer */}
-        <DialogFooter className="border-t border-border/60 px-5 py-2 gap-2 flex-shrink-0">
+        <DialogFooter className="px-5 py-2 gap-2 flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
