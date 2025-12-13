@@ -35,7 +35,11 @@ export function LiveRunView({ logs, artifacts, onBack }: LiveRunViewProps) {
       </div>
 
       {/* Artifacts area - takes available space */}
-      <LiveArtifactsGrid artifacts={artifacts} className="flex-1 min-h-0" />
+      <LiveArtifactsGrid
+        artifacts={artifacts}
+        latestLog={logs[logs.length - 1]}
+        className="flex-1 min-h-0"
+      />
 
       {/* Logs panel - fixed height at bottom */}
       <LiveLogsPanel logs={logs} className="h-64 shrink-0" />
