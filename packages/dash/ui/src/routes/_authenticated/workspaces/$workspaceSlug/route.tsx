@@ -94,11 +94,7 @@ function WorkspaceComponent() {
     // User dismissed onboarding, show simple null state
     return (
       <WorkspaceLayout>
-        <WorkspaceNullState
-          title={`Welcome to ${workspace.name}`}
-          description="Connect your social media accounts to start creating and scheduling content"
-          footerText="Choose a platform above to get started"
-        />
+        <WorkspaceNullState accounts={accounts} />
       </WorkspaceLayout>
     );
   }
@@ -112,11 +108,7 @@ function WorkspaceComponent() {
           onOpenChange={() => {}}
           onSkip={() => setIsOnboardingDismissed(true)}
         />
-        <WorkspaceNullState
-          title={`Welcome to ${workspace.name}`}
-          description="Connect your social media accounts to start creating and scheduling content"
-          footerText="Choose a platform above to get started"
-        />
+        <WorkspaceNullState accounts={accounts} />
       </WorkspaceLayout>
     );
   }
