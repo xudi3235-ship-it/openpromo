@@ -223,6 +223,7 @@ export class VideoGenAgent extends AIChatAgent<
       if (runId && (finalStatus === "succeeded" || finalStatus === "failed")) {
         // 1. AWAIT persistence to DB (critical - ensures DB has correct state)
         await this.persistFinalState(runId, this.state);
+        console.log(`in finally, finaloutput: `, this.state.output);
 
         // 2. Broadcast run_completed (tells clients to invalidate queries)
         this.broadcastRunCompleted(runId, finalStatus);
@@ -283,14 +284,14 @@ export class VideoGenAgent extends AIChatAgent<
 
     // 2. setup hooks
     setupAgentHooks(agent, {
-      onAgentStart: (_ctx) => {
-        this.log(`started`);
+      onAgentStart: (_ctx, agent) => {
+        this.log(`${agent.name} started`);
       },
       onAgentEnd: (_ctx, output) => {
         this.log(`ended`, output);
       },
-      onToolStart: (_ctx, toolName, _details) => {
-        this.log(`Tool started: ${toolName}`);
+      onToolStart: (_ctx, toolName, details) => {
+        this.log(`Tool started: ${toolName}`, details);
       },
       onToolEnd: (_ctx, toolName, result) => {
         this.log(`Tool ended: ${toolName}`, result);
@@ -330,6 +331,7 @@ export class VideoGenAgent extends AIChatAgent<
       }
       // done
       // 3. update state with serialized run and final output
+      console.log(`finaloutput: `, finalOutput);
       await this.patchState((draft) => {
         draft.status = "succeeded";
         draft.output = finalOutput;

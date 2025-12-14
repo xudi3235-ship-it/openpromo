@@ -60,9 +60,6 @@ Creates 10-15 second videos with high visual fidelity.
 
 CRITICAL:
 * Sora 2 Pro excels at creativity - prefer concise prompts that leave room for interpretation
-* Does NOT support realistic person images as input
-* Best for: product videos, creative animations, social media content
-
 NOTE: Provide local file paths or URLs - files will be uploaded automatically.`,
   parameters: params,
   async execute(args) {
@@ -124,11 +121,6 @@ NOTE: Provide local file paths or URLs - files will be uploaded automatically.`,
       status: "success" as const,
       videoUrl,
       outputPath,
-      prompt,
-      inputImagePath: inputImagePathOrUrl,
-      aspectRatio,
-      duration,
-      quality,
     };
   },
 });
