@@ -23,7 +23,7 @@ const toolParams = z.object({
     .describe("Filter by reference type: 'image', or 'video'"),
   industries: z
     .array(z.string())
-    .optional()
+    .nullable()
     .describe("Filter by industries (e.g., ['beauty', 'fashion'])"),
   limit: z.number().default(5).describe("Maximum number of results to return"),
 });
