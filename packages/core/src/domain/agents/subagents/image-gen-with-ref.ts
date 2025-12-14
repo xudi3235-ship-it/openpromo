@@ -6,7 +6,7 @@ import { Agent } from "@openai/agents";
 import { VideoGenRealtime } from "@shared/agents";
 import type { VideoGenAgentContext } from "../context";
 import { StaticPrompts } from "../prompts";
-import { evaluateImageTool, nanoBananaTool, searchImageTool } from "../tools";
+import { nanoBananaTool, searchImageTool } from "../tools";
 
 const sysPrompt = (contextStr: string) => `
 1. Role
@@ -27,7 +27,7 @@ User's input will include the following items
 * Focus on extracting learnings, styles, elements from reference images; apply them together with the product images to use image generation tools to produce img.
 * dynamically adapt to diffent product types, categories, styles, etc.
 * for any *CRITICAL instructions, must closely follow and reflect them when reasoning.
-* use the evaluate tool to asset the image quality, and iterate to address any issues. Only evaluate once, avoid loops of stuck at evals.
+* read the tool output for the image and evalute it, if not good, generate again. Only evaluate once, avoid loops of stuck at evals.
 * 
 <about_image_generation>
 - for product shots/keyframes,ALWAYS ground nano_banana requests with product images for clarity. refer to examples for best practices. NO need for json format, plain text with clear structure and ultra details are fine.
@@ -80,7 +80,7 @@ export function createImageGenWithRefAgent() {
       const contextStr = `input: ${JSON.stringify(args.context)}`;
       return sysPrompt(contextStr);
     },
-    tools: [nanoBananaTool, evaluateImageTool, searchImageTool],
+    tools: [nanoBananaTool, searchImageTool],
     // @ts-expect-error weird zod typing issue
     outputType: VideoGenRealtime.AgentOutput,
   });

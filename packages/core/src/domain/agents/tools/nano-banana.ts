@@ -18,7 +18,12 @@ import {
   downloadImage as downloadImageBase,
   isStringUrl,
 } from "@core/utils/common";
-import { tool } from "@openai/agents";
+import { Log } from "@core/utils/log";
+import {
+  type ToolOutputImage,
+  type ToolOutputText,
+  tool,
+} from "@openai/agents";
 import { getCurrentAgent } from "agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
@@ -26,6 +31,8 @@ import { VideoGenAgent } from "../video-gen-agent";
 import { getKieAIClient, uploadFilesToKie } from "./utils";
 
 const OUTPUT_DIR = "/tmp/nanobana_output";
+
+const log = Log.create({ namespace: "nano-banana-tool" });
 
 /**
  * Download image from URL and save to local path.
@@ -171,10 +178,17 @@ Auto-saves generated images and returns the URL.`,
       console.warn("[nanoBanana] No current agent found to update state.");
     }
 
-    return {
-      status: "success" as const,
-      imageUrl,
-      outputPath,
+    const textPart: ToolOutputText = {
+      type: "text",
+      text: `success. Generated image saved at ${outputPath}, URL: ${imageUrl}`,
     };
+    const imagePart: ToolOutputImage = {
+      type: "image",
+      image: imageUrl,
+      detail: "high",
+    };
+    log.info("nanoBanana tool execution completed", { outputPath, imageUrl });
+
+    return [textPart, imagePart];
   },
 });
