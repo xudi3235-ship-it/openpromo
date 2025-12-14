@@ -4,6 +4,7 @@ import { Storage } from "@core/helpers/storage";
 import { Log } from "@core/utils/log";
 import { generateObject, type ImagePart } from "ai";
 import { z } from "zod";
+import { EntProduct } from "../product";
 
 const REFERENCE_BUCKET = "openpromo-reference";
 
@@ -122,6 +123,13 @@ async function getImageUrl(key: string): Promise<string> {
   return `data:${mimeType};base64,${base64}`;
 }
 
+const analyzeTaskSegment = `Analyze the provided image and extract:
+1. A concise description (1-2 sentences) focusing on visual style, composition, and subjects
+2. Keywords covering: visual style, mood/tone, subjects/objects, color palette, composition type, any notable elements and successful features
+3. Relevant industries this image would be useful for as ad creative reference
+
+Be specific and practical - these tags will be used to search and match images to product categories.`;
+
 /**
  * Analyze image to get structured tags
  */
@@ -146,24 +154,72 @@ This is critical as the accuracy matters the most for survival of small business
 </Role>
 
 <Task>
-
-Analyze the provided image and extract:
-1. A concise description (1-2 sentences) focusing on visual style, composition, and subjects
-2. Keywords covering: visual style, mood/tone, subjects/objects, color palette, composition type, any notable elements and successful features
-3. Relevant industries this image would be useful for as ad creative reference
-
-Be specific and practical - these tags will be used to search and match images to product categories.
+${analyzeTaskSegment}
 </Task>
 
 <Rules>
 1. critical to be accurate and concise when tagging, as these tags will determine search relevancy
 2. use a progressive pattern: for industry, start broad 1-2, then more specific 3-5; similarly for keywords, take the progressive tagging approach.
+3. reason about what the images, as reference, are really good for certain product types, industry, use cases, vibes, etc. the more specific the keywords are, the better for search.
 </Rules>
 `,
       },
       {
         role: "user",
         content: [imgPart],
+      },
+    ],
+  });
+
+  return result.object;
+}
+
+const searchSchema = z.object({
+  query: z.string().min(1).describe("Natural language search query"),
+});
+
+// TODO: load product context
+async function genSearchQueryFromProductImages(
+  imgs: string[],
+): Promise<z.infer<typeof searchSchema>> {
+  const imgParts: ImagePart[] = imgs.map((url) => ({
+    type: "image",
+    image: url,
+  }));
+
+  const result = await generateObject({
+    model: openai("gpt-5-mini"),
+    schema: searchSchema,
+    maxOutputTokens: 200,
+    messages: [
+      {
+        role: "system",
+        content: `
+<Role>
+You are an expert at analyzing product images, and create search keywords from our ad creative reference library. You will analyze images of the products, and create a concise search query that will help find relevant ad creative/visuals fitting for promoting this product in the next workflows(e.g. generating ad creatives, videos, etc). The reference lib is maintained by us with thousands of editorial, ugc, lifestyle, product-shot that are top of the qualtiy in the market out ther, and downstream our systems will use the matchiing refences combined with product iamges to create ready-to-go ad creatives for small businesses.
+
+This is critical as the accuracy matters the most for survival of small businesses.
+</Role>
+
+<Context>
+here is the previous prompt we instructed to tag & process the reference images in ingestion flow:
+${analyzeTaskSegment}
+
+metadata schema used: ${z.toJSONSchema(ReferenceTagSchema)}
+</Context>
+
+<Task>
+1. analyze the product imgs and context, create a concise 3-5 keyword search query that can mest match refences that fits with the product.
+</Task>
+
+<Rules>
+1. critical to be accurate and concise, as these tags will determine search relevancy
+</Rules>
+`,
+      },
+      {
+        role: "user",
+        content: imgParts,
       },
     ],
   });
@@ -246,6 +302,24 @@ export namespace ReferenceSearch {
       keywords: tags.keywords.length,
       industries: tags.industries.length,
     });
+  }
+
+  export async function similarFromProduct(
+    productID: string,
+    options: ReferenceSearchOptions = {},
+  ): Promise<ReferenceSearchResult[]> {
+    const product = await EntProduct.fromID(productID);
+    const images = product.imageUrls();
+    if (images.length === 0) {
+      log.error("product has no images for reference search", { productID });
+      throw new Error("Product has no images");
+    }
+    const { query } = await genSearchQueryFromProductImages(images);
+    log.info("generated search query from product images", {
+      productID,
+      query,
+    });
+    return findSimilar(query, options);
   }
 
   /**
