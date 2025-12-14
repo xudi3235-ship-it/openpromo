@@ -31,11 +31,9 @@ import {
 import { produce } from "immer";
 import { EntAgentRun } from "../agent-run";
 import type { VideoGenAgentContext } from "./context";
-import {
-  AGENT_REGISTRY,
-  buildSystemPrompt,
-  createOrchestratorAgent,
-} from "./create-agent";
+import { AGENT_REGISTRY } from "./create-agent";
+import { createOrchestratorAgent } from "./create-orchestrator-agent";
+import { buildSystemPrompt } from "./create-video-agent";
 import { setupAgentHooks } from "./hooks";
 import { InputTransformer } from "./input/input-transformer";
 import { Presets } from "./presets";
@@ -65,6 +63,7 @@ export class VideoGenAgent extends AIChatAgent<
   private actorStore: ActorStore;
   private presetManager: Presets.Manager;
   private inputTransformer: InputTransformer;
+  private _suppressBroadcast = false;
 
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
@@ -113,20 +112,8 @@ export class VideoGenAgent extends AIChatAgent<
     const connections = this.ctx.getWebSockets();
     StateBroadcaster.broadcastState(connections, newState);
 
-    // Persist state asynchronously if we have a runId
-    if (newState.runId) {
-      EntAgentRun.fromID(newState.runId)
-        .then(async (run) => {
-          await run.persistState(newState);
-        })
-        .catch((err) => {
-          // might be deleted
-          console.error(
-            `[VideoGenAgent] Failed to persist state for run ${newState.runId}:`,
-            err,
-          );
-        });
-    }
+    // Note: DB persistence is handled only in persistFinalState() at run completion
+    // to avoid race conditions between multiple async writes
   }
 
   private async runPipeline() {
@@ -467,6 +454,7 @@ export class VideoGenAgent extends AIChatAgent<
     _state: VideoGenRealtime.ServerAppState | undefined,
     _source: Connection | "server",
   ): Promise<void> {
+    if (this._suppressBroadcast) return;
     // Broadcast current state to all connected clients
     const connections = this.ctx.getWebSockets();
     StateBroadcaster.broadcastState(connections, this.state);
@@ -515,7 +503,9 @@ export class VideoGenAgent extends AIChatAgent<
    * Used after run completion to clear DO state without confusing clients
    */
   private resetStateQuietly() {
+    this._suppressBroadcast = true;
     this.setState(VideoGenRealtime.initialServerAppState);
+    this._suppressBroadcast = false;
     this.runStateSerialized = null;
     this.messages = [];
     console.log(`[VideoGenAgent] State reset quietly (no broadcast)`);
