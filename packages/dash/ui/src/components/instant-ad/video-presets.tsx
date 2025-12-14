@@ -161,7 +161,7 @@ export function PresetPicker({
         </button>
       )}
       <PresetPreviewModal
-        preset={selectedRef as Reference}
+        preset={selectedRef ?? null}
         isOpen={previewModalOpen}
         onClose={() => setPreviewModalOpen(false)}
       />

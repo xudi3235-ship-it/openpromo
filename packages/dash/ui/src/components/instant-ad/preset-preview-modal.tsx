@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface ReferencePreviewModalProps {
   preset: {
@@ -35,7 +36,7 @@ export function PresetPreviewModal({
 
   if (!isOpen || !preset) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       onClick={onClose}
@@ -89,6 +90,7 @@ export function PresetPreviewModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

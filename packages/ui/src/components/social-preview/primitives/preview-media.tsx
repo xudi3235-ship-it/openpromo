@@ -280,8 +280,8 @@ function CarouselLayout({
   };
 
   return (
-    <div className={cn("relative group", aspectRatioClass, className)}>
-      {renderSingleMedia(media[currentIndex], "w-full h-full")}
+    <div className={cn("relative group w-full", aspectRatioClass, className)}>
+      {renderSingleMedia(media[currentIndex], "w-full h-full absolute inset-0")}
 
       {/* Navigation Controls - only show when multiple media */}
       {media.length > 1 && (
