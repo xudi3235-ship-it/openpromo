@@ -615,7 +615,7 @@ export namespace ReferenceSearch {
 
       log.info("reference deleted", { id });
     } catch (error) {
-      log.error("failed to delete reference", { id, error });
+      log.error("might already be deleted, ok", { id, error });
     }
   }
 
