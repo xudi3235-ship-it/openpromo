@@ -3,14 +3,14 @@ packages:
 
 catalog:
   '@openai/agents': ^0.3.4
-  '@orpc/client': ^1.12.2
-  '@orpc/openapi': ^1.12.2
-  '@orpc/server': ^1.12.2
-  '@orpc/zod': ^1.12.2
+  '@orpc/client': ^1.12.3
+  '@orpc/openapi': ^1.12.3
+  '@orpc/server': ^1.12.3
+  '@orpc/zod': ^1.12.3
   '@types/react': 19.2.7
   '@types/react-dom': 19.2.3
   '@workos-inc/node': ^7.77.0
-  agents: ^0.2.31
+  agents: ^0.2.32
   ai: 5.0.112
   cloudflare: 5.2.0
   drizzle-orm: 0.45.1
