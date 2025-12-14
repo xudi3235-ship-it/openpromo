@@ -1,19 +1,36 @@
 import { Agent } from "@openai/agents";
-import { VideoGenRealtime } from "@shared/agents";
+import { OrchestratorSchema } from "@shared/agents";
+import z from "zod";
 import { PRIMARY_GOAL } from "./constants";
 import type { VideoGenAgentContext } from "./context";
 import { StaticPrompts } from "./prompts";
 import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
-import {
-  ffmpegTool,
-  veo31ImageToVideoTool,
-  // veo31ImageToVideoTool,
-  // veo31UnifiedTool, // uses replicate provider
-  virtualShellTool,
-} from "./tools";
+import { ffmpegTool, veo31ImageToVideoTool, virtualShellTool } from "./tools";
 import { setContextTool } from "./tools/set-context";
 import { sora2ProI2VTool } from "./tools/sora2-pro-i2v";
 import { videoToSpecTool } from "./tools/video-to-spec";
+
+// biome-ignore lint/suspicious/noExplicitAny: Agent output types vary by agent
+type AnyAgent = Agent<VideoGenAgentContext, any>;
+
+/**
+ * Agent registry - maps agent type names to factory functions.
+ * Enables dynamic agent instantiation in the run loop.
+ */
+export const AGENT_REGISTRY: Record<
+  OrchestratorSchema.AgentType,
+  () => AnyAgent
+> = {
+  image_gen: createImageGenWithRefAgent,
+  video_gen: createVideoGenAgent,
+  // Future agents - placeholder implementations
+  subtitle_gen: () => {
+    throw new Error("subtitle_gen agent not yet implemented");
+  },
+  audio_gen: () => {
+    throw new Error("audio_gen agent not yet implemented");
+  },
+};
 
 namespace PromptFragments {
   export const hardLimit = `
@@ -138,6 +155,16 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     `;
 }
 
+const videoAgentOutput = z.object({
+  status: z.enum(["success", "failure"]).describe("status of the task"),
+  finalVideo: z.object({
+    url: z.string(),
+    path: z.string(),
+    description: z.string(),
+  }),
+  summary: z.string().describe("summary of the video generation task"),
+});
+
 /**
  * Create the OpenAI Agents SDK agent with typed context.
  * Tools will be added here once ported.
@@ -145,7 +172,7 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
  * limited compared to Modal runtime.
  */
 export function createVideoGenAgent() {
-  const agent = new Agent<VideoGenAgentContext, VideoGenRealtime.AgentOutput>({
+  const agent = new Agent<VideoGenAgentContext, typeof videoAgentOutput>({
     name: "VideoGenAgent",
     model: "gpt-5.1",
     instructions: (runCtx, _agent) => {
@@ -155,10 +182,8 @@ export function createVideoGenAgent() {
     tools: [
       virtualShellTool,
       videoToSpecTool,
-      // veo31UnifiedTool, // on replicate
       veo31ImageToVideoTool,
       sora2ProI2VTool,
-      // other stuff
       ffmpegTool,
     ],
     modelSettings: {
@@ -167,17 +192,17 @@ export function createVideoGenAgent() {
         summary: "auto",
       },
     },
-    // @ts-expect-error zod version mismatch
-    outputType: VideoGenRealtime.AgentOutput.omit(),
+    outputType: videoAgentOutput,
   });
   return agent;
 }
 
+/**
+ * Creates the orchestrator agent that routes work to sub-agents.
+ * Uses structured Decision output for explicit handoffs.
+ */
 export function createOrchestratorAgent() {
-  // subagents for the tools
-  const imageGenAgent = createImageGenWithRefAgent();
-  const videoGenAgent = createVideoGenAgent();
-  return new Agent<VideoGenAgentContext, VideoGenRealtime.AgentOutput>({
+  return new Agent<VideoGenAgentContext, OrchestratorSchema.Decision>({
     name: "VideoGenOrchestrator",
     model: "gpt-5.1",
     instructions: (runCtx, _agent) => {
@@ -186,63 +211,60 @@ export function createOrchestratorAgent() {
 You are an expert video production orchestrator specializing in social media content for small businesses. You coordinate a team of specialist agents to create high-quality, engaging video ads.
 
 <current_context>
-<CRITICAL/> input is user's request input!! if it's image gen, meaning the Final deliverable are images, else is a video! DO NOT set done until you completed the requests.
-
-If image gen -> set the context plan and delegate to image gen agent to create the images.
-
-if video gen -> make the plan, create keyframe via image gen agent, then delegate to video gen agent to create the final video.
-current run context:
 ${JSON.stringify(context, null, 2)}
 </current_context>
 
 PRIMARY GOAL: ${PRIMARY_GOAL}
 
-<Scopes>
-* Focus on: exploring connection between product, reference image, and ideas from the docs/guide, good examples to craft good product-centric images, and later use those create videos, suited for fast paced social media shorts, duration 15-30s, target platform is Tiktok, IG reels, and FB reels. Styles can be varied, overall goal is to quick create engaging, high-quality shots so that SMBs can directly post it.
+<decision_output_schema>
+You must output ONE of the following decision types:
 
-* VIDEO TYPES, REFERENCE REGISTRY (just for your reference; covers ~80% SMB needs)
-<critical_must_follow/>
+1. **plan** - Create an execution plan upfront (use this first!)
+   { "action": "plan", "reasoning": "why this plan", "steps": [{ "stepId": "step1", "agent": "image_gen", "task": "...", "dependsOn": [] }, ...] }
+
+2. **handoff** - Delegate to a sub-agent
+   { "action": "handoff", "targetAgent": "image_gen|video_gen", "stepId": "step1", "taskDescription": "detailed instructions for sub-agent" }
+
+3. **retry** - Retry a failed step with different approach
+   { "action": "retry", "targetAgent": "image_gen|video_gen", "stepId": "step1", "newApproach": "what to try differently", "taskDescription": "updated instructions" }
+
+4. **complete** - Workflow finished successfully
+   { "action": "complete", "output": { "done": true, "message": "summary", "output": { "videos": [...], "images": [...] } } }
+
+5. **error** - Cannot continue
+   { "action": "error", "reason": "why workflow cannot continue" }
+
+Available agents: image_gen, video_gen (subtitle_gen, audio_gen coming soon)
+</decision_output_schema>
+
+<workflow>
+1. On first call: output a "plan" action with steps
+2. After plan acknowledged: output "handoff" for first step
+3. After each sub-agent result: output next "handoff" or "complete"
+4. On sub-agent failure: output "retry" with modified approach or "error"
+</workflow>
+
+<Scopes>
+* Focus on: exploring connection between product, reference image, and ideas from the docs/guide, good examples to craft good product-centric images, and later use those create videos, suited for fast paced social media shorts, duration 15-30s, target platform is Tiktok, IG reels, and FB reels.
+
+* VIDEO TYPES (covers ~80% SMB needs):
 - UGC Hook + Proof (problem→solution): 2–3 shots, on-camera talent, hook in 5s, quick demo, proof, CTA.
 - Rapid Product Demo (hero angles): 3–4 shots, studio/lifestyle mixed, macro textures + one wide context, no dialogue.
 - Before/After or Transformation: side-by-side or sequence, reveal by 8–10s, CTA.
 - Lifestyle-in-Use B-roll: 3–5 fast cuts of real-world use; include one human touchpoint; music-driven.
-- How-to / 3-Step Mini Tutorial: 3–4 beats labeled Step 1/2/3 (in prompt), each beat <7s; payoff/CTA at end.
+- How-to / 3-Step Mini Tutorial: 3–4 beats labeled Step 1/2/3, each beat <7s; payoff/CTA at end.
 - Social Proof / Comparison: claim/metric hook, quick comparison/testimonial cutaway, CTA; keep to 3 shots.
-- <critical/> for any videos with dialogues, please stuff in enough content so the pacing is fast enough, else veo31 gives very slow, weird movements.
 
+* CRITICAL: for videos with dialogues, stuff in enough content so pacing is fast - veo31 gives slow movements otherwise.
 </Scopes>
-
-Your plans must strictly adhere to these guidelines, especially about the limits.
 
 ${PromptFragments.orchestrator}
 ${PromptFragments.hardLimit}
 ${PromptFragments.formatting}
 
-
-
-<__internal__>
-- use the set_context tool to update internal stage, steps, tasks. etc. if no done, complete the conversation, since it will trigger the next run with updated context, and more tools will be available to you. 
-- e.g. for certain stage, new tools will be enabled for specific tasks.
-- stage transition: image -> video. 
-- do NOT complete until you have a final deliverable. do NOT set done=true until a final output is ready!
-- AVOID infinite loops. after you set the context, next run should be executing it against it.
-</__internal__>
-
 `.replaceAll("  ", "");
     },
-    tools: [
-      setContextTool,
-      imageGenAgent.asTool({
-        toolName: "image_gen_agent",
-        toolDescription:
-          "Creates product-focused ad images using reference images for style guidance. Generates keyframes for video sequences.",
-      }),
-      videoGenAgent.asTool({
-        toolName: "video_gen_agent",
-        toolDescription:
-          "Converts images into engaging social media videos. Optimizes multi-shot structure and internal pacing.",
-      }),
-    ],
+    tools: [setContextTool], // Keep for backward compat, will be removed
     modelSettings: {
       reasoning: {
         effort: "low",
@@ -250,6 +272,6 @@ ${PromptFragments.formatting}
       },
     },
     // @ts-expect-error zod version mismatch
-    outputType: VideoGenRealtime.AgentOutput,
+    outputType: OrchestratorSchema.Decision,
   });
 }

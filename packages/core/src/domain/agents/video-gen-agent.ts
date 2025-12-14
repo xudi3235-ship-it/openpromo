@@ -9,7 +9,7 @@ import {
   run,
   withTrace,
 } from "@openai/agents";
-import { VideoGenRealtime } from "@shared/agents";
+import { type OrchestratorSchema, VideoGenRealtime } from "@shared/agents";
 import {
   type AgentContext,
   type Connection,
@@ -31,7 +31,11 @@ import {
 import { produce } from "immer";
 import { EntAgentRun } from "../agent-run";
 import type { VideoGenAgentContext } from "./context";
-import { buildSystemPrompt, createOrchestratorAgent } from "./create-agent";
+import {
+  AGENT_REGISTRY,
+  buildSystemPrompt,
+  createOrchestratorAgent,
+} from "./create-agent";
 import { setupAgentHooks } from "./hooks";
 import { InputTransformer } from "./input/input-transformer";
 import { Presets } from "./presets";
@@ -253,7 +257,8 @@ export class VideoGenAgent extends AIChatAgent<
 
   // either from serialize state or create new
   private async createRunnerInput(
-    agent: Agent<VideoGenAgentContext, VideoGenRealtime.AgentOutput>,
+    // biome-ignore lint/suspicious/noExplicitAny: Agent output types vary
+    agent: Agent<VideoGenAgentContext, any>,
   ): Promise<AgentInputItem[]> {
     if (!this.runStateSerialized) {
       // new
@@ -270,6 +275,7 @@ export class VideoGenAgent extends AIChatAgent<
 
   /**
    * core entrypoint to run the video generation pipeline.
+   * Uses decision-based routing with structured orchestrator output.
    */
   private async runPipelineImpl() {
     const runtimeContext = new RunContext<VideoGenAgentContext>({
@@ -277,13 +283,14 @@ export class VideoGenAgent extends AIChatAgent<
       stage: "create_plan",
       plan: "",
     });
-    // 1. create agent with context
-    const agent = createOrchestratorAgent();
-    // finalized input items
-    const runnerInput = await this.createRunnerInput(agent);
 
-    // 2. setup hooks
-    setupAgentHooks(agent, {
+    // 1. create orchestrator agent
+    const orchestrator = createOrchestratorAgent();
+    const runnerInput = await this.createRunnerInput(orchestrator);
+
+    // 2. setup hooks for orchestrator
+    // @ts-expect-error
+    setupAgentHooks(orchestrator, {
       onAgentStart: (_ctx, agent) => {
         this.log(`${agent.name} started`);
       },
@@ -297,49 +304,160 @@ export class VideoGenAgent extends AIChatAgent<
         this.log(`Tool ended: ${toolName}`, result);
       },
     });
-    let currInput = runnerInput;
+
+    // Track execution state
+    let currInput: AgentInputItem[] = runnerInput;
     let step = 0;
     const MAX_RUN_STEPS = 100;
-    // 2. run the agent
-    // TODO: utilize agent handoff using structural output
+    let _currentPlan: OrchestratorSchema.PlanStep[] | null = null;
+    const completedSteps = new Map<string, unknown>();
+
+    // 3. Decision-based run loop
     while (step < MAX_RUN_STEPS) {
-      console.log(`>>>> Agent: ${this.state.input.mode} run step ${step} >>>>`);
+      this.log(`Step ${step}: Running orchestrator`);
+      console.log(`>>>> Orchestrator step ${step} >>>>`);
       console.log(`>>>> last 2 input:`, JSON.stringify(currInput.slice(-2)));
-      console.log(
-        `>>>> agent tools:`,
-        agent.tools.map((t) => t.name),
-      );
-      const result = await run(agent, currInput, {
+
+      const result = await run(orchestrator, currInput, {
         context: runtimeContext,
       });
-      // serialize run state
+
+      // Serialize state for recovery
       this.runStateSerialized = result.state.toString();
-      const finalOutput = result.finalOutput as VideoGenRealtime.AgentOutput;
-      if (!finalOutput.done) {
-        console.log(`continuing run, not done yet...`);
-        // prepare next input
-        currInput = [
-          ...result.history,
-          // TODO: might instrument more info here during each run to avoid losing context.
-          {
-            role: "system",
-            content: `<end_of_step> end of step ${step}, continue to next step run. above is the action item and needs execution.`,
-          },
-        ];
-        step++;
-        continue;
+      const decision = result.finalOutput as OrchestratorSchema.Decision;
+
+      this.log(`Decision: ${decision.action}`, decision);
+
+      // 4. Route based on decision type
+      switch (decision.action) {
+        case "plan": {
+          // Store the plan for tracking
+          const steps = decision.steps ?? [];
+          _currentPlan = steps;
+          console.log(`Current plan:`, _currentPlan);
+          this.log(
+            `Plan created with ${steps.length} steps: ${decision.reasoning ?? "no reasoning"}`,
+          );
+
+          // Acknowledge plan and prompt for first handoff
+          currInput = [
+            ...result.history,
+            {
+              role: "system",
+              content: `Plan acknowledged with ${steps.length} steps. Proceed with first step handoff.`,
+            },
+          ];
+          break;
+        }
+
+        case "handoff":
+        case "retry": {
+          const targetAgent = decision.targetAgent;
+          const taskDescription = decision.taskDescription ?? "";
+
+          if (!targetAgent) {
+            throw new Error("Handoff/retry decision missing targetAgent");
+          }
+
+          this.log(`Handoff to ${targetAgent}: ${taskDescription}`);
+
+          try {
+            // Get agent factory from registry
+            const agentFactory = AGENT_REGISTRY[targetAgent];
+            const subAgent = agentFactory();
+
+            // Setup hooks for sub-agent
+            setupAgentHooks(subAgent, {
+              onAgentStart: (_ctx, agent) => {
+                this.log(`[SubAgent] ${agent.name} started`);
+              },
+              onAgentEnd: (_ctx, output) => {
+                this.log(`[SubAgent] ended`, output);
+              },
+              onToolStart: (_ctx, toolName, details) => {
+                this.log(`[SubAgent] Tool started: ${toolName}`, details);
+              },
+              onToolEnd: (_ctx, toolName, result) => {
+                this.log(`[SubAgent] Tool ended: ${toolName}`, result);
+              },
+            });
+            const productInputs = await this.inputTransformer.fromProductImages(
+              this.state.input,
+            );
+
+            // Run sub-agent with task description
+            const subInput: AgentInputItem[] = [
+              // TODO: load more context from initial inputs
+              // e.g. include product imgs.
+              // create initial inputs too
+              ...productInputs,
+              { role: "user", content: taskDescription },
+            ];
+
+            const subResult = await run(subAgent, subInput, {
+              context: runtimeContext,
+            });
+
+            // Track completed step
+            if (decision.stepId) {
+              completedSteps.set(decision.stepId, subResult.finalOutput);
+            }
+
+            // Feed result back to orchestrator
+            currInput = [
+              ...result.history,
+              {
+                role: "system",
+                content: `Sub-agent ${targetAgent} completed successfully.\nResult: ${JSON.stringify(subResult.finalOutput)}.
+                Current completed steps: ${JSON.stringify(completedSteps)}
+                `,
+              },
+            ];
+          } catch (error) {
+            const errorMsg =
+              error instanceof Error ? error.message : String(error);
+            this.log(`Sub-agent ${targetAgent} failed: ${errorMsg}`);
+
+            // On failure, let orchestrator decide (retry or error)
+            currInput = [
+              ...result.history,
+              {
+                role: "system",
+                content: `Sub-agent ${targetAgent} FAILED.\nError: ${errorMsg}\nOrchestrator: decide whether to retry with different approach or abort.`,
+              },
+            ];
+          }
+          break;
+        }
+
+        case "complete": {
+          // Workflow finished successfully
+          const output = decision.output;
+          if (!output) {
+            throw new Error("Complete decision missing output");
+          }
+          this.log(`Workflow complete`, output);
+
+          await this.patchState((draft) => {
+            draft.status = "succeeded";
+            draft.output = output;
+          });
+          return; // Exit the loop
+        }
+
+        case "error": {
+          // Workflow cannot continue
+          throw new Error(
+            `Orchestrator error: ${decision.reason ?? "unknown"}`,
+          );
+        }
       }
-      // done
-      // 3. update state with serialized run and final output
-      console.log(`finaloutput: `, finalOutput);
-      await this.patchState((draft) => {
-        draft.status = "succeeded";
-        draft.output = finalOutput;
-      });
-      this.log(`run completed:`, result.finalOutput);
-      // exit
-      break;
+
+      step++;
     }
+
+    // Exceeded max steps
+    throw new Error(`Exceeded maximum run steps (${MAX_RUN_STEPS})`);
   }
 
   /**

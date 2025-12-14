@@ -221,3 +221,98 @@ export namespace VideoGenRealtime {
     connection.send(JSON.stringify(event));
   }
 }
+
+/**
+ * Orchestrator decision schemas for structured agent handoffs.
+ * Used by the orchestrator to route work to sub-agents.
+ *
+ * Note: Using a flat object with action discriminator instead of z.discriminatedUnion
+ * because OpenAI's structured output doesn't support 'union' type directly.
+ */
+export namespace OrchestratorSchema {
+  /** Available sub-agent types (extensible) */
+  export const AgentType = z.enum([
+    "image_gen",
+    "video_gen",
+    "subtitle_gen",
+    "audio_gen",
+  ]);
+  export type AgentType = z.infer<typeof AgentType>;
+
+  /** Single step in an execution plan */
+  export const PlanStep = z.object({
+    stepId: z.string().describe("Unique identifier for this step"),
+    agent: AgentType,
+    task: z.string().describe("What this step should accomplish"),
+    dependsOn: z
+      .string()
+      .array()
+      .nullable()
+      .describe("stepIds this step depends on"),
+  });
+  export type PlanStep = z.infer<typeof PlanStep>;
+
+  /**
+   * Flat decision object - OpenAI structured output compatible.
+   * Use `action` field to determine which other fields are relevant.
+   * Note: OpenAI requires .nullable() for optional fields.
+   */
+  export const Decision = z.object({
+    // Discriminator field
+    action: z
+      .enum(["plan", "handoff", "retry", "complete", "error"])
+      .describe("The type of decision"),
+
+    // Fields for 'plan' action
+    reasoning: z
+      .string()
+      .nullable()
+      .describe("Why this plan makes sense (required for plan action)"),
+    steps: PlanStep.array()
+      .nullable()
+      .describe("Ordered steps to execute (required for plan action)"),
+
+    // Fields for 'handoff' and 'retry' actions
+    targetAgent: AgentType.nullable().describe(
+      "Which agent to delegate to (required for handoff/retry)",
+    ),
+    stepId: z
+      .string()
+      .nullable()
+      .describe(
+        "Which plan step this fulfills (optional for handoff, required for retry)",
+      ),
+    taskDescription: z
+      .string()
+      .nullable()
+      .describe(
+        "Detailed instructions for the sub-agent (required for handoff/retry)",
+      ),
+
+    // Fields for 'retry' action only
+    newApproach: z
+      .string()
+      .nullable()
+      .describe("What to try differently (required for retry)"),
+
+    // Fields for 'complete' action
+    output: VideoGenRealtime.AgentOutput.nullable().describe(
+      "Final output (required for complete action)",
+    ),
+
+    // Fields for 'error' action
+    reason: z
+      .string()
+      .nullable()
+      .describe("Why the workflow cannot continue (required for error action)"),
+  });
+
+  export type Decision = z.infer<typeof Decision>;
+
+  // Helper types for type narrowing in switch statements
+  export type PlanDecision = Decision & { action: "plan" };
+  export type HandoffDecision = Decision & { action: "handoff" };
+  export type RetryDecision = Decision & { action: "retry" };
+  export type CompleteDecision = Decision & { action: "complete" };
+  export type ErrorDecision = Decision & { action: "error" };
+}

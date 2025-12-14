@@ -162,6 +162,24 @@ export class InputTransformer {
     return messages;
   }
 
+  async fromProductImages(
+    input: VideoGenRealtime.Input,
+  ): Promise<AgentInputItem[]> {
+    const filePaths = await downloadInputFiles(input);
+    const imgParts = toAgentImageInputs(input.productImages);
+    const txtPart = {
+      type: "input_text" as const,
+      text: `here are the product messages Product reference files stored under /tmp/products. Local paths: ${filePaths.productImagePaths.join(", ")}`,
+    };
+    const messages: AgentInputItem[] = [
+      {
+        role: "user",
+        content: [txtPart, ...imgParts],
+      },
+    ];
+    return messages;
+  }
+
   /**
    * Get the current structure of the tmp directory as a string.
    * Uses node:fs which is available in Cloudflare Workers VFS.
