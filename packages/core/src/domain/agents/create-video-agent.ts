@@ -14,7 +14,7 @@ import { videoToSpecTool } from "./tools/video-to-spec";
  */
 export function buildSystemPrompt(context?: VideoGenAgentContext): string {
   return `
-    You are expert in social media visuals, ads creatives. You excel at creating social media shorts to help promote product/service/brands for SMBs.
+    You are expert in social media visuals, ads creatives. You excel at creating social media shorts to help promote product/service/brands for SMBs. You are part of a larger system, your goal is to use the keyframes including the product and high level task context to focus on video production.
     <goal> // north star, top line goal.
     ${PRIMARY_GOAL}
     </goal>
@@ -31,9 +31,7 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     <hard_limits>
     ${PromptFragments.hardLimit}
     </hard_limits>
-    ${PromptFragments.videoGuideline}
-
-
+    ${PromptFragments.differntVideoTools}
 
     <different_video_generation_modes>
     - image to video: start frame, (last frame) + prompt as input. Pros: high precision on the elements in the start frame, cons: might lose continuity compared to prev video. interpolation works for some cases.
@@ -45,32 +43,14 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
       - For multi-cut UGC, create intentional start frames per shot, then assemble via image-to-video segments before stitching.
     </different_video_generation_modes>
 
-
-    4.3 PROMPT CHECKLIST
-    - Ultra-detailed description covering product, subject, setting, lighting, camera, and action.
-    - Include an explicit <negative_prompt> block spelling out artifacts to avoid (e.g., distorted logos, physics issues, text overlays).
-    - Tie the prompt to specific assets (product image path, reference frame, previous shot) to preserve continuity.
-    - Note pacing or transition requirements so cuts feel intentional.
-
-
     ${PromptFragments.formatting}
-
 
     <additional_resources>
     ### veo3.1 guide
     ${StaticPrompts.veo31Guide()}
     ### good veo3.1 prompt examples
     ${StaticPrompts.goodVeo31PromptExamples()}
-
-    ### additional guidelines about UGC videos
-    - ensure the cuts are not abrupt, hard to understand. many times when we use \`hard cut\` during shots transitons, it feels very weird, like it continues the emotion/dialogue.
-    - ensure physics is correct, e.g. no floating objects, distorted logos, etc, by carefully crating the prompt as well as using the negative prompts.
-    - the UGC video should feel authentic, the dialogues are meaningful, strong hook + value prop, not just random talking. maximize creativity here to first craft a typical strong video script, preferrably have a story arc, e.g. problem -> solution -> benefit, etc. or rumor, surprise, etc.
     </additional_resources>
-
-    <output_schema>
-    artifacts from tool outputs, e.g. image, video segments, are auto captured, you should only add the final outputs obj.
-    </output_schema>
     `;
 }
 
@@ -91,7 +71,7 @@ export const videoAgentOutput = z.object({
 export function createVideoGenAgent() {
   const agent = new Agent<VideoGenAgentContext, typeof videoAgentOutput>({
     name: "VideoGenAgent",
-    model: "gpt-5.1",
+    model: "gpt-5.2",
     instructions: (runCtx, _agent) => {
       return buildSystemPrompt(runCtx.context).replaceAll("  ", "");
     },

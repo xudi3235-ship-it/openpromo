@@ -241,6 +241,10 @@ export namespace ReferenceSearch {
     return results && results.length > 0;
   }
 
+  export async function processVideo(key: string): Promise<void> {
+    log.error("video processing not implemented yet", { key });
+  }
+
   /**
    * Process a reference image: analyze with vision model, embed, and store in Vectorize.
    * Idempotent - skips processing if already indexed.
@@ -294,6 +298,7 @@ export namespace ReferenceSearch {
         id: key,
         values: embedding,
         metadata,
+        // namespace: // TODO: figure out how to use namespace to partition
       },
     ]);
 

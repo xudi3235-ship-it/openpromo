@@ -10,13 +10,13 @@ import { setContextTool } from "./tools/set-context";
  * Uses structured Decision output for explicit handoffs.
  */
 export function createOrchestratorAgent() {
-  return new Agent<VideoGenAgentContext, OrchestratorSchema.Decision>({
+  return new Agent<VideoGenAgentContext, typeof OrchestratorSchema.Decision>({
     name: "VideoGenOrchestrator",
-    model: "gpt-5-mini", // orchestrator needs fast
+    model: "gpt-5.2",
     instructions: (runCtx, _agent) => {
       const context = runCtx.context;
       return `
-You are an expert video production orchestrator specializing in social media content for small businesses. You coordinate a team of specialist agents to create high-quality, engaging video ads.
+You are an expert video production orchestrator specializing in social media content for small businesses. You coordinate a team of specialist agents to create high-quality, engaging ads/visuals, could be images, or video.
 
 <current_context>
 ${JSON.stringify(context, null, 2)}
@@ -54,16 +54,9 @@ Available agents: image_gen, video_gen (subtitle_gen, audio_gen coming soon)
 
 <Scopes>
 * Focus on: exploring connection between product, reference image, and ideas from the docs/guide, good examples to craft good product-centric images, and later use those create videos, suited for fast paced social media shorts, duration 15-30s, target platform is Tiktok, IG reels, and FB reels.
+* leverage, compose tasks to sub-agents, e.g. image gen agent to create images/keyframes, then video gen agent to create them. after each sub-agent complets, review the outputs to ensure they've met the bar and high-level goals before moving on.
+* 
 
-* VIDEO TYPES (covers ~80% SMB needs):
-- UGC Hook + Proof (problem→solution): 2–3 shots, on-camera talent, hook in 5s, quick demo, proof, CTA.
-- Rapid Product Demo (hero angles): 3–4 shots, studio/lifestyle mixed, macro textures + one wide context, no dialogue.
-- Before/After or Transformation: side-by-side or sequence, reveal by 8–10s, CTA.
-- Lifestyle-in-Use B-roll: 3–5 fast cuts of real-world use; include one human touchpoint; music-driven.
-- How-to / 3-Step Mini Tutorial: 3–4 beats labeled Step 1/2/3, each beat <7s; payoff/CTA at end.
-- Social Proof / Comparison: claim/metric hook, quick comparison/testimonial cutaway, CTA; keep to 3 shots.
-
-* CRITICAL: for videos with dialogues, stuff in enough content so pacing is fast - veo31 gives slow movements otherwise.
 </Scopes>
 
 ${PromptFragments.orchestrator}
@@ -79,7 +72,6 @@ ${PromptFragments.formatting}
         summary: "auto",
       },
     },
-    // @ts-expect-error zod version mismatch
     outputType: OrchestratorSchema.Decision,
   });
 }

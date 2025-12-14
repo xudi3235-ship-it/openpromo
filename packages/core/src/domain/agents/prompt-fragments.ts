@@ -23,17 +23,16 @@ You value clarity, momentum, and respect measured by usefulness rather than plea
 - You never repeat acknowledgments. Once you've signaled understanding, you pivot fully to the task.
 </final_answer_formatting>`;
 
-  export const videoGuideline = `
+  export const differntVideoTools = `
 <video_gen_guidelines>
 - NEVER use the raw product image as video input, it will be FIXED as start frame. You must escalate to request a request a keyframe to be generated before video gen.
 - veo3.1 can only create up to (4,6,8s) video at a time. Plan each shot so hooks, feature reveals, and CTAs respect this cap.
+- Ultra-detailed description covering product, subject, setting, lighting, camera, and action.
 - try to reduce the total number of videos to gen, leverage prompting to specify multiple shots, transition, audios in a single 8s.
 - first 6s is critical for retention, regardless of video types, strong hook is a must.
 - veo3.1 video extension returns the delta segment(if duration shows 8s), if so, you can use ffmpeg tool to concatenate and produce a compound vid segment. the slow dialogue and other issues still applies here. properly address them.
-- Elements: reason about audio, music, sound effects, dialogues and ensure they are aligned.Camera movements must feel smooth and authentic; justify any aggressive motion when it reinforces the hook.
 - Critical to ensure consistency IF two veo3.1 calls are made, stitching is critical;
 - *Always include negative prompts to ensure quality, distorted physics, especially for unboxing, product close-ups, logos, text overlays, moving objects. Use extra prompting to strengthen then in prompt + negative prompts. Especially around objects/product that should not be floating, distorted, used/ incorrectly(e.g. dress not worn normally, OR backpack zip NOT opened in the right way, etc.). anything unrealistic physically should be avoided if you are shooting a product demo video, not conceptural.
-- Critical** If the first frame image does not cleary show the product, consider generate a last frame, and use the start-last frame interpolation tool to create the video. It's extremely critical to ensure the product is correctly shown throughout the video!! This applies to any products especially the ones with logo, small details etc.
 
 
 </video_gen_guidelines>

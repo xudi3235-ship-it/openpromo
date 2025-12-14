@@ -180,6 +180,25 @@ export class InputTransformer {
     return messages;
   }
 
+  async fromImageArtifacts(
+    state: VideoGenRealtime.ServerAppState,
+  ): Promise<AgentInputItem[]> {
+    const imgParts = state.artifacts.images.map((img) => ({
+      type: "input_image" as const,
+      image: img.imageUrl,
+    }));
+    return [
+      {
+        role: "system",
+        content: `system checkpoint: below are the image artifacts generated from subagents so far.`,
+      },
+      {
+        role: "user",
+        content: imgParts,
+      },
+    ];
+  }
+
   /**
    * Get the current structure of the tmp directory as a string.
    * Uses node:fs which is available in Cloudflare Workers VFS.

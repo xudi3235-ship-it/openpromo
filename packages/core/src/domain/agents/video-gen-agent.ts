@@ -305,13 +305,14 @@ export class VideoGenAgent extends AIChatAgent<
       console.log(`>>>> Orchestrator step ${step} >>>>`);
       console.log(`>>>> last 2 input:`, JSON.stringify(currInput.slice(-2)));
 
-      const result = await run(orchestrator, currInput, {
+      const orchestratorResult = await run(orchestrator, currInput, {
         context: runtimeContext,
       });
 
       // Serialize state for recovery
-      this.runStateSerialized = result.state.toString();
-      const decision = result.finalOutput as OrchestratorSchema.Decision;
+      this.runStateSerialized = orchestratorResult.state.toString();
+      const decision =
+        orchestratorResult.finalOutput as OrchestratorSchema.Decision;
 
       this.log(`Decision: ${decision.action}`, decision);
 
@@ -328,7 +329,7 @@ export class VideoGenAgent extends AIChatAgent<
 
           // Acknowledge plan and prompt for first handoff
           currInput = [
-            ...result.history,
+            ...orchestratorResult.history,
             {
               role: "system",
               content: `Plan acknowledged with ${steps.length} steps. Proceed with first step handoff.`,
@@ -374,10 +375,8 @@ export class VideoGenAgent extends AIChatAgent<
 
             // Run sub-agent with task description
             const subInput: AgentInputItem[] = [
-              // TODO: load more context from initial inputs
-              // e.g. include product imgs.
-              // create initial inputs too
               ...productInputs,
+              ...(await this.inputTransformer.fromImageArtifacts(this.state)),
               { role: "user", content: taskDescription },
             ];
 
@@ -392,7 +391,10 @@ export class VideoGenAgent extends AIChatAgent<
 
             // Feed result back to orchestrator
             currInput = [
-              ...result.history,
+              // TODO: maybe we need to re-feed the images here so orchestrator
+              // can evaluate?
+              ...orchestratorResult.history,
+              ...(await this.inputTransformer.fromImageArtifacts(this.state)),
               {
                 role: "system",
                 content: `Sub-agent ${targetAgent} completed successfully.\nResult: ${JSON.stringify(subResult.finalOutput)}.
@@ -407,7 +409,7 @@ export class VideoGenAgent extends AIChatAgent<
 
             // On failure, let orchestrator decide (retry or error)
             currInput = [
-              ...result.history,
+              ...orchestratorResult.history,
               {
                 role: "system",
                 content: `Sub-agent ${targetAgent} FAILED.\nError: ${errorMsg}\nOrchestrator: decide whether to retry with different approach or abort.`,

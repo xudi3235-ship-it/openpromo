@@ -198,6 +198,7 @@ async function handleWorkspaceInsightsSnapshotMessage(
 
 const REFERENCE_BUCKET_NAME = "openpromo-reference";
 const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"];
+const VIDEO_EXTENSIONS = [".mp4", ".mov", ".avi", ".webm"];
 
 async function handleR2EventMessage(event: R2EventMessage) {
   // Only process events from reference bucket
@@ -210,8 +211,11 @@ async function handleR2EventMessage(event: R2EventMessage) {
 
   const key = event.object.key.toLowerCase();
   const isImage = IMAGE_EXTENSIONS.some((ext) => key.endsWith(ext));
-  if (!isImage) {
-    log.info("skipping non-image R2 event", { key: event.object.key });
+  const isVideo = VIDEO_EXTENSIONS.some((ext) => key.endsWith(ext));
+  if (!isImage && !isVideo) {
+    log.info("skipping non-image and non-video R2 event", {
+      key: event.object.key,
+    });
     return;
   }
 
@@ -245,7 +249,13 @@ async function handleR2EventMessage(event: R2EventMessage) {
       size: event.object.size,
       action: event.action,
     });
-    await ReferenceSearch.processImage(event.object.key);
+    if (isImage) {
+      await ReferenceSearch.processImage(event.object.key);
+    } else if (isVideo) {
+      await ReferenceSearch.processVideo(event.object.key);
+    } else {
+      log.warn("unhandled reference media type", { key: event.object.key });
+    }
   }
 }
 
