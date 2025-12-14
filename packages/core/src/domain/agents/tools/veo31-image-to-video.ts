@@ -5,13 +5,12 @@
 
 import { KieAI } from "@core/providers/kie-ai/models";
 import { isStringUrl } from "@core/utils/common";
+import { tool } from "@openai/agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
-import { toolBuilder, toolSuccess } from "../tool-builder";
 import { VideoGenAgent } from "../video-gen-agent";
 import { downloadVideo, getKieAIClient, uploadFile } from "./utils";
 
-// Parameter schema for image-to-video tool
 const params = z.object({
   prompt: z.string().describe("Text prompt"),
   outputPath: z.string().describe("Path to save the generated video file."),
@@ -27,32 +26,27 @@ const params = z.object({
     ),
 });
 
-type Params = z.infer<typeof params>;
-
 /**
  * VEO 3.1 Image-to-Video tool.
  * Generate a video from an image (first frame) using VEO 3.1.
  */
-export const veo31ImageToVideoTool = toolBuilder<
-  "veo31_image_to_video",
-  typeof params,
-  VideoGenAgentContext
->({
+export const veo31ImageToVideoTool = tool<VideoGenAgentContext>({
   name: "veo31_image_to_video",
   description: `Generate a video from an image using VEO 3.1.
 The input image is used as the first frame to guide generation.
 Optionally provide a last frame image for frame interpolation.
 Best for: animating static images, starting from a specific visual, transitions.
-NOTE: 
+NOTE:
 
 1. Provide local file paths - files will be uploaded automatically.
 2. each video is fixed at 8s.
 
 `,
   parameters: params,
-  async execute(params: Params) {
+  async execute(args) {
+    const parsed = params.parse(args);
     const { prompt, outputPath, inputImagePathOrUrl, inputLastFramePathOrUrl } =
-      params;
+      parsed;
 
     console.log(
       `[veo31_image_to_video] Generating from image: ${inputImagePathOrUrl}`,
@@ -106,12 +100,13 @@ NOTE:
     // Download and save
     await downloadVideo(videoUrl, outputPath);
 
-    return toolSuccess("veo31_image_to_video", {
+    return {
+      status: "success" as const,
       videoUrl,
       outputPath,
       prompt,
       inputImagePath: inputImagePathOrUrl,
       inputLastFramePath: inputLastFramePathOrUrl ?? null,
-    });
+    };
   },
 });

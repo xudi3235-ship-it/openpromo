@@ -5,14 +5,11 @@
  * Generates multi-scene storyboard videos up to 25 seconds using Kie AI provider.
  */
 
-import type {
-  FrameDuration,
-  StoryboardAspectRatio,
-} from "@core/providers/kie-ai";
+import { KieAI } from "@core/providers/kie-ai";
 import { downloadVideo as downloadVideoBase } from "@core/utils/common";
+import { tool } from "@openai/agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
-import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import { VideoGenAgent } from "../video-gen-agent";
 import { getKieAIClient, uploadFilesToKie } from "./utils";
 
@@ -21,24 +18,6 @@ import { getKieAIClient, uploadFilesToKie } from "./utils";
  */
 async function downloadVideo(url: string, outputPath: string): Promise<void> {
   await downloadVideoBase(url, outputPath, "sora2_storyboard");
-}
-
-/**
- * Map duration string to Kie AI FrameDuration type.
- */
-function mapDuration(duration: "10" | "15" | "25"): FrameDuration {
-  // FrameDuration is a union type of "10" | "15" | "25"
-  return duration;
-}
-
-/**
- * Map aspect ratio string to Kie AI StoryboardAspectRatio type.
- */
-function mapAspectRatio(
-  aspectRatio: "portrait" | "landscape",
-): StoryboardAspectRatio {
-  // StoryboardAspectRatio is a union type of "portrait" | "landscape"
-  return aspectRatio;
 }
 
 // Schema for a single storyboard shot
@@ -51,8 +30,7 @@ const StoryboardShotSchema = z.object({
     .describe("Duration in seconds (typically 7.5s per scene)"),
 });
 
-// Parameter schema for sora2 storyboard tool
-const Sora2StoryboardParamsSchema = z.object({
+const params = z.object({
   shots: z
     .array(StoryboardShotSchema)
     .min(1)
@@ -77,23 +55,17 @@ const Sora2StoryboardParamsSchema = z.object({
     .describe("Optional start frame image paths for visual consistency"),
 });
 
-type Sora2StoryboardParams = z.infer<typeof Sora2StoryboardParamsSchema>;
-
 /**
  * Sora 2 Pro Storyboard video generation tool.
  * Creates multi-scene videos up to 25 seconds by combining multiple shots.
  */
-export const sora2StoryboardTool = toolBuilder<
-  "sora2_storyboard_generate",
-  typeof Sora2StoryboardParamsSchema,
-  VideoGenAgentContext
->({
+export const sora2StoryboardTool = tool<VideoGenAgentContext>({
   name: "sora2_storyboard_generate",
   description: `Generate a multi-scene storyboard video using Sora 2 Pro.
 Creates videos up to 25 seconds long by combining multiple scenes into a cohesive storyboard.
 Each scene has its own prompt and duration. Shots don't have to be equal length, but total must not exceed duration param.
 
-CRITICAL: 
+CRITICAL:
 * Sora2 excels at creativity, so it's preferred to not be extremely detailed prompt, but rather leave room for the model to interpret and create dynamic scenes, especially for social media style videos.
 * sora2 image does NOT allow realistic person image as input, so avoid that in the img gen if you decide to use this.
 
@@ -101,14 +73,15 @@ Preferably use image gen tool to create image first, then use that along with th
 
 Best for: longer narrative videos, multi-scene storytelling, complex sequences.
 NOTE: Provide local file paths for reference images - files will be uploaded automatically.`,
-  parameters: Sora2StoryboardParamsSchema,
+  parameters: params,
   isEnabled(args) {
     const context = args.runContext.context as VideoGenAgentContext;
     return context.stage === "video_gen";
   },
-  async execute(params: Sora2StoryboardParams) {
+  async execute(args) {
+    const parsed = params.parse(args);
     const { shots, outputPath, duration, aspectRatio, referenceImagePaths } =
-      params;
+      parsed;
 
     // Validate total shot duration
     const totalShotDuration = shots.reduce(
@@ -118,21 +91,20 @@ NOTE: Provide local file paths for reference images - files will be uploaded aut
     const expectedDuration = Number.parseFloat(duration);
 
     if (totalShotDuration > expectedDuration) {
-      return toolError(
-        "sora2_storyboard_generate",
-        `Total shot durations (${totalShotDuration}s) exceed specified video duration (${expectedDuration}s)`,
-      );
+      return {
+        status: "error" as const,
+        error: `Total shot durations (${totalShotDuration}s) exceed specified video duration (${expectedDuration}s)`,
+      };
     }
 
     console.log(
       `[sora2_storyboard] Creating storyboard: ${shots.length} shots, ${duration}s duration`,
     );
 
-    const client = getKieAIClient();
-
     // Upload reference images if provided
     let imageUrls: string[] | undefined;
     if (referenceImagePaths && referenceImagePaths.length > 0) {
+      const client = getKieAIClient();
       imageUrls = await uploadFilesToKie(client, referenceImagePaths);
     }
 
@@ -143,46 +115,32 @@ NOTE: Provide local file paths for reference images - files will be uploaded aut
       duration: shot.duration,
     }));
 
-    // Create storyboard task via generic API and poll until complete
-    const payload = {
-      shots: kieShots,
-      n_frames: mapDuration(duration),
-      aspect_ratio: mapAspectRatio(aspectRatio),
-      image_urls: imageUrls,
-    };
-
-    const response = await client.createGenericTask(
-      "sora2-storyboard",
-      payload as unknown,
-    );
-    const taskId = response.data?.taskId;
-    if (!taskId) {
-      return toolError(
-        "sora2_storyboard_generate",
-        "Failed to start storyboard generation - no task ID returned",
-      );
-    }
-
-    console.log(`[sora2_storyboard] Task started: ${taskId}`);
-
-    const videoUrl = await client.pollTaskUntilComplete(taskId, {
-      logPrefix: "sora2_storyboard",
-      onPoll: async (attempt, maxAttempt) => {
-        VideoGenAgent.onProgressUpdate((draft) => {
-          draft.logs.push(
-            `[sora2_storyboard] Polling attempt ${attempt} of ${maxAttempt}`,
-          );
-        });
+    // Generate storyboard video using KieAI namespace
+    const videoUrl = await KieAI.Sora2Storyboard.run(
+      {
+        shots: kieShots,
+        nFrames: duration,
+        aspectRatio,
+        imageUrls,
       },
-    });
+      {
+        onPoll: (attempt, maxAttempts) => {
+          VideoGenAgent.onProgressUpdate((draft) => {
+            draft.logs.push(
+              `[sora2_storyboard] Polling attempt ${attempt} of ${maxAttempts}`,
+            );
+          });
+        },
+      },
+    );
 
     // Download and save
     await downloadVideo(videoUrl, outputPath);
 
-    return toolSuccess("sora2_storyboard_generate", {
+    return {
+      status: "success" as const,
       videoUrl,
       outputPath,
-      taskId,
-    });
+    };
   },
 });

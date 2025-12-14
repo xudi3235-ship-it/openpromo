@@ -12,9 +12,9 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { tool } from "@openai/agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
-import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import { direntType, resolveTmpPath, TMP_ROOT } from "./tmp-fs-helpers";
 
 type CommandOptionValue = string | boolean;
@@ -25,7 +25,7 @@ interface ParsedInstruction {
   options: Record<string, CommandOptionValue>;
 }
 
-const VirtualShellParamsSchema = z.object({
+const params = z.object({
   instruction: z
     .string()
     .min(1, "Instruction cannot be empty")
@@ -33,8 +33,6 @@ const VirtualShellParamsSchema = z.object({
       "Shell-like instruction limited to /tmp. Supported commands: pwd, ls, cat, write, rm, mkdir, stat.",
     ),
 });
-
-type VirtualShellParams = z.infer<typeof VirtualShellParamsSchema>;
 
 const BOOLEAN_TRUE = new Set(["true", "1", "yes", "on"]);
 const BOOLEAN_FALSE = new Set(["false", "0", "no", "off"]);
@@ -192,14 +190,17 @@ async function describeDirectory(absolutePath: string) {
   );
 }
 
+type SupportedEncoding = "utf8" | "base64";
+
 async function executeLs(args: string[]) {
   const { display, absolute } = resolveDisplayPath(args[0]);
   const entries = await describeDirectory(absolute);
-  return toolSuccess("virtual_shell", {
+  return {
+    status: "success" as const,
     command: "ls",
     path: display,
     entries,
-  });
+  };
 }
 
 async function executeCat(
@@ -218,13 +219,14 @@ async function executeCat(
   const buffer = await readFile(absolute);
   const content =
     encoding === "utf8" ? buffer.toString("utf8") : buffer.toString("base64");
-  return toolSuccess("virtual_shell", {
+  return {
+    status: "success" as const,
     command: "cat",
     path: display,
     encoding,
     content,
     byteLength: buffer.byteLength,
-  });
+  };
 }
 
 async function executeWrite(
@@ -257,15 +259,15 @@ async function executeWrite(
       ? Buffer.from(dataValue, "utf8")
       : Buffer.from(dataValue, "base64");
   await writeFile(absolute, buffer, { flag: append ? "a" : "w" });
-  return toolSuccess("virtual_shell", {
+  return {
+    status: "success" as const,
     command: "write",
     path: display,
     bytesWritten: buffer.byteLength,
     append,
     encoding,
-  });
+  };
 }
-type SupportedEncoding = "utf8" | "base64";
 
 async function executeRm(
   args: string[],
@@ -277,11 +279,12 @@ async function executeRm(
   const recursive = boolOption(options.recursive ?? options.r, false);
   const { display, absolute } = resolveDisplayPath(args[0]);
   await rm(absolute, { recursive, force: true });
-  return toolSuccess("virtual_shell", {
+  return {
+    status: "success" as const,
     command: "rm",
     path: display,
     recursive,
-  });
+  };
 }
 
 async function executeMkdir(
@@ -297,11 +300,12 @@ async function executeMkdir(
   );
   const { display, absolute } = resolveDisplayPath(args[0]);
   await mkdir(absolute, { recursive });
-  return toolSuccess("virtual_shell", {
+  return {
+    status: "success" as const,
     command: "mkdir",
     path: display,
     recursive,
-  });
+  };
 }
 
 async function executeStat(args: string[]) {
@@ -310,34 +314,33 @@ async function executeStat(args: string[]) {
   }
   const { display, absolute } = resolveDisplayPath(args[0]);
   const stats = await stat(absolute);
-  return toolSuccess("virtual_shell", {
+  return {
+    status: "success" as const,
     command: "stat",
     path: display,
     size: stats.size,
     isFile: stats.isFile(),
     isDirectory: stats.isDirectory(),
     modifiedAt: stats.mtime.toISOString(),
-  });
+  };
 }
 
 function executePwd() {
-  return toolSuccess("virtual_shell", {
+  return {
+    status: "success" as const,
     command: "pwd",
     cwd: TMP_ROOT,
-  });
+  };
 }
 
-export const virtualShellTool = toolBuilder<
-  "virtual_shell",
-  typeof VirtualShellParamsSchema,
-  VideoGenAgentContext
->({
+export const virtualShellTool = tool<VideoGenAgentContext>({
   name: "virtual_shell",
   description:
     "Execute limited shell-like commands (pwd, ls, cat, write, rm, mkdir, stat) scoped to /tmp. Used in Cloudflare Worker runtime.",
-  parameters: VirtualShellParamsSchema,
-  async execute(params: VirtualShellParams) {
-    const parsed = parseInstruction(params.instruction);
+  parameters: params,
+  async execute(args) {
+    const { instruction } = params.parse(args);
+    const parsed = parseInstruction(instruction);
     switch (parsed.command) {
       case "pwd":
         return executePwd();
@@ -354,10 +357,10 @@ export const virtualShellTool = toolBuilder<
       case "stat":
         return await executeStat(parsed.args);
       default:
-        return toolError(
-          "virtual_shell",
-          `Unsupported command ${parsed.command}`,
-        );
+        return {
+          status: "error" as const,
+          error: `Unsupported command ${parsed.command}`,
+        };
     }
   },
 });

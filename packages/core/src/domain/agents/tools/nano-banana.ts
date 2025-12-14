@@ -18,10 +18,10 @@ import {
   downloadImage as downloadImageBase,
   isStringUrl,
 } from "@core/utils/common";
+import { tool } from "@openai/agents";
 import { getCurrentAgent } from "agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
-import { toolBuilder, toolSuccess } from "../tool-builder";
 import { VideoGenAgent } from "../video-gen-agent";
 import { getKieAIClient, uploadFilesToKie } from "./utils";
 
@@ -34,8 +34,7 @@ async function downloadImage(url: string, outputPath: string): Promise<string> {
   return downloadImageBase(url, outputPath, "nanoBanana");
 }
 
-// Define schema separately for better type inference
-const NanoBananaParamsSchema = z.object({
+const params = z.object({
   prompt: z
     .string()
     .describe(
@@ -65,12 +64,10 @@ const NanoBananaParamsSchema = z.object({
     ),
 });
 
-type NanoBananaParams = z.infer<typeof NanoBananaParamsSchema>;
+type NanoBananaParams = z.infer<typeof params>;
 
 /**
  * handles transforming file inputs for replicate api calls
- * @param inputs
- * @returns
  */
 export function transformFileInputs(inputs: string[]): (string | Buffer)[] {
   return inputs.map((input) => {
@@ -81,6 +78,7 @@ export function transformFileInputs(inputs: string[]): (string | Buffer)[] {
     return readFileSync(input);
   });
 }
+
 async function providerRepImpl(params: NanoBananaParams) {
   const { prompt, imageInputPaths, aspectRatio } = params;
   const inputImages = transformFileInputs(imageInputPaths ?? []);
@@ -128,29 +126,30 @@ async function impl(provider: "replicate" | "kie", params: NanoBananaParams) {
       return await providerKieImpl(params);
   }
 }
+
 /**
  * Nano Banana image generation tool.
  * Generates images using Google's Nano Banana model via Replicate.
  */
-export const nanoBananaTool = toolBuilder<
-  "nano_banana",
-  typeof NanoBananaParamsSchema,
-  VideoGenAgentContext
->({
+export const nanoBananaTool = tool<VideoGenAgentContext>({
   name: "nano_banana",
   description: `Run the Nano Banana model for high-quality text-to-image or image-to-image generation.
 Can take up to 14 input images for style reference, editing, or composition.
 Auto-saves generated images and returns the URL.`,
-  parameters: NanoBananaParamsSchema,
-  async execute(params: NanoBananaParams) {
+  parameters: params,
+  async execute(args) {
+    const parsed = params.parse(args);
     console.log(
       `[nanoBanana] Tool invoked with params:`,
-      JSON.stringify(params),
+      JSON.stringify(parsed),
     );
-    const imageUrl = await impl("kie", params);
+
+    const imageUrl = await impl("kie", parsed);
     console.log(`[nanoBanana] Generated image URL: ${imageUrl}`);
+
     // Ensure output directory exists
     await mkdir(OUTPUT_DIR, { recursive: true });
+
     // Generate unique filename with timestamp
     const timestamp = Date.now();
     const fileName = `nanobana_${timestamp}.jpg`;
@@ -161,24 +160,21 @@ Auto-saves generated images and returns the URL.`,
 
     // update agent state with artifacts
     const { agent } = getCurrentAgent<VideoGenAgent>();
-    if (!agent) {
-      console.warn("[nanoBanana] No current agent found to update state.");
-      return toolSuccess("nano_banana", {
-        imageUrl,
-        outputPath,
+    if (agent) {
+      agent.patchState((draft) => {
+        draft.artifacts.images.push({
+          id: `nano_banana_${Date.now()}`,
+          imageUrl,
+        });
       });
+    } else {
+      console.warn("[nanoBanana] No current agent found to update state.");
     }
 
-    agent.patchState((draft) => {
-      draft.artifacts.images.push({
-        id: `nano_banana_${Date.now()}`,
-        imageUrl,
-      });
-    });
-
-    return toolSuccess("nano_banana", {
+    return {
+      status: "success" as const,
       imageUrl,
       outputPath,
-    });
+    };
   },
 });

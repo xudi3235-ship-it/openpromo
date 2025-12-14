@@ -86,7 +86,6 @@ export const SoraStoryboardToolOutput = makeToolOutput(
   z.object({
     videoUrl: z.string().url(),
     outputPath: z.string(),
-    taskId: z.string(),
   }),
 );
 

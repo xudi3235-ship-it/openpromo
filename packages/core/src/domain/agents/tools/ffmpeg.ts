@@ -3,13 +3,12 @@
  * Calls the container Connect RPC `RunFfmpeg` via the ContainerBackend DO.
  */
 
+import { tool } from "@openai/agents";
 import { z } from "zod";
 import { Binding } from "../../../helpers/api-env";
 import type { VideoGenAgentContext } from "../context";
-import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 
-// mirrors the RunFfmpegRequest schema
-const FfmpegParamsSchema = z.object({
+const params = z.object({
   input_urls: z
     .array(z.string())
     .describe(
@@ -28,8 +27,6 @@ const FfmpegParamsSchema = z.object({
       "Optional filename for the output artifact (e.g. 'merged.mp4'). If omitted, a temp name is used.",
     ),
 });
-
-type FfmpegParams = z.infer<typeof FfmpegParamsSchema>;
 
 const FFMPEG_TOOL_DESCRIPTION = `Run an ffmpeg command on the server.
 
@@ -73,41 +70,38 @@ TROUBLESHOOTING:
 Returns: { output_url: "<presigned_r2_url>" } on success.
 `;
 
-export const ffmpegTool = toolBuilder<
-  "run_ffmpeg",
-  typeof FfmpegParamsSchema,
-  VideoGenAgentContext
->({
+export const ffmpegTool = tool<VideoGenAgentContext>({
   name: "run_ffmpeg",
   description: FFMPEG_TOOL_DESCRIPTION,
-  parameters: FfmpegParamsSchema,
+  parameters: params,
   isEnabled(args) {
     const context = args.runContext.context as VideoGenAgentContext;
     return context.stage === "video_gen";
   },
-  async execute(params: FfmpegParams) {
-    // TODO: handle scaling and routing
+  async execute(args) {
+    const parsed = params.parse(args);
     try {
       const stub = Binding.use().ContainerBackend.getByName("default");
 
       console.log(
-        `[run_ffmpeg] Processing ${params.input_urls.length} input(s)`,
+        `[run_ffmpeg] Processing ${parsed.input_urls.length} input(s)`,
       );
-      console.log(`[run_ffmpeg] Command: ffmpeg ${params.command.join(" ")}`);
+      console.log(`[run_ffmpeg] Command: ffmpeg ${parsed.command.join(" ")}`);
 
       const resp = await stub.runFfmpeg({
-        inputUrls: params.input_urls,
-        command: params.command,
+        inputUrls: parsed.input_urls,
+        command: parsed.command,
         outputFilename:
-          params.output_filename ?? `/tmp/output_${Date.now()}.mp4`,
+          parsed.output_filename ?? `/tmp/output_${Date.now()}.mp4`,
       });
 
-      return toolSuccess("run_ffmpeg", {
+      return {
+        status: "success" as const,
         output_url: resp.r2Url,
         key: resp.r2Key,
         content_type: resp.contentType,
         filename: resp.filename,
-      });
+      };
     } catch (error) {
       console.error("[run_ffmpeg] Error:", error);
 
@@ -115,9 +109,9 @@ export const ffmpegTool = toolBuilder<
 
       // Provide helpful error messages for common issues
       if (errorMsg.includes("exit status 234")) {
-        return toolError(
-          "run_ffmpeg",
-          `Video processing failed (exit status 234). This usually means the input videos have incompatible formats (different resolutions, framerates, or codecs).
+        return {
+          status: "error" as const,
+          error: `Video processing failed (exit status 234). This usually means the input videos have incompatible formats (different resolutions, framerates, or codecs).
 
 SOLUTION: Re-encode the videos to a common format first. Try adding these flags to your command:
 - "-c:v", "libx264", "-preset", "fast"  // for video
@@ -127,25 +121,28 @@ Example safe concat command:
 ["-i", "{in0}", "-i", "{in1}", "-filter_complex", "[0:v][0:a][1:v][1:a]concat=n=2:v=1:a=1[outv][outa]", "-map", "[outv]", "-map", "[outa]", "-c:v", "libx264", "-preset", "fast", "-c:a", "aac", "{out}"]
 
 Original error: ${errorMsg}`,
-        );
+        };
       }
 
       if (
         errorMsg.includes("Invalid argument") ||
         errorMsg.includes("No such file")
       ) {
-        return toolError(
-          "run_ffmpeg",
-          `Invalid ffmpeg command or inaccessible input files. Check:
+        return {
+          status: "error" as const,
+          error: `Invalid ffmpeg command or inaccessible input files. Check:
 1. All input URLs are valid and accessible
 2. All placeholders ({in0}, {in1}, etc.) are correct
 3. No missing input files
 
 Original error: ${errorMsg}`,
-        );
+        };
       }
 
-      return toolError("run_ffmpeg", `ffmpeg failed: ${errorMsg}`);
+      return {
+        status: "error" as const,
+        error: `ffmpeg failed: ${errorMsg}`,
+      };
     }
   },
 });

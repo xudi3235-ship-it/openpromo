@@ -4,9 +4,9 @@
  */
 
 import { KieAI } from "@core/providers/kie-ai/models";
+import { tool } from "@openai/agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
-import { toolBuilder, toolSuccess } from "../tool-builder";
 import {
   defaultVeo31Config,
   downloadVideo,
@@ -15,8 +15,7 @@ import {
   Veo31ConfigSchema,
 } from "./utils";
 
-// Parameter schema for reference-images-to-video tool
-const ReferenceImagesToVideoParamsSchema = z.object({
+const params = z.object({
   prompt: z
     .string()
     .describe("Text prompt describing the desired video scene and action."),
@@ -35,28 +34,21 @@ const ReferenceImagesToVideoParamsSchema = z.object({
     ),
 });
 
-type ReferenceImagesToVideoParams = z.infer<
-  typeof ReferenceImagesToVideoParamsSchema
->;
-
 /**
  * VEO 3.1 Reference Images to Video tool.
  * Generate a video using reference images (assets) for strong visual consistency.
  */
-export const veo31ReferenceImagesToVideoTool = toolBuilder<
-  "veo31_reference_images_to_video",
-  typeof ReferenceImagesToVideoParamsSchema,
-  VideoGenAgentContext
->({
+export const veo31ReferenceImagesToVideoTool = tool<VideoGenAgentContext>({
   name: "veo31_reference_images_to_video",
   description: `Generate a video using reference images (assets) for strong visual consistency using VEO 3.1.
 Use this for "ingredients to video" generation - the reference images guide the video's content.
 CRITICAL: This tool ONLY works with 16:9 aspect ratio!
 Best for: product demos, showcasing specific items, maintaining visual consistency.
 NOTE: Provide local file paths - files will be uploaded automatically.`,
-  parameters: ReferenceImagesToVideoParamsSchema,
-  async execute(params: ReferenceImagesToVideoParams) {
-    const { prompt, outputPath, referenceImagePaths, config } = params;
+  parameters: params,
+  async execute(args) {
+    const parsed = params.parse(args);
+    const { prompt, outputPath, referenceImagePaths, config } = parsed;
 
     // Force 16:9 aspect ratio for reference images
     const cfg = {
@@ -91,11 +83,12 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
     // Download and save
     await downloadVideo(videoUrl, outputPath);
 
-    return toolSuccess("veo31_reference_images_to_video", {
+    return {
+      status: "success" as const,
       videoUrl,
       outputPath,
       prompt,
       referenceImagePaths,
-    });
+    };
   },
 });

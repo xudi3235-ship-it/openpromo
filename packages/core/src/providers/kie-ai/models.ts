@@ -455,7 +455,7 @@ export namespace KieAI {
     }
   }
 
-  export namespace Storyboard {
+  export namespace Sora2Storyboard {
     export const schema = z.object({
       shots: z.array(
         z.object({
@@ -470,12 +470,20 @@ export namespace KieAI {
     });
     export type Input = z.input<typeof schema>;
 
+    export interface RunOptions {
+      onPoll?: (attempt: number, maxAttempts: number) => void;
+    }
+
     /**
      * Generate storyboard video using Sora 2 Storyboard
      * @param input - Storyboard generation parameters
+     * @param options - Optional callbacks for polling progress
      * @returns Promise resolving to video URL
      */
-    export async function run(input: Input): Promise<string> {
+    export async function run(
+      input: Input,
+      options?: RunOptions,
+    ): Promise<string> {
       const parsed = schema.parse(input);
       const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
 
@@ -485,12 +493,121 @@ export namespace KieAI {
       );
       const taskId = task.data?.taskId;
       if (!taskId)
-        throw new KieAIError(500, "No task ID returned from Storyboard");
+        throw new KieAIError(500, "No task ID returned from Sora2Storyboard");
 
       return await client.pollTaskUntilComplete(taskId, {
-        logPrefix: "Storyboard",
+        logPrefix: "Sora2Storyboard",
         pollIntervalMs: 15000,
         maxAttempts: 480,
+        onPoll: options?.onPoll,
+      });
+    }
+  }
+  export namespace Sora2ImageToVideo {
+    export const schema = z.object({
+      prompt: z.string(),
+      imageUrls: z.array(z.string()),
+      aspectRatio: z.enum(["portrait", "landscape"]).optional(),
+      nFrames: z.enum(["10", "15"]).optional(),
+      removeWatermark: z.boolean().optional(),
+      callbackUrl: z.string().optional(),
+    });
+    export type Input = z.input<typeof schema>;
+
+    export interface RunOptions {
+      onPoll?: (attempt: number, maxAttempts: number) => void;
+    }
+
+    /**
+     * Generate video from image using Sora 2
+     * @param input - Video generation parameters
+     * @param options - Optional callbacks for polling progress
+     * @returns Promise resolving to video URL
+     */
+    export async function run(
+      input: Input,
+      options?: RunOptions,
+    ): Promise<string> {
+      const parsed = schema.parse(input);
+      const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+
+      const task = await client.createGenericTask(
+        "sora-2-image-to-video",
+        {
+          prompt: parsed.prompt,
+          imageUrls: parsed.imageUrls,
+          aspectRatio: parsed.aspectRatio,
+          nFrames: parsed.nFrames,
+          removeWatermark: parsed.removeWatermark,
+        },
+        parsed.callbackUrl,
+      );
+      const taskId = task.data?.taskId;
+      if (!taskId)
+        throw new KieAIError(500, "No task ID returned from Sora2ImageToVideo");
+
+      return await client.pollTaskUntilComplete(taskId, {
+        logPrefix: "Sora2ImageToVideo",
+        pollIntervalMs: 15000,
+        maxAttempts: 240,
+        onPoll: options?.onPoll,
+      });
+    }
+  }
+
+  export namespace Sora2ProImageToVideo {
+    export const schema = z.object({
+      prompt: z.string(),
+      imageUrls: z.array(z.string()),
+      aspectRatio: z.enum(["portrait", "landscape"]).optional(),
+      nFrames: z.enum(["10", "15"]).optional(),
+      size: z.enum(["standard", "high"]).optional(),
+      removeWatermark: z.boolean().optional(),
+      callbackUrl: z.string().optional(),
+    });
+    export type Input = z.input<typeof schema>;
+
+    export interface RunOptions {
+      onPoll?: (attempt: number, maxAttempts: number) => void;
+    }
+
+    /**
+     * Generate video from image using Sora 2 Pro (higher quality)
+     * @param input - Video generation parameters
+     * @param options - Optional callbacks for polling progress
+     * @returns Promise resolving to video URL
+     */
+    export async function run(
+      input: Input,
+      options?: RunOptions,
+    ): Promise<string> {
+      const parsed = schema.parse(input);
+      const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+
+      const task = await client.createGenericTask(
+        "sora-2-pro-image-to-video",
+        {
+          prompt: parsed.prompt,
+          imageUrls: parsed.imageUrls,
+          aspectRatio: parsed.aspectRatio,
+          nFrames: parsed.nFrames,
+          size: parsed.size,
+          removeWatermark: parsed.removeWatermark,
+        },
+        parsed.callbackUrl,
+      );
+      const taskId = task.data?.taskId;
+      if (!taskId)
+        throw new KieAIError(
+          500,
+          "No task ID returned from Sora2ProImageToVideo",
+        );
+
+      return await client.pollTaskUntilComplete(taskId, {
+        logPrefix: "Sora2ProImageToVideo",
+        pollIntervalMs: 15000,
+        maxAttempts: 240,
+        onPoll: options?.onPoll,
       });
     }
   }

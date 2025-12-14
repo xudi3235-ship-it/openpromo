@@ -5,13 +5,13 @@
 
 import { Replicate } from "@core/providers/replicate/models";
 import { downloadVideo } from "@core/utils/common";
+import { tool } from "@openai/agents";
 import { getCurrentAgent } from "agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
-import { toolBuilder, toolError, toolSuccess } from "../tool-builder";
 import type { VideoGenAgent } from "../video-gen-agent";
 
-const toolParams = z.object({
+const params = z.object({
   outputPath: z.string().describe("Path to save the generated video file."),
   ...Replicate.Veo31Fast.schema.omit({
     seed: true,
@@ -20,25 +20,20 @@ const toolParams = z.object({
   }).shape,
 });
 
-type ToolParams = z.infer<typeof toolParams>;
-
-export const veo31UnifiedTool = toolBuilder<
-  "veo31_unified",
-  typeof toolParams,
-  VideoGenAgentContext
->({
+export const veo31UnifiedTool = tool<VideoGenAgentContext>({
   name: "veo31_unified",
   description: `Generate a video from an image using VEO 3.1 Fast model via Replicate.
 The input image is used as the first frame to guide generation.
 Best for: animating static images, creating motion from still images.
 NOTE: Provide image URLs - the tool will process them directly.`,
-  parameters: toolParams,
+  parameters: params,
   isEnabled(args) {
     const context = args.runContext.context as VideoGenAgentContext;
     return context.stage === "video_gen";
   },
-  async execute(params: ToolParams) {
-    const { outputPath, ...rest } = params;
+  async execute(args) {
+    const parsed = params.parse(args);
+    const { outputPath, ...rest } = parsed;
 
     console.log(
       `[veo31_unified] Config: ${JSON.stringify(rest)}, outputPath: ${outputPath}`,
@@ -52,10 +47,10 @@ NOTE: Provide image URLs - the tool will process them directly.`,
       const videoUrl = prediction.output as string;
 
       if (!videoUrl) {
-        return toolError(
-          "veo31_unified",
-          `Failed to generate video - no output URL returned, raw output: ${JSON.stringify(prediction)}`,
-        );
+        return {
+          status: "error" as const,
+          error: `Failed to generate video - no output URL returned, raw output: ${JSON.stringify(prediction)}`,
+        };
       }
 
       console.log(`[veo31_unified] Video generated successfully: ${videoUrl}`);
@@ -74,17 +69,17 @@ NOTE: Provide image URLs - the tool will process them directly.`,
         });
       });
 
-      // Return success with the exact schema expected by Veo31UnifiedToolOutput
-      return toolSuccess("veo31_unified", {
+      return {
+        status: "success" as const,
         videoUrl,
         outputPath,
-      });
+      };
     } catch (error) {
       console.error(`[veo31_unified] Error:`, error);
-      return toolError(
-        "veo31_unified",
-        `Failed to generate video: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      return {
+        status: "error" as const,
+        error: `Failed to generate video: ${error instanceof Error ? error.message : String(error)}`,
+      };
     }
   },
 });
