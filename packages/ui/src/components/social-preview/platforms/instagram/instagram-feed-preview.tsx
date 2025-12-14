@@ -127,6 +127,18 @@ export function InstagramFeedPreview({
           maxLines={2}
         />
 
+        {/* View all comments link */}
+        {metrics?.comments !== undefined && metrics.comments > 0 && (
+          <div
+            className={cn(
+              "text-muted-foreground",
+              isCompact ? "text-xs px-2 pb-1" : "text-sm px-3 pb-1.5",
+            )}
+          >
+            View all {metrics.comments.toLocaleString()} comments
+          </div>
+        )}
+
         {/* First Comment */}
         {firstComment && (
           <div className={cn(isCompact ? "px-2 pb-1.5" : "px-3 pb-2")}>
