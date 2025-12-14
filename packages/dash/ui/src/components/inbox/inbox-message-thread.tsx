@@ -5,19 +5,12 @@ import {
 } from "@openpromo/ui/components/avatar";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { cn } from "@openpromo/ui/lib/utils";
-import { useParams } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { CornerUpLeft, Image as ImageIcon, Loader2 } from "lucide-react";
 import { useMemo } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useAddReaction, useRemoveReaction } from "@/queries/inbox/reactions";
 import type { InboxMessage } from "@/stores/inbox/types";
 import { InboxMessageAttachments } from "./inbox-message-attachments";
-import {
-  processReactions,
-  ReactionDisplay,
-  ReactionPicker,
-} from "./inbox-message-reactions";
+import { processReactions, ReactionDisplay } from "./inbox-message-reactions";
 
 interface InboxMessageThreadProps {
   messages: InboxMessage[];
@@ -126,14 +119,6 @@ function MessageBubble({
   onReply,
   conversationPlatform,
 }: MessageBubbleProps) {
-  const params = useParams({ strict: false }) as { conversationId?: string };
-  const conversationId = params.conversationId ?? "";
-  const auth = useAuth();
-  const userId = auth.data?.id;
-
-  const addReaction = useAddReaction();
-  const removeReaction = useRemoveReaction();
-
   const isSelf = message.sender === "self";
   const timestamp = format(message.createdAt, "MMM d, h:mm a");
   const hasAttachments = message.attachments?.length
@@ -153,33 +138,19 @@ function MessageBubble({
     : (senderAvatarExtra ?? contactAvatarUrl ?? undefined);
   const avatarFallback = getInitials(displayName || (isSelf ? "You" : "User"));
 
-  // Instagram supports adding reactions via API (unlike Facebook)
-  const canAddReaction = conversationPlatform === "INSTAGRAM";
+  // Instagram API doesn't support reply_to or sending reactions
+  // Facebook API doesn't support sending reactions
+  // So we disable both features for Instagram, and reactions for Facebook
+  const canReply = conversationPlatform !== "INSTAGRAM"; // Instagram API doesn't support reply_to
 
-  // Process reactions from webhooks
+  // Process reactions from webhooks (display only, no interaction)
   const processedReactions = processReactions(
     message.metadata,
     message.channel,
-    canAddReaction ? userId : undefined, // Only highlight user reactions if they can interact
+    undefined, // Don't highlight user reactions since interaction is disabled
   );
 
-  const showReplyAction = typeof onReply === "function";
-
-  const handleAddReaction = (emoji: string) => {
-    addReaction.mutate({
-      conversationId,
-      messageId: message.id,
-      emoji,
-    });
-  };
-
-  const handleRemoveReaction = (emoji: string) => {
-    removeReaction.mutate({
-      conversationId,
-      messageId: message.id,
-      emoji,
-    });
-  };
+  const showReplyAction = typeof onReply === "function" && canReply;
 
   const replyTargetSender =
     replyTarget?.sender === "self"
@@ -266,30 +237,19 @@ function MessageBubble({
           )}
         </div>
 
-        {/* Reactions Display */}
+        {/* Reactions Display (Read-only, from webhooks) */}
         {!isDeleted && processedReactions.length > 0 && (
-          <ReactionDisplay
-            reactions={processedReactions}
-            onRemove={canAddReaction ? handleRemoveReaction : undefined}
-            className="mt-1"
-          />
+          <ReactionDisplay reactions={processedReactions} className="mt-1" />
         )}
 
         {/* Action Buttons */}
-        <div
-          className={cn(
-            "flex items-center gap-2",
-            isSelf ? "self-end" : "self-start",
-          )}
-        >
-          {/* Instagram: Allow adding reactions (API supported) */}
-          {!isDeleted && canAddReaction && (
-            <ReactionPicker
-              onSelect={handleAddReaction}
-              disabled={isOptimistic}
-            />
-          )}
-          {showReplyAction ? (
+        {showReplyAction && (
+          <div
+            className={cn(
+              "flex items-center gap-2",
+              isSelf ? "self-end" : "self-start",
+            )}
+          >
             <button
               type="button"
               onClick={() => onReply?.(message)}
@@ -301,8 +261,8 @@ function MessageBubble({
               <CornerUpLeft className="h-3 w-3" />
               Reply
             </button>
-          ) : null}
-        </div>
+          </div>
+        )}
       </div>
       {isSelf && (
         <MessageAvatar src={avatarUrl} fallback={avatarFallback} self />
