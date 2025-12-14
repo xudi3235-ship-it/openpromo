@@ -3,7 +3,7 @@
 # source: ffprobe/v1/ffprobe.proto
 # pyright: reportMissingTypeArgument=false
 
-from collections.abc import AsyncIterator, Iterable, Iterator, Mapping
+from collections.abc import AsyncGenerator, AsyncIterator, Iterable, Iterator, Mapping
 from typing import Protocol
 
 from connectrpc.client import ConnectClient, ConnectClientSync
@@ -21,10 +21,11 @@ class FFprobeService(Protocol):
         raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
 
 
-class FFprobeServiceASGIApplication(ConnectASGIApplication):
-    def __init__(self, service: FFprobeService, *, interceptors: Iterable[Interceptor]=(), read_max_bytes: int | None = None) -> None:
+class FFprobeServiceASGIApplication(ConnectASGIApplication[FFprobeService]):
+    def __init__(self, service: FFprobeService | AsyncGenerator[FFprobeService], *, interceptors: Iterable[Interceptor]=(), read_max_bytes: int | None = None) -> None:
         super().__init__(
-            endpoints={
+            service=service,
+            endpoints=lambda svc: {
                 "/ffprobe.v1.FFprobeService/Probe": Endpoint.unary(
                     method=MethodInfo(
                         name="Probe",
@@ -33,7 +34,7 @@ class FFprobeServiceASGIApplication(ConnectASGIApplication):
                         output=ffprobe_dot_v1_dot_ffprobe__pb2.FFprobeResponse,
                         idempotency_level=IdempotencyLevel.UNKNOWN,
                     ),
-                    function=service.probe,
+                    function=svc.probe,
                 ),
             },
             interceptors=interceptors,

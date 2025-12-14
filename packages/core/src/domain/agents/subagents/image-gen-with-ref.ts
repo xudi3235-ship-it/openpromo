@@ -3,10 +3,11 @@
  */
 
 import { Agent } from "@openai/agents";
-import { VideoGenRealtime } from "@shared/agents";
+import z from "zod";
 import type { VideoGenAgentContext } from "../context";
 import { StaticPrompts } from "../prompts";
 import { nanoBananaTool, searchImageTool } from "../tools";
+import { searchReferencesTool } from "../tools/search-image";
 
 const sysPrompt = (contextStr: string) => `
 1. Role
@@ -36,6 +37,10 @@ User's input will include the following items
 - Follow the Prompt Checklist below before every run.
 </about_image_generation>
 
+<image_validation>
+- MUST: critical to ensure the images are showing the product exactly matching the product images, if not, needs rework the image; IF you can't see the output image, fail the task directly.
+</image_validation>
+
 3. Reasoning
 think thoroughly & chain the steps, since it's sequential, former steps needs to be hgih quality & detailed to ensure good output quality
 
@@ -62,12 +67,25 @@ ${StaticPrompts.goodNanoBananaPromptExamples()}
 
 `;
 
+const outputSchema = z.object({
+  status: z.enum(["success", "failure"]).describe("status of the task"),
+  outputImages: z
+    .object({
+      path: z.string(),
+      url: z.string(),
+      description: z.string(),
+    })
+    .array()
+    .describe("output images"),
+  summary: z.string().describe("your task summary"),
+});
+
 /**
  *
  * @returns image generation agent
  */
 export function createImageGenWithRefAgent() {
-  const agent = new Agent<VideoGenAgentContext, VideoGenRealtime.AgentOutput>({
+  const agent = new Agent<VideoGenAgentContext, typeof outputSchema>({
     name: "ImageGenWithRefAgent",
     model: "gpt-5.1",
     modelSettings: {
@@ -80,9 +98,8 @@ export function createImageGenWithRefAgent() {
       const contextStr = `input: ${JSON.stringify(args.context)}`;
       return sysPrompt(contextStr);
     },
-    tools: [nanoBananaTool, searchImageTool],
-    // @ts-expect-error weird zod typing issue
-    outputType: VideoGenRealtime.AgentOutput,
+    tools: [nanoBananaTool, searchImageTool, searchReferencesTool],
+    outputType: outputSchema,
   });
   return agent;
 }

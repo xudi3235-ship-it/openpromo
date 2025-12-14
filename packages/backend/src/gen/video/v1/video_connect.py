@@ -3,7 +3,7 @@
 # source: video/v1/video.proto
 # pyright: reportMissingTypeArgument=false
 
-from collections.abc import AsyncIterator, Iterable, Iterator, Mapping
+from collections.abc import AsyncGenerator, AsyncIterator, Iterable, Iterator, Mapping
 from typing import Protocol
 
 from connectrpc.client import ConnectClient, ConnectClientSync
@@ -24,10 +24,11 @@ class VideoService(Protocol):
         raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
 
 
-class VideoServiceASGIApplication(ConnectASGIApplication):
-    def __init__(self, service: VideoService, *, interceptors: Iterable[Interceptor]=(), read_max_bytes: int | None = None) -> None:
+class VideoServiceASGIApplication(ConnectASGIApplication[VideoService]):
+    def __init__(self, service: VideoService | AsyncGenerator[VideoService], *, interceptors: Iterable[Interceptor]=(), read_max_bytes: int | None = None) -> None:
         super().__init__(
-            endpoints={
+            service=service,
+            endpoints=lambda svc: {
                 "/video.v1.VideoService/Transcode": Endpoint.unary(
                     method=MethodInfo(
                         name="Transcode",
@@ -36,7 +37,7 @@ class VideoServiceASGIApplication(ConnectASGIApplication):
                         output=video_dot_v1_dot_video__pb2.TranscodeResponse,
                         idempotency_level=IdempotencyLevel.UNKNOWN,
                     ),
-                    function=service.transcode,
+                    function=svc.transcode,
                 ),
                 "/video.v1.VideoService/RunFfmpeg": Endpoint.unary(
                     method=MethodInfo(
@@ -46,7 +47,7 @@ class VideoServiceASGIApplication(ConnectASGIApplication):
                         output=video_dot_v1_dot_video__pb2.RunFfmpegResponse,
                         idempotency_level=IdempotencyLevel.UNKNOWN,
                     ),
-                    function=service.run_ffmpeg,
+                    function=svc.run_ffmpeg,
                 ),
             },
             interceptors=interceptors,

@@ -3,7 +3,7 @@
 # source: jobs/v1/jobs.proto
 # pyright: reportMissingTypeArgument=false
 
-from collections.abc import AsyncIterator, Iterable, Iterator, Mapping
+from collections.abc import AsyncGenerator, AsyncIterator, Iterable, Iterator, Mapping
 from typing import Protocol
 
 from connectrpc.client import ConnectClient, ConnectClientSync
@@ -27,10 +27,11 @@ class JobsService(Protocol):
         raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
 
 
-class JobsServiceASGIApplication(ConnectASGIApplication):
-    def __init__(self, service: JobsService, *, interceptors: Iterable[Interceptor]=(), read_max_bytes: int | None = None) -> None:
+class JobsServiceASGIApplication(ConnectASGIApplication[JobsService]):
+    def __init__(self, service: JobsService | AsyncGenerator[JobsService], *, interceptors: Iterable[Interceptor]=(), read_max_bytes: int | None = None) -> None:
         super().__init__(
-            endpoints={
+            service=service,
+            endpoints=lambda svc: {
                 "/jobs.v1.JobsService/SubmitEditVideoJob": Endpoint.unary(
                     method=MethodInfo(
                         name="SubmitEditVideoJob",
@@ -39,7 +40,7 @@ class JobsServiceASGIApplication(ConnectASGIApplication):
                         output=jobs_dot_v1_dot_jobs__pb2.JobSubmitResponse,
                         idempotency_level=IdempotencyLevel.UNKNOWN,
                     ),
-                    function=service.submit_edit_video_job,
+                    function=svc.submit_edit_video_job,
                 ),
                 "/jobs.v1.JobsService/SubmitAgentVideoJob": Endpoint.unary(
                     method=MethodInfo(
@@ -49,7 +50,7 @@ class JobsServiceASGIApplication(ConnectASGIApplication):
                         output=jobs_dot_v1_dot_jobs__pb2.JobSubmitResponse,
                         idempotency_level=IdempotencyLevel.UNKNOWN,
                     ),
-                    function=service.submit_agent_video_job,
+                    function=svc.submit_agent_video_job,
                 ),
                 "/jobs.v1.JobsService/GetJobResult": Endpoint.unary(
                     method=MethodInfo(
@@ -59,7 +60,7 @@ class JobsServiceASGIApplication(ConnectASGIApplication):
                         output=jobs_dot_v1_dot_jobs__pb2.JobResultResponse,
                         idempotency_level=IdempotencyLevel.UNKNOWN,
                     ),
-                    function=service.get_job_result,
+                    function=svc.get_job_result,
                 ),
             },
             interceptors=interceptors,

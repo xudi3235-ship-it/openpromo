@@ -12,7 +12,14 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 FROM alpine:3.20
 WORKDIR /app
-RUN apk add --no-cache ffmpeg ca-certificates fuse curl bash
+RUN apk add --no-cache ffmpeg ca-certificates fuse curl bash fontconfig
+
+# Install Montserrat font family for viral subtitles
+RUN mkdir -p /usr/share/fonts/montserrat && \
+    curl -L "https://github.com/JulietaUla/Montserrat/raw/master/fonts/ttf/Montserrat-ExtraBold.ttf" -o /usr/share/fonts/montserrat/Montserrat-ExtraBold.ttf && \
+    curl -L "https://github.com/JulietaUla/Montserrat/raw/master/fonts/ttf/Montserrat-Bold.ttf" -o /usr/share/fonts/montserrat/Montserrat-Bold.ttf && \
+    curl -L "https://github.com/JulietaUla/Montserrat/raw/master/fonts/ttf/Montserrat-Black.ttf" -o /usr/share/fonts/montserrat/Montserrat-Black.ttf && \
+    fc-cache -fv
 # Install tigrisfs for mounting R2 via FUSE
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; fi && \

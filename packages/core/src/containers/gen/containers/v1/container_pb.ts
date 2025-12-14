@@ -22,7 +22,7 @@ import {
 export const file_containers_v1_container: GenFile =
   /*@__PURE__*/
   fileDesc(
-    "Ch1jb250YWluZXJzL3YxL2NvbnRhaW5lci5wcm90bxINY29udGFpbmVycy52MSINCgtQaW5nUmVxdWVzdCI0CgxQaW5nUmVzcG9uc2USDwoHbWVzc2FnZRgBIAEoCRITCgtpbnN0YW5jZV9pZBgCIAEoCSJGChJSZXNpemVWaWRlb1JlcXVlc3QSEQoJdmlkZW9fdXJsGAEgASgJEg0KBXdpZHRoGAIgASgFEg4KBmhlaWdodBgDIAEoBSJdChNSZXNpemVWaWRlb1Jlc3BvbnNlEhQKDGNvbnRlbnRfdHlwZRgBIAEoCRIQCghmaWxlbmFtZRgCIAEoCRIOCgZyMl91cmwYAyABKAkSDgoGcjJfa2V5GAQgASgJIlAKEFJ1bkZmbXBlZ1JlcXVlc3QSEgoKaW5wdXRfdXJscxgBIAMoCRIPCgdjb21tYW5kGAIgAygJEhcKD291dHB1dF9maWxlbmFtZRgDIAEoCSJbChFSdW5GZm1wZWdSZXNwb25zZRIOCgZyMl91cmwYASABKAkSDgoGcjJfa2V5GAIgASgJEhQKDGNvbnRlbnRfdHlwZRgDIAEoCRIQCghmaWxlbmFtZRgEIAEoCSIgChFQcm9iZU1lZGlhUmVxdWVzdBILCgN1cmwYASABKAkiWAoSUHJvYmVNZWRpYVJlc3BvbnNlEhMKC2R1cmF0aW9uX21zGAEgASgEEg0KBXdpZHRoGAIgASgNEg4KBmhlaWdodBgDIAEoDRIOCgZmb3JtYXQYBCABKAkiVQoVVHJhbnNjb2RlVmlkZW9SZXF1ZXN0EhEKCWlucHV0X3VybBgBIAEoCRIpCghwbGF0Zm9ybRgCIAEoDjIXLmNvbnRhaW5lcnMudjEuUGxhdGZvcm0iXgoWVHJhbnNjb2RlVmlkZW9SZXNwb25zZRISCgpvdXRwdXRfdXJsGAEgASgJEhIKCnRyYW5zY29kZWQYAiABKAgSEgoFZXJyb3IYAyABKAlIAIgBAUIICgZfZXJyb3IqZQoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5TUEVDSUZJRUQQABIUChBQTEFURk9STV9JR19SRUVMEAESFAoQUExBVEZPUk1fRkJfUkVFTBACEhMKD1BMQVRGT1JNX1RJS1RPSxADMqsDChBDb250YWluZXJTZXJ2aWNlEj8KBFBpbmcSGi5jb250YWluZXJzLnYxLlBpbmdSZXF1ZXN0GhsuY29udGFpbmVycy52MS5QaW5nUmVzcG9uc2USVAoLUmVzaXplVmlkZW8SIS5jb250YWluZXJzLnYxLlJlc2l6ZVZpZGVvUmVxdWVzdBoiLmNvbnRhaW5lcnMudjEuUmVzaXplVmlkZW9SZXNwb25zZRJOCglSdW5GZm1wZWcSHy5jb250YWluZXJzLnYxLlJ1bkZmbXBlZ1JlcXVlc3QaIC5jb250YWluZXJzLnYxLlJ1bkZmbXBlZ1Jlc3BvbnNlElEKClByb2JlTWVkaWESIC5jb250YWluZXJzLnYxLlByb2JlTWVkaWFSZXF1ZXN0GiEuY29udGFpbmVycy52MS5Qcm9iZU1lZGlhUmVzcG9uc2USXQoOVHJhbnNjb2RlVmlkZW8SJC5jb250YWluZXJzLnYxLlRyYW5zY29kZVZpZGVvUmVxdWVzdBolLmNvbnRhaW5lcnMudjEuVHJhbnNjb2RlVmlkZW9SZXNwb25zZUIlWiNtYWluL2dlbi9jb250YWluZXJzL3YxO2NvbnRhaW5lcnN2MWIGcHJvdG8z",
+    "Ch1jb250YWluZXJzL3YxL2NvbnRhaW5lci5wcm90bxINY29udGFpbmVycy52MSINCgtQaW5nUmVxdWVzdCI0CgxQaW5nUmVzcG9uc2USDwoHbWVzc2FnZRgBIAEoCRITCgtpbnN0YW5jZV9pZBgCIAEoCSJGChJSZXNpemVWaWRlb1JlcXVlc3QSEQoJdmlkZW9fdXJsGAEgASgJEg0KBXdpZHRoGAIgASgFEg4KBmhlaWdodBgDIAEoBSJdChNSZXNpemVWaWRlb1Jlc3BvbnNlEhQKDGNvbnRlbnRfdHlwZRgBIAEoCRIQCghmaWxlbmFtZRgCIAEoCRIOCgZyMl91cmwYAyABKAkSDgoGcjJfa2V5GAQgASgJIlAKEFJ1bkZmbXBlZ1JlcXVlc3QSEgoKaW5wdXRfdXJscxgBIAMoCRIPCgdjb21tYW5kGAIgAygJEhcKD291dHB1dF9maWxlbmFtZRgDIAEoCSJbChFSdW5GZm1wZWdSZXNwb25zZRIOCgZyMl91cmwYASABKAkSDgoGcjJfa2V5GAIgASgJEhQKDGNvbnRlbnRfdHlwZRgDIAEoCRIQCghmaWxlbmFtZRgEIAEoCSIgChFQcm9iZU1lZGlhUmVxdWVzdBILCgN1cmwYASABKAkiWAoSUHJvYmVNZWRpYVJlc3BvbnNlEhMKC2R1cmF0aW9uX21zGAEgASgEEg0KBXdpZHRoGAIgASgNEg4KBmhlaWdodBgDIAEoDRIOCgZmb3JtYXQYBCABKAkiVQoVVHJhbnNjb2RlVmlkZW9SZXF1ZXN0EhEKCWlucHV0X3VybBgBIAEoCRIpCghwbGF0Zm9ybRgCIAEoDjIXLmNvbnRhaW5lcnMudjEuUGxhdGZvcm0iXgoWVHJhbnNjb2RlVmlkZW9SZXNwb25zZRISCgpvdXRwdXRfdXJsGAEgASgJEhIKCnRyYW5zY29kZWQYAiABKAgSEgoFZXJyb3IYAyABKAlIAIgBAUIICgZfZXJyb3IiPQoTQnVyblN1YnRpdGxlUmVxdWVzdBIRCgl2aWRlb191cmwYASABKAkSEwoLYXNzX2NvbnRlbnQYAiABKAkiOgoUQnVyblN1YnRpdGxlUmVzcG9uc2USEgoKb3V0cHV0X3VybBgBIAEoCRIOCgZyMl9rZXkYAiABKAkqZQoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5TUEVDSUZJRUQQABIUChBQTEFURk9STV9JR19SRUVMEAESFAoQUExBVEZPUk1fRkJfUkVFTBACEhMKD1BMQVRGT1JNX1RJS1RPSxADMoQEChBDb250YWluZXJTZXJ2aWNlEj8KBFBpbmcSGi5jb250YWluZXJzLnYxLlBpbmdSZXF1ZXN0GhsuY29udGFpbmVycy52MS5QaW5nUmVzcG9uc2USVAoLUmVzaXplVmlkZW8SIS5jb250YWluZXJzLnYxLlJlc2l6ZVZpZGVvUmVxdWVzdBoiLmNvbnRhaW5lcnMudjEuUmVzaXplVmlkZW9SZXNwb25zZRJOCglSdW5GZm1wZWcSHy5jb250YWluZXJzLnYxLlJ1bkZmbXBlZ1JlcXVlc3QaIC5jb250YWluZXJzLnYxLlJ1bkZmbXBlZ1Jlc3BvbnNlElEKClByb2JlTWVkaWESIC5jb250YWluZXJzLnYxLlByb2JlTWVkaWFSZXF1ZXN0GiEuY29udGFpbmVycy52MS5Qcm9iZU1lZGlhUmVzcG9uc2USXQoOVHJhbnNjb2RlVmlkZW8SJC5jb250YWluZXJzLnYxLlRyYW5zY29kZVZpZGVvUmVxdWVzdBolLmNvbnRhaW5lcnMudjEuVHJhbnNjb2RlVmlkZW9SZXNwb25zZRJXCgxCdXJuU3VidGl0bGUSIi5jb250YWluZXJzLnYxLkJ1cm5TdWJ0aXRsZVJlcXVlc3QaIy5jb250YWluZXJzLnYxLkJ1cm5TdWJ0aXRsZVJlc3BvbnNlQiVaI21haW4vZ2VuL2NvbnRhaW5lcnMvdjE7Y29udGFpbmVyc3YxYgZwcm90bzM",
   );
 
 /**
@@ -295,6 +295,56 @@ export const TranscodeVideoResponseSchema: GenMessage<TranscodeVideoResponse> =
   messageDesc(file_containers_v1_container, 9);
 
 /**
+ * @generated from message containers.v1.BurnSubtitleRequest
+ */
+export type BurnSubtitleRequest =
+  Message<"containers.v1.BurnSubtitleRequest"> & {
+    /**
+     * @generated from field: string video_url = 1;
+     */
+    videoUrl: string;
+
+    /**
+     * Pre-generated ASS subtitle file content.
+     *
+     * @generated from field: string ass_content = 2;
+     */
+    assContent: string;
+  };
+
+/**
+ * Describes the message containers.v1.BurnSubtitleRequest.
+ * Use `create(BurnSubtitleRequestSchema)` to create a new message.
+ */
+export const BurnSubtitleRequestSchema: GenMessage<BurnSubtitleRequest> =
+  /*@__PURE__*/
+  messageDesc(file_containers_v1_container, 10);
+
+/**
+ * @generated from message containers.v1.BurnSubtitleResponse
+ */
+export type BurnSubtitleResponse =
+  Message<"containers.v1.BurnSubtitleResponse"> & {
+    /**
+     * @generated from field: string output_url = 1;
+     */
+    outputUrl: string;
+
+    /**
+     * @generated from field: string r2_key = 2;
+     */
+    r2Key: string;
+  };
+
+/**
+ * Describes the message containers.v1.BurnSubtitleResponse.
+ * Use `create(BurnSubtitleResponseSchema)` to create a new message.
+ */
+export const BurnSubtitleResponseSchema: GenMessage<BurnSubtitleResponse> =
+  /*@__PURE__*/
+  messageDesc(file_containers_v1_container, 11);
+
+/**
  * @generated from enum containers.v1.Platform
  */
 export enum Platform {
@@ -381,5 +431,15 @@ export const ContainerService: GenService<{
     methodKind: "unary";
     input: typeof TranscodeVideoRequestSchema;
     output: typeof TranscodeVideoResponseSchema;
+  };
+  /**
+   * Burn ASS subtitles into a video.
+   *
+   * @generated from rpc containers.v1.ContainerService.BurnSubtitle
+   */
+  burnSubtitle: {
+    methodKind: "unary";
+    input: typeof BurnSubtitleRequestSchema;
+    output: typeof BurnSubtitleResponseSchema;
   };
 }> = /*@__PURE__*/ serviceDesc(file_containers_v1_container, 0);

@@ -27,6 +27,9 @@ service ContainerService {
 
   // Transcode video for social media platforms (IG Reel, FB Reel, etc.).
   rpc TranscodeVideo(TranscodeVideoRequest) returns (TranscodeVideoResponse);
+
+  // Burn ASS subtitles into a video.
+  rpc BurnSubtitle(BurnSubtitleRequest) returns (BurnSubtitleResponse);
 }
 
 message PingRequest {}
@@ -85,4 +88,15 @@ message TranscodeVideoResponse {
   string output_url = 1;
   bool transcoded = 2;
   optional string error = 3;
+}
+
+message BurnSubtitleRequest {
+  string video_url = 1;
+  // Pre-generated ASS subtitle file content.
+  string ass_content = 2;
+}
+
+message BurnSubtitleResponse {
+  string output_url = 1;
+  string r2_key = 2;
 }
