@@ -7,7 +7,7 @@ import z from "zod";
 import type { VideoGenAgentContext } from "../context";
 import { StaticPrompts } from "../prompts";
 import { nanoBananaTool, searchImageTool } from "../tools";
-import { searchReferencesTool } from "../tools/search-image";
+import { searchReferencesTool } from "../tools/search-references";
 
 const sysPrompt = (contextStr: string) => `
 1. Role

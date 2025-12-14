@@ -231,12 +231,7 @@ export namespace VideoGenRealtime {
  */
 export namespace OrchestratorSchema {
   /** Available sub-agent types (extensible) */
-  export const AgentType = z.enum([
-    "image_gen",
-    "video_gen",
-    "subtitle_gen",
-    "audio_gen",
-  ]);
+  export const AgentType = z.enum(["image_gen", "video_gen"]);
   export type AgentType = z.infer<typeof AgentType>;
 
   /** Single step in an execution plan */
@@ -288,12 +283,6 @@ export namespace OrchestratorSchema {
       .describe(
         "Detailed instructions for the sub-agent (required for handoff/retry)",
       ),
-
-    // Fields for 'retry' action only
-    newApproach: z
-      .string()
-      .nullable()
-      .describe("What to try differently (required for retry)"),
 
     // Fields for 'complete' action
     output: VideoGenRealtime.AgentOutput.nullable().describe(

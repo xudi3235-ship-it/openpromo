@@ -17,15 +17,6 @@ export const AGENT_REGISTRY: Record<
   OrchestratorSchema.AgentType,
   () => AnyAgent
 > = {
-  image_gen: createImageGenWithRefAgent,
-  video_gen: () => {
-    return createVideoGenAgent();
-  },
-  // Future agents - placeholder implementations
-  subtitle_gen: () => {
-    throw new Error("subtitle_gen agent not yet implemented");
-  },
-  audio_gen: () => {
-    throw new Error("audio_gen agent not yet implemented");
-  },
+  image_gen: () => createImageGenWithRefAgent(),
+  video_gen: () => createVideoGenAgent(),
 };

@@ -3,6 +3,7 @@ import { OrchestratorSchema } from "@shared/agents";
 import { PRIMARY_GOAL } from "./constants";
 import type { VideoGenAgentContext } from "./context";
 import { PromptFragments } from "./prompt-fragments";
+import { searchReferencesTool } from "./tools/search-references";
 import { setContextTool } from "./tools/set-context";
 
 /**
@@ -42,14 +43,15 @@ You must output ONE of the following decision types:
 5. **error** - Cannot continue
    { "action": "error", "reason": "why workflow cannot continue" }
 
-Available agents: image_gen, video_gen (subtitle_gen, audio_gen coming soon)
+Available agents: image_gen, video_gen
 </decision_output_schema>
 
 <workflow>
 1. On first call: output a "plan" action with steps
-2. After plan acknowledged: output "handoff" for first step
-3. After each sub-agent result: output next "handoff" or "complete"
-4. On sub-agent failure: output "retry" with modified approach or "error"
+2. once plan is created, we can use the search reference tool to find relevant references depending on whether we're producing images or video ad creative. 
+3. After plan acknowledged: output "handoff" for first step
+4. After each sub-agent result: output next "handoff" or "complete"
+5. On sub-agent failure: output "retry" with modified approach or "error"
 </workflow>
 
 <Scopes>
@@ -65,7 +67,8 @@ ${PromptFragments.formatting}
 
 `.replaceAll("  ", "");
     },
-    tools: [setContextTool], // Keep for backward compat, will be removed
+    // TODO: maybe create a planner sub-agent to handle the refernce search.
+    tools: [setContextTool, searchReferencesTool],
     modelSettings: {
       reasoning: {
         effort: "low",

@@ -3,8 +3,10 @@ import { Binding } from "@core/helpers/api-env";
 import { Storage } from "@core/helpers/storage";
 import { Log } from "@core/utils/log";
 import { generateObject, type ImagePart } from "ai";
+import { ulid } from "ulid";
 import { z } from "zod";
 import { EntProduct } from "../product";
+import { analyzeReferenceVideo } from "./video-analyzer";
 
 const REFERENCE_BUCKET = "openpromo-reference";
 
@@ -33,15 +35,40 @@ const ReferenceTagSchema = z.object({
 type ReferenceTag = z.infer<typeof ReferenceTagSchema>;
 
 /**
- * Search result from Vectorize
+ * Search result from Vectorize (images)
  */
 export interface ReferenceSearchResult {
   id: string;
   score: number;
+  type: "image" | "video";
   description: string;
   keywords: string[];
   industries: string[];
   createdAt: string;
+}
+
+/**
+ * Image reference with source extension
+ */
+export interface ImageReferenceResult extends ReferenceSearchResult {
+  type: "image";
+  sourceExt: string;
+}
+
+/**
+ * Video reference with full blueprint
+ */
+export interface VideoReferenceResult extends ReferenceSearchResult {
+  type: "video";
+  blueprint: string;
+  duration: number;
+  aspectRatio: string;
+  audio: {
+    type: string;
+    mood: string;
+    isReusable: boolean;
+    reasoning: string;
+  };
 }
 
 /**
@@ -54,6 +81,8 @@ export interface ReferenceSearchOptions {
   industries?: string[];
   /** Return vector values (for debugging) */
   returnValues?: boolean;
+  // namespace to filter
+  namespace?: string;
 }
 
 // ============================================================================
@@ -85,6 +114,7 @@ function toSearchResult(match: VectorizeMatch): ReferenceSearchResult {
   return {
     id: match.id,
     score: match.score,
+    type: (metadata.type as "image" | "video") || "image",
     description: (metadata.description as string) || "",
     keywords: (metadata.keywords as string[]) || [],
     industries: (metadata.industries as string[]) || [],
@@ -241,24 +271,122 @@ export namespace ReferenceSearch {
     return results && results.length > 0;
   }
 
+  /**
+   * Process a reference video: analyze with Gemini, create folder structure, embed, and index.
+   * Creates: videos/{id}/source.mp4, spec.txt, metadata.json
+   */
   export async function processVideo(key: string): Promise<void> {
-    log.error("video processing not implemented yet", { key });
+    const env = Binding.use();
+
+    // Generate video ID
+    const videoId = ulid();
+    const videoFolder = `videos/${videoId}`;
+
+    // Check if already processed (by original key)
+    if (await exists(key)) {
+      log.info("video already indexed by original key, skipping", { key });
+      return;
+    }
+
+    log.info("processing reference video", { key, videoId });
+
+    // Analyze video with Gemini
+    const analysis = await analyzeReferenceVideo(key);
+
+    // Move source video to folder structure (R2 has no native move, so copy+delete)
+    const sourceObject = await env.ReferenceBucket.get(key);
+    if (!sourceObject) {
+      throw new Error(`Source video not found: ${key}`);
+    }
+    const sourceBuffer = await sourceObject.arrayBuffer();
+    await env.ReferenceBucket.put(`${videoFolder}/source.mp4`, sourceBuffer, {
+      httpMetadata: { contentType: "video/mp4" },
+    });
+    await env.ReferenceBucket.delete(key); // Complete the move
+
+    // Save spec.txt (blueprint)
+    await env.ReferenceBucket.put(
+      `${videoFolder}/spec.txt`,
+      analysis.blueprint,
+      { httpMetadata: { contentType: "text/plain" } },
+    );
+
+    // Save metadata.json
+    const metadata = {
+      id: videoId,
+      originalKey: key,
+      type: "video" as const,
+      summary: analysis.summary,
+      keywords: analysis.keywords,
+      industries: analysis.industries,
+      duration: analysis.duration,
+      aspectRatio: analysis.aspectRatio,
+      audio: analysis.audio,
+      createdAt: new Date().toISOString(),
+    };
+    await env.ReferenceBucket.put(
+      `${videoFolder}/metadata.json`,
+      JSON.stringify(metadata, null, 2),
+      { httpMetadata: { contentType: "application/json" } },
+    );
+
+    // Create embedding from summary + keywords + industries
+    const embeddingText = [
+      analysis.summary,
+      `Keywords: ${analysis.keywords.join(", ")}`,
+      `Industries: ${analysis.industries.join(", ")}`,
+    ].join(". ");
+
+    const embedding = await embedText(embeddingText);
+
+    // Index in Vectorize
+    await env.ReferenceIndex.upsert([
+      {
+        id: videoId,
+        values: embedding,
+        metadata: {
+          id: videoId,
+          originalKey: key,
+          type: "video",
+          description: analysis.summary,
+          keywords: analysis.keywords,
+          industries: analysis.industries,
+          duration: analysis.duration,
+          aspectRatio: analysis.aspectRatio,
+          hasAudio: analysis.audio.isReusable,
+          createdAt: metadata.createdAt,
+        },
+        namespace: "video",
+      },
+    ]);
+
+    log.info("video processed and indexed", {
+      videoId,
+      originalKey: key,
+      duration: analysis.duration,
+      audioReusable: analysis.audio.isReusable,
+    });
   }
 
   /**
-   * Process a reference image: analyze with vision model, embed, and store in Vectorize.
+   * Process a reference image: analyze with vision model, create folder structure, embed, and index.
+   * Creates: images/{id}/source.{ext}, metadata.json
    * Idempotent - skips processing if already indexed.
    */
   export async function processImage(key: string): Promise<void> {
     const env = Binding.use();
 
-    // Check if already indexed (idempotent)
+    // Generate image ID
+    const imageId = ulid();
+    const imageFolder = `images/${imageId}`;
+
+    // Check if already processed (by original key)
     if (await exists(key)) {
-      log.info("reference image already indexed, skipping", { key });
+      log.info("image already indexed by original key, skipping", { key });
       return;
     }
 
-    log.info("processing reference image", { key });
+    log.info("processing reference image", { key, imageId });
 
     // Get image as data URL for vision model
     const imageUrl = await getImageUrl(key);
@@ -274,6 +402,45 @@ export namespace ReferenceSearch {
       industries: tags.industries.length,
     });
 
+    // Move source image to folder structure (R2 has no native move, so copy+delete)
+    const sourceObject = await env.ReferenceBucket.get(key);
+    if (!sourceObject) {
+      throw new Error(`Source image not found: ${key}`);
+    }
+    const sourceBuffer = await sourceObject.arrayBuffer();
+    const ext = key.split(".").pop()?.toLowerCase() || "jpg";
+    const mimeTypes: Record<string, string> = {
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      png: "image/png",
+      webp: "image/webp",
+    };
+    await env.ReferenceBucket.put(
+      `${imageFolder}/source.${ext}`,
+      sourceBuffer,
+      {
+        httpMetadata: { contentType: mimeTypes[ext] || "image/jpeg" },
+      },
+    );
+    await env.ReferenceBucket.delete(key); // Complete the move
+
+    // Save metadata.json
+    const metadata = {
+      id: imageId,
+      originalKey: key,
+      type: "image" as const,
+      description: tags.description,
+      keywords: tags.keywords,
+      industries: tags.industries,
+      sourceExt: ext,
+      createdAt: new Date().toISOString(),
+    };
+    await env.ReferenceBucket.put(
+      `${imageFolder}/metadata.json`,
+      JSON.stringify(metadata, null, 2),
+      { httpMetadata: { contentType: "application/json" } },
+    );
+
     // Create text for embedding: description + keywords + industries
     const embeddingText = [
       tags.description,
@@ -283,27 +450,28 @@ export namespace ReferenceSearch {
 
     const embedding = await embedText(embeddingText);
 
-    // Prepare metadata
-    const metadata: Record<string, string | string[]> = {
-      id: key,
-      description: tags.description,
-      keywords: tags.keywords,
-      industries: tags.industries,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Upsert to Vectorize
+    // Index in Vectorize
     await env.ReferenceIndex.upsert([
       {
-        id: key,
+        id: imageId,
         values: embedding,
-        metadata,
-        // namespace: // TODO: figure out how to use namespace to partition
+        metadata: {
+          id: imageId,
+          originalKey: key,
+          type: "image",
+          description: tags.description,
+          keywords: tags.keywords,
+          industries: tags.industries,
+          sourceExt: ext,
+          createdAt: metadata.createdAt,
+        },
+        namespace: "image",
       },
     ]);
 
-    log.info("reference image processed and indexed", {
-      key,
+    log.info("image processed and indexed", {
+      imageId,
+      originalKey: key,
       keywords: tags.keywords.length,
       industries: tags.industries.length,
     });
@@ -335,7 +503,7 @@ export namespace ReferenceSearch {
     options: ReferenceSearchOptions = {},
   ): Promise<ReferenceSearchResult[]> {
     const env = Binding.use();
-    const { topK = 20, industries, returnValues = false } = options;
+    const { topK = 20, industries, returnValues = false, namespace } = options;
 
     log.info("searching references", { query, topK, industries });
 
@@ -345,6 +513,7 @@ export namespace ReferenceSearch {
       topK,
       returnMetadata: "all",
       returnValues,
+      namespace,
     };
 
     const results = await env.ReferenceIndex.query(queryVector, queryOptions);
@@ -422,6 +591,7 @@ export namespace ReferenceSearch {
     return {
       id: match.id,
       score: 1,
+      type: (metadata.type as "image" | "video") || "image",
       description: (metadata.description as string) || "",
       keywords: (metadata.keywords as string[]) || [],
       industries: (metadata.industries as string[]) || [],
@@ -459,5 +629,145 @@ export namespace ReferenceSearch {
    */
   export async function getPresignedUrl(key: string): Promise<string> {
     return Storage.getPresignedUrl(key, REFERENCE_BUCKET, { expiresIn: 3600 });
+  }
+
+  /**
+   * Get a video reference with full metadata and blueprint.
+   */
+  export async function getVideoReference(
+    videoId: string,
+  ): Promise<VideoReferenceResult | null> {
+    const env = Binding.use();
+
+    // Get from vectorize first
+    const results = await env.ReferenceIndex.getByIds([videoId]);
+    if (!results || results.length === 0) {
+      return null;
+    }
+
+    const match = results[0];
+    const vectorMeta = match.metadata || {};
+
+    // Load full metadata from R2
+    const metadataObj = await env.ReferenceBucket.get(
+      `videos/${videoId}/metadata.json`,
+    );
+    if (!metadataObj) {
+      log.warn("video metadata.json not found", { videoId });
+      return null;
+    }
+
+    const metadata = JSON.parse(await metadataObj.text());
+
+    // Load blueprint
+    const specObj = await env.ReferenceBucket.get(`videos/${videoId}/spec.txt`);
+    const blueprint = specObj ? await specObj.text() : "";
+
+    return {
+      id: videoId,
+      score: 1,
+      type: "video",
+      description: metadata.summary || (vectorMeta.description as string) || "",
+      keywords: metadata.keywords || [],
+      industries: metadata.industries || [],
+      createdAt: metadata.createdAt || "",
+      blueprint,
+      duration: metadata.duration || 0,
+      aspectRatio: metadata.aspectRatio || "9:16",
+      audio: metadata.audio || {
+        type: "music_only",
+        mood: "unknown",
+        isReusable: false,
+        reasoning: "",
+      },
+    };
+  }
+
+  /**
+   * Get an image reference with full metadata.
+   */
+  export async function getImageReference(
+    imageId: string,
+  ): Promise<ImageReferenceResult | null> {
+    const env = Binding.use();
+
+    // Get from vectorize first
+    const results = await env.ReferenceIndex.getByIds([imageId]);
+    if (!results || results.length === 0) {
+      return null;
+    }
+
+    const match = results[0];
+    const vectorMeta = match.metadata || {};
+
+    // Load full metadata from R2
+    const metadataObj = await env.ReferenceBucket.get(
+      `images/${imageId}/metadata.json`,
+    );
+    if (!metadataObj) {
+      log.warn("image metadata.json not found", { imageId });
+      return null;
+    }
+
+    const metadata = JSON.parse(await metadataObj.text());
+
+    return {
+      id: imageId,
+      score: 1,
+      type: "image",
+      description:
+        metadata.description || (vectorMeta.description as string) || "",
+      keywords: metadata.keywords || [],
+      industries: metadata.industries || [],
+      createdAt: metadata.createdAt || "",
+      sourceExt: metadata.sourceExt || "jpg",
+    };
+  }
+
+  /**
+   * Get a reference by ID (unified for both images and videos).
+   */
+  export async function getReference(
+    id: string,
+  ): Promise<ImageReferenceResult | VideoReferenceResult | null> {
+    const base = await getById(id);
+    if (!base) return null;
+
+    if (base.type === "video") {
+      return getVideoReference(id);
+    } else {
+      return getImageReference(id);
+    }
+  }
+
+  /**
+   * Search for video references specifically.
+   */
+  export async function findSimilarVideos(
+    query: string,
+    options: ReferenceSearchOptions = {},
+  ): Promise<VideoReferenceResult[]> {
+    const { topK = 10, industries } = options;
+
+    // Search all references
+    const allResults = await findSimilar(query, {
+      topK: topK * 3, // Get more to filter
+      industries,
+    });
+
+    // Filter to videos only
+    const videoResults = allResults.filter((r) => r.type === "video");
+
+    // Load full video data for each
+    const videos: VideoReferenceResult[] = [];
+    for (const result of videoResults.slice(0, topK)) {
+      const video = await getVideoReference(result.id);
+      if (video) {
+        video.score = result.score;
+        videos.push(video);
+      }
+    }
+
+    return videos;
   }
 }
