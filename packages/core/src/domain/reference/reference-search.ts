@@ -3,7 +3,6 @@ import { Binding } from "@core/helpers/api-env";
 import { Storage } from "@core/helpers/storage";
 import { Log } from "@core/utils/log";
 import { generateObject, type ImagePart } from "ai";
-import { ulid } from "ulid";
 import { z } from "zod";
 import { EntProduct } from "../product";
 import { analyzeReferenceVideo } from "./video-analyzer";
@@ -263,46 +262,48 @@ metadata schema used: ${z.toJSONSchema(ReferenceTagSchema)}
 
 export namespace ReferenceSearch {
   /**
-   * Check if a reference already exists in the index
-   */
-  export async function exists(id: string): Promise<boolean> {
-    const env = Binding.use();
-    const results = await env.ReferenceIndex.getByIds([id]);
-    return results && results.length > 0;
-  }
-
-  /**
    * Process a reference video: analyze with Gemini, create folder structure, embed, and index.
-   * Creates: videos/{id}/source.mp4, spec.txt, metadata.json
+   * Creates: videos/{hash}/source.mp4, spec.txt, metadata.json
+   * Uses content hash for deduplication - identical videos share the same folder.
    */
   export async function processVideo(key: string): Promise<void> {
     const env = Binding.use();
 
-    // Generate video ID
-    const videoId = ulid();
-    const videoFolder = `videos/${videoId}`;
-
-    // Check if already processed (by original key)
-    if (await exists(key)) {
-      log.info("video already indexed by original key, skipping", { key });
-      return;
-    }
-
-    log.info("processing reference video", { key, videoId });
-
-    // Analyze video with Gemini
-    const analysis = await analyzeReferenceVideo(key);
-
-    // Move source video to folder structure (R2 has no native move, so copy+delete)
+    // Get source file first to compute hash
     const sourceObject = await env.ReferenceBucket.get(key);
     if (!sourceObject) {
       throw new Error(`Source video not found: ${key}`);
     }
     const sourceBuffer = await sourceObject.arrayBuffer();
+
+    // Compute SHA-256 hash for content-addressable storage
+    const hashBuffer = await crypto.subtle.digest("SHA-256", sourceBuffer);
+    const hash = Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const videoFolder = `videos/${hash}`;
+
+    // Check if already processed (by content hash)
+    const existing = await env.ReferenceBucket.head(
+      `${videoFolder}/source.mp4`,
+    );
+    if (existing) {
+      log.info("duplicate content, skipping", { key, hash });
+      await env.ReferenceBucket.delete(key); // cleanup ingest/
+      return;
+    }
+
+    log.info("processing reference video", { key, hash });
+
+    // Analyze video with Gemini
+    const analysis = await analyzeReferenceVideo(key);
+
+    // Store source video in hash-based folder
     await env.ReferenceBucket.put(`${videoFolder}/source.mp4`, sourceBuffer, {
       httpMetadata: { contentType: "video/mp4" },
     });
-    await env.ReferenceBucket.delete(key); // Complete the move
+    await env.ReferenceBucket.delete(key); // cleanup ingest/
 
     // Save spec.txt (blueprint)
     await env.ReferenceBucket.put(
@@ -313,8 +314,7 @@ export namespace ReferenceSearch {
 
     // Save metadata.json
     const metadata = {
-      id: videoId,
-      originalKey: key,
+      id: hash,
       type: "video" as const,
       summary: analysis.summary,
       keywords: analysis.keywords,
@@ -339,14 +339,13 @@ export namespace ReferenceSearch {
 
     const embedding = await embedText(embeddingText);
 
-    // Index in Vectorize
+    // Index in Vectorize (use hash as ID)
     await env.ReferenceIndex.upsert([
       {
-        id: videoId,
+        id: hash,
         values: embedding,
         metadata: {
-          id: videoId,
-          originalKey: key,
+          id: hash,
           type: "video",
           description: analysis.summary,
           keywords: analysis.keywords,
@@ -361,8 +360,7 @@ export namespace ReferenceSearch {
     ]);
 
     log.info("video processed and indexed", {
-      videoId,
-      originalKey: key,
+      hash,
       duration: analysis.duration,
       audioReusable: analysis.audio.isReusable,
     });
@@ -370,23 +368,39 @@ export namespace ReferenceSearch {
 
   /**
    * Process a reference image: analyze with vision model, create folder structure, embed, and index.
-   * Creates: images/{id}/source.{ext}, metadata.json
-   * Idempotent - skips processing if already indexed.
+   * Creates: images/{hash}/source.{ext}, metadata.json
+   * Uses content hash for deduplication - identical images share the same folder.
    */
   export async function processImage(key: string): Promise<void> {
     const env = Binding.use();
 
-    // Generate image ID
-    const imageId = ulid();
-    const imageFolder = `images/${imageId}`;
+    // Get source file first to compute hash
+    const sourceObject = await env.ReferenceBucket.get(key);
+    if (!sourceObject) {
+      throw new Error(`Source image not found: ${key}`);
+    }
+    const sourceBuffer = await sourceObject.arrayBuffer();
+    const ext = key.split(".").pop()?.toLowerCase() || "jpg";
 
-    // Check if already processed (by original key)
-    if (await exists(key)) {
-      log.info("image already indexed by original key, skipping", { key });
+    // Compute SHA-256 hash for content-addressable storage
+    const hashBuffer = await crypto.subtle.digest("SHA-256", sourceBuffer);
+    const hash = Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const imageFolder = `images/${hash}`;
+
+    // Check if already processed (by content hash)
+    const existing = await env.ReferenceBucket.head(
+      `${imageFolder}/source.${ext}`,
+    );
+    if (existing) {
+      log.info("duplicate content, skipping", { key, hash });
+      await env.ReferenceBucket.delete(key); // cleanup ingest/
       return;
     }
 
-    log.info("processing reference image", { key, imageId });
+    log.info("processing reference image", { key, hash });
 
     // Get image as data URL for vision model
     const imageUrl = await getImageUrl(key);
@@ -402,13 +416,7 @@ export namespace ReferenceSearch {
       industries: tags.industries.length,
     });
 
-    // Move source image to folder structure (R2 has no native move, so copy+delete)
-    const sourceObject = await env.ReferenceBucket.get(key);
-    if (!sourceObject) {
-      throw new Error(`Source image not found: ${key}`);
-    }
-    const sourceBuffer = await sourceObject.arrayBuffer();
-    const ext = key.split(".").pop()?.toLowerCase() || "jpg";
+    // Store source image in hash-based folder
     const mimeTypes: Record<string, string> = {
       jpg: "image/jpeg",
       jpeg: "image/jpeg",
@@ -422,12 +430,11 @@ export namespace ReferenceSearch {
         httpMetadata: { contentType: mimeTypes[ext] || "image/jpeg" },
       },
     );
-    await env.ReferenceBucket.delete(key); // Complete the move
+    await env.ReferenceBucket.delete(key); // cleanup ingest/
 
     // Save metadata.json
     const metadata = {
-      id: imageId,
-      originalKey: key,
+      id: hash,
       type: "image" as const,
       description: tags.description,
       keywords: tags.keywords,
@@ -450,14 +457,13 @@ export namespace ReferenceSearch {
 
     const embedding = await embedText(embeddingText);
 
-    // Index in Vectorize
+    // Index in Vectorize (use hash as ID)
     await env.ReferenceIndex.upsert([
       {
-        id: imageId,
+        id: hash,
         values: embedding,
         metadata: {
-          id: imageId,
-          originalKey: key,
+          id: hash,
           type: "image",
           description: tags.description,
           keywords: tags.keywords,
@@ -470,8 +476,7 @@ export namespace ReferenceSearch {
     ]);
 
     log.info("image processed and indexed", {
-      imageId,
-      originalKey: key,
+      hash,
       keywords: tags.keywords.length,
       industries: tags.industries.length,
     });

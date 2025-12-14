@@ -200,6 +200,11 @@ const REFERENCE_BUCKET_NAME = "openpromo-reference";
 const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"];
 const VIDEO_EXTENSIONS = [".mp4", ".mov", ".avi", ".webm"];
 
+// Prefix filters to prevent infinite recursion
+const INGEST_PREFIX = "ingest/";
+const IMAGES_PREFIX = "images/";
+const VIDEOS_PREFIX = "videos/";
+
 async function handleR2EventMessage(event: R2EventMessage) {
   // Only process events from reference bucket
   if (event.bucket !== REFERENCE_BUCKET_NAME) {
@@ -210,6 +215,35 @@ async function handleR2EventMessage(event: R2EventMessage) {
   }
 
   const key = event.object.key.toLowerCase();
+
+  // Determine event type
+  const isDeleteEvent = ["DeleteObject", "LifecycleDeletion"].includes(
+    event.action,
+  );
+  const isCreateEvent = [
+    "PutObject",
+    "CopyObject",
+    "CompleteMultipartUpload",
+  ].includes(event.action);
+
+  // For CREATE events: only process ingest/ (prevents recursion from processed files)
+  if (isCreateEvent && !key.startsWith(INGEST_PREFIX)) {
+    log.info("skipping create event outside ingest directory", { key });
+    return;
+  }
+
+  // For DELETE events: only process images/ or videos/ (cleanup vectors)
+  if (
+    isDeleteEvent &&
+    !key.startsWith(IMAGES_PREFIX) &&
+    !key.startsWith(VIDEOS_PREFIX)
+  ) {
+    log.info("skipping delete event outside images/videos directories", {
+      key,
+    });
+    return;
+  }
+
   const isImage = IMAGE_EXTENSIONS.some((ext) => key.endsWith(ext));
   const isVideo = VIDEO_EXTENSIONS.some((ext) => key.endsWith(ext));
   if (!isImage && !isVideo) {
@@ -224,12 +258,9 @@ async function handleR2EventMessage(event: R2EventMessage) {
     "@core/domain/reference/reference-search"
   );
 
-  // Handle delete events
-  const isDeleteEvent = ["DeleteObject", "LifecycleDeletion"].includes(
-    event.action,
-  );
+  // Handle delete events (cleanup vectors when source deleted from images/ or videos/)
   if (isDeleteEvent) {
-    log.info("processing reference image deletion", {
+    log.info("processing reference deletion", {
       key: event.object.key,
       action: event.action,
     });
@@ -237,14 +268,9 @@ async function handleR2EventMessage(event: R2EventMessage) {
     return;
   }
 
-  // Handle create events
-  const isCreateEvent = [
-    "PutObject",
-    "CopyObject",
-    "CompleteMultipartUpload",
-  ].includes(event.action);
+  // Handle create events (process new files from ingest/)
   if (isCreateEvent) {
-    log.info("processing reference image upload", {
+    log.info("processing reference upload from ingest", {
       key: event.object.key,
       size: event.object.size,
       action: event.action,

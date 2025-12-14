@@ -27,3 +27,28 @@ runs:
       env:
         CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
         CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
+
+    - name: Configure R2 reference bucket notifications
+      working-directory: packages/dash
+      shell: bash
+      run: |
+        # CREATE: only ingest/ (triggers AI processing)
+        pnpm exec wrangler r2 bucket notification create openpromo-reference \
+          --event-type object-create \
+          --queue jobs \
+          --prefix "ingest/" || true
+
+        # DELETE: images/ (cleanup vectors when source deleted)
+        pnpm exec wrangler r2 bucket notification create openpromo-reference \
+          --event-type object-delete \
+          --queue jobs \
+          --prefix "images/" || true
+
+        # DELETE: videos/ (cleanup vectors when source deleted)
+        pnpm exec wrangler r2 bucket notification create openpromo-reference \
+          --event-type object-delete \
+          --queue jobs \
+          --prefix "videos/" || true
+      env:
+        CLOUDFLARE_ACCOUNT_ID: ${{ inputs.cloudflare_account_id }}
+        CLOUDFLARE_API_TOKEN: ${{ inputs.cloudflare_api_token }}
