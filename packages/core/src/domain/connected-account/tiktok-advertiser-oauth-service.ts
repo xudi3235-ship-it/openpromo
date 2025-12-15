@@ -1,3 +1,12 @@
+/**
+ * NOT IN USE: This service is not in use since 2025-12-10.
+ *
+ * TikTok Marketing API integration is planned but not yet implemented.
+ * This file contains the OAuth service for TikTok advertiser accounts but is not exposed in the UI.
+ *
+ * Status: Implementation complete, but not integrated into the main application flow.
+ * To enable: Add route registration in workspaces/connected-accounts and expose in frontend.
+ */
 import { env } from "@core/utils/env";
 import { Log } from "@core/utils/log";
 

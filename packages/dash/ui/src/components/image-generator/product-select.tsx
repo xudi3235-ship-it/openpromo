@@ -1,3 +1,4 @@
+import { Button } from "@openpromo/ui/components/button";
 import {
   Select,
   SelectContent,
@@ -6,6 +7,9 @@ import {
   SelectValue,
 } from "@openpromo/ui/components/select";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
+import { Plus } from "lucide-react";
+import { useProductModalStore } from "@/stores/product-modal-store";
+import { CreateProductModal } from "../products/create-product-modal";
 
 export interface ProductSelectItem {
   id: string;
@@ -86,87 +90,112 @@ export function ProductSelect({
           </span>
         )}
       </div>
-      <Select
-        value={selectedProductId}
-        onValueChange={onProductChange}
-        disabled={disabled}
-      >
-        <SelectTrigger
-          id="product-select"
-          className="w-full"
-          disabled={disabled}
-        >
-          <SelectValue placeholder="Select a product...">
-            {selectedProductId &&
-              (() => {
-                const product = products.find(
-                  (p) => p.id === selectedProductId,
-                );
-                if (!product) return null;
-                const imageUrl = getProductImage(product);
-                const productName = product.name || product.id;
-                const displayName =
-                  productName.length > 40
-                    ? `${productName.substring(0, 40)}...`
-                    : productName;
-                return (
-                  <div className="flex items-center gap-2 min-w-0">
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={productName}
-                        className="w-5 h-5 object-cover rounded flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-5 h-5 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
-                        ?
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <Select
+            value={selectedProductId}
+            onValueChange={onProductChange}
+            disabled={disabled}
+          >
+            <SelectTrigger
+              id="product-select"
+              className="w-full"
+              disabled={disabled}
+            >
+              <SelectValue placeholder="Select a product...">
+                {selectedProductId &&
+                  (() => {
+                    const product = products.find(
+                      (p) => p.id === selectedProductId,
+                    );
+                    if (!product) return null;
+                    const imageUrl = getProductImage(product);
+                    const productName = product.name || product.id;
+                    const displayName =
+                      productName.length > 40
+                        ? `${productName.substring(0, 40)}...`
+                        : productName;
+                    return (
+                      <div className="flex items-center gap-2 min-w-0">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={productName}
+                            className="w-5 h-5 object-cover rounded flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-5 h-5 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
+                            ?
+                          </div>
+                        )}
+                        <span className="text-sm truncate" title={productName}>
+                          {displayName}
+                        </span>
                       </div>
-                    )}
-                    <span className="text-sm truncate" title={productName}>
-                      {displayName}
-                    </span>
-                  </div>
-                );
-              })()}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          {hasNoResults ? (
-            <div className="py-6 text-center text-sm text-muted-foreground">
-              No products found
-            </div>
-          ) : (
-            products.map((product) => {
-              const imageUrl = getProductImage(product);
-              const productName = product.name || product.id;
-              const displayName =
-                productName.length > 50
-                  ? `${productName.substring(0, 50)}...`
-                  : productName;
-              return (
-                <SelectItem key={product.id} value={product.id}>
-                  <div className="flex items-center gap-2 min-w-0">
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={productName}
-                        className="w-6 h-6 object-cover rounded flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
-                        ?
+                    );
+                  })()}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {hasNoResults ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  No products found
+                </div>
+              ) : (
+                products.map((product) => {
+                  const imageUrl = getProductImage(product);
+                  const productName = product.name || product.id;
+                  const displayName =
+                    productName.length > 50
+                      ? `${productName.substring(0, 50)}...`
+                      : productName;
+                  return (
+                    <SelectItem key={product.id} value={product.id}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={productName}
+                            className="w-6 h-6 object-cover rounded flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
+                            ?
+                          </div>
+                        )}
+                        <span className="text-sm truncate" title={productName}>
+                          {displayName}
+                        </span>
                       </div>
-                    )}
-                    <span className="text-sm truncate" title={productName}>
-                      {displayName}
-                    </span>
-                  </div>
-                </SelectItem>
-              );
-            })
-          )}
-        </SelectContent>
-      </Select>
+                    </SelectItem>
+                  );
+                })
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <ProductSelectAddButton disabled={disabled} />
+        </div>
+        <CreateProductModal />
+      </div>
     </div>
+  );
+}
+
+function ProductSelectAddButton({ disabled }: { disabled?: boolean }) {
+  const { openCreateModal } = useProductModalStore();
+  return (
+    <Button
+      onClick={() => openCreateModal()}
+      variant="outline"
+      size="sm"
+      disabled={disabled}
+      aria-label="Add product"
+      title="Add product"
+    >
+      <Plus className="h-4 w-4" />
+    </Button>
   );
 }

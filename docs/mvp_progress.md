@@ -30,8 +30,8 @@ support tiktok business(!, diff from regular tiktok dev api). IG + FB.
 
 that's it. all our features below are centered aroudn these platforms. Some feature migth be specific to certain platform, that's okay.
 
-*Missing
-- wip: simplify the tiktok business integration, only use tiktok business api.
+*Done
+- simplify the tiktok business integration, only use tiktok business api.
 - wip: check if we need to supprot IG w/ FB login.
 - check the access token, might need some periodic jobs to renew per workspace if possible.
 - tiktok biz access token is a bit unclear for how long it lasts until expiration
@@ -74,7 +74,6 @@ working product visuals page, powered by DO, for image/video gen w/ product imag
 *Missing
 - [p0] add presets in the ui & DO. is it the same as style? maybe not, i want presets to be even more high level, abstracted, higher quality handpicked one that can reduce the uncercaintiy in output.
 - [p1] we have to double down in this cloning path, it has to be stunning, by finding the best ads, etiher from visuals, creative ideas, etc. reverse-eng the top-performing ads, breakdown the visuals, structure, framework, and apply the treatment to user's brand/product context.
-- [p2] check ltx-2 model for long vid generation?
 - [p0] e2e test from ai-gen to composer-> final publish flow.
 
 
@@ -183,8 +182,6 @@ here are the longterm roadmap items. eventually we wanna build a solid platform 
 
 1. [composer][p0] e2e test publishing for all content formats, different attachment source handling
 2. [composer][p0] one click to generate thumbnail for videos
-3. [content][p0] audit current state for backfill lifecycle and available actions
-4. [content][p0] table view metrics setup and nightly refresh
 5. [genai][p0] add presets in UI & DO for higher quality, abstracted outputs
 6. [genai][p0] e2e test from AI-gen to composer to final publish flow
 7. [inbox][p0] audit current state for feature parity across platforms

@@ -43,12 +43,14 @@ export function useComposerNavigationGuard() {
     (state) => state.hasUnsavedChanges,
   );
   const resetComposer = useComposerStore((state) => state.resetComposer);
-  const [shouldBlock, setShouldBlock] = useState(false);
+  const [shouldEnableBeforeUnload, setShouldEnableBeforeUnload] =
+    useState(false);
 
-  // Update shouldBlock based on actual unsaved changes
+  // Update beforeUnload state based on actual unsaved changes
+  // This is only for the native browser dialog on refresh/close
   useEffect(() => {
     const checkChanges = () => {
-      setShouldBlock(hasUnsavedChanges());
+      setShouldEnableBeforeUnload(hasUnsavedChanges());
     };
 
     // Check immediately
@@ -61,10 +63,11 @@ export function useComposerNavigationGuard() {
   }, [hasUnsavedChanges]);
 
   // Use TanStack Router's useBlocker with resolver pattern
+  // Call hasUnsavedChanges() directly in shouldBlockFn to get fresh state
   const blocker = useBlocker({
-    shouldBlockFn: () => shouldBlock,
+    shouldBlockFn: () => hasUnsavedChanges(),
     withResolver: true,
-    enableBeforeUnload: shouldBlock, // Enable native browser dialog for refresh/close
+    enableBeforeUnload: shouldEnableBeforeUnload, // Enable native browser dialog for refresh/close
   });
 
   // Custom proceed that resets composer state

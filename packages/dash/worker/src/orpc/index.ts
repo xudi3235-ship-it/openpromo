@@ -7,21 +7,12 @@ export type {
 } from "./routes/agent-runs";
 export { agentRunsRouter } from "./routes/agent-runs";
 export { contentRouter } from "./routes/content/index";
-export { imageGenRouter } from "./routes/image-gen";
 export { inboxRouter } from "./routes/inbox";
 export { insightsRouter } from "./routes/insights";
 export { internalRouter } from "./routes/internal";
-export {
-  createPlanet,
-  findPlanet,
-  listPlanet,
-  planetRouter,
-} from "./routes/planet";
-export { productVisualsRouter } from "./routes/product-visuals";
-export { productVisualsVideoRouter } from "./routes/product-visuals-video";
 export { productsRouter } from "./routes/products";
+export { referencesRouter } from "./routes/references-orpc-route";
 export { listStyles, stylesRouter } from "./routes/styles";
-export { videoGenRouter } from "./routes/video-gen";
 export { workspacesRouter } from "./routes/workspaces";
 
 import { getPostHogClient } from "@core/providers/posthog";
@@ -29,16 +20,13 @@ import { onError } from "@orpc/server";
 import { orpcBuilder } from "./context";
 import { agentRunsRouter as agentRuns } from "./routes/agent-runs";
 import { contentRouter as content } from "./routes/content/index";
-import { imageGenRouter as imageGen } from "./routes/image-gen";
 import { inboxRouter as inbox } from "./routes/inbox";
 import { insightsRouter as insights } from "./routes/insights";
 import { internalRouter as internal } from "./routes/internal";
-import { planetRouter as planet } from "./routes/planet";
 import { productVisualsRouter as productVisuals } from "./routes/product-visuals";
-import { productVisualsVideoRouter as productVisualsVideo } from "./routes/product-visuals-video";
 import { productsRouter as products } from "./routes/products";
+import { referencesRouter as references } from "./routes/references-orpc-route";
 import { stylesRouter as styles } from "./routes/styles";
-import { videoGenRouter as videoGen } from "./routes/video-gen";
 import { workspacesRouter as workspaces } from "./routes/workspaces";
 
 export const orpcRouter = orpcBuilder
@@ -60,13 +48,10 @@ export const orpcRouter = orpcBuilder
   .router({
     content,
     agentRuns,
-    planet,
     inbox,
     insights,
-    imageGen,
-    videoGen,
     productVisuals,
-    productVisualsVideo,
+    references,
     styles,
     products,
     workspaces,

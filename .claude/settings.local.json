@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker info:*)",
+      "Bash(cat:*)",
+      "Bash(tree:*)",
+      "Bash(pnpm:*)",
+      "Bash(ls:*)",
+      "Bash(xargs basename:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": ["playwright"],
+  "disabledMcpjsonServers": ["playwright"]
+}

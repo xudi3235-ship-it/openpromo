@@ -2,9 +2,12 @@
 
 // Component exports
 export { AgendaView } from "./agenda-view";
+export { CalendarDayDensityDots } from "./calendar-day-density-dots";
+export { CalendarDayEventsSheet } from "./calendar-day-events-sheet";
 export { CalendarDndProvider, useCalendarDnd } from "./calendar-dnd-context";
 export { CalendarEventCard } from "./calendar-event-card";
 export { CalendarEventCardCompact } from "./calendar-event-card-compact";
+export { CalendarEventCardMini } from "./calendar-event-card-mini";
 export { CalendarSkeleton } from "./calendar-skeleton";
 export { CalendarStatusBadge } from "./calendar-status-badge";
 // Constants and utility exports

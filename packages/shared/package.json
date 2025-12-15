@@ -6,13 +6,13 @@
     "./*": "./src/*.ts"
   },
   "scripts": {
-    "typecheck": "tsgo --project tsconfig.json --noEmit"
+    "typecheck": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "^2.10.1",
+    "@bufbuild/protobuf": "^2.10.2",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@bufbuild/protoc-gen-es": "^2.10.1"
+    "@bufbuild/protoc-gen-es": "^2.10.2"
   }
 }

@@ -51,6 +51,11 @@ export interface ComposerProps {
   initialMessage?: string;
   initContentCreateData?: ContentCreateData;
   contentGroupID?: string;
+  /**
+   * When true, treat provided initial content as unsaved so navigation blockers fire
+   * even before the user edits anything (used for flows like Instant Ad handoff).
+   */
+  treatInitialContentAsUnsaved?: boolean;
 }
 
 export interface ComposerState {

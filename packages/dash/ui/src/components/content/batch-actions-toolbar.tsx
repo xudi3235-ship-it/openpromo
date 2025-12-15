@@ -1,6 +1,6 @@
 import { Button } from "@openpromo/ui/components/button";
 import type { MergedContentEntity } from "@worker/shared/content-types";
-import { Trash2 } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { matchEntity } from "@/lib/hono-client";
@@ -36,26 +36,29 @@ export function BatchActionsToolbar({
 
   return (
     <>
-      <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-3 mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">
-            {selectedRows.length} item(s) selected
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={batchDeleteMutation.isPending}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Selected
-          </Button>
-          <Button variant="outline" size="sm" onClick={onClearSelection}>
-            Clear Selection
-          </Button>
-        </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">
+          {selectedRows.length} selected
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowDeleteConfirm(true)}
+          disabled={batchDeleteMutation.isPending}
+          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="h-4 w-4 mr-1" />
+          Delete
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClearSelection}
+          className="text-muted-foreground"
+        >
+          <X className="h-4 w-4 mr-1" />
+          Clear
+        </Button>
       </div>
 
       <ConfirmDialog

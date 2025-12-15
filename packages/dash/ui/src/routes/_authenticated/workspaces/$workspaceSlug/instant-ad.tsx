@@ -2,6 +2,7 @@ import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { z } from "zod";
 import type { StyleGalleryItem } from "@/components/image-generator/style-gallery";
 import { InstantAdRoot } from "@/components/instant-ad/instant-ad-root";
+import { VideoGenAgentProvider } from "@/features/instant-ad/video-gen-agent-provider";
 import { prefetchAgentRunsList } from "@/queries/agent-runs";
 import { prefetchProductList } from "@/queries/product";
 import { prefetchPresetsQuery } from "@/queries/product-visuals";
@@ -50,22 +51,24 @@ function InstantAdPage() {
   const styleGalleryItems: StyleGalleryItem[] = stylesData?.styles ?? [];
 
   return (
-    <div className="flex h-full flex-col bg-background">
-      <div className="flex-shrink-0">
-        <h1 className="text-lg font-semibold tracking-tight">Instant Ad</h1>
-        <p className="text-sm text-muted-foreground">
-          Create ready-to-publish social media ads with AI in seconds.
-        </p>
-      </div>
+    <VideoGenAgentProvider>
+      <div className="flex h-full flex-col bg-background">
+        <div className="flex-shrink-0 pt-6 pb-4">
+          <h1 className="text-lg font-semibold tracking-tight">Instant Ad</h1>
+          <p className="text-sm text-muted-foreground">
+            Create ready-to-publish social media ads with AI in seconds.
+          </p>
+        </div>
 
-      <div className="flex-1 min-h-0">
-        <InstantAdRoot
-          styles={styleGalleryItems}
-          isLoadingStyles={isLoadingStyles}
-          preselectedStyleId={styleId}
-          selectedRunId={runId}
-        />
+        <div className="flex-1 min-h-0">
+          <InstantAdRoot
+            styles={styleGalleryItems}
+            isLoadingStyles={isLoadingStyles}
+            preselectedStyleId={styleId}
+            selectedRunId={runId}
+          />
+        </div>
       </div>
-    </div>
+    </VideoGenAgentProvider>
   );
 }

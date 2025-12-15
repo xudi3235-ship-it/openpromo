@@ -1,4 +1,5 @@
 import { refreshWorkspaceTokens } from "@core/domain/connected-account/token-refresher";
+import { WorkspaceInsightsAggregator } from "@core/domain/insights/aggregator";
 import { runWorkspaceMetricsTask } from "@core/domain/workspace/sync/run-workspace-metrics";
 import { Actor } from "@core/helpers/actor";
 import { type ApiEnv, Binding } from "@core/helpers/api-env";
@@ -35,14 +36,50 @@ const VideoCleanupMessageSchema = BaseJobMessage.extend({
   cursor: z.string().optional(),
 });
 
+const WorkspaceInsightsSnapshotMessageSchema = BaseJobMessage.extend({
+  type: z.literal("workspace.insights.snapshot"),
+  workspaceId: z.string().min(1),
+});
+
 export const JobQueueMessageSchema = z.discriminatedUnion("type", [
   WorkspaceMetricsMessageSchema,
   WorkspaceTokenRefreshMessageSchema,
   ImageCleanupMessageSchema,
   VideoCleanupMessageSchema,
+  WorkspaceInsightsSnapshotMessageSchema,
 ]);
 
 export type JobQueueMessage = z.infer<typeof JobQueueMessageSchema>;
+
+/**
+ * R2 Event Notification message format (from Cloudflare)
+ * @see https://developers.cloudflare.com/r2/buckets/event-notifications/
+ */
+export const R2EventMessageSchema = z.object({
+  account: z.string(),
+  action: z.enum([
+    "PutObject",
+    "CopyObject",
+    "CompleteMultipartUpload",
+    "DeleteObject",
+    "LifecycleDeletion",
+  ]),
+  bucket: z.string(),
+  object: z.object({
+    key: z.string(),
+    size: z.number().optional(),
+    eTag: z.string().optional(),
+  }),
+  eventTime: z.string(),
+  copySource: z
+    .object({
+      bucket: z.string(),
+      object: z.string(),
+    })
+    .optional(),
+});
+
+export type R2EventMessage = z.infer<typeof R2EventMessageSchema>;
 
 type WorkspaceMetricsMessage = z.infer<typeof WorkspaceMetricsMessageSchema>;
 type WorkspaceTokenRefreshMessage = z.infer<
@@ -50,6 +87,9 @@ type WorkspaceTokenRefreshMessage = z.infer<
 >;
 type ImageCleanupMessage = z.infer<typeof ImageCleanupMessageSchema>;
 type VideoCleanupMessage = z.infer<typeof VideoCleanupMessageSchema>;
+type WorkspaceInsightsSnapshotMessage = z.infer<
+  typeof WorkspaceInsightsSnapshotMessageSchema
+>;
 
 async function handleWorkspaceMetricsMessage(message: WorkspaceMetricsMessage) {
   await runWorkspaceMetricsTask(message.workspaceId);
@@ -140,8 +180,116 @@ async function handleVideoCleanupMessage(message: VideoCleanupMessage) {
   }
 }
 
+async function handleWorkspaceInsightsSnapshotMessage(
+  message: WorkspaceInsightsSnapshotMessage,
+) {
+  const aggregator = new WorkspaceInsightsAggregator();
+  const snapshot = await aggregator.generateSnapshotForWorkspace({
+    workspaceId: message.workspaceId,
+  });
+
+  log.info("workspace insights snapshot generated", {
+    workspaceId: message.workspaceId,
+    snapshotDate: snapshot.date,
+    reach: snapshot.funnel?.awareness ?? 0,
+    engagement: snapshot.funnel?.engagement ?? 0,
+  });
+}
+
+const REFERENCE_BUCKET_NAME = "openpromo-reference";
+const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"];
+const VIDEO_EXTENSIONS = [".mp4", ".mov", ".avi", ".webm"];
+
+// Prefix filters to prevent infinite recursion
+const INGEST_PREFIX = "ingest/";
+const IMAGES_PREFIX = "images/";
+const VIDEOS_PREFIX = "videos/";
+
+async function handleR2EventMessage(event: R2EventMessage) {
+  // Only process events from reference bucket
+  if (event.bucket !== REFERENCE_BUCKET_NAME) {
+    log.info("skipping R2 event from non-reference bucket", {
+      bucket: event.bucket,
+    });
+    return;
+  }
+
+  const key = event.object.key.toLowerCase();
+
+  // Determine event type
+  const isDeleteEvent = ["DeleteObject", "LifecycleDeletion"].includes(
+    event.action,
+  );
+  const isCreateEvent = [
+    "PutObject",
+    "CopyObject",
+    "CompleteMultipartUpload",
+  ].includes(event.action);
+
+  // For CREATE events: only process ingest/ (prevents recursion from processed files)
+  if (isCreateEvent && !key.startsWith(INGEST_PREFIX)) {
+    log.info("skipping create event outside ingest directory", { key });
+    return;
+  }
+
+  // For DELETE events: only process images/ or videos/ (cleanup vectors)
+  if (
+    isDeleteEvent &&
+    !key.startsWith(IMAGES_PREFIX) &&
+    !key.startsWith(VIDEOS_PREFIX)
+  ) {
+    log.info("skipping delete event outside images/videos directories", {
+      key,
+    });
+    return;
+  }
+
+  const isImage = IMAGE_EXTENSIONS.some((ext) => key.endsWith(ext));
+  const isVideo = VIDEO_EXTENSIONS.some((ext) => key.endsWith(ext));
+  if (!isImage && !isVideo) {
+    log.info("skipping non-image and non-video R2 event", {
+      key: event.object.key,
+    });
+    return;
+  }
+
+  // Import dynamically to avoid circular dependency
+  const { ReferenceSearch } = await import(
+    "@core/domain/reference/reference-search"
+  );
+
+  // Handle delete events (cleanup vectors when source deleted from images/ or videos/)
+  if (isDeleteEvent) {
+    log.info("processing reference deletion", {
+      key: event.object.key,
+      action: event.action,
+    });
+    await ReferenceSearch.remove(event.object.key);
+    return;
+  }
+
+  // Handle create events (process new files from ingest/)
+  if (isCreateEvent) {
+    log.info("processing reference upload from ingest", {
+      key: event.object.key,
+      size: event.object.size,
+      action: event.action,
+    });
+    if (isImage) {
+      await ReferenceSearch.processImage(event.object.key);
+    } else if (isVideo) {
+      await ReferenceSearch.processVideo(event.object.key);
+    } else {
+      log.warn("unhandled reference media type", { key: event.object.key });
+    }
+  }
+}
+
+/** Union type for all messages the queue can receive */
+export type QueueMessage = JobQueueMessage | R2EventMessage;
+
 export async function processJobQueueBatch(
-  batch: MessageBatch<JobQueueMessage>,
+  batch: MessageBatch<QueueMessage>,
   env: ApiEnv["Bindings"],
   _ctx?: ExecutionContext,
 ) {
@@ -150,6 +298,26 @@ export async function processJobQueueBatch(
   );
 
   for (const message of batch.messages) {
+    // Try parsing as R2 event first (has 'bucket' field)
+    const r2Parsed = R2EventMessageSchema.safeParse(message.body);
+    if (r2Parsed.success) {
+      try {
+        await Binding.provide(env, () => handleR2EventMessage(r2Parsed.data));
+        message.ack();
+      } catch (error) {
+        const messageText =
+          error instanceof Error ? error.message : String(error);
+        console.error("R2 event message failed", {
+          bucket: r2Parsed.data.bucket,
+          key: r2Parsed.data.object.key,
+          error: messageText,
+        });
+        message.retry();
+      }
+      continue;
+    }
+
+    // Try parsing as job queue message
     const parsed = JobQueueMessageSchema.safeParse(message.body);
     if (!parsed.success) {
       log.warn("invalid job queue message", {
@@ -175,6 +343,9 @@ export async function processJobQueueBatch(
             break;
           case "storage.workspace.videos.cleanup":
             await handleVideoCleanupMessage(job);
+            break;
+          case "workspace.insights.snapshot":
+            await handleWorkspaceInsightsSnapshotMessage(job);
             break;
           default:
             log.warn("unsupported job queue message type", {

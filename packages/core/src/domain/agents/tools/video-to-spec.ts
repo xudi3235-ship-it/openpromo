@@ -4,8 +4,15 @@ import { isStringUrl } from "@core/utils/common";
 import { type ContentListUnion, ThinkingLevel } from "@google/genai";
 import { tool } from "@openai/agents";
 import z from "zod";
-import { PRIMARY_GOAL } from "../constants";
 import type { VideoGenAgentContext } from "../context";
+import {
+  AD_ANALYST_ROLE,
+  ADAPTABLE_BLUEPRINT_OUTPUT,
+  CRITICAL_ANALYSIS_RULES,
+  FULL_VISUAL_ANALYSIS,
+  MARKETING_STRATEGY_ANALYSIS,
+  PRODUCT_PRESENTATION_ANALYSIS,
+} from "../prompts/ad-analysis-fragments";
 import { downloadImagesToTmp, downloadVideosToTmp } from "../utils";
 
 const toolParams = z.object({
@@ -22,30 +29,95 @@ const specSchema = z.object({
   extra: z.string().describe("Any extra notes or comments"),
 });
 
-const sysPrompt = `
-<role>
-You are an expert at analyzing viral social media video ads, shorts, ugc content. You excel at deconstructing the viral elements, shot breakdowns, hooks, everything into a comprehensive spec/template/blueprint that can be used to replicate the image/video to promote other products/services/brands effectively, targeting SMBs. Key is to get ideas/concepts that made the original video successful, and extrapolate them into a adaptable blueprint.
+const sysPrompt = `${AD_ANALYST_ROLE}
 
-you are part of larger system, with our primary goal of: ${PRIMARY_GOAL}
-</role>
+Your task: Analyze the uploaded video ad/short and produce a comprehensive spec/blueprint that captures:
+1. The structure, pacing, and shot breakdown for replication
+2. The marketing/persuasion elements that make it effective
+3. Visual details for each key frame to guide AI image generation
+4. An adaptable blueprint for promoting different products/brands
 
+Our north star is to use this blueprint to create viral social media ads for small businesses to grow social presence and sales.
 
-<context>
-Replication workflow is: the video has shots, overall structure, hooks, visual/audio elements, psychological triggers, meme, etc that captured the engagements. Next the spec will include artifacts, details, each shot breakdown etc and rough duration timings etc. higher level agent will use the spec as north star ref to invoke tools like image gen, to compose the static keyframe/ingridients first, then use them for video gen, or extension etc. The agent is focusing on execution details, so you need to provide effective, detailed spec, guidelines for successful replication.
-</context>
+---
 
-<scope>
-* focus on why it worked well, extrapolate and structure the elemnets. Reason first about the linkage between products, target audience, and the viral vid;
-* our final delivery is fro social media shorts/ads; primarily vertical format, tiktok, reels, etc.
+## OUTPUT FORMAT
 
-</scope>
+Produce a structured plain-text analysis. Be exhaustive and specific. The spec will be used by downstream agents to generate keyframe images and compose video.
 
-<constraints>
-- ensure the spec is detailed, comprehensive, covering all critical aspects to replicate the video effectively;
-- output strictly in JSON format as per the schema provided;
-- if any critical info is missing from input video, make reasonable assumptions based on typical viral video characteristics.
-</constraints>
-`;
+---
+
+## ANALYSIS SECTIONS
+
+### 1. OVERVIEW
+- Video type: UGC / talking head / product demo / testimonial / meme / trending format / story-driven / montage
+- Duration: estimated length in seconds
+- Aspect ratio: 9:16 vertical / 16:9 horizontal / 1:1 square
+- Platform fit: TikTok / Instagram Reels / YouTube Shorts / Facebook
+- Pacing: fast cuts / medium / slow and deliberate
+- Confidence level: high / medium / low
+
+### 2. VIDEO STRUCTURE
+
+#### Hook (first 1-3 seconds)
+- Opening frame description: what viewer sees immediately
+- Hook type: question / bold claim / visual surprise / relatable moment / trending sound
+- Text overlay: exact wording if present
+- Why it stops the scroll: the specific element that captures attention
+
+#### Body (middle section)
+- Number of distinct shots/scenes
+- Shot-by-shot breakdown with:
+  - Duration (approximate seconds)
+  - Shot type: close-up / medium / wide / POV / screen recording / B-roll
+  - Action: what happens in this shot
+  - Text overlay: any on-screen text
+  - Transition: cut / swipe / zoom / none
+
+#### Ending/CTA
+- Final frame description
+- CTA type: verbal / text overlay / implied / product shot
+- CTA text: exact wording
+- End screen elements: logo, handle, product, offer
+
+### 3. AUDIO ANALYSIS
+- Audio type: voiceover / trending sound / original audio / music only / mixed
+- Voiceover style: casual / professional / excited / ASMR / storytelling
+- Key audio moments: sound effects, beat drops, audio cues synced to visuals
+- Music mood: energetic / chill / dramatic / funny / emotional
+- Captions: auto-generated style / designed / none
+
+${MARKETING_STRATEGY_ANALYSIS}
+
+${PRODUCT_PRESENTATION_ANALYSIS}
+
+### KEY FRAMES FOR IMAGE GENERATION
+For each critical frame that needs to be generated, provide:
+- Frame number and timestamp
+- Detailed visual description (use the visual analysis format below)
+- Why this frame is important to the video's success
+- Image generation prompt (150-200 words)
+
+${FULL_VISUAL_ANALYSIS}
+
+### VIRAL ELEMENTS
+- Trend/format being used: identify if this follows a known format (e.g., "Get Ready With Me", "POV", "Day in my life", "Before/After")
+- Shareability factors: what makes people want to share this
+- Comment bait: elements designed to drive comments
+- Relatability hooks: "this is so me" moments
+- Controversy/opinion triggers: if any
+
+${ADAPTABLE_BLUEPRINT_OUTPUT}
+
+---
+
+${CRITICAL_ANALYSIS_RULES}
+
+### ADDITIONAL VIDEO-SPECIFIC RULES
+10. Document TIMING precisely — frame-by-frame breakdown matters for video
+11. IDENTIFY the audio strategy — sound is 50% of video success
+12. Note TRANSITIONS and pacing — these affect the feel significantly
+13. Capture TRENDING ELEMENTS — formats, sounds, styles that are currently viral`;
 
 function _imgInline(path: string) {
   const base64Data = fs.readFileSync(path, { encoding: "base64" });
@@ -66,12 +138,19 @@ function videoInline(path: string) {
   };
 }
 
-async function toolImpl({
+async function transformVideoToSpec({
   videoUrlOrPath: videoPath,
   productImagePaths,
   context,
 }: z.infer<typeof toolParams>) {
   const gemini = getGeminiClient();
+  const uploadedFile = await gemini.files.upload({
+    file: videoPath,
+    config: {
+      mimeType: "video/mp4",
+    },
+  });
+  console.log("Uploaded video file:", uploadedFile);
 
   if (isStringUrl(videoPath)) {
     // download
@@ -101,11 +180,7 @@ async function toolImpl({
   }
   // 3. additional context
   contents.push({
-    text: `here is the additional context for this run`,
-    role: "user",
-  });
-  contents.push({
-    text: context,
+    text: `here is the additional context for this run: ${context}`,
     role: "user",
   });
 
@@ -117,7 +192,7 @@ async function toolImpl({
       responseMimeType: "application/json",
       responseJsonSchema: z.toJSONSchema(specSchema), // TODO: check to ensure this work with zod v4
       thinkingConfig: {
-        thinkingLevel: ThinkingLevel.HIGH,
+        thinkingLevel: ThinkingLevel.THINKING_LEVEL_UNSPECIFIED,
       },
     },
   });
@@ -138,16 +213,18 @@ async function toolImpl({
   }
 }
 
-export const videoToSpecTool = tool({
-  name: "video_to_spec",
-  description:
-    "takes in a social media video ad, analyzes it, and produces a comprehensive spec/blueprint that can be used to replicate the video effectively for promoting products/services/brands for small businesses.",
-  parameters: toolParams,
-  isEnabled(args) {
-    const context = args.runContext.context as VideoGenAgentContext;
-    return context.stage === "video_gen";
+export const videoToSpecTool = tool<VideoGenAgentContext, VideoGenAgentContext>(
+  {
+    name: "video_to_spec",
+    description:
+      "takes in a social media video ad, analyzes it, and produces a comprehensive spec/blueprint that can be used to replicate the video effectively for promoting products/services/brands for small businesses.",
+    parameters: toolParams,
+    isEnabled(args) {
+      const context = args.runContext.context as VideoGenAgentContext;
+      return context.stage === "video_gen";
+    },
+    execute: async (args: z.infer<typeof toolParams>) => {
+      return await transformVideoToSpec(args);
+    },
   },
-  execute: async (args: z.infer<typeof toolParams>) => {
-    return await toolImpl(args);
-  },
-});
+);

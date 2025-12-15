@@ -51,7 +51,7 @@ function ComposerComponent() {
       <div className="flex h-screen w-full overflow-hidden bg-background">
         <ComposerRoot
           accounts={accounts}
-          className="mx-auto flex h-full w-full max-w-7xl px-4"
+          className="mx-auto flex h-full w-full max-w-8xl px-2"
         />
       </div>
 

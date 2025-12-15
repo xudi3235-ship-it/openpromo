@@ -1,6 +1,5 @@
 import { db } from "./database/db";
 import { type ApiEnv, Binding } from "./helpers/api-env";
-import { Storage } from "./helpers/storage";
 import type { JobQueueMessage } from "./queues/job-queue";
 import { workspacesTable } from "./schemas/workspaces.sql";
 import { Log } from "./utils/log";
@@ -39,8 +38,8 @@ async function handleCron(controller: ScheduledController) {
 async function dailyJob() {
   await enqueueWorkspaceTokenRefreshes();
   await runWorkspaceContentMetrics();
+  await enqueueWorkspaceInsightSnapshots();
   await enqueueWorkspaceCleanups();
-  await cleanupPublicBucket();
 }
 
 async function enqueueWorkspaceTokenRefreshes() {
@@ -112,11 +111,6 @@ async function enqueueWorkspaceCleanups() {
   });
 }
 
-async function cleanupPublicBucket() {
-  const results = await Storage.cleanupPublicBucketByCadence();
-  log.info("public bucket cleanup results", { results });
-}
-
 async function runWorkspaceContentMetrics() {
   const workspaces = await db()
     .select({
@@ -145,6 +139,34 @@ async function runWorkspaceContentMetrics() {
   await Binding.use().JobQueue.sendBatch(messages);
 
   metricsLog.info("enqueued workspace metrics refresh tasks", {
+    totalEnqueued: messages.length,
+  });
+}
+
+async function enqueueWorkspaceInsightSnapshots() {
+  const workspaces = await db()
+    .select({ id: workspacesTable.id })
+    .from(workspacesTable);
+
+  if (workspaces.length === 0) {
+    log.info("no workspaces to enqueue for insight snapshots");
+    return;
+  }
+
+  const messages = workspaces.map((workspace) => ({
+    body: {
+      type: "workspace.insights.snapshot",
+      workspaceId: workspace.id,
+      actor: {
+        type: "system",
+        properties: { userID: "cron-job" },
+      },
+    } satisfies JobQueueMessage,
+  }));
+
+  await Binding.use().JobQueue.sendBatch(messages);
+
+  log.info("enqueued workspace insight snapshot tasks", {
     totalEnqueued: messages.length,
   });
 }

@@ -49,7 +49,7 @@ export function RunCard({
       <div className="space-y-2 p-3">
         <div className="flex items-center justify-between">
           <Badge variant="outline" className="capitalize">
-            {run.agentName.replace("_", " ")}
+            {run.input.mode}
           </Badge>
           <StatusPill status={run.status} />
         </div>

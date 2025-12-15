@@ -47,6 +47,9 @@ const (
 	// ContainerServiceTranscodeVideoProcedure is the fully-qualified name of the ContainerService's
 	// TranscodeVideo RPC.
 	ContainerServiceTranscodeVideoProcedure = "/containers.v1.ContainerService/TranscodeVideo"
+	// ContainerServiceBurnSubtitleProcedure is the fully-qualified name of the ContainerService's
+	// BurnSubtitle RPC.
+	ContainerServiceBurnSubtitleProcedure = "/containers.v1.ContainerService/BurnSubtitle"
 )
 
 // ContainerServiceClient is a client for the containers.v1.ContainerService service.
@@ -61,6 +64,8 @@ type ContainerServiceClient interface {
 	ProbeMedia(context.Context, *connect.Request[v1.ProbeMediaRequest]) (*connect.Response[v1.ProbeMediaResponse], error)
 	// Transcode video for social media platforms (IG Reel, FB Reel, etc.).
 	TranscodeVideo(context.Context, *connect.Request[v1.TranscodeVideoRequest]) (*connect.Response[v1.TranscodeVideoResponse], error)
+	// Burn ASS subtitles into a video.
+	BurnSubtitle(context.Context, *connect.Request[v1.BurnSubtitleRequest]) (*connect.Response[v1.BurnSubtitleResponse], error)
 }
 
 // NewContainerServiceClient constructs a client for the containers.v1.ContainerService service. By
@@ -104,6 +109,12 @@ func NewContainerServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(containerServiceMethods.ByName("TranscodeVideo")),
 			connect.WithClientOptions(opts...),
 		),
+		burnSubtitle: connect.NewClient[v1.BurnSubtitleRequest, v1.BurnSubtitleResponse](
+			httpClient,
+			baseURL+ContainerServiceBurnSubtitleProcedure,
+			connect.WithSchema(containerServiceMethods.ByName("BurnSubtitle")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -114,6 +125,7 @@ type containerServiceClient struct {
 	runFfmpeg      *connect.Client[v1.RunFfmpegRequest, v1.RunFfmpegResponse]
 	probeMedia     *connect.Client[v1.ProbeMediaRequest, v1.ProbeMediaResponse]
 	transcodeVideo *connect.Client[v1.TranscodeVideoRequest, v1.TranscodeVideoResponse]
+	burnSubtitle   *connect.Client[v1.BurnSubtitleRequest, v1.BurnSubtitleResponse]
 }
 
 // Ping calls containers.v1.ContainerService.Ping.
@@ -141,6 +153,11 @@ func (c *containerServiceClient) TranscodeVideo(ctx context.Context, req *connec
 	return c.transcodeVideo.CallUnary(ctx, req)
 }
 
+// BurnSubtitle calls containers.v1.ContainerService.BurnSubtitle.
+func (c *containerServiceClient) BurnSubtitle(ctx context.Context, req *connect.Request[v1.BurnSubtitleRequest]) (*connect.Response[v1.BurnSubtitleResponse], error) {
+	return c.burnSubtitle.CallUnary(ctx, req)
+}
+
 // ContainerServiceHandler is an implementation of the containers.v1.ContainerService service.
 type ContainerServiceHandler interface {
 	// Simple health check.
@@ -153,6 +170,8 @@ type ContainerServiceHandler interface {
 	ProbeMedia(context.Context, *connect.Request[v1.ProbeMediaRequest]) (*connect.Response[v1.ProbeMediaResponse], error)
 	// Transcode video for social media platforms (IG Reel, FB Reel, etc.).
 	TranscodeVideo(context.Context, *connect.Request[v1.TranscodeVideoRequest]) (*connect.Response[v1.TranscodeVideoResponse], error)
+	// Burn ASS subtitles into a video.
+	BurnSubtitle(context.Context, *connect.Request[v1.BurnSubtitleRequest]) (*connect.Response[v1.BurnSubtitleResponse], error)
 }
 
 // NewContainerServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -192,6 +211,12 @@ func NewContainerServiceHandler(svc ContainerServiceHandler, opts ...connect.Han
 		connect.WithSchema(containerServiceMethods.ByName("TranscodeVideo")),
 		connect.WithHandlerOptions(opts...),
 	)
+	containerServiceBurnSubtitleHandler := connect.NewUnaryHandler(
+		ContainerServiceBurnSubtitleProcedure,
+		svc.BurnSubtitle,
+		connect.WithSchema(containerServiceMethods.ByName("BurnSubtitle")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/containers.v1.ContainerService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ContainerServicePingProcedure:
@@ -204,6 +229,8 @@ func NewContainerServiceHandler(svc ContainerServiceHandler, opts ...connect.Han
 			containerServiceProbeMediaHandler.ServeHTTP(w, r)
 		case ContainerServiceTranscodeVideoProcedure:
 			containerServiceTranscodeVideoHandler.ServeHTTP(w, r)
+		case ContainerServiceBurnSubtitleProcedure:
+			containerServiceBurnSubtitleHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -231,4 +258,8 @@ func (UnimplementedContainerServiceHandler) ProbeMedia(context.Context, *connect
 
 func (UnimplementedContainerServiceHandler) TranscodeVideo(context.Context, *connect.Request[v1.TranscodeVideoRequest]) (*connect.Response[v1.TranscodeVideoResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("containers.v1.ContainerService.TranscodeVideo is not implemented"))
+}
+
+func (UnimplementedContainerServiceHandler) BurnSubtitle(context.Context, *connect.Request[v1.BurnSubtitleRequest]) (*connect.Response[v1.BurnSubtitleResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("containers.v1.ContainerService.BurnSubtitle is not implemented"))
 }

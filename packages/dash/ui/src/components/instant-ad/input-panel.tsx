@@ -2,7 +2,7 @@ import { Button } from "@openpromo/ui/components/button";
 import { Label } from "@openpromo/ui/components/label";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import type { VideoGenRealtime } from "@shared";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { useState } from "react";
 import type { ProductSelectItem } from "@/components/image-generator/product-select";
 import { ProductSelect } from "@/components/image-generator/product-select";
@@ -10,7 +10,6 @@ import type { StyleGalleryItem } from "@/components/image-generator/style-galler
 import { StyleGallery } from "@/components/image-generator/style-gallery";
 import { AssetInput } from "@/components/instant-ad/asset-input";
 import { ModeToggle } from "@/components/instant-ad/mode-toggle";
-import { StatusPill } from "@/components/instant-ad/status-pill";
 import { PresetPicker } from "@/components/instant-ad/video-presets";
 import { useInstantAdStore } from "@/features/instant-ad/instant-ad-store";
 import { usePresetsQuery } from "@/queries/product-visuals";
@@ -67,92 +66,40 @@ export function InputPanel({
     addBrandAsset,
     removeBrandAsset,
   } = useInstantAdStore();
-  const [isAssetsOpen, setIsAssetsOpen] = useState(false);
+  const [isStyleOpen, setIsStyleOpen] = useState(true);
   const [isPromptOpen, setIsPromptOpen] = useState(false);
+  const [isMoreOptionsOpen, setIsMoreOptionsOpen] = useState(false);
   const generateLabel = mode === "video" ? "Generate Video" : "Generate Image";
 
-  // Fetch presets
+  // Fetch references
   const { data: presetsData, isPending: isLoadingPresets } = usePresetsQuery();
-  const presets = presetsData?.presets ?? [];
+  const references = presetsData?.references ?? [];
 
-  const statusForBadge = isConnected ? status : "connecting";
+  // Determine button state and label
+  const isRunning = status === "running";
+  const buttonLabel = !isConnected
+    ? "Connecting..."
+    : isRunning
+      ? "Generating..."
+      : generateLabel;
 
   return (
     <div className="flex h-full min-w-0 flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 pb-4">
-        <h3 className="text-sm font-medium"> Settings</h3>
-        <div className="flex items-center gap-2">
-          <StatusPill status={statusForBadge} />
-          <ModeToggle mode={mode} onChange={setMode} />
-        </div>
+      <div className="flex items-center justify-between gap-2 pb-2">
+        <h3 className="text-sm font-medium">Settings</h3>
+        <ModeToggle mode={mode} onChange={setMode} />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="space-y-8">
-          {/* Presets */}
-          <div className="mx-1">
-            <PresetPicker
-              presets={presets}
-              isLoading={isLoadingPresets}
-              selectedPresetId={selectedVideoPresetId}
-              onPresetSelect={(preset) => {
-                if (selectedVideoPresetId === preset.id) {
-                  selectVideoPreset(undefined);
-                } else {
-                  selectVideoPreset(preset.id);
-                }
-              }}
-            />
-          </div>
-          {/* Custom Prompt Collapsible */}
-          <div className="mx-1">
-            <Button
-              onClick={() => setIsPromptOpen(!isPromptOpen)}
-              variant="ghost"
-              className="flex w-full items-center justify-between rounded-lg px-3 py-2 h-auto"
-            >
-              <span className="text-sm font-medium text-foreground">
-                Custom Prompt{" "}
-                <span className="text-muted-foreground font-normal">
-                  (Optional)
-                </span>
-              </span>
-              <ChevronDown
-                size={18}
-                className={`text-muted-foreground transition-transform duration-200 ${
-                  isPromptOpen ? "rotate-180" : ""
-                }`}
-              />
-            </Button>
-
-            {isPromptOpen && (
-              <div className="mt-4 animate-in fade-in-50 duration-200">
-                <p className="text-xs text-muted-foreground mb-2">
-                  Add specific instructions. Most users find presets work great
-                  on their own.
-                </p>
-                <Textarea
-                  id="prompt"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="e.g., Add a sunset background, make it more vibrant, focus on the texture..."
-                  rows={3}
-                  className="w-full text-sm"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Product Section */}
-          <div>
-            <Label className="text-sm font-medium">
-              Step 2. Select Product
-            </Label>
+      <div className="flex-1 min-h-0 overflow-y-auto py-2 scroll-feather">
+        <div className="space-y-6">
+          {/* 1. Product Section - FIRST: What are you selling? */}
+          <div className="px-3">
+            <Label className="text-sm font-medium">Your Product</Label>
             <p className="text-xs text-muted-foreground mb-2">
               Choose the product you're selling that will be featured in your
-              creative content.
+              ad.
             </p>
             <ProductSelect
               products={products}
@@ -178,31 +125,106 @@ export function InputPanel({
             )}
           </div>
 
-          {/* Optional Assets Collapsible */}
-          <div className="pt-6">
+          {/* 2. Style/Preset Section - SECOND: How should it look? */}
+          <div>
             <Button
-              onClick={() => setIsAssetsOpen(!isAssetsOpen)}
+              onClick={() => setIsStyleOpen(!isStyleOpen)}
               variant="ghost"
               className="flex w-full items-center justify-between rounded-lg px-3 py-2 h-auto"
             >
               <span className="text-sm font-medium text-foreground">
-                Advanced
+                Choose a Style
               </span>
               <ChevronDown
                 size={18}
                 className={`text-muted-foreground transition-transform duration-200 ${
-                  isAssetsOpen ? "rotate-180" : ""
+                  isStyleOpen ? "rotate-180" : ""
                 }`}
               />
             </Button>
 
-            {isAssetsOpen && (
-              <div className="mt-4 space-y-6 animate-in fade-in-50 duration-200">
-                {/* Style Section */}
+            {isStyleOpen && (
+              <div className="mt-2 px-3 animate-in fade-in-50 duration-200">
+                <PresetPicker
+                  references={references}
+                  isLoading={isLoadingPresets}
+                  selectedReferenceId={selectedVideoPresetId}
+                  onReferenceSelect={(ref) => {
+                    if (selectedVideoPresetId === ref.id) {
+                      selectVideoPreset(undefined);
+                    } else {
+                      selectVideoPreset(ref.id);
+                    }
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* 3. Custom Instructions - THIRD: Optional fine-tuning */}
+          <div>
+            <Button
+              onClick={() => setIsPromptOpen(!isPromptOpen)}
+              variant="ghost"
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 h-auto"
+            >
+              <span className="text-sm font-medium text-foreground">
+                Custom Instructions{" "}
+                <span className="text-muted-foreground font-normal">
+                  (Optional)
+                </span>
+              </span>
+              <ChevronDown
+                size={18}
+                className={`text-muted-foreground transition-transform duration-200 ${
+                  isPromptOpen ? "rotate-180" : ""
+                }`}
+              />
+            </Button>
+
+            {isPromptOpen && (
+              <div className="mt-3 px-3 animate-in fade-in-50 duration-200">
+                <p className="text-xs text-muted-foreground mb-2">
+                  Add specific directions. Most users find styles work great on
+                  their own.
+                </p>
+                <Textarea
+                  id="prompt"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="e.g., Add a sunset background, make it more vibrant, focus on the texture..."
+                  rows={3}
+                  className="w-full text-sm"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* 4. More Options - FOURTH: Power user features */}
+          <div>
+            <Button
+              onClick={() => setIsMoreOptionsOpen(!isMoreOptionsOpen)}
+              variant="ghost"
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 h-auto"
+            >
+              <span className="text-sm font-medium text-foreground">
+                More Options
+              </span>
+              <ChevronDown
+                size={18}
+                className={`text-muted-foreground transition-transform duration-200 ${
+                  isMoreOptionsOpen ? "rotate-180" : ""
+                }`}
+              />
+            </Button>
+
+            {isMoreOptionsOpen && (
+              <div className="mt-3 px-3 space-y-6 animate-in fade-in-50 duration-200">
+                {/* Visual Style Gallery */}
                 <div>
-                  <Label className="text-sm font-medium">Style</Label>
+                  <Label className="text-sm font-medium">Visual Style</Label>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Choose a visual style to apply to your generation.
+                    Apply a specific visual aesthetic to your generation.
                   </p>
                   <StyleGallery
                     styles={styles}
@@ -215,21 +237,21 @@ export function InputPanel({
 
                 <AssetInput
                   label="Avatar Assets"
-                  helper="Reference images for characters, models, or people to influence the generation."
+                  helper="Reference images for characters, models, or people."
                   assets={avatarAssets}
                   onAdd={addAvatarAsset}
                   onRemove={removeAvatarAsset}
                 />
                 <AssetInput
                   label="Reference Assets"
-                  helper="Images to guide visual style, composition, and artistic direction."
+                  helper="Images to guide visual style and composition."
                   assets={referenceAssets}
                   onAdd={addReferenceAsset}
                   onRemove={removeReferenceAsset}
                 />
                 <AssetInput
                   label="Brand Assets"
-                  helper="Logos, graphics, fonts, or other branding elements to incorporate."
+                  helper="Logos, graphics, or branding elements to incorporate."
                   assets={brandAssets}
                   onAdd={addBrandAsset}
                   onRemove={removeBrandAsset}
@@ -241,20 +263,23 @@ export function InputPanel({
       </div>
 
       {/* Generate Button */}
-      <div className="mt-6 pt-4">
-        <Label className="text-sm font-medium mb-2 block">
-          Step 3. Generate Video
-        </Label>
-        <div className="flex flex-col gap-2">
-          <Button onClick={onGenerate} disabled={isGenerateDisabled} size="sm">
-            {generateLabel}
-          </Button>
-          {error && (
-            <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-              {error.message}
-            </div>
+      <div>
+        <Button
+          onClick={onGenerate}
+          size="lg"
+          disabled={isGenerateDisabled}
+          className="w-full"
+        >
+          {(!isConnected || isRunning) && (
+            <Loader2 className="h-4 w-4 animate-spin" />
           )}
-        </div>
+          {buttonLabel}
+        </Button>
+        {error && (
+          <div className="mt-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            {error.message}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -15,6 +15,11 @@ export interface OpenComposerOptions {
   contentCreateData?: ContentCreateData;
   /** Content group ID (for editing existing posts) */
   contentGroupID?: string;
+  /**
+   * Treat provided initial content as unsaved so navigation blockers fire even before edits.
+   * Defaults to true when content is provided without a contentGroupID.
+   */
+  treatInitialContentAsUnsaved?: boolean;
 }
 
 /**
@@ -54,8 +59,13 @@ export function useOpenComposer() {
 
   return useCallback(
     (options: OpenComposerOptions = {}) => {
-      const { attachments, message, contentCreateData, contentGroupID } =
-        options;
+      const {
+        attachments,
+        message,
+        contentCreateData,
+        contentGroupID,
+        treatInitialContentAsUnsaved,
+      } = options;
 
       // Build content data from options
       const initContentCreateData: ContentCreateData | undefined =
@@ -74,6 +84,12 @@ export function useOpenComposer() {
       initializeComposer({
         initContentCreateData,
         contentGroupID,
+        treatInitialContentAsUnsaved:
+          treatInitialContentAsUnsaved ??
+          Boolean(
+            (initContentCreateData || message || attachments) &&
+              !contentGroupID,
+          ),
         initialAccounts:
           selectedAccounts.length > 0 ? currentAccounts : accounts,
       });

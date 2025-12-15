@@ -12,6 +12,7 @@ import {
   format,
   isSameMonth,
   isToday,
+  parse,
   startOfMonth,
   startOfWeek,
 } from "date-fns";
@@ -26,8 +27,15 @@ import { EventGap, EventHeight } from "@/components/calendar";
 import { Route as CalendarRoute } from "@/routes/_authenticated/workspaces/$workspaceSlug/calendar";
 
 export function CalendarSkeleton() {
-  const currentDate = new Date();
-  const { view = "month" } = CalendarRoute.useSearch();
+  const { view = "month", date: dateParam } = CalendarRoute.useSearch();
+
+  // Parse date from URL param or fallback to today
+  const currentDate = useMemo(() => {
+    if (dateParam) {
+      return parse(dateParam, "yyyy-MM-dd", new Date());
+    }
+    return new Date();
+  }, [dateParam]);
 
   const monthDays = useMemo(() => {
     const monthStart = startOfMonth(currentDate);

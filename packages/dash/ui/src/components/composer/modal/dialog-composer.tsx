@@ -45,14 +45,17 @@ export default function ComposerDialog() {
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      // User is trying to close the dialog
-      if (hasUnsavedChanges()) {
+      // User is trying to close the dialog (clicking outside, pressing Escape, or X button)
+      // Only check for unsaved changes if the dialog wasn't already being closed programmatically
+      // (i.e., mode is still "dialog" meaning this is a user-initiated close)
+      if (mode === "dialog" && hasUnsavedChanges()) {
         // Show confirmation dialog
         setShowCancelConfirm(true);
-      } else {
+      } else if (mode === "dialog") {
         // No unsaved changes, close immediately
         closeComposer();
       }
+      // If mode is already not "dialog", the close was programmatic - do nothing
     }
   };
 

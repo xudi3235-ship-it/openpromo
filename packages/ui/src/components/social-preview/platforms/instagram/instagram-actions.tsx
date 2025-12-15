@@ -12,7 +12,7 @@ export function InstagramActions({ size = "default" }: InstagramActionsProps) {
 
   return (
     <div className={cn("flex items-center justify-between", spacing)}>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-4">
         <Button
           variant="ghost"
           size="sm"

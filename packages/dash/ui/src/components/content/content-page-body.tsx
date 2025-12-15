@@ -29,9 +29,9 @@ export function ContentPageBody({
   }
 
   return (
-    <div className="overflow-hidden rounded-md border">
+    <div className="min-h-0 flex-1 overflow-auto rounded-md border">
       <Table>
-        <TableHeader>
+        <TableHeader className="sticky top-0 z-10">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {

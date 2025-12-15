@@ -1,54 +1,62 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Grid2X2, List } from "lucide-react";
-import React from "react";
+import { useEffect, useState } from "react";
 import { GridView } from "@/components/composer/layout/grid-view";
 import { ListView } from "@/components/composer/layout/list-view";
 import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
+import { useRunAttachments } from "@/hooks/useRunAttachments";
 import { useConnectedAccounts } from "@/queries/connected-account";
-import { useComposerStore } from "@/stores/composer-store";
+import { usePreviewSessionStore } from "@/stores/composer-preview-store";
+import type { LiveRunData } from "@/stores/live-run-store";
 
 interface RunPreviewProps {
-  run: RunFeedItem;
+  run: RunFeedItem | LiveRunData;
   className?: string;
+  size?: "default" | "compact" | "large";
 }
 
-export function RunPreview({ run, className }: RunPreviewProps) {
-  const [viewMode, setViewMode] = React.useState<"list" | "grid">("grid");
+export function RunPreview({
+  run,
+  className,
+  size = "large",
+}: RunPreviewProps) {
+  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const { accounts, isPending: isLoadingAccounts } = useConnectedAccounts();
-  const { initializeComposer, activeAccount, setActiveAccount } =
-    useComposerStore();
+  const { session, setPreviewSession, setActiveAccount, clearPreviewSession } =
+    usePreviewSessionStore();
 
-  // Get media from run
-  const isVideo = run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
-  const mediaUrl =
-    isVideo?.videoUrl ||
-    run.output.output?.images?.[0]?.imageUrl ||
-    run.artifacts?.images?.[0]?.imageUrl;
+  const { attachments, isVideo, hasMedia } = useRunAttachments(run);
 
-  // Initialize composer store with run data when component mounts
-  React.useEffect(() => {
-    if (mediaUrl) {
-      initializeComposer({
-        initContentCreateData: {
-          base: {
-            attachments: [
-              {
-                id: run.id,
-                type: isVideo ? "video" : "photo",
-                publicUrl: mediaUrl,
-                mimeType: isVideo ? "video/mp4" : "image/jpeg",
-                source: "remote" as const,
-              },
-            ],
-            message: run.input?.prompt || "",
-          },
-          placements: {},
+  // Initialize preview session with run data when component mounts
+  useEffect(() => {
+    if (!hasMedia || accounts.length === 0) return;
+
+    setPreviewSession({
+      accounts,
+      selectedPreview: accounts[0]?.platform,
+      activeAccount: accounts[0]?.id ?? null,
+      contentCreateData: {
+        base: {
+          attachments,
+          message: run.input?.prompt || "",
+          firstComment: undefined,
         },
-        initialAccounts: accounts,
-        initialSelectedPreview: accounts[0]?.platform,
-      });
-    }
-  }, [run, mediaUrl, isVideo, accounts, initializeComposer]);
+        placements: {},
+      },
+      placementsByAccount: {},
+    });
+
+    return () => {
+      clearPreviewSession();
+    };
+  }, [
+    accounts,
+    attachments,
+    clearPreviewSession,
+    hasMedia,
+    run.input?.prompt,
+    setPreviewSession,
+  ]);
 
   if (isLoadingAccounts) {
     return <div className={className}>Loading preview...</div>;
@@ -62,22 +70,22 @@ export function RunPreview({ run, className }: RunPreviewProps) {
   return (
     <div className={className}>
       {/* View Toggle */}
-      <div className="flex items-center justify-center gap-1 mb-4">
+      <div className="flex items-center justify-center gap-1 mb-2">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setViewMode("list")}
-          className={`h-8 w-8 p-0 ${viewMode === "list" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          className={`h-7 w-7 p-0 ${viewMode === "list" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
         >
-          <List size={16} />
+          <List size={14} />
         </Button>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setViewMode("grid")}
-          className={`h-8 w-8 p-0 ${viewMode === "grid" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          className={`h-7 w-7 p-0 ${viewMode === "grid" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
         >
-          <Grid2X2 size={16} />
+          <Grid2X2 size={14} />
         </Button>
       </div>
 
@@ -85,7 +93,7 @@ export function RunPreview({ run, className }: RunPreviewProps) {
       {viewMode === "list" ? (
         <ListView
           accounts={accounts}
-          selectedAccountId={activeAccount || accounts[0]?.id}
+          selectedAccountId={session.activeAccount || accounts[0]?.id}
           onSelectAccount={setActiveAccount}
           activeAccountId={null}
           isReel={Boolean(isVideo)}
@@ -95,6 +103,7 @@ export function RunPreview({ run, className }: RunPreviewProps) {
           accounts={accounts}
           activeAccountId={null}
           isReel={Boolean(isVideo)}
+          size={size}
         />
       )}
     </div>

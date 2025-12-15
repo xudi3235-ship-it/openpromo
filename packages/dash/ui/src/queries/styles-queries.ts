@@ -16,12 +16,6 @@ import type {
 export type StylesListParams = Omit<StyleRouterInputs["list"], "workspaceSlug">;
 export type StylesListResponse = StyleRouterOutputs["list"];
 export type StyleResponse = StyleRouterOutputs["get"];
-export type StyleGenerationsParams = Omit<
-  StyleRouterInputs["generations"]["list"],
-  "workspaceSlug" | "styleId"
->;
-export type StyleGenerationsResponse =
-  StyleRouterOutputs["generations"]["list"];
 
 export const invalidateStylesListQueries = async (queryClient: QueryClient) => {
   await queryClient.invalidateQueries({
@@ -56,25 +50,6 @@ const getStylesInfiniteOptions = (
 const getStyleDetailsOptions = (workspaceSlug: string, styleId: string) =>
   orpc.styles.get.queryOptions({ input: { workspaceSlug, styleId } });
 
-const getStyleGenerationsInfiniteOptions = (
-  workspaceSlug: string,
-  styleId: string,
-  params: Omit<StyleGenerationsParams, "page"> = {},
-) =>
-  orpc.styles.generations.list.infiniteOptions({
-    input: (pageParam) => ({
-      ...params,
-      workspaceSlug,
-      styleId,
-      page: pageParam,
-    }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
-    },
-  });
-
 // Prefetch helpers for loaders (use factory functions)
 export const prefetchStylesList = (
   queryClient: QueryClient,
@@ -100,17 +75,6 @@ export const prefetchStyleDetails = (
   styleId: string,
 ) => {
   queryClient.prefetchQuery(getStyleDetailsOptions(workspaceSlug, styleId));
-};
-
-export const prefetchStyleGenerationsInfiniteQuery = (
-  queryClient: QueryClient,
-  workspaceSlug: string,
-  styleId: string,
-  params: Omit<StyleGenerationsParams, "page"> = {},
-) => {
-  queryClient.prefetchInfiniteQuery(
-    getStyleGenerationsInfiniteOptions(workspaceSlug, styleId, params),
-  );
 };
 
 // Hooks for components - return both query result and prefetch function
@@ -163,88 +127,6 @@ export const useStyleDetailsQuery = (styleId: string | undefined) => {
       );
     },
   };
-};
-
-export const useStyleGenerationsQuery = (
-  styleId: string | undefined,
-  params: StyleGenerationsParams = {},
-) => {
-  const { workspace } = useWorkspace();
-  const queryClient = useQueryClient();
-
-  return {
-    ...useQuery(
-      orpc.styles.generations.list.queryOptions({
-        input: {
-          ...params,
-          workspaceSlug: workspace.slug,
-          // biome-ignore lint/style/noNonNullAssertion: later
-          styleId: styleId!,
-        },
-        enabled: Boolean(styleId),
-      }),
-    ),
-    prefetch: (overrideParams?: StyleGenerationsParams) => {
-      if (!styleId) return;
-      return queryClient.prefetchQuery(
-        orpc.styles.generations.list.queryOptions({
-          input: {
-            ...(overrideParams ?? params),
-            workspaceSlug: workspace.slug,
-            styleId,
-          },
-        }),
-      );
-    },
-  };
-};
-
-export const useStyleGenerationsInfiniteQuery = (
-  styleId: string | undefined,
-  params: Omit<StyleGenerationsParams, "page"> = {},
-) => {
-  const { workspace } = useWorkspace();
-  const queryClient = useQueryClient();
-
-  return {
-    ...useInfiniteQuery({
-      ...getStyleGenerationsInfiniteOptions(
-        workspace.slug,
-        // biome-ignore lint/style/noNonNullAssertion: later
-        styleId!,
-        params,
-      ),
-      enabled: Boolean(styleId),
-    }),
-    prefetch: (overrideParams?: Omit<StyleGenerationsParams, "page">) => {
-      if (!styleId) return;
-      return queryClient.prefetchInfiniteQuery(
-        getStyleGenerationsInfiniteOptions(
-          workspace.slug,
-          styleId,
-          overrideParams ?? params,
-        ),
-      );
-    },
-  };
-};
-
-export const useStyleGenerationDeleteMutation = (styleId?: string) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    ...orpc.styles.generations.delete.mutationOptions({
-      onSuccess: async () => {
-        if (!styleId) return;
-        await queryClient.invalidateQueries({
-          queryKey: orpc.styles.generations.list.key({ input: { styleId } }),
-        });
-        toast.success("Generation deleted");
-      },
-      onError: () => {
-        toast.error("Failed to delete generation");
-      },
-    }),
-  });
 };
 
 export const useStyleCreateMutation = (onSuccess?: () => void) => {

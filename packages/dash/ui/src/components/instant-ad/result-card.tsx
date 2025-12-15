@@ -21,6 +21,8 @@ interface ResultCardProps {
   isDeleting?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (runId: string) => void;
+  /** Whether this run is currently being generated (WebSocket active) */
+  isLive?: boolean;
 }
 
 const stateLabelMap: Record<RunFeedItem["status"], string> = {
@@ -38,8 +40,9 @@ export function ResultCard({
   isDeleting,
   isSelected,
   onToggleSelect,
+  isLive: _isLive,
 }: ResultCardProps) {
-  const isVideo = run.agentName === "video_gen_agent";
+  const isVideo = run.input.mode === "video_gen";
   const coverVideo =
     run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
   const coverImage =

@@ -13,6 +13,12 @@ import {
   CardTitle,
 } from "@openpromo/ui/components/card";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@openpromo/ui/components/dropdown-menu";
+import {
   Form,
   FormControl,
   FormField,
@@ -22,13 +28,25 @@ import {
 } from "@openpromo/ui/components/form";
 import { Input } from "@openpromo/ui/components/input";
 import { Separator } from "@openpromo/ui/components/separator";
+import { Skeleton } from "@openpromo/ui/components/skeleton";
+import { useQueryClient } from "@tanstack/react-query";
+import { ChevronDown, Loader2, Plus } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
+import { getPlatformMeta } from "@/components/composer/utils/platform-style";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useStorageUpload } from "@/hooks/useStorageUpload";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useWorkspacePermissions } from "@/hooks/useWorkspacePermissions";
+import type { ConnectedAccount } from "@/lib/hono-client";
+import { useHonoMutation } from "@/lib/hono-client";
+import { QUERY_KEYS } from "@/lib/query";
+import {
+  useConnectedAccounts,
+  useOAuthWithListener,
+} from "@/queries/connected-account";
 import {
   type UpdateWorkspacePayload,
   useUpdateWorkspace,
@@ -283,6 +301,178 @@ export function WorkspaceSettings() {
           </Form>
         </CardContent>
       </Card>
+
+      {/* Connected Accounts Section */}
+      <ConnectedAccountsSection />
     </div>
+  );
+}
+
+// Connected Accounts Section
+function ConnectedAccountsSection() {
+  const { accounts, isPending } = useConnectedAccounts();
+  const {
+    handleConnectFacebook,
+    handleConnectInstagram,
+    handleConnectTikTok,
+    isConnectingFacebook,
+    isConnectingInstagram,
+    isConnectingTikTok,
+  } = useOAuthWithListener();
+
+  const isConnecting =
+    isConnectingFacebook || isConnectingInstagram || isConnectingTikTok;
+
+  return (
+    <Card className="border border-border/60 shadow-none">
+      <CardHeader>
+        <CardTitle className="text-base">Connected accounts</CardTitle>
+        <CardDescription>
+          Manage your connected social media accounts.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isPending ? (
+          <div className="space-y-3">
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-14 w-full" />
+          </div>
+        ) : accounts.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            No accounts connected yet.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {accounts.map((account) => (
+              <ConnectedAccountItem key={account.id} account={account} />
+            ))}
+          </div>
+        )}
+
+        {/* Connect Account Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={isConnecting}
+            >
+              {isConnecting ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 size-4" />
+                  Connect account
+                  <ChevronDown className="ml-auto size-4" />
+                </>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="w-[var(--radix-dropdown-menu-trigger-width)]"
+          >
+            <DropdownMenuItem onClick={handleConnectInstagram}>
+              <span className="mr-2">
+                {getPlatformMeta("INSTAGRAM").icon({})}
+              </span>
+              Instagram
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleConnectFacebook}>
+              <span className="mr-2">
+                {getPlatformMeta("FACEBOOK").icon({})}
+              </span>
+              Facebook
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleConnectTikTok}>
+              <span className="mr-2">{getPlatformMeta("TIKTOK").icon({})}</span>
+              TikTok
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Individual Account Row
+function ConnectedAccountItem({ account }: { account: ConnectedAccount }) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+  const meta = getPlatformMeta(account.platform);
+  const Icon = meta.icon;
+
+  const { mutateAsync: disconnectAccount, isPending: isDisconnecting } =
+    useHonoMutation({
+      mutationFn: (api, accountId: string) =>
+        api.workspaces[":workspaceSlug"].connected_accounts[
+          ":accountId"
+        ].$delete({
+          param: { workspaceSlug: workspace.slug, accountId },
+        }),
+      onSuccess: async () => {
+        toast.success("Account disconnected successfully");
+        await queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.CONNECTED_ACCOUNTS(workspace.slug),
+        });
+      },
+    });
+
+  const handleDisconnect = async () => {
+    await disconnectAccount(account.id);
+    setShowConfirm(false);
+  };
+
+  return (
+    <>
+      <div className="flex items-center justify-between p-3 rounded-lg border border-border/60 bg-muted/30">
+        <div className="flex items-center gap-3">
+          {/* Platform icon */}
+          <div
+            className={`size-9 rounded-full bg-gradient-to-br ${meta.avatarGradient} flex items-center justify-center`}
+          >
+            <Icon className="size-4 text-white" />
+          </div>
+
+          {/* Account info */}
+          <div>
+            <p className="text-sm font-medium">
+              {account.accountName || "Unknown"}
+            </p>
+            <p className="text-xs text-muted-foreground">{meta.label}</p>
+          </div>
+        </div>
+
+        {/* Disconnect button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          onClick={() => setShowConfirm(true)}
+          disabled={isDisconnecting}
+        >
+          {isDisconnecting ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            "Disconnect"
+          )}
+        </Button>
+      </div>
+
+      <ConfirmDialog
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
+        title="Disconnect account"
+        desc={`Are you sure you want to disconnect ${account.accountName || account.platform}? You can reconnect it later.`}
+        confirmText="Disconnect"
+        destructive={true}
+        handleConfirm={handleDisconnect}
+        isLoading={isDisconnecting}
+      />
+    </>
   );
 }

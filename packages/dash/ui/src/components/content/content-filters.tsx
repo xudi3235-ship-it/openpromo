@@ -20,6 +20,8 @@ interface ContentFiltersProps {
   filters: ContentFilters;
   onFiltersChange: (filters: ContentFilters) => void;
   showDateFilter?: boolean;
+  // Batch actions slot - rendered on the right side of the filter bar
+  batchActions?: React.ReactNode;
 }
 
 const PUBLISHING_STATUS_OPTIONS: Array<{
@@ -71,6 +73,7 @@ export function ContentFilters({
   filters,
   onFiltersChange,
   showDateFilter = true,
+  batchActions,
 }: ContentFiltersProps) {
   const hasActiveFilters = Boolean(
     filters.publishingStatus || filters.dateRange?.from || filters.platform,
@@ -123,6 +126,7 @@ export function ContentFilters({
     <FilterBar
       hasActiveFilters={hasActiveFilters}
       onClearFilters={clearFilters}
+      rightContent={batchActions}
     >
       <FilterSelect
         value={filters.publishingStatus}

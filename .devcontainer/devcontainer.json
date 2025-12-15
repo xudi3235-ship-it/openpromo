@@ -1,0 +1,33 @@
+{
+  "name": "OpenPromo Development",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "biomejs.biome",
+        "bradlc.vscode-tailwindcss",
+        "charliermarsh.ruff",
+        "astro-build.astro-vscode",
+        "openai.chatgpt",
+        "anthropic.claude-code",
+        "github.copilot-chat",
+        "github.copilot"
+      ]
+    }
+  },
+
+  "forwardPorts": [3000, 8080, 5173, 4321],
+
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+
+  "remoteUser": "root",
+
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+
+  "capAdd": ["SYS_ADMIN"],
+
+  "securityOpt": ["seccomp=unconfined"]
+}

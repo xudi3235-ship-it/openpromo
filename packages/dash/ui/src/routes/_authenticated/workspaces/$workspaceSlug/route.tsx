@@ -6,10 +6,12 @@ import {
   useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
+import { useState } from "react";
 import { toast } from "sonner";
 import ComposerDialog from "@/components/composer/modal/dialog-composer";
 import { WorkspaceLayout } from "@/components/layout/workspace-layout";
 import { WorkspaceLayoutLoading } from "@/components/loading/workspace-loading";
+import { OnboardingDialog } from "@/components/onboarding/onboarding-dialog";
 import { WorkspaceConnectedAccountsBar } from "@/components/workspace/workspace-connected-accounts-bar";
 import { WorkspaceNullState } from "@/components/workspace/workspace-null-state";
 import { orpc } from "@/lib/orpc-client";
@@ -52,6 +54,7 @@ export const Route = createFileRoute(
 
 const DISABLED_ACCOUNTS_BAR_PATTERNS: RegExp[] = [
   /^\/workspaces\/[^/]+\/composer\/?$/,
+  /^\/workspaces\/[^/]+\/instant-ad(\/.*)?$/,
 ];
 
 function WorkspaceComponent() {
@@ -60,6 +63,7 @@ function WorkspaceComponent() {
   const queryClient = useQueryClient();
   const { accounts, isPending } = useConnectedAccounts();
   const { location } = useRouterState();
+  const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(false);
 
   const { mutate: _ } = useMutation(
     orpc.workspaces.delete.mutationOptions({
@@ -84,23 +88,36 @@ function WorkspaceComponent() {
     (pattern) => pattern.test(location.pathname),
   );
 
-  if (!isPending && accounts.length === 0) {
+  const showOnboarding = !isPending && accounts.length === 0;
+
+  if (showOnboarding && isOnboardingDismissed) {
+    // User dismissed onboarding, show simple null state
     return (
       <WorkspaceLayout>
-        <WorkspaceNullState
-          title={`Welcome to ${workspace.name}`}
-          description="Connect your social media accounts to start creating and scheduling content"
-          footerText="Choose a platform above to get started"
+        <WorkspaceNullState accounts={accounts} />
+      </WorkspaceLayout>
+    );
+  }
+
+  if (showOnboarding) {
+    // Show onboarding dialog experience
+    return (
+      <WorkspaceLayout>
+        <OnboardingDialog
+          open={true}
+          onOpenChange={() => {}}
+          onSkip={() => setIsOnboardingDismissed(true)}
         />
+        <WorkspaceNullState accounts={accounts} />
       </WorkspaceLayout>
     );
   }
 
   return (
     <WorkspaceLayout>
-      <div className="flex h-full flex-col gap-4">
+      <div className="flex h-full flex-col">
         {shouldShowAccountsBar && (
-          <div className="px-4 pt-5">
+          <div className="px-4 pt-2 pb-1">
             <WorkspaceConnectedAccountsBar />
           </div>
         )}

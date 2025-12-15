@@ -10,9 +10,15 @@ interface GridViewProps {
   accounts: ConnectedAccount[];
   activeAccountId: string | null;
   isReel: boolean;
+  size?: "default" | "compact" | "large";
 }
 
-export function GridView({ accounts, activeAccountId, isReel }: GridViewProps) {
+export function GridView({
+  accounts,
+  activeAccountId,
+  isReel,
+  size = "large",
+}: GridViewProps) {
   if (accounts.length === 0) {
     return (
       <div className="max-w-md mx-auto text-sm text-muted-foreground text-center p-6">
@@ -37,7 +43,7 @@ export function GridView({ accounts, activeAccountId, isReel }: GridViewProps) {
   };
 
   return (
-    <div className="mx-auto flex flex-wrap justify-center gap-4 items-start">
+    <div className="w-full mx-auto flex flex-wrap justify-center gap-2 sm:gap-3 items-start">
       {accounts.map((account) => (
         <PreviewItem
           key={account.id}
@@ -46,7 +52,7 @@ export function GridView({ accounts, activeAccountId, isReel }: GridViewProps) {
             account.platform === "TIKTOK" ? "feed" : isReel ? "reel" : "feed"
           }
           isActive={account.id === activeAccountId}
-          size="compact"
+          size={size}
         >
           {renderPreview(account)}
         </PreviewItem>

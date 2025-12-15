@@ -3,10 +3,8 @@ import type { ContainerBackend } from "@core/containers";
 import type { VideoGenAgent } from "@core/domain/agents/video-gen-agent";
 import type { ContentBackfillWorkflowParams } from "@core/domain/content/workflows/content-backfill-workflow";
 import type { PublishWorkflowParams } from "@core/domain/content/workflows/content-publish-workflow";
-import type { ImageGenerationWorkflowParams } from "@core/domain/image-generation";
 import type { ProductProcessingWorkflowParams } from "@core/domain/product/workflows/product-processing-workflow";
 import type { StyleComponentWorkflowParams } from "@core/domain/style-component";
-import type { VideoGenerationWorkflowParams } from "@core/domain/video-generation";
 import type {
   ApiRateLimitCoordinator,
   WorkspacePusher,
@@ -34,21 +32,28 @@ export type ApiEnv = {
     ContentBackfillWorkflow: Workflow<ContentBackfillWorkflowParams>;
     ProductProcessingWorkflow: Workflow<ProductProcessingWorkflowParams>;
     StyleComponentWorkflow: Workflow<StyleComponentWorkflowParams>;
-    ImageGenerationWorkflow: Workflow<ImageGenerationWorkflowParams>;
-    VideoGenerationWorkflow: Workflow<VideoGenerationWorkflowParams>;
     // durable objects
     WorkspacePusher: DurableObjectNamespace<WorkspacePusher>;
     WorkspaceSyncCoordinator: DurableObjectNamespace<WorkspaceSyncCoordinator>;
     ApiRateLimitCoordinator: DurableObjectNamespace<ApiRateLimitCoordinator>;
     ContainerBackend: DurableObjectNamespace<ContainerBackend>;
-    // storage
+    // R2 storage
     Bucket: R2Bucket;
+    PublicBucket: R2Bucket;
+    ReferenceBucket: R2Bucket;
+    // KV storage
     KV: KVNamespace;
     JobQueue: Queue<JobQueueMessage>;
     // analytics
     WorkspaceInsightsAnalytics: AnalyticsEngineDataset;
     // agents
     VideoGenAgent: AgentNamespace<VideoGenAgent>;
+    // workers ai
+    AI: Ai;
+    // browser rendering
+    Browser: Fetcher;
+    // vectorize
+    ReferenceIndex: VectorizeIndex;
   };
 };
 

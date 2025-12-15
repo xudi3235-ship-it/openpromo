@@ -43,7 +43,7 @@ describe("KieAIClient veo31 record-info fallback handling", () => {
 
     let caughtError: unknown;
     try {
-      await client.veo31GetVideoDetails(TASK_ID);
+      await client.getTaskDetails(TASK_ID);
     } catch (error) {
       caughtError = error;
     }
@@ -68,7 +68,7 @@ describe("KieAIClient veo31 record-info fallback handling", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      `${BASE_URL}/api/v1/veo/record-info?taskId=${TASK_ID}`,
+      `${BASE_URL}/api/v1/jobs/recordInfo?taskId=${TASK_ID}`,
       expect.objectContaining({
         method: "GET",
         headers: expect.objectContaining({

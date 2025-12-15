@@ -1,10 +1,6 @@
 import { openai } from "@ai-sdk/openai";
-import { type ApiEnv, Binding } from "@core/helpers/api-env";
-import { produce } from "immer";
-
-// import { routeAgentRequest } from "agents";
-
-import { Actor } from "@core/helpers/actor";
+import type { Actor } from "@core/helpers/actor";
+import type { ApiEnv } from "@core/helpers/api-env";
 import {
   type Agent,
   type AgentInputItem,
@@ -13,15 +9,15 @@ import {
   run,
   withTrace,
 } from "@openai/agents";
-import { VideoGenRealtime } from "@shared/agents";
-import type {
-  AgentContext,
-  Connection,
-  ConnectionContext,
-  WSMessage,
+import { type OrchestratorSchema, VideoGenRealtime } from "@shared/agents";
+import {
+  type AgentContext,
+  type Connection,
+  type ConnectionContext,
+  getCurrentAgent,
+  type WSMessage,
 } from "agents";
 import { AIChatAgent } from "agents/ai-chat-agent";
-import { MessageType as CfAgentMessageType } from "agents/ai-types";
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -32,41 +28,18 @@ import {
   type ToolSet,
   type UIMessage,
 } from "ai";
+import { produce } from "immer";
 import { EntAgentRun } from "../agent-run";
 import type { VideoGenAgentContext } from "./context";
-import { buildSystemPrompt, createVideoGenAgent } from "./create-agent";
+import { AGENT_REGISTRY } from "./create-agent";
+import { createOrchestratorAgent } from "./create-orchestrator-agent";
+import { buildSystemPrompt } from "./create-video-agent";
 import { setupAgentHooks } from "./hooks";
+import { InputTransformer } from "./input/input-transformer";
 import { Presets } from "./presets";
-import { createImageGenWithRefAgent } from "./subagents/image-gen-with-ref";
-import { toAgentImageInputs } from "./tools/evaluation-utils";
-import { buildTreeString, downloadImagesToTmp } from "./utils";
-
-class ActorStore {
-  private cache: Actor.WorkspaceUser | null = null;
-  private readonly key = "actor";
-
-  constructor(private ctx: AgentContext) {}
-
-  async get(): Promise<Actor.WorkspaceUser | null> {
-    if (this.cache) return this.cache;
-    const storedActor = await this.ctx.storage.get(this.key);
-    if (!storedActor) return null;
-    this.cache = storedActor as Actor.WorkspaceUser;
-    return this.cache;
-  }
-
-  async set(actor: Actor.WorkspaceUser) {
-    this.cache = actor;
-    await this.ctx.storage.put(this.key, actor);
-  }
-
-  async withContext<T>(fn: () => Promise<T>): Promise<T> {
-    const actor = await this.get();
-    if (!actor) throw new Error("Actor not set on VideoGenAgent");
-    return Actor.provide("workspace_user", actor.properties, fn);
-  }
-}
-
+import { ActorStore } from "./state/actor-store";
+import { StateBroadcaster } from "./transport/state-broadcaster";
+import { WebSocketHandler } from "./transport/websocket-handler";
 // extra props for agent instantiation.
 export interface VideoGenAgentProps {
   actor: Actor.WorkspaceUser;
@@ -87,21 +60,26 @@ export class VideoGenAgent extends AIChatAgent<
 > {
   // internal states
   private runStateSerialized: string | null;
-  private _logs: string;
   private actorStore: ActorStore;
   private presetManager: Presets.Manager;
+  private inputTransformer: InputTransformer;
+  private _suppressBroadcast = false;
 
   constructor(ctx: AgentContext, env: ApiEnv) {
     super(ctx, env);
     this.runStateSerialized = null;
-    this._logs = "";
     this.actorStore = new ActorStore(ctx);
     this.presetManager = new Presets.Manager();
+    this.inputTransformer = new InputTransformer(
+      this.actorStore,
+      this.presetManager,
+    );
 
     // if not initialized, init
     if (!this.state) {
       this.setState(VideoGenRealtime.initialServerAppState);
     }
+
     this.ctx.blockConcurrencyWhile(async () => {
       await this.actorStore.get();
     });
@@ -122,32 +100,27 @@ export class VideoGenAgent extends AIChatAgent<
   /**
    * Patch the application state with partial updates.
    */
-  patchState(updater: (draft: VideoGenRealtime.ServerAppState) => void) {
+  async patchState(updater: (draft: VideoGenRealtime.ServerAppState) => void) {
     const newState = produce(this.state, (draft) => {
       updater(draft);
       draft.lastUpdated = new Date().toISOString();
     });
+
     this.setState(newState);
-    if (!this.state.runId) return;
-    // persist state
-    EntAgentRun.fromID(this.state.runId)
-      .then((run) => {
-        run.persistState(newState);
-      })
-      .catch((err) => {
-        // might be deleted
-        console.error(
-          `[VideoGenAgent] Failed to persist state for run ${this.state.runId}:`,
-          err,
-        );
-      });
+
+    // Broadcast state to all connected clients
+    const connections = this.ctx.getWebSockets();
+    StateBroadcaster.broadcastState(connections, newState);
+
+    // Note: DB persistence is handled only in persistFinalState() at run completion
+    // to avoid race conditions between multiple async writes
   }
 
-  private async runPipeline(params: { agent: VideoGenRealtime.AgentName }) {
+  private async runPipeline() {
     await this.withActor(() =>
       withTrace(VideoGenAgent.name, async () => {
-        return this.withStateMgmt(async () => {
-          await this.runPipelineImpl(params);
+        return this.withRunLifecycle(async () => {
+          await this.runPipelineImpl();
         });
       }),
     );
@@ -156,6 +129,101 @@ export class VideoGenAgent extends AIChatAgent<
   private castProps(_props?: Record<string, unknown>): VideoGenAgentProps {
     const props = _props as unknown as VideoGenAgentProps;
     return props;
+  }
+
+  /**
+   * Validate input before starting a run.
+   */
+  private validateInput(input: VideoGenRealtime.Input): {
+    valid: boolean;
+    error?: string;
+  } {
+    if (input.productImages.length === 0) {
+      return {
+        valid: false,
+        error: "No product images provided in input.",
+      };
+    }
+    if (input.prompt.length === 0 && input.presetId === null) {
+      return {
+        valid: false,
+        error: "No prompt provided in input.",
+      };
+    }
+    return { valid: true };
+  }
+
+  /**
+   * Manage state lifecycle for a run execution.
+   * Handles validation, run creation, status transitions, and error handling.
+   */
+  private async withRunLifecycle<T>(
+    fn: () => Promise<T>,
+  ): Promise<T | undefined> {
+    // Check if already running
+    if (this.state.status === "running") {
+      console.warn(
+        "[VideoGenAgent] withRunLifecycle called but already running",
+      );
+      return;
+    }
+
+    // Validate input
+    const validation = this.validateInput(this.state.input);
+    if (!validation.valid) {
+      console.error(`[VideoGenAgent] Invalid input: ${validation.error}`);
+      await this.patchState((draft) => {
+        draft.status = "failed";
+        draft.error = validation.error ?? "Invalid input";
+      });
+      return;
+    }
+
+    // Reset internal state before starting
+    this.runStateSerialized = null;
+    await this.patchState((draft) => {
+      draft.logs = [];
+      draft.artifacts = VideoGenRealtime.defaultArtifacts;
+      draft.output = VideoGenRealtime.defaultAgentOutput;
+    });
+
+    // Create run and mark as running
+    const run = await EntAgentRun.createFromState(this.state);
+    await this.patchState((draft) => {
+      draft.status = "running";
+      draft.runId = run.data.id;
+    });
+
+    try {
+      // Execute the run
+      const result = await fn();
+      return result;
+    } catch (error) {
+      // Mark as failed
+      await this.patchState((draft) => {
+        draft.status = "failed";
+        draft.error =
+          typeof error === "string" ? error : (error as Error).message;
+      });
+      throw error;
+    } finally {
+      // Capture final state before any reset
+      const runId = this.state.runId;
+      const finalStatus = this.state.status;
+
+      if (runId && (finalStatus === "succeeded" || finalStatus === "failed")) {
+        // 1. AWAIT persistence to DB (critical - ensures DB has correct state)
+        await this.persistFinalState(runId, this.state);
+        console.log(`in finally, finaloutput: `, this.state.output);
+
+        // 2. Broadcast run_completed (tells clients to invalidate queries)
+        this.broadcastRunCompleted(runId, finalStatus);
+      }
+
+      // 3. Reset DO state quietly (no broadcast)
+      // Clients will fetch final state from DB via invalidated queries
+      this.resetStateQuietly();
+    }
   }
 
   onStart(_props?: Record<string, unknown> | undefined) {
@@ -169,152 +237,216 @@ export class VideoGenAgent extends AIChatAgent<
   private log(msg: string, ...args: any[]) {
     const formattedMsg = `[${VideoGenAgent.name}] ${msg} ${JSON.stringify(args)}`;
     console.log(formattedMsg, ...args);
-    this._logs += `${formattedMsg}\n`;
+    this.patchState((draft) => {
+      draft.logs.push(formattedMsg);
+    }).catch(console.error);
   }
 
   // either from serialize state or create new
   private async createRunnerInput(
-    agent: Agent<VideoGenAgentContext, VideoGenRealtime.AgentOutput>,
+    // biome-ignore lint/suspicious/noExplicitAny: Agent output types vary
+    agent: Agent<VideoGenAgentContext, any>,
   ): Promise<AgentInputItem[]> {
     if (!this.runStateSerialized) {
       // new
-      return await this.createRunnerInitialInput();
+      return await this.inputTransformer.transform(this.state.input);
     }
     // from serialized
     const state = await RunState.fromString(agent, this.runStateSerialized);
     return [
       ...state.history,
       // captures latest msg
-      ...(await this.createRunnerInitialInput()),
+      ...(await this.inputTransformer.transform(this.state.input)),
     ];
   }
 
   /**
    * core entrypoint to run the video generation pipeline.
+   * Uses decision-based routing with structured orchestrator output.
    */
-  private async runPipelineImpl(params: { agent: VideoGenRealtime.AgentName }) {
+  private async runPipelineImpl() {
     const runtimeContext = new RunContext<VideoGenAgentContext>({
       input: this.state.input,
       stage: "create_plan",
       plan: "",
     });
-    // 1. create agent with context
-    const agent =
-      params.agent === "video_gen_agent"
-        ? createVideoGenAgent()
-        : createImageGenWithRefAgent();
-    // finalized input items
-    const runnerInput = await this.createRunnerInput(agent);
 
-    // 2. setup hooks
-    setupAgentHooks(agent, {
-      onAgentStart: (_ctx) => {
-        this.log(`started`);
+    // 1. create orchestrator agent
+    const orchestrator = createOrchestratorAgent();
+    const runnerInput = await this.createRunnerInput(orchestrator);
+
+    // 2. setup hooks for orchestrator
+    // @ts-expect-error
+    setupAgentHooks(orchestrator, {
+      onAgentStart: (_ctx, agent) => {
+        this.log(`${agent.name} started`);
       },
       onAgentEnd: (_ctx, output) => {
         this.log(`ended`, output);
       },
-      onToolStart: (_ctx, toolName, _details) => {
-        this.log(`Tool started: ${toolName}`);
+      onToolStart: (_ctx, toolName, details) => {
+        this.log(`Tool started: ${toolName}`, details);
       },
       onToolEnd: (_ctx, toolName, result) => {
         this.log(`Tool ended: ${toolName}`, result);
       },
     });
-    let currInput = runnerInput;
+
+    // Track execution state
+    let currInput: AgentInputItem[] = runnerInput;
     let step = 0;
-    const MAX_RUN_STEPS = 20;
-    // 2. run the agent
-    // TODO: utilize agent handoff using structural output
+    const MAX_RUN_STEPS = 100;
+    let _currentPlan: OrchestratorSchema.PlanStep[] | null = null;
+    const completedSteps = new Map<string, unknown>();
+
+    // 3. Decision-based run loop
     while (step < MAX_RUN_STEPS) {
-      console.log(`>>>> Agent run step ${step} >>>>`);
+      this.log(`Step ${step}: Running orchestrator`);
+      console.log(`>>>> Orchestrator step ${step} >>>>`);
       console.log(`>>>> last 2 input:`, JSON.stringify(currInput.slice(-2)));
-      console.log(
-        `>>>> agent tools:`,
-        agent.tools.map((t) => t.name),
-      );
-      const result = await run(agent, currInput, {
+
+      const orchestratorResult = await run(orchestrator, currInput, {
         context: runtimeContext,
       });
-      // serialize run state
-      this.runStateSerialized = result.state.toString();
-      const finalOutput = result.finalOutput as VideoGenRealtime.AgentOutput;
-      if (!finalOutput.done) {
-        console.log(`continuing run, not done yet...`);
-        // prepare next input
-        currInput = [
-          ...result.history,
-          // TODO: might instrument more info here during each run
-        ];
-        step++;
-        continue;
+
+      // Serialize state for recovery
+      this.runStateSerialized = orchestratorResult.state.toString();
+      const decision =
+        orchestratorResult.finalOutput as OrchestratorSchema.Decision;
+
+      this.log(`Decision: ${decision.action}`, decision);
+
+      // 4. Route based on decision type
+      switch (decision.action) {
+        case "plan": {
+          // Store the plan for tracking
+          const steps = decision.steps ?? [];
+          _currentPlan = steps;
+          console.log(`Current plan:`, _currentPlan);
+          this.log(
+            `Plan created with ${steps.length} steps: ${decision.reasoning ?? "no reasoning"}`,
+          );
+
+          // Acknowledge plan and prompt for first handoff
+          currInput = [
+            ...orchestratorResult.history,
+            {
+              role: "system",
+              content: `Plan acknowledged with ${steps.length} steps. Proceed with first step handoff.`,
+            },
+          ];
+          break;
+        }
+
+        case "handoff":
+        case "retry": {
+          const targetAgent = decision.targetAgent;
+          const taskDescription = decision.taskDescription ?? "";
+
+          if (!targetAgent) {
+            throw new Error("Handoff/retry decision missing targetAgent");
+          }
+
+          this.log(`Handoff to ${targetAgent}: ${taskDescription}`);
+
+          try {
+            // Get agent factory from registry
+            const agentFactory = AGENT_REGISTRY[targetAgent];
+            const subAgent = agentFactory();
+
+            // Setup hooks for sub-agent
+            setupAgentHooks(subAgent, {
+              onAgentStart: (_ctx, agent) => {
+                this.log(`[SubAgent] ${agent.name} started`);
+              },
+              onAgentEnd: (_ctx, output) => {
+                this.log(`[SubAgent] ended`, output);
+              },
+              onToolStart: (_ctx, toolName, details) => {
+                this.log(`[SubAgent] Tool started: ${toolName}`, details);
+              },
+              onToolEnd: (_ctx, toolName, result) => {
+                this.log(`[SubAgent] Tool ended: ${toolName}`, result);
+              },
+            });
+            const productInputs = await this.inputTransformer.fromProductImages(
+              this.state.input,
+            );
+
+            // Run sub-agent with task description
+            const subInput: AgentInputItem[] = [
+              ...productInputs,
+              ...(await this.inputTransformer.fromImageArtifacts(this.state)),
+              { role: "user", content: taskDescription },
+            ];
+
+            const subResult = await run(subAgent, subInput, {
+              context: runtimeContext,
+            });
+
+            // Track completed step
+            if (decision.stepId) {
+              completedSteps.set(decision.stepId, subResult.finalOutput);
+            }
+
+            // Feed result back to orchestrator
+            currInput = [
+              // TODO: maybe we need to re-feed the images here so orchestrator
+              // can evaluate?
+              ...orchestratorResult.history,
+              ...(await this.inputTransformer.fromImageArtifacts(this.state)),
+              {
+                role: "system",
+                content: `Sub-agent ${targetAgent} completed successfully.\nResult: ${JSON.stringify(subResult.finalOutput)}.
+                Current completed steps: ${JSON.stringify(completedSteps)}
+                `,
+              },
+            ];
+          } catch (error) {
+            const errorMsg =
+              error instanceof Error ? error.message : String(error);
+            this.log(`Sub-agent ${targetAgent} failed: ${errorMsg}`);
+
+            // On failure, let orchestrator decide (retry or error)
+            currInput = [
+              ...orchestratorResult.history,
+              {
+                role: "system",
+                content: `Sub-agent ${targetAgent} FAILED.\nError: ${errorMsg}\nOrchestrator: decide whether to retry with different approach or abort.`,
+              },
+            ];
+          }
+          break;
+        }
+
+        case "complete": {
+          // Workflow finished successfully
+          const output = decision.output;
+          if (!output) {
+            throw new Error("Complete decision missing output");
+          }
+          this.log(`Workflow complete`, output);
+
+          await this.patchState((draft) => {
+            draft.status = "succeeded";
+            draft.output = output;
+          });
+          return; // Exit the loop
+        }
+
+        case "error": {
+          // Workflow cannot continue
+          throw new Error(
+            `Orchestrator error: ${decision.reason ?? "unknown"}`,
+          );
+        }
       }
-      // done
-      // 3. update state with serialized run and final output
-      this.patchState((draft) => {
-        draft.status = "succeeded";
-        draft.output = finalOutput;
-        draft.logs = this._logs;
-      });
-      this.log(`run completed:`, result.finalOutput);
-      // exit
-      break;
-    }
-  }
 
-  private async withStateMgmt<T>(fn: () => Promise<T>) {
-    // if already running, no-op
-    if (this.state.status === "running") {
-      console.warn("[VideoGenAgent] withStateMgmt called but already running");
-      return;
+      step++;
     }
 
-    // if no valid input or images, error out
-    if (
-      this.state.input.productImages.length === 0 ||
-      this.state.input.prompt.length === 0
-    ) {
-      console.error(
-        "[VideoGenAgent] runPipeline called but no product images provided",
-      );
-      this.patchState((draft) => {
-        draft.status = "failed";
-        draft.error = "No product images or prompt provided in input.";
-      });
-      return;
-    }
-    // 0. Reset internal state before starting a new run
-    // This ensures we don't try to restore from stale/invalid state
-    this.runStateSerialized = null;
-    this._logs = "";
-
-    // 1. mark as running
-    const run = await EntAgentRun.createFromState(this.state);
-    this.patchState((draft) => {
-      draft.status = "running";
-      draft.runId = run.data.id;
-    });
-    try {
-      // 2. run the fn
-      const result = await fn();
-      // 3. mark as succeeded?
-      this.patchState((draft) => {
-        draft.status = "succeeded";
-      });
-      return result;
-    } catch (error) {
-      // 4. failed
-      this.patchState((draft) => {
-        draft.status = "failed";
-        draft.error =
-          typeof error === "string" ? error : (error as Error).message;
-      });
-      throw error;
-    } finally {
-      // reset state
-      console.log(`[VideoGenAgent] resetting state after run`);
-      this.resetState();
-    }
+    // Exceeded max steps
+    throw new Error(`Exceeded maximum run steps (${MAX_RUN_STEPS})`);
   }
 
   /**
@@ -324,26 +456,71 @@ export class VideoGenAgent extends AIChatAgent<
     _state: VideoGenRealtime.ServerAppState | undefined,
     _source: Connection | "server",
   ): Promise<void> {
-    this.broadcastState();
+    if (this._suppressBroadcast) return;
+    // Broadcast current state to all connected clients
+    const connections = this.ctx.getWebSockets();
+    StateBroadcaster.broadcastState(connections, this.state);
   }
 
-  // clears stuff
-  resetState() {
-    this.runStateSerialized = null;
-    this._logs = "";
-    // Reset chat history and app state
-    this.messages = [];
-    this.setState(VideoGenRealtime.initialServerAppState);
-    this.broadcastState();
+  /**
+   * Persist final state to database (awaited to ensure consistency)
+   */
+  private async persistFinalState(
+    runId: string,
+    state: VideoGenRealtime.ServerAppState,
+  ) {
+    try {
+      const run = await EntAgentRun.fromID(runId);
+      await run.persistState(state);
+      console.log(`[VideoGenAgent] Final state persisted for run ${runId}`);
+    } catch (err) {
+      console.error(
+        `[VideoGenAgent] Failed to persist final state for run ${runId}:`,
+        err,
+      );
+    }
   }
 
-  private broadcastState() {
+  /**
+   * Broadcast run_completed event to all clients
+   * This signals clients to invalidate queries and fetch from DB
+   */
+  private broadcastRunCompleted(runId: string, status: "succeeded" | "failed") {
     const connections = this.ctx.getWebSockets();
     for (const conn of connections) {
-      VideoGenRealtime.sendEvent(conn, "sync_state", {
-        state: this.state,
-      });
+      VideoGenRealtime.sendEvent(
+        conn as unknown as WebSocket,
+        "run_completed",
+        {
+          runId,
+          status,
+        },
+      );
     }
+    console.log(`[VideoGenAgent] Broadcasted run_completed for ${runId}`);
+  }
+
+  /**
+   * Reset state without broadcasting (quiet reset)
+   * Used after run completion to clear DO state without confusing clients
+   */
+  private resetStateQuietly() {
+    this._suppressBroadcast = true;
+    this.setState(VideoGenRealtime.initialServerAppState);
+    this._suppressBroadcast = false;
+    this.runStateSerialized = null;
+    this.messages = [];
+    console.log(`[VideoGenAgent] State reset quietly (no broadcast)`);
+  }
+
+  /**
+   * Reset state with broadcast - used for explicit user reset
+   */
+  resetState() {
+    this.resetStateQuietly();
+    // Broadcast the reset state for explicit resets
+    const connections = this.ctx.getWebSockets();
+    StateBroadcaster.broadcastState(connections, this.state);
   }
 
   /**
@@ -396,225 +573,64 @@ export class VideoGenAgent extends AIChatAgent<
     // Access the Request on ctx.request to inspect headers, cookies and the URL
     await super.onConnect(connection, ctx);
 
-    // Manually sync messages to client on connection
-    this.syncChatMessages(connection);
-
-    // Sync application state
-    VideoGenRealtime.sendEvent(connection, "sync_state", {
-      state: this.state,
-    });
-  }
-
-  private syncChatMessages(connection: Connection) {
-    if (this.messages.length === 0) return;
-    console.log(
-      `[VideoGenAgent] Syncing ${this.messages.length} messages to connection`,
-    );
-    connection.send(
-      JSON.stringify({
-        type: CfAgentMessageType.CF_AGENT_CHAT_MESSAGES,
-        messages: this.messages as UIMessage[],
-      }),
-    );
+    // Only sync if there's an ACTIVE run
+    // For completed runs, client will rely on DB via React Query
+    if (this.state.status === "running" && this.state.runId) {
+      console.log(
+        `[VideoGenAgent] Syncing active run ${this.state.runId} to new connection`,
+      );
+      StateBroadcaster.syncToNewConnection(
+        connection,
+        this.state,
+        this.messages as UIMessage[],
+      );
+    } else {
+      // Send idle state - client will rely on DB for historical data
+      console.log(`[VideoGenAgent] No active run, sending idle state`);
+      VideoGenRealtime.sendEvent(
+        connection as unknown as WebSocket,
+        "sync_state",
+        {
+          state: {
+            ...VideoGenRealtime.initialServerAppState,
+            status: "not_started",
+          },
+        },
+      );
+    }
   }
 
   /**
    * handles incoming ws message, we will provide our custom message types here.
    */
   async onMessage(connection: Connection, message: WSMessage) {
-    await this.handleWebsocketMessages(connection, message);
-  }
-
-  /**
-   * internal handlers for typesafe ws message events
-   */
-  private async handleWebsocketMessages(
-    connection: Connection,
-    message: WSMessage,
-  ) {
-    if (typeof message !== "string") {
-      console.warn(
-        `[VideoGenAgent] Received non-string message, ignoring:`,
-        message,
-      );
-      return;
-    }
-    await VideoGenRealtime.onEvent(message, {
-      echo: async (data) => {
-        console.log(`[VideoGenAgent] Received echo message:`, data);
-        VideoGenRealtime.sendEvent(connection, "echo", {
-          message: `Echo: ${data.message}`,
-        });
-      },
-      set_input: async (data) => {
+    await WebSocketHandler.handleMessage(connection, message, {
+      onSetInput: async (data) => {
         this.patchState((draft) => {
           draft.input = data;
         });
       },
-      set_agent: async (data) => {
-        this.log(`[VideoGenAgent] switching agent to ${data.agent}`);
-        this.runStateSerialized = null;
-        this.patchState((draft) => {
-          Object.assign(draft, VideoGenRealtime.initialServerAppState);
-          draft.agentName = data.agent;
-        });
-      },
-      start_pipeline: async (data) => {
+      onStartPipeline: async (data) => {
         // Input is now required in start_pipeline
         this.patchState((draft) => {
           draft.input = data.input;
         });
-        await this.runPipeline({
-          agent: this.state.agentName,
-        });
+        await this.runPipeline();
       },
-      reset_state: async () => {
-        console.log(`[VideoGenAgent] reset_state requested`);
+      onResetState: async () => {
         this.resetState();
       },
-    });
-  }
-
-  private async ensureFilesExists() {
-    return await Promise.all([
-      downloadImagesToTmp(this.state.input.productImages, "/tmp/products"),
-      downloadImagesToTmp(this.state.input.avatarImages, "/tmp/avatar"),
-      downloadImagesToTmp(this.state.input.referenceImages, "/tmp/reference"),
-      downloadImagesToTmp(this.state.input.brandAssets, "/tmp/brand"),
-    ]);
+    } satisfies WebSocketHandler.EventHandlers);
   }
 
   /**
-   * shared logic to tranform input to agent input items.
-   * used for both video gen and image gen agents
+   * uses async local storage
+   * @param updater
    */
-  private async createRunnerInitialInput(): Promise<AgentInputItem[]> {
-    console.log(`[VideoGenAgent] Creating input from state`, this.state);
-
-    const [productImagePaths, avatarImagePaths] =
-      await this.ensureFilesExists();
-
-    const productImages = toAgentImageInputs(this.state.input.productImages);
-    const avatarImages = toAgentImageInputs(this.state.input.avatarImages);
-    const referenceImages = toAgentImageInputs(
-      this.state.input.referenceImages,
-    );
-    const brandAssets = toAgentImageInputs(this.state.input.brandAssets);
-
-    const messages: AgentInputItem[] = [];
-
-    if (productImages.length > 0) {
-      messages.push({
-        role: "user",
-        content: [
-          {
-            type: "input_text" as const,
-            text: `Product reference files stored under /tmp/products. Local paths: ${productImagePaths.join(", ")}`,
-          },
-          ...productImages,
-        ],
-      });
-    }
-
-    if (avatarImages.length > 0) {
-      messages.push({
-        role: "user",
-        content: [
-          {
-            type: "input_text" as const,
-            text: `Avatar references stored under /tmp/avatar. Local paths: ${avatarImagePaths.join(", ")}`,
-          },
-          ...avatarImages,
-        ],
-      });
-    }
-
-    if (referenceImages.length > 0) {
-      messages.push({
-        role: "user",
-        content: [
-          {
-            type: "input_text" as const,
-            text: "Additional reference images:",
-          },
-          ...referenceImages,
-        ],
-      });
-    }
-
-    if (brandAssets.length > 0) {
-      messages.push({
-        role: "user",
-        content: [
-          {
-            type: "input_text" as const,
-            text: "Brand assets:",
-          },
-          ...brandAssets,
-        ],
-      });
-    }
-
-    messages.push({
-      role: "user",
-      content: [
-        {
-          type: "input_text" as const,
-          text: `Latest tmp dir snapshot (cwd=/tmp):\n${VideoGenAgent.tmpDirStr}`,
-        },
-      ],
-    });
-
-    // load preset if any
-    if (this.state.input.presetId) {
-      const preset = await this.presetManager.getByID(
-        this.state.input.presetId,
-      );
-      if (preset) {
-        messages.push({
-          role: "system",
-          content: `user selected this preset, use properly as direction and adjustmenets. Using preset "${preset.name}": ${preset.description}\nPrompt: ${preset.prompt}`,
-        });
-      }
-    }
-    // final user prompt
-
-    messages.push({
-      role: "user",
-      content: [
-        {
-          type: "input_text" as const,
-          text: `user input: ${this.state.input.prompt}`,
-        },
-      ],
-    });
-
-    return messages;
-  }
-
-  /**
-   * Get the current structure of the tmp directory as a string.
-   * Uses node:fs which is available in Cloudflare Workers VFS.
-   */
-  static get tmpDirStr(): string {
-    try {
-      // Use the VFS tmp path where we symlink/copy files
-      const tmpBasePath = "/tmp";
-      return `${tmpBasePath}/\n${buildTreeString(tmpBasePath, "")}`;
-    } catch {
-      return "Unable to read tmp directory structure";
-    }
-  }
-
-  // wip
-  async _startImageGenWorkflow() {
-    this.ctx.id; // current durable object id
-    const workflow = await Binding.use().ImageGenerationWorkflow.create({
-      params: {
-        actor: Actor.assert("workspace_user"),
-        generationId: "TODO",
-      },
-    });
-    return workflow;
+  static onProgressUpdate(
+    updater: (draft: VideoGenRealtime.ServerAppState) => void,
+  ) {
+    const { agent } = getCurrentAgent<VideoGenAgent>();
+    agent?.patchState(updater);
   }
 }

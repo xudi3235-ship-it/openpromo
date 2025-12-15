@@ -52,19 +52,9 @@
       "name": "ProductProcessingWorkflow"
     },
     {
-      "class_name": "ImageGenerationWorkflow",
-      "binding": "ImageGenerationWorkflow",
-      "name": "ImageGenerationWorkflow"
-    },
-    {
       "class_name": "StyleComponentWorkflow",
       "binding": "StyleComponentWorkflow",
       "name": "StyleComponentWorkflow"
-    },
-    {
-      "class_name": "VideoGenerationWorkflow",
-      "binding": "VideoGenerationWorkflow",
-      "name": "VideoGenerationWorkflow"
     }
   ],
   "durable_objects": {
@@ -97,15 +87,30 @@
       "id": "66945099c2b142c0bc7a46cc5664a67d"
     }
   ],
-//   "containers": [
-//     {
-//       "max_instances": 2,
-//       "class_name": "ContainerBackend",
-//       "image": "../core/src/containers/Dockerfile",
-//       "image_build_context": "../core/src/containers",
-//       "instance_type": "basic"
-//     }
-//   ],
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
+  "browser": {
+    "binding": "Browser",
+    "remote": true
+  },
+  "vectorize": [
+    {
+      "binding": "ReferenceIndex",
+      "index_name": "reference-gallery-index",
+      "remote": true
+    }
+  ],
+  "containers": [
+    {
+      "max_instances": 2,
+      "class_name": "ContainerBackend",
+      "image": "../core/src/containers/Dockerfile",
+      "image_build_context": "../core/src/containers",
+      "instance_type": "basic"
+    }
+  ],
   // https://developers.cloudflare.com/workers/development-testing/wrangler-vs-vite/#when-to-use-wrangler
   // R2 does not work locally since vite plugin does not support.
   // as our backend grows we should separate to its own worker
@@ -118,7 +123,12 @@
     {
       "bucket_name": "public",
       "binding": "PublicBucket",
-      // "remote": true
+      "remote": true
+    },
+    {
+      "bucket_name": "openpromo-reference",
+      "binding": "ReferenceBucket",
+      "remote": true
     }
   ],
   "analytics_engine_datasets": [
@@ -240,6 +250,11 @@
           "bucket_name": "public",
           "binding": "PublicBucket",
           "remote": true
+        },
+        {
+          "bucket_name": "openpromo-reference",
+          "binding": "ReferenceBucket",
+          "remote": true
         }
       ],
       "analytics_engine_datasets": [
@@ -266,19 +281,9 @@
           "name": "ProductProcessingWorkflow"
         },
         {
-          "class_name": "ImageGenerationWorkflow",
-          "binding": "ImageGenerationWorkflow",
-          "name": "ImageGenerationWorkflow"
-        },
-        {
           "class_name": "StyleComponentWorkflow",
           "binding": "StyleComponentWorkflow",
           "name": "StyleComponentWorkflow"
-        },
-        {
-          "class_name": "VideoGenerationWorkflow",
-          "binding": "VideoGenerationWorkflow",
-          "name": "VideoGenerationWorkflow"
         }
       ],
       "triggers": {
@@ -300,7 +305,13 @@
             "max_batch_size": 10
           }
         ]
-      }
+      },
+      "vectorize": [
+        {
+          "binding": "ReferenceIndex",
+          "index_name": "reference-gallery-index"
+        }
+      ]
     },
     "production": {
       "name": "openpromo-dash-production",
@@ -325,6 +336,11 @@
         {
           "bucket_name": "public",
           "binding": "PublicBucket",
+          "remote": true
+        },
+        {
+          "bucket_name": "openpromo-reference",
+          "binding": "ReferenceBucket",
           "remote": true
         }
       ],
@@ -362,32 +378,22 @@
         {
           "class_name": "PendingContentPublishWorkflow",
           "binding": "WORKFLOW",
-          "name": "PendingContentPublishWorkflowProd"
+          "name": "PendingContentPublishWorkflow"
         },
         {
           "class_name": "ContentBackfillWorkflow",
           "binding": "ContentBackfillWorkflow",
-          "name": "ContentBackfillWorkflowProd"
+          "name": "ContentBackfillWorkflow"
         },
         {
           "class_name": "ProductProcessingWorkflow",
           "binding": "ProductProcessingWorkflow",
-          "name": "ProductProcessingWorkflowProd"
-        },
-        {
-          "class_name": "ImageGenerationWorkflow",
-          "binding": "ImageGenerationWorkflow",
-          "name": "ImageGenerationWorkflowProd"
+          "name": "ProductProcessingWorkflow"
         },
         {
           "class_name": "StyleComponentWorkflow",
           "binding": "StyleComponentWorkflow",
-          "name": "StyleComponentWorkflowProd"
-        },
-        {
-          "class_name": "VideoGenerationWorkflow",
-          "binding": "VideoGenerationWorkflow",
-          "name": "VideoGenerationWorkflowProd"
+          "name": "StyleComponentWorkflow"
         }
       ],
       "triggers": {
@@ -399,13 +405,13 @@
       "queues": {
         "producers": [
           {
-            "queue": "jobs-prod",
+            "queue": "jobs",
             "binding": "JobQueue"
           }
         ],
         "consumers": [
           {
-            "queue": "jobs-prod",
+            "queue": "jobs",
             "max_batch_size": 10
           }
         ]
@@ -423,6 +429,18 @@
         {
           "binding": "KV",
           "id": "66945099c2b142c0bc7a46cc5664a67d"
+        }
+      ],
+      "ai": {
+        "binding": "AI"
+      },
+      "browser": {
+        "binding": "Browser"
+      },
+      "vectorize": [
+        {
+          "binding": "ReferenceIndex",
+          "index_name": "reference-gallery-index"
         }
       ]
     }

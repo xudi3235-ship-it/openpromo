@@ -1,3 +1,11 @@
+/**
+ * DEPRECATED: This route is deprecated since 2025-12-10.
+ *
+ * All TikTok OAuth now uses the Business API flow through tiktok-business-oauth-callback-route.ts.
+ * This route is kept for historical context and is no longer registered in the routing table.
+ *
+ * Migration: All TikTok connections should use /api/connected_accounts/tiktok_business/callback
+ */
 import {
   ConnectedAccount,
   tikTokOAuthService,

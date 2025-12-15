@@ -3,7 +3,7 @@
 # source: hello/v1/hello.proto
 # pyright: reportMissingTypeArgument=false
 
-from collections.abc import AsyncIterator, Iterable, Iterator, Mapping
+from collections.abc import AsyncGenerator, AsyncIterator, Iterable, Iterator, Mapping
 from typing import Protocol
 
 from connectrpc.client import ConnectClient, ConnectClientSync
@@ -21,10 +21,11 @@ class HelloService(Protocol):
         raise ConnectError(Code.UNIMPLEMENTED, "Not implemented")
 
 
-class HelloServiceASGIApplication(ConnectASGIApplication):
-    def __init__(self, service: HelloService, *, interceptors: Iterable[Interceptor]=(), read_max_bytes: int | None = None) -> None:
+class HelloServiceASGIApplication(ConnectASGIApplication[HelloService]):
+    def __init__(self, service: HelloService | AsyncGenerator[HelloService], *, interceptors: Iterable[Interceptor]=(), read_max_bytes: int | None = None) -> None:
         super().__init__(
-            endpoints={
+            service=service,
+            endpoints=lambda svc: {
                 "/hello.v1.HelloService/SayHello": Endpoint.unary(
                     method=MethodInfo(
                         name="SayHello",
@@ -33,7 +34,7 @@ class HelloServiceASGIApplication(ConnectASGIApplication):
                         output=hello_dot_v1_dot_hello__pb2.HelloResponse,
                         idempotency_level=IdempotencyLevel.UNKNOWN,
                     ),
-                    function=service.say_hello,
+                    function=svc.say_hello,
                 ),
             },
             interceptors=interceptors,

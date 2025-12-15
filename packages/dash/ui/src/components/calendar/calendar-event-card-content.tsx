@@ -1,7 +1,13 @@
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@openpromo/ui/components/hover-card";
 import { cn } from "@openpromo/ui/lib/utils";
 import type { PlacementSpec } from "@shared/content";
 import type { ContentEntity } from "@worker/shared/content-types";
 import { matchPlacementSpec } from "@/lib/hono-client";
+import { CalendarContentDetailPopoverContent } from "./calendar-content-detail-popover";
 import { CalendarEventCardHeader } from "./calendar-event-card-header";
 import { CalendarEventCardMetrics } from "./calendar-event-card-metrics";
 import { CalendarEventCardThumbnail } from "./calendar-event-card-thumbnail";
@@ -50,7 +56,14 @@ export function CalendarEventCardContent({
   onClick,
 }: CalendarEventCardContentProps) {
   const {
-    entity: { placementSpec, publishingStatus, metrics },
+    entity: {
+      placementSpec,
+      publishingStatus,
+      metrics,
+      placement,
+      metricsRefreshedAt,
+      permalinkUrl,
+    },
   } = entity;
 
   const thumbnailSrc = getThumbnailFromPlacement(
@@ -63,7 +76,9 @@ export function CalendarEventCardContent({
     TTFeed: (s) => s.caption,
   });
 
-  return (
+  const isPublished = publishingStatus === "PUBLISHED";
+
+  const cardContent = (
     <div
       className={cn(
         "group w-full h-full rounded-lg transition-all relative overflow-hidden bg-white dark:bg-gray-800",
@@ -89,13 +104,13 @@ export function CalendarEventCardContent({
         </p>
 
         {/* Footer with metrics and platform */}
-        {publishingStatus === "PUBLISHED" && (
+        {isPublished && (
           <CalendarEventCardMetrics
             metrics={metrics}
             platformIcon={platformIcon}
           />
         )}
-        {publishingStatus !== "PUBLISHED" && platformIcon && (
+        {!isPublished && platformIcon && (
           <div className="flex items-end justify-end">
             <div className="flex-shrink-0 bg-gray-100 dark:bg-gray-700 rounded-full p-1">
               {platformIcon}
@@ -114,4 +129,24 @@ export function CalendarEventCardContent({
       </button>
     </div>
   );
+
+  // Wrap with HoverCard only for published content
+  if (isPublished) {
+    return (
+      <HoverCard openDelay={300} closeDelay={100}>
+        <HoverCardTrigger asChild>{cardContent}</HoverCardTrigger>
+        <HoverCardContent side="right" align="start" className="w-auto p-4">
+          <CalendarContentDetailPopoverContent
+            placementSpec={placementSpec as PlacementSpec}
+            placement={placement}
+            metrics={metrics}
+            metricsRefreshedAt={metricsRefreshedAt}
+            permalinkUrl={permalinkUrl}
+          />
+        </HoverCardContent>
+      </HoverCard>
+    );
+  }
+
+  return cardContent;
 }

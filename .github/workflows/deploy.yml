@@ -47,6 +47,12 @@ jobs:
       - name: Install PostHog CLI
         run: npm install -g @posthog/cli
 
+      - name: Setup Cloudflare Infrastructure
+        uses: ./.github/actions/setup-cloudflare-infra
+        with:
+          cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
       - name: Sync secrets to worker
         working-directory: packages/dash
         run: doppler secrets --config=${{ github.ref_name }} --json | jq -c 'with_entries(.value = .value.computed)' | pnpm exec wrangler secret bulk -e ${{ github.ref_name }}

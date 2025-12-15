@@ -128,6 +128,32 @@ func (containerServiceServer) TranscodeVideo(ctx context.Context, req *connect.R
 	return resp, nil
 }
 
+func (containerServiceServer) BurnSubtitle(ctx context.Context, req *connect.Request[containersv1.BurnSubtitleRequest]) (*connect.Response[containersv1.BurnSubtitleResponse], error) {
+	result, err := burnSubtitle(ctx, req.Msg.GetVideoUrl(), req.Msg.GetAssContent())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("burn subtitle failed: %w", err))
+	}
+	defer os.Remove(result.outputPath)
+
+	uploader, err := newR2Uploader(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 init failed: %w", err))
+	}
+
+	key := filepath.Join("subtitled", buildR2Key(result.filename))
+	uploadRes, err := uploader.uploadFile(ctx, result.outputPath, key, result.contentType, TTL1Week)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 upload failed: %w", err))
+	}
+
+	resp := connect.NewResponse(&containersv1.BurnSubtitleResponse{
+		OutputUrl: sanitizeURL(uploadRes.URL),
+		R2Key:     uploadRes.Key,
+	})
+
+	return resp, nil
+}
+
 func newConnectHandler() (string, http.Handler) {
 	return containersv1connect.NewContainerServiceHandler(containerServiceServer{})
 }

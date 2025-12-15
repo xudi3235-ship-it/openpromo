@@ -1,24 +1,14 @@
 import { Button } from "@openpromo/ui/components/button";
 import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Skeleton } from "@openpromo/ui/components/skeleton";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  Download,
-  RefreshCw,
-  SquarePen,
-  Trash2,
-  Wifi,
-  WifiOff,
-} from "lucide-react";
+import { ArrowLeft, Download, SquarePen, Trash2 } from "lucide-react";
 import { useOpenComposer } from "@/hooks/useOpenComposer";
-import { useVideoGenAgent } from "@/hooks/useVideoGenAgent";
-import { orpc } from "@/lib/orpc-client";
-import {
-  useAgentRunQuery,
-  useDeleteAgentRunsMutation,
-} from "@/queries/agent-runs";
+import { useRunAttachments } from "@/hooks/useRunAttachments";
+import { useRunData } from "@/hooks/useRunData";
+import { useDeleteAgentRunsMutation } from "@/queries/agent-runs";
+import { useIsConnected } from "@/stores/live-run-store";
+import { LiveRunView } from "./live-run-view";
 import { RunPreview } from "./run-preview";
 
 interface RunDetailViewProps {
@@ -26,67 +16,27 @@ interface RunDetailViewProps {
   workspaceSlug: string;
 }
 
+/**
+ * Detail view for a single run.
+ *
+ * Data source depends on run state:
+ * - LIVE runs (status: "running"): Data from Zustand store (WebSocket)
+ * - COMPLETED runs: Data from React Query (database)
+ */
 export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   const navigate = useNavigate();
   const deleteRunMutation = useDeleteAgentRunsMutation();
   const openComposer = useOpenComposer();
-  const queryClient = useQueryClient();
 
-  // Fetch run data using the specific query
-  const {
-    data: run,
-    isPending,
-    error,
-    // refetch,
-  } = useAgentRunQuery({ id: runId });
+  // Unified hook handles live vs completed data source
+  const { run, isPending, error, isLive, logs, artifacts, status } =
+    useRunData(runId);
 
-  // Set up real-time updates for running runs
-  const { serverState, isConnected } = useVideoGenAgent({
-    onEvent: {
-      // Update run data when we receive sync_state event
-      sync_state: async (data) => {
-        if (data.state.runId !== runId) {
-          return;
-        }
-        // Merge the latest data from sync_state into the cached query data
-        queryClient.setQueryData(
-          orpc.agentRuns.get.key({ input: { id: runId, workspaceSlug } }),
-          (oldData: typeof run) => {
-            if (!oldData) return oldData;
+  const isConnected = useIsConnected();
 
-            // Merge the server state with the existing run data
-            return {
-              ...oldData,
-              status: data.state.status,
-              output: data.state.output,
-              artifacts: data.state.artifacts,
-              agentName: data.state.agentName,
-              updatedAt: data.state.lastUpdated,
-            };
-          },
-        );
-      },
-      // status_update: async () => {
-      //   // Refetch on status updates for this run
-      //   if (serverState.runId === runId) {
-      //     refetch();
-      //   }
-      // },
-      // video_generated: async () => {
-      //   // Refetch when video generation is complete for this run
-      //   if (serverState.runId === runId) {
-      //     refetch();
-      //   }
-      // },
-    },
-  });
-
-  // Check if this run is currently active in the agent
-  const isActiveRun = serverState.runId === runId && isConnected;
-
-  // Get media type for metadata display
-  const isVideo =
-    run?.output.output?.videos?.[0] || run?.artifacts?.videos?.[0];
+  const { attachments, isVideo, firstMediaUrl } = useRunAttachments(
+    run ?? undefined,
+  );
 
   const handleBack = () => {
     navigate({
@@ -97,33 +47,24 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
   };
 
   const handleDownload = async () => {
-    if (!run) return;
-
-    const isVideo =
-      run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
-    const url =
-      isVideo?.videoUrl ||
-      run.output.output?.images?.[0]?.imageUrl ||
-      run.artifacts?.images?.[0]?.imageUrl;
-
-    if (!url) {
+    if (!run || !firstMediaUrl) {
       alert("No media found to download");
       return;
     }
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(firstMediaUrl);
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = downloadUrl;
-      a.download = `run-${run.id}-${Date.now()}${isVideo ? ".mp4" : ".jpg"}`;
+      a.download = `run-${runId}-${Date.now()}${isVideo ? ".mp4" : ".jpg"}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(downloadUrl);
       document.body.removeChild(a);
-    } catch (error) {
-      console.error("Failed to download media:", error);
+    } catch (err) {
+      console.error("Failed to download media:", err);
       alert("Failed to download media");
     }
   };
@@ -134,49 +75,25 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     }
 
     try {
-      await deleteRunMutation.mutateAsync({ ids: [run.id] });
-      handleBack(); // Go back to list after successful delete
-    } catch (error) {
-      console.error("Failed to delete run:", error);
+      await deleteRunMutation.mutateAsync({ ids: [runId] });
+      handleBack();
+    } catch (err) {
+      console.error("Failed to delete run:", err);
     }
   };
 
   const handleCreatePost = () => {
-    if (!run) return;
-
-    const isVideo =
-      run.output.output?.videos?.[0] || run.artifacts?.videos?.[0];
-    const url =
-      isVideo?.videoUrl ||
-      run.output.output?.images?.[0]?.imageUrl ||
-      run.artifacts?.images?.[0]?.imageUrl;
-
-    if (!url) {
+    if (!run || attachments.length === 0) {
       alert("No media found to add to composer");
       return;
     }
-
-    const attachments = [
-      {
-        id: run.id,
-        type: isVideo ? ("video" as const) : ("photo" as const),
-        publicUrl: url,
-        mimeType: isVideo ? "video/mp4" : "image/jpeg",
-        source: "remote" as const,
-      },
-    ];
-
-    // Open composer with the media
-    openComposer({
-      attachments,
-    });
+    openComposer({ attachments });
   };
 
-  // Show loading state
-  if (isPending) {
+  // Loading state
+  if (isPending && !run) {
     return (
       <div className="flex h-full w-full min-w-0 flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between py-3 px-4">
           <div className="flex items-center gap-3">
             <Button
@@ -187,65 +104,17 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
             >
               <ArrowLeft size={16} />
             </Button>
-            <div>
-              <Skeleton className="h-4 w-24" />
-            </div>
+            <Skeleton className="h-4 w-24" />
           </div>
           <div className="flex items-center gap-2">
             <Skeleton className="h-8 w-20" />
             <Skeleton className="h-8 w-16" />
           </div>
         </div>
-
-        {/* Loading Content */}
         <ScrollArea className="min-h-0 flex-1">
           <div className="px-4 pb-4 pt-4">
-            {/* Preview Skeleton */}
             <div className="pb-6 flex justify-center">
-              <Skeleton className="w-[280px] h-[500px] rounded-2xl" />
-            </div>
-
-            {/* Details Skeleton */}
-            <div className="max-w-4xl mx-auto">
-              <div className="flex gap-8">
-                {/* Left Column Skeleton */}
-                <div className="flex-1 min-w-0">
-                  <div className="mb-6">
-                    <Skeleton className="h-4 w-16 mb-3" />
-                    <div className="bg-muted/50 rounded-lg p-4">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-3/4 mt-2" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Column Skeleton */}
-                <div className="w-80 flex-shrink-0">
-                  <div className="mb-6">
-                    <Skeleton className="h-4 w-20 mb-3" />
-                    <div className="bg-muted/30 rounded-lg p-4">
-                      <div className="space-y-3">
-                        <div>
-                          <Skeleton className="h-3 w-16 mb-1" />
-                          <Skeleton className="h-4 w-32" />
-                        </div>
-                        <div>
-                          <Skeleton className="h-3 w-12 mb-1" />
-                          <Skeleton className="h-4 w-20" />
-                        </div>
-                        <div>
-                          <Skeleton className="h-3 w-10 mb-1" />
-                          <Skeleton className="h-4 w-16" />
-                        </div>
-                        <div>
-                          <Skeleton className="h-3 w-14 mb-1" />
-                          <Skeleton className="h-4 w-24" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <Skeleton className="w-full max-w-[320px] sm:w-[280px] h-[400px] sm:h-[500px] rounded-2xl mx-auto" />
             </div>
           </div>
         </ScrollArea>
@@ -253,12 +122,12 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     );
   }
 
-  // Show error state
+  // Error state
   if (error || !run) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <p className="text-sm text-muted-foreground">
-          {error ? error.message : "Run not found"}
+          {error?.message ?? "Run not found"}
         </p>
         <Button
           variant="outline"
@@ -272,193 +141,158 @@ export function RunDetailView({ runId, workspaceSlug }: RunDetailViewProps) {
     );
   }
 
+  const isRunning = status === "running";
+
+  // Show immersive live view for active running jobs
+  if (isLive && isRunning && isConnected) {
+    return (
+      <LiveRunView logs={logs} artifacts={artifacts} onBack={handleBack} />
+    );
+  }
+
+  // For completed runs, get additional fields from the database response
+  const prompt = "input" in run ? run.input?.prompt : undefined;
+  const createdAt = "createdAt" in run ? new Date(run.createdAt) : new Date();
+  const output = "output" in run ? run.output : undefined;
+
   return (
     <div className="flex h-full w-full min-w-0 flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between py-3 px-4">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between py-2 px-4">
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={handleBack}
-            className="p-2"
+            className="p-1.5"
           >
             <ArrowLeft size={16} />
           </Button>
-          <div>
-            <h3 className="text-sm font-medium">Run Details</h3>
-          </div>
+          <h3 className="text-sm font-medium">Run Details</h3>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            onClick={handleCreatePost}
-            size="sm"
-            variant="ghost"
-            className="flex items-center gap-2"
-          >
-            <SquarePen size={14} />
-            Create Post
-          </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleDownload}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground sm:px-3"
           >
             <Download size={14} />
+            <span className="hidden sm:inline ml-1.5">Download</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCreatePost}
+            disabled={attachments.length === 0}
+          >
+            <SquarePen size={14} />
+            <span className="hidden sm:inline">Create Post</span>
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleDelete}
             disabled={deleteRunMutation.isPending}
-            className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 sm:px-3"
           >
             <Trash2 size={14} />
-            Delete
+            <span className="hidden sm:inline">Delete</span>
           </Button>
         </div>
       </div>
 
       {/* Content */}
       <ScrollArea className="min-h-0 flex-1">
-        <div className="px-4 pb-4 pt-4">
-          {/* Social Media Previews */}
-          {run && (
-            <div className="pb-6 flex justify-center">
-              <RunPreview run={run} />
+        <div className="w-full max-w-6xl mx-auto px-3 py-2 sm:px-4 sm:py-3 space-y-4 sm:space-y-6">
+          {/* Social Media Preview */}
+          <div className="w-full">
+            <div className="flex justify-center">
+              <RunPreview run={run} className="w-full max-w-full" />
             </div>
-          )}
-
-          {/* Call to Action - Post to Social */}
-          {run && (
-            <div className="mb-8 max-w-2xl mx-auto text-center">
-              <p className="text-sm text-muted-foreground mb-4">
-                Share your creation with your audience instantly
-              </p>
-              <Button onClick={handleCreatePost} size="lg">
+            {/* Mobile Create Post Button */}
+            <div className="mt-4 sm:hidden text-center">
+              <Button
+                onClick={handleCreatePost}
+                disabled={attachments.length === 0}
+                className="w-full max-w-xs"
+                size="lg"
+              >
                 <SquarePen size={18} className="mr-2" />
-                Post to Social Accounts
+                Create Post
               </Button>
+              <p className="text-xs text-muted-foreground mt-1.5 px-4">
+                Share your creation with your audience
+              </p>
             </div>
-          )}
+          </div>
 
-          {/* Details Section */}
-          {run && (
-            <div className="max-w-4xl mx-auto">
-              <div className="flex gap-8">
-                {/* Left Column - Prompt */}
-                <div className="flex-1 min-w-0">
-                  <div className="mb-6">
-                    <h4 className="text-sm font-medium mb-3 text-foreground">
-                      Prompt
-                    </h4>
-                    <div className="bg-muted/50 rounded-lg p-4">
-                      <p className="text-sm text-muted-foreground">
-                        {run.input?.prompt || "No prompt available"}
-                      </p>
-                    </div>
-                  </div>
+          {/* Information Card */}
+          <div className="bg-card border rounded-lg sm:rounded-xl p-3 sm:p-4">
+            <h4 className="text-sm font-medium mb-3 text-foreground">
+              Run Information
+            </h4>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 xl:gap-4">
+              {/* Prompt Section */}
+              <div>
+                <h5 className="text-xs font-medium mb-1.5 text-muted-foreground uppercase tracking-wider">
+                  Prompt
+                </h5>
+                <div className="bg-muted/50 rounded-md sm:rounded-lg p-2.5 sm:p-3">
+                  <p className="text-sm text-muted-foreground break-words">
+                    {prompt || "No prompt available"}
+                  </p>
                 </div>
+              </div>
 
-                {/* Right Column - Metadata */}
-                <div className="w-80 flex-shrink-0">
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-medium text-foreground">
-                        Information
-                      </h4>
-                      {/* Real-time connection indicator */}
-                      <div className="flex items-center gap-1 text-xs">
-                        {isConnected && isActiveRun ? (
-                          <>
-                            <Wifi className="h-3 w-3 text-green-500" />
-                            <span className="text-green-600 dark:text-green-400">
-                              Live updates
-                            </span>
-                          </>
-                        ) : isConnected ? (
-                          <>
-                            <Wifi className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-muted-foreground">
-                              Connected
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <WifiOff className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-muted-foreground">
-                              Offline
-                            </span>
-                          </>
-                        )}
-                      </div>
+              {/* Details Section */}
+              <div>
+                <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Details
+                </h5>
+                <div className="bg-muted/30 rounded-md sm:rounded-lg p-2.5 sm:p-3">
+                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Type: </span>
+                      <span className="font-medium capitalize">
+                        {isVideo ? "Video" : "Image"}
+                      </span>
                     </div>
-                    <div className="bg-muted/30 rounded-lg p-4">
-                      <div className="space-y-3 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">
-                            Created:
-                          </span>
-                          <p className="font-medium mt-1">
-                            {new Date(run.createdAt).toLocaleString()}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Status:</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <p className="capitalize font-medium">
-                              {run.status}
-                            </p>
-                            {isActiveRun && (
-                              <div className="flex items-center gap-1">
-                                <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />
-                                <span className="text-xs text-blue-600 dark:text-blue-400">
-                                  {serverState.status === "running"
-                                    ? "Processing..."
-                                    : serverState.status}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Type:</span>
-                          <p className="font-medium mt-1">
-                            {isVideo ? "Video" : "Image"}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Agent:</span>
-                          <p className="font-medium mt-1">{run.agentName}</p>
-                        </div>
-                      </div>
+                    <div>
+                      <span className="text-muted-foreground">Status: </span>
+                      <span className="font-medium capitalize">{status}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Created: </span>
+                      <span className="font-medium">
+                        {createdAt.toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
-
-                  {/* Output Details - only show in dev */}
-                  {run.output.output &&
-                    process.env.NODE_ENV === "development" && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <h4 className="text-sm font-medium text-foreground">
-                            Debug Output
-                          </h4>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                            DEV ONLY
-                          </span>
-                        </div>
-                        <div className="bg-muted/50 rounded-lg p-4">
-                          <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-96 overflow-auto">
-                            {JSON.stringify(run.output.output, null, 2)}
-                          </pre>
-                        </div>
-                      </div>
-                    )}
                 </div>
               </div>
             </div>
-          )}
+
+            {/* Debug Output - dev only */}
+            {output?.output && process.env.NODE_ENV === "development" && (
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 mb-2">
+                  <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Debug Output
+                  </h5>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 w-fit">
+                    DEV ONLY
+                  </span>
+                </div>
+                <div className="bg-muted/50 rounded-md sm:rounded-lg p-2.5 sm:p-3 overflow-x-auto">
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono max-h-96 overflow-auto break-all">
+                    {JSON.stringify(run, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </ScrollArea>
     </div>

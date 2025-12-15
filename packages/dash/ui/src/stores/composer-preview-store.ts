@@ -20,8 +20,68 @@ import type {
   TikTokFeedPreview,
 } from "@shared/content/content-preview";
 import { useMemo } from "react";
+import { create } from "zustand";
+import { immer } from "zustand/middleware/immer";
 import type { ConnectedAccount } from "@/lib/hono-client";
+import {
+  createComposerInitialState,
+  resolveComposerProps,
+} from "@/stores/composer/initial-state";
+import type { ComposerState } from "@/stores/composer/types";
 import { useComposerStore } from "@/stores/composer-store";
+
+type PreviewSession = Pick<
+  ComposerState,
+  | "accounts"
+  | "selectedPreview"
+  | "activeAccount"
+  | "contentCreateData"
+  | "placementsByAccount"
+>;
+
+const emptyPreviewSession = (() => {
+  const defaultState = createComposerInitialState(resolveComposerProps({}));
+  const {
+    accounts,
+    selectedPreview,
+    activeAccount,
+    contentCreateData,
+    placementsByAccount,
+  } = defaultState;
+  return {
+    accounts,
+    selectedPreview,
+    activeAccount,
+    contentCreateData,
+    placementsByAccount,
+  } satisfies PreviewSession;
+})();
+
+type PreviewSessionStore = {
+  session: PreviewSession;
+  setPreviewSession: (session: PreviewSession) => void;
+  setActiveAccount: (accountId: string | null) => void;
+  clearPreviewSession: () => void;
+};
+
+export const usePreviewSessionStore = create<PreviewSessionStore>()(
+  immer((set) => ({
+    session: emptyPreviewSession,
+    setPreviewSession: (session) => set({ session }),
+    setActiveAccount: (accountId) =>
+      set((state) => {
+        if (!state.session.accounts.length) return state;
+        const account = state.session.accounts.find(
+          (acc) => acc.id === accountId,
+        );
+        if (!account) return state;
+        state.session.activeAccount = account.id;
+        state.session.selectedPreview = account.platform;
+        return state;
+      }),
+    clearPreviewSession: () => set({ session: emptyPreviewSession }),
+  })),
+);
 
 const getAccountDisplayData = (account: ConnectedAccount) => {
   const metadata = account.metadata;
@@ -89,18 +149,39 @@ interface PreviewOptions {
 export const useComposerPreview = (
   options: PreviewOptions = {},
 ): ContentPreview => {
-  const accounts = useComposerStore((state) => state.accounts);
-  const activeAccount = useComposerStore((state) => state.activeAccount);
-  const selectedPreview = useComposerStore((state) => state.selectedPreview);
-  const contentCreateData = useComposerStore(
+  const previewSession = usePreviewSessionStore((state) => state.session);
+  const composerAccounts = useComposerStore((state) => state.accounts);
+  const composerActiveAccount = useComposerStore(
+    (state) => state.activeAccount,
+  );
+  const composerSelectedPreview = useComposerStore(
+    (state) => state.selectedPreview,
+  );
+  const composerContentCreateData = useComposerStore(
     (state) => state.contentCreateData,
   );
-  const placementsByAccount = useComposerStore(
+  const composerPlacementsByAccount = useComposerStore(
     (state) => state.placementsByAccount,
   );
 
+  const usePreviewSession = previewSession.accounts.length > 0;
+  const accounts = usePreviewSession
+    ? previewSession.accounts
+    : composerAccounts;
+  const activeAccount = usePreviewSession
+    ? previewSession.activeAccount
+    : composerActiveAccount;
+  const selectedPreview = usePreviewSession
+    ? previewSession.selectedPreview
+    : composerSelectedPreview;
+  const contentCreateData = usePreviewSession
+    ? previewSession.contentCreateData
+    : composerContentCreateData;
+  const placementsByAccount = usePreviewSession
+    ? previewSession.placementsByAccount
+    : composerPlacementsByAccount;
+
   return useMemo(() => {
-    // Find the account to display based on active account or selected preview platform
     let targetAccount: ConnectedAccount | undefined;
 
     if (options.accountId) {
@@ -120,7 +201,6 @@ export const useComposerPreview = (
         accounts.find((acc) => acc.platform === selectedPreview) || accounts[0];
     }
 
-    // If still no account found, use the first available account
     const displayData = targetAccount
       ? getAccountDisplayData(targetAccount)
       : {
@@ -130,7 +210,6 @@ export const useComposerPreview = (
           platform: "FACEBOOK" as Platform,
         };
 
-    // Get the message for the target account (preview account)
     const getMessageForAccount = (): string => {
       if (!targetAccount) {
         return contentCreateData.base.message || "";
@@ -138,7 +217,6 @@ export const useComposerPreview = (
 
       const entry = placementsByAccount?.[targetAccount.id];
 
-      // If this is the active account being customized, get its specific message
       if (activeAccount === targetAccount.id) {
         if (entry?.platform === "FACEBOOK") {
           const spec = entry.spec as FBFeedPlacementSpec;
@@ -152,7 +230,6 @@ export const useComposerPreview = (
         }
       }
 
-      // For non-active accounts, check if they have customized messages
       if (entry?.customized) {
         if (entry.platform === "FACEBOOK") {
           const spec = entry.spec as FBFeedPlacementSpec;
@@ -166,7 +243,6 @@ export const useComposerPreview = (
         }
       }
 
-      // Fallback to base message for non-customized accounts
       return contentCreateData.base.message || "";
     };
 
@@ -260,12 +336,10 @@ export const useComposerPreview = (
     const firstComment = getFirstCommentForAccount();
     const attachments = getAttachmentsForAccount();
 
-    // Determine if this is a reel based on options or content
     const isReel =
       options.placement === "REEL" ||
       (attachments.length === 1 && attachments[0]?.type === "video");
 
-    // Build ContentPreview based on platform
     const platform = displayData.platform;
 
     if (platform === "INSTAGRAM") {
@@ -377,7 +451,6 @@ export const useComposerPreview = (
       return preview;
     }
 
-    // Fallback to Instagram if platform is unknown
     const fallbackPreview: InstagramFeedPreview = {
       placement: AllPlacement.IG_FEED,
       accountName: displayData.pageName,

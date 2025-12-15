@@ -11,6 +11,8 @@ export interface FilterBarProps {
   onClearFilters?: () => void;
   /** Custom className */
   className?: string;
+  /** Content to display on the right side (e.g., batch actions) */
+  rightContent?: ReactNode;
 }
 
 /**
@@ -32,6 +34,7 @@ export function FilterBar({
   hasActiveFilters = false,
   onClearFilters,
   className = "",
+  rightContent,
 }: FilterBarProps) {
   return (
     <div className={`flex items-center gap-2 mb-2 ${className}`}>
@@ -48,6 +51,14 @@ export function FilterBar({
           <X className="h-4 w-4 mr-1" />
           Clear
         </Button>
+      )}
+
+      {/* Right content (batch actions, etc.) */}
+      {rightContent && (
+        <>
+          <div className="flex-1" />
+          {rightContent}
+        </>
       )}
     </div>
   );

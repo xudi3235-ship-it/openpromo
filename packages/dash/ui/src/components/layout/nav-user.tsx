@@ -22,17 +22,15 @@ import useDialogState from "@openpromo/ui/hooks/use-dialog-state";
 import { cn } from "@openpromo/ui/lib/utils";
 import { Link } from "@tanstack/react-router";
 import {
-  BadgeCheck,
-  Bell,
   Check,
   ChevronsUpDown,
   CreditCard,
   LogOut,
   Moon,
-  Sparkles,
   Sun,
 } from "lucide-react";
 import { useTheme } from "@/context/theme-provider";
+import { useWorkspaceSlug } from "@/hooks/useWorkspace";
 import type { User } from "@/lib/hono-client";
 import { SignOutDialog } from "../signout-dialog";
 
@@ -41,6 +39,7 @@ type NavUserProps = {
 };
 
 export function NavUser({ user }: NavUserProps) {
+  const workspaceSlug = useWorkspaceSlug();
   const { isMobile } = useSidebar();
   const [open, setOpen] = useDialogState();
   const { theme, setTheme } = useTheme();
@@ -96,29 +95,13 @@ export function NavUser({ user }: NavUserProps) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem>
-                  <Sparkles />
-                  Upgrade to Pro
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
-                  <Link to="/">
-                    <BadgeCheck />
-                    Account
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/">
+                  <Link
+                    to="/workspaces/$workspaceSlug/billing"
+                    params={{ workspaceSlug }}
+                  >
                     <CreditCard />
                     Billing
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/">
-                    <Bell />
-                    Notifications
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuGroup>

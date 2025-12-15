@@ -3,6 +3,7 @@ import type { ConnectedAccount } from "@/lib/hono-client";
 import { useComposerStore } from "@/stores/composer-store";
 import { ComposerLeft } from "./composer-left";
 import { ComposerRight } from "./composer-right";
+import { DebuggerFloat } from "./debugger-float";
 import { TwoColumnLayout } from "./two-column-layout";
 
 interface ComposerRootProps {
@@ -51,10 +52,13 @@ export function ComposerRoot({ accounts, className = "" }: ComposerRootProps) {
   }, [accounts]);
 
   return (
-    <TwoColumnLayout
-      left={<ComposerLeft />}
-      right={<ComposerRight />}
-      className={className}
-    />
+    <>
+      <TwoColumnLayout
+        left={<ComposerLeft />}
+        right={<ComposerRight />}
+        className={className}
+      />
+      <DebuggerFloat />
+    </>
   );
 }

@@ -18,13 +18,21 @@ import {
   downloadImage as downloadImageBase,
   isStringUrl,
 } from "@core/utils/common";
+import { Log } from "@core/utils/log";
+import {
+  type ToolOutputImage,
+  type ToolOutputText,
+  tool,
+} from "@openai/agents";
 import { getCurrentAgent } from "agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
-import { toolBuilder, toolSuccess } from "../tool-builder";
-import type { VideoGenAgent } from "../video-gen-agent";
+import { VideoGenAgent } from "../video-gen-agent";
+import { getKieAIClient, uploadFilesToKie } from "./utils";
 
 const OUTPUT_DIR = "/tmp/nanobana_output";
+
+const log = Log.create({ namespace: "nano-banana-tool" });
 
 /**
  * Download image from URL and save to local path.
@@ -33,8 +41,7 @@ async function downloadImage(url: string, outputPath: string): Promise<string> {
   return downloadImageBase(url, outputPath, "nanoBanana");
 }
 
-// Define schema separately for better type inference
-const NanoBananaParamsSchema = z.object({
+const params = z.object({
   prompt: z
     .string()
     .describe(
@@ -62,20 +69,14 @@ const NanoBananaParamsSchema = z.object({
     .describe(
       "Aspect ratio of the generated image. Use 9:16 for TikTok/Reels, 1:1 for Instagram posts, 16:9 for YouTube.",
     ),
-  outputFormat: z
-    .enum(["png", "jpg"])
-    .default("jpg")
-    .describe("Output image format."),
 });
 
-type NanoBananaParams = z.infer<typeof NanoBananaParamsSchema>;
+type NanoBananaParams = z.infer<typeof params>;
 
 /**
  * handles transforming file inputs for replicate api calls
- * @param inputs
- * @returns
  */
-function transformFileInputs(inputs: string[]): (string | Buffer)[] {
+export function transformFileInputs(inputs: string[]): (string | Buffer)[] {
   return inputs.map((input) => {
     // 1. if url string, use as is
     if (isStringUrl(input)) return input;
@@ -85,35 +86,72 @@ function transformFileInputs(inputs: string[]): (string | Buffer)[] {
   });
 }
 
+async function providerRepImpl(params: NanoBananaParams) {
+  const { prompt, imageInputPaths, aspectRatio } = params;
+  const inputImages = transformFileInputs(imageInputPaths ?? []);
+
+  const imageUrl = await Replicate.NanoBanana.run({
+    prompt,
+    image_input: inputImages,
+    aspect_ratio: aspectRatio,
+    output_format: "jpg",
+    pro: false, // cheaper for test
+  });
+
+  return imageUrl;
+}
+
+async function providerKieImpl(params: NanoBananaParams) {
+  const { prompt, imageInputPaths, aspectRatio } = params;
+  const client = getKieAIClient();
+  const imageUrls = await uploadFilesToKie(client, imageInputPaths ?? []);
+  const task = await client.createGenericTask("nano-banana-pro", {
+    prompt,
+    imageInput: imageUrls,
+    aspectRatio,
+  });
+  const taskID = task.data?.taskId;
+  if (!taskID)
+    throw new Error("Failed to start Nano Banana task - no task ID returned");
+  const imageUrl = await client.pollTaskUntilComplete(taskID, {
+    onPoll(attempt, maxAttempt) {
+      VideoGenAgent.onProgressUpdate((draft) => {
+        draft.logs.push(
+          `[nanoBanana] Polling - attempt ${attempt}/${maxAttempt}`,
+        );
+      });
+    },
+  });
+  return imageUrl;
+}
+
+async function impl(provider: "replicate" | "kie", params: NanoBananaParams) {
+  switch (provider) {
+    case "replicate":
+      return await providerRepImpl(params);
+    case "kie":
+      return await providerKieImpl(params);
+  }
+}
+
 /**
  * Nano Banana image generation tool.
  * Generates images using Google's Nano Banana model via Replicate.
  */
-export const nanoBananaTool = toolBuilder<
-  "nano_banana",
-  typeof NanoBananaParamsSchema,
-  VideoGenAgentContext
->({
+export const nanoBananaTool = tool<VideoGenAgentContext>({
   name: "nano_banana",
   description: `Run the Nano Banana model for high-quality text-to-image or image-to-image generation.
 Can take up to 14 input images for style reference, editing, or composition.
 Auto-saves generated images and returns the URL.`,
-  parameters: NanoBananaParamsSchema,
-  async execute(params: NanoBananaParams) {
+  parameters: params,
+  async execute(args) {
+    const parsed = params.parse(args);
     console.log(
       `[nanoBanana] Tool invoked with params:`,
-      JSON.stringify(params),
+      JSON.stringify(parsed),
     );
-    const { prompt, imageInputPaths, aspectRatio, outputFormat } = params;
-    const inputImages = transformFileInputs(imageInputPaths ?? []);
 
-    const imageUrl = await Replicate.NanoBanana.run({
-      prompt,
-      image_input: inputImages,
-      aspect_ratio: aspectRatio,
-      output_format: outputFormat,
-    });
-
+    const imageUrl = await impl("kie", parsed);
     console.log(`[nanoBanana] Generated image URL: ${imageUrl}`);
 
     // Ensure output directory exists
@@ -121,7 +159,7 @@ Auto-saves generated images and returns the URL.`,
 
     // Generate unique filename with timestamp
     const timestamp = Date.now();
-    const fileName = `nanobana_${timestamp}.${outputFormat}`;
+    const fileName = `nanobana_${timestamp}.jpg`;
     const outputPath = join(OUTPUT_DIR, fileName);
 
     // Download and save the image
@@ -129,19 +167,28 @@ Auto-saves generated images and returns the URL.`,
 
     // update agent state with artifacts
     const { agent } = getCurrentAgent<VideoGenAgent>();
-    agent?.patchState((draft) => {
-      if (!draft.artifacts.images) {
-        draft.artifacts.images = [];
-      }
-      draft.artifacts.images.push({
-        id: `nano_banana_${Date.now()}`,
-        imageUrl,
+    if (agent) {
+      agent.patchState((draft) => {
+        draft.artifacts.images.push({
+          id: `nano_banana_${Date.now()}`,
+          imageUrl,
+        });
       });
-    });
+    } else {
+      console.warn("[nanoBanana] No current agent found to update state.");
+    }
 
-    return toolSuccess("nano_banana", {
-      imageUrl,
-      outputPath,
-    });
+    const textPart: ToolOutputText = {
+      type: "text",
+      text: `success. Generated image saved at ${outputPath}, URL: ${imageUrl}`,
+    };
+    const imagePart: ToolOutputImage = {
+      type: "image",
+      image: imageUrl,
+      detail: "high",
+    };
+    log.info("nanoBanana tool execution completed", { outputPath, imageUrl });
+
+    return [textPart, imagePart];
   },
 });

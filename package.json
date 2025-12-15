@@ -1,29 +1,29 @@
 {
   "name": "openpromo",
   "version": "0.0.0",
-  "packageManager": "pnpm@10.24.0",
+  "packageManager": "pnpm@10.25.0",
   "scripts": {
     "check": "biome check --write --diagnostic-level=warn",
-    "sync_secrets": "bash scripts/sync_secrets.sh",
     "postinstall": "lefthook install && patch-package",
     "typecheck": "pnpm run --parallel -r typecheck",
     "lint": "pnpm check && pnpm typecheck",
-    "meerkat": "bash scripts/meerkat.sh"
+    "meerkat": "bash scripts/meerkat.sh",
+    "dev": "turbo dev"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.8",
-    "@tsconfig/node22": "^22.0.5",
-    "@types/node": "^24.10.2",
-    "@typescript/native-preview": "7.0.0-dev.20251204.1",
-    "lefthook": "^2.0.9",
-    "orval": "^7.17.0",
+    "@biomejs/biome": "2.3.8",
+    "@tsconfig/node22": "22.0.5",
+    "@types/node": "^25.0.2",
+    "@typescript/native-preview": "7.0.0-dev.20251211.1",
+    "lefthook": "2.0.9",
+    "orval": "7.17.0",
     "patch-package": "8.0.1",
-    "turbo": "^2.6.3",
-    "typescript": "^5.9.3",
+    "turbo": "2.6.3",
+    "typescript": "5.9.3",
     "wrangler": "catalog:"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=25"
   },
   "pnpm": {
     "overrides": {

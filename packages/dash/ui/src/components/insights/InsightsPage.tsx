@@ -1,41 +1,40 @@
 import { Skeleton } from "@openpromo/ui/components/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@openpromo/ui/components/tabs";
+import { useParams } from "@tanstack/react-router";
 import type { MergedContentEntity } from "@worker/shared/content-types";
-import { formatDistanceToNow, startOfDay, subDays } from "date-fns";
+import { startOfDay, subDays } from "date-fns";
 import { useMemo, useState } from "react";
+import { MomentumCard } from "@/components/momentum/MomentumCard";
 import {
   type TimeSeriesQueryParams,
   useWorkspaceInsightSnapshot,
   useWorkspaceInsightsInboxSummary,
-  useWorkspaceInsightsStatus,
   useWorkspaceInsightsTimeSeries,
   useWorkspaceInsightsTopContent,
 } from "@/queries/insights";
+import { InsightsActions } from "./InsightsActions";
 import { InsightsGoalProgress } from "./InsightsGoalProgress";
-import { InsightsInboxSummary } from "./InsightsInboxSummary";
-import { InsightsNarrativeHighlights } from "./InsightsNarrativeHighlights";
-import { InsightsNextActions } from "./InsightsNextActions";
-import { InsightsSummaryCards } from "./InsightsSummaryCards";
 import { InsightsTimeSeriesChart } from "./InsightsTimeSeriesChart";
-import {
-  InsightsTopContent,
-  InsightsTopContentSkeleton,
-} from "./InsightsTopContent";
+import { PlatformBreakdown } from "./PlatformBreakdown";
+import { TopContentGrid } from "./TopContentGrid";
 
 type TimeRange = "7d" | "30d" | "90d";
 
-const SUMMARY_SKELETON_KEYS = [
-  "impressions",
-  "engagement",
-  "clicks",
-  "likes",
-  "comments",
-  "shares",
-] as const;
-
-const INBOX_SKELETON_KEYS = ["messages", "response", "rate"] as const;
+function formatNumber(value: number): string {
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(1)}M`;
+  }
+  if (value >= 1_000) {
+    return `${(value / 1_000).toFixed(1)}K`;
+  }
+  return value.toLocaleString();
+}
 
 export function InsightsPage() {
+  const { workspaceSlug } = useParams({
+    from: "/_authenticated/workspaces/$workspaceSlug/insights",
+  });
+
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
   const [interval, setInterval] = useState<"day" | "week">("day");
 
@@ -60,165 +59,177 @@ export function InsightsPage() {
 
   const { data: topContent, isLoading: topContentLoading } =
     useWorkspaceInsightsTopContent({
-      limit: 5,
+      limit: 8,
       sortBy: "impressions",
       start: dateRange.start,
       end: dateRange.end,
     });
 
-  const { data: inboxSummary, isLoading: inboxSummaryLoading } =
-    useWorkspaceInsightsInboxSummary();
+  const { data: inboxSummary } = useWorkspaceInsightsInboxSummary();
 
-  const { data: status } = useWorkspaceInsightsStatus();
+  // Compute derived data
+  const topContentItems = (topContent?.items ?? []) as MergedContentEntity[];
 
-  const formatRelative = (value: Date | string | null | undefined) => {
-    if (!value) return "Never";
-    return formatDistanceToNow(new Date(value), { addSuffix: true });
-  };
+  // Summary stats data
+  const funnel = snapshot?.snapshot.funnel;
+  const reach = funnel?.awareness ?? 0;
+  const engagement = funnel?.engagement ?? 0;
+  const clicks = funnel?.clicks ?? 0;
+  const conversions = funnel?.conversions ?? 0;
+  const hasData = reach > 0 || engagement > 0;
 
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground mb-1">
-              Insights
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Track your content performance and engagement metrics
-            </p>
-            {status && (
-              <div className="text-xs text-muted-foreground flex flex-wrap gap-4 mt-1">
-                <span>
-                  Content refreshed{" "}
-                  {formatRelative(status.contentLastRefreshedAt)}
-                </span>
-                <span>
-                  Followers updated{" "}
-                  {formatRelative(status.followerLastCollectedAt)}
-                </span>
-                <span>
-                  Inbox updated {formatRelative(status.inboxLastUpdatedAt)}
-                </span>
-              </div>
+        {/* Header with summary and time range selector */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            {snapshotPending ? (
+              <>
+                <Skeleton className="h-7 w-48 rounded" />
+                <Skeleton className="h-5 w-72 rounded" />
+              </>
+            ) : hasData ? (
+              <>
+                <h1 className="text-xl font-semibold text-foreground">
+                  Insights
+                </h1>
+                <p className="text-muted-foreground">
+                  Your content reached{" "}
+                  <span className="font-medium text-foreground">
+                    {formatNumber(reach)}
+                  </span>{" "}
+                  people and drove{" "}
+                  <span className="font-medium text-foreground">
+                    {formatNumber(engagement)}
+                  </span>{" "}
+                  engagements
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-xl font-semibold text-foreground">
+                  Insights
+                </h1>
+                <p className="text-muted-foreground">
+                  Publish content to see how it's performing
+                </p>
+              </>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <Tabs
-              value={timeRange}
-              onValueChange={(v) => setTimeRange(v as TimeRange)}
-            >
-              <TabsList>
-                <TabsTrigger value="7d">7 days</TabsTrigger>
-                <TabsTrigger value="30d">30 days</TabsTrigger>
-                <TabsTrigger value="90d">90 days</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <Tabs
-              value={interval}
-              onValueChange={(v) => setInterval(v as "day" | "week")}
-            >
-              <TabsList>
-                <TabsTrigger value="day">Daily</TabsTrigger>
-                <TabsTrigger value="week">Weekly</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+          <Tabs
+            value={timeRange}
+            onValueChange={(v) => setTimeRange(v as TimeRange)}
+          >
+            <TabsList>
+              <TabsTrigger value="7d">7 days</TabsTrigger>
+              <TabsTrigger value="30d">30 days</TabsTrigger>
+              <TabsTrigger value="90d">90 days</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
-        {/* Summary Cards */}
+        {/* Summary Stats Row */}
         {snapshotPending ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {SUMMARY_SKELETON_KEYS.map((key) => (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {["a", "b", "c", "d"].map((key) => (
               <div
-                key={`summary-skeleton-${key}`}
-                className="rounded-lg border border-border/40 p-4 bg-card"
+                key={key}
+                className="rounded-xl border border-border/40 bg-card p-4"
               >
-                <Skeleton className="h-4 w-4 mb-2 rounded" />
-                <Skeleton className="h-6 mb-2 rounded" />
-                <Skeleton className="h-3 w-16 rounded" />
+                <Skeleton className="h-8 w-16 rounded" />
+                <Skeleton className="h-4 w-20 mt-1 rounded" />
               </div>
             ))}
           </div>
         ) : (
-          <InsightsSummaryCards snapshotRecord={snapshot ?? undefined} />
-        )}
-
-        {/* Narrative Highlights & Next Actions */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <InsightsNarrativeHighlights
-            highlights={snapshot?.snapshot.narrativeHighlights}
-            isLoading={snapshotPending}
-          />
-          <InsightsNextActions
-            goals={snapshot?.snapshot.goals}
-            highlights={snapshot?.snapshot.narrativeHighlights}
-          />
-        </div>
-
-        {/* Inbox Summary */}
-        {inboxSummaryLoading ? (
-          <div className="bg-card rounded-lg p-6 border border-border/40">
-            <Skeleton className="h-5 w-40 mb-4 rounded" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {INBOX_SKELETON_KEYS.map((key) => (
-                <div
-                  key={`inbox-skeleton-${key}`}
-                  className="rounded-lg border border-border/40 p-4 bg-background"
-                >
-                  <Skeleton className="h-3 w-24 mb-3 rounded" />
-                  <Skeleton className="h-6 w-20 mb-2 rounded" />
-                  <Skeleton className="h-3 w-28 rounded" />
-                </div>
-              ))}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="rounded-xl border border-border/40 bg-card p-4">
+              <p className="text-2xl font-semibold text-foreground">
+                {formatNumber(reach)}
+              </p>
+              <p className="text-sm text-muted-foreground">Reach</p>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-card p-4">
+              <p className="text-2xl font-semibold text-foreground">
+                {formatNumber(engagement)}
+              </p>
+              <p className="text-sm text-muted-foreground">Engagement</p>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-card p-4">
+              <p className="text-2xl font-semibold text-foreground">
+                {formatNumber(clicks)}
+              </p>
+              <p className="text-sm text-muted-foreground">Clicks</p>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-card p-4">
+              <p className="text-2xl font-semibold text-foreground">
+                {formatNumber(conversions)}
+              </p>
+              <p className="text-sm text-muted-foreground">Conversions</p>
             </div>
           </div>
-        ) : (
-          <InsightsInboxSummary summary={inboxSummary} />
         )}
 
-        {/* Goals & Time Series */}
+        {/* Top Content + Engagement Trend */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <TopContentGrid
+            items={topContentItems}
+            isLoading={topContentLoading}
+            workspaceSlug={workspaceSlug}
+            limit={4}
+          />
+
+          <MomentumCard className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-foreground">
+                  Engagement trend
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Impressions and engagement over time
+                </p>
+              </div>
+              <Tabs
+                value={interval}
+                onValueChange={(v) => setInterval(v as "day" | "week")}
+              >
+                <TabsList className="h-7">
+                  <TabsTrigger value="day" className="text-xs px-2 py-1">
+                    Daily
+                  </TabsTrigger>
+                  <TabsTrigger value="week" className="text-xs px-2 py-1">
+                    Weekly
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            {timeSeriesLoading ? (
+              <Skeleton className="h-[250px] rounded" />
+            ) : (
+              <InsightsTimeSeriesChart data={timeSeries} />
+            )}
+          </MomentumCard>
+        </div>
+
+        {/* Goals + Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <InsightsGoalProgress
             goals={snapshot?.snapshot.goals}
             isLoading={snapshotPending}
           />
-          <div className="bg-card rounded-lg p-6 border border-border/40">
-            <div className="mb-4">
-              <h2 className="font-medium text-foreground mb-1">
-                Performance Over Time
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Impressions and engagement trends
-              </p>
-            </div>
-            {timeSeriesLoading ? (
-              <Skeleton className="h-[300px] rounded" />
-            ) : (
-              <InsightsTimeSeriesChart data={timeSeries} />
-            )}
-          </div>
+          <InsightsActions
+            goals={snapshot?.snapshot.goals}
+            inboxSummary={inboxSummary}
+            hasRecentAiContent={false}
+          />
         </div>
 
-        {/* Top Content */}
-        <div className="bg-card rounded-lg p-6 border border-border/40">
-          <div className="mb-4">
-            <h2 className="font-medium text-foreground mb-1">
-              Top Performing Content
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Your best performing posts ranked by impressions
-            </p>
-          </div>
-          {topContentLoading ? (
-            <InsightsTopContentSkeleton rows={5} />
-          ) : (
-            <InsightsTopContent
-              items={((topContent?.items ?? []) as MergedContentEntity[]) ?? []}
-            />
-          )}
-        </div>
+        {/* Platform Breakdown (collapsed) */}
+        <PlatformBreakdown
+          items={topContentItems}
+          isLoading={topContentLoading}
+        />
       </div>
     </div>
   );

@@ -57,6 +57,14 @@ export async function downloadImagesToTmp(
     const urlPath = new URL(url).pathname;
     const filename = urlPath.split("/").pop() || `image_${i}.jpg`;
     const localPath = `${destDir}/${filename}`;
+    // if file already exists, skip download
+    if (existsSync(localPath)) {
+      console.log(
+        `[VideoGenAgent] Image already exists, skipping download: ${localPath}`,
+      );
+      localPaths.push(localPath);
+      continue;
+    }
 
     try {
       console.log(`[VideoGenAgent] Downloading: ${url}`);

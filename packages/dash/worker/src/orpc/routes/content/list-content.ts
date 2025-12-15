@@ -4,7 +4,7 @@ import {
   unifiedContentTable,
 } from "@core/schemas/content.sql";
 import { db } from "@openpromo/core/database/db";
-import { and, asc, count, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
 import * as z from "zod";
 import type { MergedContentContainer } from "../../../shared/content-types";
 import { orpcBuilder } from "../../context";
@@ -108,9 +108,22 @@ export const listContents = orpcBuilder
       whereConditions.push(lte(unifiedContentTable.createdAt, toDate));
     }
 
-    // Get total count with filters
+    // Get total count of entities (groups + standalone content)
+    // We need to count distinct groups + content without groups
     const totalCountResult = await db()
-      .select({ count: count() })
+      .select({
+        // Count distinct groups + count of content without groups
+        count: sql<number>`
+          COUNT(DISTINCT CASE
+            WHEN ${unifiedContentTable.pendingContentGroupId} IS NOT NULL
+            THEN ${unifiedContentTable.pendingContentGroupId}
+          END) +
+          COUNT(CASE
+            WHEN ${unifiedContentTable.pendingContentGroupId} IS NULL
+            THEN 1
+          END)
+        `.as("count"),
+      })
       .from(unifiedContentTable)
       .leftJoin(
         pendingContentGroupTable,
@@ -121,7 +134,7 @@ export const listContents = orpcBuilder
       )
       .where(and(...whereConditions));
 
-    const totalCount = totalCountResult[0]?.count ?? 0;
+    const totalCount = Number(totalCountResult[0]?.count ?? 0);
     const totalPages = Math.ceil(totalCount / pageSize);
 
     // Determine order by clause based on sortBy and sortOrder
@@ -151,6 +164,55 @@ export const listContents = orpcBuilder
         break;
     }
 
+    // Step 1: Get paginated entity identifiers (group IDs or content IDs for standalone)
+    // Use COALESCE to treat group ID as the entity key, or content ID if no group
+    const entityKeysQuery = await db()
+      .selectDistinct({
+        entityKey:
+          sql<string>`COALESCE(${unifiedContentTable.pendingContentGroupId}, ${unifiedContentTable.id})`.as(
+            "entity_key",
+          ),
+        // For ordering, use the max/min of the sort column within each entity
+        sortValue:
+          sortOrder === "desc"
+            ? sql`MAX(${orderByColumn})`.as("sort_value")
+            : sql`MIN(${orderByColumn})`.as("sort_value"),
+      })
+      .from(unifiedContentTable)
+      .leftJoin(
+        pendingContentGroupTable,
+        eq(
+          unifiedContentTable.pendingContentGroupId,
+          pendingContentGroupTable.id,
+        ),
+      )
+      .where(and(...whereConditions))
+      .groupBy(
+        sql`COALESCE(${unifiedContentTable.pendingContentGroupId}, ${unifiedContentTable.id})`,
+      )
+      .orderBy(
+        sortOrder === "desc" ? desc(sql`sort_value`) : asc(sql`sort_value`),
+      )
+      .limit(pageSize)
+      .offset((page - 1) * pageSize);
+
+    const entityKeys = entityKeysQuery.map((r) => r.entityKey);
+
+    if (entityKeys.length === 0) {
+      return {
+        entities: [],
+        pagination: {
+          page,
+          pageSize,
+          total: totalCount,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
+    }
+
+    // Step 2: Fetch all content for the selected entities
     const raw = await db()
       .select()
       .from(unifiedContentTable)
@@ -161,48 +223,51 @@ export const listContents = orpcBuilder
           pendingContentGroupTable.id,
         ),
       )
-      .where(and(...whereConditions))
-      .orderBy(orderByFn(orderByColumn))
-      .limit(pageSize)
-      .offset((page - 1) * pageSize);
+      .where(
+        and(
+          ...whereConditions,
+          sql`COALESCE(${unifiedContentTable.pendingContentGroupId}, ${unifiedContentTable.id}) IN (${sql.join(
+            entityKeys.map((k) => sql`${k}`),
+            sql`, `,
+          )})`,
+        ),
+      )
+      .orderBy(orderByFn(orderByColumn));
 
-    // Process and group by pendingContentGroupId
-    const entities = raw.reduce<z.infer<typeof MergedContentContainer>[]>(
-      (acc, row) => {
-        const { unified_content, pending_content_group } = row;
+    // Step 3: Group by pendingContentGroupId, maintaining entity order
+    const entityMap = new Map<string, z.infer<typeof MergedContentContainer>>();
 
-        if (pending_content_group) {
-          // Content belongs to a group - find existing group or create new one
-          let existingGroup = acc.find(
-            (entity) =>
-              entity.type === "group" &&
-              entity.entity.id === pending_content_group.id,
-          );
+    for (const row of raw) {
+      const { unified_content, pending_content_group } = row;
+      const entityKey = pending_content_group?.id ?? unified_content.id;
 
-          if (!existingGroup) {
-            existingGroup = {
-              type: "group",
-              entity: pending_content_group,
-              contents: [],
-            };
-            acc.push(existingGroup);
-          }
-
-          if (existingGroup.type === "group") {
-            existingGroup.contents.push(unified_content);
-          }
-        } else {
-          // Individual content (no group)
-          acc.push({
-            type: "content",
-            entity: unified_content,
-          });
+      if (pending_content_group) {
+        let existingGroup = entityMap.get(entityKey);
+        if (!existingGroup) {
+          existingGroup = {
+            type: "group",
+            entity: pending_content_group,
+            contents: [],
+          };
+          entityMap.set(entityKey, existingGroup);
         }
+        if (existingGroup.type === "group") {
+          existingGroup.contents.push(unified_content);
+        }
+      } else {
+        entityMap.set(entityKey, {
+          type: "content",
+          entity: unified_content,
+        });
+      }
+    }
 
-        return acc;
-      },
-      [],
-    );
+    // Maintain the order from entityKeys
+    const entities = entityKeys
+      .map((key) => entityMap.get(key))
+      .filter(
+        (e): e is z.infer<typeof MergedContentContainer> => e !== undefined,
+      );
 
     return {
       entities,

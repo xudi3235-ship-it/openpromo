@@ -14,12 +14,13 @@ interface ContentPageLayoutProps {
   table?: Table<MergedContentEntity>;
   filters: ContentFiltersType;
   onFiltersChange: (filters: ContentFiltersType) => void;
+  batchActions?: React.ReactNode;
 }
 
 /**
  * Shared layout wrapper for content page that includes:
  * - Header with search and column visibility
- * - Filters section
+ * - Filters section with optional batch actions
  * - Dialogs (Reschedule and Composer)
  */
 export function ContentPageLayout({
@@ -29,9 +30,10 @@ export function ContentPageLayout({
   table,
   filters,
   onFiltersChange,
+  batchActions,
 }: ContentPageLayoutProps) {
   return (
-    <div className="w-full space-y-2">
+    <div className="flex h-full flex-col gap-2">
       {/* Header with search and column controls only */}
       {table && (
         <ContentPageSearchHeader
@@ -41,9 +43,14 @@ export function ContentPageLayout({
         />
       )}
 
-      <ContentFilters filters={filters} onFiltersChange={onFiltersChange} />
+      <ContentFilters
+        filters={filters}
+        onFiltersChange={onFiltersChange}
+        batchActions={batchActions}
+      />
 
-      {children}
+      {/* Main content area - flex-1 to take remaining space, min-h-0 for scroll containment */}
+      <div className="flex min-h-0 flex-1 flex-col gap-2">{children}</div>
 
       <ContentRescheduleDialog />
     </div>

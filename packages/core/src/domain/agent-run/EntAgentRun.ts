@@ -52,7 +52,6 @@ export class EntAgentRun extends Ent<AgentRunSelectType> {
         ...input,
         workspaceId: Actor.workspaceID(),
         status: input.status ?? "not_started",
-        agentName: input.agentName,
       })
       .returning();
 
@@ -80,29 +79,14 @@ export class EntAgentRun extends Ent<AgentRunSelectType> {
     page?: number;
     pageSize?: number;
     status?: AgentRunStatus;
-    agentName?: AgentRunSelectType["agentName"];
     hasImages?: boolean;
     hasVideos?: boolean;
   }) {
-    const {
-      page = 1,
-      pageSize = 20,
-      status,
-      agentName,
-      hasImages,
-      hasVideos,
-    } = params;
+    const { page = 1, pageSize = 20, status, hasImages, hasVideos } = params;
 
     const filters = [eq(agentRunTable.workspaceId, Actor.workspaceID())];
 
     if (status) filters.push(eq(agentRunTable.status, status));
-    if (agentName)
-      filters.push(
-        eq(
-          agentRunTable.agentName,
-          agentName as AgentRunSelectType["agentName"],
-        ),
-      );
     if (hasImages) {
       filters.push(
         sql`${agentRunTable.output}->'output'->'images' IS NOT NULL AND jsonb_array_length(${agentRunTable.output}->'output'->'images') > 0`,

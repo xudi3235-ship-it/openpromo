@@ -22,7 +22,7 @@ const platforms: Platform[] = [
   },
   {
     id: "tiktok",
-    name: "TikTok",
+    name: "TikTok Business",
     colors: "from-black to-gray-800",
     available: true,
   },
@@ -100,8 +100,8 @@ export function AvailablePlatformsRow({
           </button>
 
           {/* Tooltip */}
-          <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-            Add {platform.name} account
+          <div className="absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-popover text-popover-foreground text-xs rounded shadow-md border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+            Add {platform.name}
           </div>
         </div>
       ))}

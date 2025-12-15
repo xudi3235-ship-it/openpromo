@@ -3,7 +3,6 @@ import type {
   PutObjectCommandInput,
   CompletedPart as S3CompletedPart,
 } from "@aws-sdk/client-s3";
-import { Binding } from "@core/helpers/api-env";
 import { getR2Client } from "@core/providers/aws";
 import { Log } from "@core/utils/log";
 
@@ -67,36 +66,6 @@ export namespace Storage {
     }
   }
 
-  async function listObjectsViaBinding(params: {
-    bucket: R2Bucket;
-    prefix?: string;
-    continuationToken?: string;
-    maxKeys?: number;
-  }): Promise<ListPage> {
-    const { bucket, prefix, continuationToken, maxKeys } = params;
-    const result = await bucket.list({
-      prefix,
-      cursor: continuationToken,
-      limit: maxKeys,
-    });
-    const cursor =
-      typeof (result as { cursor?: unknown }).cursor === "string"
-        ? ((result as { cursor?: string }).cursor as string)
-        : undefined;
-
-    const objects =
-      result.objects?.map((obj) => ({
-        key: obj.key,
-        lastModified: obj.uploaded ? new Date(obj.uploaded) : undefined,
-      })) ?? [];
-
-    return {
-      objects,
-      isTruncated: result.truncated ?? false,
-      continuationToken: cursor,
-    };
-  }
-
   type UploadBody =
     | Buffer
     | Uint8Array
@@ -104,28 +73,6 @@ export namespace Storage {
     | string
     | ReadableStream<Uint8Array>
     | ReadableStream;
-
-  type ListObject = {
-    key: string;
-    lastModified?: Date;
-  };
-
-  type ListObjectsResult = {
-    objects: ListObject[];
-    isTruncated: boolean;
-    continuationToken?: string;
-  };
-
-  type ListPage = {
-    objects: ListObject[];
-    isTruncated: boolean;
-    continuationToken?: string;
-  };
-
-  const ONE_HOUR_MS = 60 * 60 * 1000;
-  const ONE_DAY_MS = ONE_HOUR_MS * 24;
-  const ONE_WEEK_MS = ONE_DAY_MS * 7;
-  const ONE_MONTH_MS = ONE_DAY_MS * 35;
 
   function resolveBucket(bucket: BucketInput): BucketConfig {
     if (typeof bucket === "string") {
@@ -233,10 +180,6 @@ export namespace Storage {
       return `temporary/monthly/${month}/${filename}`;
     }
 
-    export function permanent(path: string, filename: string): string {
-      return `permanent/${path}/${filename}`;
-    }
-
     export function workspace(
       workspaceId: string,
       path: string,
@@ -291,79 +234,6 @@ export namespace Storage {
     }
 
     return { key, url: publicUrl(key, bucket) };
-  }
-
-  function parseListBucketXml(xml: string): ListObjectsResult {
-    const contents: ListObject[] = [];
-    const contentsRegex = /<Contents>([\s\S]*?)<\/Contents>/g;
-
-    for (const match of xml.matchAll(contentsRegex)) {
-      const block = match[1];
-      const keyMatch = block.match(/<Key>([^<]+)<\/Key>/);
-      if (!keyMatch) continue;
-
-      const rawKey = keyMatch[1]
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'");
-
-      const key = decodeURIComponent(rawKey);
-      const lastModifiedMatch = block.match(
-        /<LastModified>([^<]+)<\/LastModified>/,
-      );
-      const lastModified = lastModifiedMatch
-        ? new Date(lastModifiedMatch[1])
-        : undefined;
-
-      contents.push({ key, lastModified });
-    }
-
-    const isTruncated = /<IsTruncated>true<\/IsTruncated>/.test(xml);
-    const nextTokenMatch = xml.match(
-      /<NextContinuationToken>([^<]+)<\/NextContinuationToken>/,
-    );
-
-    return {
-      objects: contents,
-      isTruncated,
-      continuationToken: nextTokenMatch ? nextTokenMatch[1] : undefined,
-    };
-  }
-
-  async function listObjects(params: {
-    bucket: BucketInput;
-    prefix?: string;
-    continuationToken?: string;
-    maxKeys?: number;
-  }): Promise<ListObjectsResult> {
-    const { bucket, prefix, continuationToken, maxKeys } = params;
-    const { client, r2Url } = getR2Client();
-    const { name } = resolveBucket(bucket);
-
-    const url = new URL(`${r2Url}/${name}`);
-    url.searchParams.set("list-type", "2");
-    url.searchParams.set("encoding-type", "url");
-    if (prefix) url.searchParams.set("prefix", prefix);
-    if (continuationToken) {
-      url.searchParams.set("continuation-token", continuationToken);
-    }
-    if (maxKeys) {
-      url.searchParams.set("max-keys", String(maxKeys));
-    }
-
-    const response = await client.fetch(url.toString(), { method: "GET" });
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new StorageError(
-        `Failed to list objects: ${response.status} ${response.statusText}`,
-        { bucket: name, prefix, body: errorText },
-      );
-    }
-
-    const xml = await response.text();
-    return parseListBucketXml(xml);
   }
 
   export async function uploadMultipart(
@@ -551,126 +421,6 @@ export namespace Storage {
         { key, body: errorText },
       );
     }
-  }
-
-  export async function cleanupPublicBucketByCadence(options?: {
-    bucket?: BucketInput;
-    r2Bucket?: R2Bucket;
-    maxKeysPerList?: number;
-  }): Promise<
-    Array<{
-      cadence: string;
-      prefixes: string[];
-      scanned: number;
-      deleted: number;
-    }>
-  > {
-    const bucket = options?.bucket ?? PUBLIC_BUCKET;
-    const r2Bucket =
-      options?.r2Bucket ??
-      (() => {
-        try {
-          return Binding.use().Bucket;
-        } catch {
-          return undefined;
-        }
-      })();
-    const useR2Binding = !!r2Bucket && typeof r2Bucket.list === "function";
-    const rules = [
-      {
-        cadence: "hourly",
-        prefixes: ["ephemeral/hourly/", "temporary/hourly/"],
-        ttlMs: ONE_HOUR_MS,
-      },
-      {
-        cadence: "daily",
-        prefixes: ["temporary/daily/", "ephemeral/daily/"],
-        ttlMs: ONE_DAY_MS,
-      },
-      {
-        cadence: "weekly",
-        prefixes: ["temporary/weekly/", "ephemeral/weekly/"],
-        ttlMs: ONE_WEEK_MS,
-      },
-      {
-        cadence: "monthly",
-        prefixes: ["temporary/monthly/", "ephemeral/monthly/"],
-        ttlMs: ONE_MONTH_MS,
-      },
-    ];
-
-    const results: Array<{
-      cadence: string;
-      prefixes: string[];
-      scanned: number;
-      deleted: number;
-    }> = [];
-
-    for (const rule of rules) {
-      const ttlMs = rule.ttlMs;
-      const now = Date.now();
-      let scanned = 0;
-      let deleted = 0;
-
-      for (const prefix of rule.prefixes) {
-        let continuationToken: string | undefined;
-
-        do {
-          const page: ListPage = useR2Binding
-            ? await listObjectsViaBinding({
-                bucket: r2Bucket as R2Bucket,
-                prefix,
-                continuationToken,
-                maxKeys: options?.maxKeysPerList ?? 1000,
-              })
-            : await listObjects({
-                bucket,
-                prefix,
-                continuationToken,
-                maxKeys: options?.maxKeysPerList ?? 1000,
-              });
-
-          for (const obj of page.objects) {
-            scanned++;
-            const lastModified = obj.lastModified?.getTime();
-            if (!lastModified) continue;
-            if (now - lastModified < ttlMs) continue;
-            try {
-              if (useR2Binding) {
-                await (r2Bucket as R2Bucket).delete(obj.key);
-              } else {
-                await deleteFile(obj.key, bucket);
-              }
-              deleted++;
-            } catch (error) {
-              log.warn("failed to delete public object", {
-                key: obj.key,
-                cadence: rule.cadence,
-                prefix,
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : JSON.stringify(error),
-              });
-            }
-          }
-
-          continuationToken = page.isTruncated
-            ? page.continuationToken
-            : undefined;
-        } while (continuationToken);
-      }
-
-      results.push({
-        cadence: rule.cadence,
-        prefixes: rule.prefixes,
-        scanned,
-        deleted,
-      });
-    }
-
-    log.info("public bucket cleanup completed", { results });
-    return results;
   }
 
   export async function getPresignedUrl(

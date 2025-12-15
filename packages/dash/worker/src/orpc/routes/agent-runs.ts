@@ -14,7 +14,6 @@ const listAgentRunsInput = createWorkspaceInputSchema(
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(50).default(20),
     status: VideoGenRealtime.RunStatusZod.optional(),
-    agentName: VideoGenRealtime.AgentNameZod.optional(),
     hasImages: z.boolean().optional(),
     hasVideos: z.boolean().optional(),
   }),
@@ -24,13 +23,12 @@ export const listAgentRuns = orpcBuilder
   .input(listAgentRunsInput)
   .use(withWorkspaceRole, workspaceRoleMappers.viewer)
   .handler(async ({ input }) => {
-    const { page, pageSize, status, agentName, hasImages, hasVideos } = input;
+    const { page, pageSize, status, hasImages, hasVideos } = input;
 
     const result = await EntAgentRun.list({
       page,
       pageSize,
       status,
-      agentName: agentName ?? undefined,
       hasImages,
       hasVideos,
     });

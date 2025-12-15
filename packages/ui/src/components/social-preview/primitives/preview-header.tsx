@@ -23,6 +23,8 @@ export interface PreviewHeaderProps extends BasePreviewProps {
   avatarSize?: "xs" | "sm" | "md" | "lg";
   /** Toggle location pin icon */
   showLocationPin?: boolean;
+  /** Show Instagram story-style gradient ring around avatar */
+  showStoryRing?: boolean;
 }
 
 export function PreviewHeader({
@@ -37,6 +39,7 @@ export function PreviewHeader({
   metaLayout = "inline",
   avatarSize,
   showLocationPin = true,
+  showStoryRing = false,
   className,
 }: PreviewHeaderProps) {
   const isCompact = size === "thumbnail" || size === "compact";
@@ -100,15 +103,39 @@ export function PreviewHeader({
       )}
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        <Avatar className={cn(resolvedAvatarSize, "flex-shrink-0")}>
-          <AvatarImage
-            src={profilePicUrl || undefined}
-            alt={accountName || ""}
-          />
-          <AvatarFallback>
-            {accountName?.charAt(0)?.toUpperCase() || "A"}
-          </AvatarFallback>
-        </Avatar>
+        {showStoryRing ? (
+          <div
+            className={cn(
+              "rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[2px] flex-shrink-0",
+              avatarSize === "xs" && "w-8 h-8",
+              avatarSize === "sm" && "w-9 h-9",
+              (avatarSize === "md" || (!avatarSize && !isCompact)) &&
+                "w-11 h-11",
+              avatarSize === "lg" && "w-[52px] h-[52px]",
+              !avatarSize && isCompact && "w-9 h-9",
+            )}
+          >
+            <Avatar className="w-full h-full border-2 border-background">
+              <AvatarImage
+                src={profilePicUrl || undefined}
+                alt={accountName || ""}
+              />
+              <AvatarFallback>
+                {accountName?.charAt(0)?.toUpperCase() || "A"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        ) : (
+          <Avatar className={cn(resolvedAvatarSize, "flex-shrink-0")}>
+            <AvatarImage
+              src={profilePicUrl || undefined}
+              alt={accountName || ""}
+            />
+            <AvatarFallback>
+              {accountName?.charAt(0)?.toUpperCase() || "A"}
+            </AvatarFallback>
+          </Avatar>
+        )}
 
         <div className="min-w-0 flex-1">
           <div className={cn("font-semibold truncate", nameSize)}>
@@ -121,7 +148,7 @@ export function PreviewHeader({
                 metaSize,
                 metaLayout === "stacked"
                   ? "mt-1 space-y-1 leading-tight"
-                  : "flex items-center gap-1 text-muted-foreground",
+                  : "flex items-center gap-1 text-muted-foreground truncate",
               )}
             >
               {metaLayout === "stacked" ? (
@@ -133,9 +160,11 @@ export function PreviewHeader({
                 </>
               ) : (
                 <>
+                  {renderTimestamp("flex-shrink-0")}
+                  {location && timestamp && (
+                    <span className="flex-shrink-0">•</span>
+                  )}
                   {renderLocation()}
-                  {location && timestamp && <span>•</span>}
-                  {renderTimestamp()}
                 </>
               )}
             </div>

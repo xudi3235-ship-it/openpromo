@@ -98,9 +98,9 @@ export type ConnectedAccountMetadata =
 
 // TikTok auth type enum - only used when platform is TIKTOK, otherwise N/A
 export const tiktokAuthTypePgEnum = pgEnum("tiktok_auth_type", [
-  "DEVELOPER_OAUTH", // TikTok Login Kit - for organic content API
-  "BUSINESS_LOGIN", // TikTok Business Login - for business accounts
-  "ADVERTISER", // TikTok Marketing API - for advertiser accounts
+  "DEVELOPER_OAUTH", // DEPRECATED since 2025-12-10: TikTok Login Kit - for organic content API
+  "BUSINESS_LOGIN", // TikTok Business Login - for business accounts (ACTIVE)
+  "ADVERTISER", // NOT IN USE since 2025-12-10: TikTok Marketing API - for advertiser accounts (implementation exists but not exposed in UI)
   "N/A", // for non-TikTok platforms
 ]);
 export const TikTokAuthType = z.enum(tiktokAuthTypePgEnum.enumValues);

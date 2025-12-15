@@ -1,3 +1,13 @@
+/**
+ * DEPRECATED: This publisher is deprecated since 2025-12-10.
+ *
+ * All TikTok content publishing now uses TikTokBusinessPublisher.
+ * This file is kept for historical context and reference only.
+ *
+ * Migration: Replace usage with TikTokBusinessPublisher which uses the Business API
+ * and provides enhanced features including comment management, business verification,
+ * and improved publishing capabilities.
+ */
 import { EntTikTokFeedPendingContent } from "@core/domain/content/entity";
 import { TikTokDirectPostClient } from "@core/domain/content/entity/tiktok/direct-post-client";
 import type { TikTokPublishStatusResult } from "@core/domain/content/entity/tiktok-feed";

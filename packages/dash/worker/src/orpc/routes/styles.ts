@@ -1,8 +1,6 @@
-import { EntImageGeneration } from "@core/domain/image-generation";
 import { EntStyleComponent } from "@core/domain/style-component";
 import type { InferRouterInputs, InferRouterOutputs } from "@orpc/server";
 import * as z from "zod";
-import { createVisibleError } from "../../helpers/error";
 import { orpcBuilder } from "../context";
 import { withWorkspaceRole } from "../middleware";
 import {
@@ -59,23 +57,6 @@ const createManyStylesInput = createWorkspaceInputSchema(
 const updateStyleInput = createWorkspaceInputSchema(
   EntStyleComponent.Schemas().update.extend({
     styleId: z.string().min(1),
-  }),
-);
-
-const listGenerationsInput = createWorkspaceInputSchema(
-  z.object({
-    styleId: z.string().min(1),
-    page: z.number().int().min(1).default(1),
-    pageSize: z.number().int().min(1).max(30).default(12),
-    productId: z.string().optional(),
-    productOnly: z.boolean().default(false),
-  }),
-);
-
-const deleteGenerationInput = createWorkspaceInputSchema(
-  z.object({
-    styleId: z.string().min(1),
-    generationId: z.string().min(1),
   }),
 );
 
@@ -152,65 +133,6 @@ export const deleteStyle = orpcBuilder
     return { styleId: input.styleId };
   });
 
-export const listStyleGenerations = orpcBuilder
-  .input(listGenerationsInput)
-  .use(withWorkspaceRole, workspaceRoleMappers.editor)
-  .handler(async ({ input }) => {
-    const {
-      styleId,
-      page,
-      pageSize,
-      productId,
-      productOnly,
-      workspaceId: _workspaceId,
-      workspaceSlug: _workspaceSlug,
-    } = input;
-
-    const style = await EntStyleComponent.fromID(styleId);
-    if (!style)
-      throw createVisibleError(404, {
-        message: `Style component ${styleId} not found`,
-        userMessage: "Style not found.",
-      });
-
-    const productFilter = productOnly ? (productId ?? null) : productId;
-
-    const result = await EntImageGeneration.listForStyle(style.data.id, {
-      page,
-      pageSize,
-      productId: productFilter,
-    });
-
-    return {
-      generations: result.generations.map((generation) => generation.toJSON()),
-      pagination: result.pagination,
-    };
-  });
-
-export const deleteStyleGeneration = orpcBuilder
-  .input(deleteGenerationInput)
-  .use(withWorkspaceRole, workspaceRoleMappers.editor)
-  .handler(async ({ input }) => {
-    const { styleId, generationId } = input;
-
-    const style = await EntStyleComponent.fromID(styleId);
-    if (!style)
-      throw createVisibleError(404, {
-        message: `Style component ${styleId} not found`,
-        userMessage: "Style not found.",
-      });
-
-    const generation = await EntImageGeneration.fromID(generationId);
-    if (!generation)
-      throw createVisibleError(404, {
-        message: `Generation ${generationId} not found for style ${styleId}`,
-        userMessage: "Generation not found.",
-      });
-
-    await generation.delete();
-    return { success: true };
-  });
-
 export const stylesRouter = {
   list: listStyles,
   get: getStyle,
@@ -218,10 +140,6 @@ export const stylesRouter = {
   createMany: createManyStyles,
   update: updateStyle,
   delete: deleteStyle,
-  generations: {
-    list: listStyleGenerations,
-    delete: deleteStyleGeneration,
-  },
 };
 
 // infer the inputs / outputs so that clients are easier to use.

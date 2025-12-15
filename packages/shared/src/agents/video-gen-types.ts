@@ -24,16 +24,12 @@ export namespace VideoGenRealtime {
   export const RunStatusZod = z.enum(RunStatus);
   export type RunStatus = z.infer<typeof RunStatusZod>;
 
-  export const AgentName = ["video_gen_agent", "image_gen_agent"] as const;
-  export type AgentName = z.infer<typeof AgentNameZod>;
-
-  export const AgentNameZod = z.enum(AgentName);
-
   // -- Client Events --
   /**
    * core input data schema, powering the video gen as well as
    */
   export const InputSchema = z.object({
+    mode: z.enum(["image_gen", "video_gen"]),
     prompt: z.string(),
     // brand assets, e.g. logo
     brandAssets: z.string().array(),
@@ -53,6 +49,7 @@ export namespace VideoGenRealtime {
 
   export const defaultInput: Input = {
     prompt: "empty prompt",
+    mode: "video_gen",
     productImages: [],
     avatarImages: [],
     referenceImages: [],
@@ -68,13 +65,6 @@ export namespace VideoGenRealtime {
     type: z.literal("start_pipeline"),
     data: z.object({
       input: InputSchema,
-    }),
-  });
-
-  export const SetAgent = base.extend({
-    type: z.literal("set_agent"),
-    data: z.object({
-      agent: AgentNameZod,
     }),
   });
 
@@ -125,12 +115,11 @@ export namespace VideoGenRealtime {
 
   // -- Application State --
   export const serverAppState = z.object({
-    agentName: AgentNameZod,
     status: RunStatusZod,
     runId: z.string().nullable(),
     lastUpdated: z.string(),
     input: InputSchema,
-    logs: z.string().describe("optional logs from agent run"),
+    logs: z.array(z.string()).describe("append-only logs from agent run"),
     // intermediate artifacts generated in the pipeline
     // during agent run
     artifacts: z.object({
@@ -145,10 +134,9 @@ export namespace VideoGenRealtime {
   export type ServerAppState = z.infer<typeof serverAppState>;
 
   export const initialServerAppState: ServerAppState = {
-    agentName: "video_gen_agent",
     status: "not_started",
     runId: null,
-    logs: "",
+    logs: [],
     lastUpdated: new Date().toISOString(),
     input: defaultInput,
     output: defaultAgentOutput,
@@ -157,6 +145,8 @@ export namespace VideoGenRealtime {
   };
 
   // -- Server Events --
+
+  // Full state broadcast - used for all real-time updates during a run
   export const SyncState = base.extend({
     type: z.literal("sync_state"),
     data: z.object({
@@ -164,34 +154,18 @@ export namespace VideoGenRealtime {
     }),
   });
 
-  export const StatusUpdate = base.extend({
-    type: z.literal("status_update"),
+  // Signals run completion - client should invalidate queries to fetch from DB
+  export const RunCompleted = base.extend({
+    type: z.literal("run_completed"),
     data: z.object({
-      status: RunStatusZod,
-      currentStep: z.string(),
-      message: z.string().optional(),
+      runId: z.string(),
+      status: z.enum(["succeeded", "failed"]),
     }),
   });
 
-  export const VideoGenerated = base.extend({
-    type: z.literal("video_generated"),
-    data: z.object({
-      assetId: z.string(),
-      videoUrl: z.string(),
-      thumbnailUrl: z.string().optional(),
-    }),
-  });
+  const ClientEvents = z.union([SetInput, StartPipeline, ResetState]);
 
-  export const Echo = base.extend({
-    type: z.literal("echo"),
-    data: z.object({
-      message: z.string(),
-    }),
-  });
-
-  const ClientEvents = z.union([SetInput, SetAgent, StartPipeline, ResetState]);
-
-  const ServerEvents = z.union([SyncState, StatusUpdate, VideoGenerated, Echo]);
+  const ServerEvents = z.union([SyncState, RunCompleted]);
 
   export const Event = z.union([ClientEvents, ServerEvents]);
   export type Event = z.infer<typeof Event>;
@@ -246,4 +220,88 @@ export namespace VideoGenRealtime {
     const event = createEvent(type, data as EventDataMap[K]);
     connection.send(JSON.stringify(event));
   }
+}
+
+/**
+ * Orchestrator decision schemas for structured agent handoffs.
+ * Used by the orchestrator to route work to sub-agents.
+ *
+ * Note: Using a flat object with action discriminator instead of z.discriminatedUnion
+ * because OpenAI's structured output doesn't support 'union' type directly.
+ */
+export namespace OrchestratorSchema {
+  /** Available sub-agent types (extensible) */
+  export const AgentType = z.enum(["image_gen", "video_gen"]);
+  export type AgentType = z.infer<typeof AgentType>;
+
+  /** Single step in an execution plan */
+  export const PlanStep = z.object({
+    stepId: z.string().describe("Unique identifier for this step"),
+    agent: AgentType,
+    task: z.string().describe("What this step should accomplish"),
+    dependsOn: z
+      .string()
+      .array()
+      .nullable()
+      .describe("stepIds this step depends on"),
+  });
+  export type PlanStep = z.infer<typeof PlanStep>;
+
+  /**
+   * Flat decision object - OpenAI structured output compatible.
+   * Use `action` field to determine which other fields are relevant.
+   * Note: OpenAI requires .nullable() for optional fields.
+   */
+  export const Decision = z.object({
+    // Discriminator field
+    action: z
+      .enum(["plan", "handoff", "retry", "complete", "error"])
+      .describe("The type of decision"),
+
+    // Fields for 'plan' action
+    reasoning: z
+      .string()
+      .nullable()
+      .describe("Why this plan makes sense (required for plan action)"),
+    steps: PlanStep.array()
+      .nullable()
+      .describe("Ordered steps to execute (required for plan action)"),
+
+    // Fields for 'handoff' and 'retry' actions
+    targetAgent: AgentType.nullable().describe(
+      "Which agent to delegate to (required for handoff/retry)",
+    ),
+    stepId: z
+      .string()
+      .nullable()
+      .describe(
+        "Which plan step this fulfills (optional for handoff, required for retry)",
+      ),
+    taskDescription: z
+      .string()
+      .nullable()
+      .describe(
+        "Detailed instructions for the sub-agent (required for handoff/retry)",
+      ),
+
+    // Fields for 'complete' action
+    output: VideoGenRealtime.AgentOutput.nullable().describe(
+      "Final output (required for complete action)",
+    ),
+
+    // Fields for 'error' action
+    reason: z
+      .string()
+      .nullable()
+      .describe("Why the workflow cannot continue (required for error action)"),
+  });
+
+  export type Decision = z.infer<typeof Decision>;
+
+  // Helper types for type narrowing in switch statements
+  export type PlanDecision = Decision & { action: "plan" };
+  export type HandoffDecision = Decision & { action: "handoff" };
+  export type RetryDecision = Decision & { action: "retry" };
+  export type CompleteDecision = Decision & { action: "complete" };
+  export type ErrorDecision = Decision & { action: "error" };
 }

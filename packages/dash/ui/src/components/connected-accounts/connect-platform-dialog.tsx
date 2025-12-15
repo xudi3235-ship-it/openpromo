@@ -44,15 +44,17 @@ const platforms = [
   },
   {
     id: "tiktok",
-    name: "TikTok",
-    description: "Create and schedule TikTok videos for your business",
+    name: "TikTok Business",
+    description:
+      "Create and schedule TikTok videos for your business with enhanced features",
     icon: "https://logo.clearbit.com/tiktok.com",
     available: true,
     permissions: [
       "Profile Access",
-      "Video Upload",
-      "Video Publish",
+      "Video Upload & Publish",
       "Video List",
+      "Comment Management",
+      "Business Analytics",
     ],
   },
 ];

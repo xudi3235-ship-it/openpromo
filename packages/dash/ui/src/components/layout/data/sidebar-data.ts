@@ -1,5 +1,6 @@
 import {
   Calendar,
+  CreditCard,
   Home,
   Inbox,
   LayoutList,
@@ -91,6 +92,11 @@ export const useSidebarData = (): SidebarData => {
           title: "Team",
           url: "/workspaces/$workspaceSlug/team",
           icon: Users,
+        },
+        {
+          title: "Billing",
+          url: "/workspaces/$workspaceSlug/billing",
+          icon: CreditCard,
         },
         {
           title: "Settings",
