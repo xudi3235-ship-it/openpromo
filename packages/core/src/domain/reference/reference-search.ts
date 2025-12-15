@@ -44,6 +44,8 @@ export interface ReferenceSearchResult {
   keywords: string[];
   industries: string[];
   createdAt: string;
+  sourceExt?: string; // For images: jpg, png, etc.
+  imageUrl?: string; // Presigned URL for display
 }
 
 /**
@@ -118,7 +120,35 @@ function toSearchResult(match: VectorizeMatch): ReferenceSearchResult {
     keywords: (metadata.keywords as string[]) || [],
     industries: (metadata.industries as string[]) || [],
     createdAt: (metadata.createdAt as string) || "",
+    sourceExt: (metadata.sourceExt as string) || undefined,
   };
+}
+
+/**
+ * Add presigned URLs to search results for display
+ */
+async function addImageUrls(
+  results: ReferenceSearchResult[],
+): Promise<ReferenceSearchResult[]> {
+  return Promise.all(
+    results.map(async (result) => {
+      if (result.type === "image" && result.sourceExt) {
+        const key = `images/${result.id}/source.${result.sourceExt}`;
+        const imageUrl = await Storage.getPresignedUrl(key, REFERENCE_BUCKET, {
+          expiresIn: 3600,
+        });
+        return { ...result, imageUrl };
+      }
+      if (result.type === "video") {
+        const key = `videos/${result.id}/source.mp4`;
+        const imageUrl = await Storage.getPresignedUrl(key, REFERENCE_BUCKET, {
+          expiresIn: 3600,
+        });
+        return { ...result, imageUrl };
+      }
+      return result;
+    }),
+  );
 }
 
 /**
@@ -541,7 +571,8 @@ export namespace ReferenceSearch {
       topScore: matches[0]?.score,
     });
 
-    return matches;
+    // Add presigned URLs for display
+    return addImageUrls(matches);
   }
 
   /**
@@ -573,7 +604,8 @@ export namespace ReferenceSearch {
       );
     }
 
-    return matches;
+    // Add presigned URLs for display
+    return addImageUrls(matches);
   }
 
   /**
