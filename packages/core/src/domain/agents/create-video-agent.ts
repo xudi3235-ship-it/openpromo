@@ -71,6 +71,8 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
 
     ${PromptFragments.promptRefinementGuide}
 
+    ${PromptFragments.multiSegmentFramework}
+
     <hard_limits>
     ${PromptFragments.hardLimit}
     </hard_limits>

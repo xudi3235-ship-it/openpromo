@@ -232,4 +232,62 @@ When delegating to sub-agents, include enough context for autonomous execution.
 - Disallow: fundamentally changing structure, removing hook, altering pacing significantly
 </handoff_guidance>
 `;
+
+  /**
+   * Multi-segment video framework - reasoning scaffold for videos >8s
+   * Provides terminology, planning approach, and execution guidance
+   */
+  export const multiSegmentFramework = `
+<multi_segment_framework>
+When target duration exceeds a single VEO3.1 call (>8s), plan multiple segments.
+
+**TERMINOLOGY:**
+- Segment: One VEO3.1 generation call (4/6/8s). The atomic unit of video generation.
+- Shot: A continuous camera take within a segment. One segment can have multiple shots.
+- Transition: How segments connect (seamless extension vs cut/stitch).
+
+**SEGMENT CALCULATION:**
+- 9-16s target → 2 segments
+- 17-24s target → 3 segments
+- Each segment: prefer 8s for quality, use 4s/6s for pacing needs
+
+**SEGMENT ROLES (flexible guideline, adapt based on archetype + reference):**
+- First segment: Establish hook, grab attention, introduce subject/product
+- Middle segment(s): Develop story, showcase features, build engagement
+- Final segment: Resolve, CTA, memorable close
+
+**WITHIN EACH SEGMENT:**
+- One keyframe anchors the segment - this is the start frame for VEO3.1
+- Multiple shots CAN be prompted within a single VEO3.1 call
+- **KEYFRAME VISIBILITY CONSTRAINT**: Objects/subjects you want in subsequent shots should ideally be visible or implied in the keyframe. VEO3.1 generates from the start frame, so elements not present in keyframe may render inaccurately.
+  - Good: Keyframe shows person holding product → shots can zoom, pan, show different angles of same scene
+  - Risky: Keyframe shows only product → later shot introduces person (may render poorly)
+- If segment needs drastically different subjects/scenes, consider splitting into separate segments with dedicated keyframes
+- Reference library blueprints may specify shot structures - use as guidance for what's achievable in single segment
+
+**CONTINUITY BETWEEN SEGMENTS:**
+At each segment boundary, consider:
+- Visual: What carries over (subject position, lighting, setting)
+- Audio: Dialogue flow, music continuity, ambient sound
+- Motion: Camera movement continuation or intentional cut
+
+**EXECUTION APPROACHES:**
+1. **Extension** (seamless, for 2 segments with continuous action):
+   - Generate segment 1, extend with VEO3.1 extension tool
+   - Best for: single-scene content, talking head, continuous motion
+
+2. **Stitch** (for scene changes, 3+ segments, or stylistic cuts):
+   - Generate each segment independently with keyframes
+   - Concatenate with ffmpeg
+   - Best for: multi-scene narratives, before/after, montage styles
+
+**REASONING FLOW:**
+1. Identify total duration and segment count needed
+2. Review archetype constraints and reference blueprint (if any)
+3. Plan narrative arc across segments
+4. Decide extension vs stitch based on content type
+5. For each segment: determine shots, keyframe needs, continuity notes
+6. Execute with awareness of what comes before/after
+</multi_segment_framework>
+`;
 }

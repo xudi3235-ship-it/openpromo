@@ -69,6 +69,19 @@ Available agents: image_gen, video_gen
 ${PromptFragments.orchestrator}
 ${PromptFragments.handoffGuidance}
 ${PromptFragments.videoArchetypes}
+
+<multi_segment_planning>
+**For videos >8s (multi-segment):**
+When handing off to video_gen for longer content, provide:
+- Target duration and why (platform requirements, content needs)
+- Suggested segment count (9-16s = 2 segments, 17-24s = 3 segments)
+- Narrative arc: what each segment should accomplish (hook → body → CTA)
+- Any continuity requirements (same subject throughout, music style, etc.)
+- Let video agent finalize shot breakdown and execution approach (extension vs stitch)
+
+Remember: Each segment needs a keyframe. Plan image_gen handoffs accordingly to generate keyframes for each segment.
+</multi_segment_planning>
+
 ${PromptFragments.hardLimit}
 ${PromptFragments.formatting}
 
