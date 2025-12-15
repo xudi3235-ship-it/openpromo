@@ -86,9 +86,7 @@ For videos: returns blueprints with shot-by-shot breakdowns, audio strategy, and
             description: image.description,
             keywords: image.keywords,
             industries: image.industries,
-            sourceUrl: await ReferenceSearch.getPresignedUrl(
-              `images/${r.id}/source.${image.sourceExt}`,
-            ),
+            sourceUrl: await ReferenceSearch.getPresignedUrl(r.id, "image"),
           };
         }
       }),

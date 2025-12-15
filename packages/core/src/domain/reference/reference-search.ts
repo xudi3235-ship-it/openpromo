@@ -12,6 +12,18 @@ const REFERENCE_BUCKET = "openpromo-reference";
 const log = Log.create({ namespace: "reference-search" });
 
 /**
+ * Centralized path construction for R2 keys.
+ * Clients deal with IDs only - all path logic is encapsulated here.
+ */
+const PATHS = {
+  image: (id: string) => `images/${id}/source.jpg`,
+  video: (id: string) => `videos/${id}/source.mp4`,
+  imageMetadata: (id: string) => `images/${id}/metadata.json`,
+  videoMetadata: (id: string) => `videos/${id}/metadata.json`,
+  videoSpec: (id: string) => `videos/${id}/spec.txt`,
+} as const;
+
+/**
  * Schema for AI-generated reference image tags.
  * Minimal and flexible - keywords are freeform, industries for product matching.
  */
@@ -44,16 +56,14 @@ export interface ReferenceSearchResult {
   keywords: string[];
   industries: string[];
   createdAt: string;
-  sourceExt?: string; // For images: jpg, png, etc.
   imageUrl?: string; // Presigned URL for display
 }
 
 /**
- * Image reference with source extension
+ * Image reference (standardized to .jpg)
  */
 export interface ImageReferenceResult extends ReferenceSearchResult {
   type: "image";
-  sourceExt: string;
 }
 
 /**
@@ -120,7 +130,6 @@ function toSearchResult(match: VectorizeMatch): ReferenceSearchResult {
     keywords: (metadata.keywords as string[]) || [],
     industries: (metadata.industries as string[]) || [],
     createdAt: (metadata.createdAt as string) || "",
-    sourceExt: (metadata.sourceExt as string) || undefined,
   };
 }
 
@@ -132,21 +141,14 @@ async function addImageUrls(
 ): Promise<ReferenceSearchResult[]> {
   return Promise.all(
     results.map(async (result) => {
-      if (result.type === "image" && result.sourceExt) {
-        const key = `images/${result.id}/source.${result.sourceExt}`;
-        const imageUrl = await Storage.getPresignedUrl(key, REFERENCE_BUCKET, {
-          expiresIn: 3600,
-        });
-        return { ...result, imageUrl };
-      }
-      if (result.type === "video") {
-        const key = `videos/${result.id}/source.mp4`;
-        const imageUrl = await Storage.getPresignedUrl(key, REFERENCE_BUCKET, {
-          expiresIn: 3600,
-        });
-        return { ...result, imageUrl };
-      }
-      return result;
+      const key =
+        result.type === "video"
+          ? PATHS.video(result.id)
+          : PATHS.image(result.id);
+      const imageUrl = await Storage.getPresignedUrl(key, REFERENCE_BUCKET, {
+        expiresIn: 3600,
+      });
+      return { ...result, imageUrl };
     }),
   );
 }
@@ -314,12 +316,8 @@ export namespace ReferenceSearch {
       .join("");
     const hash = fullHash.slice(0, 32);
 
-    const videoFolder = `videos/${hash}`;
-
-    // Check if already processed (by content hash)
-    const existing = await env.ReferenceBucket.head(
-      `${videoFolder}/source.mp4`,
-    );
+    // Check if already processed (by content hash) - use PATHS helper
+    const existing = await env.ReferenceBucket.head(PATHS.video(hash));
     if (existing) {
       log.info("duplicate content, skipping", { key, hash });
       await env.ReferenceBucket.delete(key); // cleanup ingest/
@@ -331,18 +329,16 @@ export namespace ReferenceSearch {
     // Analyze video with Gemini
     const analysis = await analyzeReferenceVideo(key);
 
-    // Store source video in hash-based folder
-    await env.ReferenceBucket.put(`${videoFolder}/source.mp4`, sourceBuffer, {
+    // Store source video - use PATHS helper
+    await env.ReferenceBucket.put(PATHS.video(hash), sourceBuffer, {
       httpMetadata: { contentType: "video/mp4" },
     });
     await env.ReferenceBucket.delete(key); // cleanup ingest/
 
     // Save spec.txt (blueprint)
-    await env.ReferenceBucket.put(
-      `${videoFolder}/spec.txt`,
-      analysis.blueprint,
-      { httpMetadata: { contentType: "text/plain" } },
-    );
+    await env.ReferenceBucket.put(PATHS.videoSpec(hash), analysis.blueprint, {
+      httpMetadata: { contentType: "text/plain" },
+    });
 
     // Save metadata.json
     const metadata = {
@@ -357,7 +353,7 @@ export namespace ReferenceSearch {
       createdAt: new Date().toISOString(),
     };
     await env.ReferenceBucket.put(
-      `${videoFolder}/metadata.json`,
+      PATHS.videoMetadata(hash),
       JSON.stringify(metadata, null, 2),
       { httpMetadata: { contentType: "application/json" } },
     );
@@ -400,7 +396,7 @@ export namespace ReferenceSearch {
 
   /**
    * Process a reference image: analyze with vision model, create folder structure, embed, and index.
-   * Creates: images/{hash}/source.{ext}, metadata.json
+   * Creates: images/{hash}/source.jpg, metadata.json (standardized to .jpg)
    * Uses content hash for deduplication - identical images share the same folder.
    */
   export async function processImage(key: string): Promise<void> {
@@ -412,7 +408,6 @@ export namespace ReferenceSearch {
       throw new Error(`Source image not found: ${key}`);
     }
     const sourceBuffer = await sourceObject.arrayBuffer();
-    const ext = key.split(".").pop()?.toLowerCase() || "jpg";
 
     // Compute SHA-256 hash for content-addressable storage
     // Truncate to 32 chars (16 bytes) to stay within Vectorize's 64-byte ID limit
@@ -422,12 +417,8 @@ export namespace ReferenceSearch {
       .join("");
     const hash = fullHash.slice(0, 32);
 
-    const imageFolder = `images/${hash}`;
-
-    // Check if already processed (by content hash)
-    const existing = await env.ReferenceBucket.head(
-      `${imageFolder}/source.${ext}`,
-    );
+    // Check if already processed (by content hash) - use PATHS helper
+    const existing = await env.ReferenceBucket.head(PATHS.image(hash));
     if (existing) {
       log.info("duplicate content, skipping", { key, hash });
       await env.ReferenceBucket.delete(key); // cleanup ingest/
@@ -450,20 +441,10 @@ export namespace ReferenceSearch {
       industries: tags.industries.length,
     });
 
-    // Store source image in hash-based folder
-    const mimeTypes: Record<string, string> = {
-      jpg: "image/jpeg",
-      jpeg: "image/jpeg",
-      png: "image/png",
-      webp: "image/webp",
-    };
-    await env.ReferenceBucket.put(
-      `${imageFolder}/source.${ext}`,
-      sourceBuffer,
-      {
-        httpMetadata: { contentType: mimeTypes[ext] || "image/jpeg" },
-      },
-    );
+    // Store source image - standardized to .jpg
+    await env.ReferenceBucket.put(PATHS.image(hash), sourceBuffer, {
+      httpMetadata: { contentType: "image/jpeg" },
+    });
     await env.ReferenceBucket.delete(key); // cleanup ingest/
 
     // Save metadata.json
@@ -473,11 +454,10 @@ export namespace ReferenceSearch {
       description: tags.description,
       keywords: tags.keywords,
       industries: tags.industries,
-      sourceExt: ext,
       createdAt: new Date().toISOString(),
     };
     await env.ReferenceBucket.put(
-      `${imageFolder}/metadata.json`,
+      PATHS.imageMetadata(hash),
       JSON.stringify(metadata, null, 2),
       { httpMetadata: { contentType: "application/json" } },
     );
@@ -502,7 +482,6 @@ export namespace ReferenceSearch {
           description: tags.description,
           keywords: tags.keywords,
           industries: tags.industries,
-          sourceExt: ext,
           createdAt: metadata.createdAt,
         },
         namespace: "image",
@@ -675,9 +654,14 @@ export namespace ReferenceSearch {
   }
 
   /**
-   * Generate a presigned URL for a reference image.
+   * Generate a presigned URL for a reference by ID and type.
+   * Uses PATHS helper - no Vectorize lookup needed.
    */
-  export async function getPresignedUrl(key: string): Promise<string> {
+  export async function getPresignedUrl(
+    id: string,
+    type: "image" | "video" = "image",
+  ): Promise<string> {
+    const key = type === "video" ? PATHS.video(id) : PATHS.image(id);
     return Storage.getPresignedUrl(key, REFERENCE_BUCKET, { expiresIn: 3600 });
   }
 
@@ -700,7 +684,7 @@ export namespace ReferenceSearch {
 
     // Load full metadata from R2
     const metadataObj = await env.ReferenceBucket.get(
-      `videos/${videoId}/metadata.json`,
+      PATHS.videoMetadata(videoId),
     );
     if (!metadataObj) {
       log.warn("video metadata.json not found", { videoId });
@@ -710,7 +694,7 @@ export namespace ReferenceSearch {
     const metadata = JSON.parse(await metadataObj.text());
 
     // Load blueprint
-    const specObj = await env.ReferenceBucket.get(`videos/${videoId}/spec.txt`);
+    const specObj = await env.ReferenceBucket.get(PATHS.videoSpec(videoId));
     const blueprint = specObj ? await specObj.text() : "";
 
     return {
@@ -752,7 +736,7 @@ export namespace ReferenceSearch {
 
     // Load full metadata from R2
     const metadataObj = await env.ReferenceBucket.get(
-      `images/${imageId}/metadata.json`,
+      PATHS.imageMetadata(imageId),
     );
     if (!metadataObj) {
       log.warn("image metadata.json not found", { imageId });
@@ -770,7 +754,6 @@ export namespace ReferenceSearch {
       keywords: metadata.keywords || [],
       industries: metadata.industries || [],
       createdAt: metadata.createdAt || "",
-      sourceExt: metadata.sourceExt || "jpg",
     };
   }
 
