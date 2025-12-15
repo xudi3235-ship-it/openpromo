@@ -630,15 +630,11 @@ export namespace ReferenceSearch {
     return list.objects.map((obj) => obj.key);
   }
 
-  /**
-   * Generate a presigned URL for a reference by ID and type.
-   * Uses PATHS helper - no Vectorize lookup needed.
-   */
-  export async function getPresignedUrl(
-    id: string,
-    type: "image" | "video" = "image",
+  export async function getPresignedUrlFromResult(
+    result: ReferenceSearchResult,
   ): Promise<string> {
-    const key = type === "video" ? PATHS.video(id) : PATHS.image(id);
+    const key =
+      result.type === "video" ? PATHS.video(result.id) : PATHS.image(result.id);
     return Storage.getPresignedUrl(key, REFERENCE_BUCKET, { expiresIn: 3600 });
   }
 

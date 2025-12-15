@@ -61,13 +61,9 @@ The results are based on vector similarity search based on keywords, tags, etc.
             aspectRatio: video.aspectRatio,
             audio: video.audio,
             blueprint: video.blueprint,
-            sourceUrl: await ReferenceSearch.getPresignedUrl(
-              `videos/${r.id}/source.mp4`,
-            ),
+            sourceUrl: await ReferenceSearch.getPresignedUrlFromResult(video),
             audioUrl: video.audio.isReusable
-              ? await ReferenceSearch.getPresignedUrl(
-                  `videos/${r.id}/audio.mp3`,
-                )
+              ? await ReferenceSearch.getPresignedUrlFromResult(video)
               : null,
           };
         } else {
@@ -81,7 +77,7 @@ The results are based on vector similarity search based on keywords, tags, etc.
             description: image.description,
             keywords: image.keywords,
             industries: image.industries,
-            sourceUrl: await ReferenceSearch.getPresignedUrl(r.id, "image"),
+            sourceUrl: await ReferenceSearch.getPresignedUrlFromResult(image),
           };
         }
       }),

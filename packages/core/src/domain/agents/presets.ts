@@ -69,6 +69,7 @@ export namespace Presets {
    * Used for UI display and agent context.
    */
   export type Reference = {
+    type: "image" | "video";
     id: string;
     url: string;
     description: string;
@@ -102,10 +103,11 @@ export namespace Presets {
       const references = await Promise.all(
         results.map(async (r) => ({
           id: r.id,
-          url: await ReferenceSearch.getPresignedUrl(r.id),
+          url: await ReferenceSearch.getPresignedUrlFromResult(r),
           description: r.description,
           keywords: r.keywords,
           industries: r.industries,
+          type: r.type,
         })),
       );
 
@@ -124,7 +126,8 @@ export namespace Presets {
 
       return {
         id: result.id,
-        url: await ReferenceSearch.getPresignedUrl(result.id),
+        type: result.type,
+        url: await ReferenceSearch.getPresignedUrlFromResult(result),
         description: result.description,
         keywords: result.keywords,
         industries: result.industries,
@@ -140,7 +143,8 @@ export namespace Presets {
       return Promise.all(
         results.map(async (r) => ({
           id: r.id,
-          url: await ReferenceSearch.getPresignedUrl(r.id),
+          type: r.type,
+          url: await ReferenceSearch.getPresignedUrlFromResult(r),
           description: r.description,
           keywords: r.keywords,
           industries: r.industries,

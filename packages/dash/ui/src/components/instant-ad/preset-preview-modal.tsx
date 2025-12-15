@@ -1,14 +1,10 @@
+import type { Presets } from "@core/domain/agents/presets";
 import { X } from "lucide-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 
 interface ReferencePreviewModalProps {
-  preset: {
-    id: string;
-    url: string;
-    description: string;
-    keywords: string[];
-  } | null;
+  preset: Presets.Reference | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -55,14 +51,21 @@ export function PresetPreviewModal({
 
         {/* Modal content */}
         <div className="bg-card rounded-lg overflow-hidden shadow-xl border">
-          {preset.url && (
+          {preset.url && preset.type === "image" ? (
             <img
               src={preset.url}
               alt={preset.description}
               className="w-full h-auto max-h-[50vh] object-contain bg-muted"
             />
-          )}
-
+          ) : preset.url && preset.type === "video" ? (
+            <video
+              src={preset.url}
+              className="w-full h-auto max-h-[50vh] object-contain bg-muted"
+              muted
+              loop
+              autoPlay
+            />
+          ) : null}
           {/* Info section */}
           <div className="p-4">
             {preset.description && (
