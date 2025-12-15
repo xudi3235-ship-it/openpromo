@@ -786,6 +786,361 @@ export namespace KieAI {
   }
 
   // -------------------------------------------------------------------------
+  // ElevenLabs Audio Models
+  // -------------------------------------------------------------------------
+
+  /**
+   * ElevenLabs Audio Models
+   *
+   * Collection of ElevenLabs audio generation and processing models.
+   *
+   * @example
+   * ```typescript
+   * // Text-to-Speech
+   * const audioUrl = await KieAI.ElevenLabs.TextToSpeechMultilingualV2.run({
+   *   text: "Hello world",
+   *   voice: "Rachel",
+   * });
+   *
+   * // Sound Effects
+   * const sfxUrl = await KieAI.ElevenLabs.SoundEffectV2.run({
+   *   text: "Thunder rumbling",
+   * });
+   *
+   * // Speech-to-Text
+   * const result = await KieAI.ElevenLabs.SpeechToText.run({
+   *   audio_url: "https://example.com/audio.mp3",
+   * });
+   * ```
+   */
+  export namespace ElevenLabs {
+    /** Voice options available for TTS models */
+    export const Voice = z.enum([
+      "Rachel",
+      "Aria",
+      "Roger",
+      "Sarah",
+      "Laura",
+      "Charlie",
+      "George",
+      "Callum",
+      "River",
+      "Liam",
+      "Charlotte",
+      "Alice",
+      "Matilda",
+      "Will",
+      "Jessica",
+      "Eric",
+      "Chris",
+      "Brian",
+      "Daniel",
+      "Lily",
+      "Bill",
+    ]);
+
+    /** Output format options for audio generation */
+    export const OutputFormat = z.enum([
+      "mp3_22050_32",
+      "mp3_44100_32",
+      "mp3_44100_64",
+      "mp3_44100_96",
+      "mp3_44100_128",
+      "mp3_44100_192",
+      "pcm_8000",
+      "pcm_16000",
+      "pcm_22050",
+      "pcm_24000",
+      "pcm_44100",
+      "pcm_48000",
+      "ulaw_8000",
+      "alaw_8000",
+      "opus_48000_32",
+      "opus_48000_64",
+      "opus_48000_96",
+      "opus_48000_128",
+      "opus_48000_192",
+    ]);
+
+    export namespace TextToSpeechMultilingualV2 {
+      export const schema = z.object({
+        text: z.string().max(5000),
+        voice: Voice.optional(),
+        stability: z.number().min(0).max(1).optional(),
+        similarity_boost: z.number().min(0).max(1).optional(),
+        style: z.number().min(0).max(1).optional(),
+        speed: z.number().min(0.7).max(1.2).optional(),
+        timestamps: z.boolean().optional(),
+        previous_text: z.string().max(5000).optional(),
+        next_text: z.string().max(5000).optional(),
+        language_code: z.string().max(500).optional(),
+        callbackUrl: z.string().optional(),
+      });
+      export type Input = z.input<typeof schema>;
+
+      /**
+       * Generate speech using Text-to-Speech Multilingual V2
+       * High-quality multilingual text-to-speech synthesis.
+       * @param input - TTS generation parameters
+       * @returns Promise resolving to audio URL
+       */
+      export async function run(input: Input): Promise<string> {
+        const parsed = schema.parse(input);
+        const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+
+        const { callbackUrl, ...payload } = parsed;
+        const task = await client.createGenericTask(
+          "elevenlabs/text-to-speech-multilingual-v2",
+          payload,
+          callbackUrl,
+        );
+        const taskId = task.data?.taskId;
+        if (!taskId)
+          throw new KieAIError(
+            500,
+            "No task ID returned from ElevenLabs.TextToSpeechMultilingualV2",
+          );
+
+        return await client.pollTaskUntilComplete(taskId, {
+          logPrefix: "ElevenLabs.TextToSpeechMultilingualV2",
+          pollIntervalMs: 3000,
+          maxAttempts: 60,
+        });
+      }
+    }
+
+    export namespace TextToSpeechTurbo25 {
+      export const schema = z.object({
+        text: z.string().max(5000),
+        voice: Voice.optional(),
+        stability: z.number().min(0).max(1).optional(),
+        similarity_boost: z.number().min(0).max(1).optional(),
+        style: z.number().min(0).max(1).optional(),
+        speed: z.number().min(0.7).max(1.2).optional(),
+        timestamps: z.boolean().optional(),
+        previous_text: z.string().max(5000).optional(),
+        next_text: z.string().max(5000).optional(),
+        language_code: z.string().max(500).optional(),
+        callbackUrl: z.string().optional(),
+      });
+      export type Input = z.input<typeof schema>;
+
+      /**
+       * Generate speech using Text-to-Speech Turbo 2.5
+       * Fast text-to-speech with language enforcement support.
+       * @param input - TTS generation parameters
+       * @returns Promise resolving to audio URL
+       */
+      export async function run(input: Input): Promise<string> {
+        const parsed = schema.parse(input);
+        const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+
+        const { callbackUrl, ...payload } = parsed;
+        const task = await client.createGenericTask(
+          "elevenlabs/text-to-speech-turbo-2-5",
+          payload,
+          callbackUrl,
+        );
+        const taskId = task.data?.taskId;
+        if (!taskId)
+          throw new KieAIError(
+            500,
+            "No task ID returned from ElevenLabs.TextToSpeechTurbo25",
+          );
+
+        return await client.pollTaskUntilComplete(taskId, {
+          logPrefix: "ElevenLabs.TextToSpeechTurbo25",
+          pollIntervalMs: 3000,
+          maxAttempts: 60,
+        });
+      }
+    }
+
+    export namespace SoundEffectV2 {
+      export const schema = z.object({
+        text: z.string().max(5000),
+        loop: z.boolean().optional(),
+        duration_seconds: z.number().min(0.5).max(22).optional(),
+        prompt_influence: z.number().min(0).max(1).optional(),
+        output_format: OutputFormat.optional(),
+        callbackUrl: z.string().optional(),
+      });
+      export type Input = z.input<typeof schema>;
+
+      /**
+       * Generate sound effects using Sound Effect V2
+       * Create custom sound effects from text descriptions.
+       * @param input - Sound effect generation parameters
+       * @returns Promise resolving to audio URL
+       */
+      export async function run(input: Input): Promise<string> {
+        const parsed = schema.parse(input);
+        const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+
+        const { callbackUrl, ...payload } = parsed;
+        const task = await client.createGenericTask(
+          "elevenlabs/sound-effect-v2",
+          payload,
+          callbackUrl,
+        );
+        const taskId = task.data?.taskId;
+        if (!taskId)
+          throw new KieAIError(
+            500,
+            "No task ID returned from ElevenLabs.SoundEffectV2",
+          );
+
+        return await client.pollTaskUntilComplete(taskId, {
+          logPrefix: "ElevenLabs.SoundEffectV2",
+          pollIntervalMs: 3000,
+          maxAttempts: 60,
+        });
+      }
+    }
+
+    export namespace AudioIsolation {
+      export const schema = z.object({
+        audio_url: z.string(),
+        callbackUrl: z.string().optional(),
+      });
+      export type Input = z.input<typeof schema>;
+
+      /**
+       * Isolate voice from audio using Audio Isolation
+       * Removes background noise and isolates human voice from audio files.
+       * Supported formats: audio/mpeg, wav, aac, mp4, ogg (max 10MB)
+       * @param input - Audio isolation parameters
+       * @returns Promise resolving to isolated audio URL
+       */
+      export async function run(input: Input): Promise<string> {
+        const parsed = schema.parse(input);
+        const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+
+        const { callbackUrl, ...payload } = parsed;
+        const task = await client.createGenericTask(
+          "elevenlabs/audio-isolation",
+          payload,
+          callbackUrl,
+        );
+        const taskId = task.data?.taskId;
+        if (!taskId)
+          throw new KieAIError(
+            500,
+            "No task ID returned from ElevenLabs.AudioIsolation",
+          );
+
+        return await client.pollTaskUntilComplete(taskId, {
+          logPrefix: "ElevenLabs.AudioIsolation",
+          pollIntervalMs: 3000,
+          maxAttempts: 60,
+        });
+      }
+    }
+
+    export namespace SpeechToText {
+      /** Word/token in transcription result */
+      export interface TranscriptWord {
+        speaker_id: string;
+        start: number;
+        end: number;
+        text: string;
+        type: "word" | "spacing";
+      }
+
+      /** Transcription result structure */
+      export interface TranscriptResult {
+        language_code: string;
+        language_probability: number;
+        text: string;
+        words: TranscriptWord[];
+      }
+
+      export const schema = z.object({
+        audio_url: z.string(),
+        language_code: z.string().max(500).optional(),
+        tag_audio_events: z.boolean().optional(),
+        diarize: z.boolean().optional(),
+        callbackUrl: z.string().optional(),
+      });
+      export type Input = z.input<typeof schema>;
+
+      /**
+       * Transcribe audio using Speech-to-Text
+       * Converts speech to text with speaker diarization and audio event tagging.
+       * Supported formats: audio/mpeg, wav, aac, mp4, ogg (max 200MB)
+       * @param input - Transcription parameters
+       * @returns Promise resolving to transcription result
+       */
+      export async function run(input: Input): Promise<TranscriptResult> {
+        const parsed = schema.parse(input);
+        const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+
+        const { callbackUrl, ...payload } = parsed;
+        const task = await client.createGenericTask(
+          "elevenlabs/speech-to-text",
+          payload,
+          callbackUrl,
+        );
+        const taskId = task.data?.taskId;
+        if (!taskId)
+          throw new KieAIError(
+            500,
+            "No task ID returned from ElevenLabs.SpeechToText",
+          );
+
+        // Custom polling for STT since result is in resultObject, not resultUrls
+        const pollIntervalMs = 3000;
+        const maxAttempts = 120;
+        const sleep = (ms: number) =>
+          new Promise((resolve) => setTimeout(resolve, ms));
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          const details = await client.getTaskDetails(taskId);
+          const data = details.data;
+
+          if (!data) {
+            throw new KieAIError(500, "No data in task details response");
+          }
+
+          if (data.state === "success") {
+            if (data.resultJson) {
+              const resultJson = data.resultJson;
+              const result =
+                typeof resultJson === "string"
+                  ? (JSON.parse(resultJson) as {
+                      resultObject?: TranscriptResult;
+                    })
+                  : (resultJson as { resultObject?: TranscriptResult });
+
+              if (result.resultObject) {
+                return result.resultObject;
+              }
+            }
+            throw new KieAIError(
+              500,
+              "Task succeeded but no transcription result found",
+            );
+          }
+
+          if (data.state === "fail") {
+            throw new KieAIError(500, data.failMsg ?? "Task failed");
+          }
+
+          console.log(
+            `[ElevenLabs.SpeechToText] Polling attempt ${attempt + 1}/${maxAttempts}...`,
+          );
+          await sleep(pollIntervalMs);
+        }
+
+        throw new KieAIError(
+          408,
+          `Polling timed out after ${maxAttempts} attempts`,
+        );
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // Special Case - Veo 3.1 (Custom Polling)
   // -------------------------------------------------------------------------
 
