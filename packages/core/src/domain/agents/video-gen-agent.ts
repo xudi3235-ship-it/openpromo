@@ -377,8 +377,16 @@ export class VideoGenAgent extends AIChatAgent<
             const subInput: AgentInputItem[] = [
               ...productInputs,
               ...(await this.inputTransformer.fromImageArtifacts(this.state)),
-              { role: "user", content: taskDescription },
+              {
+                role: "system",
+                content: `current task from orchestrator:
+                ${taskDescription}`,
+              },
             ];
+            console.log(`Running sub-agent ${targetAgent} with input:`, {
+              taskDescription,
+              items: JSON.stringify(subInput),
+            });
 
             const subResult = await run(subAgent, subInput, {
               context: runtimeContext,

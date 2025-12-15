@@ -166,6 +166,7 @@ export class InputTransformer {
       type: "input_image" as const,
       image: img.imageUrl,
     }));
+    if (imgParts.length === 0) return [];
     return [
       {
         role: "system",
