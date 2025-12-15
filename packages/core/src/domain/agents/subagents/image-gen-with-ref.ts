@@ -38,7 +38,7 @@ User's input will include the following items
 </about_image_generation>
 
 <image_validation>
-- MUST: critical to ensure the images are showing the product exactly matching the product images, if not, needs rework the image; IF you can't see the output image, fail the task directly.
+- MUST: after you generate, critical to ensure the images are showing the product exactly matching the product images(given to you), if not, needs rework the image; IF you can't see the output image, fail the task directly.
 </image_validation>
 
 3. Reasoning

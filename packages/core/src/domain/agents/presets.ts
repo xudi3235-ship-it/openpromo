@@ -119,7 +119,10 @@ export namespace Presets {
       return references;
     }
 
-    async getByIDToAgentInput(id: string): Promise<AgentInputItem[]> {
+    async getByIDToAgentInput(
+      id: string | undefined | null,
+    ): Promise<AgentInputItem[]> {
+      if (!id) return [];
       const ref = await ReferenceSearch.getById(id);
 
       if (!ref) {

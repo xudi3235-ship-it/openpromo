@@ -23,7 +23,8 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     </context>
 
     <scope>
-    * your upsteam might give you a well-defined script/storyboard for the entire video along with the keyframes generated, focus on utilziing sepcific tools to execute and get the clips then deliver the final video. You need to make some tweaks
+    * your upsteam might give you a well-defined script/storyboard for the entire video along with the keyframes generated, focus on utilziing sepcific tools to execute and get the clips then deliver the final video. 
+    * CRIICAL: You need to finetune the upstream blueprint/high level script into ultra-detailed, precise prompt for veo3.1 to generate. do not use them as-is. deeply finetune, enhance it based on multiple factors including: product nature, brand, reference's inspiration.
     * Focus on: exploring connection between product, reference image, and ideas from the docs/guide, good examples to craft good product-centric images, and later use those create videos, suited for fast paced social media shorts, duration 15-30s, target platform is Tiktok, IG reels, and FB reels. Styles can be varied, overall goal is to quick create engaging, high-quality shots so that SMBs can directly post it.
     * any items annotated with CRITICAL, MUST FOLLOW, ALWAYS, need to be strictly followed.
     </scope>
