@@ -307,10 +307,12 @@ export namespace ReferenceSearch {
     const sourceBuffer = await sourceObject.arrayBuffer();
 
     // Compute SHA-256 hash for content-addressable storage
+    // Truncate to 32 chars (16 bytes) to stay within Vectorize's 64-byte ID limit
     const hashBuffer = await crypto.subtle.digest("SHA-256", sourceBuffer);
-    const hash = Array.from(new Uint8Array(hashBuffer))
+    const fullHash = Array.from(new Uint8Array(hashBuffer))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
+    const hash = fullHash.slice(0, 32);
 
     const videoFolder = `videos/${hash}`;
 
@@ -413,10 +415,12 @@ export namespace ReferenceSearch {
     const ext = key.split(".").pop()?.toLowerCase() || "jpg";
 
     // Compute SHA-256 hash for content-addressable storage
+    // Truncate to 32 chars (16 bytes) to stay within Vectorize's 64-byte ID limit
     const hashBuffer = await crypto.subtle.digest("SHA-256", sourceBuffer);
-    const hash = Array.from(new Uint8Array(hashBuffer))
+    const fullHash = Array.from(new Uint8Array(hashBuffer))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
+    const hash = fullHash.slice(0, 32);
 
     const imageFolder = `images/${hash}`;
 
@@ -637,17 +641,26 @@ export namespace ReferenceSearch {
   }
 
   /**
-   * Delete a reference from the index
+   * Delete a reference from the index.
+   * Accepts either a hash ID or an R2 key path like "images/{hash}/source.jpg"
    */
-  export async function remove(id: string): Promise<void> {
+  export async function remove(idOrKey: string): Promise<void> {
     try {
       const env = Binding.use();
 
+      // Extract hash from R2 key path if needed
+      // Pattern: images/{hash}/source.{ext} or videos/{hash}/source.mp4
+      let id = idOrKey;
+      const pathMatch = idOrKey.match(/^(?:images|videos)\/([^/]+)\//);
+      if (pathMatch) {
+        id = pathMatch[1];
+      }
+
       await env.ReferenceIndex.deleteByIds([id]);
 
-      log.info("reference deleted", { id });
+      log.info("reference deleted", { id, originalKey: idOrKey });
     } catch (error) {
-      log.error("might already be deleted, ok", { id, error });
+      log.error("might already be deleted, ok", { id: idOrKey, error });
     }
   }
 
