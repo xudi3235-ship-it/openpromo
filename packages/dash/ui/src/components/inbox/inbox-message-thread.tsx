@@ -214,12 +214,14 @@ function MessageBubble({
 
         <div
           className={cn(
-            "w-fit rounded-2xl border px-3 py-2 text-sm leading-relaxed",
+            "relative w-fit rounded-2xl border px-3 text-sm leading-relaxed",
             isSelf
               ? "border-primary/40 bg-primary/90 text-primary-foreground"
               : "border-border/60 bg-background text-foreground",
             isOptimistic && "opacity-85",
             isDeleted && "border-dashed bg-muted/30 text-muted-foreground",
+            // Add bottom padding when reactions exist to accommodate overlap
+            processedReactions.length > 0 && !isDeleted ? "pb-3" : "py-2",
           )}
         >
           {isDeleted ? (
@@ -235,12 +237,19 @@ function MessageBubble({
           {!isDeleted && hasAttachments && (
             <InboxMessageAttachments attachments={message.attachments} />
           )}
-        </div>
 
-        {/* Reactions Display (Read-only, from webhooks) */}
-        {!isDeleted && processedReactions.length > 0 && (
-          <ReactionDisplay reactions={processedReactions} className="mt-1" />
-        )}
+          {/* Reactions Display (Read-only, from webhooks) - Positioned like native apps */}
+          {!isDeleted && processedReactions.length > 0 && (
+            <div
+              className={cn(
+                "absolute bottom-0 flex items-end gap-1",
+                isSelf ? "right-2 translate-y-1/2" : "left-2 translate-y-1/2",
+              )}
+            >
+              <ReactionDisplay reactions={processedReactions} />
+            </div>
+          )}
+        </div>
 
         {/* Action Buttons */}
         {showReplyAction && (

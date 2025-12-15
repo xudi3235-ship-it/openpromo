@@ -39,6 +39,12 @@ export async function handleInstagramMessageChanges(
     >
   >,
 ) {
+  console.log("[IG messages] handleInstagramMessageChanges START", {
+    accountId: account.id,
+    changesCount: rawChanges?.length ?? 0,
+    rawChanges: JSON.stringify(rawChanges),
+  });
+
   const dbClient = db();
 
   for (const rawChange of rawChanges ?? []) {
@@ -51,14 +57,36 @@ export async function handleInstagramMessageChanges(
       });
       continue;
     }
-    const change = parsed.data;
+    const change = parsed.data as any;
+
+    console.log("[IG messages] Processing change", {
+      accountId: account.id,
+      field: change.field,
+      value: change.value,
+    });
 
     if (change.field === "message_edit") {
       await handleMessageEditChange(change, account, dbClient);
     } else if (change.field === "message_reactions") {
+      console.log("[IG messages] Handling reaction change", {
+        accountId: account.id,
+        mid: change.value.mid,
+        reaction: change.value.reaction,
+        verb: change.value.verb,
+        sender: change.value.sender,
+      });
       await handleMessageReactionChange(change, account, dbClient);
+    } else {
+      console.warn("[IG messages] Unknown change field", {
+        accountId: account.id,
+        field: change.field,
+      });
     }
   }
+
+  console.log("[IG messages] handleInstagramMessageChanges COMPLETED", {
+    accountId: account.id,
+  });
 }
 
 async function handleMessageEditChange(
@@ -161,19 +189,39 @@ async function handleMessageReactionChange(
 ) {
   const { value } = change;
   const mid = value.mid;
-  if (!mid) return;
+
+  console.log("[IG messages][reaction] START", {
+    accountId: account.id,
+    mid,
+    reaction: value.reaction,
+    verb: value.verb,
+    sender: value.sender,
+    timestamp: value.timestamp,
+  });
+
+  if (!mid) {
+    console.warn("[IG messages][reaction] Missing mid", {
+      accountId: account.id,
+      value,
+    });
+    return;
+  }
 
   const record = await findMessageRecord(dbClient, account.id, mid);
   if (!record) {
-    console.warn(
-      "instagram message_reactions change without existing message",
-      {
-        mid,
-        accountId: account.id,
-      },
-    );
+    console.warn("[IG messages][reaction] Message not found", {
+      mid,
+      accountId: account.id,
+    });
     return;
   }
+
+  console.log("[IG messages][reaction] Message found", {
+    accountId: account.id,
+    mid,
+    conversationId: record.conversationId,
+    channel: record.channel,
+  });
 
   const metadata: InboxMessageMetadata = {
     ...(record.metadata ?? {}),
@@ -183,10 +231,47 @@ async function handleMessageReactionChange(
   const reaction = value.reaction;
   const verb = value.verb ?? "add";
 
+  console.log("[IG messages][reaction] Processing reaction data", {
+    accountId: account.id,
+    mid,
+    actorId,
+    reaction,
+    verb,
+    hasActorId: !!actorId,
+    hasReaction: !!reaction,
+  });
+
+  if (!actorId) {
+    console.warn("[IG messages][reaction] Missing actorId", {
+      accountId: account.id,
+      mid,
+      sender: value.sender,
+    });
+  }
+
+  if (!reaction) {
+    console.warn("[IG messages][reaction] Missing reaction", {
+      accountId: account.id,
+      mid,
+      value,
+    });
+  }
+
   if (actorId && reaction) {
     const timestamp = value.timestamp
       ? new Date(value.timestamp * 1000).toISOString()
       : new Date().toISOString();
+
+    console.log("[IG messages][reaction] Upserting reaction metadata", {
+      accountId: account.id,
+      mid,
+      platform: "INSTAGRAM",
+      key: reaction,
+      action: verb === "remove" ? "removed" : "added",
+      actorId,
+      timestamp,
+    });
+
     upsertReactionMetadata(metadata, record.channel, {
       platform: "INSTAGRAM",
       mid,
@@ -199,6 +284,24 @@ async function handleMessageReactionChange(
         senderUsername: value.sender?.username,
       },
     });
+
+    console.log("[IG messages][reaction] Reaction metadata updated", {
+      accountId: account.id,
+      mid,
+      metadataReactions:
+        metadata.byPlatform?.["INSTAGRAM"]?.[record.channel]?.reactions
+          ?.length ?? 0,
+    });
+  } else {
+    console.warn(
+      "[IG messages][reaction] Skipping reaction update - missing required fields",
+      {
+        accountId: account.id,
+        mid,
+        hasActorId: !!actorId,
+        hasReaction: !!reaction,
+      },
+    );
   }
 
   await InboxService.upsertMessage({

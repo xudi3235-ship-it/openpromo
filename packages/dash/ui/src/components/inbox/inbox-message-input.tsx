@@ -221,10 +221,11 @@ export function InboxMessageInput({
       },
       onSuccess: (_data, _variables, context) => {
         if (!context) return;
-        removeMessage({
-          conversationId: context.conversationId,
-          messageId: context.optimisticId,
-        });
+        // Don't remove optimistic message immediately - wait for WebSocket event
+        // The optimistic message will be replaced by the real message when it arrives
+        // via WebSocket event, which will match by text content and timestamp
+        // If WebSocket doesn't arrive within reasonable time, it will be cleaned up
+        // by the mergeMessages logic when matching by text + timestamp
       },
     },
   );

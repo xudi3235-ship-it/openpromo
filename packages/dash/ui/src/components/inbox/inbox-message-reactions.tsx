@@ -49,7 +49,7 @@ export function ReactionDisplay({
   const isInteractive = Boolean(onRemove);
 
   return (
-    <div className={cn("flex flex-wrap gap-1.5", className)}>
+    <div className={cn("flex flex-wrap gap-1", className)}>
       {reactions.map((reaction) => {
         const canRemove = isInteractive && reaction.userReacted;
 
@@ -63,26 +63,30 @@ export function ReactionDisplay({
               }
             }}
             className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors",
+              "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs transition-colors shadow-sm",
               canRemove
                 ? "bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer"
-                : "bg-muted/60 text-muted-foreground cursor-default",
+                : "bg-background/95 text-foreground cursor-default border border-border/50",
             )}
             disabled={!canRemove}
           >
-            <span className="text-sm">{reaction.emoji}</span>
+            <span className="text-base leading-none">{reaction.emoji}</span>
             {reaction.count > 1 && (
-              <span className="font-medium">{reaction.count}</span>
+              <span className="font-medium text-[10px] leading-none">
+                {reaction.count}
+              </span>
             )}
           </button>
         ) : (
           <div
             key={reaction.emoji}
-            className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-xs text-muted-foreground"
+            className="inline-flex items-center gap-0.5 rounded-full bg-background/95 px-1.5 py-0.5 text-xs text-foreground border border-border/50 shadow-sm"
           >
-            <span className="text-sm">{reaction.emoji}</span>
+            <span className="text-base leading-none">{reaction.emoji}</span>
             {reaction.count > 1 && (
-              <span className="font-medium">{reaction.count}</span>
+              <span className="font-medium text-[10px] leading-none">
+                {reaction.count}
+              </span>
             )}
           </div>
         );
