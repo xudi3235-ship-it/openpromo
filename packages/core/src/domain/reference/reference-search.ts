@@ -1,4 +1,5 @@
 import { openai } from "@ai-sdk/openai";
+import { R2Bucket } from "@core/containers";
 import { Binding } from "@core/helpers/api-env";
 import { Storage } from "@core/helpers/storage";
 import { Log } from "@core/utils/log";
@@ -21,6 +22,7 @@ const PATHS = {
   imageMetadata: (id: string) => `images/${id}/metadata.json`,
   videoMetadata: (id: string) => `videos/${id}/metadata.json`,
   videoSpec: (id: string) => `videos/${id}/spec.txt`,
+  videoThumbnail: (id: string) => `videos/${id}/thumbnail.jpg`,
 } as const;
 
 /**
@@ -80,6 +82,7 @@ export interface VideoReferenceResult extends ReferenceSearchResult {
     isReusable: boolean;
     reasoning: string;
   };
+  thumbnailUrl?: string;
 }
 
 /**
@@ -88,8 +91,6 @@ export interface VideoReferenceResult extends ReferenceSearchResult {
 export interface ReferenceSearchOptions {
   /** Maximum number of results to return */
   topK?: number;
-  /** Filter by industries (match any) */
-  industries?: string[];
   /** Return vector values (for debugging) */
   returnValues?: boolean;
   // namespace to filter
@@ -392,6 +393,28 @@ export namespace ReferenceSearch {
       duration: analysis.duration,
       audioReusable: analysis.audio.isReusable,
     });
+
+    // Generate thumbnail (soft fail - don't block processing)
+    try {
+      const container = env.ContainerBackend.getByName("default");
+      const presignedUrl = await Storage.getPresignedUrl(
+        PATHS.video(hash),
+        REFERENCE_BUCKET,
+        { expiresIn: 3600 },
+      );
+
+      await container.extractFrames({
+        videoUrl: presignedUrl,
+        timestamps: [0.5], // First second - captures the hook/opening
+        outputPrefix: `videos/${hash}/`,
+        outputFilename: "thumbnail.jpg",
+        bucket: R2Bucket.REFERENCE,
+      });
+
+      log.info("thumbnail generated", { hash });
+    } catch (err) {
+      log.warn("thumbnail generation failed, continuing", { hash, error: err });
+    }
   }
 
   /**
@@ -521,9 +544,9 @@ export namespace ReferenceSearch {
     options: ReferenceSearchOptions = {},
   ): Promise<ReferenceSearchResult[]> {
     const env = Binding.use();
-    const { topK = 20, industries, returnValues = false, namespace } = options;
+    const { topK = 20, returnValues = false, namespace } = options;
 
-    log.info("searching references", { query, topK, industries });
+    log.info("searching references", { query, topK });
 
     const queryVector = await embedText(query);
 
@@ -535,18 +558,7 @@ export namespace ReferenceSearch {
     };
 
     const results = await env.ReferenceIndex.query(queryVector, queryOptions);
-    let matches = results.matches.map(toSearchResult);
-
-    // Post-filter by industries if specified
-    if (industries && industries.length > 0) {
-      matches = matches.filter((m) =>
-        m.industries.some((ind) =>
-          industries.some(
-            (filterInd) => ind.toLowerCase() === filterInd.toLowerCase(),
-          ),
-        ),
-      );
-    }
+    const matches = results.matches.map(toSearchResult);
 
     log.info("search completed", {
       query,
@@ -565,7 +577,7 @@ export namespace ReferenceSearch {
     options: ReferenceSearchOptions = {},
   ): Promise<ReferenceSearchResult[]> {
     const env = Binding.use();
-    const { topK = 50, industries } = options;
+    const { topK = 50 } = options;
 
     // Use zero vector to get results without semantic ranking
     const zeroVector = new Array(768).fill(0);
@@ -575,17 +587,7 @@ export namespace ReferenceSearch {
       returnMetadata: "all",
     });
 
-    let matches = results.matches.map(toSearchResult);
-
-    if (industries && industries.length > 0) {
-      matches = matches.filter((m) =>
-        m.industries.some((ind) =>
-          industries.some(
-            (filterInd) => ind.toLowerCase() === filterInd.toLowerCase(),
-          ),
-        ),
-      );
-    }
+    const matches = results.matches.map(toSearchResult);
 
     // Add presigned URLs for display
     return addImageUrls(matches);
@@ -653,15 +655,11 @@ export namespace ReferenceSearch {
     return list.objects.map((obj) => obj.key);
   }
 
-  /**
-   * Generate a presigned URL for a reference by ID and type.
-   * Uses PATHS helper - no Vectorize lookup needed.
-   */
-  export async function getPresignedUrl(
-    id: string,
-    type: "image" | "video" = "image",
+  export async function getPresignedUrlFromResult(
+    result: ReferenceSearchResult,
   ): Promise<string> {
-    const key = type === "video" ? PATHS.video(id) : PATHS.image(id);
+    const key =
+      result.type === "video" ? PATHS.video(result.id) : PATHS.image(result.id);
     return Storage.getPresignedUrl(key, REFERENCE_BUCKET, { expiresIn: 3600 });
   }
 
@@ -697,6 +695,15 @@ export namespace ReferenceSearch {
     const specObj = await env.ReferenceBucket.get(PATHS.videoSpec(videoId));
     const blueprint = specObj ? await specObj.text() : "";
 
+    // Check if thumbnail exists and get presigned URL
+    const thumbnailKey = PATHS.videoThumbnail(videoId);
+    const thumbnailExists = await env.ReferenceBucket.head(thumbnailKey);
+    const thumbnailUrl = thumbnailExists
+      ? await Storage.getPresignedUrl(thumbnailKey, REFERENCE_BUCKET, {
+          expiresIn: 3600,
+        })
+      : undefined;
+
     return {
       id: videoId,
       score: 1,
@@ -714,6 +721,7 @@ export namespace ReferenceSearch {
         isReusable: false,
         reasoning: "",
       },
+      thumbnailUrl,
     };
   }
 
@@ -780,12 +788,11 @@ export namespace ReferenceSearch {
     query: string,
     options: ReferenceSearchOptions = {},
   ): Promise<VideoReferenceResult[]> {
-    const { topK = 10, industries } = options;
+    const { topK = 10 } = options;
 
     // Search all references
     const allResults = await findSimilar(query, {
       topK: topK * 3, // Get more to filter
-      industries,
     });
 
     // Filter to videos only

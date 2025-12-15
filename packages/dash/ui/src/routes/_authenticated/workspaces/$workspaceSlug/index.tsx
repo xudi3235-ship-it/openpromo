@@ -98,7 +98,7 @@ function WorkspaceHomePage() {
   );
 
   return (
-    <div className="min-h-screen bg-muted/15">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-7xl space-y-6 px-6 py-8">
         <WorkspaceActionBar workspaceSlug={workspace.slug} />
 

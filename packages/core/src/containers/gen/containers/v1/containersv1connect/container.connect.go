@@ -50,6 +50,9 @@ const (
 	// ContainerServiceBurnSubtitleProcedure is the fully-qualified name of the ContainerService's
 	// BurnSubtitle RPC.
 	ContainerServiceBurnSubtitleProcedure = "/containers.v1.ContainerService/BurnSubtitle"
+	// ContainerServiceExtractFramesProcedure is the fully-qualified name of the ContainerService's
+	// ExtractFrames RPC.
+	ContainerServiceExtractFramesProcedure = "/containers.v1.ContainerService/ExtractFrames"
 )
 
 // ContainerServiceClient is a client for the containers.v1.ContainerService service.
@@ -66,6 +69,8 @@ type ContainerServiceClient interface {
 	TranscodeVideo(context.Context, *connect.Request[v1.TranscodeVideoRequest]) (*connect.Response[v1.TranscodeVideoResponse], error)
 	// Burn ASS subtitles into a video.
 	BurnSubtitle(context.Context, *connect.Request[v1.BurnSubtitleRequest]) (*connect.Response[v1.BurnSubtitleResponse], error)
+	// Extract one or more frames from a video as JPEG images.
+	ExtractFrames(context.Context, *connect.Request[v1.ExtractFramesRequest]) (*connect.Response[v1.ExtractFramesResponse], error)
 }
 
 // NewContainerServiceClient constructs a client for the containers.v1.ContainerService service. By
@@ -115,6 +120,12 @@ func NewContainerServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(containerServiceMethods.ByName("BurnSubtitle")),
 			connect.WithClientOptions(opts...),
 		),
+		extractFrames: connect.NewClient[v1.ExtractFramesRequest, v1.ExtractFramesResponse](
+			httpClient,
+			baseURL+ContainerServiceExtractFramesProcedure,
+			connect.WithSchema(containerServiceMethods.ByName("ExtractFrames")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -126,6 +137,7 @@ type containerServiceClient struct {
 	probeMedia     *connect.Client[v1.ProbeMediaRequest, v1.ProbeMediaResponse]
 	transcodeVideo *connect.Client[v1.TranscodeVideoRequest, v1.TranscodeVideoResponse]
 	burnSubtitle   *connect.Client[v1.BurnSubtitleRequest, v1.BurnSubtitleResponse]
+	extractFrames  *connect.Client[v1.ExtractFramesRequest, v1.ExtractFramesResponse]
 }
 
 // Ping calls containers.v1.ContainerService.Ping.
@@ -158,6 +170,11 @@ func (c *containerServiceClient) BurnSubtitle(ctx context.Context, req *connect.
 	return c.burnSubtitle.CallUnary(ctx, req)
 }
 
+// ExtractFrames calls containers.v1.ContainerService.ExtractFrames.
+func (c *containerServiceClient) ExtractFrames(ctx context.Context, req *connect.Request[v1.ExtractFramesRequest]) (*connect.Response[v1.ExtractFramesResponse], error) {
+	return c.extractFrames.CallUnary(ctx, req)
+}
+
 // ContainerServiceHandler is an implementation of the containers.v1.ContainerService service.
 type ContainerServiceHandler interface {
 	// Simple health check.
@@ -172,6 +189,8 @@ type ContainerServiceHandler interface {
 	TranscodeVideo(context.Context, *connect.Request[v1.TranscodeVideoRequest]) (*connect.Response[v1.TranscodeVideoResponse], error)
 	// Burn ASS subtitles into a video.
 	BurnSubtitle(context.Context, *connect.Request[v1.BurnSubtitleRequest]) (*connect.Response[v1.BurnSubtitleResponse], error)
+	// Extract one or more frames from a video as JPEG images.
+	ExtractFrames(context.Context, *connect.Request[v1.ExtractFramesRequest]) (*connect.Response[v1.ExtractFramesResponse], error)
 }
 
 // NewContainerServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -217,6 +236,12 @@ func NewContainerServiceHandler(svc ContainerServiceHandler, opts ...connect.Han
 		connect.WithSchema(containerServiceMethods.ByName("BurnSubtitle")),
 		connect.WithHandlerOptions(opts...),
 	)
+	containerServiceExtractFramesHandler := connect.NewUnaryHandler(
+		ContainerServiceExtractFramesProcedure,
+		svc.ExtractFrames,
+		connect.WithSchema(containerServiceMethods.ByName("ExtractFrames")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/containers.v1.ContainerService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ContainerServicePingProcedure:
@@ -231,6 +256,8 @@ func NewContainerServiceHandler(svc ContainerServiceHandler, opts ...connect.Han
 			containerServiceTranscodeVideoHandler.ServeHTTP(w, r)
 		case ContainerServiceBurnSubtitleProcedure:
 			containerServiceBurnSubtitleHandler.ServeHTTP(w, r)
+		case ContainerServiceExtractFramesProcedure:
+			containerServiceExtractFramesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -262,4 +289,8 @@ func (UnimplementedContainerServiceHandler) TranscodeVideo(context.Context, *con
 
 func (UnimplementedContainerServiceHandler) BurnSubtitle(context.Context, *connect.Request[v1.BurnSubtitleRequest]) (*connect.Response[v1.BurnSubtitleResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("containers.v1.ContainerService.BurnSubtitle is not implemented"))
+}
+
+func (UnimplementedContainerServiceHandler) ExtractFrames(context.Context, *connect.Request[v1.ExtractFramesRequest]) (*connect.Response[v1.ExtractFramesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("containers.v1.ContainerService.ExtractFrames is not implemented"))
 }

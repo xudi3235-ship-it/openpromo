@@ -11,6 +11,7 @@ import {
 } from "@openai/agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
+import { downloadImagesToTmp } from "../utils";
 
 const toolParams = z.object({
   query: z
@@ -21,10 +22,6 @@ const toolParams = z.object({
   type: z
     .enum(["image", "video"])
     .describe("Filter by reference type: 'image', or 'video'"),
-  industries: z
-    .array(z.string())
-    .nullable()
-    .describe("Filter by industries (e.g., ['beauty', 'fashion'])"),
   limit: z.number().default(5).describe("Maximum number of results to return"),
 });
 
@@ -36,15 +33,13 @@ export const searchReferencesTool = tool<
   description: `Search the reference library for proven ad formats, blueprints, and style references.
 Returns both images (for style/keyframe inspiration) and videos (with shot-by-shot blueprints).
 Use the 'type' filter if you need specifically images or videos.
-
-For images: returns style references, compositions, and visual inspiration.
-For videos: returns blueprints with shot-by-shot breakdowns, audio strategy, and key frames.`,
+The results are based on vector similarity search based on keywords, tags, etc.
+`,
   parameters: toolParams,
-  execute: async ({ query, type, industries, limit }) => {
+  execute: async ({ query, type, limit }) => {
     // Search all references
     const results = await ReferenceSearch.findSimilar(query, {
       topK: limit * 2, // Get extra to filter
-      industries,
       namespace: type, // Filter by type
     });
 
@@ -66,13 +61,9 @@ For videos: returns blueprints with shot-by-shot breakdowns, audio strategy, and
             aspectRatio: video.aspectRatio,
             audio: video.audio,
             blueprint: video.blueprint,
-            sourceUrl: await ReferenceSearch.getPresignedUrl(
-              `videos/${r.id}/source.mp4`,
-            ),
+            sourceUrl: await ReferenceSearch.getPresignedUrlFromResult(video),
             audioUrl: video.audio.isReusable
-              ? await ReferenceSearch.getPresignedUrl(
-                  `videos/${r.id}/audio.mp3`,
-                )
+              ? await ReferenceSearch.getPresignedUrlFromResult(video)
               : null,
           };
         } else {
@@ -86,7 +77,7 @@ For videos: returns blueprints with shot-by-shot breakdowns, audio strategy, and
             description: image.description,
             keywords: image.keywords,
             industries: image.industries,
-            sourceUrl: await ReferenceSearch.getPresignedUrl(r.id, "image"),
+            sourceUrl: await ReferenceSearch.getPresignedUrlFromResult(image),
           };
         }
       }),
@@ -94,11 +85,18 @@ For videos: returns blueprints with shot-by-shot breakdowns, audio strategy, and
 
     // Filter out nulls (failed lookups)
     const validResults = enrichedResults.filter((r) => r !== null);
+    // download refernce images
+    const localImgPaths = await downloadImagesToTmp(
+      validResults.map((r) => r.sourceUrl),
+      "/tmp/reference",
+    );
 
     const txtPart: ToolOutputText = {
       type: "text",
       text: `Found ${validResults.length} matching reference(s) for query "${query}". NOTE: images are returned to you. videos are not supported yet.
-       Full response: ${JSON.stringify(validResults, null, 2)}`,
+       Full response: ${JSON.stringify(validResults, null, 2)}
+       the reference images are downloaded to local paths: ${JSON.stringify(localImgPaths, null, 2)}
+       `,
     };
     const imgParts: ToolOutputImage[] = validResults
       .filter((r) => r && r.type === "image")

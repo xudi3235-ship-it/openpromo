@@ -373,12 +373,28 @@ export class VideoGenAgent extends AIChatAgent<
               this.state.input,
             );
 
+            const presetMsgs = await this.presetManager.getByIDToAgentInput(
+              this.state.input.presetId,
+            );
+
             // Run sub-agent with task description
             const subInput: AgentInputItem[] = [
+              // 1. product imgs
               ...productInputs,
+              // 2. generated imgs
               ...(await this.inputTransformer.fromImageArtifacts(this.state)),
-              { role: "user", content: taskDescription },
+              // 3. preset context if any
+              ...presetMsgs,
+              {
+                role: "system",
+                content: `current task from orchestrator:
+                ${taskDescription}`,
+              },
             ];
+            // console.log(`Running sub-agent ${targetAgent} with input:`, {
+            //   taskDescription,
+            //   items: JSON.stringify(subInput),
+            // });
 
             const subResult = await run(subAgent, subInput, {
               context: runtimeContext,

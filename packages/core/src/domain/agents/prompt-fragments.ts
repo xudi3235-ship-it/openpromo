@@ -69,4 +69,245 @@ BEFORE creating a plan, always search for video references:
 4. Generate images/keyframes -> Use nano_banana with product inputs. If a run fails (e.g., server error), retry once, then stop and report. Success: at least one approved candidate per planned shot.
 5. Plan shots around the veo3.1 limits, group them into minimal number of veo3.1 calls, multiple shots in a single call.
 `;
+
+  /**
+   * Text overlay guidance - differentiates keyframes (for video) vs direct image ads
+   */
+  export const textOverlayGuidance = `
+<text_overlay_strategy>
+**KEYFRAMES FOR VIDEO (typically no baked-in text)**
+When generating keyframes that will animate into video:
+- Avoid baked-in text overlays unless explicitly requested
+- VEO3.1 handles dialogue/captions via native audio generation
+- Text in start frames becomes static or distorted during animation
+- Exception: stylized text integral to the visual (neon signs, branded elements, product packaging)
+
+**DIRECT IMAGE ADS (text required)**
+When generating standalone image ads for direct posting:
+- Include clear, readable text overlays
+- Hook/headline: top third, high contrast, max 5-7 words
+- CTA text: bottom third, action-oriented ("Shop Now", "Learn More")
+- Use double quotes in prompt for exact text accuracy: text reading "50% OFF"
+- Specify font style: bold sans-serif, clean contrast against background
+- Ensure text contrast: white text on dark gradient, black on light
+
+**TEXT ACCURACY RULES**
+- Always specify text content in double quotes for precision
+- Position text with explicit placement (top-center, bottom-left)
+- For product names/prices: place near product, not floating
+- Avoid long sentences - short punchy phrases work best
+</text_overlay_strategy>
+`;
+
+  /**
+   * Video archetypes framework - reasoning foundation for different content types
+   * Reference library provides specific execution details; this gives structural understanding
+   */
+  export const videoArchetypes = `
+<video_archetypes>
+Use these archetypes as a reasoning foundation. Identify which fits, then apply its constraints.
+
+## 1. UGC/TESTIMONIAL
+**Intent:** Authentic creator/customer experience sharing product benefits
+**Visual Style:**
+- POV or front-facing camera, slightly imperfect framing
+- Natural/casual lighting (ring light, window light, selfie-style)
+- Real environment (bedroom, bathroom, kitchen) not studio
+- Creator holding/using product naturally
+**Audio:** Native dialogue via VEO3.1, casual conversational tone
+**Pacing:** Medium (let personality show), 1-2 scene cuts max
+**Keyframe Focus:** Creator face + product in frame, genuine expression
+**Must-Have:** Eye contact moments, authentic reactions, product-in-use
+
+## 2. PRODUCT DEMO
+**Intent:** Feature showcase, benefit visualization, how-it-works
+**Visual Style:**
+- Clean, controlled shots (studio or neutral background)
+- Product as hero, well-lit with soft shadows
+- Multiple angles: hero shot, detail close-up, in-action
+**Audio:** Optional voiceover OR rely on text overlays for key features
+**Pacing:** Fast cuts (2-3s per shot), dynamic transitions
+**Keyframe Focus:** Clean product isolation, feature close-ups
+**Must-Have:** Transformation/before-after moment, clear product visibility throughout
+
+## 3. TALKING HEAD
+**Intent:** Expert advice, educational content, personality-driven
+**Visual Style:**
+- Chest-up framing, centered or rule-of-thirds
+- Controlled background, good audio environment
+- Direct camera address, expressive face
+**Audio:** Dialogue-heavy, clear speech - VEO3.1 native audio essential
+**Pacing:** Slower (let dialogue breathe), minimal cuts
+**Keyframe Focus:** Speaker mid-sentence expression, engaged face
+**Must-Have:** Strong opening line, caption-ready audio
+
+## 4. LIFESTYLE/AESTHETIC
+**Intent:** Mood/vibe selling, aspirational visuals, brand building
+**Visual Style:**
+- Cinematic framing, golden hour or dramatic lighting
+- Environment tells the story (beach, city, cozy home)
+- Product integrated naturally into scene
+**Audio:** Trending music or atmospheric sound, minimal/no dialogue
+**Pacing:** Smooth, flowing transitions, slower motion moments
+**Keyframe Focus:** Aspirational scene, product-in-context
+**Must-Have:** Strong color grade, cohesive visual mood throughout
+
+## 5. TRENDING FORMAT
+**Intent:** Platform-native content leveraging current viral patterns
+**Formats:** POV, GRWM (Get Ready With Me), "Watch me...", Before/After, Transformation
+**Visual Style:** Follows trend conventions exactly
+**Audio:** Trending sound if applicable, or format-specific dialogue
+**Pacing:** Matches trend format (usually fast, punchy)
+**Keyframe Focus:** Format-specific opening frame
+**Must-Have:** Recognizable trend structure, hook in first 1-2s
+
+---
+**Selection Logic:**
+- UGC/Testimonial: social proof, authenticity, creator-style content
+- Product Demo: features, benefits, "how it works" focus
+- Talking Head: expertise, explanation, personality as the hook
+- Lifestyle: mood, aspiration, brand vibe priority
+- Trending: specific format mentioned or platform trend referenced
+</video_archetypes>
+`;
+
+  /**
+   * Prompt refinement checklist - ensures ultra-detailed prompts before tool calls
+   */
+  export const promptRefinementGuide = `
+<prompt_refinement_checklist>
+Before calling generation tools, transform task into ultra-detailed prompt.
+
+**For Nano Banana (Image Gen):**
+- Subject: Main focus described in extreme detail
+- Environment: Background, setting, context
+- Lighting: Source, quality, direction, color temperature
+- Composition: Framing, angle, depth of field
+- Style: Aesthetic, mood, reference inspirations
+- Product Placement: Exact position, size, angle of product
+- Text (if any): Exact wording in quotes, placement, font style
+
+**For VEO3.1 (Video Gen):**
+- Opening Frame: Detailed description tying to keyframe
+- Subject Action: Precise movements, gestures, expressions
+- Camera Motion: Specific movement (dolly, pan, static, handheld)
+- Audio: Dialogue in quotes, ambient sounds, music style
+- Pacing: Shot timing, transition style, "FASTER PACED" for dialogue
+- Negative Prompts: Distortion, floating objects, physics issues
+
+**Quick Checklist:**
+[ ] Product clearly specified with angle/position
+[ ] Lighting defined (not generic "good lighting")
+[ ] Camera/composition specified
+[ ] For video with dialogue: "faster-paced dialogue" cue included
+[ ] Negative prompts address common VEO3.1 failure modes
+</prompt_refinement_checklist>
+`;
+
+  /**
+   * Handoff guidance for orchestrator when delegating to sub-agents
+   */
+  export const handoffGuidance = `
+<handoff_guidance>
+When delegating to sub-agents, include enough context for autonomous execution.
+
+**For image_gen handoffs:**
+- State purpose: "keyframe for video" vs "direct image ad"
+- For keyframes: remind to avoid baked-in text (video handles captions)
+- For direct ads: specify exact text content, placement, style
+- Reference how to use selected preset/reference if any
+- List key visual elements that must be present
+
+**For video_gen handoffs:**
+- Identify archetype: UGC, product demo, talking head, lifestyle, or trending format
+- Specify hook approach for first 2-3 seconds
+- If dialogue: describe voice style, pacing, key lines in quotes
+- If preset selected: remind to follow its structure closely
+- Include keyframe references and shot breakdown
+
+**When preset is selected:**
+- Reference the blueprint in your task description
+- Highlight elements to preserve: shot structure, hook pattern, pacing
+- Allow adaptations: product swap, setting change, color palette
+- Disallow: fundamentally changing structure, removing hook, altering pacing significantly
+</handoff_guidance>
+`;
+
+  /**
+   * Multi-segment video framework - reasoning scaffold for videos >8s
+   * Provides terminology, planning approach, and execution guidance
+   */
+  export const multiSegmentFramework = `
+<multi_segment_framework>
+When target duration exceeds a single VEO3.1 call (>8s), plan multiple segments.
+
+**TERMINOLOGY:**
+- Segment: One VEO3.1 generation call (4/6/8s). The atomic unit of video generation.
+- Shot: A continuous camera take within a segment. One segment can have multiple shots.
+- Transition: How segments connect (seamless extension vs cut/stitch).
+
+**SEGMENT CALCULATION:**
+- 9-16s target → 2 segments
+- 17-24s target → 3 segments
+- Each segment: prefer 8s for quality, use 4s/6s for pacing needs
+
+**SEGMENT ROLES (flexible guideline, adapt based on archetype + reference):**
+- First segment: Establish hook, grab attention, introduce subject/product
+- Middle segment(s): Develop story, showcase features, build engagement
+- Final segment: Resolve, CTA, memorable close
+
+**WITHIN EACH SEGMENT:**
+- One keyframe anchors the segment - this is the start frame for VEO3.1
+- Multiple shots CAN be prompted within a single VEO3.1 call
+- **KEYFRAME VISIBILITY CONSTRAINT**: Objects/subjects you want in subsequent shots should ideally be visible or implied in the keyframe. VEO3.1 generates from the start frame, so elements not present in keyframe may render inaccurately.
+  - Good: Keyframe shows person holding product → shots can zoom, pan, show different angles of same scene
+  - Risky: Keyframe shows only product → later shot introduces person (may render poorly)
+- If segment needs drastically different subjects/scenes, consider splitting into separate segments with dedicated keyframes
+- Reference library blueprints may specify shot structures - use as guidance for what's achievable in single segment
+
+**CONTINUITY BETWEEN SEGMENTS:**
+At each segment boundary, consider:
+- Visual: What carries over (subject position, lighting, setting)
+- Audio: Dialogue flow, music continuity, ambient sound
+- Motion: Camera movement continuation or intentional cut
+
+**EXECUTION APPROACHES:**
+1. **Extension** (seamless, for 2 segments with continuous action):
+   - Generate segment 1, extend with VEO3.1 extension tool
+   - Best for: single-scene content, talking head, continuous motion
+
+2. **Stitch** (for scene changes, 3+ segments, or stylistic cuts):
+   - Generate each segment independently with keyframes
+   - Concatenate with ffmpeg
+   - Best for: multi-scene narratives, before/after, montage styles
+
+3. **Keyframe Derivation** (high consistency for 2-3 segments):
+   - Generate base keyframe with all core elements (subject, product, lighting)
+   - Use image gen agent to EDIT the base keyframe for subsequent segments
+   - Edit prompts: change background, action, pose while preserving subject/product
+   - Result: multiple keyframes with strong visual consistency
+   - Best for: maintaining subject/product appearance across scene changes
+   - Example flow:
+     - Keyframe 1: Person holding product in kitchen
+     - Edit → Keyframe 2: Same person/product, now outdoors (BG swap)
+     - Edit → Keyframe 3: Same person/product, different pose/action
+   - This solves the "drift" problem where independent keyframe generations vary in subject appearance
+
+**REASONING FLOW:**
+1. Identify total duration and segment count needed
+2. Review archetype constraints and reference blueprint (if any)
+3. Plan narrative arc across segments
+4. Choose execution approach:
+   - Extension: continuous action, same scene throughout
+   - Keyframe Derivation: scene changes but need consistent subject/product appearance
+   - Stitch (independent): completely different scenes, subjects, or stylistic cuts
+5. For each segment: determine shots, keyframe needs, continuity notes
+6. Execute with awareness of what comes before/after
+
+**APPROACH SELECTION GUIDE:**
+- Same scene, continuous motion → Extension
+- Different scenes, same subject/product must look identical → Keyframe Derivation
+- Montage/transformation/completely different subjects → Stitch with independent keyframes
+</multi_segment_framework>
+`;
 }
