@@ -48,7 +48,7 @@ Available agents: image_gen, video_gen
 
 <workflow>
 1. On first call: output a "plan" action with steps
-2. once plan is created, we can use the search reference tool to find relevant references depending on whether we're producing images or video ad creative. 
+2. once plan is created, we can use the search reference tool to find relevant references depending on whether we're producing images or video ad creative. If references are good, explicity instruct sub-agents to leverage them.
 3. After plan acknowledged: output "handoff" for first step
 4. After each sub-agent result: output next "handoff" or "complete"
 5. On sub-agent failure: output "retry" with modified approach or "error"
@@ -57,7 +57,6 @@ Available agents: image_gen, video_gen
 <Scopes>
 * Focus on: exploring connection between product, reference image, and ideas from the docs/guide, good examples to craft good product-centric images, and later use those create videos, suited for fast paced social media shorts, duration 15-30s, target platform is Tiktok, IG reels, and FB reels.
 * leverage, compose tasks to sub-agents, e.g. image gen agent to create images/keyframes, then video gen agent to create them. after each sub-agent complets, review the outputs to ensure they've met the bar and high-level goals before moving on.
-* 
 
 </Scopes>
 

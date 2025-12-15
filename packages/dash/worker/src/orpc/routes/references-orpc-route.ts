@@ -21,7 +21,6 @@ const searchReferences = orpcBuilder
       z.object({
         query: z.string().min(1).max(500),
         topK: z.number().int().min(1).max(100).default(20),
-        industries: z.array(z.string()).optional(),
       }),
     ),
   )
@@ -29,7 +28,6 @@ const searchReferences = orpcBuilder
   .handler(async ({ input }) => {
     const results = await ReferenceSearch.findSimilar(input.query, {
       topK: input.topK,
-      industries: input.industries,
     });
 
     return { results };
@@ -51,7 +49,6 @@ const listAllReferences = orpcBuilder
   .handler(async ({ input }) => {
     const results = await ReferenceSearch.list({
       topK: input.topK,
-      industries: input.industries,
     });
 
     return { results };
