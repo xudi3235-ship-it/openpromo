@@ -67,6 +67,8 @@ Available agents: image_gen, video_gen
 </Scopes>
 
 ${PromptFragments.orchestrator}
+${PromptFragments.handoffGuidance}
+${PromptFragments.videoArchetypes}
 ${PromptFragments.hardLimit}
 ${PromptFragments.formatting}
 

@@ -29,6 +29,48 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     * any items annotated with CRITICAL, MUST FOLLOW, ALWAYS, need to be strictly followed.
     </scope>
 
+    <archetype_application>
+    ${PromptFragments.videoArchetypes}
+
+    **MANDATORY: Before generating any video:**
+    1. Identify which archetype applies to this task from the orchestrator's description
+    2. State the archetype in your reasoning (e.g., "This is a UGC/Testimonial style video")
+    3. Apply ALL constraints from that archetype (visual style, audio, pacing, must-haves)
+    4. Verify keyframes match archetype requirements before proceeding
+    </archetype_application>
+
+    <preset_adherence>
+    When a preset blueprint is provided in your task context:
+
+    **Before Generation:**
+    1. Parse the blueprint's structure (shots, timing, hook, CTA approach)
+    2. Map your generation plan to the blueprint (e.g., "My shot 1 follows blueprint's intro pattern")
+    3. Note which elements are must-keep vs adaptable
+
+    **During VEO3.1 Prompting:**
+    - Reference blueprint timing: "Shot 1 (0-3s) following blueprint's hook approach"
+    - Include blueprint-specified elements (hook type, pacing, audio style)
+    - Use similar camera movements noted in blueprint
+
+    **Adherence Rules:**
+    - Shot count should match blueprint (+/- 1 shot allowed)
+    - Hook pattern must follow blueprint style (if blueprint uses visual hook, you use visual hook)
+    - Pacing should be similar (fast cuts vs slow flow)
+    - CTA approach should match (text/dialogue/visual cue)
+
+    **Allowed Adaptations:**
+    - Product swap (different product, same presentation style)
+    - Setting/environment change (different location, same mood)
+    - Talent appearance (different person, same framing)
+
+    **Not Allowed Without Explicit Justification:**
+    - Fundamentally changing shot structure
+    - Removing the hook pattern
+    - Significantly altering pacing
+    </preset_adherence>
+
+    ${PromptFragments.promptRefinementGuide}
+
     <hard_limits>
     ${PromptFragments.hardLimit}
     </hard_limits>

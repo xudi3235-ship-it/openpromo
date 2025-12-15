@@ -156,12 +156,51 @@ export namespace Presets {
         // load the metadata + spec.txt
         const video = await ReferenceSearch.getVideoReference(id);
         msgs.push({
+          role: "system",
+          content: `
+<preset_blueprint>
+**PRESET SELECTED: ${id}**
+**ADHERENCE LEVEL: MODERATE-TO-STRICT**
+
+User selected this proven ad format as their template. This blueprint represents a successful, tested ad pattern.
+
+**You MUST:**
+1. Follow the shot structure closely (number of shots, timing, pacing)
+2. Replicate the hook style (first 2-3 seconds pattern)
+3. Match the audio strategy (dialogue style, music placement)
+4. Preserve the CTA approach
+
+**Blueprint to Follow:**
+${video?.blueprint ?? "No blueprint available"}
+
+**Adherence Checklist (verify before generation):**
+- Shot count matches blueprint (+/- 1 shot)
+- Hook follows same pattern (visual/dialogue/motion)
+- Pacing is similar (fast cuts vs slow flow)
+- CTA style matches (text/dialogue/visual)
+- Audio approach aligned (voiceover/trending sound/music)
+
+**Allowed Adaptations:**
+- Product swap (different product, same presentation style)
+- Setting change (different location, same mood/vibe)
+- Color palette (match brand colors, keep contrast ratios)
+- Talent appearance (different person, same framing/energy)
+
+**NOT Allowed Without Justification:**
+- Changing shot structure fundamentally
+- Removing or significantly altering the hook pattern
+- Changing pacing significantly (fast to slow or vice versa)
+- Adding elements not in blueprint without clear reasoning
+</preset_blueprint>
+`,
+        });
+        // Also add the raw video reference data for context
+        msgs.push({
           role: "user",
           content: [
             {
               type: "input_text" as const,
-              text: `User selected a reference image as directional inspiration. ref: ${JSON.stringify(video)}.
-                `,
+              text: `Video reference details: ${JSON.stringify(video)}`,
             },
           ],
         });

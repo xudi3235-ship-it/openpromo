@@ -69,4 +69,167 @@ BEFORE creating a plan, always search for video references:
 4. Generate images/keyframes -> Use nano_banana with product inputs. If a run fails (e.g., server error), retry once, then stop and report. Success: at least one approved candidate per planned shot.
 5. Plan shots around the veo3.1 limits, group them into minimal number of veo3.1 calls, multiple shots in a single call.
 `;
+
+  /**
+   * Text overlay guidance - differentiates keyframes (for video) vs direct image ads
+   */
+  export const textOverlayGuidance = `
+<text_overlay_strategy>
+**KEYFRAMES FOR VIDEO (typically no baked-in text)**
+When generating keyframes that will animate into video:
+- Avoid baked-in text overlays unless explicitly requested
+- VEO3.1 handles dialogue/captions via native audio generation
+- Text in start frames becomes static or distorted during animation
+- Exception: stylized text integral to the visual (neon signs, branded elements, product packaging)
+
+**DIRECT IMAGE ADS (text required)**
+When generating standalone image ads for direct posting:
+- Include clear, readable text overlays
+- Hook/headline: top third, high contrast, max 5-7 words
+- CTA text: bottom third, action-oriented ("Shop Now", "Learn More")
+- Use double quotes in prompt for exact text accuracy: text reading "50% OFF"
+- Specify font style: bold sans-serif, clean contrast against background
+- Ensure text contrast: white text on dark gradient, black on light
+
+**TEXT ACCURACY RULES**
+- Always specify text content in double quotes for precision
+- Position text with explicit placement (top-center, bottom-left)
+- For product names/prices: place near product, not floating
+- Avoid long sentences - short punchy phrases work best
+</text_overlay_strategy>
+`;
+
+  /**
+   * Video archetypes framework - reasoning foundation for different content types
+   * Reference library provides specific execution details; this gives structural understanding
+   */
+  export const videoArchetypes = `
+<video_archetypes>
+Use these archetypes as a reasoning foundation. Identify which fits, then apply its constraints.
+
+## 1. UGC/TESTIMONIAL
+**Intent:** Authentic creator/customer experience sharing product benefits
+**Visual Style:**
+- POV or front-facing camera, slightly imperfect framing
+- Natural/casual lighting (ring light, window light, selfie-style)
+- Real environment (bedroom, bathroom, kitchen) not studio
+- Creator holding/using product naturally
+**Audio:** Native dialogue via VEO3.1, casual conversational tone
+**Pacing:** Medium (let personality show), 1-2 scene cuts max
+**Keyframe Focus:** Creator face + product in frame, genuine expression
+**Must-Have:** Eye contact moments, authentic reactions, product-in-use
+
+## 2. PRODUCT DEMO
+**Intent:** Feature showcase, benefit visualization, how-it-works
+**Visual Style:**
+- Clean, controlled shots (studio or neutral background)
+- Product as hero, well-lit with soft shadows
+- Multiple angles: hero shot, detail close-up, in-action
+**Audio:** Optional voiceover OR rely on text overlays for key features
+**Pacing:** Fast cuts (2-3s per shot), dynamic transitions
+**Keyframe Focus:** Clean product isolation, feature close-ups
+**Must-Have:** Transformation/before-after moment, clear product visibility throughout
+
+## 3. TALKING HEAD
+**Intent:** Expert advice, educational content, personality-driven
+**Visual Style:**
+- Chest-up framing, centered or rule-of-thirds
+- Controlled background, good audio environment
+- Direct camera address, expressive face
+**Audio:** Dialogue-heavy, clear speech - VEO3.1 native audio essential
+**Pacing:** Slower (let dialogue breathe), minimal cuts
+**Keyframe Focus:** Speaker mid-sentence expression, engaged face
+**Must-Have:** Strong opening line, caption-ready audio
+
+## 4. LIFESTYLE/AESTHETIC
+**Intent:** Mood/vibe selling, aspirational visuals, brand building
+**Visual Style:**
+- Cinematic framing, golden hour or dramatic lighting
+- Environment tells the story (beach, city, cozy home)
+- Product integrated naturally into scene
+**Audio:** Trending music or atmospheric sound, minimal/no dialogue
+**Pacing:** Smooth, flowing transitions, slower motion moments
+**Keyframe Focus:** Aspirational scene, product-in-context
+**Must-Have:** Strong color grade, cohesive visual mood throughout
+
+## 5. TRENDING FORMAT
+**Intent:** Platform-native content leveraging current viral patterns
+**Formats:** POV, GRWM (Get Ready With Me), "Watch me...", Before/After, Transformation
+**Visual Style:** Follows trend conventions exactly
+**Audio:** Trending sound if applicable, or format-specific dialogue
+**Pacing:** Matches trend format (usually fast, punchy)
+**Keyframe Focus:** Format-specific opening frame
+**Must-Have:** Recognizable trend structure, hook in first 1-2s
+
+---
+**Selection Logic:**
+- UGC/Testimonial: social proof, authenticity, creator-style content
+- Product Demo: features, benefits, "how it works" focus
+- Talking Head: expertise, explanation, personality as the hook
+- Lifestyle: mood, aspiration, brand vibe priority
+- Trending: specific format mentioned or platform trend referenced
+</video_archetypes>
+`;
+
+  /**
+   * Prompt refinement checklist - ensures ultra-detailed prompts before tool calls
+   */
+  export const promptRefinementGuide = `
+<prompt_refinement_checklist>
+Before calling generation tools, transform task into ultra-detailed prompt.
+
+**For Nano Banana (Image Gen):**
+- Subject: Main focus described in extreme detail
+- Environment: Background, setting, context
+- Lighting: Source, quality, direction, color temperature
+- Composition: Framing, angle, depth of field
+- Style: Aesthetic, mood, reference inspirations
+- Product Placement: Exact position, size, angle of product
+- Text (if any): Exact wording in quotes, placement, font style
+
+**For VEO3.1 (Video Gen):**
+- Opening Frame: Detailed description tying to keyframe
+- Subject Action: Precise movements, gestures, expressions
+- Camera Motion: Specific movement (dolly, pan, static, handheld)
+- Audio: Dialogue in quotes, ambient sounds, music style
+- Pacing: Shot timing, transition style, "FASTER PACED" for dialogue
+- Negative Prompts: Distortion, floating objects, physics issues
+
+**Quick Checklist:**
+[ ] Product clearly specified with angle/position
+[ ] Lighting defined (not generic "good lighting")
+[ ] Camera/composition specified
+[ ] For video with dialogue: "faster-paced dialogue" cue included
+[ ] Negative prompts address common VEO3.1 failure modes
+</prompt_refinement_checklist>
+`;
+
+  /**
+   * Handoff guidance for orchestrator when delegating to sub-agents
+   */
+  export const handoffGuidance = `
+<handoff_guidance>
+When delegating to sub-agents, include enough context for autonomous execution.
+
+**For image_gen handoffs:**
+- State purpose: "keyframe for video" vs "direct image ad"
+- For keyframes: remind to avoid baked-in text (video handles captions)
+- For direct ads: specify exact text content, placement, style
+- Reference how to use selected preset/reference if any
+- List key visual elements that must be present
+
+**For video_gen handoffs:**
+- Identify archetype: UGC, product demo, talking head, lifestyle, or trending format
+- Specify hook approach for first 2-3 seconds
+- If dialogue: describe voice style, pacing, key lines in quotes
+- If preset selected: remind to follow its structure closely
+- Include keyframe references and shot breakdown
+
+**When preset is selected:**
+- Reference the blueprint in your task description
+- Highlight elements to preserve: shot structure, hook pattern, pacing
+- Allow adaptations: product swap, setting change, color palette
+- Disallow: fundamentally changing structure, removing hook, altering pacing significantly
+</handoff_guidance>
+`;
 }
