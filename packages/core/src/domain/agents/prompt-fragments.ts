@@ -281,13 +281,33 @@ At each segment boundary, consider:
    - Concatenate with ffmpeg
    - Best for: multi-scene narratives, before/after, montage styles
 
+3. **Keyframe Derivation** (high consistency for 2-3 segments):
+   - Generate base keyframe with all core elements (subject, product, lighting)
+   - Use image gen agent to EDIT the base keyframe for subsequent segments
+   - Edit prompts: change background, action, pose while preserving subject/product
+   - Result: multiple keyframes with strong visual consistency
+   - Best for: maintaining subject/product appearance across scene changes
+   - Example flow:
+     - Keyframe 1: Person holding product in kitchen
+     - Edit → Keyframe 2: Same person/product, now outdoors (BG swap)
+     - Edit → Keyframe 3: Same person/product, different pose/action
+   - This solves the "drift" problem where independent keyframe generations vary in subject appearance
+
 **REASONING FLOW:**
 1. Identify total duration and segment count needed
 2. Review archetype constraints and reference blueprint (if any)
 3. Plan narrative arc across segments
-4. Decide extension vs stitch based on content type
+4. Choose execution approach:
+   - Extension: continuous action, same scene throughout
+   - Keyframe Derivation: scene changes but need consistent subject/product appearance
+   - Stitch (independent): completely different scenes, subjects, or stylistic cuts
 5. For each segment: determine shots, keyframe needs, continuity notes
 6. Execute with awareness of what comes before/after
+
+**APPROACH SELECTION GUIDE:**
+- Same scene, continuous motion → Extension
+- Different scenes, same subject/product must look identical → Keyframe Derivation
+- Montage/transformation/completely different subjects → Stitch with independent keyframes
 </multi_segment_framework>
 `;
 }
