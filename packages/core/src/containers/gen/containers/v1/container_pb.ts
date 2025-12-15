@@ -22,7 +22,7 @@ import {
 export const file_containers_v1_container: GenFile =
   /*@__PURE__*/
   fileDesc(
-    "Ch1jb250YWluZXJzL3YxL2NvbnRhaW5lci5wcm90bxINY29udGFpbmVycy52MSINCgtQaW5nUmVxdWVzdCI0CgxQaW5nUmVzcG9uc2USDwoHbWVzc2FnZRgBIAEoCRITCgtpbnN0YW5jZV9pZBgCIAEoCSJGChJSZXNpemVWaWRlb1JlcXVlc3QSEQoJdmlkZW9fdXJsGAEgASgJEg0KBXdpZHRoGAIgASgFEg4KBmhlaWdodBgDIAEoBSJdChNSZXNpemVWaWRlb1Jlc3BvbnNlEhQKDGNvbnRlbnRfdHlwZRgBIAEoCRIQCghmaWxlbmFtZRgCIAEoCRIOCgZyMl91cmwYAyABKAkSDgoGcjJfa2V5GAQgASgJIlAKEFJ1bkZmbXBlZ1JlcXVlc3QSEgoKaW5wdXRfdXJscxgBIAMoCRIPCgdjb21tYW5kGAIgAygJEhcKD291dHB1dF9maWxlbmFtZRgDIAEoCSJbChFSdW5GZm1wZWdSZXNwb25zZRIOCgZyMl91cmwYASABKAkSDgoGcjJfa2V5GAIgASgJEhQKDGNvbnRlbnRfdHlwZRgDIAEoCRIQCghmaWxlbmFtZRgEIAEoCSIgChFQcm9iZU1lZGlhUmVxdWVzdBILCgN1cmwYASABKAkiWAoSUHJvYmVNZWRpYVJlc3BvbnNlEhMKC2R1cmF0aW9uX21zGAEgASgEEg0KBXdpZHRoGAIgASgNEg4KBmhlaWdodBgDIAEoDRIOCgZmb3JtYXQYBCABKAkiVQoVVHJhbnNjb2RlVmlkZW9SZXF1ZXN0EhEKCWlucHV0X3VybBgBIAEoCRIpCghwbGF0Zm9ybRgCIAEoDjIXLmNvbnRhaW5lcnMudjEuUGxhdGZvcm0iXgoWVHJhbnNjb2RlVmlkZW9SZXNwb25zZRISCgpvdXRwdXRfdXJsGAEgASgJEhIKCnRyYW5zY29kZWQYAiABKAgSEgoFZXJyb3IYAyABKAlIAIgBAUIICgZfZXJyb3IiPQoTQnVyblN1YnRpdGxlUmVxdWVzdBIRCgl2aWRlb191cmwYASABKAkSEwoLYXNzX2NvbnRlbnQYAiABKAkiOgoUQnVyblN1YnRpdGxlUmVzcG9uc2USEgoKb3V0cHV0X3VybBgBIAEoCRIOCgZyMl9rZXkYAiABKAkqZQoIUGxhdGZvcm0SGAoUUExBVEZPUk1fVU5TUEVDSUZJRUQQABIUChBQTEFURk9STV9JR19SRUVMEAESFAoQUExBVEZPUk1fRkJfUkVFTBACEhMKD1BMQVRGT1JNX1RJS1RPSxADMoQEChBDb250YWluZXJTZXJ2aWNlEj8KBFBpbmcSGi5jb250YWluZXJzLnYxLlBpbmdSZXF1ZXN0GhsuY29udGFpbmVycy52MS5QaW5nUmVzcG9uc2USVAoLUmVzaXplVmlkZW8SIS5jb250YWluZXJzLnYxLlJlc2l6ZVZpZGVvUmVxdWVzdBoiLmNvbnRhaW5lcnMudjEuUmVzaXplVmlkZW9SZXNwb25zZRJOCglSdW5GZm1wZWcSHy5jb250YWluZXJzLnYxLlJ1bkZmbXBlZ1JlcXVlc3QaIC5jb250YWluZXJzLnYxLlJ1bkZmbXBlZ1Jlc3BvbnNlElEKClByb2JlTWVkaWESIC5jb250YWluZXJzLnYxLlByb2JlTWVkaWFSZXF1ZXN0GiEuY29udGFpbmVycy52MS5Qcm9iZU1lZGlhUmVzcG9uc2USXQoOVHJhbnNjb2RlVmlkZW8SJC5jb250YWluZXJzLnYxLlRyYW5zY29kZVZpZGVvUmVxdWVzdBolLmNvbnRhaW5lcnMudjEuVHJhbnNjb2RlVmlkZW9SZXNwb25zZRJXCgxCdXJuU3VidGl0bGUSIi5jb250YWluZXJzLnYxLkJ1cm5TdWJ0aXRsZVJlcXVlc3QaIy5jb250YWluZXJzLnYxLkJ1cm5TdWJ0aXRsZVJlc3BvbnNlQiVaI21haW4vZ2VuL2NvbnRhaW5lcnMvdjE7Y29udGFpbmVyc3YxYgZwcm90bzM",
+    "Ch1jb250YWluZXJzL3YxL2NvbnRhaW5lci5wcm90bxINY29udGFpbmVycy52MSINCgtQaW5nUmVxdWVzdCI0CgxQaW5nUmVzcG9uc2USDwoHbWVzc2FnZRgBIAEoCRITCgtpbnN0YW5jZV9pZBgCIAEoCSJGChJSZXNpemVWaWRlb1JlcXVlc3QSEQoJdmlkZW9fdXJsGAEgASgJEg0KBXdpZHRoGAIgASgFEg4KBmhlaWdodBgDIAEoBSJdChNSZXNpemVWaWRlb1Jlc3BvbnNlEhQKDGNvbnRlbnRfdHlwZRgBIAEoCRIQCghmaWxlbmFtZRgCIAEoCRIOCgZyMl91cmwYAyABKAkSDgoGcjJfa2V5GAQgASgJIlAKEFJ1bkZmbXBlZ1JlcXVlc3QSEgoKaW5wdXRfdXJscxgBIAMoCRIPCgdjb21tYW5kGAIgAygJEhcKD291dHB1dF9maWxlbmFtZRgDIAEoCSJbChFSdW5GZm1wZWdSZXNwb25zZRIOCgZyMl91cmwYASABKAkSDgoGcjJfa2V5GAIgASgJEhQKDGNvbnRlbnRfdHlwZRgDIAEoCRIQCghmaWxlbmFtZRgEIAEoCSIgChFQcm9iZU1lZGlhUmVxdWVzdBILCgN1cmwYASABKAkiWAoSUHJvYmVNZWRpYVJlc3BvbnNlEhMKC2R1cmF0aW9uX21zGAEgASgEEg0KBXdpZHRoGAIgASgNEg4KBmhlaWdodBgDIAEoDRIOCgZmb3JtYXQYBCABKAkiVQoVVHJhbnNjb2RlVmlkZW9SZXF1ZXN0EhEKCWlucHV0X3VybBgBIAEoCRIpCghwbGF0Zm9ybRgCIAEoDjIXLmNvbnRhaW5lcnMudjEuUGxhdGZvcm0iXgoWVHJhbnNjb2RlVmlkZW9SZXNwb25zZRISCgpvdXRwdXRfdXJsGAEgASgJEhIKCnRyYW5zY29kZWQYAiABKAgSEgoFZXJyb3IYAyABKAlIAIgBAUIICgZfZXJyb3IiPQoTQnVyblN1YnRpdGxlUmVxdWVzdBIRCgl2aWRlb191cmwYASABKAkSEwoLYXNzX2NvbnRlbnQYAiABKAkiOgoUQnVyblN1YnRpdGxlUmVzcG9uc2USEgoKb3V0cHV0X3VybBgBIAEoCRIOCgZyMl9rZXkYAiABKAki+wEKFEV4dHJhY3RGcmFtZXNSZXF1ZXN0EhEKCXZpZGVvX3VybBgBIAEoCRISCgp0aW1lc3RhbXBzGAIgAygCEhgKC2ZyYW1lX2NvdW50GAMgASgNSACIAQESFQoNb3V0cHV0X3ByZWZpeBgEIAEoCRIcCg9vdXRwdXRfZmlsZW5hbWUYBSABKAlIAYgBARInCgZidWNrZXQYBiABKA4yFy5jb250YWluZXJzLnYxLlIyQnVja2V0EhQKB3F1YWxpdHkYByABKA1IAogBAUIOCgxfZnJhbWVfY291bnRCEgoQX291dHB1dF9maWxlbmFtZUIKCghfcXVhbGl0eSJiCg5FeHRyYWN0ZWRGcmFtZRIRCgl0aW1lc3RhbXAYASABKAISDgoGcjJfdXJsGAIgASgJEg4KBnIyX2tleRgDIAEoCRINCgV3aWR0aBgEIAEoDRIOCgZoZWlnaHQYBSABKA0iXAoVRXh0cmFjdEZyYW1lc1Jlc3BvbnNlEi0KBmZyYW1lcxgBIAMoCzIdLmNvbnRhaW5lcnMudjEuRXh0cmFjdGVkRnJhbWUSFAoMY29udGVudF90eXBlGAIgASgJKmUKCFBsYXRmb3JtEhgKFFBMQVRGT1JNX1VOU1BFQ0lGSUVEEAASFAoQUExBVEZPUk1fSUdfUkVFTBABEhQKEFBMQVRGT1JNX0ZCX1JFRUwQAhITCg9QTEFURk9STV9USUtUT0sQAyprCghSMkJ1Y2tldBIZChVSMl9CVUNLRVRfVU5TUEVDSUZJRUQQABIVChFSMl9CVUNLRVRfREVGQVVMVBABEhcKE1IyX0JVQ0tFVF9SRUZFUkVOQ0UQAhIUChBSMl9CVUNLRVRfUFVCTElDEAMy4AQKEENvbnRhaW5lclNlcnZpY2USPwoEUGluZxIaLmNvbnRhaW5lcnMudjEuUGluZ1JlcXVlc3QaGy5jb250YWluZXJzLnYxLlBpbmdSZXNwb25zZRJUCgtSZXNpemVWaWRlbxIhLmNvbnRhaW5lcnMudjEuUmVzaXplVmlkZW9SZXF1ZXN0GiIuY29udGFpbmVycy52MS5SZXNpemVWaWRlb1Jlc3BvbnNlEk4KCVJ1bkZmbXBlZxIfLmNvbnRhaW5lcnMudjEuUnVuRmZtcGVnUmVxdWVzdBogLmNvbnRhaW5lcnMudjEuUnVuRmZtcGVnUmVzcG9uc2USUQoKUHJvYmVNZWRpYRIgLmNvbnRhaW5lcnMudjEuUHJvYmVNZWRpYVJlcXVlc3QaIS5jb250YWluZXJzLnYxLlByb2JlTWVkaWFSZXNwb25zZRJdCg5UcmFuc2NvZGVWaWRlbxIkLmNvbnRhaW5lcnMudjEuVHJhbnNjb2RlVmlkZW9SZXF1ZXN0GiUuY29udGFpbmVycy52MS5UcmFuc2NvZGVWaWRlb1Jlc3BvbnNlElcKDEJ1cm5TdWJ0aXRsZRIiLmNvbnRhaW5lcnMudjEuQnVyblN1YnRpdGxlUmVxdWVzdBojLmNvbnRhaW5lcnMudjEuQnVyblN1YnRpdGxlUmVzcG9uc2USWgoNRXh0cmFjdEZyYW1lcxIjLmNvbnRhaW5lcnMudjEuRXh0cmFjdEZyYW1lc1JlcXVlc3QaJC5jb250YWluZXJzLnYxLkV4dHJhY3RGcmFtZXNSZXNwb25zZUIlWiNtYWluL2dlbi9jb250YWluZXJzL3YxO2NvbnRhaW5lcnN2MWIGcHJvdG8z",
   );
 
 /**
@@ -345,6 +345,131 @@ export const BurnSubtitleResponseSchema: GenMessage<BurnSubtitleResponse> =
   messageDesc(file_containers_v1_container, 11);
 
 /**
+ * @generated from message containers.v1.ExtractFramesRequest
+ */
+export type ExtractFramesRequest =
+  Message<"containers.v1.ExtractFramesRequest"> & {
+    /**
+     * @generated from field: string video_url = 1;
+     */
+    videoUrl: string;
+
+    /**
+     * Timestamps to extract (in seconds). If empty, extracts at 0.5s
+     *
+     * @generated from field: repeated float timestamps = 2;
+     */
+    timestamps: number[];
+
+    /**
+     * Alternative: extract N frames evenly distributed across video duration
+     * If set, overrides timestamps field
+     *
+     * @generated from field: optional uint32 frame_count = 3;
+     */
+    frameCount?: number;
+
+    /**
+     * Output path prefix in R2 (e.g., "videos/abc123/")
+     * Frame files will be named: {prefix}frame_0.jpg, {prefix}frame_1.jpg, etc.
+     *
+     * @generated from field: string output_prefix = 4;
+     */
+    outputPrefix: string;
+
+    /**
+     * Custom filename for single frame extraction (default: "frame_0.jpg")
+     *
+     * @generated from field: optional string output_filename = 5;
+     */
+    outputFilename?: string;
+
+    /**
+     * Target bucket
+     *
+     * @generated from field: containers.v1.R2Bucket bucket = 6;
+     */
+    bucket: R2Bucket;
+
+    /**
+     * JPEG quality (1-31, lower is better, default: 2)
+     *
+     * @generated from field: optional uint32 quality = 7;
+     */
+    quality?: number;
+  };
+
+/**
+ * Describes the message containers.v1.ExtractFramesRequest.
+ * Use `create(ExtractFramesRequestSchema)` to create a new message.
+ */
+export const ExtractFramesRequestSchema: GenMessage<ExtractFramesRequest> =
+  /*@__PURE__*/
+  messageDesc(file_containers_v1_container, 12);
+
+/**
+ * @generated from message containers.v1.ExtractedFrame
+ */
+export type ExtractedFrame = Message<"containers.v1.ExtractedFrame"> & {
+  /**
+   * @generated from field: float timestamp = 1;
+   */
+  timestamp: number;
+
+  /**
+   * @generated from field: string r2_url = 2;
+   */
+  r2Url: string;
+
+  /**
+   * @generated from field: string r2_key = 3;
+   */
+  r2Key: string;
+
+  /**
+   * @generated from field: uint32 width = 4;
+   */
+  width: number;
+
+  /**
+   * @generated from field: uint32 height = 5;
+   */
+  height: number;
+};
+
+/**
+ * Describes the message containers.v1.ExtractedFrame.
+ * Use `create(ExtractedFrameSchema)` to create a new message.
+ */
+export const ExtractedFrameSchema: GenMessage<ExtractedFrame> =
+  /*@__PURE__*/
+  messageDesc(file_containers_v1_container, 13);
+
+/**
+ * @generated from message containers.v1.ExtractFramesResponse
+ */
+export type ExtractFramesResponse =
+  Message<"containers.v1.ExtractFramesResponse"> & {
+    /**
+     * @generated from field: repeated containers.v1.ExtractedFrame frames = 1;
+     */
+    frames: ExtractedFrame[];
+
+    /**
+     * @generated from field: string content_type = 2;
+     */
+    contentType: string;
+  };
+
+/**
+ * Describes the message containers.v1.ExtractFramesResponse.
+ * Use `create(ExtractFramesResponseSchema)` to create a new message.
+ */
+export const ExtractFramesResponseSchema: GenMessage<ExtractFramesResponse> =
+  /*@__PURE__*/
+  messageDesc(file_containers_v1_container, 14);
+
+/**
  * @generated from enum containers.v1.Platform
  */
 export enum Platform {
@@ -375,6 +500,48 @@ export enum Platform {
 export const PlatformSchema: GenEnum<Platform> =
   /*@__PURE__*/
   enumDesc(file_containers_v1_container, 0);
+
+/**
+ * Target R2 bucket for uploads
+ *
+ * @generated from enum containers.v1.R2Bucket
+ */
+export enum R2Bucket {
+  /**
+   * Default: openpromo-bucket
+   *
+   * @generated from enum value: R2_BUCKET_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * openpromo-bucket
+   *
+   * @generated from enum value: R2_BUCKET_DEFAULT = 1;
+   */
+  DEFAULT = 1,
+
+  /**
+   * openpromo-reference
+   *
+   * @generated from enum value: R2_BUCKET_REFERENCE = 2;
+   */
+  REFERENCE = 2,
+
+  /**
+   * public bucket
+   *
+   * @generated from enum value: R2_BUCKET_PUBLIC = 3;
+   */
+  PUBLIC = 3,
+}
+
+/**
+ * Describes the enum containers.v1.R2Bucket.
+ */
+export const R2BucketSchema: GenEnum<R2Bucket> =
+  /*@__PURE__*/
+  enumDesc(file_containers_v1_container, 1);
 
 /**
  * ContainerService exposes RPCs from the Worker to the container runtime.
@@ -441,5 +608,15 @@ export const ContainerService: GenService<{
     methodKind: "unary";
     input: typeof BurnSubtitleRequestSchema;
     output: typeof BurnSubtitleResponseSchema;
+  };
+  /**
+   * Extract one or more frames from a video as JPEG images.
+   *
+   * @generated from rpc containers.v1.ContainerService.ExtractFrames
+   */
+  extractFrames: {
+    methodKind: "unary";
+    input: typeof ExtractFramesRequestSchema;
+    output: typeof ExtractFramesResponseSchema;
   };
 }> = /*@__PURE__*/ serviceDesc(file_containers_v1_container, 0);

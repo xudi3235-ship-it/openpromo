@@ -154,6 +154,52 @@ func (containerServiceServer) BurnSubtitle(ctx context.Context, req *connect.Req
 	return resp, nil
 }
 
+func (containerServiceServer) ExtractFrames(ctx context.Context, req *connect.Request[containersv1.ExtractFramesRequest]) (*connect.Response[containersv1.ExtractFramesResponse], error) {
+	result, err := extractFrames(ctx, req.Msg)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("frame extraction failed: %w", err))
+	}
+	defer os.RemoveAll(result.workDir)
+
+	// Create uploader for target bucket
+	uploader, err := newR2UploaderForBucket(ctx, req.Msg.GetBucket())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 init failed: %w", err))
+	}
+
+	// Upload each frame
+	extractedFrames := make([]*containersv1.ExtractedFrame, 0, len(result.frames))
+	for i, frame := range result.frames {
+		filename := filepath.Base(frame.outputPath)
+		key := filepath.Join(req.Msg.GetOutputPrefix(), filename)
+
+		// Use appropriate TTL based on bucket (reference = permanent, others = 1 week)
+		ttl := TTL1Week
+		if req.Msg.GetBucket() == containersv1.R2Bucket_R2_BUCKET_REFERENCE {
+			ttl = TTL1Month * 12 // ~1 year for reference content
+		}
+
+		uploadRes, err := uploader.uploadFile(ctx, frame.outputPath, key, result.contentType, ttl)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("r2 upload failed for frame %d: %w", i, err))
+		}
+
+		extractedFrames = append(extractedFrames, &containersv1.ExtractedFrame{
+			Timestamp: frame.timestamp,
+			R2Url:     sanitizeURL(uploadRes.URL),
+			R2Key:     uploadRes.Key,
+			Width:     frame.width,
+			Height:    frame.height,
+		})
+	}
+
+	resp := connect.NewResponse(&containersv1.ExtractFramesResponse{
+		Frames:      extractedFrames,
+		ContentType: result.contentType,
+	})
+	return resp, nil
+}
+
 func newConnectHandler() (string, http.Handler) {
 	return containersv1connect.NewContainerServiceHandler(containerServiceServer{})
 }

@@ -1,4 +1,5 @@
 import { openai } from "@ai-sdk/openai";
+import { R2Bucket } from "@core/containers";
 import { Binding } from "@core/helpers/api-env";
 import { Storage } from "@core/helpers/storage";
 import { Log } from "@core/utils/log";
@@ -21,6 +22,7 @@ const PATHS = {
   imageMetadata: (id: string) => `images/${id}/metadata.json`,
   videoMetadata: (id: string) => `videos/${id}/metadata.json`,
   videoSpec: (id: string) => `videos/${id}/spec.txt`,
+  videoThumbnail: (id: string) => `videos/${id}/thumbnail.jpg`,
 } as const;
 
 /**
@@ -80,6 +82,7 @@ export interface VideoReferenceResult extends ReferenceSearchResult {
     isReusable: boolean;
     reasoning: string;
   };
+  thumbnailUrl?: string;
 }
 
 /**
@@ -390,6 +393,28 @@ export namespace ReferenceSearch {
       duration: analysis.duration,
       audioReusable: analysis.audio.isReusable,
     });
+
+    // Generate thumbnail (soft fail - don't block processing)
+    try {
+      const container = env.ContainerBackend.getByName("default");
+      const presignedUrl = await Storage.getPresignedUrl(
+        PATHS.video(hash),
+        REFERENCE_BUCKET,
+        { expiresIn: 3600 },
+      );
+
+      await container.extractFrames({
+        videoUrl: presignedUrl,
+        timestamps: [0.5], // First second - captures the hook/opening
+        outputPrefix: `videos/${hash}/`,
+        outputFilename: "thumbnail.jpg",
+        bucket: R2Bucket.REFERENCE,
+      });
+
+      log.info("thumbnail generated", { hash });
+    } catch (err) {
+      log.warn("thumbnail generation failed, continuing", { hash, error: err });
+    }
   }
 
   /**
@@ -670,6 +695,15 @@ export namespace ReferenceSearch {
     const specObj = await env.ReferenceBucket.get(PATHS.videoSpec(videoId));
     const blueprint = specObj ? await specObj.text() : "";
 
+    // Check if thumbnail exists and get presigned URL
+    const thumbnailKey = PATHS.videoThumbnail(videoId);
+    const thumbnailExists = await env.ReferenceBucket.head(thumbnailKey);
+    const thumbnailUrl = thumbnailExists
+      ? await Storage.getPresignedUrl(thumbnailKey, REFERENCE_BUCKET, {
+          expiresIn: 3600,
+        })
+      : undefined;
+
     return {
       id: videoId,
       score: 1,
@@ -687,6 +721,7 @@ export namespace ReferenceSearch {
         isReusable: false,
         reasoning: "",
       },
+      thumbnailUrl,
     };
   }
 
