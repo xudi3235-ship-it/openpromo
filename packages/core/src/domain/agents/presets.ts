@@ -1,5 +1,7 @@
 import { Binding } from "@core/helpers/api-env";
+import type { AgentInputItem } from "@openai/agents";
 import { ReferenceSearch } from "../reference/reference-search";
+import { downloadImagesToTmp } from "./utils";
 
 const CACHE_KEY_PREFIX = "presets:";
 const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours (presigned URLs expire)
@@ -117,21 +119,54 @@ export namespace Presets {
       return references;
     }
 
-    /**
-     * Get a single reference by ID.
-     */
-    async getByID(id: string): Promise<Reference | null> {
-      const result = await ReferenceSearch.getById(id);
-      if (!result) return null;
+    async getByIDToAgentInput(id: string): Promise<AgentInputItem[]> {
+      const ref = await ReferenceSearch.getById(id);
 
-      return {
-        id: result.id,
-        type: result.type,
-        url: await ReferenceSearch.getPresignedUrlFromResult(result),
-        description: result.description,
-        keywords: result.keywords,
-        industries: result.industries,
-      };
+      if (!ref) {
+        throw new Error(`Preset reference not found: ${id}`);
+      }
+      const msgs: AgentInputItem[] = [];
+
+      if (ref.type === "image") {
+        const imgUrl = await ReferenceSearch.getPresignedUrlFromResult(ref);
+        const refLocalPaths = await downloadImagesToTmp(
+          [imgUrl],
+          "/tmp/reference",
+        );
+        msgs.push({
+          role: "user",
+          content: [
+            {
+              type: "input_text" as const,
+              text: `User selected a reference image as directional inspiration. ref: ${JSON.stringify(ref)}.
+                  
+                  Refernce images downloaded to /tmp/reference. Local path: ${refLocalPaths.join(", ")}
+                  `,
+            },
+            {
+              type: "input_image" as const,
+              image: imgUrl,
+            },
+          ],
+        });
+      } else if (ref.type === "video") {
+        // load the metadata + spec.txt
+        const video = await ReferenceSearch.getVideoReference(id);
+        msgs.push({
+          role: "user",
+          content: [
+            {
+              type: "input_text" as const,
+              text: `User selected a reference image as directional inspiration. ref: ${JSON.stringify(video)}.
+                `,
+            },
+          ],
+        });
+      } else {
+        throw new Error(`Unsupported preset reference type: ${ref.type}`);
+      }
+
+      return msgs;
     }
 
     /**
