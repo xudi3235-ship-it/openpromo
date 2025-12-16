@@ -149,16 +149,6 @@ export function buildSystemPrompt(context?: VideoGenAgentContext): string {
     * any items annotated with CRITICAL, MUST FOLLOW, ALWAYS, need to be strictly followed.
     </scope>
 
-    <archetype_application>
-    ${PromptFragments.videoArchetypes}
-
-    **MANDATORY: Before generating any video:**
-    1. Identify which archetype applies to this task from the orchestrator's description
-    2. State the archetype in your reasoning (e.g., "This is a UGC/Testimonial style video")
-    3. Apply ALL constraints from that archetype (visual style, audio, pacing, must-haves)
-    4. Verify keyframes match archetype requirements before proceeding
-    </archetype_application>
-
     <preset_adherence>
     When a preset blueprint is provided in your task context:
 
