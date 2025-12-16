@@ -2,7 +2,7 @@ packages:
   - packages/*
 
 catalog:
-  '@openai/agents': ^0.3.4
+  '@openai/agents': ^0.3.5
   '@orpc/client': ^1.12.3
   '@orpc/openapi': ^1.12.3
   '@orpc/server': ^1.12.3
@@ -19,9 +19,9 @@ catalog:
   lucide-react: 0.561.0
   react: 19.2.3
   react-dom: 19.2.3
-  vite: 7.2.7
+  vite: 7.3.0
   wrangler: 4.54.0
-  zod: 4.1.13
+  zod: 4.2.1
 
 onlyBuiltDependencies:
   - '@parcel/watcher'
