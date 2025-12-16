@@ -10,6 +10,8 @@ import { ConversationSplitLayout } from "./conversation-split-layout";
 export function InboxConversationDetailV2() {
   const { conversationId } = Route.useParams();
   const hasInitializedMessagesRef = useRef<Record<string, boolean>>({});
+  // Track last synced message IDs to avoid unnecessary syncs
+  const lastSyncedMessageIdsRef = useRef<Record<string, string>>({});
 
   const syncMessagesFromQuery = useInboxStore(
     (state) => state.syncMessagesFromQuery,
@@ -23,9 +25,6 @@ export function InboxConversationDetailV2() {
   const conversationQuery = useInboxConversationQuery(conversationId);
 
   const messagesQuery = useInboxMessagesInfiniteQuery(conversationId, 50);
-
-  const allMessages =
-    messagesQuery.data?.pages.flatMap((page) => page.items) ?? [];
 
   useEffect(() => {
     if (!conversationId) return;
@@ -53,6 +52,24 @@ export function InboxConversationDetailV2() {
       hasInitializedMessagesRef.current[conversationId] = true;
     }
 
+    const allMessages =
+      messagesQuery.data.pages.flatMap((page) => page.items) ?? [];
+
+    // Create a hash of message IDs to detect if data actually changed
+    // This prevents unnecessary syncs that might overwrite WebSocket updates
+    const messageIdsHash = allMessages
+      .map((m) => m.id)
+      .sort()
+      .join(",");
+
+    const lastSyncedHash = lastSyncedMessageIdsRef.current[conversationId];
+
+    // Skip sync if message IDs haven't changed (avoid overwriting WebSocket updates)
+    // But always sync on initial load
+    if (!isInitialLoad && lastSyncedHash === messageIdsHash) {
+      return;
+    }
+
     syncMessagesFromQuery({
       conversationId,
       items: allMessages,
@@ -62,13 +79,26 @@ export function InboxConversationDetailV2() {
       hasNextPage: Boolean(messagesQuery.hasNextPage),
       isInitialLoad,
     });
+
+    // Update the last synced hash
+    lastSyncedMessageIdsRef.current[conversationId] = messageIdsHash;
   }, [
     conversationId,
     messagesQuery.data,
     messagesQuery.hasNextPage,
-    allMessages,
     syncMessagesFromQuery,
   ]);
+
+  // Reset sync tracking when conversation changes
+  useEffect(() => {
+    if (
+      conversationId &&
+      lastSyncedMessageIdsRef.current[conversationId] === undefined
+    ) {
+      // Reset on conversation change
+      delete lastSyncedMessageIdsRef.current[conversationId];
+    }
+  }, [conversationId]);
 
   const messagesInitialLoading = messagesQuery.isPending;
   const messagesFetching = messagesQuery.isFetching;

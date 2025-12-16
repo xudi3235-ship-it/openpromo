@@ -33,43 +33,91 @@ export const instagramWebhooksRoute = new Hono<ApiEnv>()
     async (c) => {
       try {
         const body = (await c.req.json()) as IGWebhookPayload;
+        console.log("[IG Webhook] Received webhook", {
+          object: body.object,
+          entryCount: body.entry?.length ?? 0,
+          fullBody: JSON.stringify(body, null, 2),
+        });
+
         if (body.object !== "instagram") {
           return c.status(404);
         }
         for (const entry of body.entry) {
           const { id: igAccountId } = entry;
+          console.log("[IG Webhook] Processing entry", {
+            igAccountId,
+            hasMessaging: !!entry.messaging,
+            messagingCount: entry.messaging?.length ?? 0,
+            hasChanges: !!entry.changes,
+            changesCount: entry.changes?.length ?? 0,
+          });
+
           // 1. Resolve connected account
           const account = await ConnectedAccount.fromIGAccountID(igAccountId, {
             skipWorkspaceCheck: true,
           });
 
-          // 2. Handle DM events
+          // 2. Handle DM events (messaging array)
           if (entry.messaging && entry.messaging.length > 0) {
+            console.log("[IG Webhook] Handling messaging events", {
+              accountId: account.id,
+              count: entry.messaging.length,
+            });
             await handleInstagramDMEvents(entry.messaging, account);
           }
 
-          // 3. Handle comment and message change events
+          // 3. Handle comment and message change events (changes array)
           if ("changes" in entry && Array.isArray(entry.changes)) {
             const changes = entry.changes ?? [];
+            console.log("[IG Webhook] Processing changes", {
+              accountId: account.id,
+              changesCount: changes.length,
+              changeFields: changes.map((c: { field?: string }) => c.field),
+              rawChanges: JSON.stringify(changes, null, 2),
+            });
+
             const commentChanges = changes.filter(
               (change) => change.field === "comments",
             );
             if (commentChanges.length > 0) {
+              console.log("[IG Webhook] Handling comment changes", {
+                accountId: account.id,
+                count: commentChanges.length,
+              });
               await handleInstagramCommentChanges(commentChanges, account);
             }
+
             const messageChanges = changes.filter(
               (change) =>
                 change.field === "message_edit" ||
                 change.field === "message_reactions",
             );
             if (messageChanges.length > 0) {
+              console.log("[IG Webhook] Handling message changes", {
+                accountId: account.id,
+                count: messageChanges.length,
+                fields: messageChanges.map((c: { field?: string }) => c.field),
+                rawMessageChanges: JSON.stringify(messageChanges, null, 2),
+              });
               await handleInstagramMessageChanges(messageChanges, account);
+            } else {
+              console.log("[IG Webhook] No message changes found", {
+                accountId: account.id,
+                allChangeFields: changes.map(
+                  (c: { field?: string }) => c.field,
+                ),
+              });
             }
+          } else {
+            console.log("[IG Webhook] No changes array in entry", {
+              accountId: account.id,
+              entryKeys: Object.keys(entry),
+            });
           }
         }
         return c.status(200);
       } catch (error) {
-        console.error(error);
+        console.error("[IG Webhook] Error processing webhook", error);
         return c.status(500);
       }
     },

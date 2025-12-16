@@ -35,6 +35,7 @@ export function InboxDMPanel({
           contactAvatarUrl={contactAvatarUrl}
           selfName={selfName}
           selfAvatarUrl={selfAvatarUrl}
+          conversationPlatform={conversation.platform}
         />
         <ScrollBar orientation="vertical" />
       </ScrollArea>

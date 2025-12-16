@@ -1,5 +1,6 @@
 import type { InferRouterInputs, InferRouterOutputs } from "@orpc/server";
 import { orpcBuilder } from "../../context";
+import { addReaction } from "./add-reaction";
 import {
   assignConversation,
   createNote,
@@ -16,6 +17,7 @@ import { getUnreadCount } from "./get-unread-count";
 import { listConversations } from "./list-conversations";
 import { listMessages } from "./list-messages";
 import { markConversationRead, markConversationUnread } from "./mark-read";
+import { removeReaction } from "./remove-reaction";
 import { sendMessage } from "./send-message";
 
 export const inboxRouter = orpcBuilder.router({
@@ -35,6 +37,8 @@ export const inboxRouter = orpcBuilder.router({
   markConversationRead,
   markConversationUnread,
   getUnreadCount,
+  addReaction,
+  removeReaction,
 });
 
 export type InboxRouterInputs = InferRouterInputs<typeof inboxRouter>;

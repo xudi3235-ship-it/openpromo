@@ -256,6 +256,50 @@ async function handleNewMessage(
     url: a.payload.url,
   }));
 
+  const metadata: Record<string, unknown> = {};
+
+  if (message.reply_to?.mid) {
+    console.info("[FB DM] Found reply_to in payload", {
+      mid: message.mid,
+      replyToMid: message.reply_to.mid,
+    });
+    const dbClient = db();
+    const [replyToMessage] = await dbClient
+      .select({ id: inboxMessagesTable.id })
+      .from(inboxMessagesTable)
+      .where(
+        and(
+          eq(inboxMessagesTable.externalId, message.reply_to.mid),
+          eq(inboxMessagesTable.inboxConversationId, conversation.id),
+        ),
+      )
+      .limit(1);
+
+    if (replyToMessage) {
+      console.info("[FB DM] Resolved reply_to message", {
+        mid: message.mid,
+        replyToMid: message.reply_to.mid,
+        internalId: replyToMessage.id,
+      });
+      if (!metadata.extra) {
+        metadata.extra = {};
+      }
+      (metadata.extra as Record<string, unknown>).replyToMessageId =
+        replyToMessage.id;
+    } else {
+      console.warn("[FB DM] Failed to resolve reply_to message", {
+        mid: message.mid,
+        replyToMid: message.reply_to.mid,
+        conversationId: conversation.id,
+      });
+    }
+  } else {
+    console.info("[FB DM] No reply_to in payload", {
+      mid: message.mid,
+      isEcho: message.is_echo,
+    });
+  }
+
   await InboxService.upsertMessage({
     inboxConversationId: conversation.id,
     externalId: message.mid,
@@ -265,6 +309,7 @@ async function handleNewMessage(
     sender: message.is_echo ? "self" : "user",
     workspaceId: account.workspaceId,
     channel: conversation.channel,
+    metadata,
   });
 
   const event = createWorkspaceEvent(InboxRealtimeEventTypes.MessageUpserted, {
@@ -278,7 +323,7 @@ async function handleNewMessage(
       createdAt: new Date(timestamp),
       channel: conversation.channel,
       contentId: null,
-      metadata: {},
+      metadata,
     },
   });
 

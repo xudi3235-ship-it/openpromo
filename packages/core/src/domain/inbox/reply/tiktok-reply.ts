@@ -2,7 +2,7 @@ import { TikTokBusinessAPIClient } from "@core/domain/content/entity/tiktok/busi
 import { UnifiedContent } from "@core/domain/content/unified-content";
 import { getChannelMetadata } from "@core/domain/inbox/message-metadata";
 import { ErrorCodes, VisibleError } from "@core/utils/error";
-import type { InboxMessageMetadata } from "@shared/inbox";
+import type { InboxAttachment, InboxMessageMetadata } from "@shared/inbox";
 import type { CommentReplyContext, CommentReplyTarget } from "./types";
 
 function extractString(
@@ -47,12 +47,21 @@ export namespace TikTokReply {
     context: CommentReplyContext,
     target: CommentReplyTarget,
     text: string,
+    attachments: InboxAttachment[] = [],
   ) {
     if (context.platform !== "TIKTOK") {
       throw new VisibleError(
         "validation",
         ErrorCodes.Validation.INVALID_STATE,
         "TikTokReply invoked for non-TikTok platform.",
+      );
+    }
+
+    if (attachments.length > 0) {
+      throw new VisibleError(
+        "validation",
+        ErrorCodes.Validation.INVALID_STATE,
+        "Attachments are not supported for TikTok comment replies.",
       );
     }
 

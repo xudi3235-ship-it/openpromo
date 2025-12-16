@@ -73,6 +73,26 @@ export async function instagramGraphRequest<T = unknown>(
     }
   }
 
+  // Create request body string for logging
+  const requestBodyString = body ? JSON.stringify(body, null, 2) : null;
+
+  // Create sanitized URL for logging (hide access_token)
+  const sanitizedUrl = new URL(url.toString());
+  sanitizedUrl.searchParams.set("access_token", "***REDACTED***");
+
+  // Log full request details before sending
+  log.info("instagram graph request - full request details", {
+    method,
+    path,
+    url: sanitizedUrl.toString(),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ***REDACTED***`,
+    },
+    body: requestBodyString,
+    bodySize: requestBodyString?.length ?? 0,
+  });
+
   const response = await fetchWithRateLimit(
     ctx.rateLimitKey,
     () =>
@@ -90,28 +110,55 @@ export async function instagramGraphRequest<T = unknown>(
     },
   );
 
-  log.info("instagram graph request", {
-    url: url.toString(),
+  log.info("instagram graph request - response received", {
+    url: sanitizedUrl.toString(),
     method,
     status: response.status,
     statusText: response.statusText,
   });
 
   if (!response.ok) {
-    const error = facebookGraphErrorSchema.parse(await response.json());
-    log.warn("instagram graph request failed", {
+    const errorResponseText = await response.text();
+    let errorResponse: unknown;
+    try {
+      errorResponse = JSON.parse(errorResponseText);
+    } catch {
+      errorResponse = errorResponseText;
+    }
+
+    const error = facebookGraphErrorSchema.parse(errorResponse);
+
+    // Log full error details
+    log.warn("instagram graph request failed - full error details", {
       path,
       method,
+      requestUrl: sanitizedUrl.toString(),
+      requestBody: requestBodyString,
       status: response.status,
       statusText: response.statusText,
-      body: JSON.stringify(error),
+      errorResponse:
+        typeof errorResponse === "string"
+          ? errorResponse
+          : JSON.stringify(errorResponse, null, 2),
+      errorCode: error.error.code,
+      errorType: error.error.type,
+      errorMessage: error.error.message,
     });
-    throw new FacebookGraphError(
+
+    const graphError = new FacebookGraphError(
       error.error.message ?? response.statusText,
       error.error.code,
       error.error.type,
     );
+
+    log.error(graphError);
+    throw graphError;
   }
 
-  return (await response.json()) as T;
+  const responseText = await response.text();
+  try {
+    return JSON.parse(responseText) as T;
+  } catch {
+    return responseText as T;
+  }
 }

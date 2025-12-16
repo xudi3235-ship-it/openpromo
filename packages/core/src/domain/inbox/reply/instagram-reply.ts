@@ -17,11 +17,87 @@ export namespace InstagramReply {
   export async function sendDM(
     context: DMReplyContext,
     payload: DMReplyPayload,
-  ) {
+  ): Promise<{ mid: string }[]> {
     console.info("[Instagram Reply][DM] sending message", {
       conversationId: context.conversationId,
       connectedAccountId: context.connectedAccountId,
     });
+
+    const hasAttachments = payload.attachments.length > 0;
+    const hasText = payload.text && payload.text.trim().length > 0;
+
+    const sentMessages: { mid: string }[] = [];
+
+    // Split message if both text and attachments are present
+    // Instagram API likely has similar constraints or it's safer to align behavior
+    if (hasAttachments && hasText) {
+      // 1. Send Attachment
+      const attachmentPayload = buildMessagePayload(payload.attachments, null);
+      const attachmentBody: Record<string, unknown> = {
+        recipient: { id: context.contactExternalId },
+        message: attachmentPayload,
+      };
+
+      // Instagram API doesn't support reply_to with attachments
+      // Skip reply_to for attachment message
+      if (payload.replyToMessageId) {
+        console.warn(
+          "[Instagram Reply][DM] Skipping reply_to for attachment message",
+          {
+            replyToMid: payload.replyToMessageId,
+            reason: "Instagram API doesn't support reply_to with attachments",
+          },
+        );
+      }
+
+      const attachmentResponse = await instagramGraphRequest<{
+        recipient_id: string;
+        message_id: string;
+      }>(
+        {
+          accessToken: context.accessToken,
+          rateLimitKey: `instagram:${context.connectedAccountId}`,
+        },
+        "/me/messages",
+        {
+          method: "POST",
+          body: attachmentBody,
+        },
+      );
+      sentMessages.push({ mid: attachmentResponse.message_id });
+
+      // 2. Send Text (with reply_to if available)
+      const textPayload = buildMessagePayload([], payload.text);
+      const textBody: Record<string, unknown> = {
+        recipient: { id: context.contactExternalId },
+        message: textPayload,
+      };
+
+      // Add reply_to to text message (Instagram supports this)
+      if (payload.replyToMessageId) {
+        textBody.reply_to = { mid: payload.replyToMessageId };
+        console.info("[Instagram Reply][DM] Adding reply_to to text message", {
+          replyToMid: payload.replyToMessageId,
+        });
+      }
+
+      const textResponse = await instagramGraphRequest<{
+        recipient_id: string;
+        message_id: string;
+      }>(
+        {
+          accessToken: context.accessToken,
+          rateLimitKey: `instagram:${context.connectedAccountId}`,
+        },
+        "/me/messages",
+        {
+          method: "POST",
+          body: textBody,
+        },
+      );
+      sentMessages.push({ mid: textResponse.message_id });
+      return sentMessages;
+    }
 
     const messagePayload = buildMessagePayload(
       payload.attachments,
@@ -33,11 +109,36 @@ export namespace InstagramReply {
       message: messagePayload,
     };
 
-    if (payload.replyToMessageId) {
+    // Instagram API: reply_to can only be used with text messages, not attachments
+    // If we have attachments, skip reply_to to avoid "Invalid parameter" error
+    if (payload.replyToMessageId && payload.attachments.length === 0) {
       requestBody.reply_to = { mid: payload.replyToMessageId };
+      console.info("[Instagram Reply][DM] Adding reply_to", {
+        replyToMid: payload.replyToMessageId,
+        hasAttachments: false,
+      });
+    } else if (payload.replyToMessageId && payload.attachments.length > 0) {
+      console.warn(
+        "[Instagram Reply][DM] Skipping reply_to for attachment message",
+        {
+          replyToMid: payload.replyToMessageId,
+          hasAttachments: true,
+          reason: "Instagram API doesn't support reply_to with attachments",
+        },
+      );
     }
 
-    await instagramGraphRequest(
+    console.info("[Instagram Reply][DM] Request body", {
+      hasRecipient: !!requestBody.recipient,
+      hasMessage: !!requestBody.message,
+      hasReplyTo: !!requestBody.reply_to,
+      messageKeys: Object.keys(messagePayload),
+    });
+
+    const response = await instagramGraphRequest<{
+      recipient_id: string;
+      message_id: string;
+    }>(
       {
         accessToken: context.accessToken,
         rateLimitKey: `instagram:${context.connectedAccountId}`,
@@ -48,6 +149,8 @@ export namespace InstagramReply {
         body: requestBody,
       },
     );
+    sentMessages.push({ mid: response.message_id });
+    return sentMessages;
   }
 
   /**
@@ -62,7 +165,16 @@ export namespace InstagramReply {
     },
     target: CommentReplyTarget,
     text: string,
+    attachments: InboxAttachment[] = [],
   ) {
+    if (attachments.length > 0) {
+      throw new VisibleError(
+        "validation",
+        ErrorCodes.Validation.INVALID_STATE,
+        "Attachments are not supported for Instagram comment replies.",
+      );
+    }
+
     const endpointSuffix = target.type === "comment" ? "replies" : "comments";
 
     console.info("[Instagram Reply][Comment] replying to", {

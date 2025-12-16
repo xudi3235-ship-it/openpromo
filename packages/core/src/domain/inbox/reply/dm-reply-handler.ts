@@ -15,12 +15,10 @@ export namespace DMReplyHandler {
     try {
       switch (context.platform) {
         case "FACEBOOK":
-          await FacebookReply.sendDM(context, payload);
-          break;
+          return await FacebookReply.sendDM(context, payload);
 
         case "INSTAGRAM":
-          await InstagramReply.sendDM(context, payload);
-          break;
+          return await InstagramReply.sendDM(context, payload);
 
         default:
           throw new VisibleError(

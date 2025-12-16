@@ -1,10 +1,21 @@
+import { db } from "@core/database/db";
 import { instagramOAuthService } from "@core/domain/connected-account";
 import { InboxService } from "@core/domain/inbox";
+import { upsertReactionMetadata } from "@core/domain/inbox/message-metadata";
 import { dispatchWorkspaceEvent } from "@core/domain/workspace/realtime";
 import { Platform } from "@core/schemas/connected-account.sql";
+import {
+  type InboxChannel,
+  inboxConversationsTable,
+} from "@core/schemas/inbox-conversations.sql";
+import {
+  type InboxMessageMetadata,
+  inboxMessagesTable,
+} from "@core/schemas/inbox-messages.sql";
 import type { IGMessagePayload } from "@shared/inbox";
 import { InboxRealtimeEventTypes } from "@shared/inbox";
 import { createWorkspaceEvent } from "@shared/workspace/events";
+import { and, eq } from "drizzle-orm";
 
 type ConnectedAccount = Awaited<
   ReturnType<
@@ -45,10 +56,18 @@ async function processDMEvent(
     hasMessage: !!messaging.message,
     hasMessageEdit: !!messaging.message_edit,
     hasRead: !!messaging.read,
+    fullPayload: JSON.stringify(messaging, null, 2),
   });
 
-  const { sender, recipient, message, message_edit, read, timestamp } =
-    messaging;
+  const {
+    sender,
+    recipient,
+    message,
+    message_edit,
+    read,
+    reaction,
+    timestamp,
+  } = messaging;
 
   // Handle read receipt events
   if (read) {
@@ -57,9 +76,23 @@ async function processDMEvent(
     return;
   }
 
+  // Handle reaction events
+  if (reaction) {
+    console.log("[IG DM] Processing reaction event", {
+      accountId: account.id,
+      mid: reaction.mid,
+      action: reaction.action,
+      emoji: reaction.emoji,
+      reaction: reaction.reaction,
+    });
+    await handleMessageReaction(reaction, messaging, account, timestamp);
+    return;
+  }
+
   if (!message && !message_edit) {
     console.warn("[IG DM] Event missing both message and message_edit", {
       accountId: account.id,
+      fullPayload: JSON.stringify(messaging, null, 2),
     });
     return;
   }
@@ -109,6 +142,156 @@ async function processDMEvent(
   console.log("[IG DM] Step 4: Dispatching conversation event...");
   await dispatchConversationEvent(conversation.id, timestamp, contact, account);
   console.log("[IG DM] processDMEvent COMPLETED");
+}
+
+/**
+ * Handle message reaction event
+ */
+async function handleMessageReaction(
+  reactionData: NonNullable<IGMessagePayload["reaction"]>,
+  messaging: IGMessagePayload,
+  account: ConnectedAccount,
+  timestamp: number,
+): Promise<void> {
+  const { mid, action, reaction, emoji } = reactionData;
+  const actorId = messaging.sender.id;
+
+  console.log("[IG DM] handleMessageReaction START", {
+    accountId: account.id,
+    mid,
+    action,
+    emoji,
+    reaction,
+    actorId,
+  });
+
+  const dbClient = db();
+
+  // Find the message being reacted to
+  const record = await findMessageRecord(dbClient, account.id, mid);
+
+  if (!record) {
+    console.warn("[IG DM] Reaction received for non-existent message", {
+      accountId: account.id,
+      mid,
+      action,
+    });
+    return;
+  }
+
+  console.log("[IG DM] Message found for reaction", {
+    accountId: account.id,
+    mid,
+    conversationId: record.conversationId,
+    channel: record.channel,
+  });
+
+  const metadata: InboxMessageMetadata = {
+    ...(record.metadata ?? {}),
+  };
+
+  // Instagram reaction can be emoji or reaction string (like "like")
+  const reactionKey = emoji ?? reaction ?? "👍";
+  const isoTimestamp = new Date(timestamp).toISOString();
+
+  upsertReactionMetadata(metadata, record.channel, {
+    platform: "INSTAGRAM",
+    mid,
+    key: reactionKey,
+    action: action === "unreact" ? "removed" : "added",
+    actorId,
+    timestamp: isoTimestamp,
+    extras: {
+      emoji: emoji ?? reaction,
+      reaction: reaction,
+    },
+  });
+
+  await InboxService.upsertMessage({
+    inboxConversationId: record.conversationId,
+    externalId: mid,
+    text: record.text,
+    payload: messaging,
+    sender: record.sender,
+    workspaceId: account.workspaceId,
+    channel: record.channel,
+    contentId: record.contentId,
+    metadata,
+  });
+
+  const event = createWorkspaceEvent(InboxRealtimeEventTypes.MessageUpserted, {
+    conversationId: record.conversationId,
+    message: {
+      id: "",
+      externalId: mid,
+      sender: record.sender,
+      text: record.text,
+      attachments: [],
+      createdAt: new Date(),
+      channel: record.channel,
+      contentId: record.contentId,
+      metadata,
+    },
+  });
+
+  await dispatchWorkspaceEvent(account.workspaceId, event);
+
+  console.info("[IG DM] Message reaction updated", {
+    accountId: account.id,
+    conversationId: record.conversationId,
+    mid,
+    action,
+    reactionKey,
+    actorId,
+  });
+}
+
+/**
+ * Find message record by external ID
+ */
+async function findMessageRecord(
+  dbClient: ReturnType<typeof db>,
+  connectedAccountId: string,
+  externalId: string,
+): Promise<{
+  conversationId: string;
+  channel: InboxChannel;
+  sender: "user" | "self";
+  text: string | null;
+  metadata: InboxMessageMetadata;
+  contentId: string | null;
+} | null> {
+  const [row] = await dbClient
+    .select({
+      conversationId: inboxConversationsTable.id,
+      channel: inboxMessagesTable.channel,
+      sender: inboxMessagesTable.sender,
+      text: inboxMessagesTable.text,
+      metadata: inboxMessagesTable.metadata,
+      contentId: inboxMessagesTable.contentId,
+    })
+    .from(inboxMessagesTable)
+    .innerJoin(
+      inboxConversationsTable,
+      eq(inboxMessagesTable.inboxConversationId, inboxConversationsTable.id),
+    )
+    .where(
+      and(
+        eq(inboxMessagesTable.externalId, externalId),
+        eq(inboxConversationsTable.connectedAccountId, connectedAccountId),
+      ),
+    )
+    .limit(1);
+
+  if (!row) return null;
+  return {
+    conversationId: row.conversationId,
+    channel: row.channel,
+    sender: row.sender,
+    text: row.text,
+    metadata: (row.metadata ?? {}) as InboxMessageMetadata,
+    contentId: row.contentId,
+  };
 }
 
 /**
@@ -356,6 +539,80 @@ async function handleNewMessage(
 
   console.log("[IG DM] Attachments mapped", { count: attachments.length });
 
+  const metadata: Record<string, unknown> = {};
+
+  // reply_to can be at either message level or messaging level
+  // Check message.reply_to first (actual webhook format), then fallback to messaging.reply_to
+  let replyToMid: string | null = null;
+
+  console.log("[IG DM] Checking reply_to", {
+    messageId: message.mid,
+    hasMessageReplyTo: !!message.reply_to,
+    hasMessagingReplyTo: !!messaging.reply_to,
+  });
+
+  // First check message.reply_to (actual webhook format)
+  if (message.reply_to && "mid" in message.reply_to) {
+    replyToMid = message.reply_to.mid;
+    console.info("[IG DM] Found reply_to in message object", {
+      mid: message.mid,
+      replyToMid,
+    });
+  }
+
+  // Fallback to messaging.reply_to if not found in message
+  if (!replyToMid && messaging.reply_to) {
+    if ("mid" in messaging.reply_to) {
+      replyToMid = messaging.reply_to.mid;
+      console.info("[IG DM] Found reply_to in messaging object", {
+        mid: message.mid,
+        replyToMid,
+      });
+    }
+  }
+
+  if (replyToMid) {
+    console.info("[IG DM] Processing reply_to", {
+      mid: message.mid,
+      replyToMid,
+    });
+    const dbClient = db();
+    const [replyToMessage] = await dbClient
+      .select({ id: inboxMessagesTable.id })
+      .from(inboxMessagesTable)
+      .where(
+        and(
+          eq(inboxMessagesTable.externalId, replyToMid),
+          eq(inboxMessagesTable.inboxConversationId, conversation.id),
+        ),
+      )
+      .limit(1);
+
+    if (replyToMessage) {
+      console.info("[IG DM] Resolved reply_to message", {
+        mid: message.mid,
+        replyToMid,
+        internalId: replyToMessage.id,
+      });
+      if (!metadata.extra) {
+        metadata.extra = {};
+      }
+      (metadata.extra as Record<string, unknown>).replyToMessageId =
+        replyToMessage.id;
+    } else {
+      console.warn("[IG DM] Failed to resolve reply_to message", {
+        mid: message.mid,
+        replyToMid,
+        conversationId: conversation.id,
+      });
+    }
+  } else {
+    console.info("[IG DM] No reply_to in payload", {
+      mid: message.mid,
+      isEcho: message.is_echo,
+    });
+  }
+
   await InboxService.upsertMessage({
     inboxConversationId: conversation.id,
     externalId: message.mid,
@@ -365,6 +622,7 @@ async function handleNewMessage(
     sender: message.is_echo ? "self" : "user",
     workspaceId: account.workspaceId,
     channel: conversation.channel,
+    metadata,
   });
 
   console.log("[IG DM] Message upserted to DB");
@@ -380,7 +638,7 @@ async function handleNewMessage(
       createdAt: new Date(timestamp),
       channel: conversation.channel,
       contentId: null,
-      metadata: {},
+      metadata,
     },
   };
 

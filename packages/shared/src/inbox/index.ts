@@ -160,6 +160,11 @@ export const IGMessagePayload = z.object({
       is_echo: z.boolean().optional(),
       mid: z.string(),
       text: z.string().optional(),
+      reply_to: z
+        .object({
+          mid: z.string(),
+        })
+        .optional(),
       attachments: z
         .array(
           z.object({
@@ -184,6 +189,14 @@ export const IGMessagePayload = z.object({
       mid: z.string(),
       text: z.string(),
       num_edit: z.number(),
+    })
+    .optional(),
+  reaction: z
+    .object({
+      mid: z.string(),
+      action: z.enum(["react", "unreact"]),
+      emoji: z.string().optional(),
+      reaction: z.string().optional(),
     })
     .optional(),
   read: z
