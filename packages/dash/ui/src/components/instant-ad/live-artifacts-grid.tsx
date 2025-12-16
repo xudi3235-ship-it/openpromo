@@ -1,3 +1,8 @@
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@openpromo/ui/components/dialog";
 import { cn } from "@openpromo/ui/lib/utils";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -17,26 +22,6 @@ interface LiveArtifactsGridProps {
   className?: string;
 }
 
-// TODO: Remove after testing - hardcoded sample media for design iteration
-const DEBUG_ARTIFACTS = true;
-const SAMPLE_ARTIFACTS: Artifact[] = [
-  {
-    id: "sample-1",
-    imageUrl:
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=711&fit=crop",
-  },
-  {
-    id: "sample-2",
-    imageUrl:
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=711&fit=crop",
-  },
-  {
-    id: "sample-3",
-    imageUrl:
-      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=711&fit=crop",
-  },
-];
-
 // Shared card styles - 9:16 aspect ratio, responsive width
 const CARD_CLASS = "w-40 sm:w-48 aspect-[9/16] shrink-0 rounded-xl";
 
@@ -52,33 +37,28 @@ export function LiveArtifactsGrid({
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const [displayedLog, setDisplayedLog] = useState<string | undefined>();
   const [isLogVisible, setIsLogVisible] = useState(false);
+  const [previewArtifact, setPreviewArtifact] = useState<Artifact | null>(null);
   const prevArtifactsRef = useRef<string[]>([]);
-
-  // Debug: cycle through sample logs for testing
-  const debugLog = DEBUG_ARTIFACTS
-    ? (latestLog ?? "Analyzing product details...")
-    : latestLog;
 
   // Animate log transitions
   useEffect(() => {
-    if (debugLog && debugLog !== displayedLog) {
+    if (latestLog && latestLog !== displayedLog) {
       // Fade out
       setIsLogVisible(false);
       // After fade out, update text and fade in
       const timer = setTimeout(() => {
-        setDisplayedLog(debugLog);
+        setDisplayedLog(latestLog);
         setIsLogVisible(true);
       }, 150);
       return () => clearTimeout(timer);
     }
-  }, [debugLog, displayedLog]);
+  }, [latestLog, displayedLog]);
 
   const allArtifacts: Artifact[] = useMemo(() => {
-    const real = [
+    return [
       ...artifacts.videos.map((v) => ({ id: v.id, videoUrl: v.videoUrl })),
       ...artifacts.images.map((i) => ({ id: i.id, imageUrl: i.imageUrl })),
     ];
-    return DEBUG_ARTIFACTS && real.length === 0 ? SAMPLE_ARTIFACTS : real;
   }, [artifacts.videos, artifacts.images]);
 
   useEffect(() => {
@@ -135,6 +115,7 @@ export function LiveArtifactsGrid({
                     key={artifact.id}
                     artifact={artifact}
                     isNew={isNew}
+                    onClick={() => setPreviewArtifact(artifact)}
                   />
                 );
               })}
@@ -145,6 +126,12 @@ export function LiveArtifactsGrid({
           )}
         </div>
       </div>
+
+      {/* Preview Modal */}
+      <ArtifactPreviewModal
+        artifact={previewArtifact}
+        onClose={() => setPreviewArtifact(null)}
+      />
     </div>
   );
 }
@@ -155,19 +142,23 @@ export function LiveArtifactsGrid({
 function ArtifactCard({
   artifact,
   isNew,
+  onClick,
 }: {
   artifact: Artifact;
   isNew: boolean;
+  onClick: () => void;
 }) {
   const isVideo = !!artifact.videoUrl;
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
         CARD_CLASS,
         "relative overflow-hidden border bg-card",
         "transition-all duration-500 ease-in-out",
-        "hover:border-primary/30",
+        "hover:border-primary/30 hover:scale-[1.02]",
         "cursor-pointer group",
         isNew && "animate-in fade-in-50 duration-300",
       )}
@@ -198,7 +189,7 @@ function ArtifactCard({
           className="w-full h-full object-cover"
         />
       )}
-    </div>
+    </button>
   );
 }
 
@@ -217,5 +208,50 @@ function SkeletonCard() {
       <Loader2 className="w-6 h-6 text-muted-foreground/40 animate-spin" />
       <span className="text-xs text-muted-foreground/50">Generating</span>
     </div>
+  );
+}
+
+/**
+ * Full-screen preview modal for artifacts
+ */
+function ArtifactPreviewModal({
+  artifact,
+  onClose,
+}: {
+  artifact: Artifact | null;
+  onClose: () => void;
+}) {
+  if (!artifact) return null;
+
+  const isVideo = !!artifact.videoUrl;
+
+  return (
+    <Dialog open={!!artifact} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        className="max-w-4xl w-auto p-0 bg-black/95 border-none overflow-hidden"
+        overlayClassName="bg-black/80"
+      >
+        <DialogTitle className="sr-only">Artifact Preview</DialogTitle>
+        <div className="relative flex items-center justify-center min-h-[50vh] max-h-[85vh]">
+          {isVideo ? (
+            <video
+              src={artifact.videoUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              className="max-w-full max-h-[85vh] object-contain"
+            />
+          ) : (
+            <img
+              src={artifact.imageUrl}
+              alt="Generated content preview"
+              className="max-w-full max-h-[85vh] object-contain"
+            />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
