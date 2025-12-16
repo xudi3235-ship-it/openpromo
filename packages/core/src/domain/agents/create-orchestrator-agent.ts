@@ -99,7 +99,6 @@ Incorporate the video expert's recommendations into your plan, especially:
 
 ${PromptFragments.orchestrator}
 ${PromptFragments.handoffGuidance}
-${PromptFragments.videoArchetypes}
 
 <multi_segment_planning>
 **For videos >8s (multi-segment):**
