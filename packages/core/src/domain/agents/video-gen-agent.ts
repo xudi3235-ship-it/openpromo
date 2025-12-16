@@ -435,6 +435,94 @@ export class VideoGenAgent extends AIChatAgent<
           break;
         }
 
+        case "consult": {
+          // Orchestrator is consulting video_gen for expert advice before finalizing plan
+          const consultQuestion = decision.consultQuestion;
+          if (!consultQuestion) {
+            throw new Error("Consult decision missing consultQuestion");
+          }
+
+          this.log(`Consulting video_gen: ${consultQuestion}`);
+
+          try {
+            // Get video gen agent factory (consultation mode - no execution expected)
+            const agentFactory = AGENT_REGISTRY.video_gen;
+            const consultAgent = agentFactory();
+
+            // Setup hooks for consultation
+            setupAgentHooks(consultAgent, {
+              onAgentStart: (_ctx, agent) => {
+                this.log(`[Consult] ${agent.name} started`);
+              },
+              onAgentEnd: (_ctx, output) => {
+                this.log(`[Consult] ended`, output);
+              },
+            });
+
+            // Build consultation input - provide context for advice
+            const productInputs = await this.inputTransformer.fromProductImages(
+              this.state.input,
+            );
+
+            const consultInput: AgentInputItem[] = [
+              ...productInputs,
+              {
+                role: "system",
+                content: `<consultation_request>
+You are being consulted for expert advice BEFORE execution. Do NOT execute any tools.
+Provide structured advice based on the question below.
+
+Question from orchestrator:
+${consultQuestion}
+
+Input context:
+- Mode: ${this.state.input.mode}
+- Prompt: ${this.state.input.prompt}
+- Has reference images: ${this.state.input.referenceImages.length > 0}
+- Has avatar images: ${this.state.input.avatarImages.length > 0}
+
+Respond with structured advice including:
+1. Recommended tool(s) with reasoning
+2. Segment strategy (single shot vs multi-segment)
+3. Keyframe requirements (face constraints, composition)
+4. Warnings/constraints to consider
+</consultation_request>`,
+              },
+            ];
+
+            const consultResult = await run(consultAgent, consultInput, {
+              context: runtimeContext,
+              maxTurns: 1, // Single turn for consultation - no tool execution
+            });
+
+            // Feed advice back to orchestrator
+            currInput = [
+              ...orchestratorResult.history,
+              {
+                role: "system",
+                content: `Video expert consultation complete.
+Advice: ${JSON.stringify(consultResult.finalOutput)}
+
+Now finalize your plan incorporating this advice. Output a "plan" action.`,
+              },
+            ];
+          } catch (error) {
+            const errorMsg =
+              error instanceof Error ? error.message : String(error);
+            this.log(`Consultation failed: ${errorMsg}`);
+
+            // On consultation failure, proceed without advice
+            currInput = [
+              ...orchestratorResult.history,
+              {
+                role: "system",
+                content: `Consultation failed: ${errorMsg}. Proceed with plan using your best judgment.`,
+              },
+            ];
+          }
+          break;
+        }
+
         case "complete": {
           // Workflow finished successfully
           const output = decision.output;
