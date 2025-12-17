@@ -516,6 +516,7 @@ export namespace KieAI {
 
     export interface RunOptions {
       onPoll?: (attempt: number, maxAttempts: number) => void;
+      onTaskCreated?: (taskId: string) => void;
     }
 
     /**
@@ -545,6 +546,8 @@ export namespace KieAI {
       const taskId = task.data?.taskId;
       if (!taskId)
         throw new KieAIError(500, "No task ID returned from Sora2ImageToVideo");
+
+      options?.onTaskCreated?.(taskId);
 
       return await client.pollTaskUntilComplete(taskId, {
         logPrefix: "Sora2ImageToVideo",
@@ -1182,6 +1185,7 @@ export namespace KieAI {
       input: Input,
       opts?: {
         onPoll: (attempt: number, maxAttempts: number) => void;
+        onTaskCreated?: (taskId: string) => void;
       },
     ): Promise<string> {
       const parsed = schema.parse(input);
@@ -1199,6 +1203,7 @@ export namespace KieAI {
 
       const taskId = task.data?.taskId;
       if (!taskId) throw new KieAIError(500, "No task ID returned from Veo31");
+      opts?.onTaskCreated?.(taskId);
 
       return await client.pollVeo31UntilComplete(taskId, {
         logPrefix: "Veo31",

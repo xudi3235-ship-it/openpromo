@@ -24,7 +24,7 @@ import {
   type ToolOutputText,
   tool,
 } from "@openai/agents";
-import { getCurrentAgent } from "agents";
+// no need to grab current agent; use VideoGenAgent helper
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
 import { VideoGenAgent } from "../video-gen-agent";
@@ -165,18 +165,13 @@ Auto-saves generated images and returns the URL.`,
     // Download and save the image
     await downloadImage(imageUrl, outputPath);
 
-    // update agent state with artifacts
-    const { agent } = getCurrentAgent<VideoGenAgent>();
-    if (agent) {
-      agent.patchState((draft) => {
-        draft.artifacts.images.push({
-          id: `nano_banana_${Date.now()}`,
-          imageUrl,
-        });
-      });
-    } else {
-      console.warn("[nanoBanana] No current agent found to update state.");
-    }
+    // update agent state with artifacts via helper
+    VideoGenAgent.updateImageArtifact({
+      id: `nano_banana_${Date.now()}`,
+      imageUrl,
+      state: "ready",
+      progressPercent: 100,
+    });
 
     const textPart: ToolOutputText = {
       type: "text",

@@ -89,6 +89,7 @@ Rules:
       imageUrl = await uploadFile(client, inputImagePathOrUrl);
     }
 
+    let taskID: string | null = null;
     // Generate video using KieAI namespace
     const videoUrl = await KieAI.Sora2ImageToVideo.run(
       {
@@ -100,8 +101,25 @@ Rules:
         removeWatermark,
       },
       {
-        onPoll: (attempt, maxAttempts) => {
+        onTaskCreated: (taskId: string) => {
+          VideoGenAgent.updateVideoArtifact({
+            id: taskId,
+          });
+          taskID = taskId;
+        },
+        onPoll: (attempt: number, maxAttempts: number) => {
           VideoGenAgent.onProgressUpdate((draft) => {
+            const pct = Math.floor((attempt / maxAttempts) * 100);
+            const artifact = draft.artifacts.videos.find(
+              (a) => a.id === taskID,
+            );
+            if (!artifact) return;
+            draft.artifacts.videos.push({
+              videoUrl: "",
+              id: taskID as string,
+              state: "processing",
+              progressPercent: pct,
+            });
             draft.logs.push(
               `[sora2_pro_i2v] Polling attempt ${attempt} of ${maxAttempts}`,
             );
@@ -110,9 +128,16 @@ Rules:
       },
     );
 
-    // Update progress with artifact
-    VideoGenAgent.onProgressUpdate((draft) => {
-      draft.artifacts.videos.push({ videoUrl, id: videoUrl });
+    if (!taskID) {
+      throw new Error("Task ID not set during Sora 2 Pro I2V generation");
+    }
+
+    // mark ready
+    VideoGenAgent.updateVideoArtifact({
+      id: taskID,
+      videoUrl,
+      state: "ready",
+      progressPercent: 100,
     });
 
     // Download and save

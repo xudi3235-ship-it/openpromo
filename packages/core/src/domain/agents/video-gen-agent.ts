@@ -737,4 +737,72 @@ Now finalize your plan incorporating this advice. Output a "plan" action.`,
     const { agent } = getCurrentAgent<VideoGenAgent>();
     agent?.patchState(updater);
   }
+
+  /**
+   * Upsert or update a video artifact.
+   * - Matches existing artifact by `videoUrl` or `id`.
+   * - If found, merges provided fields; otherwise pushes a new artifact.
+   */
+  static updateVideoArtifact(opts: {
+    id: string;
+    videoUrl?: string;
+    state?: VideoGenRealtime.ServerAppState["artifacts"]["videos"][number]["state"];
+    progressPercent?: number | null;
+  }) {
+    const { agent } = getCurrentAgent<VideoGenAgent>();
+    agent?.patchState((draft) => {
+      if (!draft.artifacts) draft.artifacts = VideoGenRealtime.defaultArtifacts;
+      const artifact = draft.artifacts.videos.find(
+        (a) =>
+          (opts.videoUrl && a.videoUrl === opts.videoUrl) || a.id === opts.id,
+      );
+      if (artifact) {
+        if (opts.videoUrl !== undefined) artifact.videoUrl = opts.videoUrl;
+        if (opts.state !== undefined) artifact.state = opts.state;
+        if (opts.progressPercent !== undefined)
+          artifact.progressPercent = opts.progressPercent;
+      } else {
+        draft.artifacts.videos.push({
+          id: opts.id,
+          videoUrl: opts.videoUrl ?? "",
+          state: opts.state ?? "processing",
+          progressPercent: opts.progressPercent ?? null,
+        });
+      }
+      draft.lastUpdated = new Date().toISOString();
+    });
+  }
+
+  /**
+   * Upsert or update an image artifact.
+   */
+  static updateImageArtifact(opts: {
+    id: string;
+    imageUrl?: string;
+    state?: VideoGenRealtime.ServerAppState["artifacts"]["images"][number]["state"];
+    progressPercent?: number | null;
+  }) {
+    const { agent } = getCurrentAgent<VideoGenAgent>();
+    agent?.patchState((draft) => {
+      if (!draft.artifacts) draft.artifacts = VideoGenRealtime.defaultArtifacts;
+      const artifact = draft.artifacts.images.find(
+        (a) =>
+          (opts.imageUrl && a.imageUrl === opts.imageUrl) || a.id === opts.id,
+      );
+      if (artifact) {
+        if (opts.imageUrl !== undefined) artifact.imageUrl = opts.imageUrl;
+        if (opts.state !== undefined) artifact.state = opts.state;
+        if (opts.progressPercent !== undefined)
+          artifact.progressPercent = opts.progressPercent;
+      } else {
+        draft.artifacts.images.push({
+          id: opts.id,
+          imageUrl: opts.imageUrl ?? "",
+          state: opts.state ?? "processing",
+          progressPercent: opts.progressPercent ?? null,
+        });
+      }
+      draft.lastUpdated = new Date().toISOString();
+    });
+  }
 }

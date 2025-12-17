@@ -73,15 +73,20 @@ export namespace VideoGenRealtime {
     data: z.object({}).strict(),
   });
 
-  const Video = z.object({
+  const ArtifactBase = z.object({
     id: z.string(),
+    state: z.enum(["processing", "ready", "failed"]).default("processing"),
+    progressPercent: z.number().nullable().optional(),
+  });
+
+  const Video = ArtifactBase.extend({
     videoUrl: z.string(),
   });
 
-  const Image = z.object({
-    id: z.string(),
+  const Image = ArtifactBase.extend({
     imageUrl: z.string(),
   });
+
   export const defaultArtifacts = {
     images: [] as z.infer<typeof Image>[],
     videos: [] as z.infer<typeof Video>[],

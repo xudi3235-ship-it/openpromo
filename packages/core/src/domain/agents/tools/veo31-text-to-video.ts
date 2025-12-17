@@ -7,6 +7,7 @@ import { KieAI } from "@core/providers/kie-ai/models";
 import { tool } from "@openai/agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
+import { VideoGenAgent } from "../video-gen-agent";
 import { defaultVeo31Config, downloadVideo, Veo31ConfigSchema } from "./utils";
 
 const params = z.object({
@@ -47,13 +48,43 @@ Note: For product consistency, prefer veo31_reference_images_to_video instead.`,
     console.log(`[veo31_text_to_video] Config: ${JSON.stringify(cfg)}`);
 
     // Generate video via models API (handles task creation + polling)
-    const videoUrl = await KieAI.Veo31.run({
-      prompt,
-      aspectRatio: cfg.aspectRatio === "16:9" ? "16:9" : "9:16",
-      model: "veo3_fast",
+    const videoUrl = await KieAI.Veo31.run(
+      {
+        prompt,
+        aspectRatio: cfg.aspectRatio === "16:9" ? "16:9" : "9:16",
+        model: "veo3_fast",
+      },
+      {
+        onPoll: (attempt, maxAttempts) => {
+          const pct = Math.floor((attempt / maxAttempts) * 100);
+          VideoGenAgent.updateVideoArtifact({
+            id: videoUrl,
+            videoUrl,
+            state: "processing",
+            progressPercent: pct,
+          });
+        },
+        onTaskCreated(taskId) {
+          VideoGenAgent.updateVideoArtifact({
+            id: taskId,
+            videoUrl: "",
+            state: "processing",
+            progressPercent: null,
+          });
+          VideoGenAgent.onProgressUpdate((draft) => {
+            draft.logs.push(`Task created with ID: ${taskId}`);
+          });
+        },
+      },
+    );
+
+    VideoGenAgent.updateVideoArtifact({
+      id: videoUrl,
+      videoUrl,
+      state: "ready",
+      progressPercent: 100,
     });
 
-    // Download and save
     await downloadVideo(videoUrl, outputPath);
 
     return {

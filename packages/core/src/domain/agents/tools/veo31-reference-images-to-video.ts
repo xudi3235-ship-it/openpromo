@@ -7,6 +7,7 @@ import { KieAI } from "@core/providers/kie-ai/models";
 import { tool } from "@openai/agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
+import { VideoGenAgent } from "../video-gen-agent";
 import {
   defaultVeo31Config,
   downloadVideo,
@@ -72,15 +73,61 @@ NOTE: Provide local file paths - files will be uploaded automatically.`,
     const referenceImageUrls = await uploadFiles(client, referenceImagePaths);
 
     // Generate video via models API (handles task creation + polling)
-    const videoUrl = await KieAI.Veo31.run({
-      prompt,
-      imageUrls: referenceImageUrls,
-      generationType: "REFERENCE_2_VIDEO",
-      aspectRatio: "9:16",
-      model: "veo3_fast",
+    const videoUrl = await KieAI.Veo31.run(
+      {
+        prompt,
+        aspectRatio: cfg.aspectRatio,
+        model: "veo3_fast",
+        imageUrls: referenceImageUrls,
+      },
+      {
+        onPoll: (attempt: number, maxAttempts: number) => {
+          const pct = Math.floor((attempt / maxAttempts) * 100);
+          VideoGenAgent.updateVideoArtifact({
+            id: videoUrl,
+            videoUrl: "",
+            state: "processing",
+            progressPercent: pct,
+          });
+        },
+        onTaskCreated(taskId) {
+          VideoGenAgent.updateVideoArtifact({
+            id: taskId,
+            videoUrl: "",
+            state: "processing",
+            progressPercent: null,
+          });
+          VideoGenAgent.onProgressUpdate((draft) => {
+            draft.logs.push(`Task created with ID: ${taskId}`);
+          });
+        },
+      },
+    );
+
+    // mark ready and download
+    VideoGenAgent.onProgressUpdate((draft) => {
+      const artifact = draft.artifacts.videos.find(
+        (a) => a.videoUrl === videoUrl,
+      );
+      if (artifact) {
+        artifact.state = "ready";
+        artifact.progressPercent = 100;
+      } else {
+        draft.artifacts.videos.push({
+          videoUrl,
+          id: videoUrl,
+          state: "ready",
+          progressPercent: 100,
+        });
+      }
+    });
+    VideoGenAgent.updateVideoArtifact({
+      id: videoUrl,
+      videoUrl,
+      state: "ready",
+      progressPercent: 100,
     });
 
-    // Download and save
     await downloadVideo(videoUrl, outputPath);
 
     return {

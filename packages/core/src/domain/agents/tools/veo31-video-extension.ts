@@ -7,6 +7,7 @@ import { KieAI } from "@core/providers/kie-ai/models";
 import { tool } from "@openai/agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
+import { VideoGenAgent } from "../video-gen-agent";
 import { downloadVideo, probeDurationMs, Veo31ConfigSchema } from "./utils";
 
 const params = z.object({
@@ -42,13 +43,30 @@ Best for: making longer videos, continuing a scene, seamless extensions.`,
       `[veo31_video_extension] Extension prompt: ${prompt.slice(0, 100)}...`,
     );
 
+    // Create optimistic artifact entry for the extension task
+    VideoGenAgent.updateVideoArtifact({
+      id: inputVideoTaskId,
+      videoUrl: "",
+      state: "processing",
+      progressPercent: null,
+    });
+    VideoGenAgent.onProgressUpdate((draft) => {
+      draft.logs.push(`Extending task: ${inputVideoTaskId}`);
+    });
+
     // Extend via models API (handles task creation + polling)
     const videoUrl = await KieAI.Veo31.extend({
       taskId: inputVideoTaskId,
       prompt,
     });
 
-    // Download and save
+    VideoGenAgent.updateVideoArtifact({
+      id: videoUrl,
+      videoUrl,
+      state: "ready",
+      progressPercent: 100,
+    });
+
     const [_, durationMs] = await Promise.all([
       downloadVideo(videoUrl, outputPath),
       probeDurationMs(videoUrl),

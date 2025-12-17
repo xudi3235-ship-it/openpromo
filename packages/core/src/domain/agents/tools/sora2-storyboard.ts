@@ -124,7 +124,14 @@ NOTE: Provide local file paths for reference images - files will be uploaded aut
         imageUrls,
       },
       {
-        onPoll: (attempt, maxAttempts) => {
+        onPoll: (attempt: number, maxAttempts: number) => {
+          const pct = Math.floor((attempt / maxAttempts) * 100);
+          VideoGenAgent.updateVideoArtifact({
+            id: videoUrl,
+            videoUrl: "",
+            state: "processing",
+            progressPercent: pct,
+          });
           VideoGenAgent.onProgressUpdate((draft) => {
             draft.logs.push(
               `[sora2_storyboard] Polling attempt ${attempt} of ${maxAttempts}`,
@@ -133,6 +140,13 @@ NOTE: Provide local file paths for reference images - files will be uploaded aut
         },
       },
     );
+
+    VideoGenAgent.updateVideoArtifact({
+      id: videoUrl,
+      videoUrl,
+      state: "ready",
+      progressPercent: 100,
+    });
 
     // Download and save
     await downloadVideo(videoUrl, outputPath);
