@@ -1,6 +1,6 @@
 module main
 
-go 1.24.4
+go 1.25.4
 
 require (
 	connectrpc.com/connect v1.17.0

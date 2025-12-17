@@ -11,6 +11,14 @@ enum Platform {
   PLATFORM_TIKTOK = 3;
 }
 
+// Target R2 bucket for uploads
+enum R2Bucket {
+  R2_BUCKET_UNSPECIFIED = 0;  // Default: openpromo-bucket
+  R2_BUCKET_DEFAULT = 1;       // openpromo-bucket
+  R2_BUCKET_REFERENCE = 2;     // openpromo-reference
+  R2_BUCKET_PUBLIC = 3;        // public bucket
+}
+
 // ContainerService exposes RPCs from the Worker to the container runtime.
 service ContainerService {
   // Simple health check.
@@ -30,6 +38,9 @@ service ContainerService {
 
   // Burn ASS subtitles into a video.
   rpc BurnSubtitle(BurnSubtitleRequest) returns (BurnSubtitleResponse);
+
+  // Extract one or more frames from a video as JPEG images.
+  rpc ExtractFrames(ExtractFramesRequest) returns (ExtractFramesResponse);
 }
 
 message PingRequest {}
@@ -99,4 +110,41 @@ message BurnSubtitleRequest {
 message BurnSubtitleResponse {
   string output_url = 1;
   string r2_key = 2;
+}
+
+message ExtractFramesRequest {
+  string video_url = 1;
+
+  // Timestamps to extract (in seconds). If empty, extracts at 0.5s
+  repeated float timestamps = 2;
+
+  // Alternative: extract N frames evenly distributed across video duration
+  // If set, overrides timestamps field
+  optional uint32 frame_count = 3;
+
+  // Output path prefix in R2 (e.g., "videos/abc123/")
+  // Frame files will be named: {prefix}frame_0.jpg, {prefix}frame_1.jpg, etc.
+  string output_prefix = 4;
+
+  // Custom filename for single frame extraction (default: "frame_0.jpg")
+  optional string output_filename = 5;
+
+  // Target bucket
+  R2Bucket bucket = 6;
+
+  // JPEG quality (1-31, lower is better, default: 2)
+  optional uint32 quality = 7;
+}
+
+message ExtractedFrame {
+  float timestamp = 1;
+  string r2_url = 2;
+  string r2_key = 3;
+  uint32 width = 4;
+  uint32 height = 5;
+}
+
+message ExtractFramesResponse {
+  repeated ExtractedFrame frames = 1;
+  string content_type = 2;
 }

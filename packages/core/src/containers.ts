@@ -6,6 +6,8 @@ import {
   type BurnSubtitleRequest,
   type BurnSubtitleResponse,
   ContainerService,
+  type ExtractFramesRequest,
+  type ExtractFramesResponse,
   type PingResponse,
   type ResizeVideoRequest,
   type ResizeVideoResponse,
@@ -117,7 +119,31 @@ export class ContainerBackend extends Container {
       $typeName: "containers.v1.BurnSubtitleRequest",
     });
   }
+
+  /**
+   * Extract one or more frames from a video as JPEG images
+   * @param req.videoUrl - URL of the input video
+   * @param req.timestamps - Timestamps in seconds to extract (default: [0.5])
+   * @param req.frameCount - Alternative: extract N frames evenly distributed (overrides timestamps)
+   * @param req.outputPrefix - R2 path prefix for output files
+   * @param req.outputFilename - Custom filename for single frame (default: "frame_0.jpg")
+   * @param req.bucket - Target R2 bucket (default, reference, or public)
+   * @param req.quality - JPEG quality 1-31, lower is better (default: 2)
+   * @returns Array of extracted frames with R2 URLs and dimensions
+   */
+  async extractFrames(
+    req: Omit<ExtractFramesRequest, "$typeName">,
+  ): Promise<ExtractFramesResponse> {
+    const client = await this.getClient();
+    return await client.extractFrames({
+      ...req,
+      $typeName: "containers.v1.ExtractFramesRequest",
+    });
+  }
 }
 
-// Re-export Platform enum for use in workflows
-export { Platform } from "./containers/gen/containers/v1/container_pb";
+// Re-export Platform and R2Bucket enums for use in workflows
+export {
+  Platform,
+  R2Bucket,
+} from "./containers/gen/containers/v1/container_pb";

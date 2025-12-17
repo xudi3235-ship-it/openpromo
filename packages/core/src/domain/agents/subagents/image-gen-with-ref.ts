@@ -38,8 +38,30 @@ User's input will include the following items
 </about_image_generation>
 
 <image_validation>
-- MUST: critical to ensure the images are showing the product exactly matching the product images, if not, needs rework the image; IF you can't see the output image, fail the task directly.
+- MUST: after you generate, critical to ensure the images are showing the product exactly matching the product images(given to you), if not, needs rework the image; IF you can't see the output image, fail the task directly.
 </image_validation>
+
+<text_handling>
+**CRITICAL: Differentiate between generation modes based on task description**
+
+**If task says "keyframe for video":**
+- Generate clean visuals WITHOUT baked-in text overlays
+- VEO3.1 handles dialogue/captions via native audio generation
+- Text in keyframes becomes static or distorted during video animation
+- Focus on: composition, product visibility, mood, lighting
+- Exception: stylized text integral to the visual (neon signs, product packaging)
+
+**If task says "direct image ad" or specifies text requirements:**
+- Include text overlays as specified
+- Use exact wording provided (in double quotes in your prompt)
+- Position text as instructed (top-center, bottom-left, etc.)
+- Ensure high contrast and readability
+- Bold, clear fonts appropriate for social media
+
+**Text Prompt Pattern:**
+For accurate text rendering, structure like:
+\`...with bold text reading "EXACT TEXT" in top-center, white sans-serif font against dark gradient overlay\`
+</text_handling>
 
 3. Reasoning
 think thoroughly & chain the steps, since it's sequential, former steps needs to be hgih quality & detailed to ensure good output quality

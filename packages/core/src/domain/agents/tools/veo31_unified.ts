@@ -6,10 +6,9 @@
 import { Replicate } from "@core/providers/replicate/models";
 import { downloadVideo } from "@core/utils/common";
 import { tool } from "@openai/agents";
-import { getCurrentAgent } from "agents";
 import { z } from "zod";
 import type { VideoGenAgentContext } from "../context";
-import type { VideoGenAgent } from "../video-gen-agent";
+import { VideoGenAgent } from "../video-gen-agent";
 
 const params = z.object({
   outputPath: z.string().describe("Path to save the generated video file."),
@@ -58,15 +57,11 @@ NOTE: Provide image URLs - the tool will process them directly.`,
       // Download and save the video
       await downloadVideo(videoUrl, outputPath);
 
-      const { agent } = getCurrentAgent<VideoGenAgent>();
-      agent?.patchState((draft) => {
-        if (!draft.artifacts.videos) {
-          draft.artifacts.videos = [];
-        }
-        draft.artifacts.videos.push({
-          id: `$veo31_unified_${Date.now()}`,
-          videoUrl: videoUrl,
-        });
+      VideoGenAgent.updateVideoArtifact({
+        id: `$veo31_unified_${Date.now()}`,
+        videoUrl,
+        state: "ready",
+        progressPercent: 100,
       });
 
       return {

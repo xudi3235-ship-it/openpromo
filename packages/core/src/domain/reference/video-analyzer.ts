@@ -63,26 +63,24 @@ The input video is provided from top performing ads/shorts/reels that have prove
 
 Your task:
 0. closely analyze the video short
-1. A comprehensive blueprint/spec for replication. blueprint is extremely detailed, different shots, each shots's detais including visuals, coloring, composition, camera movements. the blueprint should be guidelines for creating similar videos instantaneous. take progressive, incremental approach, from high level structure setup to fine-grained, detailed shot-level descriptions.
+1. A comprehensive blueprint/spec for replication. blueprint is extremely detailed, different shots, each shots's detais including visuals, coloring, composition, camera movements. the blueprint should be guidelines for creating similar videos instantaneous. take progressive, incremental approach, from high level structure setup to fine-grained, detailed shot-level descriptions. 
 2. Search metadata (summary, keywords, industries) for our reference library
 
 </Task>
 
 
 <Analysis_Guidelines>
-following are some example guidelines for some specific types of videos. Non-exhasutive. Use your best judgement to produce high-quality analysis.
+- following are some example guidelines for some specific types of videos. Non-exhasutive. Use your best judgement to produce high-quality analysis.
+- for each shot, be ultra-detailed in describing the visuals, for realistic person involed, describe their appearance, clothing, expressions, actions, etc. For product shots, be precise on how the product is shown, angles, lighting, context, etc.
 
 ${MARKETING_STRATEGY_ANALYSIS}
 
 ${PRODUCT_PRESENTATION_ANALYSIS}
 
-### KEY FRAMES FOR IMAGE GENERATION
+// KEY FRAMES FOR IMAGE GENERATION
 For critical frames: timestamp, visual description, importance, image gen prompt
 
 ${FULL_VISUAL_ANALYSIS}
-
-### VIRAL ELEMENTS
-- Trend/format, shareability factors, comment bait, relatability hooks
 
 ${ADAPTABLE_BLUEPRINT_OUTPUT}
 

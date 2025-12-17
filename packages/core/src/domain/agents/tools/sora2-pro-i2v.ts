@@ -25,7 +25,7 @@ const params = z.object({
     .describe("Local file path or URL of the image to use as the first frame"),
   aspectRatio: z
     .enum(["portrait", "landscape"])
-    .default("landscape")
+    .default("portrait")
     .describe("Video aspect ratio"),
   duration: z
     .enum(["10", "15"])
@@ -50,7 +50,7 @@ async function downloadVideo(url: string, outputPath: string): Promise<void> {
 
 /**
  * Sora 2 Pro Image-to-Video tool.
- * Generate a video from an image using Sora 2 Pro.
+ * Generate a video from an image using Sora 2 Pro and its family models
  */
 export const sora2ProI2VTool = tool<VideoGenAgentContext>({
   name: "sora2_pro_image_to_video",
@@ -58,9 +58,10 @@ export const sora2ProI2VTool = tool<VideoGenAgentContext>({
 The input image is used as the first frame to guide video generation.
 Creates 10-15 second videos with high visual fidelity.
 
-CRITICAL:
-* Sora 2 Pro excels at creativity - prefer concise prompts that leave room for interpretation
-NOTE: Provide local file paths or URLs - files will be uploaded automatically.`,
+Rules:
+* Sora rejects image input with realistic person due to privacy concerns. To get around this, ensure the keyframe does not have a face, it can still have a person in there, just no face, then in the prompt, you can specify the movements so the person still shows up. This is to ensure the product exists and are accurate
+* Provide local file paths or URLs - files will be uploaded automatically.
+`,
   parameters: params,
   async execute(args) {
     const parsed = params.parse(args);
@@ -70,7 +71,7 @@ NOTE: Provide local file paths or URLs - files will be uploaded automatically.`,
       inputImagePathOrUrl,
       aspectRatio,
       duration,
-      quality,
+      // quality, // TODO: re-enable when KieAI supports quality param
       removeWatermark,
     } = parsed;
 
@@ -88,19 +89,37 @@ NOTE: Provide local file paths or URLs - files will be uploaded automatically.`,
       imageUrl = await uploadFile(client, inputImagePathOrUrl);
     }
 
+    let taskID: string | null = null;
     // Generate video using KieAI namespace
-    const videoUrl = await KieAI.Sora2ProImageToVideo.run(
+    const videoUrl = await KieAI.Sora2ImageToVideo.run(
       {
         prompt,
         imageUrls: [imageUrl],
         aspectRatio,
         nFrames: duration,
-        size: quality,
+        // size: quality,
         removeWatermark,
       },
       {
-        onPoll: (attempt, maxAttempts) => {
+        onTaskCreated: (taskId: string) => {
+          VideoGenAgent.updateVideoArtifact({
+            id: taskId,
+          });
+          taskID = taskId;
+        },
+        onPoll: (attempt: number, maxAttempts: number) => {
           VideoGenAgent.onProgressUpdate((draft) => {
+            const pct = Math.floor((attempt / maxAttempts) * 100);
+            const artifact = draft.artifacts.videos.find(
+              (a) => a.id === taskID,
+            );
+            if (!artifact) return;
+            draft.artifacts.videos.push({
+              videoUrl: "",
+              id: taskID as string,
+              state: "processing",
+              progressPercent: pct,
+            });
             draft.logs.push(
               `[sora2_pro_i2v] Polling attempt ${attempt} of ${maxAttempts}`,
             );
@@ -109,9 +128,16 @@ NOTE: Provide local file paths or URLs - files will be uploaded automatically.`,
       },
     );
 
-    // Update progress with artifact
-    VideoGenAgent.onProgressUpdate((draft) => {
-      draft.artifacts.videos.push({ videoUrl, id: videoUrl });
+    if (!taskID) {
+      throw new Error("Task ID not set during Sora 2 Pro I2V generation");
+    }
+
+    // mark ready
+    VideoGenAgent.updateVideoArtifact({
+      id: taskID,
+      videoUrl,
+      state: "ready",
+      progressPercent: 100,
     });
 
     // Download and save

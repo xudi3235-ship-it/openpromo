@@ -83,13 +83,21 @@ export function PresetPicker({
                 : "border-gray-200 hover:border-gray-400 hover:shadow-sm",
             )}
           >
-            {ref.url && (
+            {ref.url && ref.type === "image" ? (
               <img
                 src={ref.url}
                 alt={ref.description}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
               />
-            )}
+            ) : ref.url && ref.type === "video" ? (
+              <video
+                src={ref.url}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                muted
+                loop
+                autoPlay
+              />
+            ) : null}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             {selectedReferenceId === ref.id && (
               <div className="absolute top-1 right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
@@ -113,14 +121,23 @@ export function PresetPicker({
       {/* Selected Reference Description */}
       {selectedRef && (
         <div className="mt-3 flex gap-3">
-          {selectedRef.url && (
+          {selectedRef.url && selectedRef.type === "image" ? (
             <img
               src={selectedRef.url}
               alt={selectedRef.description}
               className="w-28 h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0"
               onClick={() => setPreviewModalOpen(true)}
             />
-          )}
+          ) : selectedRef.url && selectedRef.type === "video" ? (
+            <video
+              src={selectedRef.url}
+              className="w-28 h-28 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity flex-shrink-0"
+              onClick={() => setPreviewModalOpen(true)}
+              muted
+              loop
+              autoPlay
+            />
+          ) : null}
           <div className="min-w-0 flex-1">
             {selectedRef.description && (
               <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">

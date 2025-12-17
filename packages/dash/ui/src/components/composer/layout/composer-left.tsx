@@ -1,3 +1,4 @@
+import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { AccountSelection } from "@/components/composer/controls/account-selection";
 import { PostDetails } from "@/components/composer/controls/post-details";
 import { SchedulingOptions } from "@/components/composer/controls/scheduling-options";
@@ -11,19 +12,21 @@ export function ComposerLeft() {
   const { validation } = useComposerStore();
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col min-h-0">
       {/* Fixed Header */}
       <div className="flex-shrink-0 px-4 md:px-6 py-2 relative z-20">
         <ComposerHeader />
       </div>
 
       {/* Scrollable Content with Glass Effects */}
-      <div className="flex-1 overflow-y-auto relative px-4 md:px-6 pb-0 flex flex-col gap-6 scroll-feather">
-        <AccountSelection />
-        <MediaUpload />
-        <PostDetails />
-        <SchedulingOptions />
-      </div>
+      <ScrollArea className="flex-1 min-h-0" feather>
+        <div className="px-4 md:px-6 pb-4 flex flex-col gap-6">
+          <AccountSelection />
+          <MediaUpload />
+          <PostDetails />
+          <SchedulingOptions />
+        </div>
+      </ScrollArea>
 
       {/* Fixed Footer Actions with Validation */}
       <div className="flex-shrink-0 mx-4 mt-0 space-y-3">

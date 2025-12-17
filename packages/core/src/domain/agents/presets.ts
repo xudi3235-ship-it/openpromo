@@ -1,5 +1,7 @@
 import { Binding } from "@core/helpers/api-env";
+import type { AgentInputItem } from "@openai/agents";
 import { ReferenceSearch } from "../reference/reference-search";
+import { downloadImagesToTmp } from "./utils";
 
 const CACHE_KEY_PREFIX = "presets:";
 const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours (presigned URLs expire)
@@ -69,6 +71,7 @@ export namespace Presets {
    * Used for UI display and agent context.
    */
   export type Reference = {
+    type: "image" | "video";
     id: string;
     url: string;
     description: string;
@@ -102,10 +105,11 @@ export namespace Presets {
       const references = await Promise.all(
         results.map(async (r) => ({
           id: r.id,
-          url: await ReferenceSearch.getPresignedUrl(r.id),
+          url: await ReferenceSearch.getPresignedUrlFromResult(r),
           description: r.description,
           keywords: r.keywords,
           industries: r.industries,
+          type: r.type,
         })),
       );
 
@@ -115,20 +119,96 @@ export namespace Presets {
       return references;
     }
 
-    /**
-     * Get a single reference by ID.
-     */
-    async getByID(id: string): Promise<Reference | null> {
-      const result = await ReferenceSearch.getById(id);
-      if (!result) return null;
+    async getByIDToAgentInput(
+      id: string | undefined | null,
+    ): Promise<AgentInputItem[]> {
+      if (!id) return [];
+      const ref = await ReferenceSearch.getById(id);
 
-      return {
-        id: result.id,
-        url: await ReferenceSearch.getPresignedUrl(result.id),
-        description: result.description,
-        keywords: result.keywords,
-        industries: result.industries,
-      };
+      if (!ref) {
+        throw new Error(`Preset reference not found: ${id}`);
+      }
+      const msgs: AgentInputItem[] = [];
+
+      if (ref.type === "image") {
+        const imgUrl = await ReferenceSearch.getPresignedUrlFromResult(ref);
+        const refLocalPaths = await downloadImagesToTmp(
+          [imgUrl],
+          "/tmp/reference",
+        );
+        msgs.push({
+          role: "user",
+          content: [
+            {
+              type: "input_text" as const,
+              text: `User selected a reference image as directional inspiration. ref: ${JSON.stringify(ref)}.
+                  
+                  Refernce images downloaded to /tmp/reference. Local path: ${refLocalPaths.join(", ")}
+                  `,
+            },
+            {
+              type: "input_image" as const,
+              image: imgUrl,
+            },
+          ],
+        });
+      } else if (ref.type === "video") {
+        // load the metadata + spec.txt
+        const video = await ReferenceSearch.getVideoReference(id);
+        msgs.push({
+          role: "system",
+          content: `
+<preset_blueprint>
+**PRESET SELECTED: ${id}**
+**ADHERENCE LEVEL: MODERATE-TO-STRICT**
+
+User selected this proven ad format as their template. This blueprint represents a successful, tested ad pattern.
+
+**You MUST:**
+1. Follow the shot structure closely (number of shots, timing, pacing)
+2. Replicate the hook style (first 2-3 seconds pattern)
+3. Match the audio strategy (dialogue style, music placement)
+4. Preserve the CTA approach
+
+**Blueprint to Follow:**
+${video?.blueprint ?? "No blueprint available"}
+
+**Adherence Checklist (verify before generation):**
+- Shot count matches blueprint (+/- 1 shot)
+- Hook follows same pattern (visual/dialogue/motion)
+- Pacing is similar (fast cuts vs slow flow)
+- CTA style matches (text/dialogue/visual)
+- Audio approach aligned (voiceover/trending sound/music)
+
+**Allowed Adaptations:**
+- Product swap (different product, same presentation style)
+- Setting change (different location, same mood/vibe)
+- Color palette (match brand colors, keep contrast ratios)
+- Talent appearance (different person, same framing/energy)
+
+**NOT Allowed Without Justification:**
+- Changing shot structure fundamentally
+- Removing or significantly altering the hook pattern
+- Changing pacing significantly (fast to slow or vice versa)
+- Adding elements not in blueprint without clear reasoning
+</preset_blueprint>
+`,
+        });
+        // Also add the raw video reference data for context
+        msgs.push({
+          role: "user",
+          content: [
+            {
+              type: "input_text" as const,
+              text: `Video reference details: ${JSON.stringify(video)}`,
+            },
+          ],
+        });
+      } else {
+        throw new Error(`Unsupported preset reference type: ${ref.type}`);
+      }
+
+      return msgs;
     }
 
     /**
@@ -140,7 +220,8 @@ export namespace Presets {
       return Promise.all(
         results.map(async (r) => ({
           id: r.id,
-          url: await ReferenceSearch.getPresignedUrl(r.id),
+          type: r.type,
+          url: await ReferenceSearch.getPresignedUrlFromResult(r),
           description: r.description,
           keywords: r.keywords,
           industries: r.industries,

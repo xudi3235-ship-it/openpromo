@@ -1,3 +1,4 @@
+import type { VideoGenRealtime } from "@shared";
 import { useMemo } from "react";
 import type { RunFeedItem } from "@/features/instant-ad/instant-ad-types";
 import { useAgentRunQuery } from "@/queries/agent-runs";
@@ -19,10 +20,7 @@ export type RunDataResult = {
   /** Logs for this run */
   logs: string[];
   /** Artifacts for this run */
-  artifacts: {
-    images: { id: string; imageUrl: string }[];
-    videos: { id: string; videoUrl: string }[];
-  };
+  artifacts: VideoGenRealtime.ServerAppState["artifacts"];
   /** Run status */
   status: string | undefined;
 };

@@ -73,6 +73,59 @@ func (Platform) EnumDescriptor() ([]byte, []int) {
 	return file_containers_v1_container_proto_rawDescGZIP(), []int{0}
 }
 
+// Target R2 bucket for uploads
+type R2Bucket int32
+
+const (
+	R2Bucket_R2_BUCKET_UNSPECIFIED R2Bucket = 0 // Default: openpromo-bucket
+	R2Bucket_R2_BUCKET_DEFAULT     R2Bucket = 1 // openpromo-bucket
+	R2Bucket_R2_BUCKET_REFERENCE   R2Bucket = 2 // openpromo-reference
+	R2Bucket_R2_BUCKET_PUBLIC      R2Bucket = 3 // public bucket
+)
+
+// Enum value maps for R2Bucket.
+var (
+	R2Bucket_name = map[int32]string{
+		0: "R2_BUCKET_UNSPECIFIED",
+		1: "R2_BUCKET_DEFAULT",
+		2: "R2_BUCKET_REFERENCE",
+		3: "R2_BUCKET_PUBLIC",
+	}
+	R2Bucket_value = map[string]int32{
+		"R2_BUCKET_UNSPECIFIED": 0,
+		"R2_BUCKET_DEFAULT":     1,
+		"R2_BUCKET_REFERENCE":   2,
+		"R2_BUCKET_PUBLIC":      3,
+	}
+)
+
+func (x R2Bucket) Enum() *R2Bucket {
+	p := new(R2Bucket)
+	*p = x
+	return p
+}
+
+func (x R2Bucket) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (R2Bucket) Descriptor() protoreflect.EnumDescriptor {
+	return file_containers_v1_container_proto_enumTypes[1].Descriptor()
+}
+
+func (R2Bucket) Type() protoreflect.EnumType {
+	return &file_containers_v1_container_proto_enumTypes[1]
+}
+
+func (x R2Bucket) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use R2Bucket.Descriptor instead.
+func (R2Bucket) EnumDescriptor() ([]byte, []int) {
+	return file_containers_v1_container_proto_rawDescGZIP(), []int{1}
+}
+
 type PingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -749,6 +802,234 @@ func (x *BurnSubtitleResponse) GetR2Key() string {
 	return ""
 }
 
+type ExtractFramesRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	VideoUrl string                 `protobuf:"bytes,1,opt,name=video_url,json=videoUrl,proto3" json:"video_url,omitempty"`
+	// Timestamps to extract (in seconds). If empty, extracts at 0.5s
+	Timestamps []float32 `protobuf:"fixed32,2,rep,packed,name=timestamps,proto3" json:"timestamps,omitempty"`
+	// Alternative: extract N frames evenly distributed across video duration
+	// If set, overrides timestamps field
+	FrameCount *uint32 `protobuf:"varint,3,opt,name=frame_count,json=frameCount,proto3,oneof" json:"frame_count,omitempty"`
+	// Output path prefix in R2 (e.g., "videos/abc123/")
+	// Frame files will be named: {prefix}frame_0.jpg, {prefix}frame_1.jpg, etc.
+	OutputPrefix string `protobuf:"bytes,4,opt,name=output_prefix,json=outputPrefix,proto3" json:"output_prefix,omitempty"`
+	// Custom filename for single frame extraction (default: "frame_0.jpg")
+	OutputFilename *string `protobuf:"bytes,5,opt,name=output_filename,json=outputFilename,proto3,oneof" json:"output_filename,omitempty"`
+	// Target bucket
+	Bucket R2Bucket `protobuf:"varint,6,opt,name=bucket,proto3,enum=containers.v1.R2Bucket" json:"bucket,omitempty"`
+	// JPEG quality (1-31, lower is better, default: 2)
+	Quality       *uint32 `protobuf:"varint,7,opt,name=quality,proto3,oneof" json:"quality,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExtractFramesRequest) Reset() {
+	*x = ExtractFramesRequest{}
+	mi := &file_containers_v1_container_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExtractFramesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExtractFramesRequest) ProtoMessage() {}
+
+func (x *ExtractFramesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_containers_v1_container_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExtractFramesRequest.ProtoReflect.Descriptor instead.
+func (*ExtractFramesRequest) Descriptor() ([]byte, []int) {
+	return file_containers_v1_container_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ExtractFramesRequest) GetVideoUrl() string {
+	if x != nil {
+		return x.VideoUrl
+	}
+	return ""
+}
+
+func (x *ExtractFramesRequest) GetTimestamps() []float32 {
+	if x != nil {
+		return x.Timestamps
+	}
+	return nil
+}
+
+func (x *ExtractFramesRequest) GetFrameCount() uint32 {
+	if x != nil && x.FrameCount != nil {
+		return *x.FrameCount
+	}
+	return 0
+}
+
+func (x *ExtractFramesRequest) GetOutputPrefix() string {
+	if x != nil {
+		return x.OutputPrefix
+	}
+	return ""
+}
+
+func (x *ExtractFramesRequest) GetOutputFilename() string {
+	if x != nil && x.OutputFilename != nil {
+		return *x.OutputFilename
+	}
+	return ""
+}
+
+func (x *ExtractFramesRequest) GetBucket() R2Bucket {
+	if x != nil {
+		return x.Bucket
+	}
+	return R2Bucket_R2_BUCKET_UNSPECIFIED
+}
+
+func (x *ExtractFramesRequest) GetQuality() uint32 {
+	if x != nil && x.Quality != nil {
+		return *x.Quality
+	}
+	return 0
+}
+
+type ExtractedFrame struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Timestamp     float32                `protobuf:"fixed32,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	R2Url         string                 `protobuf:"bytes,2,opt,name=r2_url,json=r2Url,proto3" json:"r2_url,omitempty"`
+	R2Key         string                 `protobuf:"bytes,3,opt,name=r2_key,json=r2Key,proto3" json:"r2_key,omitempty"`
+	Width         uint32                 `protobuf:"varint,4,opt,name=width,proto3" json:"width,omitempty"`
+	Height        uint32                 `protobuf:"varint,5,opt,name=height,proto3" json:"height,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExtractedFrame) Reset() {
+	*x = ExtractedFrame{}
+	mi := &file_containers_v1_container_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExtractedFrame) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExtractedFrame) ProtoMessage() {}
+
+func (x *ExtractedFrame) ProtoReflect() protoreflect.Message {
+	mi := &file_containers_v1_container_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExtractedFrame.ProtoReflect.Descriptor instead.
+func (*ExtractedFrame) Descriptor() ([]byte, []int) {
+	return file_containers_v1_container_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ExtractedFrame) GetTimestamp() float32 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+func (x *ExtractedFrame) GetR2Url() string {
+	if x != nil {
+		return x.R2Url
+	}
+	return ""
+}
+
+func (x *ExtractedFrame) GetR2Key() string {
+	if x != nil {
+		return x.R2Key
+	}
+	return ""
+}
+
+func (x *ExtractedFrame) GetWidth() uint32 {
+	if x != nil {
+		return x.Width
+	}
+	return 0
+}
+
+func (x *ExtractedFrame) GetHeight() uint32 {
+	if x != nil {
+		return x.Height
+	}
+	return 0
+}
+
+type ExtractFramesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Frames        []*ExtractedFrame      `protobuf:"bytes,1,rep,name=frames,proto3" json:"frames,omitempty"`
+	ContentType   string                 `protobuf:"bytes,2,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExtractFramesResponse) Reset() {
+	*x = ExtractFramesResponse{}
+	mi := &file_containers_v1_container_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExtractFramesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExtractFramesResponse) ProtoMessage() {}
+
+func (x *ExtractFramesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_containers_v1_container_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExtractFramesResponse.ProtoReflect.Descriptor instead.
+func (*ExtractFramesResponse) Descriptor() ([]byte, []int) {
+	return file_containers_v1_container_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ExtractFramesResponse) GetFrames() []*ExtractedFrame {
+	if x != nil {
+		return x.Frames
+	}
+	return nil
+}
+
+func (x *ExtractFramesResponse) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
 var File_containers_v1_container_proto protoreflect.FileDescriptor
 
 const file_containers_v1_container_proto_rawDesc = "" +
@@ -804,12 +1085,41 @@ const file_containers_v1_container_proto_rawDesc = "" +
 	"\x14BurnSubtitleResponse\x12\x1d\n" +
 	"\n" +
 	"output_url\x18\x01 \x01(\tR\toutputUrl\x12\x15\n" +
-	"\x06r2_key\x18\x02 \x01(\tR\x05r2Key*e\n" +
+	"\x06r2_key\x18\x02 \x01(\tR\x05r2Key\"\xcc\x02\n" +
+	"\x14ExtractFramesRequest\x12\x1b\n" +
+	"\tvideo_url\x18\x01 \x01(\tR\bvideoUrl\x12\x1e\n" +
+	"\n" +
+	"timestamps\x18\x02 \x03(\x02R\n" +
+	"timestamps\x12$\n" +
+	"\vframe_count\x18\x03 \x01(\rH\x00R\n" +
+	"frameCount\x88\x01\x01\x12#\n" +
+	"\routput_prefix\x18\x04 \x01(\tR\foutputPrefix\x12,\n" +
+	"\x0foutput_filename\x18\x05 \x01(\tH\x01R\x0eoutputFilename\x88\x01\x01\x12/\n" +
+	"\x06bucket\x18\x06 \x01(\x0e2\x17.containers.v1.R2BucketR\x06bucket\x12\x1d\n" +
+	"\aquality\x18\a \x01(\rH\x02R\aquality\x88\x01\x01B\x0e\n" +
+	"\f_frame_countB\x12\n" +
+	"\x10_output_filenameB\n" +
+	"\n" +
+	"\b_quality\"\x8a\x01\n" +
+	"\x0eExtractedFrame\x12\x1c\n" +
+	"\ttimestamp\x18\x01 \x01(\x02R\ttimestamp\x12\x15\n" +
+	"\x06r2_url\x18\x02 \x01(\tR\x05r2Url\x12\x15\n" +
+	"\x06r2_key\x18\x03 \x01(\tR\x05r2Key\x12\x14\n" +
+	"\x05width\x18\x04 \x01(\rR\x05width\x12\x16\n" +
+	"\x06height\x18\x05 \x01(\rR\x06height\"q\n" +
+	"\x15ExtractFramesResponse\x125\n" +
+	"\x06frames\x18\x01 \x03(\v2\x1d.containers.v1.ExtractedFrameR\x06frames\x12!\n" +
+	"\fcontent_type\x18\x02 \x01(\tR\vcontentType*e\n" +
 	"\bPlatform\x12\x18\n" +
 	"\x14PLATFORM_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PLATFORM_IG_REEL\x10\x01\x12\x14\n" +
 	"\x10PLATFORM_FB_REEL\x10\x02\x12\x13\n" +
-	"\x0fPLATFORM_TIKTOK\x10\x032\x84\x04\n" +
+	"\x0fPLATFORM_TIKTOK\x10\x03*k\n" +
+	"\bR2Bucket\x12\x19\n" +
+	"\x15R2_BUCKET_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11R2_BUCKET_DEFAULT\x10\x01\x12\x17\n" +
+	"\x13R2_BUCKET_REFERENCE\x10\x02\x12\x14\n" +
+	"\x10R2_BUCKET_PUBLIC\x10\x032\xe0\x04\n" +
 	"\x10ContainerService\x12?\n" +
 	"\x04Ping\x12\x1a.containers.v1.PingRequest\x1a\x1b.containers.v1.PingResponse\x12T\n" +
 	"\vResizeVideo\x12!.containers.v1.ResizeVideoRequest\x1a\".containers.v1.ResizeVideoResponse\x12N\n" +
@@ -817,7 +1127,8 @@ const file_containers_v1_container_proto_rawDesc = "" +
 	"\n" +
 	"ProbeMedia\x12 .containers.v1.ProbeMediaRequest\x1a!.containers.v1.ProbeMediaResponse\x12]\n" +
 	"\x0eTranscodeVideo\x12$.containers.v1.TranscodeVideoRequest\x1a%.containers.v1.TranscodeVideoResponse\x12W\n" +
-	"\fBurnSubtitle\x12\".containers.v1.BurnSubtitleRequest\x1a#.containers.v1.BurnSubtitleResponseB%Z#main/gen/containers/v1;containersv1b\x06proto3"
+	"\fBurnSubtitle\x12\".containers.v1.BurnSubtitleRequest\x1a#.containers.v1.BurnSubtitleResponse\x12Z\n" +
+	"\rExtractFrames\x12#.containers.v1.ExtractFramesRequest\x1a$.containers.v1.ExtractFramesResponseB%Z#main/gen/containers/v1;containersv1b\x06proto3"
 
 var (
 	file_containers_v1_container_proto_rawDescOnce sync.Once
@@ -831,42 +1142,50 @@ func file_containers_v1_container_proto_rawDescGZIP() []byte {
 	return file_containers_v1_container_proto_rawDescData
 }
 
-var file_containers_v1_container_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_containers_v1_container_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_containers_v1_container_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_containers_v1_container_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_containers_v1_container_proto_goTypes = []any{
 	(Platform)(0),                  // 0: containers.v1.Platform
-	(*PingRequest)(nil),            // 1: containers.v1.PingRequest
-	(*PingResponse)(nil),           // 2: containers.v1.PingResponse
-	(*ResizeVideoRequest)(nil),     // 3: containers.v1.ResizeVideoRequest
-	(*ResizeVideoResponse)(nil),    // 4: containers.v1.ResizeVideoResponse
-	(*RunFfmpegRequest)(nil),       // 5: containers.v1.RunFfmpegRequest
-	(*RunFfmpegResponse)(nil),      // 6: containers.v1.RunFfmpegResponse
-	(*ProbeMediaRequest)(nil),      // 7: containers.v1.ProbeMediaRequest
-	(*ProbeMediaResponse)(nil),     // 8: containers.v1.ProbeMediaResponse
-	(*TranscodeVideoRequest)(nil),  // 9: containers.v1.TranscodeVideoRequest
-	(*TranscodeVideoResponse)(nil), // 10: containers.v1.TranscodeVideoResponse
-	(*BurnSubtitleRequest)(nil),    // 11: containers.v1.BurnSubtitleRequest
-	(*BurnSubtitleResponse)(nil),   // 12: containers.v1.BurnSubtitleResponse
+	(R2Bucket)(0),                  // 1: containers.v1.R2Bucket
+	(*PingRequest)(nil),            // 2: containers.v1.PingRequest
+	(*PingResponse)(nil),           // 3: containers.v1.PingResponse
+	(*ResizeVideoRequest)(nil),     // 4: containers.v1.ResizeVideoRequest
+	(*ResizeVideoResponse)(nil),    // 5: containers.v1.ResizeVideoResponse
+	(*RunFfmpegRequest)(nil),       // 6: containers.v1.RunFfmpegRequest
+	(*RunFfmpegResponse)(nil),      // 7: containers.v1.RunFfmpegResponse
+	(*ProbeMediaRequest)(nil),      // 8: containers.v1.ProbeMediaRequest
+	(*ProbeMediaResponse)(nil),     // 9: containers.v1.ProbeMediaResponse
+	(*TranscodeVideoRequest)(nil),  // 10: containers.v1.TranscodeVideoRequest
+	(*TranscodeVideoResponse)(nil), // 11: containers.v1.TranscodeVideoResponse
+	(*BurnSubtitleRequest)(nil),    // 12: containers.v1.BurnSubtitleRequest
+	(*BurnSubtitleResponse)(nil),   // 13: containers.v1.BurnSubtitleResponse
+	(*ExtractFramesRequest)(nil),   // 14: containers.v1.ExtractFramesRequest
+	(*ExtractedFrame)(nil),         // 15: containers.v1.ExtractedFrame
+	(*ExtractFramesResponse)(nil),  // 16: containers.v1.ExtractFramesResponse
 }
 var file_containers_v1_container_proto_depIdxs = []int32{
 	0,  // 0: containers.v1.TranscodeVideoRequest.platform:type_name -> containers.v1.Platform
-	1,  // 1: containers.v1.ContainerService.Ping:input_type -> containers.v1.PingRequest
-	3,  // 2: containers.v1.ContainerService.ResizeVideo:input_type -> containers.v1.ResizeVideoRequest
-	5,  // 3: containers.v1.ContainerService.RunFfmpeg:input_type -> containers.v1.RunFfmpegRequest
-	7,  // 4: containers.v1.ContainerService.ProbeMedia:input_type -> containers.v1.ProbeMediaRequest
-	9,  // 5: containers.v1.ContainerService.TranscodeVideo:input_type -> containers.v1.TranscodeVideoRequest
-	11, // 6: containers.v1.ContainerService.BurnSubtitle:input_type -> containers.v1.BurnSubtitleRequest
-	2,  // 7: containers.v1.ContainerService.Ping:output_type -> containers.v1.PingResponse
-	4,  // 8: containers.v1.ContainerService.ResizeVideo:output_type -> containers.v1.ResizeVideoResponse
-	6,  // 9: containers.v1.ContainerService.RunFfmpeg:output_type -> containers.v1.RunFfmpegResponse
-	8,  // 10: containers.v1.ContainerService.ProbeMedia:output_type -> containers.v1.ProbeMediaResponse
-	10, // 11: containers.v1.ContainerService.TranscodeVideo:output_type -> containers.v1.TranscodeVideoResponse
-	12, // 12: containers.v1.ContainerService.BurnSubtitle:output_type -> containers.v1.BurnSubtitleResponse
-	7,  // [7:13] is the sub-list for method output_type
-	1,  // [1:7] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	1,  // 1: containers.v1.ExtractFramesRequest.bucket:type_name -> containers.v1.R2Bucket
+	15, // 2: containers.v1.ExtractFramesResponse.frames:type_name -> containers.v1.ExtractedFrame
+	2,  // 3: containers.v1.ContainerService.Ping:input_type -> containers.v1.PingRequest
+	4,  // 4: containers.v1.ContainerService.ResizeVideo:input_type -> containers.v1.ResizeVideoRequest
+	6,  // 5: containers.v1.ContainerService.RunFfmpeg:input_type -> containers.v1.RunFfmpegRequest
+	8,  // 6: containers.v1.ContainerService.ProbeMedia:input_type -> containers.v1.ProbeMediaRequest
+	10, // 7: containers.v1.ContainerService.TranscodeVideo:input_type -> containers.v1.TranscodeVideoRequest
+	12, // 8: containers.v1.ContainerService.BurnSubtitle:input_type -> containers.v1.BurnSubtitleRequest
+	14, // 9: containers.v1.ContainerService.ExtractFrames:input_type -> containers.v1.ExtractFramesRequest
+	3,  // 10: containers.v1.ContainerService.Ping:output_type -> containers.v1.PingResponse
+	5,  // 11: containers.v1.ContainerService.ResizeVideo:output_type -> containers.v1.ResizeVideoResponse
+	7,  // 12: containers.v1.ContainerService.RunFfmpeg:output_type -> containers.v1.RunFfmpegResponse
+	9,  // 13: containers.v1.ContainerService.ProbeMedia:output_type -> containers.v1.ProbeMediaResponse
+	11, // 14: containers.v1.ContainerService.TranscodeVideo:output_type -> containers.v1.TranscodeVideoResponse
+	13, // 15: containers.v1.ContainerService.BurnSubtitle:output_type -> containers.v1.BurnSubtitleResponse
+	16, // 16: containers.v1.ContainerService.ExtractFrames:output_type -> containers.v1.ExtractFramesResponse
+	10, // [10:17] is the sub-list for method output_type
+	3,  // [3:10] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_containers_v1_container_proto_init() }
@@ -875,13 +1194,14 @@ func file_containers_v1_container_proto_init() {
 		return
 	}
 	file_containers_v1_container_proto_msgTypes[9].OneofWrappers = []any{}
+	file_containers_v1_container_proto_msgTypes[12].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_containers_v1_container_proto_rawDesc), len(file_containers_v1_container_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   12,
+			NumEnums:      2,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
