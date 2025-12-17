@@ -1,4 +1,5 @@
 import { Button } from "@openpromo/ui/components/button";
+import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import {
   Tooltip,
   TooltipContent,
@@ -148,23 +149,25 @@ export function ComposerRight() {
       </div>
 
       {/* Scrollable content */}
-      <div className="min-h-0 flex-1 overflow-y-auto scroll-feather px-4 pt-2 pb-4">
-        {viewMode === "collage" ? (
-          <CollageView
-            accounts={previewAccounts}
-            activeAccountId={activeAccount}
-            isReel={isReelContent()}
-          />
-        ) : (
-          <ListView
-            accounts={previewAccounts}
-            selectedAccountId={selectedAccountId}
-            onSelectAccount={handleSelectAccount}
-            activeAccountId={activeAccount}
-            isReel={isReelContent()}
-          />
-        )}
-      </div>
+      <ScrollArea className="min-h-0 flex-1" feather>
+        <div className="px-4 pt-2 pb-4">
+          {viewMode === "collage" ? (
+            <CollageView
+              accounts={previewAccounts}
+              activeAccountId={activeAccount}
+              isReel={isReelContent()}
+            />
+          ) : (
+            <ListView
+              accounts={previewAccounts}
+              selectedAccountId={selectedAccountId}
+              onSelectAccount={handleSelectAccount}
+              activeAccountId={activeAccount}
+              isReel={isReelContent()}
+            />
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { Button } from "@openpromo/ui/components/button";
 import { Label } from "@openpromo/ui/components/label";
+import { ScrollArea } from "@openpromo/ui/components/scroll-area";
 import { Textarea } from "@openpromo/ui/components/textarea";
 import type { VideoGenRealtime } from "@shared";
 import { ChevronDown, Loader2 } from "lucide-react";
@@ -92,8 +93,8 @@ export function InputPanel({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto py-2 scroll-feather">
-        <div className="space-y-6">
+      <ScrollArea className="flex-1 min-h-0" feather>
+        <div className="py-2 space-y-6">
           {/* 1. Product Section - FIRST: What are you selling? */}
           <div className="px-3">
             <Label className="text-sm font-medium">Your Product</Label>
@@ -260,7 +261,7 @@ export function InputPanel({
             )}
           </div>
         </div>
-      </div>
+      </ScrollArea>
 
       {/* Generate Button */}
       <div>
