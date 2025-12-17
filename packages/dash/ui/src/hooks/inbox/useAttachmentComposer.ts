@@ -64,14 +64,17 @@ export function useAttachmentComposer(
       }
 
       if (attachments.length >= 1) {
-        toast.info("You can attach one image per message for now");
+        toast.info("You can attach one media file per message for now");
         resetFileInput();
         return;
       }
 
       const file = files[0];
-      if (!file.type.startsWith("image/")) {
-        toast.error("Only image attachments are supported right now");
+      const isImage = file.type.startsWith("image/");
+      const isVideo = file.type.startsWith("video/");
+
+      if (!isImage && !isVideo) {
+        toast.error("Only image or video attachments are supported right now");
         resetFileInput();
         return;
       }
@@ -88,14 +91,16 @@ export function useAttachmentComposer(
             id: generateId("attachment"),
             name: file.name,
             data: {
-              type: "image",
+              type: isVideo ? "video" : "image",
               url: publicUrl,
             },
           },
         ]);
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : "Failed to upload image";
+          error instanceof Error
+            ? error.message
+            : "Failed to upload media file";
         toast.error(message);
       } finally {
         setIsUploading(false);

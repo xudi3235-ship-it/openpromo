@@ -46,6 +46,37 @@ export function InboxMessageAttachments({
           );
         }
 
+        if (attachment.type === "video") {
+          return (
+            <Dialog key={key}>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  className="relative overflow-hidden rounded-lg border border-border/50 transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <video
+                    src={attachment.url}
+                    className="h-32 w-32 object-cover"
+                    muted
+                    playsInline
+                  />
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/30">
+                    <Video className="h-6 w-6 text-white" />
+                  </div>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl border-none bg-transparent p-0 shadow-none">
+                <video
+                  src={attachment.url}
+                  className="max-h-[85vh] w-full object-contain"
+                  controls
+                  playsInline
+                />
+              </DialogContent>
+            </Dialog>
+          );
+        }
+
         const icon = getAttachmentIcon(attachment.type);
         const fileName = getFileNameFromUrl(attachment.url) || "Attachment";
 

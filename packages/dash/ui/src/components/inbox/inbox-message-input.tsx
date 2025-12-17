@@ -344,11 +344,21 @@ export function InboxMessageInput({
                 key={attachment.id}
                 className="group relative h-16 w-16 overflow-hidden rounded-md border border-border/60 bg-muted/20"
               >
-                <img
-                  src={attachment.data.url}
-                  alt={attachment.name ?? "Attached image"}
-                  className="h-full w-full object-cover"
-                />
+                {attachment.data.type === "video" ? (
+                  <video
+                    src={attachment.data.url}
+                    className="h-full w-full object-cover"
+                    muted
+                    autoPlay
+                    loop
+                  />
+                ) : (
+                  <img
+                    src={attachment.data.url}
+                    alt={attachment.name ?? "Attached image"}
+                    className="h-full w-full object-cover"
+                  />
+                )}
                 <button
                   type="button"
                   onClick={handleRemoveAttachment}
@@ -377,7 +387,7 @@ export function InboxMessageInput({
                 mutation.isPending ||
                 hasAttachments
               }
-              aria-label="Attach image"
+              aria-label="Attach media"
             >
               {isUploadingAttachment ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -388,7 +398,7 @@ export function InboxMessageInput({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               className="hidden"
               onChange={(event) => handleFileChange(event.target.files)}
             />

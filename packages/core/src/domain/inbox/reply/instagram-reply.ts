@@ -220,7 +220,7 @@ function buildMessagePayload(
     }
 
     const [attachment] = attachments;
-    if (attachment.type !== "image") {
+    if (attachment.type !== "image" && attachment.type !== "video") {
       throw new VisibleError(
         "validation",
         ErrorCodes.Validation.INVALID_STATE,
@@ -229,7 +229,7 @@ function buildMessagePayload(
     }
 
     payload.attachment = {
-      type: "image",
+      type: attachment.type,
       payload: {
         url: attachment.url,
         is_reusable: true,
