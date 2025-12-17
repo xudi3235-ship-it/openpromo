@@ -114,11 +114,12 @@ async function providerKieImpl(params: NanoBananaParams) {
   if (!taskID)
     throw new Error("Failed to start Nano Banana task - no task ID returned");
   const imageUrl = await client.pollTaskUntilComplete(taskID, {
-    onPoll(attempt, maxAttempt) {
-      VideoGenAgent.onProgressUpdate((draft) => {
-        draft.logs.push(
-          `[nanoBanana] Polling - attempt ${attempt}/${maxAttempt}`,
-        );
+    onPoll(attempt: number, maxAttempt: number) {
+      const pct = Math.floor((attempt / maxAttempt) * 100);
+      VideoGenAgent.updateImageArtifact({
+        id: taskID,
+        state: "processing",
+        progressPercent: pct,
       });
     },
   });

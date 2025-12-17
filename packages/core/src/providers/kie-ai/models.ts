@@ -904,7 +904,7 @@ export namespace KieAI {
       return await client.pollTaskUntilComplete(taskId, {
         logPrefix: "Sora2ImageToVideo",
         pollIntervalMs: 15000,
-        maxAttempts: 240,
+        maxAttempts: 200,
         onPoll: options?.onPoll,
       });
     }
