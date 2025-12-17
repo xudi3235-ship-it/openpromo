@@ -415,6 +415,358 @@ export namespace KieAI {
   }
 
   // -------------------------------------------------------------------------
+  // Midjourney Models
+  // -------------------------------------------------------------------------
+
+  /**
+   * Midjourney Image & Video Generation
+   *
+   * Collection of Midjourney AI models for image and video generation.
+   *
+   * @example
+   * ```typescript
+   * // Text-to-Image
+   * const imageUrls = await KieAI.Midjourney.TextToImage.run({
+   *   prompt: "A beautiful sunset over mountains",
+   *   aspectRatio: "16:9",
+   *   speed: "fast",
+   * });
+   *
+   * // Image-to-Image
+   * const editedUrls = await KieAI.Midjourney.ImageToImage.run({
+   *   prompt: "Make it more vibrant",
+   *   fileUrls: ["https://example.com/image.jpg"],
+   *   speed: "turbo",
+   * });
+   *
+   * // Image-to-Video
+   * const videoUrls = await KieAI.Midjourney.ImageToVideo.run({
+   *   prompt: "Animate this scene",
+   *   fileUrls: ["https://example.com/image.jpg"],
+   * });
+   * ```
+   */
+  export namespace Midjourney {
+    /** Aspect ratio options */
+    export const AspectRatio = z.enum([
+      "1:2",
+      "9:16",
+      "2:3",
+      "3:4",
+      "5:6",
+      "6:5",
+      "4:3",
+      "3:2",
+      "1:1",
+      "16:9",
+      "2:1",
+    ]);
+
+    /** Speed mode options */
+    export const Speed = z.enum(["relaxed", "fast", "turbo"]);
+
+    /** Midjourney model version options */
+    export const Version = z.enum(["7", "6.1", "6", "5.2", "5.1", "niji6"]);
+
+    export namespace TextToImage {
+      export const schema = z.object({
+        prompt: z.string().max(2000),
+        speed: Speed.optional(),
+        aspectRatio: AspectRatio.optional(),
+        version: Version.optional(),
+        variety: z.number().min(0).max(100).optional(),
+        stylization: z.number().min(0).max(1000).optional(),
+        weirdness: z.number().min(0).max(3000).optional(),
+        waterMark: z.string().optional(),
+        callBackUrl: z.string().optional(),
+      });
+      export type Input = z.input<typeof schema>;
+
+      /**
+       * Generate images from text using Midjourney
+       * @param input - Generation parameters
+       * @returns Promise resolving to array of image URLs (typically 4)
+       */
+      export async function run(input: Input): Promise<string[]> {
+        const parsed = schema.parse(input);
+        const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+
+        const task = await client.createMidjourneyTask({
+          taskType: "mj_txt2img",
+          prompt: parsed.prompt,
+          speed: parsed.speed,
+          aspectRatio: parsed.aspectRatio,
+          version: parsed.version,
+          variety: parsed.variety,
+          stylization: parsed.stylization,
+          weirdness: parsed.weirdness,
+          waterMark: parsed.waterMark,
+          callBackUrl: parsed.callBackUrl,
+        });
+        const taskId = task.data?.taskId;
+        if (!taskId)
+          throw new KieAIError(
+            500,
+            "No task ID returned from Midjourney.TextToImage",
+          );
+
+        return await pollMidjourneyTask(
+          client,
+          taskId,
+          "Midjourney.TextToImage",
+        );
+      }
+    }
+
+    export namespace ImageToImage {
+      export const schema = z.object({
+        prompt: z.string().max(2000),
+        fileUrls: z.array(z.string()),
+        speed: Speed.optional(),
+        aspectRatio: AspectRatio.optional(),
+        version: Version.optional(),
+        variety: z.number().min(0).max(100).optional(),
+        stylization: z.number().min(0).max(1000).optional(),
+        weirdness: z.number().min(0).max(3000).optional(),
+        waterMark: z.string().optional(),
+        callBackUrl: z.string().optional(),
+      });
+      export type Input = z.input<typeof schema>;
+
+      /**
+       * Generate images from an input image using Midjourney
+       * @param input - Generation parameters
+       * @returns Promise resolving to array of image URLs (typically 4)
+       */
+      export async function run(input: Input): Promise<string[]> {
+        const parsed = schema.parse(input);
+        const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+
+        const task = await client.createMidjourneyTask({
+          taskType: "mj_img2img",
+          prompt: parsed.prompt,
+          fileUrls: parsed.fileUrls,
+          speed: parsed.speed,
+          aspectRatio: parsed.aspectRatio,
+          version: parsed.version,
+          variety: parsed.variety,
+          stylization: parsed.stylization,
+          weirdness: parsed.weirdness,
+          waterMark: parsed.waterMark,
+          callBackUrl: parsed.callBackUrl,
+        });
+        const taskId = task.data?.taskId;
+        if (!taskId)
+          throw new KieAIError(
+            500,
+            "No task ID returned from Midjourney.ImageToImage",
+          );
+
+        return await pollMidjourneyTask(
+          client,
+          taskId,
+          "Midjourney.ImageToImage",
+        );
+      }
+    }
+
+    export namespace ImageToVideo {
+      export const schema = z.object({
+        prompt: z.string().max(2000),
+        fileUrls: z.array(z.string()).max(1),
+        aspectRatio: AspectRatio.optional(),
+        waterMark: z.string().optional(),
+        callBackUrl: z.string().optional(),
+      });
+      export type Input = z.input<typeof schema>;
+
+      /**
+       * Generate video from an input image using Midjourney
+       * Note: fileUrls can only have one image link for video generation
+       * @param input - Generation parameters
+       * @returns Promise resolving to array of video URLs
+       */
+      export async function run(input: Input): Promise<string[]> {
+        const parsed = schema.parse(input);
+        const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+
+        const task = await client.createMidjourneyTask({
+          taskType: "mj_video",
+          prompt: parsed.prompt,
+          fileUrls: parsed.fileUrls,
+          aspectRatio: parsed.aspectRatio,
+          waterMark: parsed.waterMark,
+          callBackUrl: parsed.callBackUrl,
+        });
+        const taskId = task.data?.taskId;
+        if (!taskId)
+          throw new KieAIError(
+            500,
+            "No task ID returned from Midjourney.ImageToVideo",
+          );
+
+        return await pollMidjourneyTask(
+          client,
+          taskId,
+          "Midjourney.ImageToVideo",
+          15000,
+          240,
+        );
+      }
+    }
+
+    export namespace StyleReference {
+      export const schema = z.object({
+        prompt: z.string().max(2000),
+        fileUrls: z.array(z.string()),
+        speed: Speed.optional(),
+        aspectRatio: AspectRatio.optional(),
+        version: Version.optional(),
+        variety: z.number().min(0).max(100).optional(),
+        stylization: z.number().min(0).max(1000).optional(),
+        weirdness: z.number().min(0).max(3000).optional(),
+        waterMark: z.string().optional(),
+        callBackUrl: z.string().optional(),
+      });
+      export type Input = z.input<typeof schema>;
+
+      /**
+       * Generate images using style reference from input images
+       * @param input - Generation parameters
+       * @returns Promise resolving to array of image URLs
+       */
+      export async function run(input: Input): Promise<string[]> {
+        const parsed = schema.parse(input);
+        const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+
+        const task = await client.createMidjourneyTask({
+          taskType: "mj_style_reference",
+          prompt: parsed.prompt,
+          fileUrls: parsed.fileUrls,
+          speed: parsed.speed,
+          aspectRatio: parsed.aspectRatio,
+          version: parsed.version,
+          variety: parsed.variety,
+          stylization: parsed.stylization,
+          weirdness: parsed.weirdness,
+          waterMark: parsed.waterMark,
+          callBackUrl: parsed.callBackUrl,
+        });
+        const taskId = task.data?.taskId;
+        if (!taskId)
+          throw new KieAIError(
+            500,
+            "No task ID returned from Midjourney.StyleReference",
+          );
+
+        return await pollMidjourneyTask(
+          client,
+          taskId,
+          "Midjourney.StyleReference",
+        );
+      }
+    }
+
+    export namespace OmniReference {
+      export const schema = z.object({
+        prompt: z.string().max(2000),
+        fileUrls: z.array(z.string()),
+        ow: z.number().min(1).max(1000).optional(),
+        aspectRatio: AspectRatio.optional(),
+        waterMark: z.string().optional(),
+        callBackUrl: z.string().optional(),
+      });
+      export type Input = z.input<typeof schema>;
+
+      /**
+       * Generate images using omni reference (characters, objects, vehicles, creatures)
+       * from reference images
+       * @param input - Generation parameters
+       * @returns Promise resolving to array of image URLs
+       */
+      export async function run(input: Input): Promise<string[]> {
+        const parsed = schema.parse(input);
+        const client = new KieAIClient({ apiKey: env.KIE_AI_API_KEY });
+
+        const task = await client.createMidjourneyTask({
+          taskType: "mj_omni_reference",
+          prompt: parsed.prompt,
+          fileUrls: parsed.fileUrls,
+          ow: parsed.ow,
+          aspectRatio: parsed.aspectRatio,
+          waterMark: parsed.waterMark,
+          callBackUrl: parsed.callBackUrl,
+        });
+        const taskId = task.data?.taskId;
+        if (!taskId)
+          throw new KieAIError(
+            500,
+            "No task ID returned from Midjourney.OmniReference",
+          );
+
+        return await pollMidjourneyTask(
+          client,
+          taskId,
+          "Midjourney.OmniReference",
+        );
+      }
+    }
+  }
+
+  /**
+   * Helper function to poll Midjourney tasks until complete.
+   * Returns all result URLs (typically 4 for image generation).
+   */
+  async function pollMidjourneyTask(
+    client: KieAIClient,
+    taskId: string,
+    logPrefix: string,
+    pollIntervalMs = 10000,
+    maxAttempts = 120,
+  ): Promise<string[]> {
+    const sleep = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const details = await client.getTaskDetails(taskId);
+      const data = details.data;
+
+      if (!data) {
+        throw new KieAIError(500, "No data in task details response");
+      }
+
+      if (data.state === "success") {
+        if (data.resultJson) {
+          const resultJson = data.resultJson;
+          const result =
+            typeof resultJson === "string"
+              ? (JSON.parse(resultJson) as { resultUrls?: string[] })
+              : (resultJson as { resultUrls?: string[] });
+          const urls = result.resultUrls ?? [];
+          if (urls.length > 0) {
+            return urls;
+          }
+        }
+        throw new KieAIError(500, "Task succeeded but no result URLs found");
+      }
+
+      if (data.state === "fail") {
+        throw new KieAIError(500, data.failMsg ?? "Midjourney task failed");
+      }
+
+      console.log(
+        `[${logPrefix}] Polling attempt ${attempt + 1}/${maxAttempts}...`,
+      );
+      await sleep(pollIntervalMs);
+    }
+
+    throw new KieAIError(
+      408,
+      `Midjourney polling timed out after ${maxAttempts} attempts`,
+    );
+  }
+
+  // -------------------------------------------------------------------------
   // Video Generation Models
   // -------------------------------------------------------------------------
 
