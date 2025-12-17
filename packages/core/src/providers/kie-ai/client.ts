@@ -229,6 +229,28 @@ export class KieAIClient {
     );
   }
 
+  /**
+   * Create a Midjourney generation task.
+   * Uses the dedicated /api/v1/mj/generate endpoint.
+   *
+   * @param params - Midjourney generation parameters (taskType, prompt, speed, etc.)
+   * @returns Response containing taskId
+   */
+  async createMidjourneyTask(
+    params: Record<string, unknown>,
+  ): Promise<CreateTaskResponse> {
+    const payload = omitUndefined(params);
+
+    return this.request(
+      `${this.baseUrl}/api/v1/mj/generate`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+      CreateTaskResponseSchema,
+    );
+  }
+
   async pollVeo31UntilComplete(
     taskId: string,
     options?: {

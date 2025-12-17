@@ -73,15 +73,20 @@ export namespace VideoGenRealtime {
     data: z.object({}).strict(),
   });
 
-  const Video = z.object({
+  const ArtifactBase = z.object({
     id: z.string(),
+    state: z.enum(["processing", "ready", "failed"]).default("processing"),
+    progressPercent: z.number().nullable().optional(),
+  });
+
+  const Video = ArtifactBase.extend({
     videoUrl: z.string(),
   });
 
-  const Image = z.object({
-    id: z.string(),
+  const Image = ArtifactBase.extend({
     imageUrl: z.string(),
   });
+
   export const defaultArtifacts = {
     images: [] as z.infer<typeof Image>[],
     videos: [] as z.infer<typeof Video>[],
@@ -255,7 +260,7 @@ export namespace OrchestratorSchema {
   export const Decision = z.object({
     // Discriminator field
     action: z
-      .enum(["plan", "handoff", "retry", "complete", "error"])
+      .enum(["plan", "handoff", "retry", "complete", "error", "consult"])
       .describe("The type of decision"),
 
     // Fields for 'plan' action
@@ -269,7 +274,7 @@ export namespace OrchestratorSchema {
 
     // Fields for 'handoff' and 'retry' actions
     targetAgent: AgentType.nullable().describe(
-      "Which agent to delegate to (required for handoff/retry)",
+      "Which agent to delegate to (required for handoff/retry/consult)",
     ),
     stepId: z
       .string()
@@ -282,6 +287,14 @@ export namespace OrchestratorSchema {
       .nullable()
       .describe(
         "Detailed instructions for the sub-agent (required for handoff/retry)",
+      ),
+
+    // Fields for 'consult' action
+    consultQuestion: z
+      .string()
+      .nullable()
+      .describe(
+        "Question for the video expert (required for consult action). Include: archetype, duration target, whether reference has realistic face.",
       ),
 
     // Fields for 'complete' action
@@ -304,4 +317,5 @@ export namespace OrchestratorSchema {
   export type RetryDecision = Decision & { action: "retry" };
   export type CompleteDecision = Decision & { action: "complete" };
   export type ErrorDecision = Decision & { action: "error" };
+  export type ConsultDecision = Decision & { action: "consult" };
 }

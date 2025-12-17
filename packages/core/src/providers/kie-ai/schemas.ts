@@ -137,6 +137,45 @@ export const Veo31GenerationTypeSchema = z.enum([
 ]);
 export type Veo31GenerationType = z.infer<typeof Veo31GenerationTypeSchema>;
 
+// ===== MIDJOURNEY SCHEMAS =====
+
+export const MidjourneyTaskTypeSchema = z.enum([
+  "mj_txt2img",
+  "mj_img2img",
+  "mj_video",
+  "mj_style_reference",
+  "mj_omni_reference",
+]);
+export type MidjourneyTaskType = z.infer<typeof MidjourneyTaskTypeSchema>;
+
+export const MidjourneySpeedSchema = z.enum(["relaxed", "fast", "turbo"]);
+export type MidjourneySpeed = z.infer<typeof MidjourneySpeedSchema>;
+
+export const MidjourneyAspectRatioSchema = z.enum([
+  "1:2",
+  "9:16",
+  "2:3",
+  "3:4",
+  "5:6",
+  "6:5",
+  "4:3",
+  "3:2",
+  "1:1",
+  "16:9",
+  "2:1",
+]);
+export type MidjourneyAspectRatio = z.infer<typeof MidjourneyAspectRatioSchema>;
+
+export const MidjourneyVersionSchema = z.enum([
+  "7",
+  "6.1",
+  "6",
+  "5.2",
+  "5.1",
+  "niji6",
+]);
+export type MidjourneyVersion = z.infer<typeof MidjourneyVersionSchema>;
+
 export const TaskResultPayloadSchema = z.object({
   resultUrls: z.array(z.string()).optional(),
   originUrls: z.array(z.string()).optional(),

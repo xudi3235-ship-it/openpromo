@@ -1,5 +1,5 @@
 # NOTE: syntax directive removed to avoid Docker credential issues in dev containers
-FROM golang:1.24.4-alpine AS base
+FROM golang:1.25.4-alpine AS base
 WORKDIR /src
 COPY go.mod ./
 RUN go mod download

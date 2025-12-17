@@ -86,15 +86,33 @@ NOTE:
       },
       {
         onPoll: (attempt, maxAttempts) => {
+          const pct = Math.floor((attempt / maxAttempts) * 100);
+          VideoGenAgent.updateVideoArtifact({
+            id: videoUrl,
+            videoUrl,
+            state: "processing",
+            progressPercent: pct,
+          });
+        },
+        onTaskCreated(taskId) {
+          VideoGenAgent.updateVideoArtifact({
+            id: taskId,
+            videoUrl: "",
+            state: "processing",
+            progressPercent: null,
+          });
           VideoGenAgent.onProgressUpdate((draft) => {
-            draft.logs.push(`Progress: attempt ${attempt} of ${maxAttempts}`);
+            draft.logs.push(`Task created with ID: ${taskId}`);
           });
         },
       },
     );
 
-    VideoGenAgent.onProgressUpdate((draft) => {
-      draft.artifacts.videos.push({ videoUrl, id: videoUrl });
+    VideoGenAgent.updateVideoArtifact({
+      id: videoUrl,
+      videoUrl,
+      state: "ready",
+      progressPercent: 100,
     });
 
     // Download and save
