@@ -30,6 +30,11 @@ export type DMReplyPayload = {
   replyToMessageId?: string | null;
 };
 
+export type SentMessage = {
+  mid: string;
+  type: "attachment" | "text" | "combined";
+};
+
 /**
  * Comment-specific reply context
  */

@@ -138,9 +138,7 @@ export namespace InboxReplyService {
             replyToMessageId;
         }
 
-        // We can't be sure which mid corresponds to which part (text vs attachment) if split,
-        // but typically last one is text if both exist, or we just persist them all.
-        // For simplicity, we persist all sent messages.
+        // When message is split (attachment + text), we need to save each part correctly
         for (const msg of sentMessages) {
           // Create minimal payload that satisfies MessagePayload union type
           // Using FBMessagePayload structure as base (works for both FB and IG)
@@ -149,12 +147,29 @@ export namespace InboxReplyService {
             recipient: { id: row.contactExternalId },
             timestamp: Math.floor(Date.now() / 1000),
           };
+
+          // Determine what content to save based on message type
+          let messageText: string | null = null;
+          let messageAttachments: InboxAttachment[] = [];
+
+          if (msg.type === "attachment") {
+            // Only attachment, no text
+            messageAttachments = normalizedAttachments;
+          } else if (msg.type === "text") {
+            // Only text, no attachment
+            messageText = trimmedText.length > 0 ? trimmedText : null;
+          } else {
+            // Combined message (both text and attachment in one message)
+            messageText = trimmedText.length > 0 ? trimmedText : null;
+            messageAttachments = normalizedAttachments;
+          }
+
           await InboxService.upsertMessage({
             workspaceId,
             inboxConversationId: row.id,
             externalId: msg.mid,
-            text: trimmedText.length > 0 ? trimmedText : null, // This might duplicate text if split, but it's acceptable for now
-            attachments: normalizedAttachments, // Same here
+            text: messageText,
+            attachments: messageAttachments,
             payload: minimalPayload as MessagePayload,
             sender: "self",
             channel: "dm",

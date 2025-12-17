@@ -5,6 +5,7 @@ import type {
   CommentReplyTarget,
   DMReplyContext,
   DMReplyPayload,
+  SentMessage,
 } from "./types";
 
 /**
@@ -17,7 +18,7 @@ export namespace InstagramReply {
   export async function sendDM(
     context: DMReplyContext,
     payload: DMReplyPayload,
-  ): Promise<{ mid: string }[]> {
+  ): Promise<SentMessage[]> {
     console.info("[Instagram Reply][DM] sending message", {
       conversationId: context.conversationId,
       connectedAccountId: context.connectedAccountId,
@@ -26,7 +27,7 @@ export namespace InstagramReply {
     const hasAttachments = payload.attachments.length > 0;
     const hasText = payload.text && payload.text.trim().length > 0;
 
-    const sentMessages: { mid: string }[] = [];
+    const sentMessages: SentMessage[] = [];
 
     // Split message if both text and attachments are present
     // Instagram API likely has similar constraints or it's safer to align behavior
@@ -64,7 +65,10 @@ export namespace InstagramReply {
           body: attachmentBody,
         },
       );
-      sentMessages.push({ mid: attachmentResponse.message_id });
+      sentMessages.push({
+        mid: attachmentResponse.message_id,
+        type: "attachment",
+      });
 
       // 2. Send Text (with reply_to if available)
       const textPayload = buildMessagePayload([], payload.text);
@@ -95,7 +99,7 @@ export namespace InstagramReply {
           body: textBody,
         },
       );
-      sentMessages.push({ mid: textResponse.message_id });
+      sentMessages.push({ mid: textResponse.message_id, type: "text" });
       return sentMessages;
     }
 
@@ -149,7 +153,13 @@ export namespace InstagramReply {
         body: requestBody,
       },
     );
-    sentMessages.push({ mid: response.message_id });
+    const messageType: SentMessage["type"] =
+      hasAttachments && hasText
+        ? "combined"
+        : hasAttachments
+          ? "attachment"
+          : "text";
+    sentMessages.push({ mid: response.message_id, type: messageType });
     return sentMessages;
   }
 
