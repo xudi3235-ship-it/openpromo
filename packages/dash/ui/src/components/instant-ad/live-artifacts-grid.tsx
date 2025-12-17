@@ -4,20 +4,23 @@ import {
   DialogTitle,
 } from "@openpromo/ui/components/dialog";
 import { cn } from "@openpromo/ui/lib/utils";
-import { Loader2 } from "lucide-react";
+import type { VideoGenRealtime } from "@shared";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CircularProgress } from "../circular-progress";
 
-interface Artifact {
-  id: string;
+// Derive artifact types from the shared schema
+type VideoArtifact =
+  VideoGenRealtime.ServerAppState["artifacts"]["videos"][number];
+type ImageArtifact =
+  VideoGenRealtime.ServerAppState["artifacts"]["images"][number];
+type Artifact = (VideoArtifact | ImageArtifact) & {
   videoUrl?: string;
   imageUrl?: string;
-}
+};
 
 interface LiveArtifactsGridProps {
-  artifacts: {
-    videos: Array<{ id: string; videoUrl: string }>;
-    images: Array<{ id: string; imageUrl: string }>;
-  };
+  artifacts: VideoGenRealtime.ServerAppState["artifacts"];
   latestLog?: string;
   className?: string;
 }
@@ -56,8 +59,8 @@ export function LiveArtifactsGrid({
 
   const allArtifacts: Artifact[] = useMemo(() => {
     return [
-      ...artifacts.videos.map((v) => ({ id: v.id, videoUrl: v.videoUrl })),
-      ...artifacts.images.map((i) => ({ id: i.id, imageUrl: i.imageUrl })),
+      ...artifacts.videos.map((v) => ({ ...v, videoUrl: v.videoUrl })),
+      ...artifacts.images.map((i) => ({ ...i, imageUrl: i.imageUrl })),
     ];
   }, [artifacts.videos, artifacts.images]);
 
@@ -149,6 +152,9 @@ function ArtifactCard({
   onClick: () => void;
 }) {
   const isVideo = !!artifact.videoUrl;
+  const isProcessing = artifact.state === "processing";
+  const isFailed = artifact.state === "failed";
+  const progress = artifact.progressPercent ?? 0;
 
   return (
     <button
@@ -161,6 +167,7 @@ function ArtifactCard({
         "hover:border-primary/30 hover:scale-[1.02]",
         "cursor-pointer group",
         isNew && "animate-in fade-in-50 duration-300",
+        isFailed && "border-destructive/50",
       )}
     >
       {/* Type badge */}
@@ -169,6 +176,21 @@ function ArtifactCard({
           {isVideo ? "Video" : "Image"}
         </span>
       </div>
+
+      {/* Progress overlay for processing state */}
+      {isProcessing && (
+        <div className="absolute inset-0 z-[6] flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
+          <CircularProgress percent={progress} />
+        </div>
+      )}
+
+      {/* Failed state overlay */}
+      {isFailed && (
+        <div className="absolute inset-0 z-[6] flex flex-col items-center justify-center gap-2 bg-black/60 animate-in fade-in duration-200">
+          <AlertCircle className="w-8 h-8 text-destructive" />
+          <span className="text-xs font-medium text-white/80">Failed</span>
+        </div>
+      )}
 
       {/* Subtle overlay on hover */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-[5]" />
@@ -224,6 +246,9 @@ function ArtifactPreviewModal({
   if (!artifact) return null;
 
   const isVideo = !!artifact.videoUrl;
+  const isProcessing = artifact.state === "processing";
+  const isFailed = artifact.state === "failed";
+  const progress = artifact.progressPercent ?? 0;
 
   return (
     <Dialog open={!!artifact} onOpenChange={(open) => !open && onClose()}>
@@ -233,6 +258,21 @@ function ArtifactPreviewModal({
       >
         <DialogTitle className="sr-only">Artifact Preview</DialogTitle>
         <div className="relative flex items-center justify-center min-h-[50vh] max-h-[85vh]">
+          {/* Progress overlay for processing state */}
+          {isProcessing && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 animate-in fade-in duration-200">
+              <CircularProgress percent={progress} size={72} strokeWidth={4} />
+            </div>
+          )}
+          {/* Failed state overlay */}
+          {isFailed && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/60 animate-in fade-in duration-200">
+              <AlertCircle className="w-12 h-12 text-destructive" />
+              <span className="text-sm font-medium text-white/80">
+                Generation failed
+              </span>
+            </div>
+          )}
           {isVideo ? (
             <video
               src={artifact.videoUrl}
