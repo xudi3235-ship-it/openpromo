@@ -164,7 +164,7 @@ export namespace InboxReplyService {
             messageAttachments = normalizedAttachments;
           }
 
-          await InboxService.upsertMessage({
+          const created = await InboxService.upsertMessage({
             workspaceId,
             inboxConversationId: row.id,
             externalId: msg.mid,
@@ -175,17 +175,29 @@ export namespace InboxReplyService {
             channel: "dm",
             metadata,
           });
+
+          // Emit real event immediately since we have persisted it.
+          // This is critical for local dev where webhook might hit prod.
+          const upsertEvent = createWorkspaceEvent(
+            InboxRealtimeEventTypes.MessageUpserted,
+            {
+              conversationId: row.id,
+              message: {
+                id: created.id,
+                externalId: created.externalId,
+                sender: created.sender,
+                text: created.text,
+                attachments: created.attachments,
+                createdAt: created.createdAt,
+                channel: created.channel,
+                contentId: created.contentId,
+                metadata: created.metadata,
+              },
+            },
+          );
+          await dispatchWorkspaceEvent(workspaceId, upsertEvent);
         }
       }
-
-      await emitPendingReplyEvent(
-        row.id,
-        row.channel,
-        workspaceId,
-        trimmedText,
-        normalizedAttachments,
-        replyToMessageId,
-      );
     } else if (row.channel === "post_comment") {
       const commentContext: CommentReplyContext = {
         ...baseContext,
